@@ -1,10 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.NodeMeta
 
-trait WithMeta {
-  protected implicit def evAnno: Renderable[Anno]
+class MetaRenderer(context: IDLRenderingContext) {
+  import context._
 
   def withMeta(meta: NodeMeta, struct: String): String = {
     val maybeDoc = meta.doc.map {

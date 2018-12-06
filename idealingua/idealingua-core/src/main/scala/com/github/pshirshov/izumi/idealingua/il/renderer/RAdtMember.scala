@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, Anno}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.AdtMember
 
 
-class RAdtMember()(implicit ev: Renderable[TypeId], protected val evAnno: Renderable[Anno]) extends Renderable[AdtMember] with WithMeta {
+class RAdtMember(context: IDLRenderingContext) extends Renderable[AdtMember] {
+  import context._
   override def render(field: AdtMember): String = {
     val t = field.typeId.render()
     val repr = field.memberName match {
@@ -15,6 +15,6 @@ class RAdtMember()(implicit ev: Renderable[TypeId], protected val evAnno: Render
         t
     }
 
-    withMeta(field.meta, repr)
+    context.meta.withMeta(field.meta, repr)
   }
 }

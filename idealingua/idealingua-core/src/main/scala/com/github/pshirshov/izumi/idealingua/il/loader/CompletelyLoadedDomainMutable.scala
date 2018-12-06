@@ -11,6 +11,7 @@ private[loader] class CompletelyLoadedDomainMutable
   override val id: DomainId,
   override val members: Seq[IL.Val],
   override val origin: FSPath,
+  override val directInclusions: Seq[String],
   refContext: mutable.Map[DomainId, CompletelyLoadedDomain],
   requiredRefs: Set[DomainId]
 ) extends CompletelyLoadedDomain {

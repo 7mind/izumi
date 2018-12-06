@@ -10,14 +10,16 @@ class DefBuzzer(context: IDLParserContext) {
 
   import sep._
   import context._
+  import defPositions._
 
   // other method kinds should be added here
   def methods[_: P]: P[Seq[RawMethod]] = P(defSignature.method(kw.defe).rep(sep = any))
 
-  def buzzerBlock[_: P]: P[ILBuzzer] = metaAgg.cblock(kw.buzzer, methods)
+  def buzzerBlock[_: P]: P[ILBuzzer] = P(IP(metaAgg.cblock(kw.buzzer, methods)
     .map {
-      case (c, i, v) => ILBuzzer(Buzzer(i.toBuzzerId, v.toList, c))
-    }
+      case (c, i, v) => Buzzer(i.toBuzzerId, v.toList, c)
+    }))
+    .map(ILBuzzer)
 
 }
 

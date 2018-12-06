@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, Structure, Structures, Tuple}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Structure, Structures, Tuple}
 
-class RStructure()(implicit ev: Renderable[TypeId], ev1: Renderable[Field]) extends Renderable[Structure] {
+class RStructure(context: IDLRenderingContext) extends Renderable[Structure] {
+  import context._
+
   override def render(structure: Structure): String = {
     Seq(
       renderComposite(structure.superclasses.interfaces, "& ")

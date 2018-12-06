@@ -1,13 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.StructureId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, SimpleStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.SimpleStructure
 
-class RSimpleStructure()(
-  implicit ev1: Renderable[Field]
-  , ev2: Renderable[StructureId]
-) extends Renderable[SimpleStructure] {
+class RSimpleStructure(context: IDLRenderingContext) extends Renderable[SimpleStructure] {
+  import context._
+
   override def render(signature: SimpleStructure): String = {
     Seq(
       signature.concepts.map(_.render()).map(t => s"+ $t")

@@ -4,9 +4,8 @@ import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.ConstValue
 
-class RValue()(
-  implicit protected val evTypeId: Renderable[TypeId]
-) extends Renderable[ConstValue] {
+class RValue(context: IDLRenderingContext) extends Renderable[ConstValue] {
+  import context._
 
   override def render(v: ConstValue): String = {
     v match {
@@ -27,7 +26,7 @@ class RValue()(
       case ConstValue.CMap(value) =>
         value.map {
           case (name, v1: ConstValue.Typed) =>
-            s"$name: ${evTypeId.render(v1.typeId)} = ${render(v1)}"
+            s"$name: ${v1.typeId.render()} = ${render(v1)}"
           case (name, v1) =>
             s"$name = ${render(v1)}"
         }.mkString("{", ", ", "}")
@@ -45,13 +44,13 @@ class RValue()(
 
       case ConstValue.CTyped(typeId, value) =>
         typed(typeId, render(value))
-        evTypeId.render(typeId) + "(" + render(value) + ")"
+        typeId.render() + "(" + render(value) + ")"
     }
 
   }
 
   private def typed(typeId: TypeId, value: String) = {
-    s"${evTypeId.render(typeId)}($value)"
+    s"${typeId.render()}($value)"
 
   }
 }

@@ -27,9 +27,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[List[RefResolverIssue], CompletelyLoadedDomainMutable] = {
     (for {
       withIncludes <- resolveIncludes(parsed)
-      loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, processed, parsed.imports.map(_.id).toSet)
-
-
+      loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, parsed.model.includes, processed, parsed.imports.map(_.id).toSet)
     } yield {
       processed.update(parsed.did, loaded)
 

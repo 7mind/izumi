@@ -58,6 +58,7 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
 
     DomainDefinitionInterpreted(
       defn.id,
+      DomainMetadata(defn.origin, defn.directInclusions),
       types,
       services,
       buzzers,
@@ -109,6 +110,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
     typed.DomainDefinition(
       id = domainId,
+      meta = defn.meta,
       types = mappedTypes,
       services = mappedServices,
       buzzers = mappedBuzzers,

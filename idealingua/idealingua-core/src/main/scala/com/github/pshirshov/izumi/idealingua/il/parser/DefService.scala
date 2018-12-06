@@ -10,14 +10,14 @@ class DefService(context: IDLParserContext) {
 
   import context._
   import sep._
-
+  import defPositions._
 
   // other method kinds should be added here
   def methods[_: P]: P[Seq[RawMethod]] = P(defSignature.method(kw.defm).rep(sep = any))
 
-  def serviceBlock[_: P]: P[ILService] = metaAgg.cblock(kw.service, methods)
+  def serviceBlock[_: P]: P[ILService] = P(IP(metaAgg.cblock(kw.service, methods)
     .map {
-      case (c, i, v) => ILService(Service(i.toServiceId, v.toList, c))
-    }
+      case (c, i, v) => Service(i.toServiceId, v.toList, c)
+    })).map(ILService)
 
 }

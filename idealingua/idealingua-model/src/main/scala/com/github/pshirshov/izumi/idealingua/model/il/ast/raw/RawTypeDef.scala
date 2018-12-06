@@ -54,6 +54,6 @@ object RawTypeDef {
 }
 
 
-case class RawAnno(name: String, values: RawVal.CMap, position: InputPosition = InputPosition.Undefined) extends RawPositioned {
+case class RawAnno(name: String, values: RawVal.CMap, position: InputPosition) extends RawPositioned {
   override def updatePosition(position: ParserPosition[_]): RawPositioned = this.copy(position = position.toInputPos)
 }

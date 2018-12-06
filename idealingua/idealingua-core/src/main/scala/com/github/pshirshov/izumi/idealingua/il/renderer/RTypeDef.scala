@@ -1,18 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 
-class RTypeDef()(
-  implicit ev1: Renderable[TypeId]
-  , ev2: Renderable[AdtMember]
-  , ev3: Renderable[Structure]
-  , ev4: Renderable[IdField]
-  , protected val evAnno: Renderable[Anno]
-) extends Renderable[TypeDef] with WithMeta {
+class RTypeDef(context: IDLRenderingContext) extends Renderable[TypeDef] {
+  import context._
+
   override def render(tpe: TypeDef): String = {
     val struct = tpe match {
       case d: Adt =>
@@ -52,7 +47,7 @@ class RTypeDef()(
            |}
          """.stripMargin
     }
-    withMeta(tpe.meta, struct)
+    context.meta.withMeta(tpe.meta, struct)
   }
 
   private def renderPrimitiveAggregate(aggregate: IdTuple): String = {
@@ -62,6 +57,6 @@ class RTypeDef()(
   }
 
   private def renderEnumMember(s: EnumMember): String = {
-    withMeta(s.meta, s.value)
+    context.meta.withMeta(s.meta, s.value)
   }
 }

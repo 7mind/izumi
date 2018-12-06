@@ -1,15 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.renderer
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Anno, Field}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
 
-class RField()(
-  implicit ev: Renderable[TypeId],
-  protected val evAnno: Renderable[Anno],
-) extends Renderable[Field] with WithMeta {
+class RField(context: IDLRenderingContext) extends Renderable[Field] {
+  import context._
+
   override def render(field: Field): String = {
     val repr = s"${field.name}: ${field.typeId.render()}"
-    withMeta(field.meta, repr)
+    context.meta.withMeta(field.meta, repr)
   }
 }
