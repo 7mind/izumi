@@ -93,7 +93,7 @@ case class RpcPacket
   , ref: Option[RpcPacketId]
   , service: Option[String]
   , method: Option[String]
-  , headers: Map[String, String]
+  , headers: Option[Map[String, String]]
 )
 
 object RpcPacket {
@@ -102,7 +102,7 @@ object RpcPacket {
   implicit def enc0: Encoder[RpcPacket] = deriveEncoder
 
   def rpcCritical(data: String, cause: String): RpcPacket = {
-    RpcPacket(RPCPacketKind.Fail, Some(Map("data" -> data, "cause" -> cause).asJson), None, None, None, None, Map.empty)
+    RpcPacket(RPCPacketKind.Fail, Some(Map("data" -> data, "cause" -> cause).asJson), None, None, None, None, None)
   }
 
   def rpcRequest(method: IRTMethodId, data: Json): RpcPacket = {
@@ -113,16 +113,16 @@ object RpcPacket {
       None,
       Some(method.service.value),
       Some(method.methodId.value),
-      Map.empty,
+      None,
     )
   }
 
   def rpcResponse(ref: RpcPacketId, data: Json): RpcPacket = {
-    RpcPacket(RPCPacketKind.RpcResponse, Some(data), None, Some(ref), None, None, Map.empty)
+    RpcPacket(RPCPacketKind.RpcResponse, Some(data), None, Some(ref), None, None, None)
   }
 
   def rpcFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
-    RpcPacket(RPCPacketKind.RpcFail, Some(Map("cause" -> cause).asJson), None, ref, None, None, Map.empty)
+    RpcPacket(RPCPacketKind.RpcFail, Some(Map("cause" -> cause).asJson), None, ref, None, None, None)
   }
 
   def buzzerRequest(method: IRTMethodId, data: Json): RpcPacket = {
@@ -133,16 +133,16 @@ object RpcPacket {
       None,
       Some(method.service.value),
       Some(method.methodId.value),
-      Map.empty,
+      None,
     )
   }
 
   def buzzerResponse(ref: RpcPacketId, data: Json): RpcPacket = {
-    RpcPacket(RPCPacketKind.BuzzResponse, Some(data), None, Some(ref), None, None, Map.empty)
+    RpcPacket(RPCPacketKind.BuzzResponse, Some(data), None, Some(ref), None, None, None)
 
   }
 
   def buzzerFail(ref: Option[RpcPacketId], cause: String): RpcPacket = {
-    RpcPacket(RPCPacketKind.BuzzFailure, Some(Map("cause" -> cause).asJson), None, ref, None, None, Map.empty)
+    RpcPacket(RPCPacketKind.BuzzFailure, Some(Map("cause" -> cause).asJson), None, ref, None, None, None)
   }
 }
