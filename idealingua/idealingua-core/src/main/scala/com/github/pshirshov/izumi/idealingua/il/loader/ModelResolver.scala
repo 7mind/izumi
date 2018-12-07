@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-import com.github.pshirshov.izumi.idealingua.il.loader.verification.{DuplicateDomainsRule, GlobalVerificationRule}
+import com.github.pshirshov.izumi.idealingua.il.loader.verification.DuplicateDomainsRule
 import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.CompletelyLoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.loader._
@@ -14,6 +14,9 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, Typespa
 class ModelResolver(rules: Seq[VerificationRule]) {
 
   def resolve(domains: UnresolvedDomains): LoadedModels = {
+    val globalChecks = Seq(
+      DuplicateDomainsRule
+    )
     val importResolver = new ExternalRefResolver(domains)
 
     val typed = domains.domains.results
@@ -22,11 +25,7 @@ class ModelResolver(rules: Seq[VerificationRule]) {
 
     val result = LoadedModels(typed, IDLDiagnostics.empty)
 
-    val checks: Seq[GlobalVerificationRule] = Seq(
-      DuplicateDomainsRule
-    )
-
-    val postDiag = checks.map(_.check(result.successful)).fold(IDLDiagnostics.empty)(_ ++ _)
+    val postDiag = globalChecks.map(_.check(result.successful)).fold(IDLDiagnostics.empty)(_ ++ _)
 
     result.withDiagnostics(postDiag)
   }
