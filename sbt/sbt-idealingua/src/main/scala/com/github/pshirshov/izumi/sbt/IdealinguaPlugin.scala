@@ -256,7 +256,15 @@ object IdealinguaPlugin extends AutoPlugin {
       // TODO: maybe it's unsafe to destroy the whole directory?..
       val rules = TypespaceCompilerBaseFacade.descriptor(invokation.options.language).rules
       val resolved = new ModelResolver(rules).resolve(loaded)
-      val toCompile = resolved.throwIfFailed().successful
+
+      val toCompile = resolved
+        .ifWarnings(message => logger.warn(message))
+        .ifFailed {
+          message =>
+          logger.error(s"Compiler failed:\n$message")
+          throw new FeedbackProvidedException() {}
+        }
+        .successful
 
       if (toCompile.nonEmpty) {
         logger.info(s"""$projectId: Going to compile the following models: ${toCompile.map(_.typespace.domain.id).mkString(",")} into ${invokation.options.language}""")

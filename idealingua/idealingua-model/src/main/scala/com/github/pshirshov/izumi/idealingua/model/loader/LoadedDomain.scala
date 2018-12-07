@@ -13,12 +13,29 @@ object LoadedDomain {
 
   sealed trait Failure extends LoadedDomain
 
+  sealed trait DiagnosableFailure extends Failure {
+    def failures: Vector[IDLError]
+    def warnings: Vector[IDLWarning]
+  }
+
   final case class ParsingFailed(path: FSPath, message: String) extends Failure
 
-  final case class TyperFailed(path: FSPath, domain: DomainId, issues: IDLDiagnostics) extends Failure
+  final case class TyperFailed(path: FSPath, domain: DomainId, issues: IDLDiagnostics) extends DiagnosableFailure {
+    override def failures: Vector[IDLError] = issues.issues
 
-  final case class ResolutionFailed(path: FSPath, domain: DomainId, issues: Vector[RefResolverIssue]) extends Failure
+    override def warnings: Vector[IDLWarning] = issues.warnings
+  }
 
-  final case class VerificationFailed(path: FSPath, domain: DomainId, issues: IDLDiagnostics) extends Failure
+  final case class ResolutionFailed(path: FSPath, domain: DomainId, issues: Vector[RefResolverIssue]) extends DiagnosableFailure {
+    override def failures: Vector[IDLError] = issues
+
+    override def warnings: Vector[IDLWarning] = Vector.empty
+  }
+
+  final case class VerificationFailed(path: FSPath, domain: DomainId, issues: IDLDiagnostics) extends DiagnosableFailure {
+    override def failures: Vector[IDLError] = issues.issues
+
+    override def warnings: Vector[IDLWarning] = issues.warnings
+  }
 
 }

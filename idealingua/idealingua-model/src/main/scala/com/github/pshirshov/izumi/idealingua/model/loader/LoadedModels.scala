@@ -16,24 +16,21 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
     }
   }
 
-  def failures: Seq[String] = {
-    loaded.collect({case f: Failure => f})
-      .map {
-        case ParsingFailed(path, message) =>
-          s"$path failed to parse: $message"
-        case f: ResolutionFailed =>
-          s"Domain ${f.domain} failed to resolve external references (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
-        case f: TyperFailed =>
-          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
-        case f: VerificationFailed =>
-          s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
-      }
+  def ifWarnings(handler: String => Unit): LoadedModels = {
+    collectWarnings match {
+      case w if w.nonEmpty =>
+        handler(s"Warnings: ${w.niceList()}")
+        this
+      case _ =>
+        this
+    }
   }
 
   def ifFailed(handler: String => Unit): LoadedModels = {
-    val f = failures
-    if (f.nonEmpty) {
-      handler(s"Verification failed: ${f.niceList()}")
+    collectFailures match {
+      case f if f.nonEmpty =>
+        handler(s"Verification failed: ${f.niceList()}")
+      case _ =>
     }
 
     val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)
@@ -45,8 +42,29 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
     this
   }
 
-  def throwIfFailed() = ifFailed(message => throw new IDLException(message))
+  def throwIfFailed(): LoadedModels = ifFailed(message => throw new IDLException(message))
 
+  def collectFailures: Seq[String] = {
+    loaded.collect({ case f: Failure => f })
+      .map {
+        case ParsingFailed(path, message) =>
+          s"Parsing phase (0) failed on $path: $message"
+        case f: ResolutionFailed =>
+          s"Typespace reference resolution phase (1) failed on ${f.domain} (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+        case f: TyperFailed =>
+          s"Typing phase (2) failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
+        case f: VerificationFailed =>
+          s"Typespace verification phase (3) failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
+      }
+  }
+
+  private def collectWarnings: Seq[String] = {
+    loaded
+      .collect({ case f: DiagnosableFailure => f.warnings })
+      .map {
+        m => m.toString()
+      }
+  }
 }
 
 object LoadedModels {

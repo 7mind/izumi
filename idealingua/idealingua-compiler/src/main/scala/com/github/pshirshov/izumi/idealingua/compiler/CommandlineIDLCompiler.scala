@@ -79,9 +79,12 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
           val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
           new ModelResolver(rules)
             .resolve(loaded.value)
+            .ifWarnings {
+              message =>
+                println(message)
+            }
             .ifFailed {
               message =>
-                println("Compiler failed:")
                 println(message)
                 System.exit(1)
             }
