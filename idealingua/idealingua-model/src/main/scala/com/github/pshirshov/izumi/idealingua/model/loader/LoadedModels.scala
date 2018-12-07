@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-class LoadedModels(loaded: Seq[LoadedDomain]) {
-
+class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
   import LoadedDomain._
 
-  def map(f: LoadedDomain => LoadedDomain): LoadedModels = LoadedModels(loaded.map(f))
+  def withDiagnostics(postDiag: IDLDiagnostics): LoadedModels = {
+    LoadedModels(loaded, postDiag)
+  }
 
   def successful: Seq[Success] = {
     loaded.collect {
@@ -30,22 +31,22 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
     collectFailures match {
       case f if f.nonEmpty =>
         handler(s"Verification failed: ${f.niceList()}")
+        this
       case _ =>
+        this
     }
-
-    val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)
-    if (duplicates.nonEmpty) {
-      val messages = duplicates.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
-      handler(s"Duplicate domain ids: ${messages.niceList()}")
-    }
-
-    this
   }
 
   def throwIfFailed(): LoadedModels = ifFailed(message => throw new IDLException(message))
 
   def collectFailures: Seq[String] = {
-    loaded.collect({ case f: Failure => f })
+    val pf = if (diagnostics.issues.nonEmpty) {
+      diagnostics.issues
+    } else {
+      Seq.empty
+    }
+
+    (pf ++ loaded.collect({ case f: Failure => f }))
       .map {
         case ParsingFailed(path, message) =>
           s"Parsing phase (0) failed on $path: $message"
@@ -55,12 +56,14 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
           s"Typing phase (2) failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
         case f: VerificationFailed =>
           s"Typespace verification phase (3) failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
+        case PostVerificationFailure(issues) =>
+          s"Global verification phase (4) failed:\n${issues.issues.mkString("\n").shift(2)}"
+
       }
   }
 
   private def collectWarnings: Seq[String] = {
-    loaded
-      .collect({ case f: DiagnosableFailure => f.warnings })
+    (diagnostics.warnings +: loaded.collect({ case f: DiagnosableFailure => f.warnings }))
       .map {
         m => m.toString()
       }
@@ -68,5 +71,5 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
 }
 
 object LoadedModels {
-  def apply(loaded: Seq[LoadedDomain]): LoadedModels = new LoadedModels(loaded)
+  def apply(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics): LoadedModels = new LoadedModels(loaded, diagnostics)
 }

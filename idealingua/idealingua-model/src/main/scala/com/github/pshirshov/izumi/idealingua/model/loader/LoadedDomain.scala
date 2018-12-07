@@ -20,6 +20,8 @@ object LoadedDomain {
 
   final case class ParsingFailed(path: FSPath, message: String) extends Failure
 
+  final case class PostVerificationFailure(issues: IDLDiagnostics) extends Failure
+
   final case class TyperFailed(path: FSPath, domain: DomainId, issues: IDLDiagnostics) extends DiagnosableFailure {
     override def failures: Vector[IDLError] = issues.issues
 

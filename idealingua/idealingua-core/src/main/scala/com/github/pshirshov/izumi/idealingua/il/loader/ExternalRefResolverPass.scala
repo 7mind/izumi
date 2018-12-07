@@ -151,10 +151,11 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
       .collect {
         case s: DomainParsingResult.Success =>
           s
-      }.filter(_.domain.did == include)
+      }
+      .filter(_.domain.did == include)
 
     if (matching.size > 1) {
-      Left(RefResolverIssue.DuplicatedDomains(include, matching.map(_.path).toList))
+      Left(RefResolverIssue.DuplicatedDomainsDuringLookup(include, matching.map(_.path).toList))
     } else {
       Right(matching.headOption)
     }

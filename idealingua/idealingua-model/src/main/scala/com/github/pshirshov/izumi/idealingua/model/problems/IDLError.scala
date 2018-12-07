@@ -9,6 +9,19 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.verification.Missin
 
 sealed trait IDLError
 
+sealed trait PostError extends IDLError
+
+object PostError {
+  final case class DuplicatedDomains(paths: Map[DomainId, Seq[FSPath]]) extends RefResolverIssue {
+    override def toString: String = {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      val messages = paths.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
+      s"Duplicate domain ids at different paths: ${messages.niceList()}"
+    }
+  }
+
+}
+
 sealed trait TyperError extends IDLError
 
 object TyperError {
@@ -24,8 +37,8 @@ sealed trait RefResolverIssue extends IDLError
 
 object RefResolverIssue {
 
-  final case class DuplicatedDomains(imported: DomainId, paths: List[FSPath]) extends RefResolverIssue {
-    override def toString: String = s"$imported: multiple domains have the same identifier: ${paths.niceList()}"
+  final case class DuplicatedDomainsDuringLookup(imported: DomainId, paths: List[FSPath]) extends RefResolverIssue {
+    override def toString: String = s"$imported: can't lookup domain, multiple domains have that identifier: ${paths.niceList()}"
   }
 
   final case class UnparseableInclusion(domain: DomainId, stack: List[String], failure: ModelParsingResult.Failure) extends RefResolverIssue {
