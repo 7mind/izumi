@@ -4,11 +4,14 @@ import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDL
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
+
   import LoadedDomain._
 
   def withDiagnostics(postDiag: IDLDiagnostics): LoadedModels = {
     LoadedModels(loaded, postDiag)
   }
+
+  def all: Vector[LoadedDomain] = loaded.toVector
 
   def successful: Seq[Success] = {
     loaded.collect {
