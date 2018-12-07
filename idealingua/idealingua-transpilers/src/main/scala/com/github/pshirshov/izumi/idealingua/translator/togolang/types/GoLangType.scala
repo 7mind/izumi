@@ -21,6 +21,7 @@ final case class GoLangType (
   private def hasSetterErrorImpl(id: TypeId): Boolean = {
     id match {
       case Primitive.TUUID => true
+      case Primitive.TBLOB => ???
       case g: Generic => g match {
         case _: Generic.TOption => false
         case _ => true
@@ -112,6 +113,7 @@ final case class GoLangType (
     case Primitive.TFloat => "float32"
     case Primitive.TDouble => "float64"
     case Primitive.TUUID => "string"
+    case Primitive.TBLOB => ???
     case Primitive.TTime => if (serialized) "string" else "time.Time"
     case Primitive.TDate => if (serialized) "string" else "time.Time"
     case Primitive.TTs => if (serialized) "string" else "time.Time"
@@ -208,6 +210,7 @@ final case class GoLangType (
     case Primitive.TUInt64 => s"strconv.FormatUInt($name, 10)"
     case Primitive.TBool => s"strconv.FormatBool($name)"
     case Primitive.TUUID => name
+    case Primitive.TBLOB => ???
     case _: EnumId => s"$name.String()"
     case _: IdentifierId => s"$name.String()"
     case _ => throw new IDLException(s"Should never render non int or string types to strings. Used for type ${id.name}")
@@ -227,6 +230,7 @@ final case class GoLangType (
         case Primitive.TUInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := uint32(${dest}64)"
         case Primitive.TUInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseUInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
         case Primitive.TUUID => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
+        case Primitive.TBLOB => ???
         case en: EnumId => s"""${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\nif !IsValid${en.name}(${dest}Str) {\n    return fmt.Errorf("Unknown value %s for enum type ${en.name}", ${dest}Str)\n}\n$dest := New${en.name}(${dest}Str)"""
         case id: IdentifierId => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest := &${id.name}{}\nif err := $dest.LoadSerialized(${dest}Str); err != nil {\n    return err\n}"
         case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
@@ -250,6 +254,7 @@ final case class GoLangType (
     case Primitive.TFloat => "0"
     case Primitive.TDouble => "0"
     case Primitive.TUUID => "\"00000000-0000-0000-0000-000000000000\""
+    case Primitive.TBLOB => ???
     case Primitive.TTime => "\"00:00:00.000000\""
     case Primitive.TDate => "\"0000-00-00\""
     case Primitive.TTs => "\"0000-00-00T00:00:00.00000\""
@@ -282,6 +287,7 @@ final case class GoLangType (
     case Primitive.TFloat => "32.32"
     case Primitive.TDouble => "64.64"
     case Primitive.TUUID => "\"d71ec06e-4622-4663-abd0-de1470eb6b7d\""
+    case Primitive.TBLOB => ???
     case Primitive.TTime => "time.Now()" // "\"15:10:10.10001\""
     case Primitive.TDate => "time.Now()" // "\"2010-12-01\""
     case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""

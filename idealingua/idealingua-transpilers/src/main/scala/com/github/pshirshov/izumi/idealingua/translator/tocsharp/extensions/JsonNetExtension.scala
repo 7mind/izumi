@@ -164,6 +164,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TUInt64 => s"writer.WriteValue($src);"
               case Primitive.TFloat => s"writer.WriteValue($src);"
               case Primitive.TDouble => s"writer.WriteValue($src);"
+              case Primitive.TBLOB => ???
               case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
               case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}.{3:000}", (int)$src.TotalHours, $src.Minutes, $src.Seconds, $src.Milliseconds));"""
               case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""

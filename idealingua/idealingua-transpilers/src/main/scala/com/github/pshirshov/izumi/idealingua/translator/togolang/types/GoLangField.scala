@@ -178,6 +178,7 @@ final case class GoLangField(
 
   def renderMethods(): String = tp.id match {
     case Primitive.TUUID => toGuidField()
+    case Primitive.TBLOB => ???
     case Primitive.TTime => toTimeField()
     case Primitive.TDate => toDateField()
     case Primitive.TTs => toTimeStampField(local = true)

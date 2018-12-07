@@ -68,6 +68,7 @@ object GoLangImports {
       case Primitive.TTsU => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
       case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
       case Primitive.TUUID => return if (forTest) Seq.empty else Seq(Seq("regexp"))
+      case Primitive.TBLOB => ???
       case g: Generic => g match {
         case _: Generic.TOption => return Seq.empty
         case _: Generic.TMap => return Seq.empty

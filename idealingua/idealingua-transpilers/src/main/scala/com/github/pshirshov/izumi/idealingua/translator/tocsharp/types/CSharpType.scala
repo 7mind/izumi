@@ -44,6 +44,7 @@ final case class CSharpType (
       case Primitive.TTs => false
       case Primitive.TTsTz => false
       case Primitive.TTsU => false
+      case Primitive.TBLOB => ???
     }
     case _ => id match {
       case _: EnumId => false
@@ -81,6 +82,7 @@ final case class CSharpType (
       case Primitive.TTs => true
       case Primitive.TTsTz => true
       case Primitive.TTsU => true
+      case Primitive.TBLOB => true
     }
     case _ => id match {
       case _: EnumId => true
@@ -118,6 +120,7 @@ final case class CSharpType (
       case Primitive.TTs => "0"
       case Primitive.TTsTz => "0"
       case Primitive.TTsU => "0"
+      case Primitive.TBLOB => "null"
     }
     case _ => id match {
       case e: EnumId => s"${e.name}.${ts(e).asInstanceOf[Enumeration].members.head.value}"
@@ -155,6 +158,7 @@ final case class CSharpType (
       case Primitive.TTs => None
       case Primitive.TTsTz => None
       case Primitive.TTsU => None
+      case Primitive.TBLOB => None
     }
     case _ => id match {
       case _: EnumId => None
@@ -188,6 +192,7 @@ final case class CSharpType (
         case Primitive.TUInt64 => (2147483648L + rnd.nextInt(2147483647)).toString
         case Primitive.TFloat => rnd.nextFloat().toString + "f"
         case Primitive.TDouble => (2147483648L + rnd.nextFloat()).toString
+        case Primitive.TBLOB => ???
         case Primitive.TUUID => s"""new System.Guid("${java.util.UUID.randomUUID.toString}")"""
         case Primitive.TTime => s"""System.TimeSpan.Parse(string.Format("{0:D2}:{1:D2}:{2:D2}.{3:D3}", ${rnd.nextInt(24)}, ${rnd.nextInt(60)}, ${rnd.nextInt(60)}, ${100 + rnd.nextInt(100)}))"""
         case Primitive.TDate => s"""System.DateTime.Parse(string.Format("{0:D4}-{1:D2}-{2:D2}", ${1984 + rnd.nextInt(20)}, ${1 + rnd.nextInt(12)}, ${1 + rnd.nextInt(28)}))"""
@@ -259,6 +264,7 @@ final case class CSharpType (
         case Primitive.TUInt32 => return s"$name.ToString()"
         case Primitive.TUInt64 => return s"$name.ToString()"
         case Primitive.TBool => return s"$name.ToString()"
+        case Primitive.TBLOB => ???
         case Primitive.TUUID => s"$name.ToString()"
         case _: EnumId => s"$name.ToString()"
         case _: IdentifierId => s"$name.ToString()"
@@ -285,6 +291,7 @@ final case class CSharpType (
           case Primitive.TUInt64 => s"ulong.Parse($src)"
           case Primitive.TBool => s"bool.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
+          case Primitive.TBLOB => ???
           case e: EnumId => s"${e.name}Helpers.From($source)"
           case i: IdentifierId => s"${i.name}.From($source)"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
@@ -329,6 +336,7 @@ final case class CSharpType (
     case Primitive.TFloat => "float"
     case Primitive.TDouble => "double"
     case Primitive.TUUID => "Guid"
+    case Primitive.TBLOB => ???
     case Primitive.TTime => "TimeSpan"
     case Primitive.TDate => "DateTime" // Could be Date
     case Primitive.TTs => "DateTime"
