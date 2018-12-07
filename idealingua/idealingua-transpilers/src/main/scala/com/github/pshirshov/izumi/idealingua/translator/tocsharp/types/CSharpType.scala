@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp.types
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Enumeration, _}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{NodeMeta, Structure, Super}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace

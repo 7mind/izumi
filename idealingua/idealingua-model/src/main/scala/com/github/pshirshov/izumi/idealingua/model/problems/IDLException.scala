@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.exceptions
+package com.github.pshirshov.izumi.idealingua.model.problems
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 

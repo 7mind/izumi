@@ -5,25 +5,24 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.{ForeignType, NewType}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.loader.TyperIssue
 
 import scala.reflect._
 
 
 class IDLTyper(defn: CompletelyLoadedDomain) {
-  def perform(): Either[List[TyperIssue], typed.DomainDefinition] = {
+  def perform(): Either[IDLDiagnostics, typed.DomainDefinition] = {
     try {
       Right(new IDLPostTyper(new IDLPretyper(defn).perform()).perform())
     } catch {
       case t: Throwable =>
         import IzThrowable._
-        Left(List(TyperIssue.TyperException(t.stackTrace)))
+        Left(IDLDiagnostics(Vector(TyperError.TyperException(t.stackTrace))))
     }
   }
 }

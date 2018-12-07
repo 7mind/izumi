@@ -17,7 +17,6 @@ import scala.reflect._
 import scala.util.{Failure, Success, Try}
 
 
-
 object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
   implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
 
@@ -78,7 +77,15 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
         println(s"Preparing typespace for $langId")
         val toCompile = Timed {
           val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
-          new ModelResolver(rules).resolve(loaded.value).throwIfFailed().successful
+          new ModelResolver(rules)
+            .resolve(loaded.value)
+            .ifFailed {
+              message =>
+                println("Compiler failed:")
+                println(message)
+                System.exit(1)
+            }
+            .successful
         }
         println(s"Finished in ${toCompile.duration.toMillis}ms")
 

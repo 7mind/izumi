@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 
 trait Translator {

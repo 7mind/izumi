@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class LoadedModels(loaded: Seq[LoadedDomain]) {
@@ -24,26 +24,28 @@ class LoadedModels(loaded: Seq[LoadedDomain]) {
         case f: ResolutionFailed =>
           s"Domain ${f.domain} failed to resolve external references (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
         case f: TyperFailed =>
-          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
         case f: VerificationFailed =>
-          s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+          s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.issues.mkString("\n").shift(2)}"
       }
   }
 
-  def throwIfFailed(): LoadedModels = {
+  def ifFailed(handler: String => Unit): LoadedModels = {
     val f = failures
     if (f.nonEmpty) {
-      throw new IDLException(s"Verification failed: ${f.niceList()}")
+      handler(s"Verification failed: ${f.niceList()}")
     }
 
     val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)
     if (duplicates.nonEmpty) {
       val messages = duplicates.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
-      throw new IDLException(s"Duplicate domain ids: ${messages.niceList()}")
+      handler(s"Duplicate domain ids: ${messages.niceList()}")
     }
 
     this
   }
+
+  def throwIfFailed() = ifFailed(message => throw new IDLException(message))
 
 }
 

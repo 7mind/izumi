@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.CompletelyLoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.loader._
-import com.github.pshirshov.izumi.idealingua.model.typespace.TypespaceVerificationIssue.VerificationException
-import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl, TypespaceVerifier, VerificationRule}
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
+import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.VerificationException
+import com.github.pshirshov.izumi.idealingua.model.typespace.verification.{TypespaceVerifier, VerificationRule}
+import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl}
 
 
 class ModelResolver(rules: Seq[VerificationRule]) {
@@ -32,15 +34,15 @@ class ModelResolver(rules: Seq[VerificationRule]) {
 
   private def runVerifier(ts: Typespace): Either[LoadedDomain.VerificationFailed, LoadedDomain.Success] = {
     try {
-      val issues = new TypespaceVerifier(ts, rules).verify().toList
-      if (issues.isEmpty) {
-        Right(LoadedDomain.Success(ts.domain.meta.origin, ts))
+      val issues = new TypespaceVerifier(ts, rules).verify()
+      if (issues.issues.isEmpty) {
+        Right(LoadedDomain.Success(ts.domain.meta.origin, ts, issues.warnings))
       } else {
         Left(LoadedDomain.VerificationFailed(ts.domain.meta.origin, ts.domain.id, issues))
       }
     } catch {
       case t: Throwable =>
-        Left(LoadedDomain.VerificationFailed(ts.domain.meta.origin, ts.domain.id, List(VerificationException(t.stackTrace))))
+        Left(LoadedDomain.VerificationFailed(ts.domain.meta.origin, ts.domain.id, IDLDiagnostics(Vector(VerificationException(t.stackTrace)))))
     }
   }
 

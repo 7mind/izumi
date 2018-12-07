@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{CompletelyLoadedDomain, IL}
 import com.github.pshirshov.izumi.idealingua.model.loader._
@@ -24,7 +25,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[List[RefResolverIssue], CompletelyLoadedDomainMutable] = {
+  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], CompletelyLoadedDomainMutable] = {
     (for {
       withIncludes <- resolveIncludes(parsed)
       loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, parsed.model.includes, processed, parsed.imports.map(_.id).toSet)
@@ -43,7 +44,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
                 case Some(value) =>
                   resolveReferences(value) match {
                     case Left(v) =>
-                      Left(List(RefResolverIssue.UnresolvableImport(parsed.did, imprt.id, v)))
+                      Left(Vector(RefResolverIssue.UnresolvableImport(parsed.did, imprt.id, v)))
                     case Right(v) =>
                       Right(v)
                   }
@@ -57,18 +58,18 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
                       s"KO: $path, problem: $message"
 
                   }
-                  Left(List(RefResolverIssue.MissingImport(parsed.did, imprt.id, diagnostics.toList)))
+                  Left(Vector(RefResolverIssue.MissingImport(parsed.did, imprt.id, diagnostics.toList)))
               }
             }
 
         }
         .map {
           out =>
-            out.fold(issue => Left(List(issue)), right => right.fold(issues => Left(issues), good => Right(good)))
+            out.fold(issue => Left(Vector(issue)), right => right.fold(issues => Left(issues), good => Right(good)))
         }
         .collect({ case Left(issues) => issues })
         .flatten
-        .toList
+        .toVector
 
       if (allImportIssues.isEmpty) {
         Right(loaded)
@@ -80,7 +81,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
       .fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
   }
 
-  private def resolveIncludes(parsed: ParsedDomain): Either[List[RefResolverIssue], List[IL.Val]] = {
+  private def resolveIncludes(parsed: ParsedDomain): Either[Vector[RefResolverIssue], List[IL.Val]] = {
     val m = parsed.model
     val allIncludes = m.includes
       .map(i => loadModel(parsed.did, i, Seq(i)))
@@ -97,7 +98,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def loadModel(forDomain: DomainId, includePath: String, stack: Seq[String]): Either[List[RefResolverIssue], LoadedModel] = {
+  private def loadModel(forDomain: DomainId, includePath: String, stack: Seq[String]): Either[Vector[RefResolverIssue], LoadedModel] = {
     findModel(forDomain, domains, includePath)
       .map {
         case ModelParsingResult.Success(_, model) =>
@@ -107,7 +108,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
           merge(model, subincludes)
 
         case f: ModelParsingResult.Failure =>
-          Left(List(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
+          Left(Vector(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
 
       }
       .getOrElse {
@@ -117,12 +118,12 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
           case ModelParsingResult.Failure(path, message) =>
             s"KO: $path, problem: $message"
         }
-        Left(List(RefResolverIssue.MissingInclusion(forDomain, stack.toList, includePath, diagnostic.toList)))
+        Left(Vector(RefResolverIssue.MissingInclusion(forDomain, stack.toList, includePath, diagnostic.toList)))
       }
   }
 
-  private def merge(model: ParsedModel, subincludes: Seq[Either[List[RefResolverIssue], LoadedModel]]): Either[List[RefResolverIssue], LoadedModel] = {
-    val issues = subincludes.collect({ case Left(subissues) => subissues }).flatten.toList
+  private def merge(model: ParsedModel, subincludes: Seq[Either[Vector[RefResolverIssue], LoadedModel]]): Either[Vector[RefResolverIssue], LoadedModel] = {
+    val issues = subincludes.collect({ case Left(subissues) => subissues }).flatten.toVector
 
     if (issues.nonEmpty) {
       Left(issues)
