@@ -43,6 +43,46 @@ class DomainParserTest
           | c: x#Y
           |}
           |
+          |adt NestedAdt0 = | enum NestedAdt0Option1 { VAL1,  VAL2}
+          |                 | enum NestedAdt0Option2 { VAL1,  VAL2}
+          |
+          |/** docstring
+          |  */
+          |@TestAnno()
+          |adt NestedAdt1 {
+          |  /** docstring
+          |    */
+          |  @TestAnno()
+          |  enum NestedAdt1Option1 {
+          |    VAL1
+          |    VAL2
+          |  }
+          |
+          |  /** docstring
+          |  */
+          |  @TestAnno()
+          |  data NestedAdt1Option2 {
+          |  }
+          |}
+          |
+          |/** docstring
+          |  */
+          |@TestAnno()
+          |adt NestedAdt2 = | /** docstring
+          |                    */
+          |                   @TestAnno()
+          |                   enum NestedAdt2Option1 {
+          |                     VAL11
+          |                     VAL12
+          |                   }
+          |                 | /** docstring
+          |                    */
+          |                   @TestAnno()
+          |                   enum NestedAdt2Option2 {
+          |                     VAL21
+          |                     VAL22
+          |                   }
+          |
           |foreign JavaTime {
           |  "scala": "java.time.LocalDateTime"
           |}

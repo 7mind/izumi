@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import fastparse._
 import NoWhitespace._
+import com.github.pshirshov.izumi.idealingua.il.renderer.IDLRenderer
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
 trait ParserTestTools {

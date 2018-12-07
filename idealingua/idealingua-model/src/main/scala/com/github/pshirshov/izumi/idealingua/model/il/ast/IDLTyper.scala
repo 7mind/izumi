@@ -228,7 +228,13 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   }
 
   protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
-    typed.AdtMember(fixId(member.typeId): TypeId, member.memberName, fixMeta(member.meta))
+    member match {
+      case RawAdtMember.RawAdtMemberRef(typeId, memberName, meta) =>
+        typed.AdtMember(fixId(typeId): TypeId, memberName, fixMeta(meta))
+      case RawAdtMember.RawNestedAdtMember(nested) =>
+        throw new IDLException(s"TODO: nested members are not supported yet: ${nested.id}")
+    }
+
   }
 
   protected def toStruct(struct: raw.RawStructure): typed.Structure = {

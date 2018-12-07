@@ -69,17 +69,25 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def aggregate[_: P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
 
-  def adtMember[_: P]: P[RawAdtMember] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?)).map {
-    case (meta, (tpe, alias)) =>
-      RawAdtMember(tpe.toTypeId, alias, meta)
+  def nestedAdtMember[_: P]: P[RawAdtMember.RawNestedAdtMember] = P(defMember.typeMember)
+  .map {
+    m =>
+      RawAdtMember.RawNestedAdtMember(m.v)
   }
+
+
+  def adtMember[_: P]: P[RawAdtMember.RawAdtMemberRef] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?))
+    .map {
+      case (meta, (tpe, alias)) =>
+        RawAdtMember.RawAdtMemberRef(tpe.toTypeId, alias, meta)
+    }
 
   def importMember[_: P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {
     case (tpe, alias) =>
       ImportedId(tpe, alias)
   }
 
-  def adt[_: P](sep: => P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
+  def adt[_: P](sep: => P[Unit]): P[AlgebraicType] = P((nestedAdtMember | adtMember).rep(min = 1, sep = sep))
     .map(_.toList).map(AlgebraicType)
 
   def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol)).map {
@@ -100,7 +108,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
       case (c, i, v) => v.toDto(i.toDataId, c)
     }
 
-  def stringPair[_:P]: P[(String, String)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ Literals.Literals.Str)
+  def stringPair[_: P]: P[(String, String)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ Literals.Literals.Str)
 
   def foreignLinks[_: P]: P[Map[String, String]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 

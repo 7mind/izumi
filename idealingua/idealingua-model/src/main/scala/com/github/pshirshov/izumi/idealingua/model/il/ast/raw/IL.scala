@@ -13,11 +13,13 @@ object IL {
 
   sealed trait Val
 
+  sealed trait TypeVal extends Val
+
   final case class ILImport(domain: DomainId, id: ImportedId) extends Val
 
   final case class ILInclude(i: String) extends Val
 
-  final case class ILDef(v: IdentifiedRawTypeDef) extends Val
+  final case class ILDef(v: IdentifiedRawTypeDef) extends TypeVal
 
   final case class ILService(v: Service) extends Val
 
@@ -28,7 +30,7 @@ object IL {
 
   final case class ILConst(v: Constants) extends Val
 
-  final case class ILNewtype(v: NewType) extends Val
+  final case class ILNewtype(v: NewType) extends TypeVal
 
-  final case class ILForeignType(v: ForeignType) extends Val
+  final case class ILForeignType(v: ForeignType) extends TypeVal
 }
