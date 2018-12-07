@@ -12,7 +12,7 @@ sealed trait IDLError
 sealed trait PostError extends IDLError
 
 object PostError {
-  final case class DuplicatedDomains(paths: Map[DomainId, Seq[FSPath]]) extends RefResolverIssue {
+  final case class DuplicatedDomains(paths: Map[DomainId, Seq[FSPath]]) extends PostError {
     override def toString: String = {
       import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
       val messages = paths.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
