@@ -6,7 +6,7 @@ import java.nio.file._
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
+import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
 import io.circe.{Decoder, Encoder}
@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 
 
-object CliIdlCompiler extends ScalacheckShapeless with Codecs {
+object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
   implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
 
 
@@ -64,21 +64,26 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
     target.toFile.mkdirs()
 
     println(s"Loading definitions from `$path`...")
-    val toCompile = Timed {
+    val loaded = Timed {
       val context = new LocalModelLoaderContext(path, Seq.empty)
-      context.loader.load().throwIfFailed().successful
+      context.loader.load()
     }
-    println(s"Done: ${toCompile.size} in ${toCompile.duration.toMillis}ms")
+    println(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
     println()
 
     toRun.foreach {
       option =>
         val langId = option.language.toString
-        println(s"Working on $langId")
         val itarget = target.resolve(langId)
+        println(s"Preparing typespace for $langId")
+        val toCompile = Timed {
+          val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
+          new ModelResolver(rules).resolve(loaded.value).throwIfFailed().successful
+        }
+        println(s"Finished in ${toCompile.duration.toMillis}ms")
 
         val out = Timed {
-          new IDLCompiler(toCompile)
+          new TypespaceCompilerFSFacade(toCompile)
             .compile(itarget, option)
         }
 
@@ -116,9 +121,9 @@ object CliIdlCompiler extends ScalacheckShapeless with Codecs {
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
-    val all = TypespaceTranslatorFacade.extensions(lang)
+    val descriptor = TypespaceCompilerBaseFacade.descriptor(lang)
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
-    all.filterNot(e => negative.contains(e.id))
+    descriptor.defaultExtensions.filterNot(e => negative.contains(e.id))
   }
 }
 

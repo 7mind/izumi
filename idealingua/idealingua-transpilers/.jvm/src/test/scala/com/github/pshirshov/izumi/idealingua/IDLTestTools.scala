@@ -48,18 +48,23 @@ object IDLTestTools {
     context
   }
 
-  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs(makeLoader())
+  def makeResolver(): ModelResolver = {
+    val rules = TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
+    new ModelResolver(rules)
+  }
 
-  def loadDefs(context: LocalModelLoaderContext): Seq[LoadedDomain.Success] = {
+  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs(makeLoader(), makeResolver())
+
+  def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
-      .throwIfFailed()
+    val resolved = resolver.resolve(loaded).throwIfFailed()
 
     val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
-    val good = loaded.successful.map(_.path).toSet
+    val good = resolved.successful.map(_.path).toSet
     val failed = loadable.diff(good)
     assert(failed.isEmpty, s"domains were not loaded: $failed")
 
-    loaded.successful
+    resolved.successful
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
@@ -91,7 +96,7 @@ object IDLTestTools {
       copyright = "Copyright (C) Test Inc.",
       dependencies = List(ManifestDependency("moment", "^2.20.1"),
         ManifestDependency("@types/node", "^10.7.1"),
-//        ManifestDependency("websocket", "1.0.26"),
+        //        ManifestDependency("websocket", "1.0.26"),
         ManifestDependency("@types/websocket", "0.0.39")
       ),
       scope = "@TestScope",
@@ -208,7 +213,7 @@ object IDLTestTools {
 
     //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
-    val products = new IDLCompiler(domains)
+    val products = new TypespaceCompilerFSFacade(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
       .compilationProducts
 

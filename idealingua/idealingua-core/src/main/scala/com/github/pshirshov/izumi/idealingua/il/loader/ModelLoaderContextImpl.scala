@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
-abstract class ModelLoaderContextImpl extends ModelLoaderContext {
+class ModelLoaderContextImpl(makeEnumerator: BaseModelLoadContext => FilesystemEnumerator) extends ModelLoaderContext {
   val domainExt: String = ".domain"
 
   val modelExt: String = ".model"
 
   val parser = new ModelParserImpl()
 
-  lazy val loader = new ModelLoaderImpl(enumerator, parser, resolver, modelExt, domainExt)
+  val enumerator: FilesystemEnumerator = makeEnumerator(this)
 
-  lazy val resolver = new ModelResolverImpl()
+  val loader = new ModelLoaderImpl(enumerator, parser, modelExt, domainExt)
 }

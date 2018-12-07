@@ -434,7 +434,7 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .enablePlugins(ScriptedPlugin)
   .settings(
     libraryDependencies ++= Seq(R.scopt, R.scalacheck, R.scalacheck_shapeless) ++ R.circe
-    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CliIdlCompiler")
+    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(addArtifact(artifact in(Compile, assembly), assembly))
 

@@ -3,9 +3,11 @@ package com.github.pshirshov.izumi.idealingua.model.loader
 import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-case class LoadedModels(loaded: Seq[LoadedDomain]) {
+class LoadedModels(loaded: Seq[LoadedDomain]) {
 
   import LoadedDomain._
+
+  def map(f: LoadedDomain => LoadedDomain): LoadedModels = LoadedModels(loaded.map(f))
 
   def successful: Seq[Success] = {
     loaded.collect {
@@ -43,4 +45,8 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
     this
   }
 
+}
+
+object LoadedModels {
+  def apply(loaded: Seq[LoadedDomain]): LoadedModels = new LoadedModels(loaded)
 }

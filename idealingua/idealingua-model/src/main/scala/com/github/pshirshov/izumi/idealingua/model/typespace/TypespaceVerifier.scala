@@ -11,8 +11,11 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.TypespaceVerificati
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
+trait VerificationRule {
+  def verify(ts: Typespace): Seq[TypespaceVerificationIssue]
+}
 
-class TypespaceVerifier(ts: Typespace) {
+class TypespaceVerifier(ts: Typespace, rules: Seq[VerificationRule]) {
   def verify(): Seq[TypespaceVerificationIssue] = {
     val basic = Seq(
       checkDuplicateMembers,
@@ -22,6 +25,8 @@ class TypespaceVerifier(ts: Typespace) {
       checkAdtIssues,
     ).flatten
 
+    val additional = rules.flatMap(_.verify(ts))
+
     val cycles = checkCyclicInheritance
 
     val missing = if (cycles.isEmpty) {
@@ -30,7 +35,7 @@ class TypespaceVerifier(ts: Typespace) {
       Seq.empty
     }
 
-    basic ++ cycles ++ missing
+    basic ++ cycles ++ missing ++ additional
   }
 
   private def checkCyclicUsage: Seq[TypespaceVerificationIssue] = {

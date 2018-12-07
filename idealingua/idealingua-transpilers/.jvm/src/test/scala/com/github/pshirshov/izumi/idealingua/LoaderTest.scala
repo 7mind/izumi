@@ -14,7 +14,8 @@ class LoaderTest extends WordSpec {
   "IL loader" should {
     "parse all test domains" in {
       val loader = IDLTestTools.makeLoader()
-      val defs = IDLTestTools.loadDefs(loader)
+      val resolver = IDLTestTools.makeResolver()
+      val defs = IDLTestTools.loadDefs(loader, resolver)
 
       assert(defs.nonEmpty)
 
@@ -37,7 +38,7 @@ class LoaderTest extends WordSpec {
           val domains = loader.parser.parseDomains(updated.filter(_._1.name.endsWith(loader.domainExt)))
           val models = loader.parser.parseModels(updated.filter(_._1.name.endsWith(loader.modelExt)))
           val unresolved = UnresolvedDomains(domains, models)
-          val typespaces = loader.resolver.resolve(unresolved).throwIfFailed().successful
+          val typespaces = resolver.resolve(unresolved).throwIfFailed().successful
           val restoredTypespace = typespaces.find(_.typespace.domain.id == domainId).get.typespace
 
           // TODO: custom equality check ignoring meta
