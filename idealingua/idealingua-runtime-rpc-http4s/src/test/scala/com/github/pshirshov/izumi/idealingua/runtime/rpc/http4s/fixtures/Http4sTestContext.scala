@@ -83,7 +83,7 @@ object Http4sTestContext {
           None -> BIO.point(None)
 
         case Some(_) =>
-          toId(initial, packet) match {
+          toId(initial, id, packet) match {
             case id @ Some(_) =>
               // here we may set internal state
               id -> BIO.point(packet.ref.map {
