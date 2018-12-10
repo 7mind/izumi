@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.parser
-import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
-import fastparse._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{ParsedDomain, ParsedModel}
 import fastparse.NoWhitespace._
+import fastparse._
 
 class DefParsers(context: IDLParserContext) {
   import com.github.pshirshov.izumi.idealingua.il.parser.structure.sep._
@@ -15,8 +14,8 @@ class DefParsers(context: IDLParserContext) {
   }
 
   protected[parser] def fullDomainDef[_:P]: P[ParsedDomain] = P(any ~ defDomain.decl ~ modelDef).map {
-    case (did, imports, defs) =>
-      parser.ParsedDomain(did, imports, defs)
+    case (decl, defs) =>
+      ParsedDomain(decl, defs)
   }
 
 }

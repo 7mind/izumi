@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.parser.ParsedModel
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedModel
 
 
 sealed trait ModelParsingResult {

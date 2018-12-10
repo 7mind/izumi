@@ -1,11 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILImport
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{CompletelyLoadedDomain, IL}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.loader._
-import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
+import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
 
 import scala.collection.mutable
 
@@ -18,7 +16,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     domain match {
       case DomainParsingResult.Success(path, parsed) =>
         handleSuccess(path, parsed)
-          .fold(issues => Left(LoadedDomain.ResolutionFailed(path, parsed.did, issues)), d => Right(d))
+          .fold(issues => Left(LoadedDomain.ResolutionFailed(path, parsed.decls.id, issues)), d => Right(d))
 
       case DomainParsingResult.Failure(path, message) =>
         Left(LoadedDomain.ParsingFailed(path, message))
@@ -28,11 +26,20 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], CompletelyLoadedDomainMutable] = {
     (for {
       withIncludes <- resolveIncludes(parsed)
-      loaded = new CompletelyLoadedDomainMutable(parsed.did, withIncludes, domainPath, parsed.model.includes, processed, parsed.imports.map(_.id).toSet)
+      loaded = new CompletelyLoadedDomainMutable(
+        parsed.decls.id,
+        withIncludes.model.definitions,
+        domainPath,
+        parsed.model.includes,
+        parsed.decls.imports,
+        parsed.decls.meta,
+        processed,
+        parsed.decls.imports.map(_.id).toSet
+      )
     } yield {
-      processed.update(parsed.did, loaded)
+      processed.update(parsed.decls.id, loaded)
 
-      val allImportIssues = parsed.imports
+      val allImportIssues = parsed.decls.imports
         .filterNot(i => processed.contains(i.id))
         .map {
           imprt =>
@@ -44,7 +51,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
                 case Some(value) =>
                   resolveReferences(value) match {
                     case Left(v) =>
-                      Left(Vector(RefResolverIssue.UnresolvableImport(parsed.did, imprt.id, v)))
+                      Left(Vector(RefResolverIssue.UnresolvableImport(parsed.decls.id, imprt.id, v)))
                     case Right(v) =>
                       Right(v)
                   }
@@ -52,13 +59,13 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
                 case None =>
                   val diagnostics = domains.domains.results.map {
                     case DomainParsingResult.Success(path, domain) =>
-                      s"OK: ${domain.did} at $path"
+                      s"OK: ${domain.decls.id} at $path"
 
                     case DomainParsingResult.Failure(path, message) =>
                       s"KO: $path, problem: $message"
 
                   }
-                  Left(Vector(RefResolverIssue.MissingImport(parsed.did, imprt.id, diagnostics.toList)))
+                  Left(Vector(RefResolverIssue.MissingImport(parsed.decls.id, imprt.id, diagnostics.toList)))
               }
             }
 
@@ -81,20 +88,15 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
       .fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
   }
 
-  private def resolveIncludes(parsed: ParsedDomain): Either[Vector[RefResolverIssue], List[IL.Val]] = {
+  private def resolveIncludes(parsed: ParsedDomain): Either[Vector[RefResolverIssue], ParsedDomain] = {
     val m = parsed.model
     val allIncludes = m.includes
-      .map(i => loadModel(parsed.did, i, Seq(i)))
+      .map(i => loadModel(parsed.decls.id, i, Seq(i)))
 
     for {
       model <- merge(m, allIncludes)
-      importOps = parsed.imports.flatMap {
-        i =>
-          i.identifiers.map(ILImport(i.id, _))
-      }
     } yield {
-      val withIncludes = model.definitions ++ importOps
-      withIncludes.toList
+      parsed.copy(model = parsed.model.copy(definitions = model.definitions.toList, includes = Seq.empty))
     }
   }
 
@@ -152,7 +154,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
         case s: DomainParsingResult.Success =>
           s
       }
-      .filter(_.domain.did == include)
+      .filter(_.domain.decls.id == include)
 
     if (matching.size > 1) {
       Left(RefResolverIssue.DuplicatedDomainsDuringLookup(include, matching.map(_.path).toList))

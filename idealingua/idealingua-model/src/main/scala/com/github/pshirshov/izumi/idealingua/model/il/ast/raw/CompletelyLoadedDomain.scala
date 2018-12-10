@@ -5,8 +5,10 @@ import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
 trait CompletelyLoadedDomain {
   def id: DomainId
-  def members: Seq[IL.Val]
+  def imports: Seq[Import]
+  def members: Seq[TopLevelDefn]
   def referenced: Map[DomainId, CompletelyLoadedDomain]
   def origin: FSPath
   def directInclusions: Seq[String]
+  def meta: RawNodeMeta
 }

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILConst
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.TopLevelDefn.TLDConsts
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{Constants, RawAnno, RawConst, RawVal}
 import fastparse._
 import fastparse.NoWhitespace._
@@ -93,9 +93,9 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   def enclosedConsts[_: P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
 
-  def constBlock[_: P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
+  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ enclosedConsts)
     .map {
-      v => ILConst(Constants(v.toList))
+      v => TLDConsts(Constants(v.toList))
     }
 
   def simpleConsts[_: P]: P[RawVal.CMap] = P(simpleConst.rep(min = 0, sep = sepStruct) ~ sepStruct.?)

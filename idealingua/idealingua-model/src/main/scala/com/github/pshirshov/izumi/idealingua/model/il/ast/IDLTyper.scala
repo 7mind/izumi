@@ -5,12 +5,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.{ForeignType, NewType}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 
 import scala.reflect._
 
@@ -31,19 +30,22 @@ class IDLTyper(defn: CompletelyLoadedDomain) {
 class IDLPretyper(defn: CompletelyLoadedDomain) {
   def perform(): DomainDefinitionInterpreted = {
     val types = defn.members.collect {
-      case d: ILDef => d.v
-      case d: ILNewtype => d.v
+      case d: TopLevelDefn.TLDBaseType => d.v
+      case d: TopLevelDefn.TLDNewtype => d.v
     }
-    val imports = defn.members.collect({ case d: ILImport => d })
-    val services = defn.members.collect({ case d: ILService => d.v })
-    val buzzers = defn.members.collect({ case d: ILBuzzer => d.v })
-    val streams = defn.members.collect({ case d: ILStreams => d.v })
-    val consts = defn.members.collect({ case d: ILConst => d.v })
+    val imports = defn.imports.flatMap {
+      i =>
+        i.identifiers.map(SingleImport(i.id, _))
+    }
+    val services = defn.members.collect({ case d: TopLevelDefn.TLDService => d.v })
+    val buzzers = defn.members.collect({ case d: TopLevelDefn.TLDBuzzer => d.v })
+    val streams = defn.members.collect({ case d: TopLevelDefn.TLDStreams => d.v })
+    val consts = defn.members.collect({ case d: TopLevelDefn.TLDConsts => d.v })
 
-    val allImportNames = imports.map(_.id.importedName)
+    val allImportNames = imports.map(_.imported.importedName)
     val allTypeNames = defn.members.collect {
-      case d: ILDef => d.v.id.name
-      case d: ILNewtype => d.v.id.name
+      case d: TopLevelDefn.TLDBaseType => d.v.id.name
+      case d: TopLevelDefn.TLDNewtype => d.v.id.name
     }
 
     //    if (consts.nonEmpty) {
@@ -54,10 +56,11 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
     if (clashes.nonEmpty) {
       throw new IDLException(s"[${defn.id}] Import names clashing with domain names: ${clashes.niceList()}")
     }
-
     DomainDefinitionInterpreted(
       defn.id,
-      DomainMetadata(defn.origin, defn.directInclusions),
+      defn.origin,
+      defn.directInclusions,
+      defn.meta,
       types,
       services,
       buzzers,
@@ -77,8 +80,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected val imported: Map[IndefiniteId, TypeId] = defn.imports
     .map {
       i =>
-        val importedId = common.IndefiniteId(domainId.toPackage, i.id.importedName)
-        val originalId = common.IndefiniteId(i.domain.toPackage, i.id.name)
+        val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedName)
+        val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
         toIndefinite(importedId) -> refs(i.domain).makeDefinite(originalId)
     }
     .toMap
@@ -111,7 +114,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
     typed.DomainDefinition(
       id = domainId,
-      meta = defn.meta,
+      meta = DomainMetadata(defn.origin, defn.directInclusions, fixMeta(defn.meta)),
       types = mappedTypes,
       services = mappedServices,
       buzzers = mappedBuzzers,

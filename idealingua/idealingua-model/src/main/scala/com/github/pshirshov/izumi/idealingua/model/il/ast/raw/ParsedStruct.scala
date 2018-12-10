@@ -1,8 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.parser
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 
 final case class ParsedStruct(structure: RawStructure) {
   def toInterface(id: InterfaceId, meta: RawNodeMeta): RawTypeDef.Interface = {

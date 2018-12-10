@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.parser
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
 
 import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteMixin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawField
 
 sealed trait StructOp
 

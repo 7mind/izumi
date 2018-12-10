@@ -3,10 +3,9 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILForeignType, ILNewtype, ImportedId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.TopLevelDefn.TLDNewtype
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -112,12 +111,12 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def foreignLinks[_: P]: P[Map[String, String]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 
-  def foreignBlock[_: P]: P[ILForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
+  def foreignBlock[_: P]: P[TopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
     .map {
       case (meta, (i, v)) =>
         ForeignType(i, v, meta)
     }
-    .map(ILForeignType)
+    .map(TopLevelDefn.TLDForeignType)
 
   def idBlock[_: P]: P[Identifier] = P(metaAgg.cblock(kw.id, aggregate))
     .map {
@@ -129,12 +128,12 @@ class DefStructure(context: IDLParserContext) extends Separators {
       case (c, i, v) => Alias(i.toAliasId, v.toTypeId, c)
     }
 
-  def cloneBlock[_: P]: P[ILNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
+  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
       case (c, src, (target, struct)) =>
         NewType(target, src.toTypeId, struct.map(_.structure), c)
     }
-    .map(ILNewtype)
+    .map(TLDNewtype)
 
   def adtFreeForm[_: P]: P[AlgebraicType] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ adt(sepAdtFreeForm))
 

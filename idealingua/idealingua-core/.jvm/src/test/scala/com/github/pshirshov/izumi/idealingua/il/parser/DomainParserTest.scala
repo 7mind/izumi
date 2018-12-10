@@ -17,7 +17,10 @@ class DomainParserTest
       assertDomainParses(domaindef1)
 
       val domaindef =
-        """domain x.y.z
+        """/** kind of a domain
+          |  */
+          |@Pragma(unportable=true)
+          |domain x.y.z
           |/*test*/
           |import x.domain/*test*/
           |import x.y.domain
@@ -88,12 +91,12 @@ class DomainParserTest
           |}
           |
           |foreign JavaMap[A, B] {
-          |  "scala": "java.util.Map"
+          |  "java": "java.util.Map<$A, $B>"
           |}
           |
           |foreign JavaMap[A, B] {
-          |  "scala"
-          |  : "java.util.Map"
+          |  "java"
+          |  : "java.util.Map<$A, $B>"
           |}
           |
           |
