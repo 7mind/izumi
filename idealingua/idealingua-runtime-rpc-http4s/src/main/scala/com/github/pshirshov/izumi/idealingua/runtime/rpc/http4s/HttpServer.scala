@@ -81,7 +81,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
 
 
   protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
-    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage)
+    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger)
     context.start()
     logger.debug(s"${context -> null}: Websocket client connected")
 
@@ -162,7 +162,8 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
   protected def respond(context: WebsocketClientContextImpl[C], input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
-        wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
+        val (newId, response) = wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
+        BIO.syncThrowable(context.updateId(newId)) *> response
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
