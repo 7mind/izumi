@@ -136,7 +136,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
     for {
       parsed <- BIO.fromEither(parse(message))
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
-      id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, unmarshalled))
+      id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandboxWith {
         _.redeem(

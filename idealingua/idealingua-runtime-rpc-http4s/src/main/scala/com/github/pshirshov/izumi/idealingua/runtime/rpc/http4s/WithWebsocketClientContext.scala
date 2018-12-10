@@ -58,7 +58,7 @@ object WsSessionListener {
 trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
   def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
 
-  def toId(initial: Ctx, packet: RpcPacket): Option[ClientId]
+  def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): Option[ClientId]
 
   // TODO: we use this to mangle with authorization but it's dirty
   def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): (Option[ClientId], B[Throwable, Option[RpcPacket]])
@@ -77,7 +77,7 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
     initial
   }
 
-  override def toId(initial: C#RequestContext, packet: RpcPacket): Option[C#ClientId] = {
+  override def toId(initial: C#RequestContext, currentId: WsClientId[C#ClientId], packet: RpcPacket): Option[C#ClientId] = {
     Quirks.discard(initial, packet)
     None
   }
@@ -174,9 +174,9 @@ class WebsocketClientContextImpl[C <: Http4sContext]
 
   private val sessionId = WsSessionId(UUIDGen.getTimeUUID())
 
-  private val maybeId = new AtomicReference[ClientId]()
+  private val maybeId = new AtomicReference[Option[ClientId]]()
 
-  def id: WsClientId[ClientId] = WsClientId(sessionId, Option(maybeId.get()))
+  def id: WsClientId[ClientId] = WsClientId(sessionId, Option(maybeId.get()).flatten)
 
   val openingTime: ZonedDateTime = IzTime.utcNow
 
@@ -198,11 +198,9 @@ class WebsocketClientContextImpl[C <: Http4sContext]
 
   protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
     logger.debug(s"Id updated to $maybeNewId")
-    maybeNewId.foreach { i =>
-      maybeId.set(i)
-      listeners.foreach { listener =>
-        listener.onClientIdUpdate(id)
-      }
+    maybeId.set(maybeNewId)
+    listeners.foreach { listener =>
+      listener.onClientIdUpdate(id)
     }
   }
 

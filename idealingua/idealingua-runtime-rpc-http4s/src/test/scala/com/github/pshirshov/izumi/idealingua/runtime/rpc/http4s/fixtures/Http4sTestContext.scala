@@ -65,7 +65,7 @@ object Http4sTestContext {
       initial.copy(credentials = Option(knownAuthorization.get()))
     }
 
-    override def toId(initial: DummyRequestContext, packet: RpcPacket): Option[String] = {
+    override def toId(initial: DummyRequestContext, currentId: WsClientId[String], packet: RpcPacket): Option[String] = {
       packet.headers.getOrElse(Map.empty).get("Authorization")
         .map(Authorization.parse)
         .flatMap(_.toOption)
