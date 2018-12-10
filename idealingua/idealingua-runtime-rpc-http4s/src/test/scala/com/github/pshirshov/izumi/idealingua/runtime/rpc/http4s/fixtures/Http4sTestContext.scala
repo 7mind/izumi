@@ -65,7 +65,7 @@ object Http4sTestContext {
       initial.copy(credentials = Option(knownAuthorization.get()))
     }
 
-    override def toId(initial: DummyRequestContext, packet: RpcPacket): Option[String] = {
+    override def toId(initial: DummyRequestContext, currentId: WsClientId[String], packet: RpcPacket): Option[String] = {
       packet.headers.getOrElse(Map.empty).get("Authorization")
         .map(Authorization.parse)
         .flatMap(_.toOption)
@@ -74,29 +74,29 @@ object Http4sTestContext {
         }
     }
 
-    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, Option[RpcPacket]] = {
+    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): (Option[String], zio.IO[Throwable, Option[RpcPacket]]) = {
       Quirks.discard(id, initial)
 
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
-          BIO.point(None)
+          None -> BIO.point(None)
 
         case Some(_) =>
-          toId(initial, packet) match {
-            case Some(_) =>
+          toId(initial, id, packet) match {
+            case id @ Some(_) =>
               // here we may set internal state
-              BIO.point(packet.ref.map {
+              id -> BIO.point(packet.ref.map {
                 ref =>
                   RpcPacket.rpcResponse(ref, Json.obj())
               })
 
             case None =>
-              BIO.point(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
+              None -> BIO.point(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
           }
 
         case None =>
-          BIO.point(None)
+          None -> BIO.point(None)
       }
     }
   }
