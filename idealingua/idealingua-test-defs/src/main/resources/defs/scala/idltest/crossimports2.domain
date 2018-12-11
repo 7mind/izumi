@@ -1,7 +1,8 @@
+@unportable()
 domain idltest.crossimports2
 
 import idltest.crossimports3
 
 data Dummy2 {
-  other: idltest.crossimports3#Dummy3
+  other: opt[idltest.crossimports3#Dummy3]
 }

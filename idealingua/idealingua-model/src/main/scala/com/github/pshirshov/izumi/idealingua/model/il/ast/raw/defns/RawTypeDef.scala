@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 sealed trait RawTypeDef
 
 
+case class InterpContext(parts: Seq[String], parameters: Seq[AbstractIndefiniteId])
 
 object RawTypeDef {
 
@@ -31,7 +32,7 @@ object RawTypeDef {
 
   final case class NewType(id: ParsedId, source: AbstractIndefiniteId, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
 
-  final case class ForeignType(id: AbstractIndefiniteId, mapping: Map[String, String], meta: RawNodeMeta) extends RawTypeDef
+  final case class ForeignType(id: AbstractIndefiniteId, mapping: Map[String, InterpContext], meta: RawNodeMeta) extends RawTypeDef
 
 }
 

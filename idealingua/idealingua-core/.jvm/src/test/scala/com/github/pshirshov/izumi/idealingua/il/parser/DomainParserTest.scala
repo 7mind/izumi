@@ -86,17 +86,21 @@ class DomainParserTest
           |                     VAL22
           |                   }
           |
-          |foreign JavaTime {
-          |  "scala": "java.time.LocalDateTime"
+          |mixin Test {
+          |  field: JavaMap[int, str]
           |}
           |
-          |foreign JavaMap[A, B] {
-          |  "java": "java.util.Map<$A, $B>"
+          |foreign JavaTime {
+          |  "scala": t"java.time.LocalDateTime"
+          |}
+          |
+          |foreign JavaMap[KEY, VALUE] {
+          |  "java": t"java.util.Map<${KEY}, ${VALUE}>"
           |}
           |
           |foreign JavaMap[A, B] {
           |  "java"
-          |  : "java.util.Map<$A, $B>"
+          |  : t"java.util.Map<${A}, ${B}>"
           |}
           |
           |

@@ -42,22 +42,31 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 
 @ExposedTestScope
 object IDLTestTools {
-  def makeLoader(): LocalModelLoaderContext = {
-    val src = new File(getClass.getResource("/defs").toURI).toPath
+  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs("/defs/any")
+
+  def loadDefs(base: String): Seq[LoadedDomain.Success] = loadDefs(makeLoader(base), makeResolver(base))
+
+
+  def makeLoader(base: String): LocalModelLoaderContext = {
+    val src = new File(getClass.getResource(base).toURI).toPath
     val context = new LocalModelLoaderContext(src, Seq.empty)
     context
   }
 
-  def makeResolver(): ModelResolver = {
-    val rules = TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
+  def makeResolver(base: String): ModelResolver = {
+    val last = base.split("/").last
+    val rules = if (last == "any") {
+      TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
+    } else {
+      TypespaceCompilerBaseFacade.descriptor(IDLLanguage.parse(last)).rules
+    }
     new ModelResolver(rules)
   }
 
-  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs(makeLoader(), makeResolver())
 
   def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
-    val resolved = resolver.resolve(loaded).throwIfFailed()
+    val resolved = resolver.resolve(loaded).ifWarnings(w => System.err.println(w)).throwIfFailed()
 
     val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
     val good = resolved.successful.map(_.path).toSet
@@ -96,8 +105,7 @@ object IDLTestTools {
       copyright = "Copyright (C) Test Inc.",
       dependencies = List(ManifestDependency("moment", "^2.20.1"),
         ManifestDependency("@types/node", "^10.7.1"),
-        //        ManifestDependency("websocket", "1.0.26"),
-        ManifestDependency("@types/websocket", "0.0.39")
+        ManifestDependency("@types/websocket", "0.0.39"),
       ),
       scope = "@TestScope",
       moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED,

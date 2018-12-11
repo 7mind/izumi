@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{CompletelyLoadedDomain, ParsedDomain}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{Inclusion, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
@@ -12,9 +12,9 @@ import scala.collection.mutable
 
 private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   // we need mutable state to handle cyclic references (even though they aren't supported by go we still handle them)
-  private val processed = mutable.HashMap[DomainId, CompletelyLoadedDomain]()
+  private val processed = mutable.HashMap[DomainId, DomainMeshResolved]()
 
-  def resolveReferences(domain: DomainParsingResult): Either[LoadedDomain.Failure, CompletelyLoadedDomain] = {
+  def resolveReferences(domain: DomainParsingResult): Either[LoadedDomain.Failure, DomainMeshResolved] = {
     domain match {
       case DomainParsingResult.Success(path, parsed) =>
         handleSuccess(path, parsed)
@@ -25,10 +25,10 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], CompletelyLoadedDomainMutable] = {
+  private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], DomainMeshResolvedMutable] = {
     (for {
       withIncludes <- resolveIncludes(parsed)
-      loaded = new CompletelyLoadedDomainMutable(
+      loaded = new DomainMeshResolvedMutable(
         parsed.decls.id,
         withIncludes.model.definitions,
         domainPath,

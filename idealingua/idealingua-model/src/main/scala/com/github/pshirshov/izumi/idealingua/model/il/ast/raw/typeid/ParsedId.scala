@@ -37,7 +37,7 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
   def toConstId: ConstId = ConstId(typePath.domain, name)
 
-  def toTypeId: AbstractIndefiniteId = {
+  def toIndefinite: AbstractIndefiniteId = {
     IndefiniteId(pkg, name)
   }
 
@@ -45,7 +45,7 @@ final case class ParsedId(pkg: Seq[String], name: String) {
     if (params.nonEmpty) {
       IndefiniteGeneric(pkg, name, params.flatten.toList)
     } else {
-      toTypeId
+      toIndefinite
     }
   }
 }

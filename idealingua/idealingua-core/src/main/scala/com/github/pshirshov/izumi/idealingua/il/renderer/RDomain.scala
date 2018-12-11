@@ -11,7 +11,7 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
 
   override def render(domain: DomainDefinition): String = {
     val sb = new StringBuffer()
-    sb.append(s"domain ${domain.id.render()}")
+    sb.append(meta.withMeta(domain.meta.meta, s"domain ${domain.id.render()}"))
 
     sb.append("\n\n")
     sb.append(domain.referenced.keys.map(renderImport).mkString("\n"))

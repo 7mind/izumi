@@ -5,18 +5,17 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{ForeignType, NewType}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{CompletelyLoadedDomain, DomainDefinitionInterpreted, SingleImport}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshLoaded, DomainMeshResolved, SingleImport}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 
 import scala.reflect._
 
 
-class IDLTyper(defn: CompletelyLoadedDomain) {
+class IDLTyper(defn: DomainMeshResolved) {
   def perform(): Either[IDLDiagnostics, typed.DomainDefinition] = {
     try {
       Right(new IDLPostTyper(new IDLPretyper(defn).perform()).perform())
@@ -29,8 +28,8 @@ class IDLTyper(defn: CompletelyLoadedDomain) {
 }
 
 
-class IDLPretyper(defn: CompletelyLoadedDomain) {
-  def perform(): DomainDefinitionInterpreted = {
+class IDLPretyper(defn: DomainMeshResolved) {
+  def perform(): DomainMeshLoaded = {
     val types = defn.members.collect {
       case d: RawTopLevelDefn.TLDBaseType => d.v
       case d: RawTopLevelDefn.TLDNewtype => d.v
@@ -58,7 +57,7 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
     if (clashes.nonEmpty) {
       throw new IDLException(s"[${defn.id}] Import names clashing with domain names: ${clashes.niceList()}")
     }
-    DomainDefinitionInterpreted(
+    DomainMeshLoaded(
       defn.id,
       defn.origin,
       defn.directInclusions,
@@ -75,7 +74,7 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
 }
 
 
-class IDLPostTyper(defn: DomainDefinitionInterpreted) {
+class IDLPostTyper(defn: DomainMeshLoaded) {
   final val domainId: DomainId = defn.id
 
   protected def refs: Map[DomainId, IDLPostTyper] = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2))
@@ -103,7 +102,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
       case d: RawTypeDef.WithId =>
         (toIndefinite(d.id), d)
       case d: NewType =>
-        (toIndefinite(d.id.toTypeId), d)
+        (toIndefinite(d.id.toIndefinite), d)
       case d: ForeignType =>
         (toIndefinite(d.id), d)
     }.toMap

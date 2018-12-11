@@ -84,7 +84,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?))
     .map {
       case (meta, (tpe, alias)) =>
-        Member.TypeRef(tpe.toTypeId, alias, meta)
+        Member.TypeRef(tpe.toIndefinite, alias, meta)
     }
 
   def importMember[_: P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {
@@ -113,9 +113,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
       case (c, i, v) => v.toDto(i.toDataId, c)
     }
 
-  def stringPair[_: P]: P[(String, String)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ Literals.Literals.Str)
+  def stringPair[_: P]: P[(String, InterpContext)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ ids.typeInterp)
 
-  def foreignLinks[_: P]: P[Map[String, String]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
+  def foreignLinks[_: P]: P[Map[String, InterpContext]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 
   def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
     .map {
@@ -131,13 +131,13 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def aliasBlock[_: P]: P[Alias] = P(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier)))
     .map {
-      case (c, i, v) => Alias(i.toAliasId, v.toTypeId, c)
+      case (c, i, v) => Alias(i.toAliasId, v.toIndefinite, c)
     }
 
   def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
       case (c, src, (target, struct)) =>
-        NewType(target, src.toTypeId, struct.map(_.structure), c)
+        NewType(target, src.toIndefinite, struct.map(_.structure), c)
     }
     .map(TLDNewtype)
 

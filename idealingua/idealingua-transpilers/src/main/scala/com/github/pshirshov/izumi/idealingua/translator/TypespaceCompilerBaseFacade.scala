@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
+import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.CyclicImportsRule
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
@@ -45,7 +46,9 @@ object GoTranslatorDescriptor extends TranslatorDescriptor {
 
   override def make(typespace: Typespace, options: UntypedCompilerOptions): Translator = new GoLangTranslator(typespace, CompilerOptions.from(options))
 
-  override def rules: Seq[VerificationRule] = Seq.empty
+  override def rules: Seq[VerificationRule] = Seq(
+    CyclicImportsRule.error("Go does not support cyclic imports")
+  )
 }
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor {

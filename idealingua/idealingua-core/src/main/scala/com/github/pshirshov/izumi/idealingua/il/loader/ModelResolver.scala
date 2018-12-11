@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.idealingua.il.loader.verification.DuplicateDomainsRule
 import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.CompletelyLoadedDomain
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
 import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.VerificationException
@@ -31,7 +31,7 @@ class ModelResolver(rules: Seq[VerificationRule]) {
   }
 
 
-  private def makeTyped(f: Either[LoadedDomain.Failure, CompletelyLoadedDomain]): LoadedDomain = {
+  private def makeTyped(f: Either[LoadedDomain.Failure, DomainMeshResolved]): LoadedDomain = {
     (for {
       d <- f
       ts <- runTyper(d)
@@ -56,7 +56,7 @@ class ModelResolver(rules: Seq[VerificationRule]) {
     }
   }
 
-  private def runTyper(d: CompletelyLoadedDomain): Either[LoadedDomain.TyperFailed, TypespaceImpl] = {
+  private def runTyper(d: DomainMeshResolved): Either[LoadedDomain.TyperFailed, TypespaceImpl] = {
     (for {
       domain <- new IDLTyper(d).perform()
     } yield {

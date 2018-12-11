@@ -14,6 +14,7 @@ class TypespaceVerifier(ts: Typespace, rules: Seq[VerificationRule]) {
       AdtConflictsRule,
       CyclicUsageRule,
       CyclicInheritanceRule,
+      CyclicImportsRule.auto(ts),
     )
 
 

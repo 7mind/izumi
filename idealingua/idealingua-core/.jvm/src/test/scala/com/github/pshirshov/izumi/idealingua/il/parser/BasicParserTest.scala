@@ -44,6 +44,13 @@ class BasicParserTest
       assertParses(domainBlock(_), "domain x.y.z")
     }
 
+    "parse foreign type interpolations" in {
+      import ids._
+      assertParses(typeInterp(_), """t"java.util.Map"""")
+      assertParses(typeInterp(_), """t"java.util.Map<${A}, ${B}>"""")
+    }
+
+
     "parse aliases" in {
       assertParses(defStructure.aliasBlock(_), "alias x = y")
     }

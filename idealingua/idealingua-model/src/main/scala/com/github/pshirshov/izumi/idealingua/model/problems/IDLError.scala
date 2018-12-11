@@ -110,4 +110,10 @@ object TypespaceError {
     override def toString: String = s"Verification failed with exception. Message: $message"
   }
 
+  final case class DomainInvolvedIntoCyclicImports(domain: DomainId, loops: Set[Seq[DomainId]], clue: String) extends TypespaceError {
+    override def toString: String = {
+      val diag = loops.map(_.mkString("->"))
+      s"Domain $domain is involved into cyclic imports, $clue: ${diag.niceList().shift(2)}"
+    }
+  }
 }
