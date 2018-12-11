@@ -43,10 +43,10 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def anyPart[_: P]: P[StructOp] = P(plusField | plus | embed | minus)
 
-    def struct[_: P]: P[RawStructure.ParsedStruct] = {
+    def struct[_: P]: P[RawStructure.Aux] = {
 
       P((inline ~ anyPart ~ inline).rep(sep = sepStruct))
-        .map(RawStructure.ParsedStruct.apply)
+        .map(RawStructure.Aux.apply)
     }
   }
 
@@ -61,7 +61,8 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def simpleStruct[_: P]: P[RawSimpleStructure] = {
       P((any ~ anyPart ~ any).rep(sep = sepInlineStruct) ~ sepInlineStruct.?)
-        .map(RawStructure.ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
+        .map(RawStructure.Aux.apply)
+        .map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
     }
 
   }
@@ -74,10 +75,10 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .rep(sep = sepStruct))
 
   def nestedAdtMember[_: P]: P[Member.NestedDefn] = P(defMember.baseTypeMember)
-  .map {
-    m =>
-      Member.NestedDefn(m.v)
-  }
+    .map {
+      m =>
+        Member.NestedDefn(m.v)
+    }
 
 
   def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?))

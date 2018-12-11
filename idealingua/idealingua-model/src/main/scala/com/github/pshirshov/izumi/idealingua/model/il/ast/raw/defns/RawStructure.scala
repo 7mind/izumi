@@ -33,7 +33,7 @@ object RawStructure {
 
   }
 
-  final case class ParsedStruct(structure: RawStructure) {
+  final case class Aux(structure: RawStructure) {
     def toInterface(id: InterfaceId, meta: RawNodeMeta): RawTypeDef.Interface = {
       Interface(id, structure, meta)
     }
@@ -43,10 +43,10 @@ object RawStructure {
     }
   }
 
-  object ParsedStruct {
-    def apply(v: Seq[StructOp]): ParsedStruct = {
+  object Aux {
+    def apply(v: Seq[StructOp]): Aux = {
       import StructOp._
-      ParsedStruct(RawStructure(
+      Aux(RawStructure(
         v.collect({ case Extend(i) => i }).toList
         , v.collect({ case Mix(i) => i }).toList
         , v.collect({ case Drop(i) => i }).toList
