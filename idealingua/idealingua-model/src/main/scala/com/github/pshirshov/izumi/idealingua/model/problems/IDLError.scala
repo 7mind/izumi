@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.problems
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, LoadedDomain, ModelParsingResult}
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.MissingDependency
@@ -41,11 +42,11 @@ object RefResolverIssue {
     override def toString: String = s"$imported: can't lookup domain, multiple domains have that identifier: ${paths.niceList()}"
   }
 
-  final case class UnparseableInclusion(domain: DomainId, stack: List[String], failure: ModelParsingResult.Failure) extends RefResolverIssue {
+  final case class UnparseableInclusion(domain: DomainId, stack: List[Inclusion], failure: ModelParsingResult.Failure) extends RefResolverIssue {
     override def toString: String = s"$domain: can't parse inclusion ${failure.path}, inclusion chain: $domain->${stack.mkString("->")}. Message: ${failure.message}"
   }
 
-  final case class MissingInclusion(domain: DomainId, stack: List[String], path: String, diagnostic: List[String]) extends RefResolverIssue {
+  final case class MissingInclusion(domain: DomainId, stack: List[Inclusion], path: Inclusion, diagnostic: List[String]) extends RefResolverIssue {
     override def toString: String = s"$domain: can't find inclusion $path, inclusion chain: $domain->${stack.mkString("->")}. Available: ${diagnostic.niceList()}"
   }
 

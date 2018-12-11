@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 

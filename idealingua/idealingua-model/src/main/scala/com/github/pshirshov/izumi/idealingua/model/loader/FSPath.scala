@@ -35,8 +35,4 @@ object FSPath {
       FSPath.Name(pkg.last)
     }
   }
-
-  def apply(path: String): FSPath = {
-    apply(path.split('/'))
-  }
 }

@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{DomainDecl, Import}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainHeader, Import}
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -19,15 +20,15 @@ class DefDomain(context: IDLParserContext)
       case (id, names) =>
         names match {
           case Some(nn) =>
-            Import(id, nn.toSet)
+            domains.Import(id, nn.toSet)
           case None =>
             Import(id, Set.empty)
         }
     }
 
-  def decl[_: P]: P[DomainDecl] = P(metaAgg.withMeta(domainBlock ~ any ~ importBlock.rep(sep = any))).map {
+  def decl[_: P]: P[DomainHeader] = P(metaAgg.withMeta(domainBlock ~ any ~ importBlock.rep(sep = any))).map {
     case (meta, (id, imports)) =>
-      DomainDecl(id, imports, meta)
+      DomainHeader(id, imports, meta)
   }
 }
 

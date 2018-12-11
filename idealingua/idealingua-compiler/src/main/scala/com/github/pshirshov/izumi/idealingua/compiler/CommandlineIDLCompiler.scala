@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
+import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
 import io.circe.{Decoder, Encoder}
@@ -22,37 +23,8 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
 
 
   def main(args: Array[String]): Unit = {
-    val default = IDLCArgs(
-      Paths.get("source")
-      , Paths.get("target")
-      , List.empty
-    )
-    val conf = IDLCArgs.parser.parse(args, default) match {
-      case Some(c) =>
-        c
-      case _ =>
-        IDLCArgs.parser.showUsage()
-        throw new IllegalArgumentException("Unexpected commandline")
-    }
-
-    val toRun = conf.languages.map {
-      lopt =>
-        val lang = IDLLanguage.parse(lopt.id)
-        val exts = getExt(lang, lopt.extensions)
-
-        val manifest = lang match {
-          case IDLLanguage.Scala =>
-            lopt.manifest.map(readManifest[ScalaBuildManifest])
-          case IDLLanguage.Typescript =>
-            lopt.manifest.map(readManifest[TypeScriptBuildManifest])
-          case IDLLanguage.Go =>
-            lopt.manifest.map(readManifest[GoLangBuildManifest])
-          case IDLLanguage.CSharp =>
-            lopt.manifest.map(readManifest[CSharpBuildManifest])
-        }
-
-        UntypedCompilerOptions(lang, exts, lopt.withRuntime, manifest)
-    }
+    val conf = parseArgs(args)
+    val toRun = conf.languages.map(toOption)
 
     println("We are going to run:")
     println(toRun.niceList())
@@ -72,41 +44,79 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
 
     toRun.foreach {
       option =>
-        val langId = option.language.toString
-        val itarget = target.resolve(langId)
-        println(s"Preparing typespace for $langId")
-        val toCompile = Timed {
-          val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
-          new ModelResolver(rules)
-            .resolve(loaded.value)
-            .ifWarnings {
-              message =>
-                println(message)
-            }
-            .ifFailed {
-              message =>
-                println(message)
-                System.exit(1)
-            }
-            .successful
-        }
-        println(s"Finished in ${toCompile.duration.toMillis}ms")
-
-        val out = Timed {
-          new TypespaceCompilerFSFacade(toCompile)
-            .compile(itarget, option)
-        }
-
-        val allPaths = out.compilationProducts.flatMap(_._2.paths)
-
-        println(s"${allPaths.size} source files from ${out.compilationProducts.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
-        println(s"Archive: ${out.zippedOutput}")
-        println("")
+        runCompiler(target, loaded, option)
 
     }
   }
 
-  def readManifest[T: Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
+  private def runCompiler(target: Path, loaded: Timed[UnresolvedDomains], option: UntypedCompilerOptions): Unit = {
+    val langId = option.language.toString
+    val itarget = target.resolve(langId)
+    println(s"Preparing typespace for $langId")
+    val toCompile = Timed {
+      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
+      new ModelResolver(rules)
+        .resolve(loaded.value)
+        .ifWarnings {
+          message =>
+            println(message)
+        }
+        .ifFailed {
+          message =>
+            println(message)
+            System.exit(1)
+        }
+        .successful
+    }
+    println(s"Finished in ${toCompile.duration.toMillis}ms")
+
+    val out = Timed {
+      new TypespaceCompilerFSFacade(toCompile)
+        .compile(itarget, option)
+    }
+
+    val allPaths = out.compilationProducts.flatMap(_._2.paths)
+
+    println(s"${allPaths.size} source files from ${out.compilationProducts.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
+    println(s"Archive: ${out.zippedOutput}")
+    println("")
+  }
+
+  private def parseArgs(args: Array[String]) = {
+    val default = IDLCArgs(
+      Paths.get("source")
+      , Paths.get("target")
+      , List.empty
+    )
+    val conf = IDLCArgs.parser.parse(args, default) match {
+      case Some(c) =>
+        c
+      case _ =>
+        IDLCArgs.parser.showUsage()
+        throw new IllegalArgumentException("Unexpected commandline")
+    }
+    conf
+  }
+
+  private def toOption(lopt: LanguageOpts) = {
+    val lang = IDLLanguage.parse(lopt.id)
+    val exts = getExt(lang, lopt.extensions)
+
+    val manifest = lang match {
+      case IDLLanguage.Scala =>
+        lopt.manifest.map(readManifest[ScalaBuildManifest])
+      case IDLLanguage.Typescript =>
+        lopt.manifest.map(readManifest[TypeScriptBuildManifest])
+      case IDLLanguage.Go =>
+        lopt.manifest.map(readManifest[GoLangBuildManifest])
+      case IDLLanguage.CSharp =>
+        lopt.manifest.map(readManifest[CSharpBuildManifest])
+    }
+
+    UntypedCompilerOptions(lang, exts, lopt.withRuntime, manifest)
+  }
+
+  private def readManifest[T: Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
     import _root_.io.circe.parser._
     import _root_.io.circe.syntax._
     Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawMethod
 import org.scalatest.WordSpec
 import fastparse._
 

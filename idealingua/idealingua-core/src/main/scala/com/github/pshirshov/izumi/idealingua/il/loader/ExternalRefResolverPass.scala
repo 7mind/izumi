@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
 import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
 
@@ -100,7 +102,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def loadModel(forDomain: DomainId, includePath: String, stack: Seq[String]): Either[Vector[RefResolverIssue], LoadedModel] = {
+  private def loadModel(forDomain: DomainId, includePath: Inclusion, stack: Seq[Inclusion]): Either[Vector[RefResolverIssue], LoadedModel] = {
     findModel(forDomain, domains, includePath)
       .map {
         case ModelParsingResult.Success(_, model) =>
@@ -138,10 +140,11 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def findModel(forDomain: DomainId, domains: UnresolvedDomains, includePath: String): Option[ModelParsingResult] = {
-    val absolute = FSPath(includePath)
-    val prefixed = FSPath("idealingua" +: includePath.split("/"))
-    val relativeToDomain = FSPath(forDomain.toPackage.init ++ includePath.split("/"))
+  private def findModel(forDomain: DomainId, domains: UnresolvedDomains, includePath: Inclusion): Option[ModelParsingResult] = {
+    val includeparts = includePath.i.split("/")
+    val absolute = FSPath(includeparts)
+    val prefixed = FSPath("idealingua" +: includeparts)
+    val relativeToDomain = FSPath(forDomain.toPackage.init ++ includeparts)
 
     val candidates = Set(absolute, prefixed, relativeToDomain)
     domains.models.results.find(f => candidates.contains(f.path))

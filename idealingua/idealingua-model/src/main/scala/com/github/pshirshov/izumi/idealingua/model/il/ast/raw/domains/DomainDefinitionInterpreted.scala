@@ -1,20 +1,20 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-
 
 final case class DomainDefinitionInterpreted(
                                               id: DomainId,
                                               origin: FSPath,
-                                              directInclusions: Seq[String],
+                                              directInclusions: Seq[Inclusion],
                                               meta: RawNodeMeta,
                                               types: Seq[RawTypeDef],
-                                              services: Seq[raw.Service],
-                                              buzzers: Seq[raw.Buzzer],
-                                              streams: Seq[raw.Streams],
-                                              consts: Seq[raw.Constants],
+                                              services: Seq[RawService],
+                                              buzzers: Seq[RawBuzzer],
+                                              streams: Seq[RawStreams],
+                                              consts: Seq[RawConstBlock],
                                               imports: Seq[SingleImport],
                                               referenced: Map[DomainId, DomainDefinitionInterpreted],
                                             )

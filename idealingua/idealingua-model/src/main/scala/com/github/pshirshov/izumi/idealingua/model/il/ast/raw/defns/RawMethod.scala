@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw
+package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
 
@@ -16,7 +16,7 @@ object RawMethod {
 
     final case class Struct(input: RawSimpleStructure) extends NonAlternativeOutput
 
-    final case class Algebraic(alternatives: List[RawAdtMember]) extends NonAlternativeOutput
+    final case class Algebraic(alternatives: List[RawAdt.Member]) extends NonAlternativeOutput
 
     final case class Singular(typeId: AbstractIndefiniteId) extends NonAlternativeOutput
 

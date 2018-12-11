@@ -3,7 +3,10 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
-final case class DomainMetadata(origin: FSPath, directInclusions: Seq[String], meta: NodeMeta)
+case class Inclusion(include: String)
+
+
+final case class DomainMetadata(origin: FSPath, directInclusions: Seq[Inclusion], meta: NodeMeta)
 
 
 final case class DomainDefinition(
