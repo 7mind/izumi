@@ -66,7 +66,12 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
   }
 
   private def collectWarnings: Seq[String] = {
-    (diagnostics.warnings +: loaded.collect({ case f: DiagnosableFailure => f.warnings }))
+    val w = loaded.collect {
+      case f: DiagnosableFailure => f.warnings
+      case s: Success => s.warnings
+    }
+
+    (diagnostics.warnings +: w)
       .filter(_.nonEmpty)
       .flatten
       .map(_.toString)

@@ -21,14 +21,14 @@ class CyclicImportsRule(onLoop: (Typespace, Set[Seq[DomainId]]) => IDLDiagnostic
   private def hasCycles(ts: Typespace, path: Seq[DomainId], loops: scala.collection.mutable.HashSet[Seq[DomainId]], seen: scala.collection.mutable.HashSet[DomainId]): Boolean = {
     val currentId = ts.domain.id
     if (seen.contains(currentId)) {
-      loops.add(path :+ currentId)
+      loops.add(path)
       true
     } else {
       seen.add(currentId)
-      ts.referenced
+      ts.domain
+        .referenced
         .values
-        .filterNot(r => seen.contains(r.domain.id))
-        .exists(r => hasCycles(r, path :+ r.domain.id, loops, seen))
+        .exists(r => hasCycles(ts.referenced(r.id), path :+ r.id, loops, seen))
     }
   }
 }
