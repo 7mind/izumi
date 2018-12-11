@@ -20,7 +20,7 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
     sb.append(domain.referenced.keys.map(renderImport).mkString("\n"))
 
     sb.append("\n\n")
-    sb.append(domain.meta.directInclusions.map(i => s"""include "$i" """).mkString("\n"))
+    sb.append(domain.meta.directInclusions.map(i => s"""include "${i.include}" """).mkString("\n"))
 
     sb.append("\n\n")
     sb.append(domain.types.filter(m => isThis(domain, m.meta)).map(_.render()).map(_.trim).mkString("\n\n"))

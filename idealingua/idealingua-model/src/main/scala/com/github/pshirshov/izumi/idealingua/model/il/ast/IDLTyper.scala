@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{ForeignType, NewType}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainDefinitionInterpreted, SingleImport}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{CompletelyLoadedDomain, DomainDefinitionInterpreted, SingleImport}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 

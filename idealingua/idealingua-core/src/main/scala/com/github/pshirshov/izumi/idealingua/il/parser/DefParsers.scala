@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedModel
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.ModelMember
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{ModelMember, ParsedModel}
 import fastparse.NoWhitespace._
 import fastparse._
 

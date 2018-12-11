@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.MetaAggregates
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.ParsedModel
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.ParsedModel
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 import fastparse._
 

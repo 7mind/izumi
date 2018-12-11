@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.il.loader
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{CompletelyLoadedDomain, Import}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
