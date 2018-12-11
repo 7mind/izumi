@@ -28,7 +28,7 @@ class CyclicImportsRule(onLoop: (Typespace, Set[Seq[DomainId]]) => IDLDiagnostic
       ts.domain
         .referenced
         .values
-        .exists(r => hasCycles(ts.referenced(r.id), path :+ r.id, loops, seen))
+        .exists(r => hasCycles(ts.transitivelyReferenced(r.id), path :+ r.id, loops, seen))
     }
   }
 }

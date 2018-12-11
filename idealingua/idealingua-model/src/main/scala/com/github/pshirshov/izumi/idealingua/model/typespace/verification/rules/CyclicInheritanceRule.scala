@@ -56,7 +56,7 @@ object CyclicInheritanceRule extends VerificationRule {
       val missingTypes = allDependencies
         .filterNot(_.missing.isInstanceOf[Builtin])
         .filterNot(d => ts.types.index.contains(d.missing))
-        .filterNot(d => ts.referenced.get(d.missing.path.domain).exists(t => t.types.index.contains(d.missing)))
+        .filterNot(d => ts.transitivelyReferenced.get(d.missing.path.domain).exists(t => t.types.index.contains(d.missing)))
 
       if (missingTypes.nonEmpty) {
         Seq(TypespaceError.MissingDependencies(missingTypes.toList))
