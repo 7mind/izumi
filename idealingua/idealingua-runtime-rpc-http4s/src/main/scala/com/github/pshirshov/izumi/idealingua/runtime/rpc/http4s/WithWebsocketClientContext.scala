@@ -40,7 +40,7 @@ trait WsSessionsStorage[B[+ _, + _], ClientId, Ctx] {
 trait WsSessionListener[ClientId] {
   def onSessionOpened(context: WsClientId[ClientId]): Unit
 
-  def onClientIdUpdate(context: WsClientId[ClientId]): Unit
+  def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): Unit
 
   def onSessionClosed(context: WsClientId[ClientId]): Unit
 }
@@ -51,7 +51,7 @@ object WsSessionListener {
 
     override def onSessionClosed(context: WsClientId[ClientId]): Unit = {}
 
-    override def onClientIdUpdate(context: WsClientId[ClientId]): Unit = {}
+    override def onClientIdUpdate(context: WsClientId[ClientId], old: WsClientId[ClientId]): Unit = {}
   }
 }
 
@@ -197,10 +197,21 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   }
 
   protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
-    logger.debug(s"Id updated to $maybeNewId")
+    val oldId = id
     maybeId.set(maybeNewId)
-    listeners.foreach { listener =>
-      listener.onClientIdUpdate(id)
+    val newId = id
+
+    def notifyListeners(): Unit = {
+      logger.debug(s"Id updated to $maybeNewId, was: ${oldId.id}")
+      listeners.foreach { listener =>
+        listener.onClientIdUpdate(newId, oldId)
+      }
+    }
+
+    (newId, oldId) match {
+      case (WsClientId(_, Some(prev)), WsClientId(_, Some(next))) if prev != next => notifyListeners()
+      case (WsClientId(_, None), WsClientId(_, None)) => ()
+      case _ => notifyListeners()
     }
   }
 
