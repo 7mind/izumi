@@ -42,10 +42,10 @@ object CyclicImportsRule {
   }
 
   def auto(ts: Typespace): CyclicImportsRule = {
-    if (ts.domain.meta.meta.annos.exists(_.name.toLowerCase == "unportable")) {
+    if (ts.domain.meta.meta.annos.exists(_.name.toLowerCase == "nonportable")) {
       CyclicImportsRule.warning()
     } else {
-      CyclicImportsRule.error("such a domain must be marked with @unportable() annotation")
+      CyclicImportsRule.error("such a domain must be marked with @nonportable() annotation")
     }
   }
 }

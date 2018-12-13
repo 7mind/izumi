@@ -1,4 +1,4 @@
-@unportable()
+@nonportable()
 domain idltest.crossimports2
 
 import idltest.crossimports3

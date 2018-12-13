@@ -19,7 +19,7 @@ class DomainParserTest
       val domaindef =
         """/** kind of a domain
           |  */
-          |@Pragma(unportable=true)
+          |@Pragma(nonportable=true)
           |domain x.y.z
           |/*test*/
           |import x.domain/*test*/

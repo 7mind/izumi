@@ -15,7 +15,8 @@ object TypespaceWarning {
   final case class DomainInvolvedIntoCyclicImports(domain: DomainId, loops: Set[Seq[DomainId]]) extends TypespaceWarning {
     override def toString: String = {
       val diag = loops.map(_.mkString("->"))
-      s"Warning: domain $domain is involved into cyclic imports, it makes domain unportable: ${diag.niceList().shift(2)}"
+      s"""Warning: domain $domain is involved into cyclic imports, it makes a domain nonportable to languages that do not
+         |support cyclic imports, such as `Go`: ${diag.niceList().shift(2)}""".stripMargin
     }
   }
 }
