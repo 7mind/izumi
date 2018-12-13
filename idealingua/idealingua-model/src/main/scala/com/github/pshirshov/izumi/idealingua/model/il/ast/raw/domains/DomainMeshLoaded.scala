@@ -9,6 +9,7 @@ final case class DomainMeshLoaded(
                                    id: DomainId,
                                    origin: FSPath,
                                    directInclusions: Seq[Inclusion],
+                                   originalImports: Seq[Import],
                                    meta: RawNodeMeta,
                                    types: Seq[RawTypeDef],
                                    services: Seq[RawService],

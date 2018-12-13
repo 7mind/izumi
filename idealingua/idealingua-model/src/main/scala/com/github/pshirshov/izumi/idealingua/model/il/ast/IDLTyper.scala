@@ -61,6 +61,7 @@ class IDLPretyper(defn: DomainMeshResolved) {
       defn.id,
       defn.origin,
       defn.directInclusions,
+      defn.imports,
       defn.meta,
       types,
       services,
@@ -116,7 +117,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
     typed.DomainDefinition(
       id = domainId,
-      meta = DomainMetadata(defn.origin, defn.directInclusions.map(i => typed.Inclusion(i.i)), fixMeta(defn.meta)),
+      meta = DomainMetadata(defn.origin, defn.directInclusions.map(i => typed.Inclusion(i.i)), defn.originalImports, fixMeta(defn.meta)),
       types = mappedTypes,
       services = mappedServices,
       buzzers = mappedBuzzers,
