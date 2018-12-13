@@ -43,7 +43,7 @@ class IDLPretyper(defn: DomainMeshResolved) {
     val streams = defn.members.collect({ case d: RawTopLevelDefn.TLDStreams => d.v })
     val consts = defn.members.collect({ case d: RawTopLevelDefn.TLDConsts => d.v })
 
-    val allImportNames = imports.map(_.imported.importedName)
+    val allImportNames = imports.map(_.imported.importedAs)
     val allTypeNames = defn.members.collect {
       case d: RawTopLevelDefn.TLDBaseType => d.v.id.name
       case d: RawTopLevelDefn.TLDNewtype => d.v.id.name
@@ -83,7 +83,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
   protected val imported: Map[IndefiniteId, TypeId] = defn.imports
     .map {
       i =>
-        val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedName)
+        val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedAs)
         val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
         toIndefinite(importedId) -> refs(i.domain).makeDefinite(originalId)
     }

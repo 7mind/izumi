@@ -48,9 +48,9 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
       val ids = i.identifiers.map {i =>
         i.as match {
           case Some(value) =>
-            s"${i.importedName} as $value"
+            s"${i.name} as $value"
           case None =>
-            i.importedName
+            i.name
         }}
       s"import ${i.id.render()}.${ids.mkString("{", ", ", "}")}"
     }
