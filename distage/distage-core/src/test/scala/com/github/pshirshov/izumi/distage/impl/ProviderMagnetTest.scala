@@ -74,6 +74,23 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn2.diKeys contains DIKey.get[Int].named("valsigtypeann2"))
     }
 
+    "can handle local value references with annotated type signatures" in {
+      val fnval: Int @Id("loctypeann") => Unit = _.discard()
+      val fn = ProviderMagnet(fnval).get
+
+      assert(fn.diKeys contains DIKey.get[Int].named("loctypeann"))
+
+      def defval(z: String): Int @Id("loctypeann") => Unit = discard(z, _)
+      val fn1 = ProviderMagnet(defval("x")).get
+
+      assert(fn1.diKeys contains DIKey.get[Int].named("loctypeann"))
+
+      def defdef(z: String)(x: Int @Id("locargann")): Unit = discard(z, x)
+      val fn2 = ProviderMagnet(defdef("x") _).get
+
+      assert(fn2.diKeys contains DIKey.get[Int].named("locargann"))
+    }
+
     "handle references with annotated type signatures, if a function value is curried, the result is the next function" in {
       val fn = ProviderMagnet(testVal3).get
 
