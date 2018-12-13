@@ -11,24 +11,23 @@ import scala.collection.mutable
 class CyclicImportsRule(onLoop: (Typespace, Set[Seq[DomainId]]) => IDLDiagnostics) extends VerificationRule {
   override def verify(ts: Typespace): IDLDiagnostics = {
     val loops = mutable.HashSet.empty[Seq[DomainId]]
-    if (hasCycles(ts, Seq(ts.domain.id), loops, mutable.HashSet.empty)) {
+    if (hasCycles(ts, Seq(ts.domain.id), loops, Set.empty)) {
       onLoop(ts, loops.toSet)
     } else {
       IDLDiagnostics.empty
     }
   }
 
-  private def hasCycles(ts: Typespace, path: Seq[DomainId], loops: scala.collection.mutable.HashSet[Seq[DomainId]], seen: scala.collection.mutable.HashSet[DomainId]): Boolean = {
+  private def hasCycles(ts: Typespace, path: Seq[DomainId], loops: scala.collection.mutable.HashSet[Seq[DomainId]], seen: Set[DomainId]): Boolean = {
     val currentId = ts.domain.id
     if (seen.contains(currentId)) {
       loops.add(path)
       true
     } else {
-      seen.add(currentId)
       ts.domain
         .referenced
         .values
-        .exists(r => hasCycles(ts.transitivelyReferenced(r.id), path :+ r.id, loops, seen))
+        .exists(r => hasCycles(ts.transitivelyReferenced(r.id), path :+ r.id, loops, seen + currentId))
     }
   }
 }
