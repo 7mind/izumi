@@ -5,7 +5,8 @@ import java.security.MessageDigest
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalModelLoaderContext
+import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
+import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -14,7 +15,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.{IDLCompiler, IDLLanguage, UntypedCompilerOptions}
+import com.github.pshirshov.izumi.idealingua.translator.{IDLLanguage, TypespaceCompilerBaseFacade, TypespaceCompilerFSFacade, UntypedCompilerOptions}
 import sbt.Keys.{sourceGenerators, watchSources, _}
 import sbt._
 import sbt.internal.util.ConsoleLogger
@@ -43,6 +44,7 @@ object IdealinguaPlugin extends AutoPlugin {
     val idlDefaultExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
     val idlDefaultExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
     val idlDefaultExtensionsCSharp = settingKey[Seq[CSharpTranslatorExtension]]("Default list of translator extensions for csharp")
+    val unresolvedDomains = taskKey[UnresolvedDomains]("Loaded but not yet resolved domains")
   }
 
   import Keys._
@@ -114,18 +116,17 @@ object IdealinguaPlugin extends AutoPlugin {
       val src = sourceDirectory.value.toPath
       val versionValue = version.value
       val scalaVersionValue = scalaVersion.value
+      val izumiSrcDir = src.resolve("main/izumi")
 
       val artifacts = artifactTargets(ctargets, pname)
 
       val artifactFiles = artifacts.flatMap {
         case (a, t) =>
           val targetDir = target.value / "idealingua" / s"${a.name}-${a.classifier.get}-$versionValue-$scalaVersionValue"
-
-          val scope = Scope(thisProjectRef.value, src.resolve("main/izumi"), target.value.toPath, targetDir.toPath)
-
+          val scope = Scope(thisProjectRef.value, izumiSrcDir, target.value.toPath, targetDir.toPath)
           val zipFile = targetDir / s"${a.name}-${a.classifier.get}-$versionValue.zip.source"
-
-          val result = generateCode(scope, t, (dependencyClasspath in Compile).value)
+          val loaded = unresolvedDomains.value
+          val result = generateCode(scope, t, loaded)
 
           result match {
             case Some(r) =>
@@ -149,6 +150,19 @@ object IdealinguaPlugin extends AutoPlugin {
       packagedArtifacts.value ++ artifactFiles
     }
 
+
+    , unresolvedDomains := {
+      val projectId = thisProjectRef.value.project
+      val src = sourceDirectory.value.toPath
+      val izumiSrcDir = src.resolve("main/izumi")
+      logger.debug(s"""$projectId: Loading models from $izumiSrcDir...""")
+      val depClasspath = (dependencyClasspath in Compile).value
+      val cp = depClasspath.map(_.data)
+      val loaded = new LocalModelLoaderContext(izumiSrcDir, cp).loader.load()
+      logger.debug(s"""$projectId: Preloaded ${loaded.domains.results.size} domains from $izumiSrcDir...""")
+      loaded
+    }
+
     , sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
       val srcManaged = (sourceManaged in Compile).value.toPath
@@ -169,11 +183,12 @@ object IdealinguaPlugin extends AutoPlugin {
         logger.warn(s"${name.value}: We don't know how to compile native artifacts for ${nonScalacInputTargets.niceList()}")
       }
 
-      val depClasspath = (dependencyClasspath in Compile).value
+      val loaded = unresolvedDomains.value
+
       val scala_result = scalacInputTargets
         .map {
           invokation =>
-            (invokation, scope) -> generateCode(scope, invokation, depClasspath)
+            (invokation, scope) -> generateCode(scope, invokation, loaded)
         }
 
       val files = scala_result.flatMap {
@@ -222,11 +237,9 @@ object IdealinguaPlugin extends AutoPlugin {
       }
   }
 
-  private def generateCode(scope: Scope, invokation: Invokation, classpath: Classpath): Option[IDLCompiler.Result] = {
-    val cp = classpath.map(_.data)
+  private def generateCode(scope: Scope, invokation: Invokation, loaded: UnresolvedDomains): Option[TypespaceCompilerFSFacade.Result] = {
     val target = scope.target
     val projectId = scope.project.project
-    logger.debug(s"""$projectId: Loading models from $scope...""")
 
     val digest = MD5.messageDigest.clone().asInstanceOf[MessageDigest]
     digest.reset()
@@ -241,8 +254,17 @@ object IdealinguaPlugin extends AutoPlugin {
 
     if (isNew.exists({ case (src, tgt) => src.isAfter(tgt) }) || isNew.isEmpty) {
       // TODO: maybe it's unsafe to destroy the whole directory?..
-      val context = new LocalModelLoaderContext(scope.source, cp)
-      val toCompile = context.loader.load().throwIfFailed().successful
+      val rules = TypespaceCompilerBaseFacade.descriptor(invokation.options.language).rules
+      val resolved = new ModelResolver(rules).resolve(loaded)
+
+      val toCompile = resolved
+        .ifWarnings(message => logger.warn(message))
+        .ifFailed {
+          message =>
+          logger.error(s"Compiler failed:\n$message")
+          throw new FeedbackProvidedException() {}
+        }
+        .successful
 
       if (toCompile.nonEmpty) {
         logger.info(s"""$projectId: Going to compile the following models: ${toCompile.map(_.typespace.domain.id).mkString(",")} into ${invokation.options.language}""")
@@ -250,7 +272,7 @@ object IdealinguaPlugin extends AutoPlugin {
         logger.info(s"""$projectId: Nothing to compile at ${scope.source}""")
       }
 
-      val result = new IDLCompiler(toCompile)
+      val result = new TypespaceCompilerFSFacade(toCompile)
         .compile(target, invokation.options)
 
       result.compilationProducts.foreach {

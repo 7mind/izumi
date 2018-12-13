@@ -92,7 +92,73 @@ object Literals {
       }
     }
 
+
+
+//    case class NamedFunction(f: Char => Boolean)
+//                            (implicit name: sourcecode.Name) extends (Char => Boolean){
+//      def apply(t: Char): Boolean = f(t)
+//      override def toString(): String = name.value
+//
+//    }
+//    import CharPredicates._
+//    def VarId0[_: P](dollar: Boolean): P[Unit] = P( Lower ~ IdRest(dollar) )
+//    def UppercaseId[_: P](dollar: Boolean): P[Unit] = P( Upper ~ IdRest(dollar) )
+//    def PlainIdNoDollar[_: P]: P[Unit] = P( UppercaseId(false) | VarId0(false) ).opaque("plain-id")
+//    val NotBackTick = NamedFunction(_ != '`')
+//    def BacktickId[_: P]: P[Unit] = P( "`" ~ CharsWhile(NotBackTick) ~ "`" )
+//    def PlainId[_: P]: P[Unit] = P( UppercaseId(true) ~ (!OpChar | &(StringIn("/*", "//"))) ).opaque("plain-id")
+//    def Id[_: P]: P[Unit] = P( BacktickId | PlainId ).opaque("id")
+//    def IdRest[_: P](allowDollar: Boolean): P[Unit] = {
+//
+//      val IdCharacter =
+//        if(allowDollar) NamedFunction(c => c == '$' || isLetter(c) || isDigit(c))
+//        else NamedFunction(c => isLetter(c) || isDigit(c))
+//
+//      def IdUnderscoreChunk = P( CharsWhileIn("_", 0) ~ CharsWhile(IdCharacter) )
+//      P( IdUnderscoreChunk.rep ~ (CharsWhileIn("_") ~ CharsWhile(isOpChar, 0)).? )
+//    }
+//    class InterpCtx(interp: Option[() => P[Unit]]) {
+//      def Literal[_: P]: P[Unit] = P( ("-".? ~ (Float | Int)) | Bool | String | Null )
+//      def Interp[_: P]: P[Unit] = interp match{
+//        case None => P ( Fail )
+//        case Some(p) => P( "$" ~ PlainIdNoDollar | ("${" ~ p() ~ WL ~ "}") | "$$" )
+//      }
+//
+//
+//      def TQ[_: P]: P[Unit] = P( "\"\"\"" )
+//      /**
+//        * Helper to quickly gobble up large chunks of un-interesting
+//        * characters. We break out conservatively, even if we don't know
+//        * it's a "real" escape sequence: worst come to worst it turns out
+//        * to be a dud and we go back into a CharsChunk next rep
+//        */
+//      def StringChars[_: P]: P[Unit] = P( CharsWhile(c => c != '\n' && c != '"' && c != '\\' && c != '$') )
+//      def NonTripleQuoteChar[_: P]: P[Unit] = P( "\"" ~ "\"".? ~ !"\"" | CharIn("\\\\$\n") )
+//      def TripleChars[_: P]: P[Unit] = P( (StringChars | Interp | NonTripleQuoteChar).rep )
+//      def TripleTail[_: P]: P[Unit] = P( TQ ~ "\"".rep )
+//      def SingleChars[_: P](allowSlash: Boolean): P[Unit] = {
+//        def LiteralSlash = P( if(allowSlash) "\\" else Fail )
+//        def NonStringEnd = P( !CharIn("\n\"") ~ AnyChar )
+//        P( (StringChars | Interp | LiteralSlash | Escape | NonStringEnd ).rep )
+//      }
+//      def String[_: P]: P[Unit] = {
+//        P {
+//          (Id ~ TQ ~/ TripleChars ~ TripleTail) |
+//            (Id ~ "\"" ~/ SingleChars(true)  ~ "\"") |
+//            (TQ ~/ NoInterp.TripleChars ~ TripleTail) |
+//            ("\"" ~/ NoInterp.SingleChars(false) ~ "\"")
+//        }
+//      }
+//
+//    }
+//    def NoInterp[_: P] = new InterpCtx(None)
+////    def Pat[_: P] = new InterpCtx(Some(() => l.Pattern))
+////    def Expr[_: P] = new InterpCtx(Some(() => Block))
+
+
   }
+
+
 
 
 }

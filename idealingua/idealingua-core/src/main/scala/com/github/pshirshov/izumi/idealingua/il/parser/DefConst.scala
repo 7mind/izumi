@@ -2,61 +2,125 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.ILConst
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.{Constants, RawAnno, RawConst, RawVal}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
 import fastparse._
 import fastparse.NoWhitespace._
 
-sealed trait Agg {
-  def value: RawVal
-}
 
-object Agg {
-
-  final case class Just(value: RawVal) extends Agg
-
-  final case class ListAgg(value: RawVal.CList) extends Agg
-
-  final case class ObjAgg(value: RawVal.CMap) extends Agg
-
-  final case class TListAgg(value: RawVal.CTypedList) extends Agg
-
-  final case class TObjAgg(value: RawVal.CTypedObject) extends Agg
-
-  final case class TJust(value: RawVal.CTyped) extends Agg
-
-}
 
 class DefConst(context: IDLParserContext) extends Identifiers {
-  import context._
-  import defPositions._
-  def justValue[_: P]: P[Agg] = P(literal | objdef | listdef)
 
-  def typedValue[_: P]: P[Agg] = (idGeneric ~ inline ~ "(" ~ inline ~ justValue ~ inline ~ ")").map {
+  import DefConst._
+  import context._
+
+  def defAnno[_: P]: P[RawAnno] = P(defPositions.positioned("@" ~ idShort ~ "(" ~ inline ~ constantsNoDoc ~ inline ~ ")"))
+    .map {
+      case (pos, (id, value)) =>
+        defns.RawAnno(id.name, value, pos)
+    }
+
+  def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
+
+  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ enclosedConsts)
+    .map {
+      v => TLDConsts(RawConstBlock(v.toList))
+    }
+
+  private def enclosedConsts[_: P]: P[Seq[RawConst]] = structure.aggregates.enclosed(constants)
+
+  private def constants[_: P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct) ~ sepStruct.?)
+
+  private def constantsNoDoc[_: P]: P[RawVal.CMap] = P(constNoDoc.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
+    .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
+
+  private def const[_: P]: P[RawConst] = P(metaAgg.withMeta(constNoDoc)).map {
+    case (meta, constVal) =>
+      constVal.copy(meta = RawConstMeta(meta.doc, meta.position))
+  }
+
+  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value))
+    .map {
+      case (pos, (name, tpe, value: Aux.ObjAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
+
+      case (pos, (name, tpe, value: Aux.ListAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
+
+      case (pos, (name, tpe, Aux.Just(rv))) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, rv, RawConstMeta(pos))
+        }
+
+      case (pos, (name, tpe, value: Aux.TObjAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
+
+      case (pos, (name, tpe, value: Aux.TListAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
+
+
+      case (pos, (name, tpe, Aux.TJust(rv))) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, rv, RawConstMeta(pos))
+        }
+
+    }
+
+
+  private def justValue[_: P]: P[Aux] = P(literal | objdef | listdef)
+
+  private def typedValue[_: P]: P[Aux] = (idGeneric ~ inline ~ "(" ~ inline ~ justValue ~ inline ~ ")").map {
     case (id, agg) =>
       agg match {
-        case Agg.Just(value) =>
-          Agg.TJust(RawVal.CTyped(id, value))
-        case Agg.ListAgg(value) =>
-          Agg.TListAgg(RawVal.CTypedList(id, value.value))
-        case Agg.ObjAgg(value) =>
-          Agg.TObjAgg(RawVal.CTypedObject(id, value.value))
-        case Agg.TListAgg(value) =>
-          Agg.TListAgg(RawVal.CTypedList(id, value.value))
-        case Agg.TObjAgg(value) =>
-          Agg.TObjAgg(RawVal.CTypedObject(id, value.value))
-        case Agg.TJust(value) =>
-          Agg.TJust(RawVal.CTyped(id, value))
+        case Aux.Just(value) =>
+          Aux.TJust(RawVal.CTyped(id, value))
+        case Aux.ListAux(value) =>
+          Aux.TListAux(RawVal.CTypedList(id, value.value))
+        case Aux.ObjAux(value) =>
+          Aux.TObjAux(RawVal.CTypedObject(id, value.value))
+        case Aux.TListAux(value) =>
+          Aux.TListAux(RawVal.CTypedList(id, value.value))
+        case Aux.TObjAux(value) =>
+          Aux.TObjAux(RawVal.CTypedObject(id, value.value))
+        case Aux.TJust(value) =>
+          Aux.TJust(RawVal.CTyped(id, value))
 
       }
   }
 
 
-  def anyValue[_: P]: P[Agg] = P(typedValue | justValue)
+  private def anyValue[_: P]: P[Aux] = P(typedValue | justValue)
 
-  def value[_: P]: P[Agg] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
+  private def value[_: P]: P[Aux] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
 
-  def literal[_: P]: P[Agg.Just] = {
+  private def literal[_: P]: P[Aux.Just] = {
     import Literals.Literals._
     NoCut(P(
       ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
@@ -69,104 +133,43 @@ class DefConst(context: IDLParserContext) extends Identifiers {
         } |
         Bool.!.map(_.toBoolean).map(RawVal.CBool) |
         Str.map(RawVal.CString)
-    )).map(Agg.Just)
+    )).map(Aux.Just)
   }
 
-  def objdef[_: P]: P[Agg.ObjAgg] = enclosedConsts.map {
+  private def objdef[_: P]: P[Aux.ObjAux] = enclosedConsts.map {
     v =>
-      Agg.ObjAgg(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
+      Aux.ObjAux(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  def listElements[_: P]: P[Seq[Agg]] = P(value.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
+  private def listElements[_: P]: P[Seq[Aux]] = P(value.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
 
-  def listdef[_: P]: P[Agg.ListAgg] = {
+  private def listdef[_: P]: P[Aux.ListAux] = {
     structure.aggregates.enclosedB(listElements)
       .map {
         v =>
-          Agg.ListAgg(RawVal.CList(v.map(_.value).toList))
+          Aux.ListAux(RawVal.CList(v.map(_.value).toList))
       }
   }
+}
 
-
-  // other method kinds should be added here
-  def consts[_: P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct) ~ sepStruct.?)
-
-  def enclosedConsts[_: P]: P[Seq[RawConst]] = structure.aggregates.enclosed(consts)
-
-  def constBlock[_: P]: P[ILConst] = kw(kw.consts, inline ~ enclosedConsts)
-    .map {
-      v => ILConst(Constants(v.toList))
-    }
-
-  def simpleConsts[_: P]: P[RawVal.CMap] = P(simpleConst.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
-    .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
-
-  def defAnno[_: P]: P[RawAnno] = P(positioned("@" ~ idShort ~ "(" ~ inline ~ simpleConsts ~ inline ~ ")"))
-    .map {
-      case (pos, (id, value)) =>
-        RawAnno(id.name, value, pos)
-    }
-
-  def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
-
-
-  def simpleConst[_: P]: P[RawConst] = P(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value).map {
-    case (name, tpe, value: Agg.ObjAgg) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), None)
-        case None =>
-          RawConst(name.toConstId, value.value, None)
-      }
-
-    case (name, tpe, value: Agg.ListAgg) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), None)
-        case None =>
-          RawConst(name.toConstId, value.value, None)
-      }
-
-
-    case (name, tpe, Agg.Just(rv)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTyped(typename, rv), None)
-        case None =>
-          RawConst(name.toConstId, rv, None)
-      }
-
-    case (name, tpe, value: Agg.TObjAgg) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), None)
-        case None =>
-          RawConst(name.toConstId, value.value, None)
-      }
-
-    case (name, tpe, value: Agg.TListAgg) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), None)
-        case None =>
-          RawConst(name.toConstId, value.value, None)
-      }
-
-
-    case (name, tpe, Agg.TJust(rv)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTyped(typename, rv), None)
-        case None =>
-          RawConst(name.toConstId, rv, None)
-      }
-
+object DefConst {
+  sealed trait Aux {
+    def value: RawVal
   }
 
+  object Aux {
 
-  def const[_: P]: P[RawConst] = P(MaybeDoc ~ simpleConst).map {
-    case (doc, constVal) =>
-      constVal.copy(doc = doc)
+    final case class Just(value: RawVal) extends Aux
+
+    final case class ListAux(value: RawVal.CList) extends Aux
+
+    final case class ObjAux(value: RawVal.CMap) extends Aux
+
+    final case class TListAux(value: RawVal.CTypedList) extends Aux
+
+    final case class TObjAux(value: RawVal.CTypedObject) extends Aux
+
+    final case class TJust(value: RawVal.CTyped) extends Aux
+
   }
-
 }

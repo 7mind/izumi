@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import fastparse._
-import NoWhitespace._
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import fastparse.NoWhitespace._
+import fastparse._
 
 trait ParserTestTools {
   val ctx = IDLParserContext(FSPath.Name("ParserTestTools.domain"))

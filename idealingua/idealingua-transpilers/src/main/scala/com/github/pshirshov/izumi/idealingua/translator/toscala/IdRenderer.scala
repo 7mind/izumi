@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala
 
 import com.github.pshirshov.izumi.idealingua.model.common.PrimitiveId
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Identifier
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
 

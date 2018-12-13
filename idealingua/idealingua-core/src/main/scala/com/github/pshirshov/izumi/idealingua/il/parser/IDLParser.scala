@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.MetaAggregates
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.ParsedModel
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-import com.github.pshirshov.izumi.idealingua.model.parser.{ParsedDomain, ParsedModel}
 import fastparse._
 
 case class IDLParserContext(
@@ -16,7 +17,7 @@ case class IDLParserContext(
   protected[parser] val defBuzzer = new DefBuzzer(this)
   protected[parser] val defStreams = new DefStreams(this)
   protected[parser] val defParsers = new DefParsers(this)
-  protected[parser] val defPositions = new Positions(this)
+  protected[parser] val defPositions = new DefPositions(this)
   protected[parser] val defConst = new DefConst(this)
   protected[parser] val metaAgg = new MetaAggregates(this)
 

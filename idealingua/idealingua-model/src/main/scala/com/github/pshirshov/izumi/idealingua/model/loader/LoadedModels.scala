@@ -1,11 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-case class LoadedModels(loaded: Seq[LoadedDomain]) {
+class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
 
   import LoadedDomain._
+
+  def withDiagnostics(postDiag: IDLDiagnostics): LoadedModels = {
+    LoadedModels(loaded, postDiag)
+  }
+
+  def all: Vector[LoadedDomain] = loaded.toVector
 
   def successful: Seq[Success] = {
     loaded.collect {
@@ -14,33 +20,64 @@ case class LoadedModels(loaded: Seq[LoadedDomain]) {
     }
   }
 
-  def failures: Seq[String] = {
-    loaded.collect({case f: Failure => f})
+  def ifWarnings(handler: String => Unit): LoadedModels = {
+    collectWarnings match {
+      case w if w.nonEmpty =>
+        handler(s"Warnings: ${w.niceList()}")
+        this
+      case _ =>
+        this
+    }
+  }
+
+  def ifFailed(handler: String => Unit): LoadedModels = {
+    collectFailures match {
+      case f if f.nonEmpty =>
+        handler(s"Verification failed: ${f.niceList()}")
+        this
+      case _ =>
+        this
+    }
+  }
+
+  def throwIfFailed(): LoadedModels = ifFailed(message => throw new IDLException(message))
+
+  def collectFailures: Seq[String] = {
+    val pf = if (diagnostics.issues.nonEmpty) {
+      diagnostics.issues
+    } else {
+      Seq.empty
+    }
+
+    (pf ++ loaded.collect({ case f: Failure => f }))
       .map {
         case ParsingFailed(path, message) =>
-          s"$path failed to parse: $message"
+          s"Parsing phase (0) failed on $path: $message"
         case f: ResolutionFailed =>
-          s"Domain ${f.domain} failed to resolve external references (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+          s"Typespace reference resolution phase (1) failed on ${f.domain} (${f.path}): ${f.issues.niceList().shift(2)}"
         case f: TyperFailed =>
-          s"Typer failed on ${f.domain} (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+          s"Typing phase (2) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
         case f: VerificationFailed =>
-          s"Typespace ${f.domain} has failed verification (${f.path}):\n${f.issues.mkString("\n").shift(2)}"
+          s"Typespace verification phase (3) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
+        case PostVerificationFailure(issues) =>
+          s"Global verification phase (4) failed: ${issues.issues.niceList().shift(2)}"
+
       }
   }
 
-  def throwIfFailed(): LoadedModels = {
-    val f = failures
-    if (f.nonEmpty) {
-      throw new IDLException(s"Verification failed: ${f.niceList()}")
+  private def collectWarnings: Seq[String] = {
+    val w = loaded.collect {
+      case f: DiagnosableFailure => f.warnings
+      case s: Success => s.warnings
     }
 
-    val duplicates = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1)
-    if (duplicates.nonEmpty) {
-      val messages = duplicates.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
-      throw new IDLException(s"Duplicate domain ids: ${messages.niceList()}")
-    }
-
-    this
+    (diagnostics.warnings +: w)
+      .filter(_.nonEmpty)
+      .flatten
+      .map(_.toString)
   }
+}
 
+object LoadedModels {
+  def apply(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics): LoadedModels = new LoadedModels(loaded, diagnostics)
 }

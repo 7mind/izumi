@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -76,6 +76,7 @@ object CSharpImports {
       case Primitive.TTsTz => return Seq("System", "IRT", "System.Globalization")
       case Primitive.TDate => return Seq("System")
       case Primitive.TUUID => return Seq("System")
+      case Primitive.TBLOB => ???
       case g: Generic => g match {
         case _: Generic.TOption => return Seq("System")
         case _: Generic.TMap => return Seq("System.Collections", "System.Collections.Generic")

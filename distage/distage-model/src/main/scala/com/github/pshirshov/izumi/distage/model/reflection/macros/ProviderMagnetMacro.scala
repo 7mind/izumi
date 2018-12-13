@@ -93,7 +93,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
       analyze(inner, ret)
     case Function(args, body) =>
       analyzeMethodRef(args.map(_.symbol), body, ret)
-    case _ if Option(tree.symbol).exists(_.isMethod) =>
+    case _ if Option(tree.tpe).isDefined =>
       analyzeValRef(tree.tpe, ret)
     case _ =>
       c.abort(tree.pos

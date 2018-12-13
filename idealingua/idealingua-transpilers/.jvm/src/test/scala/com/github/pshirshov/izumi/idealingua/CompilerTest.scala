@@ -12,6 +12,7 @@ class CompilerTest extends WordSpec {
     "be able to compile into scala" in {
       assume(IzFiles.haveExecutables("scalac"), "scalac not available")
       assert(compilesScala(getClass.getSimpleName, loadDefs()))
+      assert(compilesScala(s"${getClass.getSimpleName}-nonportable", loadDefs("/defs/scala")))
     }
 
     "be able to compile into typescript" in {

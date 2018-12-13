@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext

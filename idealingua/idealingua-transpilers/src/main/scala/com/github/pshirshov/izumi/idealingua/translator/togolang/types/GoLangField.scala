@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.togolang.types
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
@@ -178,6 +178,7 @@ final case class GoLangField(
 
   def renderMethods(): String = tp.id match {
     case Primitive.TUUID => toGuidField()
+    case Primitive.TBLOB => ???
     case Primitive.TTime => toTimeField()
     case Primitive.TDate => toDateField()
     case Primitive.TTs => toTimeStampField(local = true)

@@ -5,46 +5,48 @@ import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef.{ForeignType, NewType}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawVal.RawValScalar
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{ForeignType, NewType}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshLoaded, DomainMeshResolved, SingleImport}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.loader.TyperIssue
+import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 
 import scala.reflect._
 
 
-class IDLTyper(defn: CompletelyLoadedDomain) {
-  def perform(): Either[List[TyperIssue], typed.DomainDefinition] = {
+class IDLTyper(defn: DomainMeshResolved) {
+  def perform(): Either[IDLDiagnostics, typed.DomainDefinition] = {
     try {
       Right(new IDLPostTyper(new IDLPretyper(defn).perform()).perform())
     } catch {
       case t: Throwable =>
         import IzThrowable._
-        Left(List(TyperIssue.TyperException(t.stackTrace)))
+        Left(IDLDiagnostics(Vector(TyperError.TyperException(t.stackTrace))))
     }
   }
 }
 
 
-class IDLPretyper(defn: CompletelyLoadedDomain) {
-  def perform(): DomainDefinitionInterpreted = {
+class IDLPretyper(defn: DomainMeshResolved) {
+  def perform(): DomainMeshLoaded = {
     val types = defn.members.collect {
-      case d: ILDef => d.v
-      case d: ILNewtype => d.v
+      case d: RawTopLevelDefn.TLDBaseType => d.v
+      case d: RawTopLevelDefn.TLDNewtype => d.v
     }
-    val imports = defn.members.collect({ case d: ILImport => d })
-    val services = defn.members.collect({ case d: ILService => d.v })
-    val buzzers = defn.members.collect({ case d: ILBuzzer => d.v })
-    val streams = defn.members.collect({ case d: ILStreams => d.v })
-    val consts = defn.members.collect({ case d: ILConst => d.v })
+    val imports = defn.imports.flatMap {
+      i =>
+        i.identifiers.map(SingleImport(i.id, _))
+    }
+    val services = defn.members.collect({ case d: RawTopLevelDefn.TLDService => d.v })
+    val buzzers = defn.members.collect({ case d: RawTopLevelDefn.TLDBuzzer => d.v })
+    val streams = defn.members.collect({ case d: RawTopLevelDefn.TLDStreams => d.v })
+    val consts = defn.members.collect({ case d: RawTopLevelDefn.TLDConsts => d.v })
 
-    val allImportNames = imports.map(_.id.importedName)
+    val allImportNames = imports.map(_.imported.importedAs)
     val allTypeNames = defn.members.collect {
-      case d: ILDef => d.v.id.name
-      case d: ILNewtype => d.v.id.name
+      case d: RawTopLevelDefn.TLDBaseType => d.v.id.name
+      case d: RawTopLevelDefn.TLDNewtype => d.v.id.name
     }
 
     //    if (consts.nonEmpty) {
@@ -55,10 +57,12 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
     if (clashes.nonEmpty) {
       throw new IDLException(s"[${defn.id}] Import names clashing with domain names: ${clashes.niceList()}")
     }
-
-    DomainDefinitionInterpreted(
+    DomainMeshLoaded(
       defn.id,
-      DomainMetadata(defn.origin, defn.directInclusions),
+      defn.origin,
+      defn.directInclusions,
+      defn.imports,
+      defn.meta,
       types,
       services,
       buzzers,
@@ -70,7 +74,8 @@ class IDLPretyper(defn: CompletelyLoadedDomain) {
   }
 }
 
-class IDLPostTyper(defn: DomainDefinitionInterpreted) {
+
+class IDLPostTyper(defn: DomainMeshLoaded) {
   final val domainId: DomainId = defn.id
 
   protected def refs: Map[DomainId, IDLPostTyper] = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2))
@@ -78,8 +83,8 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected val imported: Map[IndefiniteId, TypeId] = defn.imports
     .map {
       i =>
-        val importedId = common.IndefiniteId(domainId.toPackage, i.id.importedName)
-        val originalId = common.IndefiniteId(i.domain.toPackage, i.id.name)
+        val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedAs)
+        val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
         toIndefinite(importedId) -> refs(i.domain).makeDefinite(originalId)
     }
     .toMap
@@ -87,7 +92,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
   protected val mapping: Map[IndefiniteId, TypeId] = {
     defn.types
       .collect {
-        case d: IdentifiedRawTypeDef =>
+        case d: RawTypeDef.WithId =>
           toIndefinite(d.id) -> transformSimpleId[TypeId, TypeId](d.id)
       }
       .toMap ++ imported
@@ -95,10 +100,10 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
   protected val index: Map[IndefiniteId, RawTypeDef] = {
     defn.types.map {
-      case d: IdentifiedRawTypeDef =>
+      case d: RawTypeDef.WithId =>
         (toIndefinite(d.id), d)
       case d: NewType =>
-        (toIndefinite(d.id.toTypeId), d)
+        (toIndefinite(d.id.toIndefinite), d)
       case d: ForeignType =>
         (toIndefinite(d.id), d)
     }.toMap
@@ -112,7 +117,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
 
     typed.DomainDefinition(
       id = domainId,
-      meta = defn.meta,
+      meta = DomainMetadata(defn.origin, defn.directInclusions.map(i => typed.Inclusion(i.i)), defn.originalImports, fixMeta(defn.meta)),
       types = mappedTypes,
       services = mappedServices,
       buzzers = mappedBuzzers,
@@ -121,7 +126,7 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     )
   }
 
-  protected def fixEnumMember(defn: RawEnumMember): typed.EnumMember= {
+  protected def fixEnumMember(defn: RawEnumMember): typed.EnumMember = {
     EnumMember(defn.value, fixMeta(defn.meta))
   }
 
@@ -228,15 +233,21 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     NodeMeta(meta.doc, meta.annos.map(fixAnno), meta.position)
   }
 
-  protected def toMember(member: raw.RawAdtMember): typed.AdtMember = {
-    typed.AdtMember(fixId(member.typeId): TypeId, member.memberName, fixMeta(member.meta))
+  protected def toMember(member: RawAdt.Member): typed.AdtMember = {
+    member match {
+      case RawAdt.Member.TypeRef(typeId, memberName, meta) =>
+        typed.AdtMember(fixId(typeId): TypeId, memberName, fixMeta(meta))
+      case RawAdt.Member.NestedDefn(nested) =>
+        throw new IDLException(s"TODO: nested members are not supported yet: ${nested.id}")
+    }
+
   }
 
-  protected def toStruct(struct: raw.RawStructure): typed.Structure = {
+  protected def toStruct(struct: RawStructure): typed.Structure = {
     typed.Structure(fields = fixFields(struct.fields), removedFields = fixFields(struct.removedFields), superclasses = toSuper(struct))
   }
 
-  protected def toSuper(struct: raw.RawStructure): typed.Super = {
+  protected def toSuper(struct: RawStructure): typed.Super = {
     typed.Super(
       interfaces = fixSimpleIds(struct.interfaces)
       , concepts = fixMixinIds(struct.concepts)
@@ -244,15 +255,15 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     )
   }
 
-  protected def fixService(defn: raw.Service): typed.Service = {
+  protected def fixService(defn: RawService): typed.Service = {
     typed.Service(id = fixServiceId(defn.id), methods = defn.methods.map(fixMethod), meta = fixMeta(defn.meta))
   }
 
-  protected def fixBuzzer(defn: raw.Buzzer): typed.Buzzer = {
+  protected def fixBuzzer(defn: RawBuzzer): typed.Buzzer = {
     typed.Buzzer(id = fixBuzzerId(defn.id), events = defn.events.map(fixMethod), meta = fixMeta(defn.meta))
   }
 
-  protected def fixStreams(defn: raw.Streams): typed.Streams = {
+  protected def fixStreams(defn: RawStreams): typed.Streams = {
     typed.Streams(id = fixStreamsId(defn.id), streams = defn.streams.map(fixStream), meta = fixMeta(defn.meta))
   }
 
@@ -285,53 +296,53 @@ class IDLPostTyper(defn: DomainDefinitionInterpreted) {
     }
   }
 
-  protected def fixFields(fields: raw.RawTuple): typed.Tuple = {
+  protected def fixFields(fields: RawTuple): typed.Tuple = {
     fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta)))
   }
 
-  protected def fixMethod(method: raw.RawMethod): typed.DefMethod = {
+  protected def fixMethod(method: RawMethod): typed.DefMethod = {
     method match {
-      case m: raw.RawMethod.RPCMethod =>
+      case m: RawMethod.RPCMethod =>
         typed.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name, meta = fixMeta(m.meta))
     }
   }
 
 
-  protected def fixStream(method: raw.RawStream): typed.TypedStream = {
+  protected def fixStream(method: RawStream): typed.TypedStream = {
     method match {
-      case m: raw.RawStream.Directed =>
+      case m: RawStream.Directed =>
         typed.TypedStream.Directed(direction = m.direction, signature = fixStructure(m.signature), name = m.name, meta = fixMeta(m.meta))
     }
   }
 
-  protected def fixSignature(signature: raw.RawMethod.Signature): typed.DefMethod.Signature = {
+  protected def fixSignature(signature: RawMethod.Signature): typed.DefMethod.Signature = {
     typed.DefMethod.Signature(input = fixStructure(signature.input), output = fixOut(signature.output))
   }
 
-  protected def fixOut(output: raw.RawMethod.Output): typed.DefMethod.Output = {
+  protected def fixOut(output: RawMethod.Output): typed.DefMethod.Output = {
     output match {
-      case o: raw.RawMethod.Output.Alternative =>
+      case o: RawMethod.Output.Alternative =>
         typed.DefMethod.Output.Alternative(fixNonAltOut(o.success), fixNonAltOut(o.failure))
-      case o: raw.RawMethod.Output.NonAlternativeOutput =>
+      case o: RawMethod.Output.NonAlternativeOutput =>
         fixNonAltOut(o)
     }
   }
 
-  protected def fixNonAltOut(output: raw.RawMethod.Output.NonAlternativeOutput): typed.DefMethod.Output.NonAlternativeOutput = {
+  protected def fixNonAltOut(output: RawMethod.Output.NonAlternativeOutput): typed.DefMethod.Output.NonAlternativeOutput = {
     output match {
-      case o: raw.RawMethod.Output.Struct =>
+      case o: RawMethod.Output.Struct =>
         typed.DefMethod.Output.Struct(fixStructure(o.input))
-      case o: raw.RawMethod.Output.Algebraic =>
+      case o: RawMethod.Output.Algebraic =>
         typed.DefMethod.Output.Algebraic(o.alternatives.map(toMember))
-      case o: raw.RawMethod.Output.Singular =>
+      case o: RawMethod.Output.Singular =>
         typed.DefMethod.Output.Singular(fixId(o.typeId): TypeId)
-      case _: raw.RawMethod.Output.Void =>
+      case _: RawMethod.Output.Void =>
         typed.DefMethod.Output.Void()
     }
   }
 
 
-  protected def fixStructure(s: raw.RawSimpleStructure): typed.SimpleStructure = {
+  protected def fixStructure(s: RawSimpleStructure): typed.SimpleStructure = {
     typed.SimpleStructure(concepts = fixMixinIds(s.concepts), fields = fixFields(s.fields))
   }
 

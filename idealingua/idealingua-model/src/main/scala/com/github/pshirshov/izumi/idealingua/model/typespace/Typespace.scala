@@ -123,7 +123,7 @@ trait Typespace extends TypespaceData {
 
   def dealias(t: TypeId): TypeId
 
-  protected[typespace] def referenced: Map[DomainId, Typespace]
+  protected[typespace] def transitivelyReferenced: Map[DomainId, Typespace]
 }
 
 

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, DefMethod, Service, TypeDef}
@@ -68,6 +68,7 @@ object GoLangImports {
       case Primitive.TTsU => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
       case Primitive.TDate => return if (forTest) Seq(Seq("time")) else Seq(Seq("time"), Seq("irt"))
       case Primitive.TUUID => return if (forTest) Seq.empty else Seq(Seq("regexp"))
+      case Primitive.TBLOB => ???
       case g: Generic => g match {
         case _: Generic.TOption => return Seq.empty
         case _: Generic.TMap => return Seq.empty

@@ -6,6 +6,7 @@ import java.util.UUID
 import com.github.pshirshov.izumi.idealingua.model
 import com.github.pshirshov.izumi.idealingua.model.JavaType
 import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 
 import scala.meta._
@@ -78,6 +79,10 @@ class ScalaTypeConverter(domain: DomainId) {
   }
 
   def toScala(javaType: JavaType): ScalaType = {
+    if (javaType.parameters.nonEmpty) {
+      throw new IDLException(s"No type->generic mappings implemented yet")
+    }
+
     toScala(javaType, List.empty)
   }
 
@@ -118,6 +123,8 @@ class ScalaTypeConverter(domain: DomainId) {
       model.JavaType(Seq.empty, "Float")
     case Primitive.TDouble =>
       model.JavaType(Seq.empty, "Double")
+    case Primitive.TBLOB =>
+      model.JavaType(Seq.empty, "Array", Seq("Byte"))
     case Primitive.TUUID =>
       JavaType.get[UUID]
     case Primitive.TTsTz =>

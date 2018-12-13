@@ -169,6 +169,10 @@ object Primitive {
     override def aliases: List[TypeName] = List("uid", "uuid")
   }
 
+  case object TBLOB extends PrimitiveId {
+    override def aliases: List[TypeName] = List("blob", "blb", "bytes")
+  }
+
   /**
     * Date and Time, no timezone data
     */
@@ -244,6 +248,7 @@ object Primitive {
     , TTsTz
     , TTsU
     , TTs
+    , TBLOB
     ,
   )
     .flatMap(tpe => tpe.aliases.map(a => a -> tpe))

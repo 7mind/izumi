@@ -16,6 +16,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -24,7 +25,6 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator._
 
 import scala.sys.process._
 
@@ -42,24 +42,38 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 
 @ExposedTestScope
 object IDLTestTools {
-  def makeLoader(): LocalModelLoaderContext = {
-    val src = new File(getClass.getResource("/defs").toURI).toPath
+  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs("/defs/any")
+
+  def loadDefs(base: String): Seq[LoadedDomain.Success] = loadDefs(makeLoader(base), makeResolver(base))
+
+
+  def makeLoader(base: String): LocalModelLoaderContext = {
+    val src = new File(getClass.getResource(base).toURI).toPath
     val context = new LocalModelLoaderContext(src, Seq.empty)
     context
   }
 
-  def loadDefs(): Seq[LoadedDomain.Success] = loadDefs(makeLoader())
+  def makeResolver(base: String): ModelResolver = {
+    val last = base.split("/").last
+    val rules = if (last == "any") {
+      TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
+    } else {
+      TypespaceCompilerBaseFacade.descriptor(IDLLanguage.parse(last)).rules
+    }
+    new ModelResolver(rules)
+  }
 
-  def loadDefs(context: LocalModelLoaderContext): Seq[LoadedDomain.Success] = {
+
+  def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
-      .throwIfFailed()
+    val resolved = resolver.resolve(loaded).ifWarnings(w => System.err.println(w)).throwIfFailed()
 
     val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
-    val good = loaded.successful.map(_.path).toSet
+    val good = resolved.successful.map(_.path).toSet
     val failed = loadable.diff(good)
     assert(failed.isEmpty, s"domains were not loaded: $failed")
 
-    loaded.successful
+    resolved.successful
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
@@ -91,8 +105,7 @@ object IDLTestTools {
       copyright = "Copyright (C) Test Inc.",
       dependencies = List(ManifestDependency("moment", "^2.20.1"),
         ManifestDependency("@types/node", "^10.7.1"),
-//        ManifestDependency("websocket", "1.0.26"),
-        ManifestDependency("@types/websocket", "0.0.39")
+        ManifestDependency("@types/websocket", "0.0.39"),
       ),
       scope = "@TestScope",
       moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED,
@@ -208,7 +221,7 @@ object IDLTestTools {
 
     //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
-    val products = new IDLCompiler(domains)
+    val products = new TypespaceCompilerFSFacade(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
       .compilationProducts
 

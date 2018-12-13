@@ -17,7 +17,10 @@ class DomainParserTest
       assertDomainParses(domaindef1)
 
       val domaindef =
-        """domain x.y.z
+        """/** kind of a domain
+          |  */
+          |@Pragma(nonportable=true)
+          |domain x.y.z
           |/*test*/
           |import x.domain/*test*/
           |import x.y.domain
@@ -43,17 +46,61 @@ class DomainParserTest
           | c: x#Y
           |}
           |
+          |adt NestedAdt0 = | enum NestedAdt0Option1 { VAL1,  VAL2}
+          |                 | enum NestedAdt0Option2 { VAL1,  VAL2}
+          |
+          |/** docstring
+          |  */
+          |@TestAnno()
+          |adt NestedAdt1 {
+          |  /** docstring
+          |    */
+          |  @TestAnno()
+          |  enum NestedAdt1Option1 {
+          |    VAL1
+          |    VAL2
+          |  }
+          |
+          |  /** docstring
+          |  */
+          |  @TestAnno()
+          |  data NestedAdt1Option2 {
+          |  }
+          |}
+          |
+          |/** docstring
+          |  */
+          |@TestAnno()
+          |adt NestedAdt2 = | /** docstring
+          |                    */
+          |                   @TestAnno()
+          |                   enum NestedAdt2Option1 {
+          |                     VAL11
+          |                     VAL12
+          |                   }
+          |                 | /** docstring
+          |                    */
+          |                   @TestAnno()
+          |                   enum NestedAdt2Option2 {
+          |                     VAL21
+          |                     VAL22
+          |                   }
+          |
+          |mixin Test {
+          |  field: JavaMap[int, str]
+          |}
+          |
           |foreign JavaTime {
-          |  "scala": "java.time.LocalDateTime"
+          |  "scala": t"java.time.LocalDateTime"
+          |}
+          |
+          |foreign JavaMap[KEY, VALUE] {
+          |  "java": t"java.util.Map<${KEY}, ${VALUE}>"
           |}
           |
           |foreign JavaMap[A, B] {
-          |  "scala": "java.util.Map"
-          |}
-          |
-          |foreign JavaMap[A, B] {
-          |  "scala"
-          |  : "java.util.Map"
+          |  "java"
+          |  : t"java.util.Map<${A}, ${B}>"
           |}
           |
           |

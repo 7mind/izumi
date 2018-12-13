@@ -3,10 +3,14 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.IL.{ILForeignType, ILNewtype, ImportedId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawTypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
-import com.github.pshirshov.izumi.idealingua.model.parser.{AlgebraicType, ParsedStruct, StructOp}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDNewtype
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -17,10 +21,10 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def field[_: P]: P[RawField] = P(metaAgg.withMeta((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric))
     .map {
       case (meta, (name, tpe)) if name.isEmpty =>
-        RawField(tpe, tpe.name.uncapitalize, meta)
+        defns.RawField(tpe, tpe.name.uncapitalize, meta)
 
       case (meta, (name, tpe)) =>
-        RawField(tpe, name, meta)
+        defns.RawField(tpe, name, meta)
     }
 
   object Struct {
@@ -39,10 +43,10 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def anyPart[_: P]: P[StructOp] = P(plusField | plus | embed | minus)
 
-    def struct[_: P]: P[ParsedStruct] = {
+    def struct[_: P]: P[RawStructure.Aux] = {
 
       P((inline ~ anyPart ~ inline).rep(sep = sepStruct))
-        .map(ParsedStruct.apply)
+        .map(RawStructure.Aux.apply)
     }
   }
 
@@ -57,30 +61,39 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def simpleStruct[_: P]: P[RawSimpleStructure] = {
       P((any ~ anyPart ~ any).rep(sep = sepInlineStruct) ~ sepInlineStruct.?)
-        .map(ParsedStruct.apply).map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
+        .map(RawStructure.Aux.apply)
+        .map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
     }
 
   }
 
   def inlineStruct[_: P]: P[RawSimpleStructure] = aggregates.enclosed(SimpleStruct.simpleStruct)
 
-  def adtOut[_: P]: P[AlgebraicType] = aggregates.enclosed(adt(sepAdtFreeForm))
+  def adtOut[_: P]: P[RawAdt] = aggregates.enclosed(adt(sepAdtFreeForm))
 
   def aggregate[_: P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
 
-  def adtMember[_: P]: P[RawAdtMember] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?)).map {
-    case (meta, (tpe, alias)) =>
-      RawAdtMember(tpe.toTypeId, alias, meta)
-  }
+  def nestedAdtMember[_: P]: P[Member.NestedDefn] = P(defMember.baseTypeMember)
+    .map {
+      m =>
+        Member.NestedDefn(m.v)
+    }
+
+
+  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?))
+    .map {
+      case (meta, (tpe, alias)) =>
+        Member.TypeRef(tpe.toIndefinite, alias, meta)
+    }
 
   def importMember[_: P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {
     case (tpe, alias) =>
       ImportedId(tpe, alias)
   }
 
-  def adt[_: P](sep: => P[Unit]): P[AlgebraicType] = P(adtMember.rep(min = 1, sep = sep))
-    .map(_.toList).map(AlgebraicType)
+  def adt[_: P](sep: => P[Unit]): P[RawAdt] = P((nestedAdtMember | adtMember).rep(min = 1, sep = sep))
+    .map(_.toList).map(RawAdt.apply)
 
   def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol)).map {
     case (meta, name) =>
@@ -100,16 +113,16 @@ class DefStructure(context: IDLParserContext) extends Separators {
       case (c, i, v) => v.toDto(i.toDataId, c)
     }
 
-  def stringPair[_:P]: P[(String, String)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ Literals.Literals.Str)
+  def stringPair[_: P]: P[(String, InterpContext)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ ids.typeInterp)
 
-  def foreignLinks[_: P]: P[Map[String, String]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
+  def foreignLinks[_: P]: P[Map[String, InterpContext]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 
-  def foreignBlock[_: P]: P[ILForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
+  def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
     .map {
       case (meta, (i, v)) =>
         ForeignType(i, v, meta)
     }
-    .map(ILForeignType)
+    .map(RawTopLevelDefn.TLDForeignType)
 
   def idBlock[_: P]: P[Identifier] = P(metaAgg.cblock(kw.id, aggregate))
     .map {
@@ -118,19 +131,19 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def aliasBlock[_: P]: P[Alias] = P(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier)))
     .map {
-      case (c, i, v) => Alias(i.toAliasId, v.toTypeId, c)
+      case (c, i, v) => Alias(i.toAliasId, v.toIndefinite, c)
     }
 
-  def cloneBlock[_: P]: P[ILNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
+  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
       case (c, src, (target, struct)) =>
-        NewType(target, src.toTypeId, struct.map(_.structure), c)
+        NewType(target, src.toIndefinite, struct.map(_.structure), c)
     }
-    .map(ILNewtype)
+    .map(TLDNewtype)
 
-  def adtFreeForm[_: P]: P[AlgebraicType] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ adt(sepAdtFreeForm))
+  def adtFreeForm[_: P]: P[RawAdt] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ adt(sepAdtFreeForm))
 
-  def adtEnclosed[_: P]: P[AlgebraicType] = P(NoCut(aggregates.enclosed(adt(sepAdt) ~ sepAdt.?)) | aggregates.enclosed(adt(sepAdtFreeForm)))
+  def adtEnclosed[_: P]: P[RawAdt] = P(NoCut(aggregates.enclosed(adt(sepAdt) ~ sepAdt.?)) | aggregates.enclosed(adt(sepAdtFreeForm)))
 
   def adtBlock[_: P]: P[Adt] = P(metaAgg.cstarting(kw.adt, adtEnclosed | adtFreeForm))
     .map {

@@ -1,11 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
-trait ModelLoaderContext {
+protected[loader] trait BaseModelLoadContext {
   def domainExt: String
   def modelExt: String
 
   def parser: ModelParser
-  def enumerator: FilesystemEnumerator
-  def resolver: ModelResolver
   def loader: ModelLoader
+}
+
+trait ModelLoaderContext extends BaseModelLoadContext {
+
+  def enumerator: FilesystemEnumerator
 }

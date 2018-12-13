@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.exceptions.IDLException
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Alternative, Singular}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
@@ -164,6 +164,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TUInt64 => s"writer.WriteValue($src);"
               case Primitive.TFloat => s"writer.WriteValue($src);"
               case Primitive.TDouble => s"writer.WriteValue($src);"
+              case Primitive.TBLOB => ???
               case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
               case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}.{3:000}", (int)$src.TotalHours, $src.Minutes, $src.Seconds, $src.Milliseconds));"""
               case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""
@@ -213,6 +214,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
       case Primitive.TTs => false
       case Primitive.TTsTz => false
       case Primitive.TTsU => false
+      case Primitive.TBLOB => ???
     }
     case c => c match {
       case _: EnumId | _: IdentifierId => false
@@ -311,6 +313,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case Primitive.TUInt64 => s"$src.Value<ulong>()"
         case Primitive.TFloat => s"$src.Value<float>()"
         case Primitive.TDouble => s"$src.Value<double>()"
+        case Primitive.TBLOB => ???
         case Primitive.TUUID => s"new System.Guid($src.Value<string>())"
         case Primitive.TTime => s"TimeSpan.Parse($src.Value<string>())"
         case Primitive.TDate => s"DateTime.Parse($src.Value<string>())"

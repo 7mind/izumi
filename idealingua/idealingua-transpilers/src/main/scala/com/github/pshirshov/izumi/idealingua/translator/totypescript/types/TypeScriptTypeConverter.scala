@@ -27,6 +27,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TFloat => "parseFloat(" + value + ")"
       case Primitive.TDouble => "parseFloat(" + value + ")"
       case Primitive.TUUID => value
+      case Primitive.TBLOB => ???
       case Primitive.TTime => "Date.parse(" + value + ")"
       case Primitive.TDate => "Date.parse(" + value + ")"
       case Primitive.TTs => "Date.parse(" + value + ")"
@@ -58,6 +59,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TFloat => s"$value.toString()"
       case Primitive.TDouble => s"$value.toString()"
       case Primitive.TUUID => value
+      case Primitive.TBLOB => ???
       case _: IdentifierId => s"$value.toString()"
       case en: EnumId => s"$en[$value]"
       // TODO We do nothing for other types, should probably figure something out ...
@@ -90,6 +92,7 @@ class TypeScriptTypeConverter() {
       case Primitive.TFloat => variable
       case Primitive.TDouble => variable
       case Primitive.TUUID => variable
+      case Primitive.TBLOB => ???
       case Primitive.TTime => variable
       case Primitive.TDate => variable
       case Primitive.TTs => variable
@@ -174,6 +177,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TFloat => "number"
     case Primitive.TDouble => "number"
     case Primitive.TUUID => "string"
+    case Primitive.TBLOB => ???
     case Primitive.TTime => if (forSerialized) "string" else "Date"
     case Primitive.TDate => if (forSerialized) "string" else "Date"
     case Primitive.TTs => if (forSerialized) "string" else "Date"
@@ -218,6 +222,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TFloat => s"$name"
     case Primitive.TDouble => s"$name"
     case Primitive.TUUID => s"$name"
+    case Primitive.TBLOB => ???
     case Primitive.TTime => s"${name}AsString"
     case Primitive.TDate => s"${name}AsString"
     case Primitive.TTs => s"${name}AsString"
@@ -264,6 +269,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TFloat => toDoubleField(name, 32, optional)
     case Primitive.TDouble => toDoubleField(name, 64, optional)
     case Primitive.TUUID => toGuidField(name, optional)
+    case Primitive.TBLOB => ???
     case Primitive.TTime => toTimeField(name, optional)
     case Primitive.TDate => toDateField(name, optional)
     case Primitive.TTs => toDateTimeField(name, local = true, optional)
@@ -306,6 +312,7 @@ class TypeScriptTypeConverter() {
     case Primitive.TFloat => toPrivateMember(name, "number")
     case Primitive.TDouble => toPrivateMember(name, "number")
     case Primitive.TUUID => toPrivateMember(name, "string")
+    case Primitive.TBLOB => ???
     case Primitive.TTime => toPrivateMember(name, "Date")
     case Primitive.TDate => toPrivateMember(name, "Date")
     case Primitive.TTs => toPrivateMember(name, "Date")

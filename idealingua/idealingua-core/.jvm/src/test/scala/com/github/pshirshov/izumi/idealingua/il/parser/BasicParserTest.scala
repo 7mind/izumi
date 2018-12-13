@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.RawMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawMethod
 import org.scalatest.WordSpec
 import fastparse._
 
@@ -43,6 +43,13 @@ class BasicParserTest
       import defDomain._
       assertParses(domainBlock(_), "domain x.y.z")
     }
+
+    "parse foreign type interpolations" in {
+      import ids._
+      assertParses(typeInterp(_), """t"java.util.Map"""")
+      assertParses(typeInterp(_), """t"java.util.Map<${A}, ${B}>"""")
+    }
+
 
     "parse aliases" in {
       assertParses(defStructure.aliasBlock(_), "alias x = y")
