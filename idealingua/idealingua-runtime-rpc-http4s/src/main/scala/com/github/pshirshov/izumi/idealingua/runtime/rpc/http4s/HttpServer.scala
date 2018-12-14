@@ -80,6 +80,11 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
   }
 
 
+  protected def handleWsClose(context: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]): Unit = {
+    logger.debug(s"${context -> null}: Websocket client disconnected")
+    context.finish()
+  }
+
   protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
     val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger)
     context.start()
@@ -89,18 +94,14 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       val d = q.dequeue.through {
         stream =>
           stream
-            .map {
-              case m: Close =>
-                logger.debug(s"${context -> null}: Websocket client disconnected")
-                context.finish()
-                m
-              case m => m
-            }
             .evalMap(handleWsMessage(context))
             .collect({ case Some(v) => WebSocketFrame.Text(v) })
       }
       val e = q.enqueue
-      WebSocketBuilder[CatsIO].build(d.merge(context.outStream).merge(context.pingStream), e)
+      WebSocketBuilder[CatsIO].build(
+        d.merge(context.outStream).merge(context.pingStream)
+        , e
+        , onClose = CIO.delay(handleWsClose(context)))
     }
   }
 
