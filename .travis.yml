@@ -53,14 +53,6 @@ jobs:
     - stage: "SBT Tests"
       script: bash docker.sh scripted
     - stage: "Publish"
-      script:
-      - openssl aes-256-cbc -K $encrypted_8eadf24ba628_key -iv $encrypted_8eadf24ba628_iv -in secrets.tar.enc -out secrets.tar -d
-      - tar xvf secrets.tar
-      - ln -s .secrets/local.sbt local.sbt
-      - bash docker.sh publish
+      script: bash docker.sh publish
     - stage: "Site"
-      script:
-      - openssl aes-256-cbc -K $encrypted_8eadf24ba628_key -iv $encrypted_8eadf24ba628_iv -in secrets.tar.enc -out secrets.tar -d
-      - tar xvf secrets.tar
-      - ln -s .secrets/local.sbt local.sbt
-      - bash docker.sh site
+      script: bash docker.sh site
