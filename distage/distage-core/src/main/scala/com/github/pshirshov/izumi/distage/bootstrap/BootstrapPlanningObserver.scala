@@ -13,6 +13,10 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
 
   }
 
+  override def onPhase05PreFinalization(plan: SemiPlan): Unit = {
+
+  }
+
   override def onPhase10PostFinalization(plan: SemiPlan): Unit = {
 
   }

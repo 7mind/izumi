@@ -77,7 +77,7 @@ abstract class GraphVizDotML(
     */
   def edge(tailName: String, headName: String,
            label: String = null, attrs: mutable.Map[String, String] = null): Unit = {
-    this.body += _edge.format(tailName, headName, attribute(label, attrs))
+    this.body += _edge.format(quote(tailName), quote(headName), attribute(label, attrs))
   }
 
   /**

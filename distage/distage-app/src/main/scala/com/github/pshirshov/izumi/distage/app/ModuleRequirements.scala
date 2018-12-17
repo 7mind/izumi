@@ -15,6 +15,6 @@ class LogstageModuleRequirements extends ModuleRequirements(Set(
   DIKey.get[LogRouter]
 , DIKey.get[CustomContext]
 , DIKey.get[IzLogger]
-, DIKey.get[PlanningObserver]
+, DIKey.get[Set[PlanningObserver]]
 , DIKey.get[LoggerHook]
 ))

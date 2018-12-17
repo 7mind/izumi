@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import distage.Injector
 
+
+
 trait MkGcInjector {
   def mkInjector(roots: RuntimeDIUniverse.DIKey*): Injector = {
     Injector(roots.toSet, AutoSetModule().register[AutoCloseable])
