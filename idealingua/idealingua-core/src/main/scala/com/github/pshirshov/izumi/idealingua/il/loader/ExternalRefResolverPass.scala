@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, ParsedDomain}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{Inclusion, ParsedModel}
 import com.github.pshirshov.izumi.idealingua.model.loader._

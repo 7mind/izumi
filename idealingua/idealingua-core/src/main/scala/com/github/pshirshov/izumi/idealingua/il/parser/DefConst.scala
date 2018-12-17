@@ -28,6 +28,13 @@ class DefConst(context: IDLParserContext) extends Identifiers {
       v => TLDConsts(RawConstBlock(v.toList))
     }
 
+  def constValue[_: P]: P[Aux] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
+
+  private def const[_: P]: P[RawConst] = P(metaAgg.withMeta(constNoDoc)).map {
+    case (meta, constVal) =>
+      constVal.copy(meta = RawConstMeta(meta.doc, meta.position))
+  }
+
   private def enclosedConsts[_: P]: P[Seq[RawConst]] = structure.aggregates.enclosed(constants)
 
   private def constants[_: P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct) ~ sepStruct.?)
@@ -35,12 +42,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
   private def constantsNoDoc[_: P]: P[RawVal.CMap] = P(constNoDoc.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
     .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
 
-  private def const[_: P]: P[RawConst] = P(metaAgg.withMeta(constNoDoc)).map {
-    case (meta, constVal) =>
-      constVal.copy(meta = RawConstMeta(meta.doc, meta.position))
-  }
-
-  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ value))
+  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ constValue))
     .map {
       case (pos, (name, tpe, value: Aux.ObjAux)) =>
         tpe match {
@@ -118,7 +120,6 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   private def anyValue[_: P]: P[Aux] = P(typedValue | justValue)
 
-  private def value[_: P]: P[Aux] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
 
   private def literal[_: P]: P[Aux.Just] = {
     import Literals.Literals._
@@ -141,7 +142,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
       Aux.ObjAux(RawVal.CMap(v.map(rc => rc.id.name -> rc.const).toMap))
   }
 
-  private def listElements[_: P]: P[Seq[Aux]] = P(value.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
+  private def listElements[_: P]: P[Seq[Aux]] = P(constValue.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
 
   private def listdef[_: P]: P[Aux.ListAux] = {
     structure.aggregates.enclosedB(listElements)

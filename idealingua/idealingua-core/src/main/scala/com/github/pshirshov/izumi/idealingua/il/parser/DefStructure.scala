@@ -95,9 +95,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adt[_: P](sep: => P[Unit]): P[RawAdt] = P((nestedAdtMember | adtMember).rep(min = 1, sep = sep))
     .map(_.toList).map(RawAdt.apply)
 
-  def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol)).map {
-    case (meta, name) =>
-      RawEnumMember(name, meta)
+  def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
+    case (meta, (name, const)) =>
+      RawEnumMember(name, const.map(_.value), meta)
   }
 
   def enum[_: P](sep: => P[Unit]): P[Seq[RawEnumMember]] = P(enumMember.rep(min = 1, sep = sep))
