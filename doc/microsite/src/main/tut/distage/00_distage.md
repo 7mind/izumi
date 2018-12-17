@@ -569,7 +569,7 @@ class ConfiguredTryProgram[F[_]: TagK: Monad] extends ModuleDef {
 
 ### Inner Classes and Path-Dependent Types
 
-To instantiate path-dependent types via constructor, their prefix type has to be present in DI context:
+To instantiate path-dependent types via constructor, their prefix type has to be present in DI object graph:
 
 ```scala
 
@@ -595,7 +595,7 @@ val module1 = new ModuleDef {
 }
 ```
 
-Provider and instance bindings and also compile-time mode in `distage-static` module do not require the singleton type prefix to be present in DI context:
+Provider and instance bindings and also compile-time mode in `distage-static` module do not require the singleton type prefix to be present in DI object graph:
 
 ```scala
 val module2 = new ModuleDef {
@@ -628,7 +628,7 @@ object IOMonad extends ModuleDef {
 }
 ```
 
-Implicits for wired classes are injected from DI context, not from surrounding lexical scope.
+Implicits for wired classes are injected from DI object graph, not from surrounding lexical scope.
 If they were captured from lexical scope when the module is defined, then any binding of a class that depends on an
 implicit, would have to import an *implementation* of that implicit. 
 Depending on implementations is unmodular and directly contradicts the idea of using a dedicated module system

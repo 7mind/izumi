@@ -16,8 +16,8 @@ trait WithTags extends UniverseGeneric { self =>
   /**
   * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
   *
-  * In context of DI this allows you to define a module parameterized by a generic higher-kinded type parameter.
-  * This is especially helpful when coding in a [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
+  * In context of DI this lets you define modules parameterized by higher-kinded type parameters.
+  * This is especially helpful for applying [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
   *
   * Example:
   * {{{
@@ -27,14 +27,14 @@ trait WithTags extends UniverseGeneric { self =>
   * }
   * }}}
   *
-  * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]`
+  * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]` error
   *
-  * The implementation is not perfect, currently some limitations apply as to when a `Tag` will be correctly constructed:
-  *   * Type Parameters don't yet resolve when inside a structural refinement, e.g. {{{ Tag[{ def x: T}] }}}
-  *   * Type Parameters don't yet resolve inside higher-kinded type lambdas, e.g. {{{ TagK[Either[T, ?]] }}}
-  *   * TagK* does not resolve for constructors with bounded parameters, e.g. {{{ class Abc[S <: String]; TagK[Abc] }}}
+  * Currently some limitations apply as to when a `Tag` will be correctly constructed:
+  *   * Type Parameters do not yet resolve inside structural refinements, e.g. T in {{{ Tag[{ def x: T}] }}}
+  *   * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
+  *   * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
   *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
-  *   * More details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
+  *   * Further details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
   */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {

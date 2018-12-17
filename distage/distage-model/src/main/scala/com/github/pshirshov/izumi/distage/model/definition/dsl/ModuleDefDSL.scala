@@ -218,7 +218,7 @@ object ModuleDefDSL {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**
-      * A function that receives its arguments from DI context, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
+      * A function that receives its arguments from DI object graph, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
       *
       * The following syntaxes are supported by extractor macro:
       *
@@ -281,7 +281,7 @@ object ModuleDefDSL {
       *
       *   val constructor = constructorMethod _
       *
-      *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI context
+      *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
       * }}}
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]

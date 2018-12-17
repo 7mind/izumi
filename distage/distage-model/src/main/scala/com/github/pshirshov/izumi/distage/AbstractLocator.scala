@@ -31,7 +31,7 @@ trait AbstractLocator extends Locator {
   final def lookupInstanceOrThrow[T: Tag](key: DIKey): T = {
     lookupInstance(key)
       .getOrElse {
-        throw new MissingInstanceException(s"Instance is not available in the context: $key", key)
+        throw new MissingInstanceException(s"Instance is not available in the object graph: $key", key)
       }
   }
 
