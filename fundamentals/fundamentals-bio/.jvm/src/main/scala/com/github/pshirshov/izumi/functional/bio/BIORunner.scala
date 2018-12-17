@@ -6,14 +6,13 @@ import scalaz.zio.ExitResult.Cause
 import scalaz.zio._
 
 import scala.language.higherKinds
-import scala.util.Try
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: F[E, A]): A
 
-  def unsafeRunSyncAsEither[E, A](io: F[E, A]): Try[Either[E, A]]
+  def unsafeRunSyncAsEither[E, A](io: F[E, A]): BIOExit[E, A]
 
-  def unsafeRunAsyncAsEither[E, A](io: F[E, A])(callback: Try[Either[E, A]] => Unit): Unit
+  def unsafeRunAsyncAsEither[E, A](io: F[E, A])(callback: BIOExit[E, A] => Unit): Unit
 }
 
 object BIORunner {
@@ -27,7 +26,7 @@ object BIORunner {
 
     case object Default extends DefaultHandler
 
-    case class Custom(handler: String => IO[Nothing, Unit]) extends DefaultHandler
+    case class Custom(handler: BIOExit[Any, Nothing] => IO[Nothing, Unit]) extends DefaultHandler
 
   }
 
@@ -41,17 +40,17 @@ object BIORunner {
           super.defaultHandler
 
         case DefaultHandler.Custom(f) =>
-          cause: Cause[Any] => f(BIO.BIOZio.toTry(ExitResult.Failed(cause)))
+          cause: Cause[Any] => f(BIO.BIOZio.toBIOExit(cause))
       }
     }
 
-    def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: Try[Either[E, A]] => Unit): Unit = {
-      unsafeRunAsync(io)(exitResult => callback(BIO.BIOZio.toTry(exitResult)))
+    def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
+      unsafeRunAsync(io)(exitResult => callback(BIO.BIOZio.toBIOExit(exitResult)))
     }
 
-    override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): Try[Either[E, A]] = {
+    override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): BIOExit[E, A] = {
       val result = unsafeRunSync(io)
-      BIO.BIOZio.toTry(result)
+      BIO.BIOZio.toBIOExit(result)
     }
   }
 }
