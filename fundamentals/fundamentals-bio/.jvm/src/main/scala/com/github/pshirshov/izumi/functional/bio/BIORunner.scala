@@ -27,7 +27,7 @@ object BIORunner {
 
     case object Default extends DefaultHandler
 
-    case class Custom(handler: String => Unit) extends DefaultHandler
+    case class Custom(handler: String => IO[Nothing, Unit]) extends DefaultHandler
 
   }
 
@@ -41,7 +41,7 @@ object BIORunner {
           super.defaultHandler
 
         case DefaultHandler.Custom(f) =>
-          cause: Cause[Any] => IO.sync(f(FiberFailure(cause).getMessage))
+          cause: Cause[Any] => f(BIO.BIOZio.toTry(ExitResult.Failed(cause)))
       }
     }
 
