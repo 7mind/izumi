@@ -25,6 +25,8 @@ trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {
   def id: WsClientId[ClientId]
 
   def enqueue(method: IRTMethodId, data: Json): RpcPacketId
+
+  def finish(): Unit
 }
 
 trait WsSessionsStorage[B[+ _, + _], ClientId, Ctx] {
@@ -238,7 +240,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   protected[http4s] val pingStream: fs2.Stream[CatsIO, WebSocketFrame] =
     fs2.Stream.awakeEvery[CatsIO](pingTimeout) >> fs2.Stream(Ping())
 
-  protected[http4s] def finish(): Unit = {
+  override def finish(): Unit = {
     logger.debug("Finish called. Clear request state")
     Quirks.discard(wsSessionStorage.deleteClient(sessionId))
     listeners.foreach { listener =>
