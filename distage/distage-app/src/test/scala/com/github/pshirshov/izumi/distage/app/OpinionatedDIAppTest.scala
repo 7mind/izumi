@@ -54,6 +54,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
         Seq(
           new ConfigModule(config)
           , new CustomizationModule
+//          , new GraphDumpBootstrapModule()
           , new TracingGcModule(Set(
             RuntimeDIUniverse.DIKey.get[TestApp],
             RuntimeDIUniverse.DIKey.get[DisabledByKey],
