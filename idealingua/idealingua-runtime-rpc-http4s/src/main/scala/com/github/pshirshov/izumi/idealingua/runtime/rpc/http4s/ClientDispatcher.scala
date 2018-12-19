@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import cats.implicits._
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import fs2.Stream
@@ -60,14 +61,14 @@ class ClientDispatcher[C <: Http4sContext](val c: C#IMPL[C], logger: IzLogger, p
           c.CIO.async {
             cb =>
               c.BIORunner.unsafeRunAsyncAsEither(decoded) {
-                case scala.util.Success(Right(v)) =>
+                case BIOExit.Success(v) =>
                   cb(Right(v))
 
-                case scala.util.Success(Left(error)) =>
+                case BIOExit.Error(error) =>
                   logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error")
                   cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on $body: $error", Option(error))))
 
-                case scala.util.Failure(f) =>
+                case BIOExit.Termination(f, _) =>
                   logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
                   cb(Left(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f))))
               }

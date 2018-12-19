@@ -4,6 +4,7 @@ import java.net.URI
 import java.util.concurrent.TimeoutException
 
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -54,13 +55,13 @@ class ClientWsDispatcher[C <: Http4sContext]
       }
 
       BIORunner.unsafeRunAsyncAsEither(result) {
-        case scala.util.Success(Right(PacketInfo(packetId, method))) =>
+        case Success(PacketInfo(packetId, method)) =>
           logger.debug(s"Processed incoming packet $method: $packetId")
 
-        case scala.util.Success(Left(error)) =>
+        case Error(error) =>
           logger.error(s"Failed to process request: $error")
 
-        case scala.util.Failure(cause) =>
+        case Termination(cause, _) =>
           logger.error(s"Failed to process request, termination: $cause")
 
       }

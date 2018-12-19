@@ -1,12 +1,10 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.ExitResult.Cause
-import scalaz.zio.ExitResult.Cause._
-import scalaz.zio.{ExitResult, IO, Schedule}
+import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import scalaz.zio.{ExitResult, FiberFailure, IO, Schedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
-import scala.util.{Failure, Success, Try}
 
 trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
   override type Or[+E, +V] = R[E, V]
@@ -105,46 +103,59 @@ object BIO extends BIOSyntax {
 
     @inline override def race[E, A](r1: IO[E, A])(r2: IO[E, A]): IO[E, A] = r1.race(r2)
 
+    @inline override def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.traverse(l)(f)
+
     case class ComplexFailureEithers[E](failures: List[Either[List[Throwable], E]]) extends RuntimeException
 
-    def toTry[E, A](result: ExitResult[E, A]): Try[Either[E, A]] = result match {
-      case ExitResult.Succeeded(v) => Success(Right(v))
-      case ExitResult.Failed(Checked(cause)) => Success(Left(cause))
-      case ExitResult.Failed(Unchecked(cause)) => Failure(cause)
-      case ExitResult.Failed(Interruption) => Failure(new InterruptedException())
-      case ExitResult.Failed(c@Then(_, _)) => Failure(ComplexFailureEithers(c.flatten.map(toEither).toList))
-      case ExitResult.Failed(c@Both(_, _)) => Failure(ComplexFailureEithers(c.flatten.map(toEither).toList))
+    @inline def toBIOExit[E, A](result: ExitResult[E, A]): BIOExit[E, A] = result match {
+      case ExitResult.Succeeded(v) =>
+        Success(v)
+      case ExitResult.Failed(cause) =>
+        toBIOExit(cause)
     }
 
-    def toEither[E, A](result: ExitResult.Cause[E]): Either[List[Throwable], E] = result match {
-      case Checked(value) => Right(value)
-      case Unchecked(value) => Left(List(value))
-      case Interruption => Left(List(new InterruptedException()))
-      case c@Both(_, _) => Left(List(ComplexFailureEithers(c.flatten.map(toEither).toList)))
-      case c@Then(_, _) => Left(List(ComplexFailureEithers(c.flatten.map(toEither).toList)))
+    @inline def toBIOExit[E](result: ExitResult.Cause[E]): BIOExit.Failure[E] = {
+      result.checkedOrRefail match {
+        case Left(err) =>
+          Error(err)
+        case Right(cause) =>
+          val unchecked = cause.unchecked
+          val exceptions = if (cause.interrupted) {
+            new InterruptedException :: unchecked
+          } else {
+            unchecked
+          }
+          val compound = (exceptions: @unchecked) match {
+            case e :: Nil => e
+            case _ => FiberFailure(cause)
+          }
+          Termination(compound, exceptions)
+      }
     }
 
+    @inline def toEither[E](result: ExitResult.Cause[E]): Either[List[Throwable], E] = {
+      toBIOExit(result) match {
+        case Error(error) => Right(error)
+        case Termination(_, exceptions) => Left(exceptions)
+      }
+    }
+
+    @inline def eitherToCause[E](errEither: Either[List[Throwable], E]): ExitResult.Cause[E] = {
+      errEither match {
+        case Right(err) =>
+          ExitResult.Cause.Checked(err)
+        case Left(Nil) =>
+          ExitResult.Cause.Unchecked(new IllegalArgumentException(s"Unexpected empty cause list from sandboxWith: $errEither"))
+        case Left(exceptions) =>
+          exceptions.map {
+            case _: InterruptedException => ExitResult.Cause.Interruption
+            case e => ExitResult.Cause.Unchecked(e)
+          }.reduce(_ ++ _)
+      }
+    }
 
     @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] = {
-      r.sandboxWith {
-        r =>
-          val x: IO[Either[List[Throwable], E2], B] = f(r.leftMap(cause => toEither[E, A](cause)))
-          x.leftMap {
-            case Right(value) =>
-              ExitResult.Cause.Checked(value)
-            case Left((_: InterruptedException) :: Nil) =>
-              ExitResult.Cause.Interruption
-            case Left(Nil) =>
-              ExitResult.Cause.Unchecked(new IllegalArgumentException(s"Unexpected empty cause list for $r returned by $f"))
-            case Left(value :: Nil) =>
-              ExitResult.Cause.Unchecked(value)
-            case Left(head :: tail) =>
-              tail.foldLeft(Cause.Unchecked(head): Cause[E2]) {
-                case (acc, t) =>
-                  Cause.Both(acc, Cause.Unchecked(t))
-              }
-          }
-      }
+      r.sandboxWith(r => f(r.leftMap(toEither)).leftMap(eitherToCause))
     }
 
     @inline override def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
@@ -154,7 +165,7 @@ object BIO extends BIOSyntax {
             case Right(v) =>
               cb(ExitResult.Succeeded(v))
             case Left(t) =>
-              cb(ExitResult.Failed(ExitResult.Cause.Checked(t)))
+              cb(ExitResult.checked(t))
           }
 
       }

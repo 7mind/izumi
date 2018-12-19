@@ -3,13 +3,12 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 import cats.effect.IO
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceMethods}
 import org.http4s._
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
-
-import scala.util.{Failure, Success}
 
 class Http4sTransportTest extends WordSpec {
 
@@ -34,7 +33,7 @@ class Http4sTransportTest extends WordSpec {
 
           disp.cancelCredentials()
           BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Failure(exception: IRTUnexpectedHttpStatus) =>
+            case Termination(exception: IRTUnexpectedHttpStatus, _) =>
               assert(exception.status == Status.Forbidden)
             case o =>
               fail(s"Expected IRTGenericFailure but got $o")
@@ -43,7 +42,7 @@ class Http4sTransportTest extends WordSpec {
           //
           disp.setupCredentials("user", "badpass")
           BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Failure(exception: IRTUnexpectedHttpStatus) =>
+            case Termination(exception: IRTUnexpectedHttpStatus, _) =>
               assert(exception.status == Status.Unauthorized)
             case o =>
               fail(s"Expected IRTGenericFailure but got $o")
@@ -72,7 +71,7 @@ class Http4sTransportTest extends WordSpec {
 
         disp.setupCredentials("user", "badpass")
         BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-          case Failure(_: IRTGenericFailure) =>
+          case Termination(_: IRTGenericFailure, _) =>
           case o =>
             fail(s"Expected IRTGenericFailure but got $o")
         }
@@ -97,11 +96,11 @@ class Http4sTransportTest extends WordSpec {
     val dummy = IRTMuxRequest(IRTReqBody((1, 2)), GreeterServiceMethods.greet.id)
     val badJson = BIOR.unsafeRunSyncAsEither(disp.sendRaw(dummy, body.getBytes))
     badJson match {
-      case Success(Left(value: IRTUnexpectedHttpStatus)) =>
+      case Error(value: IRTUnexpectedHttpStatus) =>
         assert(value.status == Status.BadRequest).discard()
       case Success(value) =>
         fail(s"Unexpected success: $value")
-      case Failure(exception) =>
+      case Termination(exception, _) =>
         fail("Unexpected failure", exception)
     }
   }
