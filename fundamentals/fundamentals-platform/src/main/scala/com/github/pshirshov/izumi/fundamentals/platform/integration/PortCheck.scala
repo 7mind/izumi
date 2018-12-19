@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.integration
 import java.net.{InetSocketAddress, Socket, URI, URL}
 
 /**
-  * This class is intended to be always present in the DI context and injected
+  * This class is intended to be always present in the DI object graph and injected
   * into each resource which needs a port availability check.
   *
   * The timeout is intended to be defined just once per app.

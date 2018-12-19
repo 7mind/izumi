@@ -74,7 +74,7 @@ abstract class OpinionatedDiApp {
 
   protected def makeContext(logger: IzLogger, injector: distage.Injector, plan: OrderedPlan): Locator = {
     val locator = injector.produce(plan)
-    logger.trace(s"Context produced with ${locator.instances.size -> "instances"}")
+    logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
     locator
   }
 
@@ -97,7 +97,7 @@ abstract class OpinionatedDiApp {
     }
 
     if (appDef.definition.bindings.isEmpty) {
-      throw new DiAppBootstrapException("Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
+      throw new DiAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 

@@ -3,14 +3,10 @@ package com.github.pshirshov.izumi.distage.model.provisioning
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 trait ProvisioningKeyProvider {
-  /** This method returns the context value taking care of by-name form
-    *
-    */
+  /** Return the referred object if available, dereferencing by-name proxies according to the argument **/
   def fetchKey(key: RuntimeDIUniverse.DIKey, byName: Boolean): Option[Any]
 
-  /** Direct access to the value, without by-name specific transformations
-    *
-    */
+  /** Directly access the value, without dereferencing for by-names **/
   def fetchUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any]
 
   def importKey(key: RuntimeDIUniverse.DIKey): Option[Any]

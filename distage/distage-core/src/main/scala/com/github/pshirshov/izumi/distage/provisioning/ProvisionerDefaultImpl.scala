@@ -76,7 +76,7 @@ class ProvisionerDefaultImpl
       case OpResult.NewImport(target, value) =>
         value match {
           case _ if active.imports.contains(target) =>
-            throw new DuplicateInstancesException("Cannot continue, key is already in context", target)
+            throw new DuplicateInstancesException("Cannot continue, key is already in the object graph", target)
           case opResult: OpResult =>
             throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
           case _ =>
@@ -86,7 +86,7 @@ class ProvisionerDefaultImpl
       case OpResult.NewInstance(target, value) =>
         value match {
           case _ if active.instances.contains(target) =>
-            throw new DuplicateInstancesException("Cannot continue, key is already in context", target)
+            throw new DuplicateInstancesException("Cannot continue, key is already in the object graph", target)
           case opResult: OpResult =>
             throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
           case _ =>

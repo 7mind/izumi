@@ -16,7 +16,7 @@ class InstanceStrategyDefaultImpl extends InstanceStrategy {
         Seq(OpResult.NewInstance(op.target, value))
 
       case None =>
-        throw new MissingInstanceException(s"Cannot find ${op.wiring.key} in context", op.wiring.key)
+        throw new MissingInstanceException(s"Cannot find ${op.wiring.key} in the object graph", op.wiring.key)
     }
   }
 }

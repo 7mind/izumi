@@ -26,7 +26,7 @@ class StaticImplicitInjectionTest extends WordSpec with MkInjector {
     assert(context.get[TestClass].d != null)
   }
 
-  "Implicit parameters are injected from the DI context, not from Scala's lexical implicit scope" in {
+  "Implicit parameters are injected from the DI object graph, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
     val injector = mkInjector()
