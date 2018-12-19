@@ -47,6 +47,9 @@ function scripted {
 
 function site {
   bopen
+  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
+    return 0
+  fi
   if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
     echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
     chown -R root:root ~/.ssh
@@ -63,11 +66,11 @@ function site {
 
 function publish {
   bopen
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
 
-  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
+  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
     return 0
   fi
 
