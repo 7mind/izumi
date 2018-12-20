@@ -14,6 +14,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersio
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+
 
 class RoleAppTest extends WordSpec {
 
@@ -104,8 +106,16 @@ class RoleAppTest extends WordSpec {
 
   private def verifyConfig(context: Locator) = {
     val version = context.get[ArtifactVersion]("launcher-version")
-    assert(Paths.get("target", "config-dump", s"testservice-${version.version}.conf").toFile.exists())
-    assert(Paths.get("target", "config-dump", s"testservice-minimized-${version.version}.conf").toFile.exists())
+    val justConfig = Paths.get("target", "config-dump", s"testservice-${version.version}.conf").toFile
+    val minConfig = Paths.get("target", "config-dump", s"testservice-minimized-${version.version}.conf").toFile
+
+    try {
+      assert(justConfig.exists())
+      assert(minConfig.exists())
+    } finally {
+      justConfig.delete().discard()
+      minConfig.delete().discard()
+    }
   }
 
   private val overrides = Map(

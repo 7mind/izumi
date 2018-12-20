@@ -51,7 +51,7 @@ abstract class OpinionatedDiApp {
 
     validate(mergedBs, mergedApp)
 
-    val makeMainModule = makeModule(strategy, _, _)
+    val makeMainModule = makeModule(strategy) _
     val appDef = makeMainModule(mergedBs, mergedApp)
     val bsModules = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
@@ -72,7 +72,7 @@ abstract class OpinionatedDiApp {
     start(context, strategy.context)
   }
 
-  private def makeModule(strategy: Strategy, mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
+  private def makeModule(strategy: Strategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
     mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
   }
 
