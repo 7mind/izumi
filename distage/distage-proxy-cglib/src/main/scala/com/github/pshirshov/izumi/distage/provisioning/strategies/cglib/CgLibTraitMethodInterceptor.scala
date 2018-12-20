@@ -27,7 +27,7 @@ protected[distage] class CgLibTraitMethodInterceptor
           v.asInstanceOf[AnyRef]
 
         case None =>
-          throw new MissingRefException(s"Cannot return $wireWith from ${method.getName}, it's not available in the context o_O", Set(wireWith), None)
+          throw new MissingRefException(s"Cannot return $wireWith from ${method.getName}, it's not available in the object graph o_O", Set(wireWith), None)
       }
 
     } else if (index.getters.contains(method.getName)) {

@@ -46,4 +46,14 @@ trait BIOInvariant[R[_, _]] {
   @inline def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
 
   @inline def widen[E, A, E1 >: E, A1 >: A](r: R[E, A]): R[E1, A1]
+
+  @inline final def when[E](p: Boolean)(r: R[E, Unit]): R[E, Unit] = {
+    if (p) r else widen(unit)
+  }
+
+  @inline def traverse[E, A, B](l: Iterable[A])(f: A => R[E, B]): R[E, List[B]]
+}
+
+object BIOInvariant {
+  def apply[R[_, _]: BIOInvariant]: BIOInvariant[R] = implicitly
 }

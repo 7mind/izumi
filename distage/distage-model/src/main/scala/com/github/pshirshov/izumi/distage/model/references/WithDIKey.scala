@@ -27,7 +27,7 @@ trait WithDIKey {
     case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
       val idContract: IdContract[I] = implicitly
 
-      override def toString: String = s"{type.${tpe.toString}.${idContract.repr(id)}}"
+      override def toString: String = s"{type.${tpe.toString}#${idContract.repr(id)}}"
     }
 
     case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {

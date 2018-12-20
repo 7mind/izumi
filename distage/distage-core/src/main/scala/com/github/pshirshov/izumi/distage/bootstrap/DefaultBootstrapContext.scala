@@ -59,7 +59,7 @@ object DefaultBootstrapContext {
       new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
-      , bootstrapObserver
+      , Set(bootstrapObserver)
       , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
       , Set(new PlanningHookDefaultImpl)
     )
@@ -89,12 +89,13 @@ object DefaultBootstrapContext {
   }
 
   final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
+    many[PlanningObserver]
+
     make[LookupInterceptor].from(NullLookupInterceptor)
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
 
-    make[PlanningObserver].from[PlanningObserverDefaultImpl]
     make[LoggerHook].from[LoggerHookDefaultImpl]
     make[MirrorProvider].from[MirrorProvider.Impl.type]
 

@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 class TracingGcModule(roots: Set[RuntimeDIUniverse.DIKey]) extends BootstrapModuleDef {
   make[DIGarbageCollector].from(TracingDIGC)
   make[GCRootPredicate].from(new GCRootPredicateSet(roots))
+  many[RuntimeDIUniverse.DIKey].named("gc.roots").addSet(roots)
   many[PlanningHook]
     .add[GCHook]
 }

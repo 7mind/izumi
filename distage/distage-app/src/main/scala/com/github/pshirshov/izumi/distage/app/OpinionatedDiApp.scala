@@ -10,6 +10,12 @@ import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.Injector
 
+case class DIAppStartupContext(
+                                bsModule: BootstrapModule,
+                                bsPlugins: Seq[PluginBase],
+                                appPlugins: Seq[PluginBase],
+                                strategy: (LoadedPlugins, LoadedPlugins) => ModuleBase
+                              )
 
 abstract class OpinionatedDiApp {
   type CommandlineConfig
@@ -29,32 +35,32 @@ abstract class OpinionatedDiApp {
   protected def commandlineSetup(args: Array[String]): Strategy
 
   protected def doMain(strategy: Strategy): Unit = {
-    val bootstrapLoader = strategy.mkBootstrapLoader()
-    val appLoader = strategy.mkLoader()
-
-    val bootstrapAutoDef = bootstrapLoader.load()
-    val appAutoDef = appLoader.load()
-    val mergeStrategy = strategy.mergeStrategy(bootstrapAutoDef, appAutoDef)
-
     val loggerRouter = strategy.router()
     val logger: IzLogger = makeLogger(loggerRouter)
-
-    val mergedBs = mergeStrategy.merge(bootstrapAutoDef)
-    val mergedApp = mergeStrategy.merge(appAutoDef)
-
-    validate(mergedBs, mergedApp)
-
     val bsLoggerDef = new BootstrapModuleDef {
       make[LogRouter].from(loggerRouter)
     }
-    val bsModules = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
-    val accessibleBs = new BootstrapModuleDef {
-      make[BootstrapModule].from(bsModules)
-    }
-    val bootstrapCustomDef = bsModules ++ accessibleBs
 
+    val pluginsBs = strategy.mkBootstrapLoader().load()
+    val pluginsApp = strategy.mkLoader().load()
+
+    val mergeStrategy = strategy.mergeStrategy(pluginsBs, pluginsApp)
+
+    val mergedBs = mergeStrategy.merge(pluginsBs)
+    val mergedApp = mergeStrategy.merge(pluginsApp)
+
+    validate(mergedBs, mergedApp)
+
+    val makeMainModule = makeModule(strategy) _
+    val appDef = makeMainModule(mergedBs, mergedApp)
+    val bsModules = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+
+    val accessibleBs = new BootstrapModuleDef {
+      make[DIAppStartupContext].from(DIAppStartupContext(bsModules, pluginsBs, pluginsApp, makeMainModule))
+    }
+
+    val bootstrapCustomDef = bsModules ++ accessibleBs
     val bsdef = bootstrapCustomDef ++ mergedBs.definition
-    val appDef = mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
@@ -66,6 +72,10 @@ abstract class OpinionatedDiApp {
     start(context, strategy.context)
   }
 
+  private def makeModule(strategy: Strategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
+    mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
+  }
+
   protected def makeLogger(loggerRouter: LogRouter): IzLogger = {
     val logger = new IzLogger(loggerRouter, CustomContext.empty) // TODO: add instance/machine id here?
     logger.info("Main logger initialized")
@@ -74,7 +84,7 @@ abstract class OpinionatedDiApp {
 
   protected def makeContext(logger: IzLogger, injector: distage.Injector, plan: OrderedPlan): Locator = {
     val locator = injector.produce(plan)
-    logger.trace(s"Context produced with ${locator.instances.size -> "instances"}")
+    logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
     locator
   }
 
@@ -97,7 +107,7 @@ abstract class OpinionatedDiApp {
     }
 
     if (appDef.definition.bindings.isEmpty) {
-      throw new DiAppBootstrapException("Empty app context. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
+      throw new DiAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 

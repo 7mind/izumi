@@ -18,7 +18,7 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
       case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
         Seq(OpResult.DoNothing())
       case _ =>
-        throw new MissingInstanceException(s"Instance is not available in the context: $target. " +
+        throw new MissingInstanceException(s"Instance is not available in the object graph: $target. " +
           s"required by refs: $references", target)
     }
   }
@@ -30,7 +30,7 @@ class ImportStrategyFailingImpl extends ImportStrategy {
     Quirks.discard(context)
 
     import op._
-    throw new MissingInstanceException(s"Imports are disabled and instance is not available in the context: $target. required by refs: $references", target)
+    throw new MissingInstanceException(s"Imports are disabled and instance is not available in the object graph: $target. required by refs: $references", target)
   }
 }
 

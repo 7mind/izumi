@@ -27,7 +27,7 @@ class ImplicitInjectionTest extends WordSpec with MkInjector {
     assert(context.get[TestClass].d != null)
   }
 
-  "populates implicit parameters in class constructor from explicit DI context instead of scala's implicit resolution" in {
+  "populates implicit parameters in class constructor from explicit DI object graph instead of scala's implicit resolution" in {
     import ImplicitCase1._
 
     val definition = new ModuleDef {
@@ -46,7 +46,7 @@ class ImplicitInjectionTest extends WordSpec with MkInjector {
     assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)
   }
 
-  "Progression test: As of now, implicit parameters are injected from DI context, not from Scala's lexical implicit scope" in {
+  "Progression test: As of now, implicit parameters are injected from DI object graph, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
     val definition: ModuleBase = new ModuleDef {

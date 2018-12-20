@@ -5,6 +5,8 @@ import java.util.concurrent.RejectedExecutionException
 import _root_.io.circe.parser._
 import cats.implicits._
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIOExit
+import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -16,9 +18,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{Binary, Close, Text}
-
-import scala.util.Try
+import org.http4s.websocket.WebSocketFrame.{Binary, Text}
 
 class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
                                      , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
@@ -120,15 +120,15 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
   }
 
-  protected def handleResult(context: WebsocketClientContextImpl[C], result: Try[Either[Throwable, Option[RpcPacket]]]): Option[String] = {
+  protected def handleResult(context: WebsocketClientContextImpl[C], result: BIOExit[Throwable, Option[RpcPacket]]): Option[String] = {
     result match {
-      case scala.util.Success(Right(v)) =>
+      case Success(v) =>
         v.map(_.asJson).map(printer.pretty)
 
-      case scala.util.Success(Left(error)) =>
+      case Error(error) =>
         Some(handleWsError(context, List(error), None, "failure"))
 
-      case scala.util.Failure(cause) =>
+      case Termination(cause, _) =>
         Some(handleWsError(context, List(cause), None, "termination"))
     }
   }
@@ -225,9 +225,9 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       .flatten
   }
 
-  private def handleResult(context: HttpRequestContext[CatsIO, RequestContext], method: IRTMethodId, result: Try[Either[Throwable, Option[Json]]]): CatsIO[Response[CatsIO]] = {
+  private def handleResult(context: HttpRequestContext[CatsIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): CatsIO[Response[CatsIO]] = {
     result match {
-      case scala.util.Success(Right(v)) =>
+      case Success(v) =>
         v match {
           case Some(value) =>
             dsl.Ok(printer.pretty(value))
@@ -236,27 +236,27 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
             dsl.NotFound()
         }
 
-      case scala.util.Success(Left(error: circe.Error)) =>
+      case Error(error: circe.Error) =>
         logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
         dsl.BadRequest()
 
-      case scala.util.Success(Left(error: IRTDecodingException)) =>
+      case Error(error: IRTDecodingException) =>
         logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
         dsl.BadRequest()
 
-      case scala.util.Success(Left(error)) =>
+      case Error(error) =>
         logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
         dsl.InternalServerError()
 
-      case scala.util.Failure(cause: IRTHttpFailureException) =>
+      case Termination(_, (cause: IRTHttpFailureException) :: _) =>
         logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
         CIO.pure(Response(status = cause.status))
 
-      case scala.util.Failure(cause: RejectedExecutionException) =>
+      case Termination(_, (cause: RejectedExecutionException) :: _) =>
         logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")
         dsl.TooManyRequests()
 
-      case scala.util.Failure(cause) =>
+      case Termination(cause, _) =>
         logger.error(s"${context -> null}: Execution failed, termination, $method, ${context.request}, $cause")
         dsl.InternalServerError()
     }

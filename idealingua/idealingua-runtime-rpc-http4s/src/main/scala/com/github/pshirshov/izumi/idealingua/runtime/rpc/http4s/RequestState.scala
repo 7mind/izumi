@@ -76,7 +76,7 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
         _ =>
           checkResponse(id) match {
             case None =>
-              R.fail(None)
+              R.fail(())
             case Some(value) =>
               R.point(Some(value))
           }

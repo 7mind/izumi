@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bootstra
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
+import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -53,6 +54,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
         Seq(
           new ConfigModule(config)
           , new CustomizationModule
+//          , new GraphDumpBootstrapModule()
           , new TracingGcModule(Set(
             RuntimeDIUniverse.DIKey.get[TestApp],
             RuntimeDIUniverse.DIKey.get[DisabledByKey],

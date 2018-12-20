@@ -73,8 +73,8 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     *     .start
     * }
     *
-    * val context = Injector().produce(HomeRouteModule ++ BlogRouteModule)
-    * val server = context.get[HttpServer]
+    * val objects = Injector().produce(HomeRouteModule ++ BlogRouteModule)
+    * val server = objects.get[HttpServer]
     *
     * val testRouter = server.router.orNotFound
     *

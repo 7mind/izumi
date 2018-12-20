@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.roles
 trait RoleStarter {
   /**
     * Calls [[com.github.pshirshov.izumi.distage.roles.roles.RoleService.start]] on
-    * each service in context.
+    * each service in the object graph.
     */
   def start(): Unit
 
@@ -11,7 +11,7 @@ trait RoleStarter {
     * Blocks forever until [[stop]] is called or JVM shutdown happens
     *
     * The application shouldn't touch DI-provided services after this method finishes
-    * because context would be finalized at that moment
+    * because the object graph would already be finalized by that moment
     */
   def join(): Unit
 

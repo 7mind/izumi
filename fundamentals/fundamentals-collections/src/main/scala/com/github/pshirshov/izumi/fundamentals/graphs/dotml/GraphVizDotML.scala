@@ -51,10 +51,10 @@ abstract class GraphVizDotML(
     val tmpAttr = if (attrs == null) mutable.Map[String, String]() else attrs
     if (label != null) {
       s"""[label=${quote(label)} """ +
-        s"""${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${elem._2}"}}]"""
+        s"""${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
     }
     else {
-      s"""[${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${elem._2}"}}]"""
+      s"""[${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
     }
   }
 
@@ -77,7 +77,7 @@ abstract class GraphVizDotML(
     */
   def edge(tailName: String, headName: String,
            label: String = null, attrs: mutable.Map[String, String] = null): Unit = {
-    this.body += _edge.format(tailName, headName, attribute(label, attrs))
+    this.body += _edge.format(quote(tailName), quote(headName), attribute(label, attrs))
   }
 
   /**

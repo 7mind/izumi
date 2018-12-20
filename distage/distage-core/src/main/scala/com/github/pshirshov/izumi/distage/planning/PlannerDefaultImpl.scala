@@ -12,17 +12,20 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.functional.Value
 
+
 class PlannerDefaultImpl
 (
   protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
-  , protected val planningObserver: PlanningObserver
+  , protected val planningObservers: Set[PlanningObserver]
   , protected val planMergingPolicy: PlanMergingPolicy
   , protected val planningHooks: Set[PlanningHook]
 )
   extends Planner {
+
   private val hook = new PlanningHookAggregate(planningHooks)
+  private val planningObserver = new AggregatingObserver(planningObservers)
 
   override def plan(context: ModuleBase): OrderedPlan = {
     val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty(context)) {
@@ -47,6 +50,7 @@ class PlannerDefaultImpl
   def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(planMergingPolicy.addImports)
+      .eff(planningObserver.onPhase05PreFinalization)
       .map(hook.phase10PostFinalization)
       .eff(planningObserver.onPhase10PostFinalization)
       .map(hook.phase20Customization)

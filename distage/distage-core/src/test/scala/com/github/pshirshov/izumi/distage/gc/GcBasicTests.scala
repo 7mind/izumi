@@ -19,6 +19,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       })
 
       val result = injector.produce(plan)
+
       assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)

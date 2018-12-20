@@ -15,3 +15,7 @@ trait BIOAsyncInvariant[R[ _, _]] extends BIOInvariant[R] {
 
   @inline def race[E, A](r1: R[E, A])(r2: R[E ,A]): R[E, A]
 }
+
+object BIOAsyncInvariant {
+  def apply[R[_, _]: BIOAsyncInvariant]: BIOAsyncInvariant[R] = implicitly
+}
