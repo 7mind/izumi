@@ -3,13 +3,15 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import com.github.pshirshov.izumi.distage.app.DIAppStartupContext
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, Id}
+import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -89,10 +91,11 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
 
       writeConfig(versionedComponent, None, cfg)
 
-      minimizeConfig(binding, cfg).foreach {
-        cfg =>
-          writeConfig(versionedComponent, Some("minimized"), cfg)
-      }
+      minimizeConfig(binding, cfg)
+        .foreach {
+          cfg =>
+            writeConfig(versionedComponent, Some("minimized"), cfg)
+        }
     })
   }
 
@@ -100,23 +103,34 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     val locator = locatorRef.get
 
     val rcKey = RuntimeDIUniverse.DIKey.get[ResolvedConfig]
-    val newRoots = Set(binding.binding.key, rcKey)
+    val bindingKey = binding.binding.key
+    val newRoots = Set(bindingKey, rcKey)
 
-    val bootstrap = locator.get[BootstrapModule]
-    val withNewRoots = bootstrap.overridenBy(new ConfigModule(AppConfig(cfg))).overridenBy(new TracingGcModule(newRoots))
+    val bootstrap = locator.get[DIAppStartupContext]
+    val withNewRoots = bootstrap.bsModule.overridenBy(new ConfigModule(AppConfig(cfg))).overridenBy(new TracingGcModule(newRoots))
     val newInjector = Injector.Standard(withNewRoots)
 
-    val newPlan = newInjector.plan(locator.plan.definition)
+    val merged = bootstrap.strategy(
+      SimplePluginMergeStrategy.merge(bootstrap.bsPlugins),
+      SimplePluginMergeStrategy.merge(bootstrap.appPlugins),
+    )
+    val newPlan = newInjector.plan(merged)
 
-    newPlan.filter[ResolvedConfig]
-      .collect {
-        case op: WiringOp.ReferenceInstance =>
-          op.wiring.instance
-      }
-      .collectFirst {
-        case r: ResolvedConfig =>
-          r.minimized()
-      }
+    if (newPlan.steps.exists(_.target == bindingKey)) {
+      newPlan
+        .filter[ResolvedConfig]
+        .collect {
+          case op: WiringOp.ReferenceInstance =>
+            op.wiring.instance
+        }
+        .collectFirst {
+          case r: ResolvedConfig =>
+            r.minimized()
+        }
+    } else {
+      logger.warn(s"$bindingKey is not in the refined plan")
+      None
+    }
   }
 
   private def buildConfig(cmp: ConfigurableComponent): Config = {

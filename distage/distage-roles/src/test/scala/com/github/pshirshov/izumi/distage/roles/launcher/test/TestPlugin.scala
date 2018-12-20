@@ -28,7 +28,7 @@ class TestConfigWriter(
 
 class TestPlugin extends PluginDef {
   tag(BackendPluginTags.Production)
-  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion("0.0.0-SNAPSHOT"))
+  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(s"0.0.0-${System.currentTimeMillis()}"))
   make[RoleService].named("testservice").from[TestService]
   make[TestConfigWriter]
   many[Dummy]
