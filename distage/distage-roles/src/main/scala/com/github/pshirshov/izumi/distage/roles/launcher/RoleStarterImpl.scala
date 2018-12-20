@@ -65,7 +65,7 @@ class RoleStarterImpl
     releaseThenStop()
   }
 
-  private def releaseThenStop(): Unit = synchronized {
+  private def releaseThenStop(): Unit = {
     if (state.compareAndSet(StarterState.Started, StarterState.Stopping) || state.compareAndSet(StarterState.Starting, StarterState.Stopping)) {
       try {
         shutdownApp()
