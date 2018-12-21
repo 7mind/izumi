@@ -6,9 +6,9 @@ import com.github.pshirshov.izumi.distage.app.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.roles.RoleService
 import com.github.pshirshov.izumi.distage.roles.impl.ScoptRoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.test._
-import com.github.pshirshov.izumi.distage.roles.roles.RoleService
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.roles
+package com.github.pshirshov.izumi.distage.roles
 
 import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
 

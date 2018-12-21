@@ -13,13 +13,14 @@ case class ScoptLauncherArgs(
                            , dummyStorage: Option[Boolean] = Some(false)
                            , rootLogLevel: Log.Level = Log.Level.Info
                            , jsonLogging: Option[Boolean] = Some(false)
+                           , dumpContext: Option[Boolean] = Some(false)
                            , roles: List[RoleArgs] = List.empty
                          )
 
 // TODO: this stuff needs to be refactored, we can't keep WriteReference here
 object ScoptLauncherArgs {
 
-  lazy val parser: OptionParser[ScoptLauncherArgs] = new OptionParser[ScoptLauncherArgs]("tg-launcher") {
+  lazy val parser: OptionParser[ScoptLauncherArgs] = new OptionParser[ScoptLauncherArgs]("izumi-launcher") {
      head("tg-launcher", "TODO: manifest version")
      help("help")
 
@@ -28,6 +29,12 @@ object ScoptLauncherArgs {
        .action { (_, c) =>
          c.copy(jsonLogging = Some(true))
        }
+
+    opt[Unit]("dump-graph").abbr("dg")
+      .text("dump object graph")
+      .action { (_, c) =>
+        c.copy(dumpContext = Some(true))
+      }
 
      opt[Unit]("dummy-storage").abbr("ds")
        .text("use in-memory dummy storages instead of production ones")

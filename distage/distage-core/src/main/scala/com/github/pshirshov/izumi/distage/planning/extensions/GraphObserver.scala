@@ -48,7 +48,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
 
   private def render(finalPlan: OrderedPlan): String = {
     val km = new KeyMinimizer(finalPlan.keys)
-    val g = new Digraph()
+    val g = new Digraph(graphAttr = mutable.Map("rankdir" -> "LR"))
 
     val legend = new Digraph("cluster_legend", graphAttr = mutable.Map("label" -> "Legend", "style" -> "dotted", "rankdir" -> "TB"))
     legend.node("normal", "Regular", mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "darkolivegreen3"))

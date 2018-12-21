@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, ConfigWriter}
-import com.github.pshirshov.izumi.distage.roles.roles.{BackendPluginTags, RoleId, RoleService, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.{BackendPluginTags, RoleId, RoleService, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -43,8 +43,8 @@ class C2 extends Conflict
 
 class ResourcesPlugin extends PluginDef {
   make[InitCounter]
-  make[Conflict].tagged("dummy").from[C1]
-  make[Conflict].tagged("production").from[C2]
+  make[Conflict].tagged(BackendPluginTags.Dummy).from[C1]
+  make[Conflict].tagged(BackendPluginTags.Production).from[C2]
 
   make[ExecutorService].from(Executors.newCachedThreadPool())
   make[Resource1]

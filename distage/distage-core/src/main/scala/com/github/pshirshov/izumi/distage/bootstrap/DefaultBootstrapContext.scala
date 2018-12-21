@@ -55,7 +55,7 @@ object DefaultBootstrapContext {
 
     val bootstrapObservers: Set[PlanningObserver] = Set(
       new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap")),
-      new GraphObserver(analyzer, Set.empty),
+      //new GraphObserver(analyzer, Set.empty),
     )
 
     new PlannerDefaultImpl(

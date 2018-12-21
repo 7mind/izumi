@@ -3,10 +3,10 @@ package com.github.pshirshov.izumi.distage.roles.launcher.test
 import java.util.concurrent.ExecutorService
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.roles.roles._
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
-import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.collection.mutable
 

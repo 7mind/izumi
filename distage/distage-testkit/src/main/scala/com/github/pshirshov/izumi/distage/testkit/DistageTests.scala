@@ -13,9 +13,9 @@ import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
-import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.distage.testkit
 import com.github.pshirshov.izumi.distage.testkit.DistageTests.SynchronizedObject
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._

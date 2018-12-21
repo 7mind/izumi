@@ -7,8 +7,8 @@ import com.github.pshirshov.izumi.distage.app.DIAppStartupContext
 import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
-import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.{ArtifactVersion, IzManifest}
 import com.github.pshirshov.izumi.logstage.api.IzLogger

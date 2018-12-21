@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-import com.github.pshirshov.izumi.distage.roles.roles.RoleStarter
+import com.github.pshirshov.izumi.distage.roles.RoleStarter
 import distage.{ModuleBase, ModuleDef}
 
 class TestkitIgnoredTest extends DistagePluginSpec {

@@ -11,13 +11,13 @@ import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.Injector
 
-case class DIAppStartupContext(startupContext: IStartupContext)
+case class DIAppStartupContext(startupContext: StartupContext)
 
-trait IStartupContext {
+trait StartupContext {
   val logger: IzLogger
   def injector: Injector
   def plan: OrderedPlan
-  def startup(args: Array[String]): IStartupContext
+  def startup(args: Array[String]): StartupContext
 }
 
 abstract class OpinionatedDiApp {
@@ -34,13 +34,13 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  private def startup(args: Array[String]): IStartupContext = {
+  private def startup(args: Array[String]): StartupContext = {
     val config = commandlineSetup(args)
     val strategy = makeStrategy(config)
-    new StartupContext(strategy)
+    new StartupContextImpl(strategy)
   }
 
-  class StartupContext(val strategy: ApplicationBootstrapStrategy) extends IStartupContext {
+  class StartupContextImpl(val strategy: ApplicationBootstrapStrategy) extends StartupContext {
     val loggerRouter: LogRouter = strategy.router()
     val logger: IzLogger = makeLogger(loggerRouter)
     val bsLoggerDef: BootstrapModuleDef = new BootstrapModuleDef {
@@ -61,7 +61,7 @@ abstract class OpinionatedDiApp {
     val bsModules: BootstrapModule = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
     val accessibleBs: BootstrapModuleDef = new BootstrapModuleDef {
-      make[DIAppStartupContext].from(DIAppStartupContext(StartupContext.this))
+      make[DIAppStartupContext].from(DIAppStartupContext(StartupContextImpl.this))
     }
 
     val bootstrapCustomDef: BootstrapModule = bsModules ++ accessibleBs
@@ -73,7 +73,7 @@ abstract class OpinionatedDiApp {
     val injector: Injector = makeInjector(logger, bsdef)
     val plan: OrderedPlan = makePlan(logger, appDef, injector)
 
-    override def startup(args: Array[String]): IStartupContext = OpinionatedDiApp.this.startup(args)
+    override def startup(args: Array[String]): StartupContext = OpinionatedDiApp.this.startup(args)
   }
 
   protected def commandlineSetup(args: Array[String]): CommandlineConfig
@@ -97,7 +97,7 @@ abstract class OpinionatedDiApp {
     plan
   }
 
-  protected def makeContext(context: IStartupContext): Locator = {
+  protected def makeContext(context: StartupContext): Locator = {
     val locator = context.injector.produce(context.plan)
     context.logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
     locator

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.roles
+package com.github.pshirshov.izumi.distage.roles
 
 trait RoleStarter {
   /**

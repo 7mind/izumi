@@ -3,20 +3,19 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
+import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
-import com.github.pshirshov.izumi.distage.roles.roles
-import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -63,7 +62,7 @@ class RoleAppBootstrapStrategy(
     this
   }
 
-  protected val roleInfo = new AtomicReference[roles.RolesInfo]()
+  protected val roleInfo = new AtomicReference[RolesInfo]()
 
   protected lazy val config: AppConfig = buildConfig()
 
@@ -138,26 +137,32 @@ class RoleAppBootstrapStrategy(
     val gcModule = new TracingGcModule(roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig]))
 
     val rolesModule = new BootstrapModuleDef {
-      make[distage.roles.roles.RolesInfo].from(roles)
+      make[RolesInfo].from(roles)
     }
 
     val autosetModule = RoleAppBootstrapStrategy.roleAutoSetModule
 
     val configModule = new ConfigModule(config)
 
+    val maybeDumpModule = if (dumpContext) {
+      Seq(new GraphDumpBootstrapModule())
+    } else {
+      Seq.empty
+    }
 
     Seq(
       configModule,
       autosetModule,
       gcModule,
       rolesModule,
-    )
+    ) ++
+      maybeDumpModule
   }
 
   override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
     val bindings = app.flatMap(_.bindings)
     logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"} and ${bindings.size -> "app bindings"}...")
-    val roles: distage.roles.roles.RolesInfo = roleProvider.getInfo(bindings)
+    val roles: RolesInfo = roleProvider.getInfo(bindings)
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.roles.RoleStarter
+import com.github.pshirshov.izumi.distage.roles.RoleStarter
 
 abstract class RoleApp extends OpinionatedDiApp {
 

@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.impl
 
 import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleDef}
+import com.github.pshirshov.izumi.distage.roles.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
-import com.github.pshirshov.izumi.distage.roles.roles.BackendPluginTags
 
 // TODO
 object ScoptRoleAppBootstrapArgs {
@@ -31,6 +31,7 @@ object ScoptRoleAppBootstrapArgs {
       }
       , primaryConfig = params.configFile
       , roleConfigs = params.roles.flatMap(r => r.configFile.map(c => r.name -> c).toSeq).toMap
+      , dumpContext = params.dumpContext.getOrElse(false)
     )
 
 }

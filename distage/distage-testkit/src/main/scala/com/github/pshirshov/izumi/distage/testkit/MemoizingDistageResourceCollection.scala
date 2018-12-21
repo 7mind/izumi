@@ -7,9 +7,9 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentLifecycle
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
-import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
@@ -85,7 +85,7 @@ object MemoizingDistageResourceCollection {
   val memoizedInstances = new ConcurrentHashMap[DIKey, Any]()
 
   /**
-    * Contains all lifecycle states of memoized [[com.github.pshirshov.izumi.distage.roles.roles.RoleComponent]]
+    * Contains all lifecycle states of memoized [[RoleComponent]]
     */
   private val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
 

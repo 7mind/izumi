@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentsLifecycleManagerImpl
-import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 class TestComponentsLifecycleManager(

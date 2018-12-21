@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
+import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 object NullDistageResourceCollection extends DistageResourceCollection {
