@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
+import com.github.pshirshov.izumi.distage.planning.extensions.GraphObserver
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
@@ -50,16 +51,18 @@ object DefaultBootstrapContext {
   protected val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
   protected lazy val bootstrapPlanner: Planner = {
-
-    val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
-
     val analyzer = new PlanAnalyzerDefaultImpl
+
+    val bootstrapObservers: Set[PlanningObserver] = Set(
+      new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap")),
+      new GraphObserver(analyzer, Set.empty),
+    )
 
     new PlannerDefaultImpl(
       new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
-      , Set(bootstrapObserver)
+      , bootstrapObservers
       , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
       , Set(new PlanningHookDefaultImpl)
     )

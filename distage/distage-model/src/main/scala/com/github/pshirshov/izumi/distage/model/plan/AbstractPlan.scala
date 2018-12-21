@@ -44,6 +44,8 @@ sealed trait AbstractPlan {
     }
   }
 
+  final def keys: Set[DIKey] = steps.map(_.target).toSet
+
   final def toSemi: SemiPlan = {
     val safeSteps = steps.flatMap {
       case _: InitProxy =>

@@ -7,15 +7,16 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
-import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.graphs.dotml.Digraph
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import distage.{DIKey, Id}
+import distage._
 
 import scala.collection.mutable
 
-class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[RuntimeDIUniverse.DIKey]) extends PlanningObserver {
+
+
+class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey]) extends PlanningObserver {
   private val beforeFinalization = new AtomicReference[SemiPlan](null)
 
   override def onSuccessfulStep(next: DodgyPlan): Unit = {}
@@ -46,6 +47,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
   }
 
   private def render(finalPlan: OrderedPlan): String = {
+    val km = new KeyMinimizer(finalPlan.keys)
     val g = new Digraph()
 
     val legend = new Digraph("cluster_legend", graphAttr = mutable.Map("label" -> "Legend", "style" -> "dotted", "rankdir" -> "TB"))
@@ -57,7 +59,6 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
     Seq("normal", "weak", "root", "collected").sliding(2).foreach {
       p =>
         legend.edge(p.head, p.last, attrs = mutable.Map("style" -> "invis"))
-
     }
 
     val main = new Digraph("cluster_main", graphAttr = mutable.Map("label" -> "Context", "shape" -> "box"))
@@ -83,7 +84,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
         val attrs = mutable.Map("style" -> "filled", "shape" -> "box") ++ rootStyle
 
         val op = finalPlan.toSemi.index(k)
-        val name = render(k)
+        val name = km.render(k)
         modify(name, attrs, op)
         main.node(name, attrs = attrs)
     }
@@ -92,7 +93,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
       case (k, deps) =>
         deps.foreach {
           d =>
-            main.edge(render(k), render(d))
+            main.edge(km.render(k), km.render(d))
         }
     }
 
@@ -100,7 +101,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
       k =>
         val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
         val op = preGcPlan.index(k)
-        val name = render(k)
+        val name = km.render(k)
         modify(name, attrs, op)
         collected.node(name, attrs = attrs)
     }
@@ -110,9 +111,9 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
         deps.foreach {
           d =>
             if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
-              collected.edge(render(k), render(d), attrs = mutable.Map("color" -> "coral1"))
+              collected.edge(km.render(k), km.render(d), attrs = mutable.Map("color" -> "coral1"))
             } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
-              collected.edge(render(k), render(d))
+              collected.edge(km.render(k), km.render(d))
             }
         }
     }
@@ -131,9 +132,9 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case w: universe.RuntimeDIUniverse.Wiring.UnaryWiring =>
+              case w: RuntimeDIUniverse.Wiring.UnaryWiring =>
                 w match {
-                  case _: universe.RuntimeDIUniverse.Wiring.UnaryWiring.ProductWiring =>
+                  case _: RuntimeDIUniverse.Wiring.UnaryWiring.ProductWiring =>
                     "make"
                   case RuntimeDIUniverse.Wiring.UnaryWiring.Function(_, _) =>
                     "lambda"
@@ -171,36 +172,9 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[Runti
 
 
     }
-    attrs.put("label", s"$label[$name]").discard()
+    attrs.put("label", s"$name:=$label").discard()
   }
 
-  private def render(key: DIKey): String = {
-    key match {
-      case DIKey.TypeKey(tpe) =>
-        s"${render(tpe)}"
 
-      case DIKey.IdKey(tpe, id) =>
-        s"${render(tpe)}#$id"
-
-      case DIKey.ProxyElementKey(proxied, _) =>
-        s"proxy:${render(proxied)}"
-
-      case DIKey.SetElementKey(set, reference) =>
-        s"set:${render(set)}/${render(reference)}"
-    }
-  }
-
-  private def render(tpe: RuntimeDIUniverse.SafeType): String = {
-    render(tpe.tpe)
-  }
-
-  private def render(tpe: RuntimeDIUniverse.TypeNative): String = {
-    val args = if (tpe.typeArgs.nonEmpty) {
-      tpe.typeArgs.map(render).mkString("[", ",", "]")
-    } else {
-      ""
-    }
-    tpe.typeSymbol.name + args
-  }
 }
 
