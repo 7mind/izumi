@@ -9,6 +9,8 @@ trait BIOAsync[R[+ _, + _]] extends BIO[R] with BIOAsyncInvariant[R] {
 
   @inline override def async[E, A](register: (Either[E, A] => Unit) => Unit): R[E, A]
 
+  @inline override def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): R[E, A]
+
   @inline override def sleep(duration: Duration): R[Nothing, Unit]
 
   @inline override def `yield`: R[Nothing, Unit]
