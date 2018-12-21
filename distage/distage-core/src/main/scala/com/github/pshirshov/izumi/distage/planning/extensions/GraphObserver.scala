@@ -47,6 +47,8 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     val last = Paths.get(s"target", s"plan-last-$kind.gv")
 
 
+    Paths.get("target").toFile.mkdirs().discard()
+
     val path = Paths.get(s"target", name)
     Files.write(path, dotfile.getBytes(StandardCharsets.UTF_8)).discard()
     Files.deleteIfExists(last).discard()
