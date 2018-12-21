@@ -26,7 +26,7 @@ object BIORunner {
 
     case object Default extends DefaultHandler
 
-    case class Custom(handler: BIOExit[Any, Nothing] => IO[Nothing, Unit]) extends DefaultHandler
+    case class Custom(handler: BIOExit.Failure[Any] => IO[Nothing, Unit]) extends DefaultHandler
 
   }
 
