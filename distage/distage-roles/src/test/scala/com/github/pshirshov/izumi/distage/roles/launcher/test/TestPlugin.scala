@@ -2,11 +2,11 @@ package com.github.pshirshov.izumi.distage.roles.launcher.test
 
 import java.util.concurrent.{ExecutorService, Executors}
 
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
+import com.github.pshirshov.izumi.distage.app.DIAppStartupContext
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, ConfigWriter}
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
+import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, ConfigWriter}
 import com.github.pshirshov.izumi.distage.roles.roles.{BackendPluginTags, RoleId, RoleService, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -23,8 +23,8 @@ class TestConfigWriter(
                         launcherVersion: ArtifactVersion@Id("launcher-version"),
                         roleInfo: RolesInfo,
                         config: WriteReference,
-                        locatorRef: LocatorRef
-                      ) extends AbstractConfigWriter[TestPlugin](logger, launcherVersion, roleInfo, config, locatorRef)
+                        context: DIAppStartupContext
+                      ) extends AbstractConfigWriter[TestPlugin](logger, launcherVersion, roleInfo, config, context)
 
 class TestPlugin extends PluginDef {
   tag(BackendPluginTags.Production)
@@ -36,8 +36,15 @@ class TestPlugin extends PluginDef {
 
 }
 
+trait Conflict
+
+class C1 extends Conflict
+class C2 extends Conflict
+
 class ResourcesPlugin extends PluginDef {
   make[InitCounter]
+  make[Conflict].tagged("dummy").from[C1]
+  make[Conflict].tagged("production").from[C2]
 
   make[ExecutorService].from(Executors.newCachedThreadPool())
   make[Resource1]

@@ -2,19 +2,18 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.distage.app
 import com.github.pshirshov.izumi.distage.app.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.impl.{ScoptLauncherArgs, ScoptRoleApp}
+import com.github.pshirshov.izumi.distage.roles.impl.ScoptRoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.test._
 import com.github.pshirshov.izumi.distage.roles.roles.RoleService
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 
 class RoleAppTest extends WordSpec {
@@ -50,8 +49,9 @@ class RoleAppTest extends WordSpec {
           , packagesDisabled = Seq.empty
         )
 
-        override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[ScoptLauncherArgs]): Unit = {
-          super.start(context, bootstrapContext)
+
+        override protected def start(context: Locator): Unit = {
+          super.start(context)
 
           val services = context.instances.map(_.value).collect({ case t: RoleService => t }).toSet
           assert(services.size == 2)
@@ -95,8 +95,8 @@ class RoleAppTest extends WordSpec {
           , packagesDisabled = Seq.empty
         )
 
-        override protected def start(context: Locator, bootstrapContext: app.BootstrapContext[ScoptLauncherArgs]): Unit = {
-          super.start(context, bootstrapContext)
+        override protected def start(context: Locator): Unit = {
+          super.start(context)
           verifyConfig(context)
           ()
         }

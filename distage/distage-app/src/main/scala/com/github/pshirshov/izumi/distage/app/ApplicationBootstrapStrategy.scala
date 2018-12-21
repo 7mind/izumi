@@ -6,11 +6,8 @@ import com.github.pshirshov.izumi.distage.plugins.merge.PluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
-trait ApplicationBootstrapStrategy[CommandlineConfig] {
-
-  type Context = BootstrapContext[CommandlineConfig]
-
-  def context: Context
+trait ApplicationBootstrapStrategy {
+  def context: BootstrapContext
 
   def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins]
 

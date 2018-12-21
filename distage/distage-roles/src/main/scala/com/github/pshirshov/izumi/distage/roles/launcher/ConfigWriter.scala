@@ -4,21 +4,15 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.github.pshirshov.izumi.distage.app.DIAppStartupContext
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
+import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
-import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.{ArtifactVersion, IzManifest}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import distage.Injector
 
 import scala.reflect.ClassTag
 import scala.util._
@@ -45,7 +39,7 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   config: WriteReference,
-  locatorRef: LocatorRef,
+  context: DIAppStartupContext,
 )
   extends RoleService
     with RoleTask {
@@ -70,16 +64,9 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
       writeConfig(commonComponent, None, commonConfig)
     }
 
-    val (good, bad) = roleInfo.availableRoleBindings.partition(_.anno.nonEmpty)
-
-    if (bad.nonEmpty) {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-      logger.info(s"Roles to be ${bad.niceList() -> "ignored"}")
-    }
-
     Quirks.discard(for {
-      binding <- good
-      component = ConfigurableComponent(binding.anno.head, binding.source.map(_.version))
+      binding <- roleInfo.availableRoleBindings
+      component = ConfigurableComponent(binding.name, binding.source.map(_.version))
       cfg = buildConfig(component.copy(parent = Some(commonConfig)))
     } yield {
       val version = if (config.useLauncherVersion) {
@@ -91,7 +78,7 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
 
       writeConfig(versionedComponent, None, cfg)
 
-      minimizeConfig(binding, cfg)
+      minimizeConfig(binding)
         .foreach {
           cfg =>
             writeConfig(versionedComponent, Some("minimized"), cfg)
@@ -99,22 +86,10 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     })
   }
 
-  private def minimizeConfig(binding: RoleBinding, cfg: Config): Option[Config] = {
-    val locator = locatorRef.get
-
-    val rcKey = RuntimeDIUniverse.DIKey.get[ResolvedConfig]
+  private def minimizeConfig(binding: RoleBinding): Option[Config] = {
     val bindingKey = binding.binding.key
-    val newRoots = Set(bindingKey, rcKey)
-
-    val bootstrap = locator.get[DIAppStartupContext]
-    val withNewRoots = bootstrap.bsModule.overridenBy(new ConfigModule(AppConfig(cfg))).overridenBy(new TracingGcModule(newRoots))
-    val newInjector = Injector.Standard(withNewRoots)
-
-    val merged = bootstrap.strategy(
-      SimplePluginMergeStrategy.merge(bootstrap.bsPlugins),
-      SimplePluginMergeStrategy.merge(bootstrap.appPlugins),
-    )
-    val newPlan = newInjector.plan(merged)
+    val replanned = context.startupContext.startup(Array("--root-log-level", "crit", binding.name))
+    val newPlan = replanned.plan
 
     if (newPlan.steps.exists(_.target == bindingKey)) {
       newPlan

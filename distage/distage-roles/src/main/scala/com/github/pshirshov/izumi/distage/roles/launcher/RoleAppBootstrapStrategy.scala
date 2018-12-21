@@ -6,9 +6,9 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.distage
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, SimpleLoggerConfigurator}
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
@@ -44,19 +44,19 @@ object ConfigSource {
 
 }
 
-class RoleAppBootstrapStrategy[CommandlineConfig](
-                                                   params: RoleAppBootstrapStrategyArgs
-                                                   , bsContext: BootstrapContext[CommandlineConfig]
-                                                 ) extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
+class RoleAppBootstrapStrategy(
+                                params: RoleAppBootstrapStrategyArgs
+                                , bsContext: BootstrapContext
+                              ) extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
 
   import params._
 
   private val logger = IzLogger(params.rootLogLevel)
   private val mp = MirrorProvider.Impl
 
-  private val roleProvider: RoleProvider = new RoleProviderImpl(roleSet, mp)
+  private val roleProvider: RoleProvider = new RoleProviderImpl(logger, roleSet, mp)
 
-  def init(): RoleAppBootstrapStrategy[CommandlineConfig] = {
+  def init(): RoleAppBootstrapStrategy = {
     showDepData(logger, "Application is about to start", this.getClass)
     using.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
     showDepData(logger, "... using izumi-r2", classOf[OpinionatedDiApp])
@@ -135,7 +135,7 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
 
     val roles = roleInfo.get()
 
-    val gcModule = new TracingGcModule(roles.requiredComponents)
+    val gcModule = new TracingGcModule(roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig]))
 
     val rolesModule = new BootstrapModuleDef {
       make[distage.roles.roles.RolesInfo].from(roles)
@@ -177,10 +177,10 @@ class RoleAppBootstrapStrategy[CommandlineConfig](
   private def printRoleInfo(roles: RolesInfo): Unit = {
     val availableRoleInfo = roles.availableRoleBindings.map {
       r =>
-        s"${r.anno.headOption.getOrElse("N/A")}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
+        s"${r.name}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
     }.sorted
     logger.info(s"Available ${availableRoleInfo.mkString("\n - ", "\n - ", "") -> "roles"}")
-    logger.info(s"Requested ${roles.requiredRoleBindings.flatMap(_.anno).mkString("\n - ", "\n - ", "") -> "roles"}")
+    logger.info(s"Requested ${roles.requiredRoleBindings.map(_.name).mkString("\n - ", "\n - ", "") -> "roles"}")
   }
 
   override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {

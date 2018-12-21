@@ -10,10 +10,12 @@ import com.github.pshirshov.izumi.distage.roles.roles
 import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService, RoleStarter}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.reflect.ClassTag
 
 class RoleProviderImpl(
+                        logger: IzLogger,
                         requiredRoles: Set[String],
                         mirrorProvider: MirrorProvider,
                       ) extends RoleProvider {
@@ -47,19 +49,29 @@ class RoleProviderImpl(
   }
 
   private def getRoles(bb: Iterable[Binding]): Seq[roles.RoleBinding] = {
-
     val availableBindings =
       bb
         .map(b => (b, bindingToType(b, isAvailableRoleType)))
         .collect {
           case (b, Some(rt)) =>
             val runtimeClass = mirrorProvider.mirror.runtimeClass(rt.tpe)
-
             val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-            roles.RoleBinding(b, rt, getAnno(rt), src)
+            val annos = getAnno(rt)
+
+            annos.headOption match {
+              case Some(value) if annos.size == 1 =>
+                Seq(roles.RoleBinding(b, rt, value, src))
+              case Some(_) =>
+                logger.warn(s"${runtimeClass -> "role"} has multiple identifiers defined: $annos thus ignored")
+                Seq.empty
+              case None =>
+                logger.warn(s"${runtimeClass -> "role"} has no identifier defined thus ignored")
+                Seq.empty
+            }
+
         }
 
-    availableBindings.toSeq
+    availableBindings.flatten.toSeq
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
