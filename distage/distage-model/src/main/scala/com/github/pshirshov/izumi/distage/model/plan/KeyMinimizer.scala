@@ -3,9 +3,19 @@ package com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-import scala.util.{Failure, Success, Try}
-
 class KeyMinimizer(allKeys: Set[DIKey]) {
+  def renderType(tpe: TypeNative): String = {
+    trFull.renderType(tpe)
+  }
+
+  def renderType(tpe: SafeType): String = {
+    trFull.renderType(tpe)
+  }
+
+  def render(key: DIKey): String = {
+    render(key, renderType)
+  }
+
   private val indexed: Map[String, Int] = allKeys
     .toSeq
     .flatMap(extract)
@@ -18,7 +28,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
 
   private val trFull = new TypeRenderer(getName)
 
-  private def getName(tpe: RuntimeDIUniverse.TypeNative) = {
+  private def getName(tpe: RuntimeDIUniverse.TypeNative): String = {
     val shortname = tpe.typeSymbol.name.toString
 
     val by = indexed.getOrElse(shortname, 0)
@@ -29,26 +39,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
   }
 
-  def renderType(tpe: Class[_]): String = {
-    Try(u.runtimeMirror(tpe.getClassLoader).classSymbol(tpe)).map(_.toType) match {
-      case Failure(_) =>
-        tpe.getTypeName
-      case Success(value) =>
-        renderType(SafeType.apply(value))
-    }
-  }
 
-  def renderType(tpe: TypeNative): String = {
-    trFull.renderType(tpe)
-  }
-
-  def renderType(tpe: SafeType): String = {
-    trFull.renderType(tpe)
-  }
-
-  def render(key: DIKey): String = {
-    render(key, renderType)
-  }
 
   private def render(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #

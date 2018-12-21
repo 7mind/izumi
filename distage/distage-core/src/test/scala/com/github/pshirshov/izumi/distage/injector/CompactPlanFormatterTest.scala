@@ -12,7 +12,7 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(new ModuleDef {
       make[JustTrait].from[Impl1]
-      make[OptionT[Either[Nothing, ?], Unit]].from(null : OptionT[Either[Nothing, ?], Unit])
+      make[OptionT[scala.Either[Nothing, ?], Unit]].from(null : OptionT[scala.Either[Nothing, ?], Unit])
     })
 
     val formatted = plan.render()
