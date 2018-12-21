@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.gc
 
+import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
 import org.scalatest.WordSpec
@@ -19,7 +20,6 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       })
 
       val result = injector.produce(plan)
-
       assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)

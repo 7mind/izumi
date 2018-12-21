@@ -91,7 +91,8 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
   private def extract(key: SafeType): Set[SafeType] = {
-    (key +: key.tpe.typeArgs.map(SafeType.apply)).toSet
+    val params = key.tpe.dealias.finalResultType.typeArgs.map(_.dealias.finalResultType).map(SafeType.apply).flatMap(extract)
+    Set(key) ++ params
   }
 
   private class TypeRenderer(getName: TypeNative => String) {
@@ -100,11 +101,21 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
 
     def renderType(tpe: TypeNative): String = {
-      val args = if (tpe.typeArgs.nonEmpty) {
-        tpe.typeArgs.map(renderType).mkString("[", ",", "]")
+      val targs = tpe.dealias.finalResultType.typeArgs
+      val args = if (targs.nonEmpty) {
+        targs.map(_.dealias.finalResultType)
+          .map {
+            t =>
+              if (t.typeSymbol.isParameter) {
+                "?"
+              } else {
+                renderType(t)
+              }
+          }.mkString("[", ",", "]")
       } else {
         ""
       }
+
       getName(tpe) + args
     }
   }

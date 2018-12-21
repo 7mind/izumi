@@ -196,7 +196,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
     def testCase = {
       val injector = mkInjector()
       val plan = injector.plan(definition)
-
       val context = injector.produce(plan)
 
       assert(context.get[TestClass].a != null)

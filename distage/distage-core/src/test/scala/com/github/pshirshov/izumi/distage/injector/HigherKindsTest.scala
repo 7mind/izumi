@@ -56,6 +56,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
 
     val eitherInjector = mkInjector()
     val eitherPlan = eitherInjector.plan(Definition[Either[String, ?]](5))
+
     val eitherContext = eitherInjector.produce(eitherPlan)
 
     assert(eitherContext.get[TestTrait].get == Right(5))

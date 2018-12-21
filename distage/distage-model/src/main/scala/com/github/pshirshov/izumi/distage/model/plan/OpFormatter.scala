@@ -44,7 +44,11 @@ object OpFormatter {
                   doFormat(target, wiring, origin)
                 case ReferenceInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  s"${kf.format(target)} $pos := ${tf.format(wiring.instance.getClass)}#${wiring.instance.hashCode()}"
+                  if (wiring.instance!=null) {
+                    s"${kf.format(target)} $pos := ${wiring.instance.getClass}#${wiring.instance.hashCode()}"
+                  } else {
+                    s"${kf.format(target)} $pos := null"
+                  }
 
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
@@ -67,8 +71,8 @@ object OpFormatter {
                 "proxy.cogen"
               }
 
-              s"""${format(proxied)} $pos := $kind(${forwardRefs.map(s => s"${kf.format(s)}: deferred").mkString(", ")}) {
-                 |${format(p).shift(2)}
+              s"""${kf.format(p.target)} $pos := $kind(${forwardRefs.map(s => s"${kf.format(s)}: deferred").mkString(", ")}) {
+                 |${format(proxied).shift(2)}
                  |}""".stripMargin
 
             case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
