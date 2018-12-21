@@ -36,18 +36,24 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
   override def onPhase50PreForwarding(plan: SemiPlan): Unit = {}
 
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = synchronized {
-    val dotfile = render(finalPlan)
-    val name = s"plan-${System.currentTimeMillis()}.gv"
-    val path = Paths.get(s"target", name)
-    val last = Paths.get(s"target", "plan-last.gv")
+    val dotfileFull = render(finalPlan, withGc = true)
+    val dotfileMin = render(finalPlan, withGc = false)
+    save(dotfileFull, "full")
+    save(dotfileMin, "nogc")
+  }
 
+  def save(dotfile: String, kind: String): Unit = {
+    val name = s"plan-${System.currentTimeMillis()}-$kind.gv"
+    val last = Paths.get(s"target", s"plan-last-$kind.gv")
+
+
+    val path = Paths.get(s"target", name)
     Files.write(path, dotfile.getBytes(StandardCharsets.UTF_8)).discard()
     Files.deleteIfExists(last).discard()
     Files.createLink(last, path).discard()
   }
 
-  private def render(finalPlan: OrderedPlan): String = {
-    val km = new KeyMinimizer(finalPlan.keys)
+  private def render(finalPlan: OrderedPlan, withGc: Boolean): String = {
     val g = new Digraph(graphAttr = mutable.Map("rankdir" -> "TB"))
 
     val legend = new Digraph("cluster_legend", graphAttr = mutable.Map("label" -> "Legend", "style" -> "dotted"))
@@ -67,11 +73,13 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     val preGcPlan = beforeFinalization.get()
     val preTopology = planAnalyzer.topology(preGcPlan.steps)
 
-    val removedKeys = preTopology.dependencies.graph.keys
-    val goodKeys = finalPlan.topology.dependencies.graph.keys
+    val originalKeys = preTopology.dependencies.graph.keys
+    val goodKeys = finalPlan.keys
 
-    val missingKeys = removedKeys.toSet.diff(goodKeys.toSet)
+    val missingKeys = originalKeys.toSet.diff(goodKeys)
     val missingKeysSeq = missingKeys.toSeq
+
+    val km = new KeyMinimizer(goodKeys ++ originalKeys)
 
     goodKeys.foreach {
       k =>
@@ -97,29 +105,33 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
         }
     }
 
-    missingKeysSeq.foreach {
-      k =>
-        val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
-        val op = preGcPlan.index(k)
-        val name = km.render(k)
-        modify(name, attrs, op)
-        collected.node(name, attrs = attrs)
-    }
+    if (withGc) {
+      missingKeysSeq.foreach {
+        k =>
+          val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
+          val op = preGcPlan.index(k)
+          val name = km.render(k)
+          modify(name, attrs, op)
+          collected.node(name, attrs = attrs)
+      }
 
-    preTopology.dependencies.graph.foreach {
-      case (k, deps) =>
-        deps.foreach {
-          d =>
-            if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
-              collected.edge(km.render(k), km.render(d), attrs = mutable.Map("color" -> "coral1"))
-            } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
-              collected.edge(km.render(k), km.render(d))
-            }
-        }
+      preTopology.dependencies.graph.foreach {
+        case (k, deps) =>
+          deps.foreach {
+            d =>
+              if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
+                collected.edge(km.render(k), km.render(d), attrs = mutable.Map("color" -> "coral1"))
+              } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
+                collected.edge(km.render(k), km.render(d))
+              }
+          }
+      }
     }
 
     g.subGraph(main)
-    g.subGraph(collected)
+    if (withGc) {
+      g.subGraph(collected)
+    }
     g.subGraph(legend)
     g.source()
   }
