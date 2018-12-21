@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, OrderedPlan, SemiPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.graphs.dotml.Digraph

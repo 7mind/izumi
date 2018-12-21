@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
-import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
@@ -18,7 +17,7 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.P
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.typesafe.config.ConfigFactory
-import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
+import distage._
 import io.github.classgraph.ClassGraph
 
 import scala.collection.JavaConverters._
@@ -166,7 +165,7 @@ object StaticPluginCheckerMacro {
            |    ${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).mkString("\n    ")}
            |
            |  Plan was:
-           |${finalPlan.render(CompactPlanFormatter.OrderedPlanFormatter)}
+           |${finalPlan.render()}
            |
            |  ${configModule.fold("")(_ => s"Config was:\n  ${bootstrap.find[AppConfig].map(_.config)}")}
            |

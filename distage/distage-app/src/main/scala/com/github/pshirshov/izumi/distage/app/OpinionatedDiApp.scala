@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import distage.Injector
+import distage._
 
 case class DIAppStartupContext(startupContext: StartupContext)
 
@@ -93,7 +93,7 @@ abstract class OpinionatedDiApp {
   protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
     val plan = injector.plan(appDef)
     import CompactPlanFormatter._
-    logger.trace(s"Planning completed\n${plan.render -> "plan"}")
+    logger.trace(s"Planning completed\n${plan.render() -> "plan"}")
     plan
   }
 

@@ -16,17 +16,12 @@ trait WithDIAssociation {
     def name: String
     def wireWith: DIKey.BasicKey
     def context: DependencyContext
-    def format: String
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association {
-      override def format: String = s"""par $name: $tpe = lookup($wireWith)"""
-    }
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association
 
-    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey) extends Association {
-      override def format: String = s"""def $name: $tpe = lookup($wireWith)"""
-    }
+    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey) extends Association
 
     implicit class ParameterWithWireWith(p: Association.Parameter) {
       def withWireWith(key: DIKey.BasicKey): Association.Parameter =

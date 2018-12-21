@@ -13,6 +13,7 @@ trait WithDIKey {
   }
 
   object DIKey {
+    // in order to make idea links working we need to put a dot before Position occurence and avoid using #
 
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
@@ -27,7 +28,7 @@ trait WithDIKey {
     case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
       val idContract: IdContract[I] = implicitly
 
-      override def toString: String = s"{type.${tpe.toString}#${idContract.repr(id)}}"
+      override def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
     }
 
     case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {

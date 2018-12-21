@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, FormattingUtils, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OpFormatter, OrderedPlan}
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
@@ -34,7 +34,7 @@ class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInter
   override def onProvisioningFailed(toImmutable: ProvisionImmutable, plan: OrderedPlan, parentContext: Locator, failures: Seq[ProvisioningFailure]): ProvisionImmutable = {
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
-        val pos = FormattingUtils.formatBindingPosition(op.origin)
+        val pos = OpFormatter.formatBindingPosition(op.origin)
         val name = f match {
           case di: DIException => di.getClass.getSimpleName
           case o => o.getClass.getCanonicalName
