@@ -9,15 +9,15 @@ sealed trait AutomaticConfId extends AbstractConfId {
 }
 
 final case class AutoConfId(contextKey: DIKey, parameterName: String) extends AutomaticConfId {
-  override def toString: String = s"${contextKey.toString}#cfg-auto-$parameterName"
+  override def toString: String = s"${contextKey.toString}:cfg-auto-$parameterName"
 }
 
 final case class ConfId(contextKey: DIKey, parameterName: String, nameOverride: String) extends AutomaticConfId {
-  override def toString: String = s"${contextKey.toString}#cfg-id-$nameOverride->$parameterName"
+  override def toString: String = s"${contextKey.toString}:cfg-id-$nameOverride->$parameterName"
 }
 
 final case class ConfPathId(contextKey: DIKey, parameterName: String, pathOverride: String) extends AbstractConfId {
-  override def toString: String = s"${contextKey.toString}#cfg-path$pathOverride->$parameterName"
+  override def toString: String = s"${contextKey.toString}:cfg-path$pathOverride->$parameterName"
 
   override def equals(other: Any): Boolean = other match {
     case that: ConfPathId =>
