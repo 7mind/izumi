@@ -17,13 +17,13 @@ import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(contextDefinition: BootstrapContextModule) extends AbstractLocator {
+class DefaultBootstrapContext(bindings: BootstrapContextModule) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
   val parent: Option[AbstractLocator] = None
 
-  val plan: OrderedPlan = bootstrapPlanner.plan(contextDefinition)
+  val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: ProvisionImmutable = {
     bootstrapProducer.provision(plan, this)

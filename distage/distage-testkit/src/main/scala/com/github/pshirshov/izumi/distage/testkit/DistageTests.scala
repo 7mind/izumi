@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule, SimpleLoggerConfigurator}
-import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
@@ -218,7 +218,7 @@ trait DistageTests {
       primaryModule
     )
 
-    injector.plan(modules.overrideLeft)
+    injector.plan(PlannerInput(modules.overrideLeft))
   }
 
   protected def makeContext(injector: Injector, plan: OrderedPlan): Locator = {

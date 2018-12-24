@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import distage._
 import org.scalatest.WordSpec
 
@@ -33,7 +34,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(Definition[List](5))
+    val listPlan = listInjector.plan(PlannerInput(Definition[List](5)))
     val listContext = listInjector.produce(listPlan)
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -46,7 +47,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
+    val optionTPlan = optionTInjector.plan(PlannerInput(Definition[OptionT[List, ?]](5)))
     val optionTContext = optionTInjector.produce(optionTPlan)
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
@@ -55,7 +56,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.plan(Definition[Either[String, ?]](5))
+    val eitherPlan = eitherInjector.plan(PlannerInput(Definition[Either[String, ?]](5)))
 
     val eitherContext = eitherInjector.produce(eitherPlan)
 
@@ -67,7 +68,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
       == Right(Right(Right(Right(Right("aaa"))))))
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(Definition[id](5))
+    val idPlan = idInjector.plan(PlannerInput(Definition[id](5)))
     val idContext = idInjector.produce(idPlan)
 
     assert(idContext.get[TestTrait].get == 5)
@@ -152,7 +153,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     val value: Either[String, Int] = Right(5)
     val definition = new Definition[Either, Option, Int](value)
 
-    val context = Injector.Standard().produce(definition)
+    val context = Injector.Standard().produce(PlannerInput(definition))
     assert(context != null)
 
     assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])

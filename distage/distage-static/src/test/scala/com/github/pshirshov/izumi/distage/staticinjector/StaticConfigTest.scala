@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.staticinjector
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import com.typesafe.config.ConfigFactory
 import distage.Id
@@ -20,7 +21,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestDependency]
       stat[TestTrait]
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
@@ -38,7 +39,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestDependency]
       stat[TestGenericConfFactory[TestConfAlias]]
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[TestDependency] == TestDependency(TestConf(false)))
@@ -57,7 +58,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestFactory]
       stat[TestGenericConfFactory[TestConfAlias]]
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     val factory = context.get[TestFactory]
@@ -83,7 +84,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
         (conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10)
       }
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))

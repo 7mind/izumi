@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
@@ -148,7 +149,7 @@ object StaticPluginCheckerMacro {
     val bootstrap = new DefaultBootstrapContext(DefaultBootstrapContext.noCogensBootstrap overridenBy bootstrapOverrides)
     val injector = Injector.inherit(bootstrap)
 
-    val finalPlan = injector.plan(module).locateImports(bootstrap)
+    val finalPlan = injector.plan(PlannerInput(module)).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true

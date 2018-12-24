@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import distage.{Id, TagK}
@@ -33,7 +34,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(Definition[List](5))
+    val listPlan = listInjector.plan(PlannerInput(Definition[List](5)))
     val listContext = listInjector.produce(listPlan)
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -46,7 +47,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(Definition[OptionT[List, ?]](5))
+    val optionTPlan = optionTInjector.plan(PlannerInput(Definition[OptionT[List, ?]](5)))
     val optionTContext = optionTInjector.produce(optionTPlan)
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
@@ -55,7 +56,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(Definition[id](5))
+    val idPlan = idInjector.plan(PlannerInput(Definition[id](5)))
     val idContext = idInjector.produce(idPlan)
 
     assert(idContext.get[TestTrait].get == 5)

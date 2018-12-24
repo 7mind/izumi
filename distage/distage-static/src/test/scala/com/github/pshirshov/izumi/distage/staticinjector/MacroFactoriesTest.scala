@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.FactoryCases.FactoryCase1
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
-import distage.ModuleBase
 import org.scalatest.WordSpec
 
 class MacroFactoriesTest extends WordSpec with MkInjector {
@@ -10,13 +10,13 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle macro factory injections" in {
     import FactoryCase1._
 
-    val definition = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[Factory]
       stat[Dependency]
       stat[OverridingFactory]
       stat[AssistedFactory]
       stat[AbstractFactory]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -47,10 +47,10 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle generic arguments in macro factory methods" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -66,10 +66,10 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[AssistedFactory]
       make[Dependency].from(ConcreteDep())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -83,12 +83,12 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle named assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[NamedAssistedFactory]
       stat[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -124,11 +124,11 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "macro factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[Dependency]
       stat[TestClass]
       stat[Factory]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)

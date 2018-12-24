@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.logstage.distage
 
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}
@@ -25,10 +26,10 @@ class LoggerInjectionTest extends WordSpec {
       val testSink = new TestSink()
       val router = ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
 
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[ExampleService]
         make[ExampleApp]
-      }
+      })
 
       val loggerModule = new LogstageModule(router)
 

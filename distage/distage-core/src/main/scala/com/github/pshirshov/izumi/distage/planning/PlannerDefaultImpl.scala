@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.Planner
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
@@ -10,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
 
 
@@ -27,14 +27,14 @@ class PlannerDefaultImpl
   private val hook = new PlanningHookAggregate(planningHooks)
   private val planningObserver = new AggregatingObserver(planningObservers)
 
-  override def plan(context: ModuleBase): OrderedPlan = {
-    val plan = hook.hookDefinition(context).bindings.foldLeft(DodgyPlan.empty(context)) {
+  override def plan(input: PlannerInput): OrderedPlan = {
+    val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings)) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
           .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
           .eff(sanityChecker.assertStepSane)
-          .map(hook.hookStep(context, currentPlan, binding, _))
+          .map(hook.hookStep(input.bindings, currentPlan, binding, _))
           .eff(planningObserver.onSuccessfulStep)
           .get
     }

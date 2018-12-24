@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.config
 import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.{SealedTrait, _}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.typesafe.config._
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
@@ -145,10 +146,10 @@ class ConfigTest extends WordSpec {
 
       val injector = Injector.Standard(mkModule("fixtures-test.conf"))
 
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[TestDependency]
         make[TestTrait]
-      }
+      })
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 
@@ -162,11 +163,11 @@ class ConfigTest extends WordSpec {
 
       val injector = Injector.Standard(mkModule("fixtures-test.conf"))
 
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[TestDependency]
         make[TestFactory]
         make[TestGenericConfFactory[TestConfAlias]]
-      }
+      })
       val plan = injector.plan(definition)
       val context = injector.produce(plan)
 

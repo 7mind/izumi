@@ -166,6 +166,6 @@ object OrderedPlan {
   implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
 
   implicit class PlanSyntax(r: OrderedPlan) {
-    def render()(implicit ev: Renderable[OrderedPlan]): String = implicitly[Renderable[OrderedPlan]].render(r)
+    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
   }
 }

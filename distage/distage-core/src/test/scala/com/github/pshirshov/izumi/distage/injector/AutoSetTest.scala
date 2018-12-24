@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import org.scalatest.WordSpec
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
 import distage.{BootstrapModuleDef, Injector, ModuleDef}
@@ -24,7 +25,7 @@ class AutoSetTest extends WordSpec with MkInjector {
         .add(new AssignableFromAutoSetHook[Ordered, Ordered](identity))
     })
 
-    val autoCloseableSet = injector.produce(definition).get[Set[Ordered]]
+    val autoCloseableSet = injector.produce(PlannerInput(definition)).get[Set[Ordered]]
 
     assert(autoCloseableSet.toSeq == autoCloseableSet.toSeq.sortBy(_.order))
   }

@@ -4,6 +4,7 @@ import cats.Id
 import cats.effect._
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import distage._
 import distage.interop.cats._
@@ -16,9 +17,9 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       import BasicCase1._
       import CircularCase3._
 
-      val definition1 = new ModuleDef {
+      val definition1 = PlannerInput(new ModuleDef {
         make[SelfReference]
-      }
+      })
 
       val injector = Injector.Standard()
       val plan = injector.plan(definition1)
@@ -32,9 +33,9 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
 
       Then("traverse should substitute")
       val testDependencyPlan = injector.plan(
-        new ModuleDef {
+        PlannerInput(new ModuleDef {
           make[TestDependency1]
-        }
+        })
       )
       val testDependencyOp = testDependencyPlan.steps.last
 
