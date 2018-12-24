@@ -25,7 +25,6 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     assert(formatted.contains("Impl1"))
 
     assert(formatted.contains("OptionT[Either[Nothing,?],Unit]"))
-    assert(formatted.contains(":= null"))
   }
 }
 
