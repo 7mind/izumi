@@ -7,12 +7,17 @@ import com.github.pshirshov.izumi.functional.Renderable._
 import distage.ModuleDef
 import org.scalatest.WordSpec
 
+trait T1[A, B]
+
+class K1[F[_, _]]
+
 class CompactPlanFormatterTest extends WordSpec with MkInjector {
   "PlanFormatterTest should produce short class names if it's unique in plan" in {
     val injector = mkInjector()
     val plan = injector.plan(new ModuleDef {
       make[JustTrait].from[Impl1]
-      make[OptionT[scala.Either[Nothing, ?], Unit]].from(null : OptionT[scala.Either[Nothing, ?], Unit])
+      make[OptionT[scala.Either[Nothing, ?], Unit]].from(OptionT[Either[Nothing, ?], Unit](Right(None)))
+      make[K1[T1]].from(new K1[T1]{})
     })
 
     val formatted = plan.render()

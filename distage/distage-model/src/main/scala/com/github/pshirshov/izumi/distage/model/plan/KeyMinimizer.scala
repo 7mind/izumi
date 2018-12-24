@@ -40,7 +40,6 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
 
-
   private def render(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
@@ -92,8 +91,11 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
 
     def renderType(tpe: TypeNative): String = {
-      val targs = tpe.dealias.finalResultType.typeArgs
-      val args = if (targs.nonEmpty) {
+      val resultType = tpe.dealias.finalResultType
+      val targs = resultType.typeArgs
+      val tparams = resultType.typeParams
+
+      val args = if (targs.nonEmpty && tparams.isEmpty) {
         targs.map(_.dealias.finalResultType)
           .map {
             t =>
@@ -102,12 +104,22 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
               } else {
                 renderType(t)
               }
-          }.mkString("[", ",", "]")
+          }
+      } else if (targs.isEmpty && tparams.nonEmpty) {
+        List.fill(tparams.size)("?")
+      } else if (targs.nonEmpty && tparams.nonEmpty) {
+        List("<?>")
       } else {
-        ""
+        List.empty
       }
 
-      getName(tpe) + args
+      val asList = if (args.forall(_ == "?")) {
+        ""
+      } else {
+        args.mkString("[", ",", "]")
+      }
+
+      getName(tpe) + asList
     }
   }
 
