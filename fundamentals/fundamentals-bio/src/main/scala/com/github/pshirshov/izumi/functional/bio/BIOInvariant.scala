@@ -52,6 +52,8 @@ trait BIOInvariant[R[_, _]] {
   }
 
   @inline def traverse[E, A, B](l: Iterable[A])(f: A => R[E, B]): R[E, List[B]]
+
+  @inline final def traverse_[E, A, B](l: Iterable[A])(f: A => R[E, B]): R[E, Unit] = void(traverse(l)(f))
 }
 
 object BIOInvariant {

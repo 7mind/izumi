@@ -32,7 +32,7 @@ object BIOSyntax {
 
     @inline def redeem[E2, B](err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B] = R.redeem[E, A, E2, B](r)(err, succ)
 
-    @inline def redeemPure[E2, B](err: E => B, succ: A => B): R[E2, B] =
+    @inline def redeemPure[B](err: E => B, succ: A => B): R[Nothing, B] =
       redeem(err.andThen(R.now), succ.andThen(R.now))
 
     @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
@@ -46,6 +46,8 @@ object BIOSyntax {
     @inline def void: R[E, Unit] = R.void(r)
 
     @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
+
+    @inline def orTerminate(implicit ev: E <:< Throwable): R[Nothing, A] = catchAll(R.terminate(_))
   }
 
   final class BIOAsyncOps[R[+ _, + _], E, A](private val r: R[E, A])(implicit private val R: BIOAsync[R]) {
