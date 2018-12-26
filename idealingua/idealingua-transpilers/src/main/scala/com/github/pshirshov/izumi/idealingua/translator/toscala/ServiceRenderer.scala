@@ -61,7 +61,7 @@ class ServiceRenderer(ctx: STContext) {
             final val serviceId: ${rt.IRTServiceId.typeName} = ${c.svcMethods.termName}.serviceId
 
             val allMethods: Map[${rt.IRTMethodId.typeName}, IRTMethodWrapper[${c.F.t}, ${c.Ctx.t}]] = {
-              Seq(..${decls.map(_.defnMethodRegistration)})
+              Seq[IRTMethodWrapper[${c.F.t}, ${c.Ctx.t}]](..${decls.map(_.defnMethodRegistration)})
                 .map(m => m.signature.id -> m)
                 .toMap
             }
