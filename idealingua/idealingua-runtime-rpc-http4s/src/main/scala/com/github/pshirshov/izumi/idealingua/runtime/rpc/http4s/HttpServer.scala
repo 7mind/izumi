@@ -79,14 +79,38 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       }
   }
 
-
   protected def handleWsClose(context: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]): Unit = {
     logger.debug(s"${context -> null}: Websocket client disconnected")
     context.finish()
   }
 
+  protected def onWsOpened(): Unit = {
+  }
+
+  protected def onWsUpdate(maybeNewId: Option[C#ClientId], old: WsClientId[ClientId]): Unit = {
+  }
+
+  protected def onWsClosed(): Unit = {
+  }
+
   protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
-    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger)
+    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger) {
+
+      override def onWsSessionOpened(): Unit = {
+          onWsOpened()
+          super.onWsSessionOpened()
+      }
+
+      override def onWsClientIdUpdate(maybeNewId: Option[C#ClientId], oldId: WsClientId[C#ClientId]): Unit = {
+        onWsUpdate(maybeNewId, oldId)
+        super.onWsClientIdUpdate(maybeNewId, oldId)
+      }
+
+      override def onWsSessionClosed(): Unit = {
+        onWsClosed()
+        super.onWsSessionClosed()
+      }
+    }
     context.start()
     logger.debug(s"${context -> null}: Websocket client connected")
 
