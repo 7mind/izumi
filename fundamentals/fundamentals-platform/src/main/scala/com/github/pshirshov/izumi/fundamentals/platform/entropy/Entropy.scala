@@ -36,12 +36,12 @@ object Entropy {
   object Standard extends ScalaEntropy {
     override protected def random: Random = scala.util.Random
 
-    override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID
+    override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID()
 
     override def nextUUID(): UUID = UUID.randomUUID()
   }
 
-  class Determenistic(seed: Int) extends ScalaEntropy {
+  class Deterministic(seed: Int) extends ScalaEntropy {
     override protected def random: Random = new scala.util.Random(seed)
 
     override def nextTimeUUID(): UUID = UUIDGen.getTimeUUID(math.abs(random.nextLong()))

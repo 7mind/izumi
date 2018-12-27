@@ -110,7 +110,7 @@ trait DistageTests {
   }
 
   /** Synchronization over this section needed for parallel tests to avoid race over the resourceCollection instances **/
-  private def createContextLocator(roots: Set[DIKey]): Locator = SynchronizedObject.synchronized {
+  protected def createContextLocator(roots: Set[DIKey]): Locator = SynchronizedObject.synchronized {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings
     val finalModule = refineBindings(roots, primaryModule)
