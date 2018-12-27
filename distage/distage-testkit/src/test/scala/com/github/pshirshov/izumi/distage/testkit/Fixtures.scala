@@ -50,6 +50,7 @@ class TestComponent1(counter: InitCounter, logger: IzLogger) extends RoleCompone
 class TestComponent2(val testComponent1: TestComponent1, counter: InitCounter, logger: IzLogger) extends RoleComponent {
   override def start(): Unit = {
     logger.info(s"Starting $this")
+    assert(counter.startedRoleComponents.contains(testComponent1))
     counter.startedRoleComponents += this
   }
 
@@ -62,6 +63,7 @@ class TestComponent2(val testComponent1: TestComponent1, counter: InitCounter, l
 class TestComponent3(val testComponent2: TestComponent2, counter: InitCounter, logger: IzLogger) extends RoleComponent {
   override def start(): Unit = {
     logger.info(s"Starting $this")
+    assert(counter.startedRoleComponents.contains(testComponent2))
     counter.startedRoleComponents += this
   }
 

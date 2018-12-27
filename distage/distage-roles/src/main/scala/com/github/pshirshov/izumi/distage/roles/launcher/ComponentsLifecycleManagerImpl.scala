@@ -12,8 +12,8 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
 class ComponentsLifecycleManagerImpl(
-                                      components: Set[RoleComponent],
-                                      logger: IzLogger
+                                      components: Set[RoleComponent]
+                                      , logger: IzLogger
                                     ) extends ComponentsLifecycleManager {
 
   private val started = new ConcurrentLinkedDeque[ComponentLifecycle]()

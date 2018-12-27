@@ -17,7 +17,7 @@ import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
 import com.github.pshirshov.izumi.distage.testkit
-import com.github.pshirshov.izumi.distage.testkit.DistageTests.SynchronizedObject
+import com.github.pshirshov.izumi.distage.testkit.DistageTests.DirtyGlobalSynchronizedObject
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -110,7 +110,7 @@ trait DistageTests {
   }
 
   /** Synchronization over this section needed for parallel tests to avoid race over the resourceCollection instances **/
-  protected def createContextLocator(roots: Set[DIKey]): Locator = SynchronizedObject.synchronized {
+  protected def createContextLocator(roots: Set[DIKey]): Locator = DirtyGlobalSynchronizedObject.synchronized {
     val injector = makeInjector(roots)
     val primaryModule = makeBindings
     val finalModule = refineBindings(roots, primaryModule)
@@ -130,10 +130,9 @@ trait DistageTests {
     val context = createContextLocator(roots)
 
     val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
-    val componentsLifecycleManager = new TestComponentsLifecycleManager(
-      context.find[Set[RoleComponent]].getOrElse(Set.empty),
-      logger,
-      resourceCollection
+    val componentsLifecycleManager = makeLifecycleManager(
+      context.find[Set[RoleComponent]].getOrElse(Set.empty)
+      , logger
     )
     val roleStarter = makeRoleStarter(
       context.find[Set[RoleService]].getOrElse(Set.empty)
@@ -183,6 +182,14 @@ trait DistageTests {
     }
 
     paramsModule overridenBy primaryModule
+  }
+
+  protected def makeLifecycleManager(components: Set[RoleComponent], logger: IzLogger): ComponentsLifecycleManager = {
+    new TestComponentsLifecycleManager(
+      components
+      , logger
+      , resourceCollection
+    )
   }
 
   protected def makeRoleStarter(services: Set[RoleService]
@@ -275,7 +282,7 @@ trait DistageTests {
 
 object DistageTests {
 
-  private object SynchronizedObject
+  private object DirtyGlobalSynchronizedObject
 
   class TestkitException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
 
