@@ -13,7 +13,7 @@ class TestComponentsLifecycleManager(
   private val memoizedComponents = components.filter(resourceCollection.isMemoized)
 
   override def startComponents(): Unit = {
-    super.startComponents()
     resourceCollection.startMemoizedComponents(memoizedComponents)
+    super.startComponents()
   }
 }
