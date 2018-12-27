@@ -58,7 +58,7 @@ trait DistageTests {
     }
   }
 
-  private def verifyTotalSuppression(): Unit = {
+  protected def verifyTotalSuppression(): Unit = {
     if (suppressAll.get()) {
       ignoreThisTest("The rest of this test suite has been suppressed")
     }
