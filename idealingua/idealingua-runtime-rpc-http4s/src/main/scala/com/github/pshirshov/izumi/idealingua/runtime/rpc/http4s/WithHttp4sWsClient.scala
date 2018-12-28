@@ -43,11 +43,11 @@ class ClientWsDispatcher[C <: Http4sContext]
     override def onOpen(handshakedata: ServerHandshake): Unit = {}
 
     override def onMessage(message: String): Unit = {
-      logger.error(s"Incoming WS message: $message")
+      logger.debug(s"Incoming WS message: $message")
 
       val result = for {
         parsed <- BIO.fromEither(parse(message))
-        _ <- BIO.sync(logger.info(s"parsed: $parsed"))
+        _ <- BIO.sync(logger.debug(s"parsed: $parsed"))
         decoded <- BIO.fromEither(parsed.as[RpcPacket])
         v <- routeResponse(decoded)
       } yield {
