@@ -55,6 +55,9 @@ object BIOSyntax {
 
     @inline def timeout(duration: Duration): R[E, Option[A]] = R.timeout(r)(duration)
 
+    @inline def timeoutFail[E1 >: E](e: E1)(duration: Duration): R[E1, A] =
+      R.flatMap(timeout(duration): R[E1, Option[A]])(_.fold[R[E1, A]](R.fail(e))(R.now))
+
     @inline def race[E1 >: E, A1 >: A](that: R[E1, A1]): R[E1, A1] = R.race[E1, A1](r)(that)
   }
 
