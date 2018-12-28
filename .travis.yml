@@ -44,7 +44,7 @@ before_cache:
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 
 env:
-  - IMAGE="septimalmind/izumi-env:jdk11-1"
+  - IMAGE="septimalmind/izumi-env:jdk11-2"
 
 jobs:
   include:
