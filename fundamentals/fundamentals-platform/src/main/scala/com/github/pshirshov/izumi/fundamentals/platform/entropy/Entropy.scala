@@ -7,26 +7,26 @@ import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
 import scala.collection.generic.CanBuildFrom
 import scala.util.Random
 
-trait Entropy {
-  def nextBoolean(): Boolean
+trait Entropy[+F[_]] {
+  def nextBoolean(): F[Boolean]
 
-  def nextBytes(bytes: Array[Byte]): Unit
+  def nextBytes(bytes: Array[Byte]): F[Unit]
 
-  def nextDouble(): Double
+  def nextDouble(): F[Double]
 
-  def nextFloat(): Float
+  def nextFloat(): F[Float]
 
-  def nextGaussian(): Double
+  def nextGaussian(): F[Double]
 
-  def nextLong(): Long
+  def nextLong(): F[Long]
 
-  def nextInt(max: Int): Int
+  def nextInt(max: Int): F[Int]
 
-  def nextInt(): Int
+  def nextInt(): F[Int]
 
-  def nextTimeUUID(): UUID
+  def nextTimeUUID(): F[UUID]
 
-  def nextUUID(): UUID
+  def nextUUID(): F[UUID]
 
   def shuffle[T, CC[X] <: TraversableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T]
 }
