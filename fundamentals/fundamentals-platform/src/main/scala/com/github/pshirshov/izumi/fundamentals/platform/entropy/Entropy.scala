@@ -28,10 +28,11 @@ trait Entropy[+F[_]] {
 
   def nextUUID(): F[UUID]
 
-  def shuffle[T, CC[X] <: TraversableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T]
+  def shuffle[T, CC[X] <: TraversableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]]
 }
 
 object Entropy {
+  def apply[F[_]: Entropy]: Entropy[F] = implicitly
 
   object Standard extends ScalaEntropy {
     override protected def random: Random = scala.util.Random

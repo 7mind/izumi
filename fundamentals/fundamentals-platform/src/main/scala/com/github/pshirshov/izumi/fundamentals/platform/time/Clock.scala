@@ -15,6 +15,7 @@ trait Clock[+F[_]] {
 }
 
 object Clock {
+  def apply[F[_]: Clock]: Clock[F] = implicitly
 
   object Standard extends Clock[Identity] {
 
@@ -23,7 +24,7 @@ object Clock {
     override def now: ZonedDateTime = IzTime.utcNow
   }
 
-  class Constant(time: ZonedDateTime) extends Clock[Lambda[A => A]] {
+  class Constant(time: ZonedDateTime) extends Clock[Identity] {
 
     override def epoch: Long = time.toEpochSecond
 

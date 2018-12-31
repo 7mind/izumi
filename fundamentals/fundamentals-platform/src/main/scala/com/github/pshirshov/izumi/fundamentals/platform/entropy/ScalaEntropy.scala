@@ -5,7 +5,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import scala.collection.generic.CanBuildFrom
 
 trait ScalaEntropy extends Entropy[Identity] {
+
   protected def random: scala.util.Random
+
   def shuffle[T, CC[X] <: TraversableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
     random.shuffle(xs)(bf)
   }
@@ -25,4 +27,5 @@ trait ScalaEntropy extends Entropy[Identity] {
   override def nextLong(): Long = random.nextLong()
 
   override def nextInt(): Int = random.nextInt()
+
 }
