@@ -3,19 +3,24 @@
     "outDir": "../phase3-compiler-output",
     "module": "commonjs",
     "target": "es5",
-    "lib": ["es6", "dom"],
+    "lib": [
+      "es6",
+      "dom"
+    ],
     "sourceMap": true,
     "allowJs": false,
     "moduleResolution": "node",
     "rootDirs": [
-      "src"
+      "packages"
     ],
     "declaration": true,
     "baseUrl": ".",
-    "*": [
-      "typescript/*",
-      "node_modules/*"
-    ],
+    "paths": {
+      "*": [
+        "packages/*",
+        "node_modules/*"
+      ]
+    },
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,

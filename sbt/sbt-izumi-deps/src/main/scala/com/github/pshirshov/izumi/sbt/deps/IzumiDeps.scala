@@ -21,7 +21,7 @@ object IzumiDeps {
     val cats_effect = "1.1.0-M1"
     val zio = "0.5.0"
 
-    val circe = "0.10.1" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
+    val circe = "0.11.0" // 2.13+
     val circe_derivation = "0.10.0-M1"
 
     val http4s = "0.20.0-M3" // https://github.com/http4s/http4s/issues/1797
@@ -94,6 +94,7 @@ object IzumiDeps {
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
+      , "io.circe" %% "circe-literal"
     ).map(_ % V.circe) ++ Seq(
       "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
       ).map(

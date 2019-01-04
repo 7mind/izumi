@@ -10,14 +10,30 @@ import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.
 
 import scala.reflect.ClassTag
 
-case class ProvidedRuntime(modules: Seq[Module])
+case class ProvidedRuntime(modules: Seq[Module]) {
+  def isEmpty: Boolean = modules.isEmpty
+  def maybe: Option[ProvidedRuntime] = {
+    if (isEmpty) {
+      None
+    } else {
+      Some(this)
+    }
+  }
+  def ++(other: ProvidedRuntime): ProvidedRuntime = {
+    ProvidedRuntime(modules ++ other.modules)
+  }
+}
+
+object ProvidedRuntime {
+  def empty: ProvidedRuntime = ProvidedRuntime(Seq.empty)
+}
 
 sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifest] {
   def language: IDLLanguage
 
   def extensions: Seq[E]
 
-  def withRuntime: Boolean
+  def withBundledRuntime: Boolean
 
   def manifest: Option[M]
 
@@ -29,7 +45,7 @@ final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
 (
   language: IDLLanguage
   , extensions: Seq[E]
-  , withRuntime: Boolean = true
+  , withBundledRuntime: Boolean = true
   , manifest: Option[M] = None
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[E, M]
@@ -49,7 +65,7 @@ object CompilerOptions {
       case m: M => m
     }
 
-    CompilerOptions(options.language, extensions, options.withRuntime, manifest, options.providedRuntime)
+    CompilerOptions(options.language, extensions, options.withBundledRuntime, manifest, options.providedRuntime)
   }
 }
 
@@ -57,12 +73,12 @@ final case class UntypedCompilerOptions
 (
   language: IDLLanguage
   , extensions: Seq[TranslatorExtension]
-  , withRuntime: Boolean = true
+  , withBundledRuntime: Boolean = true
   , manifest: Option[BuildManifest] = None
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
   override def toString: String = {
-    val rtRepr = Option(withRuntime).filter(_ == true).map(_ => "+rt").getOrElse("-rt")
+    val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rt").getOrElse("-rt")
     val mfRepr = manifest.map(_ => "+mf").getOrElse("-mf")
     val extRepr = extensions.mkString("(", ", ", ")")
     val rtfRepr = providedRuntime.map(rt => s"rtf=${rt.modules.size}").getOrElse("-rtf")

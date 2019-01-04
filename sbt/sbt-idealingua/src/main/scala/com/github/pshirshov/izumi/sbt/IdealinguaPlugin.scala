@@ -193,7 +193,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
       val files = scala_result.flatMap {
         case (_, Some(result)) =>
-          result.compilationProducts.flatMap(_.paths)
+          result.compilationProducts.paths
         case ((_, s), _) if s.target.toFile.exists() =>
           val existing = IzFiles.walk(scope.target.toFile).filterNot(_.toFile.isDirectory)
           logger.info(s"${name.value}: Compiler didn't return a result, target ${s.target.format} exists. Reusing ${existing.size} files there...")
@@ -274,11 +274,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
       val result = new TypespaceCompilerFSFacade(toCompile)
         .compile(target, invokation.options)
-
-      result.compilationProducts.foreach {
-        s =>
-          logger.debug(s"$projectId: Model ${s.id} produced ${s.paths.size} source files...")
-      }
+      logger.debug(s"$projectId: produced ${result.compilationProducts.paths.size} source files...")
 
       IO.write(tsCache.toFile, IzTime.isoNow)
       Some(result)

@@ -13,22 +13,13 @@ import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{Jso
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
-import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
+import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
 
 object CSharpTranslator {
   final val defaultExtensions = Seq(
     JsonNetExtension,
     NUnitExtension
   )
-}
-
-class CSharpFinalizer(options: CSharpTranslatorOptions) extends PostTranslationHook {
-  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
-    outputs.map {
-      out =>
-        out.copy(modules = addRuntime(options, out.modules))
-    }
-  }
 }
 
 
@@ -139,7 +130,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |    // }
        """.stripMargin
 
-//    val memberType = CSharpType(member.typeId)
+    //    val memberType = CSharpType(member.typeId)
     s"""public sealed class ${member.name}: $adtName {
        |    public _${member.name} Value { get; private set; }
        |    public ${member.name}(_${member.name} value) {
@@ -261,40 +252,40 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     // Alternative way using reflection for From method:
     // return ($name)Enum.Parse(typeof($name), value);
     val decl =
-      s"""// $name Enumeration
-         |public enum $name {
-         |${i.members.map(_.value).map(m => s"$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(4)}
-         |}
-         |
+    s"""// $name Enumeration
+       |public enum $name {
+       |${i.members.map(_.value).map(m => s"$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(4)}
+       |}
+       |
          |public static class ${name}Helpers {
-         |    public static $name From(string value) {
-         |        switch (value) {
-         |${i.members.map(_.value).map(m => s"""case \"$m\": return $name.$m;""").mkString("\n").shift(12)}
-         |            default:
-         |                throw new ArgumentOutOfRangeException();
-         |        }
-         |    }
-         |
+       |    public static $name From(string value) {
+       |        switch (value) {
+       |${i.members.map(_.value).map(m => s"""case \"$m\": return $name.$m;""").mkString("\n").shift(12)}
+       |            default:
+       |                throw new ArgumentOutOfRangeException();
+       |        }
+       |    }
+       |
          |    public static bool IsValid(string value) {
-         |        return Enum.IsDefined(typeof($name), value);
-         |    }
-         |
+       |        return Enum.IsDefined(typeof($name), value);
+       |    }
+       |
          |    // The elements in the array are still changeable, please use with care.
-         |    private static readonly $name[] all = new $name[] {
-         |${i.members.map(_.value).map(m => s"$name.$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(8)}
-         |    };
-         |
+       |    private static readonly $name[] all = new $name[] {
+       |${i.members.map(_.value).map(m => s"$name.$m${if (m == i.members.last.value) "" else ","}").mkString("\n").shift(8)}
+       |    };
+       |
          |    public static $name[] GetAll() {
-         |        return ${name}Helpers.all;
-         |    }
-         |
+       |        return ${name}Helpers.all;
+       |    }
+       |
          |    // Extensions
-         |
+       |
          |    public static string ToString(this $name e) {
-         |        return Enum.GetName(typeof($name), e);
-         |    }
-         |}
-         |
+       |        return Enum.GetName(typeof($name), e);
+       |    }
+       |}
+       |
            |${ext.postModelEmit(ctx, i)}
          """.stripMargin
 
@@ -539,7 +530,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
       }
       case _ => throw new Exception("Unsupported renderServiceServerDummyMethod case.")
     }
-    s"""public ${if(virtual) "virtual " else ""}${renderRPCMethodSignature(svcOrBuzzer, member, forClient = false)} {
+    s"""public ${if (virtual) "virtual " else ""}${renderRPCMethodSignature(svcOrBuzzer, member, forClient = false)} {
        |    $retValue
        |}
      """.stripMargin

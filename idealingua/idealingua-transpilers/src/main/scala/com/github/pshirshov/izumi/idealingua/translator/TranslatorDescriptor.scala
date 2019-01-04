@@ -8,6 +8,6 @@ trait TranslatorDescriptor[TypedOptions] {
   def defaultExtensions: Seq[TranslatorExtension]
   def typedOptions(options: UntypedCompilerOptions): TypedOptions
   def make(typespace: Typespace, options: UntypedCompilerOptions): Translator
-  def makeHook(options: UntypedCompilerOptions): PostTranslationHook
+  def makeHook(options: UntypedCompilerOptions): TranslationLayouter
   def rules: Seq[VerificationRule]
 }

@@ -29,13 +29,9 @@ case class TypeScriptBuildManifest(
                           ) extends BuildManifest
 
 object TypeScriptBuildManifest {
-  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: List[String], peerDependencies: List[ManifestDependency] = List.empty): String = {
-    val finalName = if(manifest.moduleSchema != TypeScriptModuleSchema.PER_DOMAIN ||
-        manifest.scope.isEmpty || manifest.dropNameSpaceSegments.isEmpty)
-      name.mkString("-") else
-      name.drop(manifest.dropNameSpaceSegments.get).mkString("-")
+  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: String, peerDependencies: List[ManifestDependency] = List.empty): String = {
     s"""{
-       |  "name": "${if (manifest.scope.isEmpty) finalName else manifest.scope + "/" + finalName}",
+       |  "name": "$name",
        |  "version": "${manifest.version}",
        |  "description": "${manifest.description}",
        |  "main": "$main.js",

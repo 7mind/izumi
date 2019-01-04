@@ -394,7 +394,7 @@ lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScalaJvm)
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
-  .settings(libraryDependencies ++= Seq(R.scalameta).map(_.cross(platformDepsCrossVersion.value)))
+  .settings(libraryDependencies ++= (Seq(R.scalameta) ++ R.circe).map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,

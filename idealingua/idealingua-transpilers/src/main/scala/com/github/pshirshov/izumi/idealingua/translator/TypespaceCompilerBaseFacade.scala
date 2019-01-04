@@ -4,10 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.CyclicImportsRule
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.{CSharpTranslatorOptions, GoTranslatorOptions, ScalaTranslatorOptions, TypescriptTranslatorOptions}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSharpFinalizer, CSharpTranslator}
-import com.github.pshirshov.izumi.idealingua.translator.togolang.{GoFinalizer, GoLangTranslator}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.{ScalaFinalizer, ScalaTranslator}
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.{TypeScriptTranslator, TypescriptFinalizer}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSharpLayouter, CSharpTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.togolang.{GoLayouter, GoLangTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.toscala.{ScalaLayouter, ScalaTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.{TypeScriptTranslator, TypescriptLayouter}
 
 object TypespaceCompilerBaseFacade {
   def descriptor(language: IDLLanguage): TranslatorDescriptor[_] = descriptorsMap(language)
@@ -35,7 +35,7 @@ object ScalaTranslatorDescriptor extends TranslatorDescriptor[ScalaTranslatorOpt
 
   override def rules: Seq[VerificationRule] = Seq.empty
 
-  override def makeHook(options: UntypedCompilerOptions): PostTranslationHook = new ScalaFinalizer(typedOptions(options))
+  override def makeHook(options: UntypedCompilerOptions): TranslationLayouter = new ScalaLayouter(typedOptions(options))
 }
 
 object GoTranslatorDescriptor extends TranslatorDescriptor[GoTranslatorOptions] {
@@ -52,7 +52,7 @@ object GoTranslatorDescriptor extends TranslatorDescriptor[GoTranslatorOptions] 
     CyclicImportsRule.error("Go does not support cyclic imports")
   )
 
-  override def makeHook(options: UntypedCompilerOptions): PostTranslationHook = new GoFinalizer(typedOptions(options))
+  override def makeHook(options: UntypedCompilerOptions): TranslationLayouter = new GoLayouter(typedOptions(options))
 }
 
 object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorOptions] {
@@ -67,7 +67,7 @@ object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorO
 
   override def rules: Seq[VerificationRule] = Seq.empty
 
-  override def makeHook(options: UntypedCompilerOptions): PostTranslationHook = new CSharpFinalizer(typedOptions(options))
+  override def makeHook(options: UntypedCompilerOptions): TranslationLayouter = new CSharpLayouter(typedOptions(options))
 }
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTranslatorOptions] {
@@ -82,5 +82,5 @@ object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTra
 
   override def rules: Seq[VerificationRule] = Seq.empty
 
-  override def makeHook(options: UntypedCompilerOptions): PostTranslationHook = new TypescriptFinalizer(typedOptions(options))
+  override def makeHook(options: UntypedCompilerOptions): TranslationLayouter = new TypescriptLayouter(typedOptions(options))
 }

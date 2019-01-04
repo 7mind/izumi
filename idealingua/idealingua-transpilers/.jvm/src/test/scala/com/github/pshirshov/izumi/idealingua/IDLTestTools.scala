@@ -112,21 +112,13 @@ object IDLTestTools {
       None
     )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, withBundledRuntime = true, if (scoped) Some(manifest) else None))
 
-    val outputTspackagePath = out.targetDir.resolve("package.json")
-    Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", List("TestPackage"), List.empty).getBytes)
-    val npmCmd = Seq("npm", "install")
-    if (run(out.absoluteTargetDir, npmCmd, Map.empty, "npm") != 0) {
+    if (run(out.absoluteTargetDir, Seq("yarn", "install"), Map.empty, "yarn") != 0) {
       return false
     }
 
-    val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
-    val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
-      .get
-      .replace("../phase3-compiler-output", out.phase3.toString)
-    Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
-    val tscCmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
+    val tscCmd = Seq("tsc", "-p", "tsconfig.json")
 
     val exitCode = run(out.absoluteTargetDir, tscCmd, Map.empty, "tsc")
     exitCode == 0
@@ -172,7 +164,7 @@ object IDLTestTools {
       useRepositoryFolders = true
     )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withRuntime = true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withBundledRuntime = true, if (scoped) Some(manifest) else None))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -213,24 +205,23 @@ object IDLTestTools {
 
     val runDir = tmpdir.resolve(dirPrefix)
     val domainsDir = runDir.resolve("phase0-rerender")
-    val layoutDir = runDir.resolve("phase1-layout")
+//    val layoutDir = runDir.resolve("phase1-layout")
     val compilerDir = runDir.resolve("phase2-compiler-input")
 
-    IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
+    IzFiles.recreateDirs(runDir, domainsDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
     //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
     val products = new TypespaceCompilerFSFacade(domains)
-      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
+      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withBundledRuntime, options.manifest))
       .compilationProducts
-
-    val allPaths = products.flatMap(_.paths).toSeq
+    assert(products.paths.toSet.size == products.paths.size)
 
     rerenderDomains(domainsDir, domains)
-    saveDebugLayout(layoutDir, products)
+//    saveDebugLayout(layoutDir, products)
 
-    val out = CompilerOutput(compilerDir, allPaths)
+    val out = CompilerOutput(compilerDir, products.paths)
     out.phase3.toFile.mkdirs()
     out
   }
@@ -244,30 +235,27 @@ object IDLTestTools {
     }
   }
 
-  private def saveDebugLayout(layoutDir: Path, products: Seq[IDLCompilationResult]): Unit = {
-    products.foreach {
-      s =>
-        val mapped = s.paths.map {
-          f =>
-            val domainDir = layoutDir.resolve(s.id.toPackage.mkString("."))
-            val marker = s.id.toPackage.mkString("/")
-            val target = if (f.toString.contains(marker)) {
-              domainDir.resolve(f.toFile.getName)
-            } else {
-
-              domainDir.resolve(s.target.relativize(f))
-            }
-            (f, target)
-        }
-        mapped.foreach {
-          case (src, tgt) =>
-            tgt.getParent.toFile.mkdirs()
-            Files.copy(src, tgt)
-        }
-
-        assert(s.paths.toSet.size == s.paths.size)
-    }
-  }
+//  private def saveDebugLayout(layoutDir: Path, products: IDLCompilationResult): Unit = {
+//    val mapped = products.paths.map {
+//      f =>
+//        val domainDir = layoutDir.resolve(products.id.toPackage.mkString("."))
+//        val marker = products.id.toPackage.mkString("/")
+//        val target = if (f.toString.contains(marker)) {
+//          domainDir.resolve(f.toFile.getName)
+//        } else {
+//
+//          domainDir.resolve(products.target.relativize(f))
+//        }
+//        (f, target)
+//    }
+//    mapped.foreach {
+//      case (src, tgt) =>
+//        tgt.getParent.toFile.mkdirs()
+//        Files.copy(src, tgt)
+//    }
+//
+//    assert(products.paths.toSet.size == products.paths.size)
+//  }
 
   private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
     tmpdir

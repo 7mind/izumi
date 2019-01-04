@@ -4,40 +4,24 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, _}
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.togolang.types._
+import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
 
 object GoLangTranslator {
   final val defaultExtensions = Seq(
   )
 }
 
-class GoFinalizer(options: GoTranslatorOptions) extends PostTranslationHook {
-  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
-    outputs.map {
-      out =>
-        val modules = out.modules
-        val extendedModules = addRuntime(options, modules)
 
-        val updModules = if (options.manifest.isDefined && options.manifest.get.useRepositoryFolders)
-          extendedModules.map(m => Module(ModuleId(options.manifest.get.repository.split("/") ++ m.id.path, m.id.name), m.content))
-        else
-          extendedModules
-
-        out.copy(modules = updModules)
-    }
-  }
-}
 
 class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Translator {
   protected val ctx: GLTContext = new GLTContext(ts, options.extensions)

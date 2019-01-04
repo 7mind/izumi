@@ -4,19 +4,17 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
+import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
+import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
 
 object TypeScriptTranslator {
   final val defaultExtensions = Seq(
@@ -25,98 +23,7 @@ object TypeScriptTranslator {
   )
 }
 
-class TypescriptFinalizer(options: TypescriptTranslatorOptions) extends PostTranslationHook {
 
-
-  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
-    val f = outputs.map(finalize1)
-    f
-  }
-
-  private def finalize1(translated: Translated): Translated = {
-    implicit val tsManifest: Option[TypeScriptBuildManifest] = options.manifest
-
-    val ts = translated.typespace
-    val modules = translated.modules ++ (
-      if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
-        List(
-          buildIndexModule(ts),
-          buildPackageModule(ts),
-          buildIRTPackageModule(ts)
-        )
-      else
-        List(buildIndexModule(ts))
-      )
-    val extendedModules = addRuntime(options, modules)
-    if (tsManifest.isDefined && tsManifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
-      Translated(ts, extendedModules.map(
-        m => Module(
-          ModuleId(
-            Seq(
-              "src",
-              tsManifest.get.scope,
-              if (m.id.path.head == "irt")
-                m.id.path.mkString("/")
-              else
-                (
-                  if (tsManifest.get.dropNameSpaceSegments.isDefined)
-                    m.id.path.drop(tsManifest.get.dropNameSpaceSegments.get)
-                  else
-                    m.id.path
-                  ).mkString("-")
-            ),
-            m.id.name),
-          m.content)))
-    else
-      Translated(ts, extendedModules)
-  }
-
-  def buildPackageModule(ts: Typespace)(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
-    val imports = ts.domain.types.map(i => TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)) ++
-      ts.domain.services.map(i => TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest))
-
-    val peerDeps: List[ManifestDependency] = imports.flatMap(i => i.imports.filter(_.pkg.startsWith(manifest.get.scope)).map(im => ManifestDependency(im.pkg, manifest.get.version))).toList.distinct
-
-    val content = TypeScriptBuildManifest.generatePackage(manifest.get, "index", ts.domain.id.toPackage.toList, peerDeps)
-    Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
-  }
-
-  def buildIRTPackageModule(ts: Typespace)(implicit manifest: Option[TypeScriptBuildManifest]): Module = {
-    if (manifest.isEmpty) throw new Exception("Generating IRT package requires a manifest.")
-
-    val content = TypeScriptBuildManifest.generatePackage(TypeScriptBuildManifest(
-      "irt",
-      manifest.get.tags,
-      manifest.get.description,
-      manifest.get.notes,
-      manifest.get.publisher,
-      manifest.get.version,
-      manifest.get.license,
-      manifest.get.website,
-      manifest.get.copyright,
-      List(
-        ManifestDependency("moment", "^2.20.1"),
-        ManifestDependency("websocket", "^1.0.26")
-      ),
-      manifest.get.scope,
-      manifest.get.moduleSchema,
-      None
-    ), "index", List("irt"))
-
-    Module(ModuleId(Seq("irt"), "package.json"), content)
-  }
-
-  def buildIndexModule(ts: Typespace): Module = {
-    val content =
-      s"""// Auto-generated, any modifications may be overwritten in the future.
-         |// Exporting module for domain ${ts.domain.id.toPackage.mkString(".")}
-         |${ts.domain.types.filterNot(_.id.isInstanceOf[AliasId]).map(t => s"export * from './${t.id.name}';").mkString("\n")}
-         |${ts.domain.services.map(s => s"export * from './${s.id.name}';").mkString("\n")}
-         """.stripMargin
-
-    Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
-  }
-}
 
 class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) extends Translator {
   protected val ctx: TSTContext = new TSTContext(ts, options.extensions)

@@ -17,9 +17,10 @@ class CompilerTest extends WordSpec {
 
     "be able to compile into typescript" in {
       assume(IzFiles.haveExecutables("tsc"), "tsc not available")
-      assume(IzFiles.haveExecutables("npm"), "tsc not available")
+      assume(IzFiles.haveExecutables("npm"), "npm not available")
+      assume(IzFiles.haveExecutables("yarn"), "yarn not available")
+      //assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = true))
       assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = false))
-      assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = true))
     }
 
     "be able to compile into golang" in {

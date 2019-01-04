@@ -4,11 +4,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ClassSource
+import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
 
 import scala.meta._
 
@@ -23,14 +23,7 @@ object ScalaTranslator {
   )
 }
 
-class ScalaFinalizer(options: ScalaTranslatorOptions) extends PostTranslationHook {
-  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
-    outputs.map {
-      out =>
-        out.copy(modules = addRuntime(options, out.modules))
-    }
-  }
-}
+
 
 class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
   extends Translator {
