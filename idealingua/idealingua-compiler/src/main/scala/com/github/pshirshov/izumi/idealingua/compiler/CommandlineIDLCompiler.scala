@@ -94,7 +94,7 @@ object CommandlineIDLCompiler extends Codecs {
     conf
   }
 
-  private def toOption(lopt: LanguageOpts) = {
+  private def toOption(lopt: LanguageOpts): UntypedCompilerOptions = {
     val lang = IDLLanguage.parse(lopt.id)
     val exts = getExt(lang, lopt.extensions)
 
@@ -114,6 +114,7 @@ object CommandlineIDLCompiler extends Codecs {
 
   private def readManifest[T: ClassTag : Decoder : Encoder](lopt: LanguageOpts, default: T): T = {
     import _root_.io.circe.parser._
+    import _root_.io.circe.syntax._
     val lang = IDLLanguage.parse(lopt.id)
 
     lopt.manifest match {
@@ -133,17 +134,18 @@ object CommandlineIDLCompiler extends Codecs {
               case e =>
                 e.toString
             }
-            println(s"Failed to read manifest from $path: $errRepr")
+            println(s"Failed to read $lang manifest from $path: $errRepr")
             println(s"Example manifest for $lang:")
-            println(default)
+            println(default.asJson.toString())
             System.out.flush()
             System.exit(1)
-            throw new IllegalArgumentException(s"Failed to load manifest from $lopt: $errRepr")
+            throw new IllegalArgumentException(s"Failed to load manifest from $lang: $errRepr")
         }
 
       case None =>
         println(s"No manifest defined for $lang, using default:")
-        println(default)
+        println(default.asJson.toString())
+        println()
         default
     }
 
