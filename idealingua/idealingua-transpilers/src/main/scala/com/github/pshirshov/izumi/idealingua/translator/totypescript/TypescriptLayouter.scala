@@ -156,7 +156,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
   private def buildIRTPackageModule(): Module = {
-    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt")))
+    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), s"${options.manifest.scope}/irt")
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
