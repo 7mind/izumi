@@ -23,7 +23,7 @@ object IzumiDeps {
 
     val circe = "0.11.0" // 2.13+
     val circe_derivation = "0.10.0-M1"
-
+    val jawn = "0.14.0"
     val http4s = "0.20.0-M3" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "4.1.0" // https://github.com/scalameta/scalameta/issues/1693
@@ -65,7 +65,7 @@ object IzumiDeps {
     val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop" % V.zio
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials = Seq(scala_java8_compat, collection_compat)
+    val essentials: Seq[ModuleID] = Seq(scala_java8_compat, collection_compat)
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
@@ -117,7 +117,7 @@ object IzumiDeps {
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
     @deprecated("we must throw this out once http4s implements client-side websockets", "2018-12-01")
-    val java_websocket = Seq(
+    val java_websocket: Seq[ModuleID] = Seq(
       "org.java-websocket" % "Java-WebSocket" % V.java_websocket
       , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
       , "com.sun.xml.bind" % "jaxb-core" % V.jaxb_core
@@ -133,11 +133,15 @@ object IzumiDeps {
     val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
   }
 
+  object C {
+    val jawn = "org.typelevel" %% "jawn-parser" % V.jawn % Compile
+  }
+
   object T {
     val scalatest = R.scalatest % Test
     val slf4j_simple = R.slf4j_simple % Test
 
-    val essentials = Seq(scalatest)
+    val essentials: Seq[ModuleID] = Seq(scalatest)
 
     val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
