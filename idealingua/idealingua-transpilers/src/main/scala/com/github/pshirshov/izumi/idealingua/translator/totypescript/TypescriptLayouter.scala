@@ -146,7 +146,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       .map {
         i =>
           ManifestDependency(toScopedId(i.id.toPackage), options.manifest.version)
-      } :+ ManifestDependency(toScopedId(List("irt")), options.manifest.version)
+      } :+ ManifestDependency(irtDependency, options.manifest.version)
 
 
     val name = toScopedId(ts.domain.id.toPackage)
@@ -154,9 +154,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val content = generatePackage(options.manifest, Some("index"), name, peerDeps.toList)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
+  private def irtDependency: String = s"${options.manifest.scope}/irt"
 
   private def buildIRTPackageModule(): Module = {
-    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), s"${options.manifest.scope}/irt")
+    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), irtDependency)
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
