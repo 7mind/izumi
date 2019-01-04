@@ -13,8 +13,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader._
 import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
@@ -31,9 +31,9 @@ import scala.sys.process._
 final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
   def absoluteTargetDir: Path = targetDir.toAbsolutePath
 
-  def phase3: Path = absoluteTargetDir.getParent.resolve("phase3-compiler-output")
+  def phase2: Path = absoluteTargetDir.getParent.resolve("phase2-compiler-output")
 
-  def phase3Relative: Path = absoluteTargetDir.relativize(phase3)
+  def phase2Relative: Path = absoluteTargetDir.relativize(phase2)
 
   def relativeOutputs: Seq[String] = allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
 }
@@ -84,7 +84,7 @@ object IDLTestTools {
       "scalac"
       , "-deprecation"
       , "-opt-warnings:_"
-      , "-d", out.phase3Relative.toString
+      , "-d", out.phase2Relative.toString
       , "-classpath", classpath
     ) ++ out.relativeOutputs
 
@@ -100,7 +100,7 @@ object IDLTestTools {
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
     val tsconfigBytes = new String(Files.readAllBytes(outputTsconfigPath), StandardCharsets.UTF_8)
-      .replace("\"dist\"", s""""${out.phase3.toString}"""")
+      .replace("\"dist\"", s""""${out.phase2.toString}"""")
       .getBytes
     Files.write(outputTsconfigPath, tsconfigBytes)
 
@@ -125,16 +125,16 @@ object IDLTestTools {
     val refsSrc = s"refs/${lang.toString.toLowerCase()}"
     val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
       .filter(f => f.toFile.isFile && f.toString.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
-    IzResources.copyFromClasspath(refsSrc, out.phase3)
+    IzResources.copyFromClasspath(refsSrc, out.phase2)
 
 
     val outname = "test-output.dll"
     val refs = s"/reference:${refDlls.mkString(",")}"
-    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase3Relative}/$outname", "-recurse:\\*.cs", refs)
+    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase2Relative}/$outname", "-recurse:\\*.cs", refs)
     val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
 
     val cmdTest = Seq("nunit-console", outname)
-    val exitCodeTest = run(out.phase3, cmdTest, Map.empty, "cs-test")
+    val exitCodeTest = run(out.phase2, cmdTest, Map.empty, "cs-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
@@ -146,7 +146,7 @@ object IDLTestTools {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
     val outDir = out.absoluteTargetDir
 
-    val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
+    val tmp = outDir.getParent.resolve("phase1-compiler-tmp")
     tmp.toFile.mkdirs()
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
@@ -159,7 +159,7 @@ object IDLTestTools {
       })
     }
 
-    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
+    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase2.toString, "./...")
     val cmdTest = Seq("go", "test", "./...")
 
 
@@ -184,13 +184,11 @@ object IDLTestTools {
 
     val runDir = tmpdir.resolve(dirPrefix)
     val domainsDir = runDir.resolve("phase0-rerender")
-//    val layoutDir = runDir.resolve("phase1-layout")
-    val compilerDir = runDir.resolve("phase2-compiler-input")
+    val compilerDir = runDir.resolve("phase1-compiler-input")
 
     IzFiles.recreateDirs(runDir, domainsDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
-    //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
     val products = new TypespaceCompilerFSFacade(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.manifest, options.withBundledRuntime))
@@ -198,10 +196,9 @@ object IDLTestTools {
     assert(products.paths.toSet.size == products.paths.size)
 
     rerenderDomains(domainsDir, domains)
-//    saveDebugLayout(layoutDir, products)
 
     val out = CompilerOutput(compilerDir, products.paths)
-    out.phase3.toFile.mkdirs()
+    out.phase2.toFile.mkdirs()
     out
   }
 
@@ -214,27 +211,6 @@ object IDLTestTools {
     }
   }
 
-//  private def saveDebugLayout(layoutDir: Path, products: IDLCompilationResult): Unit = {
-//    val mapped = products.paths.map {
-//      f =>
-//        val domainDir = layoutDir.resolve(products.id.toPackage.mkString("."))
-//        val marker = products.id.toPackage.mkString("/")
-//        val target = if (f.toString.contains(marker)) {
-//          domainDir.resolve(f.toFile.getName)
-//        } else {
-//
-//          domainDir.resolve(products.target.relativize(f))
-//        }
-//        (f, target)
-//    }
-//    mapped.foreach {
-//      case (src, tgt) =>
-//        tgt.getParent.toFile.mkdirs()
-//        Files.copy(src, tgt)
-//    }
-//
-//    assert(products.paths.toSet.size == products.paths.size)
-//  }
 
   private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
     tmpdir

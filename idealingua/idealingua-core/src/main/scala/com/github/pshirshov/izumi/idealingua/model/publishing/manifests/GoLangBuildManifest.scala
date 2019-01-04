@@ -34,7 +34,7 @@ object GoLangBuildManifest {
   )
 
   def importPrefix(manifest: GoLangBuildManifest): String = {
-    if (manifest.repository.isEmpty) {
+    if (!manifest.useRepositoryFolders || manifest.repository.isEmpty) {
       ""
     } else {
       if (manifest.repository.endsWith("/")) manifest.repository else manifest.repository + "/"
