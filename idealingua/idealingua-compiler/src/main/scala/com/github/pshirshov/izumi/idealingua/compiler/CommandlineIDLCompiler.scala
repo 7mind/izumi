@@ -117,6 +117,9 @@ object CommandlineIDLCompiler extends Codecs {
     val lang = IDLLanguage.parse(lopt.id)
 
     lopt.manifest match {
+      case Some(path) if path.toString == "@" =>
+        default
+        
       case Some(path) =>
         Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
           case Success(Right(r)) =>

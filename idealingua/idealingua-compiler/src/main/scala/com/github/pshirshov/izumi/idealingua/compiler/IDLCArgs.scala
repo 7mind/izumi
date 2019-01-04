@@ -34,7 +34,7 @@ object IDLCArgs {
       .children(
         opt[File]("manifest").abbr("m")
           .optional()
-          .text("manifest file to parse to the language-specific compiler module compiler")
+          .text("manifest file to parse to the language-specific compiler module compiler. Use `@` for default one.")
           .action {
             (a, c) =>
               c.copy(languages = c.languages.init :+ c.languages.last.copy(manifest = Some(a)))
