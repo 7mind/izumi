@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -40,11 +41,17 @@ object IdealinguaPlugin extends AutoPlugin {
 
   object Keys {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
-    val idlDefaultExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
-    val idlDefaultExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
-    val idlDefaultExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
-    val idlDefaultExtensionsCSharp = settingKey[Seq[CSharpTranslatorExtension]]("Default list of translator extensions for csharp")
     val unresolvedDomains = taskKey[UnresolvedDomains]("Loaded but not yet resolved domains")
+
+    val idlExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
+    val idlExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
+    val idlExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
+    val idlExtensionsCSharp = settingKey[Seq[CSharpTranslatorExtension]]("Default list of translator extensions for csharp")
+
+    val idlManifestScala = settingKey[ScalaBuildManifest]("scala manifest")
+    val idlManifestTypescript = settingKey[TypeScriptBuildManifest]("typescript manifest")
+    val idlManifestGolang = settingKey[GoLangBuildManifest]("golang manifest")
+    val idlManifestCsharp = settingKey[CSharpBuildManifest]("csharp manifest")
   }
 
   import Keys._
@@ -79,6 +86,7 @@ object IdealinguaPlugin extends AutoPlugin {
       s"[$existence$tpe]@${a.getCanonicalPath}"
     }
   }
+
   implicit class PathExt(a: Path) {
     def format: String = {
       a.toFile.format
@@ -86,31 +94,35 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   override lazy val projectSettings = Seq(
-    idlDefaultExtensionsScala := ScalaTranslator.defaultExtensions
-    , idlDefaultExtensionsTypescript := TypeScriptTranslator.defaultExtensions
-    , idlDefaultExtensionsGolang := GoLangTranslator.defaultExtensions
-    , idlDefaultExtensionsCSharp := CSharpTranslator.defaultExtensions
+    idlExtensionsScala := ScalaTranslator.defaultExtensions,
+    idlExtensionsTypescript := TypeScriptTranslator.defaultExtensions,
+    idlExtensionsGolang := GoLangTranslator.defaultExtensions,
+    idlExtensionsCSharp := CSharpTranslator.defaultExtensions,
+    idlManifestScala := ScalaBuildManifest.default,
+    idlManifestTypescript := TypeScriptBuildManifest.default,
+    idlManifestGolang := GoLangBuildManifest.default,
+    idlManifestCsharp := CSharpBuildManifest.default,
 
-    , compilationTargets := Seq(
-      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.CompiledArtifact)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlDefaultExtensionsScala.value), Mode.SourceArtifact)
+    compilationTargets := Seq(
+      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value), Mode.CompiledArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlDefaultExtensionsTypescript.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlExtensionsTypescript.value, idlManifestTypescript.value), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlDefaultExtensionsGolang.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlExtensionsGolang.value, idlManifestGolang.value), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlDefaultExtensionsCSharp.value), Mode.SourceArtifact)
-    )
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlExtensionsCSharp.value, idlManifestCsharp.value), Mode.SourceArtifact)
+    ),
 
-    , watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi")
+    watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi"),
 
-    , artifacts ++= {
+    artifacts ++= {
       val ctargets = compilationTargets.value
       val pname = name.value
       artifactTargets(ctargets, pname).map(_._1)
-    }
+    },
 
-    , packagedArtifacts := {
+    packagedArtifacts := {
       val ctargets = compilationTargets.value
       val pname = name.value
       val src = sourceDirectory.value.toPath
@@ -148,10 +160,10 @@ object IdealinguaPlugin extends AutoPlugin {
       }.toMap
 
       packagedArtifacts.value ++ artifactFiles
-    }
+    },
 
 
-    , unresolvedDomains := {
+    unresolvedDomains := {
       val projectId = thisProjectRef.value.project
       val src = sourceDirectory.value.toPath
       val izumiSrcDir = src.resolve("main/izumi")
@@ -161,9 +173,9 @@ object IdealinguaPlugin extends AutoPlugin {
       val loaded = new LocalModelLoaderContext(izumiSrcDir, cp).loader.load()
       logger.debug(s"""$projectId: Preloaded ${loaded.domains.results.size} domains from $izumiSrcDir...""")
       loaded
-    }
+    },
 
-    , sourceGenerators in Compile += Def.task {
+    sourceGenerators in Compile += Def.task {
       val src = sourceDirectory.value.toPath
       val srcManaged = (sourceManaged in Compile).value.toPath
       //val resManaged = (resourceManaged in Compile).value.toPath
@@ -204,9 +216,9 @@ object IdealinguaPlugin extends AutoPlugin {
       }
 
       files.map(_.toFile)
-    }.taskValue
+    }.taskValue,
 
-    , resourceGenerators in Compile += Def.task {
+    resourceGenerators in Compile += Def.task {
       val idlbase = sourceDirectory.value / "main" / "izumi"
       logger.debug(s"""${name.value}: Generating resources in ${idlbase.format} ...""")
       val allModels = (idlbase ** "*.domain").get ++ (idlbase ** "*.model").get
@@ -218,7 +230,8 @@ object IdealinguaPlugin extends AutoPlugin {
       }
       IO.copy(mapped, CopyOptions().withOverwrite(true))
       mapped.map(_._2)
-    }.taskValue
+    }.taskValue,
+
   )
 
   private def artifactTargets(ctargets: Seq[Invokation], pname: String): Seq[(Artifact, Invokation)] = {
@@ -261,8 +274,8 @@ object IdealinguaPlugin extends AutoPlugin {
         .ifWarnings(message => logger.warn(message))
         .ifFailed {
           message =>
-          logger.error(s"Compiler failed:\n$message")
-          throw new FeedbackProvidedException() {}
+            logger.error(s"Compiler failed:\n$message")
+            throw new FeedbackProvidedException() {}
         }
         .successful
 

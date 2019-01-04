@@ -13,7 +13,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader._
 import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
@@ -76,7 +76,8 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
+    val manifest = ScalaBuildManifest.default
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
     val cmd = Seq(
@@ -92,26 +93,10 @@ object IDLTestTools {
   }
 
   def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
-    val manifest = new TypeScriptBuildManifest(
-      name = "TestBuild",
-      tags = "",
-      description = "Test Description",
-      notes = "",
-      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
-      version = "0.0.0",
-      license = "MIT",
-      website = "http://project.website",
-      copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("moment", "^2.20.1"),
-        ManifestDependency("@types/node", "^10.7.1"),
-        ManifestDependency("@types/websocket", "0.0.39"),
-      ),
-      scope = "@TestScope",
-      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED,
-      None
+    val manifest = TypeScriptBuildManifest.default.copy(
+      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
     )
-
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, withBundledRuntime = true, Some(manifest)))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, manifest))
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
     val tsconfigBytes = new String(Files.readAllBytes(outputTsconfigPath), StandardCharsets.UTF_8)
@@ -130,8 +115,9 @@ object IDLTestTools {
   }
 
   def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val manifest = CSharpBuildManifest.default
     val lang = IDLLanguage.CSharp
-    val out = compiles(id, domains, CompilerOptions(lang, extensions))
+    val out = compiles(id, domains, CompilerOptions(lang, extensions, manifest))
     val refsDir = out.absoluteTargetDir.resolve("refs")
 
     IzFiles.recreateDirs(refsDir)
@@ -153,23 +139,11 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, withManifest: Boolean): Boolean = {
-    val manifest = new GoLangBuildManifest(
-      name = "TestBuild",
-      tags = "",
-      description = "Test Description",
-      notes = "",
-      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
-      version = "0.0.0",
-      license = "MIT",
-      website = "http://project.website",
-      copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
-      repository = "github.com/TestCompany/TestRepo",
-      useRepositoryFolders = true
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, repoLayout: Boolean): Boolean = {
+    val manifest = GoLangBuildManifest.default.copy(
+      useRepositoryFolders = repoLayout
     )
-
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withBundledRuntime = true, if (withManifest) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -219,7 +193,7 @@ object IDLTestTools {
     //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
     val products = new TypespaceCompilerFSFacade(domains)
-      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withBundledRuntime, options.manifest))
+      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.manifest, options.withBundledRuntime))
       .compilationProducts
     assert(products.paths.toSet.size == products.paths.size)
 

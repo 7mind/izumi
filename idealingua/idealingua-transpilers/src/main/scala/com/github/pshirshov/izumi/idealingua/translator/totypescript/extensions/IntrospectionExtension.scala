@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
@@ -63,15 +63,15 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
        |}""".stripMargin
   }
 
-  private def irtImportPath(id: TypeId)(implicit manifest: Option[TypeScriptBuildManifest]): String = {
-    if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
-      s"${manifest.get.scope}/irt"
+  private def irtImportPath(ctx: TSTContext, id: TypeId): String = {
+    if (ctx.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      s"${ctx.manifest.scope}/irt"
     } else {
       id.path.toPackage.map(_ => "..").mkString("/") + "/irt"
     }
   }
 
-  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct)(implicit manifest: Option[TypeScriptBuildManifest]): EnumProduct = {
+  override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {
 //    implicit val ts: Typespace = ctx.typespace
     val pkg = enum.id.path.toPackage.mkString(".")
     val short = enum.id.name
@@ -79,7 +79,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     val extension =
       s"""
          |// Introspector registration
-         |import { Introspector, IntrospectorTypes, IIntrospectorEnumObject } from '${irtImportPath(enum.id)}';
+         |import { Introspector, IntrospectorTypes, IIntrospectorEnumObject } from '${irtImportPath(ctx, enum.id)}';
          |Introspector.register('$full', {
          |        full: '$full',
          |        short: '$short',
@@ -93,7 +93,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     EnumProduct(product.content + extension, product.preamble)
   }
 
-  override def handleIdentifier(ctx: TSTContext, identifier: TypeDef.Identifier, product: IdentifierProduct)(implicit manifest: Option[TypeScriptBuildManifest]): IdentifierProduct = {
+  override def handleIdentifier(ctx: TSTContext, identifier: TypeDef.Identifier, product: IdentifierProduct): IdentifierProduct = {
     implicit val ts: Typespace = ctx.typespace
     implicit val conv: TypeScriptTypeConverter = ctx.conv
 
@@ -108,7 +108,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorGenericType,
          |    IIntrospectorMapType,
          |    IIntrospectorIdObject
-         |} from '${irtImportPath(identifier.id)}';
+         |} from '${irtImportPath(ctx, identifier.id)}';
          |Introspector.register($short.FullClassName, {
          |        full: $short.FullClassName,
          |        short: $short.ClassName,
@@ -140,7 +140,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
      """.stripMargin
   }
 
-  override def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct)(implicit manifest: Option[TypeScriptBuildManifest]): CompositeProduct = {
+  override def handleDTO(ctx: TSTContext, dto: DTO, product: CompositeProduct): CompositeProduct = {
     implicit val ts: Typespace = ctx.typespace
     implicit val conv: TypeScriptTypeConverter = ctx.conv
 
@@ -157,14 +157,14 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorGenericType,
          |    IIntrospectorMapType,
          |    IIntrospectorDataObject
-         |} from '${irtImportPath(dto.id)}';
+         |} from '${irtImportPath(ctx, dto.id)}';
          |${renderDTOIntrospector(short, fields)}
        """.stripMargin
 
     CompositeProduct(product.more + extension, product.header, product.preamble)
   }
 
-  override def handleInterface(ctx: TSTContext, interface: Interface, product: InterfaceProduct)(implicit manifest: Option[TypeScriptBuildManifest]): InterfaceProduct = {
+  override def handleInterface(ctx: TSTContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     implicit val ts: Typespace = ctx.typespace
     implicit val conv: TypeScriptTypeConverter = ctx.conv
 
@@ -187,7 +187,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorMapType,
          |    IIntrospectorMixinObject,
          |    IIntrospectorDataObject
-         |} from '${irtImportPath(interface.id)}';
+         |} from '${irtImportPath(ctx, interface.id)}';
          |Introspector.register('$full', {
          |        full: '$full',
          |        short: '$short',
@@ -206,7 +206,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     InterfaceProduct(product.iface, product.companion + extension, product.header, product.preamble)
   }
 
-  override def handleAdt(ctx: TSTContext, adt: TypeDef.Adt, product: AdtProduct)(implicit manifest: Option[TypeScriptBuildManifest]): AdtProduct = {
+  override def handleAdt(ctx: TSTContext, adt: TypeDef.Adt, product: AdtProduct): AdtProduct = {
     implicit val ts: Typespace = ctx.typespace
     val pkg = adt.id.path.toPackage.mkString(".")
     val short = adt.id.name
@@ -222,7 +222,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |    IIntrospectorGenericType,
          |    IIntrospectorMapType,
          |    IIntrospectorAdtObject
-         |} from '${irtImportPath(adt.id)}';
+         |} from '${irtImportPath(ctx, adt.id)}';
          |Introspector.register('$full', {
          |        full: '$full',
          |        short: '$short',

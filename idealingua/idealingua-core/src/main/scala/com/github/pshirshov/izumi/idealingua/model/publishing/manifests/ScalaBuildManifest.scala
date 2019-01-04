@@ -16,4 +16,16 @@ case class ScalaBuildManifest(name: String,
                           ) extends BuildManifest
 
 object ScalaBuildManifest {
+  def default: ScalaBuildManifest = ScalaBuildManifest(
+    name = "TestBuild",
+    tags = "",
+    description = "Test Description",
+    notes = "",
+    publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+    version = "0.0.0",
+    license = "MIT",
+    website = "http://project.website",
+    copyright = "Copyright (C) Test Inc.",
+    dependencies = List.empty,
+  )
 }

@@ -14,13 +14,30 @@ case class GoLangBuildManifest(name: String,
                                copyright: String,
                                dependencies: List[ManifestDependency],
                                repository: String,
-                               useRepositoryFolders: Boolean = false,
-                          ) extends BuildManifest
+                               useRepositoryFolders: Boolean,
+                              ) extends BuildManifest
 
 object GoLangBuildManifest {
-  def importPrefix(manifest: GoLangBuildManifest): Option[String] =
-    if (manifest.repository.isEmpty) None else
-    Some(
+  def default: GoLangBuildManifest = GoLangBuildManifest(
+    name = "TestBuild",
+    tags = "",
+    description = "Test Description",
+    notes = "",
+    publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+    version = "0.0.0",
+    license = "MIT",
+    website = "http://project.website",
+    copyright = "Copyright (C) Test Inc.",
+    dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
+    repository = "github.com/TestCompany/TestRepo",
+    useRepositoryFolders = false,
+  )
+
+  def importPrefix(manifest: GoLangBuildManifest): String = {
+    if (manifest.repository.isEmpty) {
+      ""
+    } else {
       if (manifest.repository.endsWith("/")) manifest.repository else manifest.repository + "/"
-    )
+    }
+  }
 }

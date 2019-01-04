@@ -27,3 +27,24 @@ case class TypeScriptBuildManifest(
                             // by using dropnameSpaceSegments = Some(2)
                             dropNameSpaceSegments: Option[Int],
                           ) extends BuildManifest
+
+object TypeScriptBuildManifest {
+  def default: TypeScriptBuildManifest = TypeScriptBuildManifest(
+    name = "TestBuild",
+    tags = "",
+    description = "Test Description",
+    notes = "",
+    publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+    version = "0.0.0",
+    license = "MIT",
+    website = "http://project.website",
+    copyright = "Copyright (C) Test Inc.",
+    dependencies = List(ManifestDependency("moment", "^2.20.1"),
+      ManifestDependency("@types/node", "^10.7.1"),
+      ManifestDependency("@types/websocket", "0.0.39"),
+    ),
+    scope = "@TestScope",
+    moduleSchema = TypeScriptModuleSchema.PER_DOMAIN,
+    None
+  )
+}

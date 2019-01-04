@@ -25,8 +25,8 @@ class CompilerTest extends WordSpec {
 
     "be able to compile into golang" in {
       assume(IzFiles.haveExecutables("go"), "go not available")
-      assert(compilesGolang(s"${getClass.getSimpleName}-scoped", loadDefs(), withManifest = true))
-      assert(compilesGolang(s"${getClass.getSimpleName}-plain", loadDefs(), withManifest = false))
+      assert(compilesGolang(s"${getClass.getSimpleName}-scoped", loadDefs(), repoLayout = true))
+      assert(compilesGolang(s"${getClass.getSimpleName}-plain", loadDefs(), repoLayout = false))
     }
 
     "be able to compile into csharp" in {

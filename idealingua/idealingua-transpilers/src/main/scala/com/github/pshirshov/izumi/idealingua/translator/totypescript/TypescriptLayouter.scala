@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
@@ -13,22 +12,17 @@ import io.circe.literal._
 import io.circe.syntax._
 
 class TypescriptLayouter(options: TypescriptTranslatorOptions) extends TranslationLayouter {
-  val tsManifest: Option[TypeScriptBuildManifest] = options.manifest
-
 
   override def layout(outputs: Seq[Translated]): Layouted = {
     val modules = outputs.flatMap(applyLayout)
     val rt = toRuntimeModules(options)
 
-    val withLayout = options.manifest match {
-      case Some(mf) if mf.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN =>
-        val inSubdir = modules
-        val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule(mf))), mf.scope)
-        addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(mf)
-      case Some(mf) =>
-        modules ++ rt ++ buildRootModules(mf)
-      case None =>
-        throw new IDLException(s"Manifest is mandatory for typescript!")
+    val withLayout = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      val inSubdir = modules
+      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule(options.manifest))), options.manifest.scope)
+      addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(options.manifest)
+    } else {
+      modules ++ rt ++ buildRootModules(options.manifest)
     }
 
     Layouted(withLayout)
@@ -102,17 +96,17 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   private def applyLayout(translated: Translated): Seq[ExtendedModule.DomainModule] = {
     val ts = translated.typespace
     val modules = translated.modules ++ (
-      if (tsManifest.exists(_.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN))
+      if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
         List(
           buildIndexModule(ts),
-          buildPackageModule(ts, tsManifest.get),
+          buildPackageModule(ts),
         )
       else
         List(buildIndexModule(ts))
       )
 
 
-    val mm = if (tsManifest.exists(_.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)) {
+    val mm = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
       modules.map {
         m =>
           m.copy(id = toScopedId(m.id))
@@ -123,49 +117,46 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
 
-  private def toDirName(parts: Seq[String], mf: TypeScriptBuildManifest): String = {
-    val dropped = mf.dropNameSpaceSegments.fold(parts)(toDrop => parts.drop(toDrop))
+  private def toDirName(parts: Seq[String]): String = {
+    val dropped = options.manifest.dropNameSpaceSegments.fold(parts)(toDrop => parts.drop(toDrop))
     dropped.mkString("-")
   }
 
-  private def toScopedId(parts: Seq[String], mf: TypeScriptBuildManifest): String = {
-    s"${mf.scope}/${toDirName(parts, mf)}"
+  private def toScopedId(parts: Seq[String]): String = {
+    s"${options.manifest.scope}/${toDirName(parts)}"
   }
 
   private def toScopedId(id: ModuleId): ModuleId = {
-    val path = Seq(
-      tsManifest.get.scope,
-      makeName(id)
-    )
+    val path = Seq(options.manifest.scope, makeName(id))
 
     ModuleId(path, id.name)
   }
 
   private def makeName(m: ModuleId): String = {
     (
-      if (tsManifest.get.dropNameSpaceSegments.isDefined)
-        m.path.drop(tsManifest.get.dropNameSpaceSegments.get)
+      if (options.manifest.dropNameSpaceSegments.isDefined)
+        m.path.drop(options.manifest.dropNameSpaceSegments.get)
       else
         m.path
       ).mkString("-")
   }
 
-  def buildPackageModule(ts: Typespace, mf: TypeScriptBuildManifest): Module = {
+  def buildPackageModule(ts: Typespace): Module = {
     val peerDeps = ts.domain.meta.directImports
       .map {
         i =>
-          ManifestDependency(toScopedId(i.id.toPackage, mf), mf.version)
-      } :+ ManifestDependency(toScopedId(List("irt"), mf), mf.version)
+          ManifestDependency(toScopedId(i.id.toPackage), options.manifest.version)
+      } :+ ManifestDependency(toScopedId(List("irt")), options.manifest.version)
 
 
-    val name = toScopedId(ts.domain.id.toPackage, mf)
+    val name = toScopedId(ts.domain.id.toPackage)
 
-    val content = generatePackage(mf, Some("index"), name, peerDeps.toList)
+    val content = generatePackage(options.manifest, Some("index"), name, peerDeps.toList)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
 
   def buildIRTPackageModule(manifest: TypeScriptBuildManifest): Module = {
-    val content = generatePackage(manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt"), manifest))
+    val content = generatePackage(manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt")))
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 

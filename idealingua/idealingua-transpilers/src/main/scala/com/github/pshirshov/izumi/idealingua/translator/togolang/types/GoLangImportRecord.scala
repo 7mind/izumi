@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.Package
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId
 
 final case class GoLangImportRecord(id: TypeId, importName: String, pkg: Package) {
-  def renderImport(prefix: Option[String] = None): String = {
+  def renderImport(prefix: String): String = {
     if(pkg.isEmpty) {
       return ""
     }
@@ -17,8 +17,8 @@ final case class GoLangImportRecord(id: TypeId, importName: String, pkg: Package
 
     val pkgStr = pkg.mkString("/")
 
-    val pre = if (prefix.isDefined && !directImports.contains(pkgStr))
-      if (!prefix.get.endsWith("/") && !prefix.get.endsWith("\\")) prefix.get + "/" else prefix.get
+    val pre = if (prefix.nonEmpty && !directImports.contains(pkgStr))
+      if (!prefix.endsWith("/") && !prefix.endsWith("\\")) prefix + "/" else prefix
     else
       ""
 

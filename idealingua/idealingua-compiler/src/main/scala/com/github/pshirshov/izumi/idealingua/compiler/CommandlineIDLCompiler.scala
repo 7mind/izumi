@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
-import java.io.File
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -11,15 +10,12 @@ import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
 import io.circe.{Decoder, Encoder}
-import org.scalacheck._
-import org.scalacheck.rng.Seed
 
 import scala.reflect._
 import scala.util.{Failure, Success, Try}
 
 
-object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
-  implicit val sgen: Arbitrary[String] = Arbitrary(Gen.alphaLowerStr)
+object CommandlineIDLCompiler extends Codecs {
 
 
   def main(args: Array[String]): Unit = {
@@ -104,40 +100,50 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
 
     val manifest = lang match {
       case IDLLanguage.Scala =>
-        lopt.manifest.map(readManifest[ScalaBuildManifest])
+        readManifest(lopt, ScalaBuildManifest.default)
       case IDLLanguage.Typescript =>
-        lopt.manifest.map(readManifest[TypeScriptBuildManifest])
+        readManifest(lopt, TypeScriptBuildManifest.default)
       case IDLLanguage.Go =>
-        lopt.manifest.map(readManifest[GoLangBuildManifest])
+        readManifest(lopt, GoLangBuildManifest.default)
       case IDLLanguage.CSharp =>
-        lopt.manifest.map(readManifest[CSharpBuildManifest])
+        readManifest(lopt, CSharpBuildManifest.default)
     }
 
-    UntypedCompilerOptions(lang, exts, lopt.withRuntime, manifest)
+    UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
   }
 
-  private def readManifest[T: Arbitrary : ClassTag : Decoder : Encoder](path: File): T = {
+  private def readManifest[T: ClassTag : Decoder : Encoder](lopt: LanguageOpts, default: T): T = {
     import _root_.io.circe.parser._
-    import _root_.io.circe.syntax._
-    Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
-      case Success(Right(r)) =>
-        r
-      case o =>
-        val errRepr = o match {
-          case Success(Left(l)) =>
-            l.toString
-          case Failure(f) =>
-            f.toString
-          case e =>
-            e.toString
+    val lang = IDLLanguage.parse(lopt.id)
+
+    lopt.manifest match {
+      case Some(path) =>
+        Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
+          case Success(Right(r)) =>
+            r
+          case o =>
+            val errRepr = o match {
+              case Success(Left(l)) =>
+                l.toString
+              case Failure(f) =>
+                f.toString
+              case e =>
+                e.toString
+            }
+            println(s"Failed to read manifest from $path: $errRepr")
+            println(s"Example manifest for $lang:")
+            println(default)
+            System.out.flush()
+            System.exit(1)
+            throw new IllegalArgumentException(s"Failed to load manifest from $lopt: $errRepr")
         }
-        println(s"Failed to read manifest from $path: $errRepr")
-        println(s"Example manifest file for ${classTag[T].runtimeClass}:")
-        println(implicitly[Arbitrary[T]].arbitrary.pureApply(Gen.Parameters.default, Seed.random()).asJson)
-        System.out.flush()
-        System.exit(1)
-        throw new IllegalArgumentException(s"Failed to load manifest from $path: $errRepr")
+
+      case None =>
+        println(s"No manifest defined for $lang, using default:")
+        println(default)
+        default
     }
+
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {

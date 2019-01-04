@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
@@ -26,13 +26,11 @@ object TypeScriptTranslator {
 
 
 class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) extends Translator {
-  protected val ctx: TSTContext = new TSTContext(ts, options.extensions)
+  protected val ctx: TSTContext = new TSTContext(ts, options.manifest, options.extensions)
 
   import ctx._
 
   def translate(): Translated = {
-    implicit val tsManifest: Option[TypeScriptBuildManifest] = options.manifest
-
     Translated(ts, Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
@@ -40,15 +38,15 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ).flatten)
   }
 
-  protected def translateService(definition: Service)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
+  protected def translateService(definition: Service): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderService(definition))
   }
 
-  protected def translateBuzzer(definition: Buzzer)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
+  protected def translateBuzzer(definition: Buzzer): Seq[Module] = {
     ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), renderBuzzer(definition))
   }
 
-  protected def translateDef(definition: TypeDef)(implicit manifest: Option[TypeScriptBuildManifest]): Seq[Module] = {
+  protected def translateDef(definition: TypeDef): Seq[Module] = {
     val defns = definition match {
       case i: Alias =>
         renderAlias(i)
@@ -156,8 +154,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       ""
   }
 
-  protected def renderDto(i: DTO)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
+  protected def renderDto(i: DTO): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = options.manifest)
     val fields = typespace.structure.structure(i).all
     val distinctFields = fields.groupBy(_.field.name).map(_._2.head.field)
 
@@ -237,9 +235,9 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     )
   }
 
-  protected def renderAdt(i: Adt, onlyHelper: Boolean = false)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderAdt(i: Adt, onlyHelper: Boolean = false): RenderableCogenProduct = {
     Quirks.discard(onlyHelper)
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = options.manifest)
     val base = renderAdtImpl(i.id.name, i.alternatives)
 
     ext.extend(i,
@@ -403,7 +401,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderEnumeration(i: Enumeration)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderEnumeration(i: Enumeration): RenderableCogenProduct = {
     val it = i.members.map(_.value).iterator
     val members = it.map { m =>
       s"$m = '$m'" + (if (it.hasNext) "," else "")
@@ -418,8 +416,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     ext.extend(i, EnumProduct(content, s"// ${i.id.name} Enumeration"), _.handleEnum)
   }
 
-  protected def renderIdentifier(i: Identifier)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
+  protected def renderIdentifier(i: Identifier): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = options.manifest)
     val fields = typespace.structure.structure(i)
     val sortedFields = fields.all.sortBy(_.field.name)
     val typeName = i.id.name
@@ -482,8 +480,8 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     fields.map(f => conv.deserializeField(/*slice, */ f, typespace)).mkString("\n")
   }
 
-  protected def renderInterface(i: Interface)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
-    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = manifest)
+  protected def renderInterface(i: Interface): RenderableCogenProduct = {
+    val imports = TypeScriptImports(ts, i, i.id.path.toPackage, manifest = options.manifest)
     val extendsInterfaces =
       if (i.struct.superclasses.interfaces.nonEmpty) {
         "extends " + i.struct.superclasses.interfaces.map(iface => iface.name).mkString(", ") + " "
@@ -884,11 +882,11 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def importFromIRT(names: List[String], pkg: Package)(implicit manifest: Option[TypeScriptBuildManifest]): String = {
+  protected def importFromIRT(names: List[String], pkg: Package): String = {
     var importOffset = ""
     (1 to pkg.length).foreach(_ => importOffset += "../")
-    if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
-      importOffset = manifest.get.scope + "/"
+    if (manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      importOffset = manifest.scope + "/"
     }
 
     s"""import {
@@ -897,7 +895,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderService(i: Service)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderService(i: Service): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
     val typeName = i.id.name
 
@@ -1017,7 +1015,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
      """.stripMargin
   }
 
-  protected def renderBuzzer(i: Buzzer)(implicit manifest: Option[TypeScriptBuildManifest]): RenderableCogenProduct = {
+  protected def renderBuzzer(i: Buzzer): RenderableCogenProduct = {
     val imports = TypeScriptImports(ts, i, i.id.domain.toPackage, List.empty, manifest)
     val typeName = i.id.name
 

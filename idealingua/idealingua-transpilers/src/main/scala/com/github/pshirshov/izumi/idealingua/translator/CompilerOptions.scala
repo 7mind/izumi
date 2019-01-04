@@ -35,7 +35,7 @@ sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifes
 
   def withBundledRuntime: Boolean
 
-  def manifest: Option[M]
+  def manifest: M
 
   def providedRuntime: Option[ProvidedRuntime]
 }
@@ -45,8 +45,8 @@ final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
 (
   language: IDLLanguage
   , extensions: Seq[E]
+  , manifest: M
   , withBundledRuntime: Boolean = true
-  , manifest: Option[M] = None
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[E, M]
 
@@ -61,11 +61,9 @@ object CompilerOptions {
       case e: E => e
     }
 
-    val manifest = options.manifest.collect {
-      case m: M => m
-    }
+    val manifest = options.manifest.asInstanceOf[M]
 
-    CompilerOptions(options.language, extensions, options.withBundledRuntime, manifest, options.providedRuntime)
+    CompilerOptions(options.language, extensions, manifest, options.withBundledRuntime, options.providedRuntime)
   }
 }
 
@@ -73,16 +71,16 @@ final case class UntypedCompilerOptions
 (
   language: IDLLanguage
   , extensions: Seq[TranslatorExtension]
+  , manifest: BuildManifest
   , withBundledRuntime: Boolean = true
-  , manifest: Option[BuildManifest] = None
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
   override def toString: String = {
-    val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rt").getOrElse("-rt")
-    val mfRepr = manifest.map(_ => "+mf").getOrElse("-mf")
+    val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rtb").getOrElse("-rtb")
+    val rtfRepr = providedRuntime.map(rt => s"rtu=${rt.modules.size}").getOrElse("-rtu")
+    //val mfRepr = manifest.map(_ => "+mf").getOrElse("-mf")
     val extRepr = extensions.mkString("(", ", ", ")")
-    val rtfRepr = providedRuntime.map(rt => s"rtf=${rt.modules.size}").getOrElse("-rtf")
-    Seq(language, mfRepr, extRepr, rtRepr, rtfRepr).mkString(" ")
+    Seq(language, extRepr, rtRepr, rtfRepr).mkString(" ")
   }
 }
 

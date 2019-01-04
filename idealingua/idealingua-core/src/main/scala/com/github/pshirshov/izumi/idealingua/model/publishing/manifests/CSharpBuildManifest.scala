@@ -19,6 +19,22 @@ case class CSharpBuildManifest(name: String,
                           ) extends BuildManifest
 
 object CSharpBuildManifest {
+  def default = CSharpBuildManifest(
+    name = "TestBuild",
+    tags = "",
+    description = "Test Description",
+    notes = "",
+    publisher = Publisher("Test Publisher Name", "test_publisher_id"),
+    version = "0.0.0",
+    license = "MIT",
+    website = "http://project.website",
+    copyright = "Copyright (C) Test Inc.",
+    dependencies = List.empty,
+    "test-library",
+    "",
+    requireLicenseAcceptance = false,
+  )
+
   def generateNuspec(manifest: CSharpBuildManifest, filesFolder: List[String] = List("csharp\\**")): String = {
     s"""<?xml version="1.0"?>
        |<package >
