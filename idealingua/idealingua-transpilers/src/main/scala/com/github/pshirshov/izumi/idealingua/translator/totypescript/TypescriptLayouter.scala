@@ -19,13 +19,37 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val withLayout = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
       val inSubdir = modules
-      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule(options.manifest))), options.manifest.scope)
+      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), options.manifest.scope)
       addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(options.manifest)
     } else {
       modules ++ rt ++ buildRootModules(options.manifest)
     }
 
     Layouted(withLayout)
+  }
+
+  private def applyLayout(translated: Translated): Seq[ExtendedModule.DomainModule] = {
+    val ts = translated.typespace
+    val modules = translated.modules ++ (
+      if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
+        List(
+          buildIndexModule(ts),
+          buildPackageModule(ts),
+        )
+      else
+        List(buildIndexModule(ts))
+      )
+
+
+    val mm = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      modules.map {
+        m =>
+          m.copy(id = toScopedId(m.id))
+      }
+    } else {
+      modules
+    }
+    mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
 
   private def addPrefix(rt: Seq[ExtendedModule], prefix: String): Seq[ExtendedModule] = {
@@ -93,30 +117,6 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     )
   }
 
-  private def applyLayout(translated: Translated): Seq[ExtendedModule.DomainModule] = {
-    val ts = translated.typespace
-    val modules = translated.modules ++ (
-      if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
-        List(
-          buildIndexModule(ts),
-          buildPackageModule(ts),
-        )
-      else
-        List(buildIndexModule(ts))
-      )
-
-
-    val mm = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
-      modules.map {
-        m =>
-          m.copy(id = toScopedId(m.id))
-      }
-    } else {
-      modules
-    }
-    mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
-  }
-
   private def toDirName(parts: Seq[String]): String = {
     val dropped = options.manifest.dropNameSpaceSegments.fold(parts)(toDrop => parts.drop(toDrop))
     dropped.mkString("-")
@@ -141,7 +141,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       ).mkString("-")
   }
 
-  def buildPackageModule(ts: Typespace): Module = {
+  private def buildPackageModule(ts: Typespace): Module = {
     val peerDeps = ts.domain.meta.directImports
       .map {
         i =>
@@ -155,12 +155,12 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
 
-  def buildIRTPackageModule(manifest: TypeScriptBuildManifest): Module = {
-    val content = generatePackage(manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt")))
+  private def buildIRTPackageModule(): Module = {
+    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt")))
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
-  def buildIndexModule(ts: Typespace): Module = {
+  private def buildIndexModule(ts: Typespace): Module = {
     val content =
       s"""// Auto-generated, any modifications may be overwritten in the future.
          |// Exporting module for domain ${ts.domain.id.toPackage.mkString(".")}
@@ -171,7 +171,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
   }
 
-  def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
+  private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
     val author = s"${manifest.publisher.name} (${manifest.publisher.id})"
     val deps = manifest.dependencies.map(d => d.module -> d.version).toMap.asJson
     val peerDeps = peerDependencies.map(d => d.module -> d.version).toMap.asJson

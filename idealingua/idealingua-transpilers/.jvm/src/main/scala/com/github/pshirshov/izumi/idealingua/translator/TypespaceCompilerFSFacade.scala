@@ -26,15 +26,7 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
 
     val withRt = options.copy(providedRuntime = fullRt)
 
-    val descriptor = TypespaceCompilerBaseFacade.descriptor(options.language)
-    val compiled = toCompile.map {
-      loaded =>
-        descriptor.make(loaded.typespace, withRt).translate()
-    }
-
-    val hook = descriptor.makeHook(withRt)
-
-    val finalized = hook.layout(compiled)
+    val finalized = new TypespaceCompilerBaseFacade(withRt).compile(toCompile)
 
     val files = finalized.emodules.map {
       emodule =>
@@ -78,6 +70,8 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
 
     TypespaceCompilerFSFacade.Result(result, ztarget)
   }
+
+
 
   private def loadBundledRuntime(options: UntypedCompilerOptions): Option[ProvidedRuntime] = {
     if (options.withBundledRuntime) {

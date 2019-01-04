@@ -40,18 +40,4 @@ trait TranslationLayouter {
   protected def withRuntime(options: CompilerOptions[_, _], generated: Seq[Translated]): Seq[ExtendedModule] = {
     toRuntimeModules(options) ++ toDomainModules(generated)
   }
-
-//  protected def mergeModules(m1: Seq[Module], m2: Seq[Module]): Seq[Module] = {
-//    val combined = m1 ++ m2
-//
-//    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-//    val grouped = combined.groupBy(_.id)
-//
-//    val conflicts = grouped.filter(_._2.size > 1)
-//    if (conflicts.nonEmpty) {
-//      throw new IDLException(s"Conflicting modules: ${conflicts.map(kv => s"${kv._1} => ${kv._2.map(_.id).mkString(", ")}").niceList()}")
-//    }
-//
-//    combined
-//  }
 }
