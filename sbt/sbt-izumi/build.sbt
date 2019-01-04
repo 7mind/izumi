@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
 sbtPlugin := true
 
 // https://github.com/coursier/coursier#sbt-plugin
-val coursier = "1.1.0-M7"
+val coursier = "1.1.0-M8"
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % coursier)
 addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 
@@ -38,7 +38,7 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
 //https://github.com/aiyanbo/sbt-dependency-updates
-addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.12")
+addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.13")
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")

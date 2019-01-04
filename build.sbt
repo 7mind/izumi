@@ -41,11 +41,12 @@ publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTa
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettings")
 
-  override val settings: Seq[sbt.Setting[_]] = Seq(
+  override val settings: Seq[sbt.Setting[_]] = Seq(    
     crossScalaVersions := Seq(
       V.scala_212,
       V.scala_213,
     )
+    , scalaVersion := crossScalaVersions.value.head
     , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
   )

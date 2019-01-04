@@ -141,9 +141,9 @@ object CoursierCompat {
           throw new IllegalArgumentException(s"Unexpected crossversion in $module")
       }
 
-      Dependency(Module(module.organization, name, module.extraAttributes),
+      Dependency(Module(Organization(module.organization), ModuleName(name), module.extraAttributes),
         module.revision,
-        attributes = Attributes(`type` = "jar")
+        attributes = Attributes(`type` = core.Type("jar"))
       )
     }
   }

@@ -18,13 +18,13 @@ object IzumiDeps {
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.5.0" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.1.0-M1"
+    val cats_effect = "1.1.0"
     val zio = "0.5.0"
 
     val circe = "0.11.0" // 2.13+
-    val circe_derivation = "0.10.0-M1"
+    val circe_derivation = "0.11.0-M1"
     val jawn = "0.14.0"
-    val http4s = "0.20.0-M3" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.20.0-M4" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "4.1.0" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
@@ -45,7 +45,7 @@ object IzumiDeps {
     val typesafe_config = "1.3.3" // java
 
     // good to drop - scala
-    val scopt = "3.7.0" // 2.13+
+    val scopt = "3.7.1" // 2.13+
 
     // good to drop - java
     val cglib_nodep = "3.2.8" // java

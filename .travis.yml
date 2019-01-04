@@ -11,7 +11,7 @@ before_install:
   - mkdir -p ~/.ivy2/
   - mkdir -p ~/.coursier/
   - mkdir -p ~/.cache/coursier
-  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M7")' > ~/.sbt/1.0/plugins/build.sbt
+  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
   - sudo rm -rf ~/.ivy2/local
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
 
