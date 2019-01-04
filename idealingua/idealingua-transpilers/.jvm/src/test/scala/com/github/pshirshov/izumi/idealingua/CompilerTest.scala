@@ -19,14 +19,14 @@ class CompilerTest extends WordSpec {
       assume(IzFiles.haveExecutables("tsc"), "tsc not available")
       assume(IzFiles.haveExecutables("npm"), "npm not available")
       assume(IzFiles.haveExecutables("yarn"), "yarn not available")
-      //assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = true))
-      assert(compilesTypeScript(getClass.getSimpleName, loadDefs(), scoped = false))
+      assert(compilesTypeScript(s"${getClass.getSimpleName}-scoped", loadDefs(), scoped = true))
+      assert(compilesTypeScript(s"${getClass.getSimpleName}-plain", loadDefs(), scoped = false))
     }
 
     "be able to compile into golang" in {
       assume(IzFiles.haveExecutables("go"), "go not available")
-      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = false))
-      assert(compilesGolang(getClass.getSimpleName, loadDefs(), scoped = true))
+      assert(compilesGolang(s"${getClass.getSimpleName}-scoped", loadDefs(), withManifest = true))
+      assert(compilesGolang(s"${getClass.getSimpleName}-plain", loadDefs(), withManifest = false))
     }
 
     "be able to compile into csharp" in {

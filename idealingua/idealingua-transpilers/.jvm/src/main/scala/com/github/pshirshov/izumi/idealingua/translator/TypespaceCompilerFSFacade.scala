@@ -58,14 +58,12 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
     val toPack = result.paths.map(p => ZE(result.target.relativize(p).toString, p))
     val grouped = toPack.groupBy(_.name)
 
-    // this check is kinda excessive because we have per-domain conflict checks
-    // TODO: this check is kinda expensive as well
     val conflicts = grouped
       .filter { // at first we compare zip entries by file path and entry name
         case (_, v) =>
           v.toSet.size > 1
       }
-      .filter { // when compare the rest by content
+      .filter { // then compare the rest by content
         case (_, v) =>
           v.map(f => IzFiles.readString(f.file)).toSet.size > 1
       }

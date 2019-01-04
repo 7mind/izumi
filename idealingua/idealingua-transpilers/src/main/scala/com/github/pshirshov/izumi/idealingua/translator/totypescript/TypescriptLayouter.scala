@@ -2,14 +2,18 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
+import io.circe.Json
+import io.circe.literal._
+import io.circe.syntax._
 
 class TypescriptLayouter(options: TypescriptTranslatorOptions) extends TranslationLayouter {
-  implicit val tsManifest: Option[TypeScriptBuildManifest] = options.manifest
+  val tsManifest: Option[TypeScriptBuildManifest] = options.manifest
 
 
   override def layout(outputs: Seq[Translated]): Layouted = {
@@ -20,18 +24,14 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       case Some(mf) if mf.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN =>
         val inSubdir = modules
         val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule(mf))), mf.scope)
-        addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(mf, outputs)
-      case _ =>
-        modules ++ rt
+        addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(mf)
+      case Some(mf) =>
+        modules ++ rt ++ buildRootModules(mf)
+      case None =>
+        throw new IDLException(s"Manifest is mandatory for typescript!")
     }
 
-
-    val out = Layouted(withLayout)
-    out.modules.foreach {
-      m =>
-        println(s"${m.id}")
-    }
-    out
+    Layouted(withLayout)
   }
 
   private def addPrefix(rt: Seq[ExtendedModule], prefix: String): Seq[ExtendedModule] = {
@@ -43,9 +43,12 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     }
   }
 
-  private def buildRootModules(mf: TypeScriptBuildManifest, outputs: Seq[Translated]): Seq[ExtendedModule.RuntimeModule] = {
-    import io.circe.literal._
-
+  private def buildRootModules(mf: TypeScriptBuildManifest): Seq[ExtendedModule.RuntimeModule] = {
+    val rootDir = if (mf.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      "packages"
+    } else {
+      "."
+    }
     val tsconfig =
       json"""
             {
@@ -56,15 +59,13 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
                   "sourceMap": true,
                   "allowJs": false,
                   "moduleResolution": "node",
-                  "rootDirs": [
-                    "packages"
-                  ],
-                  "outDir": "target",
+                  "rootDirs": [$rootDir],
+                  "outDir": "dist",
                   "declaration": true,
                   "baseUrl": ".",
                   "paths": {
                     "*": [
-                      "packages/*",
+                      ${s"$rootDir/*"},
                       "node_modules/*"
                     ]
                   },
@@ -82,16 +83,18 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
               }
           """.toString()
 
-    val packageJson = json"""{
-            "name": "root",
+    val packageJson = generatePackage(mf, None, "root", List.empty)
+    val rootJson =
+      json"""{
             "private": true,
             "workspaces": {
               "packages": [${s"packages/${mf.scope}/*"}]
             }
-          }""".toString()
+          }"""
+    val fullRootJson = packageJson.deepMerge(rootJson)
 
     Seq(
-      ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "package.json"), packageJson)),
+      ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "package.json"), fullRootJson.toString())),
       ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "tsconfig.json"), tsconfig)),
     )
   }
@@ -120,12 +123,12 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
 
-  private def toDirName(parts: Seq[String], mf: TypeScriptBuildManifest) = {
+  private def toDirName(parts: Seq[String], mf: TypeScriptBuildManifest): String = {
     val dropped = mf.dropNameSpaceSegments.fold(parts)(toDrop => parts.drop(toDrop))
     dropped.mkString("-")
   }
 
-  private def toScopedId(parts: Seq[String], mf: TypeScriptBuildManifest) = {
+  private def toScopedId(parts: Seq[String], mf: TypeScriptBuildManifest): String = {
     s"${mf.scope}/${toDirName(parts, mf)}"
   }
 
@@ -157,13 +160,13 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val name = toScopedId(ts.domain.id.toPackage, mf)
 
-    val content = TypeScriptBuildManifest.generatePackage(mf, "index", name, peerDeps.toList)
-    Module(ModuleId(ts.domain.id.toPackage, "package.json"), content)
+    val content = generatePackage(mf, Some("index"), name, peerDeps.toList)
+    Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
 
   def buildIRTPackageModule(manifest: TypeScriptBuildManifest): Module = {
-    val content = TypeScriptBuildManifest.generatePackage(manifest.copy(dropNameSpaceSegments = None), "index", toScopedId(List("irt"), manifest))
-    Module(ModuleId(Seq("irt"), "package.json"), content)
+    val content = generatePackage(manifest.copy(dropNameSpaceSegments = None), Some("index"), toScopedId(List("irt"), manifest))
+    Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
   def buildIndexModule(ts: Typespace): Module = {
@@ -175,5 +178,32 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
          """.stripMargin
 
     Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
+  }
+
+  def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
+    val author = s"${manifest.publisher.name} (${manifest.publisher.id})"
+    val deps = manifest.dependencies.map(d => d.module -> d.version).toMap.asJson
+    val peerDeps = peerDependencies.map(d => d.module -> d.version).toMap.asJson
+
+    val base =
+      json"""{
+         "name": $name,
+         "version": ${manifest.version},
+         "description": ${manifest.description},
+         "author": $author,
+         "license": ${manifest.license},
+         "dependencies": $deps,
+         "peerDependencies": $peerDeps
+       }
+     """
+
+
+    main match {
+      case Some(value) =>
+        base.deepMerge(
+          json"""{"main": ${s"$value.js"}, "typings": ${s"$value.d.ts"}}""")
+      case None =>
+        base
+    }
   }
 }

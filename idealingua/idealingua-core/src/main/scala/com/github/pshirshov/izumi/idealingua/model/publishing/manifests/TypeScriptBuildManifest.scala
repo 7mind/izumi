@@ -27,24 +27,3 @@ case class TypeScriptBuildManifest(
                             // by using dropnameSpaceSegments = Some(2)
                             dropNameSpaceSegments: Option[Int],
                           ) extends BuildManifest
-
-object TypeScriptBuildManifest {
-  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: String, peerDependencies: List[ManifestDependency] = List.empty): String = {
-    s"""{
-       |  "name": "$name",
-       |  "version": "${manifest.version}",
-       |  "description": "${manifest.description}",
-       |  "main": "$main.js",
-       |  "typings": "$main.d.ts",
-       |  "author": "${manifest.publisher.name} (${manifest.publisher.id})",
-       |  "license": "${manifest.license}",
-       |  "dependencies": {
-       |${manifest.dependencies.map(md => s"""    "${md.module}": "${md.version}"""").mkString(",\n    ")}
-       |  },
-       |  "peerDependencies": {
-       |${peerDependencies.map(pd => s"""    "${pd.module}": "${pd.version}"""").mkString(",\n    ")}
-       |  }
-       |}
-     """.stripMargin
-  }
-}

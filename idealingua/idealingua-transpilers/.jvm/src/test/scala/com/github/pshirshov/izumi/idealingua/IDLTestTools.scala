@@ -15,7 +15,6 @@ import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRender
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
-import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompilerFSFacade.IDLCompilationResult
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
@@ -112,7 +111,13 @@ object IDLTestTools {
       None
     )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, withBundledRuntime = true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, withBundledRuntime = true, Some(manifest)))
+
+    val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
+    val tsconfigBytes = new String(Files.readAllBytes(outputTsconfigPath), StandardCharsets.UTF_8)
+      .replace("\"dist\"", s""""${out.phase3.toString}"""")
+      .getBytes
+    Files.write(outputTsconfigPath, tsconfigBytes)
 
     if (run(out.absoluteTargetDir, Seq("yarn", "install"), Map.empty, "yarn") != 0) {
       return false
@@ -148,7 +153,7 @@ object IDLTestTools {
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, withManifest: Boolean): Boolean = {
     val manifest = new GoLangBuildManifest(
       name = "TestBuild",
       tags = "",
@@ -164,7 +169,7 @@ object IDLTestTools {
       useRepositoryFolders = true
     )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withBundledRuntime = true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withBundledRuntime = true, if (withManifest) Some(manifest) else None))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
