@@ -78,9 +78,8 @@ final case class UntypedCompilerOptions
   override def toString: String = {
     val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rtb").getOrElse("-rtb")
     val rtfRepr = providedRuntime.map(rt => s"rtu=${rt.modules.size}").getOrElse("-rtu")
-    //val mfRepr = manifest.map(_ => "+mf").getOrElse("-mf")
     val extRepr = extensions.mkString("(", ", ", ")")
-    Seq(language, extRepr, rtRepr, rtfRepr).mkString(" ")
+    Seq(language, rtRepr, rtfRepr, extRepr).mkString(" ")
   }
 }
 
