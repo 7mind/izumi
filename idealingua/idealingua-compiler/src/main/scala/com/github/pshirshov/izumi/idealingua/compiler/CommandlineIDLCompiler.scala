@@ -75,7 +75,7 @@ object CommandlineIDLCompiler extends ScalacheckShapeless with Codecs {
         .compile(itarget, option)
     }
 
-    val allPaths = out.compilationProducts.flatMap(_._2.paths)
+    val allPaths = out.compilationProducts.flatMap(_.paths)
 
     println(s"${allPaths.size} source files from ${out.compilationProducts.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
     println(s"Archive: ${out.zippedOutput}")

@@ -3,18 +3,17 @@ package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, DomainId, TypeId, TypePath}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{JsonNetExtension, NUnitExtension}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.CogenProduct._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.products.RenderableCogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
+import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
 
 object CSharpTranslator {
   final val defaultExtensions = Seq(
@@ -23,19 +22,29 @@ object CSharpTranslator {
   )
 }
 
+class CSharpFinalizer(options: CSharpTranslatorOptions) extends PostTranslationHook {
+  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
+    outputs.map {
+      out =>
+        out.copy(modules = addRuntime(options, out.modules))
+    }
+  }
+}
+
+
 class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends Translator {
   protected val ctx: CSTContext = new CSTContext(ts, options.extensions)
 
   import ctx._
 
-  def translate(): Seq[Module] = {
+  def translate(): Translated = {
     val modules = Seq(
       typespace.domain.types.flatMap(translateDef)
       , typespace.domain.services.flatMap(translateService)
       , typespace.domain.buzzers.flatMap(translateBuzzer)
     ).flatten
 
-    addRuntime(options, modules)
+    Translated(ts, modules)
   }
 
 

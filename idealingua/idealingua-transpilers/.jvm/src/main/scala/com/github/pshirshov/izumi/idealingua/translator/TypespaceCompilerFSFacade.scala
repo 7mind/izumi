@@ -6,12 +6,15 @@ import java.nio.file.{Files, Path}
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
+
 
 class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
+
+  import TypespaceCompilerFSFacade._
+
   def compile(relTarget: Path, options: UntypedCompilerOptions): TypespaceCompilerFSFacade.Result = {
     val target = relTarget.toAbsolutePath
     IzFiles.recreateDir(target)
@@ -29,16 +32,29 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
       options
     }
 
-    val result = toCompile.map {
+
+    val descriptor = TypespaceCompilerBaseFacade.descriptor(options.language)
+    val compiled = toCompile.map {
       loaded =>
-        loaded.typespace.domain.id -> invokeCompiler(target, withRt, loaded.typespace)
+        descriptor.make(loaded.typespace, withRt).translate()
     }
 
-    val success = result.collect({ case (id, success: IDLCompilationResult.Success) => id -> success })
-    val failure = result.collect({ case (id, failure: IDLCompilationResult.Failure) => s"$id: $failure" })
+    val hook = descriptor.makeHook(options)
 
-    if (failure.nonEmpty) {
-      throw new IllegalStateException(s"Cannot compile models: ${failure.mkString("\n  ")}")
+    val finalized = hook.finalize(compiled)
+
+    val result = finalized.map {
+      out =>
+        val files = out.modules.map {
+          module =>
+            val parts = module.id.path :+ module.id.name
+            val modulePath = parts.foldLeft(target) { case (path, part) => path.resolve(part) }
+            modulePath.getParent.toFile.mkdirs()
+            Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
+            modulePath
+        }
+
+        IDLCompilationResult(out.typespace.domain.id, target, files)
     }
 
     // pack output
@@ -48,8 +64,8 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
       .getParent
       .resolve(s"${options.language.toString}.zip")
 
-    val toPack = success.flatMap {
-      case (_, s) =>
+    val toPack = result.flatMap {
+      s =>
         s.paths.map(p => ZE(s.target.relativize(p).toString, p))
     }
 
@@ -75,29 +91,16 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
 
     zip(ztarget, grouped.values.map(_.head))
 
-    TypespaceCompilerFSFacade.Result(success.toMap, ztarget)
-  }
-
-  protected def invokeCompiler(target: Path, options: UntypedCompilerOptions, typespace: Typespace): IDLCompilationResult = {
-    val modules = new TypespaceCompilerBaseFacade(typespace, options).compile()
-
-    val files = modules.map {
-      module =>
-        val parts = module.id.path :+ module.id.name
-        val modulePath = parts.foldLeft(target) { case (path, part) => path.resolve(part) }
-        modulePath.getParent.toFile.mkdirs()
-        Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
-        modulePath
-    }
-
-    IDLCompilationResult.Success(target, files)
+    TypespaceCompilerFSFacade.Result(result, ztarget)
   }
 }
 
 object TypespaceCompilerFSFacade {
 
+  final case class IDLCompilationResult(id: DomainId, target: Path, paths: Seq[Path])
+
   case class Result(
-                     compilationProducts: Map[DomainId, IDLCompilationResult.Success]
+                     compilationProducts: Seq[IDLCompilationResult]
                      , zippedOutput: Path
                    )
 

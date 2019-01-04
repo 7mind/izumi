@@ -8,10 +8,14 @@
     "allowJs": false,
     "moduleResolution": "node",
     "rootDirs": [
-      "."
+      "src"
     ],
     "declaration": true,
     "baseUrl": ".",
+    "*": [
+      "typescript/*",
+      "node_modules/*"
+    ],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.Translator
+import com.github.pshirshov.izumi.idealingua.translator.{PostTranslationHook, Translated, Translator}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
@@ -23,6 +23,14 @@ object ScalaTranslator {
   )
 }
 
+class ScalaFinalizer(options: ScalaTranslatorOptions) extends PostTranslationHook {
+  override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
+    outputs.map {
+      out =>
+        out.copy(modules = addRuntime(options, out.modules))
+    }
+  }
+}
 
 class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
   extends Translator {
@@ -30,7 +38,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
 
 
 
-  def translate(): Seq[Module] = {
+  def translate(): Translated = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val aliases = ctx.typespace.domain.types
       .collect {
@@ -60,7 +68,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
       , packageObjects
     ).flatten
 
-    addRuntime(options, ctx.ext.extend(modules))
+    Translated(ts, ctx.ext.extend(modules))
   }
 
   protected def translateBuzzer(definition: Buzzer): Seq[Module] = {

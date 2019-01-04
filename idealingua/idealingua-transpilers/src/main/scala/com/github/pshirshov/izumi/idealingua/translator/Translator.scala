@@ -1,10 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
+import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+
+case class Translated(typespace: Typespace, modules: Seq[Module])
 
 trait Translator {
-  def translate(): Seq[Module]
+  def translate(): Translated
+}
+
+trait PostTranslationHook {
+  def finalize(outputs: Seq[Translated]): Seq[Translated]
 
   protected def addRuntime(options: CompilerOptions[_, _], generated: Seq[Module]): Seq[Module] = {
     mergeModules(generated, options.providedRuntime.toSeq.flatMap(_.modules).toSeq)
@@ -22,5 +29,13 @@ trait Translator {
     }
 
     combined
+  }
+}
+
+object PostTranslationHook {
+  object NoOp extends PostTranslationHook {
+    override def finalize(outputs: Seq[Translated]): Seq[Translated] = {
+      outputs
+    }
   }
 }

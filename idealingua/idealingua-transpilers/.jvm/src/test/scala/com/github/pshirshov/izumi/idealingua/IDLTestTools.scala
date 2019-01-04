@@ -12,10 +12,10 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader._
 import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.translator.TypespaceCompilerFSFacade.IDLCompilationResult
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
@@ -172,7 +172,7 @@ object IDLTestTools {
       useRepositoryFolders = true
     )
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, withRuntime = true, if (scoped) Some(manifest) else None))
     val outDir = out.absoluteTargetDir
 
     val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
@@ -225,7 +225,7 @@ object IDLTestTools {
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
       .compilationProducts
 
-    val allPaths = products.flatMap(_._2.paths).toSeq
+    val allPaths = products.flatMap(_.paths).toSeq
 
     rerenderDomains(domainsDir, domains)
     saveDebugLayout(layoutDir, products)
@@ -244,13 +244,13 @@ object IDLTestTools {
     }
   }
 
-  private def saveDebugLayout(layoutDir: Path, products: Map[DomainId, IDLCompilationResult.Success]): Unit = {
+  private def saveDebugLayout(layoutDir: Path, products: Seq[IDLCompilationResult]): Unit = {
     products.foreach {
-      case (did, s) =>
+      s =>
         val mapped = s.paths.map {
           f =>
-            val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
-            val marker = did.toPackage.mkString("/")
+            val domainDir = layoutDir.resolve(s.id.toPackage.mkString("."))
+            val marker = s.id.toPackage.mkString("/")
             val target = if (f.toString.contains(marker)) {
               domainDir.resolve(f.toFile.getName)
             } else {
