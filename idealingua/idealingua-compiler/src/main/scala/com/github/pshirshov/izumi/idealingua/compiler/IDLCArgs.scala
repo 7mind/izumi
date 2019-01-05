@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 import scopt.OptionParser
 
-case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String])
+case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String], overrides: Map[String, String])
 
 
 case class IDLCArgs(source: Path, target: Path, languages: List[LanguageOpts])
@@ -27,7 +27,7 @@ object IDLCArgs {
       .text("{scala|typescript|go|csharp}")
       .action {
         (a, c) =>
-          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, List.empty))
+          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, List.empty, Map.empty))
       }
       .optional()
       .unbounded()
@@ -45,6 +45,15 @@ object IDLCArgs {
           .action {
             (_, c) =>
               c.copy(languages = c.languages.init :+ c.languages.last.copy(withRuntime = false))
+          },
+        opt[String]('d', "define").valueName("name=value")
+          .text("define manifest overrides")
+          .optional()
+          .unbounded()
+          .action {
+            (a, c) =>
+              val kv = a.split("=")
+              c.copy(languages = c.languages.init :+ c.languages.last.copy(overrides = c.languages.last.overrides.updated(kv.head, kv(1))))
           },
         opt[String]("extensions").abbr("e")
           .optional()

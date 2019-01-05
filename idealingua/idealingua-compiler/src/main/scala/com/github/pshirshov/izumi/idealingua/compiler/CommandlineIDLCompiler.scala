@@ -1,45 +1,47 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
-import java.io.File
 import java.nio.file._
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
-import io.circe.{Decoder, Encoder}
-import io.circe.syntax._
-import io.circe.parser._
+import com.typesafe.config.ConfigFactory
+import io.circe.Json
 
-import scala.reflect._
-import scala.util.{Failure, Success, Try}
+import scala.collection.JavaConverters._
 
 
-object CommandlineIDLCompiler extends Codecs {
-
+object CommandlineIDLCompiler {
+  private val log = CompilerLog.Default
 
   def main(args: Array[String]): Unit = {
-    val conf = parseArgs(args)
-    val toRun = conf.languages.map(toOption)
+    val mf = IzManifest.manifest[CommandlineIDLCompiler.type]().map(IzManifest.read)
+    val izumiVersion = mf.map(_.version.toString).getOrElse("0.0.0-UNKNOWN")
 
-    println("We are going to run:")
-    println(toRun.niceList())
-    println()
+    log.log(s"Iuzmi IDL Compiler v$izumiVersion")
+
+    val conf = parseArgs(args)
+    val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))
+
+
+    log.log("We are going to run:")
+    log.log(toRun.niceList())
+    log.log("")
 
     val path = conf.source.toAbsolutePath
     val target = conf.target.toAbsolutePath
     target.toFile.mkdirs()
 
-    println(s"Loading definitions from `$path`...")
+    log.log(s"Loading definitions from `$path`...")
     val loaded = Timed {
       val context = new LocalModelLoaderContext(path, Seq.empty)
       context.loader.load()
     }
-    println(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
-    println()
+    log.log(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
+    log.log("")
 
     toRun.foreach {
       option =>
@@ -51,23 +53,23 @@ object CommandlineIDLCompiler extends Codecs {
   private def runCompiler(target: Path, loaded: Timed[UnresolvedDomains], option: UntypedCompilerOptions): Unit = {
     val langId = option.language.toString
     val itarget = target.resolve(langId)
-    println(s"Preparing typespace for $langId")
+    log.log(s"Preparing typespace for $langId")
     val toCompile = Timed {
       val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
       new ModelResolver(rules)
         .resolve(loaded.value)
         .ifWarnings {
           message =>
-            println(message)
+            log.log(message)
         }
         .ifFailed {
           message =>
-            println(message)
+            log.log(message)
             System.exit(1)
         }
         .successful
     }
-    println(s"Finished in ${toCompile.duration.toMillis}ms")
+    log.log(s"Finished in ${toCompile.duration.toMillis}ms")
 
     val out = Timed {
       new TypespaceCompilerFSFacade(toCompile)
@@ -76,9 +78,9 @@ object CommandlineIDLCompiler extends Codecs {
 
     val allPaths = out.compilationProducts.paths
 
-    println(s"${allPaths.size} source files from ${toCompile.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
-    println(s"Archive: ${out.zippedOutput}")
-    println("")
+    log.log(s"${allPaths.size} source files from ${toCompile.size} domains produced in `$itarget` in ${out.duration.toMillis}ms")
+    log.log(s"Archive: ${out.zippedOutput}")
+    log.log("")
   }
 
   private def parseArgs(args: Array[String]) = {
@@ -97,73 +99,42 @@ object CommandlineIDLCompiler extends Codecs {
     conf
   }
 
-  private def toOption(lopt: LanguageOpts): UntypedCompilerOptions = {
+  private def toOption(env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {
     val lang = IDLLanguage.parse(lopt.id)
     val exts = getExt(lang, lopt.extensions)
 
-    val manifest = lang match {
-      case IDLLanguage.Scala =>
-        readManifest(lopt, ScalaBuildManifest.default)
-      case IDLLanguage.Typescript =>
-        readManifest(lopt, TypeScriptBuildManifest.default)
-      case IDLLanguage.Go =>
-        readManifest(lopt, GoLangBuildManifest.default)
-      case IDLLanguage.CSharp =>
-        readManifest(lopt, CSharpBuildManifest.default)
-    }
+    val patch = toJson(ConfigFactory.parseMap((env ++ lopt.overrides).asJava).root().unwrapped())
+    val reader = new ManifestReader(patch, lang, lopt.manifest)
+    val manifest = reader.read()
 
     UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
   }
 
-  private def readManifest[T: ClassTag : Decoder : Encoder](lopt: LanguageOpts, default: T): T = {
-    val lang = IDLLanguage.parse(lopt.id)
+  private def toJson(v: AnyRef): Json = {
+    import io.circe.syntax._
 
-    lopt.manifest match {
-      case Some(path) if path.toString == "@" =>
-        default
+    v match {
+      case m: java.util.HashMap[_, _] =>
+        m.asScala
+          .map {
+            case (k, value) =>
+              k.toString -> toJson(value.asInstanceOf[AnyRef])
+          }
+          .asJson
 
-      case Some(path) if path.toString == "+" =>
-        readMfFromFile(default, lang, Paths.get("manifests", s"${lang.toString.toLowerCase}.json").toFile)
+      case s: String =>
+        s.asJson
 
-      case Some(path) =>
-        readMfFromFile(default, lang, path)
-
-      case None =>
-        println(s"No manifest defined for $lang, using default:")
-        println(default.asJson.toString())
-        println()
-        default
-    }
-
-  }
-
-  private def readMfFromFile[T: ClassTag : Decoder : Encoder](default: T, lang: IDLLanguage, path: File) = {
-    Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
-      case Success(Right(r)) =>
-        r
-      case o =>
-        val errRepr = o match {
-          case Success(Left(l)) =>
-            l.toString
-          case Failure(f) =>
-            f.toString
-          case e =>
-            e.toString
-        }
-        println(s"Failed to read $lang manifest from $path: $errRepr")
-        println(s"Example manifest for $lang:")
-        println(default.asJson.toString())
-        System.out.flush()
-        System.exit(1)
-        throw new IllegalArgumentException(s"Failed to load manifest from $lang: $errRepr")
     }
   }
+
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
     val descriptor = TypespaceCompilerBaseFacade.descriptor(lang)
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
     descriptor.defaultExtensions.filterNot(e => negative.contains(e.id))
   }
+
 }
 
 

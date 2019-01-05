@@ -52,8 +52,6 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
               s"""lazy val `$id` = (project in file("$id"))$depends"""
           }
 
-        val idlVersion = "0.7.0-SNAPSHOT"
-
         val agg =
           s"""
              |lazy val root = (project in file("."))
@@ -64,6 +62,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
 
         import SbtDslOp._
 
+        val idlVersion = options.manifest.common.izumiVersion
         val deps = Seq("libraryDependencies" -> Append(
           Seq(
             RawExpr(s""" "com.github.pshirshov.izumi.r2" %% "idealingua-runtime-rpc-scala" % "$idlVersion" """),
