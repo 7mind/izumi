@@ -118,7 +118,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
   private def toDirName(parts: Seq[String]): String = {
-    val dropped = options.manifest.dropNameSpaceSegments.fold(parts)(toDrop => parts.drop(toDrop))
+    val dropped = options.manifest.dropFQNSegments.fold(parts)(toDrop => parts.drop(toDrop))
     dropped.mkString("-")
   }
 
@@ -134,8 +134,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
   private def makeName(m: ModuleId): String = {
     (
-      if (options.manifest.dropNameSpaceSegments.isDefined)
-        m.path.drop(options.manifest.dropNameSpaceSegments.get)
+      if (options.manifest.dropFQNSegments.isDefined)
+        m.path.drop(options.manifest.dropFQNSegments.get)
       else
         m.path
       ).mkString("-")
@@ -157,7 +157,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   private def irtDependency: String = s"${options.manifest.scope}/irt"
 
   private def buildIRTPackageModule(): Module = {
-    val content = generatePackage(options.manifest.copy(dropNameSpaceSegments = None), Some("index"), irtDependency)
+    val content = generatePackage(options.manifest.copy(dropFQNSegments = None), Some("index"), irtDependency)
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 

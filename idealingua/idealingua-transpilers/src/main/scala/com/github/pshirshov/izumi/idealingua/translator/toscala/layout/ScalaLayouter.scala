@@ -111,7 +111,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
 
   private def projectId(did: DomainId): String = {
     val pkg = did.toPackage
-    val parts = options.manifest.dropPackageHead match {
+    val parts = options.manifest.dropFQNSegments.getOrElse(0) match {
       case v if v < 0 =>
         pkg.takeRight(-v)
       case 0 =>

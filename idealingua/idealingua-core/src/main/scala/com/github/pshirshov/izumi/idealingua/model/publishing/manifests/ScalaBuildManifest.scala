@@ -16,7 +16,7 @@ case class ScalaBuildManifest(
                                  *
                                  * Does not apply for layout == PLAIN
                                  */
-                               dropPackageHead: Int,
+                               dropFQNSegments: Option[Int],
                              ) extends BuildManifest
 
 object ScalaBuildManifest {
@@ -24,7 +24,7 @@ object ScalaBuildManifest {
     common = BuildManifest.Common.default,
     dependencies = List.empty,
     layout = ScalaProjectLayout.PLAIN,
-    dropPackageHead = 0,
+    dropFQNSegments = Some(0),
   )
 }
 

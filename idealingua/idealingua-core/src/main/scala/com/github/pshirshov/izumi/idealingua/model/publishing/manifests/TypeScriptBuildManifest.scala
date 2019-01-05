@@ -18,10 +18,11 @@ case class TypeScriptBuildManifest(
                                     dependencies: List[ManifestDependency],
                                     scope: String,
                                     moduleSchema: TypeScriptModuleSchema,
-                                    // this one only works with scoped namespaces, this way you can
-                                    // get rid of @scope/net-company-project and use @scope/project
-                                    // by using dropnameSpaceSegments = Some(2)
-                                    dropNameSpaceSegments: Option[Int],
+                                    /** This one only works with scoped namespaces, this way you can
+                                      * get rid of @scope/net-company-project and use @scope/project
+                                      * by using dropnameSpaceSegments = Some(2)
+                                      */
+                                    dropFQNSegments: Option[Int],
                                   ) extends BuildManifest
 
 object TypeScriptBuildManifest {
@@ -34,6 +35,6 @@ object TypeScriptBuildManifest {
     ),
     scope = "@TestScope",
     moduleSchema = TypeScriptModuleSchema.PER_DOMAIN,
-    dropNameSpaceSegments = None
+    dropFQNSegments = None
   )
 }

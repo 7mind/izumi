@@ -76,7 +76,7 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val manifest = ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.SBT, dropPackageHead = 2)
+    val manifest = ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
