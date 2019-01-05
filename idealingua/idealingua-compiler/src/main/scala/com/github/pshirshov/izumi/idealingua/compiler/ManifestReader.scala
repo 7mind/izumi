@@ -60,6 +60,9 @@ class ManifestReader(patch: Json, lang: IDLLanguage, file: Option[File]) extends
         json
 
       case RawMf.FailedToLoad(e, path) =>
+        log.log(s"Failed to parse manifest for $lang from $path, check if it corresponds to the following example:")
+        log.log(defaultJson.toString())
+        log.log("")
         shutdown(s"Failed to parse $lang manifest from $path: ${e.toString}")
 
       case RawMf.Failed(e, path) =>
