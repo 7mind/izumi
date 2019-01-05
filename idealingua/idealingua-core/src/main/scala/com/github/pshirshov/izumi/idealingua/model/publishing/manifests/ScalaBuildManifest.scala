@@ -8,6 +8,14 @@ case class ScalaBuildManifest(
                                common: Common,
                                dependencies: List[ManifestDependency],
                                layout: ScalaProjectLayout,
+
+                               /**
+                                 * Positive value will work as .drop on fully qualified module name
+                                 * Zero value will leave name untouched
+                                 * Negative value will work as .takeRight
+                                 *
+                                 * Does not apply for layout == PLAIN
+                                 */
                                dropPackageHead: Int,
                              ) extends BuildManifest
 
