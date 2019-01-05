@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.logstage.api
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
+import com.github.pshirshov.izumi.logstage.macros.LoggingMacro
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
@@ -10,14 +11,12 @@ import scala.language.implicitConversions
 class IzLogger
 (
   override val receiver: LogRouter
-  , override val contextCustom: Log.CustomContext
+  , override val customContext: Log.CustomContext
 ) extends LoggingMacro
   with AbstractLogger {
 
-  final def log(entry: Log.Entry): Unit = receiver.log(entry)
-
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
-    new IzLogger(receiver, contextCustom + newCustomContext)
+    new IzLogger(receiver, customContext + newCustomContext)
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {

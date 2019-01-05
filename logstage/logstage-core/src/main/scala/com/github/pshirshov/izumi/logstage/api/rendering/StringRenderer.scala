@@ -5,12 +5,12 @@ import java.util.regex.Pattern
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy.{Constant, LogMessageItem, WithMargin}
+import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderer.{Constant, LogMessageItem, WithMargin}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{LogUnit, Margin}
 
 import scala.collection.mutable.ListBuffer
 
-class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[String] = None) extends RenderingPolicy {
+class StringRenderer(options: RenderingOptions, renderingLayout: Option[String] = None) extends Renderer {
   protected val withColors: Boolean = {
     (
       options.withColors &&
@@ -19,7 +19,7 @@ class StringRenderingPolicy(options: RenderingOptions, renderingLayout: Option[S
       !java.awt.GraphicsEnvironment.isHeadless // FIXME
   }
 
-  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderingPolicy.defaultMessageLayout))
+  private implicit val policyLayout: Iterable[LogMessageItem] = renderedLayout(renderingLayout.getOrElse(StringRenderer.defaultMessageLayout))
 
   override def render(entry: Log.Entry): String = {
     val sb = new StringBuffer(performRendering(entry, withColors))
@@ -180,7 +180,7 @@ case class WithConstants[T <: LogUnit](unit: Option[WithMargin[T]] = None) {
 }
 
 
-object StringRenderingPolicy {
+object StringRenderer {
 
   val defaultMessageLayout: String = s"$${level} $${ts} $${id[2:]} $${thread} $${location} $${custom-ctx} $${msg}"
 

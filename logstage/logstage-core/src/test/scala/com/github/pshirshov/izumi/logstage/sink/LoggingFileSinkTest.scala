@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.dummy.{DummyFile, DummyFileServiceImpl}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
+import com.github.pshirshov.izumi.logstage.api.rendering.Renderer
 import com.github.pshirshov.izumi.logstage.sink.FileServiceUtils._
 import com.github.pshirshov.izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
 import com.github.pshirshov.izumi.logstage.sink.file.FileServiceImpl.RealFile
@@ -215,7 +215,7 @@ object LoggingFileSinkTest {
       Random.nextInt(until)
     }
 
-  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
+  def dummySink[F <: LogFile](renderingPolicy: Renderer, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
 
     val cfg = (if (softLimit) {
       FileSinkConfig.soft(_ : Int)
@@ -231,7 +231,7 @@ object LoggingFileSinkTest {
   }
 
   def withoutRotation[F <: LogFile](
-                                     renderingPolicy: RenderingPolicy
+                                     renderingPolicy: Renderer
                                      , fileSize: Int
                                      , fileService: FileService[F]
                                      , broken: Boolean = false
@@ -241,7 +241,7 @@ object LoggingFileSinkTest {
   }
 
   def withRotation[F <: LogFile](
-                                  renderingPolicy: RenderingPolicy
+                                  renderingPolicy: Renderer
                                   , fileSize: Int
                                   , fileService: FileService[F]
                                   , filesLimit: Int
@@ -262,7 +262,7 @@ object LoggingFileSinkTest {
     }
   }
 
-  class FileSinkTestImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+  class FileSinkTestImpl[F <: LogFile](override val renderingPolicy: Renderer
                                        , override val fileService: FileService[F]
                                        , override val rotation: FileRotation
                                        , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
@@ -270,7 +270,7 @@ object LoggingFileSinkTest {
     override def recoverOnFail(e: String): Unit = println
   }
 
-  class FileSinkBrokenImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+  class FileSinkBrokenImpl[F <: LogFile](override val renderingPolicy: Renderer
                                          , override val fileService: FileService[F]
                                          , override val rotation: FileRotation
                                          , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {

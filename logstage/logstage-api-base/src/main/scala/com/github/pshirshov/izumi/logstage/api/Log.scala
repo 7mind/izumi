@@ -1,7 +1,12 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.{CodePosition, SourceFilePosition}
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import com.github.pshirshov.izumi.logstage.api
+import com.github.pshirshov.izumi.logstage.macros.LoggingMacro._
+
+import scala.language.experimental.macros
 
 object Log {
 
@@ -68,10 +73,16 @@ object Log {
   }
 
   object CustomContext {
-    def empty: CustomContext = CustomContext(List.empty)
+    def empty: CustomContext = CustomContext(Nil)
   }
 
   final case class LoggerId(id: String) extends AnyVal
+
+  object LoggerId {
+    def fromCodePosition(pos: CodePosition): LoggerId = {
+      LoggerId(pos.applicationPointId)
+    }
+  }
 
   final case class StaticExtendedContext(id: LoggerId, position: SourceFilePosition)
 
@@ -79,7 +90,28 @@ object Log {
 
   final case class DynamicContext(level: Level, threadData: ThreadData, tsMillis: Long)
 
-  final case class Context(static: StaticExtendedContext, dynamic: DynamicContext, customContext: CustomContext)
+  final case class Context(
+                            static: StaticExtendedContext
+                          , dynamic: DynamicContext
+                          , customContext: CustomContext
+                          ) {
+    def +(that: CustomContext): Context = {
+      copy(customContext = customContext + that)
+    }
+  }
+
+  object Context {
+    def sample(logLevel: Log.Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): Context = {
+      val loggerId = LoggerId.fromCodePosition(pos.get)
+
+      val thread = Thread.currentThread()
+      val tsMillis = System.currentTimeMillis()
+      val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
+      val extendedStaticContext = StaticExtendedContext(loggerId, pos.get.position)
+
+      Log.Context(extendedStaticContext, dynamicContext, customContext)
+    }
+  }
 
   final case class Entry(message: Message, context: Context) {
     def firstThrowable: Option[Throwable] = {
@@ -87,8 +119,20 @@ object Log {
     }
   }
 
+  object Entry {
+    def apply(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): Entry = {
+      val context = Context.sample(logLevel, CustomContext.empty)(pos)
+      Log.Entry(message, context)
+    }
+  }
+
   final case class Message(template: StringContext, args: LogContext) {
     def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
+  }
+
+  object Message {
+    /** Construct [[Message]] from a string interpolation */
+    implicit def apply(message: String): api.Log.Message = macro logMessageMacro
   }
 
 }

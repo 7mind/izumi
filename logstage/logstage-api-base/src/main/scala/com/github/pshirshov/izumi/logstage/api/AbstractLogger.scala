@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.logstage.api
 
-
 trait AbstractLogger {
-  def debug(message: String): Unit
-  def info(message: String): Unit
-  def warn(message: String): Unit
-  def error(message: String): Unit
-  def crit(message: String): Unit
-  def entry(logLevel: Log.Level)(message: String): Log.Entry
+  def log(entry: Log.Entry): Unit
+
+  def debug(message: Log.Message): Unit
+  def info(message: Log.Message): Unit
+  def warn(message: Log.Message): Unit
+  def error(message: Log.Message): Unit
+  def crit(message: Log.Message): Unit
 }

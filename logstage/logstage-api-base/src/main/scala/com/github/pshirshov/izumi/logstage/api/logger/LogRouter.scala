@@ -3,19 +3,23 @@ package com.github.pshirshov.izumi.logstage.api.logger
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.logstage.api.Log
 
+import scala.util.control.NonFatal
+
 trait LogRouter extends AutoCloseable {
   private final val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
 
-  def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
-
   final def log(entry: Log.Entry): Unit = {
-    try  {
-      doLog(entry)
-    } catch {
-      case e: Throwable =>
-        fallback.log("Log router failed", e)
+    if (acceptable(entry.context.static.id, entry.context.dynamic.level)) {
+      try {
+        doLog(entry)
+      } catch {
+        case NonFatal(e) =>
+          fallback.log("Log router failed", e)
+      }
     }
   }
+
+  def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
 
   @inline protected def doLog(entry: Log.Entry): Unit
 
