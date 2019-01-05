@@ -76,7 +76,7 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val manifest = ScalaBuildManifest.default
+    val manifest = ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.SBT, dropPackageHead = 2)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
@@ -86,7 +86,7 @@ object IDLTestTools {
       , "-opt-warnings:_"
       , "-d", out.phase2Relative.toString
       , "-classpath", classpath
-    ) ++ out.relativeOutputs
+    ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0

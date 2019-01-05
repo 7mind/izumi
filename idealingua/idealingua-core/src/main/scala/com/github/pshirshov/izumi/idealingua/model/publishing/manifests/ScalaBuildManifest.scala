@@ -12,7 +12,9 @@ case class ScalaBuildManifest(name: String,
                               license: String,
                               website: String,
                               copyright: String,
-                              dependencies: List[ManifestDependency]
+                              dependencies: List[ManifestDependency],
+                              layout: ScalaProjectLayout,
+                              dropPackageHead: Int,
                           ) extends BuildManifest
 
 object ScalaBuildManifest {
@@ -27,5 +29,15 @@ object ScalaBuildManifest {
     website = "http://project.website",
     copyright = "Copyright (C) Test Inc.",
     dependencies = List.empty,
+    layout = ScalaProjectLayout.PLAIN,
+    dropPackageHead = 0,
   )
+}
+
+
+sealed trait ScalaProjectLayout
+
+object ScalaProjectLayout {
+  final case object PLAIN extends ScalaProjectLayout
+  final case object SBT extends ScalaProjectLayout
 }
