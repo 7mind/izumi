@@ -34,14 +34,14 @@ object IDLCArgs {
       .children(
         opt[File]("manifest").abbr("m")
           .optional()
-          .text("manifest file to parse to the language-specific compiler module compiler. Use `@` for default one.")
+          .text("manifest file to parse to the language-specific compiler module compiler. Use `@` builting stub, `+` for default path (./manifests/<language>.json)")
           .action {
             (a, c) =>
               c.copy(languages = c.languages.init :+ c.languages.last.copy(manifest = Some(a)))
           },
         opt[Unit]("no-runtime").abbr("nrt")
           .optional()
-          .text("don't include runtime into compiler output")
+          .text("don't include buitin runtime into compiler output")
           .action {
             (_, c) =>
               c.copy(languages = c.languages.init :+ c.languages.last.copy(withRuntime = false))

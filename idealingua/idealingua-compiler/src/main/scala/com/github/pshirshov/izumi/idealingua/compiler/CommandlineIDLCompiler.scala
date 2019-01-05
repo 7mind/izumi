@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
+import java.io.File
 import java.nio.file._
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
@@ -10,6 +11,8 @@ import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
 import io.circe.{Decoder, Encoder}
+import io.circe.syntax._
+import io.circe.parser._
 
 import scala.reflect._
 import scala.util.{Failure, Success, Try}
@@ -113,34 +116,17 @@ object CommandlineIDLCompiler extends Codecs {
   }
 
   private def readManifest[T: ClassTag : Decoder : Encoder](lopt: LanguageOpts, default: T): T = {
-    import _root_.io.circe.parser._
-    import _root_.io.circe.syntax._
     val lang = IDLLanguage.parse(lopt.id)
 
     lopt.manifest match {
       case Some(path) if path.toString == "@" =>
         default
 
+      case Some(path) if path.toString == "+" =>
+        readMfFromFile(default, lang, Paths.get("manifests", s"${lang.toString.toLowerCase}.json").toFile)
+
       case Some(path) =>
-        Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
-          case Success(Right(r)) =>
-            r
-          case o =>
-            val errRepr = o match {
-              case Success(Left(l)) =>
-                l.toString
-              case Failure(f) =>
-                f.toString
-              case e =>
-                e.toString
-            }
-            println(s"Failed to read $lang manifest from $path: $errRepr")
-            println(s"Example manifest for $lang:")
-            println(default.asJson.toString())
-            System.out.flush()
-            System.exit(1)
-            throw new IllegalArgumentException(s"Failed to load manifest from $lang: $errRepr")
-        }
+        readMfFromFile(default, lang, path)
 
       case None =>
         println(s"No manifest defined for $lang, using default:")
@@ -149,6 +135,28 @@ object CommandlineIDLCompiler extends Codecs {
         default
     }
 
+  }
+
+  private def readMfFromFile[T: ClassTag : Decoder : Encoder](default: T, lang: IDLLanguage, path: File) = {
+    Try(parse(IzFiles.readString(path)).flatMap(_.as[T])) match {
+      case Success(Right(r)) =>
+        r
+      case o =>
+        val errRepr = o match {
+          case Success(Left(l)) =>
+            l.toString
+          case Failure(f) =>
+            f.toString
+          case e =>
+            e.toString
+        }
+        println(s"Failed to read $lang manifest from $path: $errRepr")
+        println(s"Example manifest for $lang:")
+        println(default.asJson.toString())
+        System.out.flush()
+        System.exit(1)
+        throw new IllegalArgumentException(s"Failed to load manifest from $lang: $errRepr")
+    }
   }
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.ManifestDependency
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
@@ -145,8 +145,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val peerDeps = ts.domain.meta.directImports
       .map {
         i =>
-          ManifestDependency(toScopedId(i.id.toPackage), options.manifest.version)
-      } :+ ManifestDependency(irtDependency, options.manifest.version)
+          ManifestDependency(toScopedId(i.id.toPackage), options.manifest.common.version)
+      } :+ ManifestDependency(irtDependency, options.manifest.common.version)
 
 
     val name = toScopedId(ts.domain.id.toPackage)
@@ -173,17 +173,17 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
   private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
-    val author = s"${manifest.publisher.name} (${manifest.publisher.id})"
+    val author = s"${manifest.common.publisher.name} (${manifest.common.publisher.id})"
     val deps = manifest.dependencies.map(d => d.module -> d.version).toMap.asJson
     val peerDeps = peerDependencies.map(d => d.module -> d.version).toMap.asJson
 
     val base =
       json"""{
          "name": $name,
-         "version": ${manifest.version},
-         "description": ${manifest.description},
+         "version": ${manifest.common.version},
+         "description": ${manifest.common.description},
          "author": $author,
-         "license": ${manifest.license},
+         "license": ${manifest.common.licenses.head.name},
          "dependencies": $deps,
          "peerDependencies": $peerDeps
        }
