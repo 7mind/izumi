@@ -51,7 +51,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
              |${content.map(_.toString()).mkString("\n\n")}
              |}
            """.stripMargin
-        Module(id, ctx.modules.withPackage(id.path.init, code))
+        Module(id.copy(name = "package-object.scala"), ctx.modules.withPackage(id.path.init, code))
     }
 
     val modules = Seq(

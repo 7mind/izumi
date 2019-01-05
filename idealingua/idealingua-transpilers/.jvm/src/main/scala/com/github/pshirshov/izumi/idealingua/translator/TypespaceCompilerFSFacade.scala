@@ -48,8 +48,15 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
       .resolve(s"${options.language.toString}.zip")
 
     val toPack = result.paths.map(p => ZE(result.target.relativize(p).toString, p))
-    val grouped = toPack.groupBy(_.name)
+    val grouped = toPack.groupBy(_.name.toLowerCase)
+    verifySanity(grouped)
+    zip(ztarget, grouped.values.map(_.head))
 
+    TypespaceCompilerFSFacade.Result(result, ztarget)
+  }
+
+
+  private def verifySanity(grouped: Map[String, Seq[IzZip.ZE]]): Unit = {
     val conflicts = grouped
       .filter { // at first we compare zip entries by file path and entry name
         case (_, v) =>
@@ -65,13 +72,7 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
     if (conflicts.nonEmpty) {
       throw new IDLException(s"Cannot continue: conflicting files: ${conflicts.niceList()}")
     }
-
-    zip(ztarget, grouped.values.map(_.head))
-
-    TypespaceCompilerFSFacade.Result(result, ztarget)
   }
-
-
 
   private def loadBundledRuntime(options: UntypedCompilerOptions): Option[ProvidedRuntime] = {
     if (options.withBundledRuntime) {
