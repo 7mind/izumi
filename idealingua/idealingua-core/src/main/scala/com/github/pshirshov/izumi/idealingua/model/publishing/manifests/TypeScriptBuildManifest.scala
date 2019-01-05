@@ -13,6 +13,7 @@ object TypeScriptModuleSchema {
 
 }
 
+// https://docs.npmjs.com/files/package.json
 case class TypeScriptBuildManifest(
                                     common: Common,
                                     dependencies: List[ManifestDependency],

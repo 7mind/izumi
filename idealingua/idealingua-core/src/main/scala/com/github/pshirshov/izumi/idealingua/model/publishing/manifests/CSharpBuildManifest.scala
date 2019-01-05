@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
 
 
+// https://docs.microsoft.com/en-us/nuget/reference/nuspec
 case class CSharpBuildManifest(
                                 common: Common,
                                 dependencies: List[ManifestDependency],

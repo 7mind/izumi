@@ -54,7 +54,7 @@ data Type {
 }
 
 mixin TypeInfo {
-  type: Type
+  tpe: Type
 }
 
 adt TypedAst {

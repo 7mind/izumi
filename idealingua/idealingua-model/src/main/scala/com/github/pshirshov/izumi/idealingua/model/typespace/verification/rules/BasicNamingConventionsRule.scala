@@ -34,3 +34,5 @@ object BasicNamingConventionsRule extends VerificationRule {
     }
   }
 }
+
+

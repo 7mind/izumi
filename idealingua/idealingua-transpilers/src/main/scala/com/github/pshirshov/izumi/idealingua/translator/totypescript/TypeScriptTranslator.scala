@@ -452,12 +452,12 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
          |            const parts = data.substr(data.indexOf('#') + 1).split(':');
          |${sortedFields.zipWithIndex.map { case (sf, index) => s"this.${conv.safeName(sf.field.name)} = ${conv.parseTypeFromString(s"decodeURIComponent(parts[$index])", sf.field.typeId)};" }.mkString("\n").shift(12)}
          |        } else {
-         |${fields.all.map(f => s"this.${conv.safeName(f.field.name)} = ${conv.deserializeType("data." + f.field.name, f.field.typeId, typespace)};").mkString("\n").shift(12)}
+         |${fields.all.map(f => s"this.${conv.safeName(f.field.name)} = ${conv.deserializeType("data." +  conv.safeName(f.field.name), f.field.typeId, typespace)};").mkString("\n").shift(12)}
          |        }
          |    }
          |
            |    public toString(): string {
-         |        const suffix = ${sortedFields.map(sf => "encodeURIComponent(" + conv.emitTypeAsString(s"this.${sf.field.name}", sf.field.typeId) + ")").mkString(" + ':' + ")};
+         |        const suffix = ${sortedFields.map(sf => "encodeURIComponent(" + conv.emitTypeAsString(s"this.${conv.safeName(sf.field.name)}", sf.field.typeId) + ")").mkString(" + ':' + ")};
          |        return '$typeName#' + suffix;
          |    }
          |
