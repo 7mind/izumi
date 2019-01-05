@@ -82,6 +82,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val metadata = Seq(
           "name" -> Assign(options.manifest.common.name, Scope.Project),
           "organization" -> Assign(options.manifest.common.group),
+          "version" -> Assign(options.manifest.common.version),
           "homepage" -> Assign(Some(options.manifest.common.website)),
           "licenses" -> Append(options.manifest.common.licenses),
         )
