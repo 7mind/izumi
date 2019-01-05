@@ -21,7 +21,7 @@ object CommandlineIDLCompiler {
     val mf = IzManifest.manifest[CommandlineIDLCompiler.type]().map(IzManifest.read)
     val izumiVersion = mf.map(_.version.toString).getOrElse("0.0.0-UNKNOWN")
 
-    log.log(s"Iuzmi IDL Compiler v$izumiVersion")
+    log.log(s"Iuzmi IDL Compiler $izumiVersion")
 
     val conf = parseArgs(args)
     val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))

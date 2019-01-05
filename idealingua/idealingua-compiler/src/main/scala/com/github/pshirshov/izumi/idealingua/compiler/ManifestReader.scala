@@ -80,6 +80,7 @@ class ManifestReader(patch: Json, lang: IDLLanguage, file: Option[File]) extends
 
 
   private def shutdown(message: String): Nothing = {
+    log.log(message)
     System.out.flush()
     System.exit(1)
     throw new IllegalArgumentException(message)
