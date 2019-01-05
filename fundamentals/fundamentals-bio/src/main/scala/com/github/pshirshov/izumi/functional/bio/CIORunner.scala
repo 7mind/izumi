@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scala.language.higherKinds
-
 trait CIORunner[CIO[_]] {
   def unsafeRunSync[A](cio: CIO[A]): A
   def unsafeRunAsync[A](cio: CIO[A])(cb: Either[Throwable, A] => Unit): Unit
