@@ -32,9 +32,9 @@ class IdRenderer(ctx: STContext) {
       .map({ case (field, idx) => (field, idx, field.field.field.typeId) })
       .map {
         case (field, idx, t: EnumId) =>
-          q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
+          q"${field.name} = ${conv.toScala(t).termFull}.parse(parts(${Lit.Int(idx)}))"
         case (field, idx, t: IdentifierId) =>
-          q"${field.name} = ${conv.toScala(t).termName}.parse(parts(${Lit.Int(idx)}))"
+          q"${field.name} = ${conv.toScala(t).termFull}.parse(parts(${Lit.Int(idx)}))"
         case (field, idx, _: PrimitiveId) =>
           q"${field.name} = parsePart[${field.fieldType}](parts(${Lit.Int(idx)}), classOf[${field.fieldType}])"
         case o =>
