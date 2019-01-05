@@ -17,6 +17,7 @@ case class ScalaBuildManifest(
                                  * Does not apply for layout == PLAIN
                                  */
                                dropFQNSegments: Option[Int],
+                               projectIdPostfix: Option[String],
                              ) extends BuildManifest
 
 object ScalaBuildManifest {
@@ -25,6 +26,7 @@ object ScalaBuildManifest {
     dependencies = List.empty,
     layout = ScalaProjectLayout.PLAIN,
     dropFQNSegments = Some(0),
+    projectIdPostfix = Some("api"),
   )
 }
 
