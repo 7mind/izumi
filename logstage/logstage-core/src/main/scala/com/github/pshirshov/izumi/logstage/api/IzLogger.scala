@@ -9,12 +9,12 @@ import scala.language.implicitConversions
 
 class IzLogger
 (
-  override val receiver: LogRouter
+  override protected val router: LogRouter
 , override val customContext: Log.CustomContext
 ) extends RoutingLogger {
 
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
-    new IzLogger(receiver, customContext + newCustomContext)
+    new IzLogger(router, customContext + newCustomContext)
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {

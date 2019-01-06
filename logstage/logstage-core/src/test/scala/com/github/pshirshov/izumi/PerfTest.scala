@@ -12,14 +12,13 @@ object PerfTest {
 
   def main(args: Array[String]): Unit = {
     val logger = IzLogger(acceptingNullRouter)
+//    val logger = IzLogger.NullLogger
 
     var i0 = 0
     while (i0 < 10000) {
       i0+=1
       logger.debug("jit")
     }
-
-//    val receiver = logger.receiver
 
     val results = 1 to 1000 map { _ =>
       val start = System.nanoTime()
@@ -28,31 +27,6 @@ object PerfTest {
         i += 1
 
         logger.debug("heya-ya-hey")
-//        if (logger.receiver.acceptable(LoggerId(pos.applicationPointId), Log.Level.Debug)) {
-//        }
-//
-//        val pos = CodePositionMaterializer.materialize.get
-//        val logLevel = Log.Level.Debug
-////        val loggerId = LoggerId.fromCodePosition(pos)
-//        val loggerId = LoggerId(pos.applicationPointId)
-////        logger.receiver.log(entry)
-//        if (receiver.acceptable(loggerId, logLevel)) {
-//
-//          val message = Message(StringContext("heya-ya-hey"), List(LogArg(Seq("@type"), "const", hidden = false)))
-//
-//          val thread = Thread.currentThread()
-//          val tsMillis = System.currentTimeMillis()
-//          val data = ThreadData(thread.getName, thread.getId)
-//          val dynamicContext = DynamicContext(logLevel, data, tsMillis)
-//          val extendedStaticContext = StaticExtendedContext(loggerId, pos.position)
-//
-//          val context = new Log.Context(extendedStaticContext, dynamicContext, logger.customContext)
-////          val context = new Log.Context(extendedStaticContext, dynamicContext, logger.contextCustom)
-//          val entry = new Log.Entry(message, context)
-//
-//          receiver.log(entry)
-//        }
-
       }
       val end = System.nanoTime()
 
@@ -65,12 +39,31 @@ object PerfTest {
 }
 
 // accepting null tests:
-// Result: avg of 1000 runs 13581504 nanos
-// Result: avg of 1000 runs 15451058 nanos
-// Result: avg of 1000 runs 18213739 nanos
-// Result: avg of 1000 runs 15764597 nanos
+// new (lambda, anyval):
+// Result: avg of 1000 runs 14876492 nanos
+// Result: avg of 1000 runs 15245759 nanos
+// Result: avg of 1000 runs 13890930 nanos
+// Result: avg of 1000 runs 15674452 nanos
+// Result: avg of 1000 runs 18266810 nanos
+// Result: avg of 1000 runs 15266548 nanos
 
+// new (nolambda, anyval):
+// Result: avg of 1000 runs 13813806 nanos
+// Result: avg of 1000 runs 13838628 nanos
+// Result: avg of 1000 runs 13879927 nanos
 
+// new (abstract, nolambda, anyval, applicationpointid)
+// Result: avg of 1000 runs 13506974 nanos
+// Result: avg of 1000 runs 13489046 nanos
+
+// old (no anyval, no lambda):
+// Result: avg of 1000 runs 15135465 nanos
+// Result: avg of 1000 runs 14133218 nanos
+// Result: avg of 1000 runs 14609388 nanos
+// Result: avg of 1000 runs 14005947 nanos
+// Result: avg of 1000 runs 14039547 nanos
+// Result: avg of 1000 runs 14214438 nanos
+// Result: avg of 1000 runs 14177798 nanos
 
 // null tests:
 
@@ -98,6 +91,9 @@ object PerfTest {
 // lambda-abstract + anyval codeposition
 // Result: avg of 1000 runs 447830 nanos
 
+// nolambda + applicationPointId literal
+// Result: avg of 1000 runs 7035 nanos
+
 // old:
 // Result: avg of 1000 runs 1114780 nanos
 
@@ -107,9 +103,6 @@ object PerfTest {
 
 // old = inlined-with-proper-if:
 // Result: avg of 1000 runs 1066996 nanos
-
-
-
 
 // print tests:
 

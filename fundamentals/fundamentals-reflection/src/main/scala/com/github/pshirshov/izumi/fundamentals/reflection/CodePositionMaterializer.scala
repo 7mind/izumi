@@ -42,6 +42,10 @@ object CodePositionMaterializer {
     }
   }
 
+  def getApplicationPointId(c: blackbox.Context): c.Expr[String] = {
+    import c.universe._
+    c.Expr[String](Literal(Constant(getEnclosingPositionImpl(c).applicationPointId)))
+  }
 
   private def getEnclosingPositionImpl(c: blackbox.Context): CodePosition = {
 
