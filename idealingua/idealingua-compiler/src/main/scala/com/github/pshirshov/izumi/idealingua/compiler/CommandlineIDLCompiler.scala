@@ -2,17 +2,20 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
 
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.platform.resources.{IzManifest, IzResources}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
+import com.github.pshirshov.izumi.idealingua.compiler.Codecs._
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
+import io.circe.syntax._
 
 import scala.collection.JavaConverters._
-
 
 object CommandlineIDLCompiler {
   private val log: CompilerLog = CompilerLog.Default
@@ -26,10 +29,48 @@ object CommandlineIDLCompiler {
     log.log(s"Izumi IDL Compiler $izumiInfoVersion")
 
     val conf = parseArgs(args)
+
+    initDir(conf)
+
+    if (conf.languages.nonEmpty) {
+      runCompilations(izumiVersion, conf)
+    }
+  }
+
+  private def initDir(conf: IDLCArgs): Unit = {
+    conf.init match {
+      case Some(p) =>
+        log.log(s"Initializing layout in $p...")
+        val f = p.toFile
+        if (f.exists()) {
+          if (f.isDirectory) {
+            if (f.listFiles().nonEmpty) {
+              shutdown.shutdown(s"Exists and not empty: $p")
+            }
+          } else {
+            shutdown.shutdown(s"Exists and not a directory: $p")
+          }
+        }
+
+        val mfdir = p.resolve("manifests")
+        mfdir.toFile.mkdirs().discard()
+        IzResources.copyFromClasspath("defs/example", p).discard()
+
+        TypespaceCompilerBaseFacade.descriptors.foreach {
+          d =>
+            Files.write(mfdir.resolve(s"${d.language.toString.toLowerCase}.json"), new ManifestWriter().write(d.defaultManifest).utf8).discard()
+        }
+
+        Files.write(p.resolve(s"version.json"), ProjectVersion.default.asJson.toString().utf8).discard()
+
+      case None =>
+    }
+  }
+
+  private def runCompilations(izumiVersion: String, conf: IDLCArgs): Unit = {
+    log.log("Reading manifests...")
     val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))
-
-
-    log.log("We are going to run:")
+    log.log("Going to compile:")
     log.log(toRun.niceList())
     log.log("")
 
@@ -53,7 +94,6 @@ object CommandlineIDLCompiler {
     toRun.foreach {
       option =>
         runCompiler(target, loaded, option)
-
     }
   }
 
@@ -104,12 +144,15 @@ object CommandlineIDLCompiler {
   private def toOption(env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {
     val lang = IDLLanguage.parse(lopt.id)
     val exts = getExt(lang, lopt.extensions)
+    val manifest: BuildManifest = readManifest(env, lopt, lang)
+    UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
+  }
 
+  private def readManifest(env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage) = {
     val patch = toJson(ConfigFactory.parseMap((env ++ lopt.overrides).asJava).root().unwrapped())
     val reader = new ManifestReader(log, shutdown, patch, lang, lopt.manifest)
     val manifest = reader.read()
-
-    UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
+    manifest
   }
 
   private def toJson(v: AnyRef): Json = {

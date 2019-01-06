@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, License, MFUrl, ManifestDependency}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.model.publishing.Publisher
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectVersion, Publisher}
 
 trait Codecs {
 
@@ -53,4 +53,12 @@ trait Codecs {
   implicit def encGo: Encoder[GoLangBuildManifest] = deriveEncoder
 
   implicit def encCs: Encoder[CSharpBuildManifest] = deriveEncoder
+
+  implicit def decProjectVersion: Decoder[ProjectVersion] = deriveDecoder
+
+  implicit def encProjectVersion: Encoder[ProjectVersion] = deriveEncoder
+}
+
+object Codecs extends Codecs {
+
 }

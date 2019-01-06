@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
@@ -8,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.layout.ScalaLayouter
 
 object ScalaTranslatorDescriptor extends TranslatorDescriptor[ScalaTranslatorOptions] {
+  override def defaultManifest: BuildManifest = ScalaBuildManifest.default
 
   override def typedOptions(options: UntypedCompilerOptions): ScalaTranslatorOptions = CompilerOptions.from(options)
 

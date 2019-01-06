@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.totypescript
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
@@ -7,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.Typescri
 import com.github.pshirshov.izumi.idealingua.translator._
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTranslatorOptions] {
+  override def defaultManifest: BuildManifest = TypeScriptBuildManifest.default
 
   override def typedOptions(options: UntypedCompilerOptions): TypescriptTranslatorOptions = CompilerOptions.from(options)
 

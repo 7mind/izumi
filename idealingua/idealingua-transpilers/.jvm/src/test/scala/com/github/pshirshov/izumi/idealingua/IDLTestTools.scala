@@ -24,6 +24,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.sys.process._
 
@@ -207,7 +208,7 @@ object IDLTestTools {
     domains.foreach {
       d =>
         val rendered = new IDLRenderer(d.typespace.domain, IDLRenderingOptions(expandIncludes = false)).render()
-        Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+        Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.utf8)
     }
   }
 

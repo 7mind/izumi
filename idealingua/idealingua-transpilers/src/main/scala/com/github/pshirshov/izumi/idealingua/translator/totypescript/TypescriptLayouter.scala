@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.totypescript
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
+import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
@@ -145,8 +146,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val peerDeps = ts.domain.meta.directImports
       .map {
         i =>
-          ManifestDependency(toScopedId(i.id.toPackage), options.manifest.common.version)
-      } :+ ManifestDependency(irtDependency, options.manifest.common.version)
+          ManifestDependency(toScopedId(i.id.toPackage), renderVersion(options.manifest.common.version))
+      } :+ ManifestDependency(irtDependency, renderVersion(options.manifest.common.version))
 
 
     val name = toScopedId(ts.domain.id.toPackage)
@@ -180,7 +181,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val base =
       json"""{
          "name": $name,
-         "version": ${manifest.common.version},
+         "version": ${renderVersion(manifest.common.version)},
          "description": ${manifest.common.description},
          "author": $author,
          "license": ${manifest.common.licenses.head.name},
@@ -196,6 +197,21 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
           json"""{"main": ${s"$value.js"}, "typings": ${s"$value.d.ts"}}""")
       case None =>
         base
+    }
+  }
+
+  private def renderVersion(version: ProjectVersion): String = {
+    if (version.release) {
+      s"${version.version}"
+    } else {
+      val qualifier = version.buildId match {
+        case Some(value) =>
+          s"build.$value"
+        case None =>
+          s"ts.${System.currentTimeMillis()}"
+      }
+
+      s"${version.version}-$qualifier"
     }
   }
 }

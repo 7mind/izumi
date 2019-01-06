@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
+import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
@@ -82,7 +83,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val metadata = Seq(
           "name" -> Assign(options.manifest.common.name, Scope.Project),
           "organization" -> Assign(options.manifest.common.group),
-          "version" -> Assign(options.manifest.common.version),
+          "version" -> Assign(renderVersion(options.manifest.common.version)),
           "homepage" -> Assign(Some(options.manifest.common.website)),
           "licenses" -> Append(options.manifest.common.licenses),
         )
@@ -126,6 +127,14 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         }
     }
     (parts ++ options.manifest.projectIdPostfix.toSeq).mkString("-").toLowerCase()
+  }
+
+  private def renderVersion(version: ProjectVersion): String = {
+    if (version.release) {
+      s"${version.version}-SNAPSHOT"
+    } else {
+      version.version
+    }
   }
 }
 

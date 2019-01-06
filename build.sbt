@@ -408,6 +408,7 @@ lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
     idealinguaRuntimeRpcGo,
     idealinguaRuntimeRpcCSharp,
   ).map(_.testOnlyRef))
+
 lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
   .settings(libraryDependencies += C.jawn)
 
@@ -428,6 +429,7 @@ lazy val idealinguaCompilerDeps = Seq[ProjectReferenceEx](
   idealinguaRuntimeRpcTypescript,
   idealinguaRuntimeRpcGo,
   idealinguaRuntimeRpcCSharp,
+  idealinguaTestDefs,
 )
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module

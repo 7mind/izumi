@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{Layouted, Translated, TranslationLayouter}
@@ -15,7 +16,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
        |<package >
        |    <metadata>
        |        <id>${manifest.id}</id>
-       |        <version>${manifest.common.version}</version>
+       |        <version>${renderVersion(manifest.common.version)}</version>
        |        <authors>${manifest.common.publisher.name}</authors>
        |        <owners>${manifest.common.publisher.id}</owners>
        |        <licenseUrl>${manifest.common.licenses.head.url.url}</licenseUrl>
@@ -34,5 +35,9 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
        |    </files>
        |</package>
      """.stripMargin
+  }
+
+  private def renderVersion(version: ProjectVersion): String = {
+    version.version
   }
 }

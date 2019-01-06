@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.{CyclicImportsRule, ReservedKeywordRule}
@@ -7,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.GoTransl
 import com.github.pshirshov.izumi.idealingua.translator._
 
 object GoTranslatorDescriptor extends TranslatorDescriptor[GoTranslatorOptions] {
+  override def defaultManifest: BuildManifest = GoLangBuildManifest.default
 
   override def typedOptions(options: UntypedCompilerOptions): GoTranslatorOptions = CompilerOptions.from(options)
 

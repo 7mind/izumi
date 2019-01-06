@@ -14,8 +14,24 @@ import io.circe.{Decoder, Encoder, Json}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
+import Codecs._
 
-class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: IDLLanguage, file: Option[File]) extends Codecs {
+class ManifestWriter() {
+  def write(mf: BuildManifest): String = {
+    (mf match {
+      case m: ScalaBuildManifest =>
+        m.asJson
+      case m: TypeScriptBuildManifest =>
+        m.asJson
+      case m: GoLangBuildManifest =>
+        m.asJson
+      case m: CSharpBuildManifest =>
+        m.asJson
+    }).toString()
+  }
+}
+
+class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: IDLLanguage, file: Option[File]) {
   def read(): BuildManifest = {
     lang match {
       case IDLLanguage.Scala =>

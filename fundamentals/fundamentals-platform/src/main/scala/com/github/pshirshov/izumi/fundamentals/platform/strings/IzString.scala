@@ -1,9 +1,14 @@
 package com.github.pshirshov.izumi.fundamentals.platform.strings
 
+import java.nio.charset.StandardCharsets
+
 import scala.language.implicitConversions
 import scala.util.Try
 
 class IzString(s: String) {
+  @inline def utf8: Array[Byte] = {
+    s.getBytes(StandardCharsets.UTF_8)
+  }
   @inline def asBoolean(defValue: Boolean): Boolean = {
     asBoolean().getOrElse(defValue)
   }

@@ -16,7 +16,7 @@ class ReservedKeywordRule(context: String, keywords: Set[String]) extends Verifi
         }
 
         val badMembers = t match {
-          case TypeDef.Alias(id, _, _) =>
+          case TypeDef.Alias(_, _, _) =>
             Seq.empty
           case TypeDef.Enumeration(_, members, _) =>
             check(t, members.map(_.value))

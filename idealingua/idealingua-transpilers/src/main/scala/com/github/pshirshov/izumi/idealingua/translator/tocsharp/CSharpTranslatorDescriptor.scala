@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
@@ -7,6 +9,8 @@ import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTr
 import com.github.pshirshov.izumi.idealingua.translator._
 
 object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorOptions] {
+
+  override def defaultManifest: BuildManifest = CSharpBuildManifest.default
 
   override def typedOptions(options: UntypedCompilerOptions): CSharpTranslatorOptions = CompilerOptions.from(options)
 
@@ -136,3 +140,4 @@ object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorO
 //    "yield",
 //  )
 }
+

@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
 
@@ -34,7 +34,7 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
         val parts = module.id.path :+ module.id.name
         val modulePath = parts.foldLeft(target) { case (path, part) => path.resolve(part) }
         modulePath.getParent.toFile.mkdirs()
-        Files.write(modulePath, module.content.getBytes(StandardCharsets.UTF_8))
+        Files.write(modulePath, module.content.utf8)
         modulePath
     }
     val result = IDLCompilationResult(target, files)
