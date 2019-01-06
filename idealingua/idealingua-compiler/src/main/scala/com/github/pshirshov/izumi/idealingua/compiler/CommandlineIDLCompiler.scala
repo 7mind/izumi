@@ -30,14 +30,17 @@ object CommandlineIDLCompiler {
 
     val conf = parseArgs(args)
 
-    initDir(conf)
+    val results = Seq(
+      initDir(conf),
+      runCompilations(izumiVersion, conf),
+    )
 
-    if (conf.languages.nonEmpty) {
-      runCompilations(izumiVersion, conf)
+    if (!results.contains(true)) {
+      log.log("There was nothing to do. Try to run with `--help`")
     }
   }
 
-  private def initDir(conf: IDLCArgs): Unit = {
+  private def initDir(conf: IDLCArgs): Boolean = {
     conf.init match {
       case Some(p) =>
         log.log(s"Initializing layout in $p...")
@@ -62,39 +65,46 @@ object CommandlineIDLCompiler {
         }
 
         Files.write(p.resolve(s"version.json"), ProjectVersion.default.asJson.toString().utf8).discard()
-
+        true
       case None =>
+        false
     }
   }
 
-  private def runCompilations(izumiVersion: String, conf: IDLCArgs): Unit = {
-    log.log("Reading manifests...")
-    val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))
-    log.log("Going to compile:")
-    log.log(toRun.niceList())
-    log.log("")
+  private def runCompilations(izumiVersion: String, conf: IDLCArgs) = {
+    if (conf.languages.nonEmpty) {
+      log.log("Reading manifests...")
+      val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))
+      log.log("Going to compile:")
+      log.log(toRun.niceList())
+      log.log("")
 
-    val path = conf.source.toAbsolutePath
-    val target = conf.target.toAbsolutePath
-    target.toFile.mkdirs()
+      val path = conf.source.toAbsolutePath
+      val target = conf.target.toAbsolutePath
+      target.toFile.mkdirs()
 
-    log.log(s"Loading definitions from `$path`...")
+      log.log(s"Loading definitions from `$path`...")
 
-    val loaded = Timed {
-      if (path.toFile.exists() && path.toFile.isDirectory) {
-        val context = new LocalModelLoaderContext(path, Seq.empty)
-        context.loader.load()
-      } else {
-        shutdown.shutdown(s"Not exists or not a directory: $path")
+      val loaded = Timed {
+        if (path.toFile.exists() && path.toFile.isDirectory) {
+          val context = new LocalModelLoaderContext(path, Seq.empty)
+          context.loader.load()
+        } else {
+          shutdown.shutdown(s"Not exists or not a directory: $path")
+        }
       }
-    }
-    log.log(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
-    log.log("")
+      log.log(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
+      log.log("")
 
-    toRun.foreach {
-      option =>
-        runCompiler(target, loaded, option)
+      toRun.foreach {
+        option =>
+          runCompiler(target, loaded, option)
+      }
+      true
+    } else {
+      false
     }
+
   }
 
   private def runCompiler(target: Path, loaded: Timed[UnresolvedDomains], option: UntypedCompilerOptions): Unit = {
