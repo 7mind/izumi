@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -98,7 +98,7 @@ object IdealinguaPlugin extends AutoPlugin {
     idlExtensionsTypescript := TypeScriptTranslator.defaultExtensions,
     idlExtensionsGolang := GoLangTranslator.defaultExtensions,
     idlExtensionsCSharp := CSharpTranslator.defaultExtensions,
-    idlManifestScala := ScalaBuildManifest.default,
+    idlManifestScala := ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.PLAIN),
     idlManifestTypescript := TypeScriptBuildManifest.default,
     idlManifestGolang := GoLangBuildManifest.default,
     idlManifestCsharp := CSharpBuildManifest.default,

@@ -5,7 +5,13 @@ import java.nio.file.{Path, Paths}
 
 import scopt.OptionParser
 
-case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File], extensions: List[String], overrides: Map[String, String])
+case class LanguageOpts(
+                         id: String,
+                         withRuntime: Boolean,
+                         manifest: Option[File],
+                         extensions: List[String],
+                         overrides: Map[String, String],
+                       )
 
 
 case class IDLCArgs(
@@ -13,6 +19,8 @@ case class IDLCArgs(
                      target: Path,
                      languages: List[LanguageOpts],
                      init: Option[Path],
+                     versionOverlay: Option[Path],
+                     overrides: Map[String, String],
                    )
 
 object IDLCArgs {
@@ -21,6 +29,8 @@ object IDLCArgs {
     , Paths.get("target")
     , List.empty
     , None
+    , None
+    , Map.empty
   )
 
   val parser: OptionParser[IDLCArgs] = new scopt.OptionParser[IDLCArgs]("idlc") {
@@ -31,6 +41,19 @@ object IDLCArgs {
       .action((a, c) => c.copy(init = Some(a.toPath)))
       .text("init directory (must be empty or non-existing)")
 
+    opt[String]('g', "global-define").valueName("name=value")
+      .text("Define global manifest override")
+      .optional()
+      .unbounded()
+      .action {
+        (a, c) =>
+          val kv = a.split("=")
+          c.copy(overrides = c.overrides.updated(kv.head, kv(1)))
+      }
+
+    opt[File]('v', "version-overlay").optional().valueName("<version.json>")
+      .action((a, c) => c.copy(versionOverlay = Some(a.toPath)))
+      .text("path to version overlay file (version.json)")
 
     opt[File]('s', "source").optional().valueName("<dir>")
       .action((a, c) => c.copy(source = a.toPath))

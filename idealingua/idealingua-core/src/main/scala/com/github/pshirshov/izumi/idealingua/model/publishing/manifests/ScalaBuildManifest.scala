@@ -24,7 +24,7 @@ object ScalaBuildManifest {
   def default: ScalaBuildManifest = ScalaBuildManifest(
     common = BuildManifest.Common.default,
     dependencies = List.empty,
-    layout = ScalaProjectLayout.PLAIN,
+    layout = ScalaProjectLayout.SBT,
     dropFQNSegments = Some(0),
     projectIdPostfix = Some("api"),
   )

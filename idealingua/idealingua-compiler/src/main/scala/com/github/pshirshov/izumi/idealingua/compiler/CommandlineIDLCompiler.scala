@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.{IzManifest, IzResources}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -12,8 +13,9 @@ import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.typesafe.config.ConfigFactory
-import io.circe.Json
+import io.circe.parser.parse
 import io.circe.syntax._
+import io.circe.{Json, JsonObject}
 
 import scala.collection.JavaConverters._
 
@@ -43,7 +45,7 @@ object CommandlineIDLCompiler {
   private def initDir(conf: IDLCArgs): Boolean = {
     conf.init match {
       case Some(p) =>
-        log.log(s"Initializing layout in $p...")
+        log.log(s"Initializing layout in `$p` ...")
         val f = p.toFile
         if (f.exists()) {
           if (f.isDirectory) {
@@ -74,7 +76,7 @@ object CommandlineIDLCompiler {
   private def runCompilations(izumiVersion: String, conf: IDLCArgs) = {
     if (conf.languages.nonEmpty) {
       log.log("Reading manifests...")
-      val toRun = conf.languages.map(toOption(Map("common.izumiVersion" -> izumiVersion)))
+      val toRun = conf.languages.map(toOption(conf, Map("common.izumiVersion" -> izumiVersion)))
       log.log("Going to compile:")
       log.log(toRun.niceList())
       log.log("")
@@ -151,21 +153,56 @@ object CommandlineIDLCompiler {
     conf
   }
 
-  private def toOption(env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {
+  private def toOption(conf: IDLCArgs, env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {
     val lang = IDLLanguage.parse(lopt.id)
     val exts = getExt(lang, lopt.extensions)
-    val manifest: BuildManifest = readManifest(env, lopt, lang)
+
+    val manifest = readManifest(conf, env, lopt, lang)
     UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
   }
 
-  private def readManifest(env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage) = {
-    val patch = toJson(ConfigFactory.parseMap((env ++ lopt.overrides).asJava).root().unwrapped())
+  private def readManifest(conf: IDLCArgs, env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage): BuildManifest = {
+    val default = Paths.get("version.json")
+
+    val overlay = conf.versionOverlay.map(loadVersionOverlay) match {
+      case Some(value) =>
+        Some(value)
+      case None if default.toFile.exists() =>
+        log.log(s"Found $default, using as version overlay...")
+        Some(loadVersionOverlay(default))
+      case None =>
+        None
+    }
+
+    val overlayJson = overlay match {
+      case Some(Right(value)) =>
+        value
+      case Some(Left(e)) =>
+        shutdown.shutdown(s"Failed to parse version overlay: ${e.getMessage()}")
+      case None =>
+        JsonObject.empty.asJson
+    }
+
+    val envJson = toJson(env)
+    val languageOverridesJson = toJson(lopt.overrides)
+    val globalOverridesJson = toJson(conf.overrides)
+    val patch = overlayJson.deepMerge(globalOverridesJson).deepMerge(envJson).deepMerge(languageOverridesJson)
+
     val reader = new ManifestReader(log, shutdown, patch, lang, lopt.manifest)
     val manifest = reader.read()
     manifest
   }
 
-  private def toJson(v: AnyRef): Json = {
+  private def loadVersionOverlay(path: Path) = {
+    import io.circe.literal._
+    parse(IzFiles.readString(path.toFile)).map(vj => json"""{"common": {"version": $vj}}""")
+  }
+
+  private def toJson(env: Map[String, String]) = {
+    valToJson(ConfigFactory.parseMap(env.asJava).root().unwrapped())
+  }
+
+  private def valToJson(v: AnyRef): Json = {
     import io.circe.syntax._
 
     v match {
@@ -173,7 +210,7 @@ object CommandlineIDLCompiler {
         m.asScala
           .map {
             case (k, value) =>
-              k.toString -> toJson(value.asInstanceOf[AnyRef])
+              k.toString -> valToJson(value.asInstanceOf[AnyRef])
           }
           .asJson
 
