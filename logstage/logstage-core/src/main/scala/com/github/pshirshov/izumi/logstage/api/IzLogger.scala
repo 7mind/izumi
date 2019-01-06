@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.logstage.api
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
-import com.github.pshirshov.izumi.logstage.macros.LoggingMacro
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
@@ -11,9 +10,8 @@ import scala.language.implicitConversions
 class IzLogger
 (
   override val receiver: LogRouter
-  , override val customContext: Log.CustomContext
-) extends LoggingMacro
-  with AbstractLogger {
+, override val customContext: Log.CustomContext
+) extends RoutingLogger {
 
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
     new IzLogger(receiver, customContext + newCustomContext)
@@ -34,7 +32,7 @@ object IzLogger {
   val Level: Log.Level.type = Log.Level
 
   /**
-    * By default, a basic colored console logger with global [[Level.Trace]] threshold
+    * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
     */
   final def apply(threshold: Log.Level = IzLogger.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): IzLogger = {
     val r = ConfigurableLogRouter(threshold, sink, levels)

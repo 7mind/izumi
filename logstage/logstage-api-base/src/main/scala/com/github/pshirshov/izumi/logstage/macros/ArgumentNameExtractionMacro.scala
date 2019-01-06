@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 object ArgumentNameExtractionMacro {
-  protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
+  protected[macros] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
     object Arrow {

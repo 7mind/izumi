@@ -3,10 +3,10 @@ package com.github.pshirshov.izumi.logstage.api
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.{CodePosition, SourceFilePosition}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api
-import com.github.pshirshov.izumi.logstage.macros.LoggingMacro._
+import com.github.pshirshov.izumi.logstage.macros.LogMessageMacro.logMessageMacro
 
 import scala.language.experimental.macros
+import scala.language.implicitConversions
 
 object Log {
 
@@ -132,7 +132,7 @@ object Log {
 
   object Message {
     /** Construct [[Message]] from a string interpolation */
-    implicit def apply(message: String): api.Log.Message = macro logMessageMacro
+    implicit def apply(message: String): Message = macro logMessageMacro
   }
 
 }
