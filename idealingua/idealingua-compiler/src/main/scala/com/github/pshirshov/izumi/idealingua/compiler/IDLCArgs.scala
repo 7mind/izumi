@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.io.File
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import scopt.OptionParser
 
@@ -11,15 +11,21 @@ case class LanguageOpts(id: String, withRuntime: Boolean, manifest: Option[File]
 case class IDLCArgs(source: Path, target: Path, languages: List[LanguageOpts])
 
 object IDLCArgs {
+  def default: IDLCArgs = IDLCArgs(
+    Paths.get("source")
+    , Paths.get("target")
+    , List.empty
+  )
+
   val parser: OptionParser[IDLCArgs] = new scopt.OptionParser[IDLCArgs]("idlc") {
     head("idlc")
     help("help")
 
-    opt[File]('s', "source").required().valueName("<dir>")
+    opt[File]('s', "source").optional().valueName("<dir>")
       .action((a, c) => c.copy(source = a.toPath))
       .text("source directory")
 
-    opt[File]('t', "target").required().valueName("<dir>")
+    opt[File]('t', "target").optional().valueName("<dir>")
       .action((a, c) => c.copy(target = a.toPath))
       .text("target directory")
 

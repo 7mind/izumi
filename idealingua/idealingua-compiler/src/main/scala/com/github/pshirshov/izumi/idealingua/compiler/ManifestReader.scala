@@ -14,9 +14,8 @@ import io.circe.{Decoder, Encoder, Json}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-class ManifestReader(patch: Json, lang: IDLLanguage, file: Option[File]) extends Codecs {
-  private val log = CompilerLog.Default
 
+class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: IDLLanguage, file: Option[File]) extends Codecs {
   def read(): BuildManifest = {
     lang match {
       case IDLLanguage.Scala =>
@@ -63,31 +62,24 @@ class ManifestReader(patch: Json, lang: IDLLanguage, file: Option[File]) extends
         log.log(s"Failed to parse manifest for $lang from $path, check if it corresponds to the following example:")
         log.log(defaultJson.toString())
         log.log("")
-        shutdown(s"Failed to parse $lang manifest from $path: ${e.toString}")
+        shutdown.shutdown(s"Failed to parse $lang manifest from $path: ${e.toString}")
 
       case RawMf.Failed(e, path) =>
         log.log(s"Failed to load manifest for $lang from $path, you may use the following example to create it:")
         log.log(defaultJson.toString())
         log.log("")
-        shutdown(s"Failed to load $lang manifest from $path: ${e.toString}")
+        shutdown.shutdown(s"Failed to load $lang manifest from $path: ${e.toString}")
     }
 
     rawMf.deepMerge(patch).as[T] match {
       case Left(value) =>
-        shutdown(s"Have $lang manifest but it failed to parse: ${value.toString}")
+        shutdown.shutdown(s"Have $lang manifest but it failed to parse: ${value.toString}")
 
       case Right(value) =>
         value
     }
   }
 
-
-  private def shutdown(message: String): Nothing = {
-    log.log(message)
-    System.out.flush()
-    System.exit(1)
-    throw new IllegalArgumentException(message)
-  }
 
   private def readMfFromFile(path: File): RawMf = {
     Try(parse(IzFiles.readString(path))) match {

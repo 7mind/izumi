@@ -15,7 +15,8 @@ import scala.collection.JavaConverters._
 
 
 object CommandlineIDLCompiler {
-  private val log = CompilerLog.Default
+  private val log: CompilerLog = CompilerLog.Default
+  private val shutdown: Shutdown = ShutdownImpl
 
   def main(args: Array[String]): Unit = {
     val mf = IzManifest.manifest[CommandlineIDLCompiler.type]().map(IzManifest.read)
@@ -37,9 +38,14 @@ object CommandlineIDLCompiler {
     target.toFile.mkdirs()
 
     log.log(s"Loading definitions from `$path`...")
+
     val loaded = Timed {
-      val context = new LocalModelLoaderContext(path, Seq.empty)
-      context.loader.load()
+      if (path.toFile.exists() && path.toFile.isDirectory) {
+        val context = new LocalModelLoaderContext(path, Seq.empty)
+        context.loader.load()
+      } else {
+        shutdown.shutdown(s"Not exists or not a directory: $path")
+      }
     }
     log.log(s"Done: ${loaded.value.domains.results.size} in ${loaded.duration.toMillis}ms")
     log.log("")
@@ -65,8 +71,7 @@ object CommandlineIDLCompiler {
         }
         .ifFailed {
           message =>
-            log.log(message)
-            System.exit(1)
+            shutdown.shutdown(message)
         }
         .successful
     }
@@ -85,11 +90,7 @@ object CommandlineIDLCompiler {
   }
 
   private def parseArgs(args: Array[String]) = {
-    val default = IDLCArgs(
-      Paths.get("source")
-      , Paths.get("target")
-      , List.empty
-    )
+    val default = IDLCArgs.default
     val conf = IDLCArgs.parser.parse(args, default) match {
       case Some(c) =>
         c
@@ -105,7 +106,7 @@ object CommandlineIDLCompiler {
     val exts = getExt(lang, lopt.extensions)
 
     val patch = toJson(ConfigFactory.parseMap((env ++ lopt.overrides).asJava).root().unwrapped())
-    val reader = new ManifestReader(patch, lang, lopt.manifest)
+    val reader = new ManifestReader(log, shutdown, patch, lang, lopt.manifest)
     val manifest = reader.read()
 
     UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
@@ -135,7 +136,6 @@ object CommandlineIDLCompiler {
     val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
     descriptor.defaultExtensions.filterNot(e => negative.contains(e.id))
   }
-
 }
 
 
