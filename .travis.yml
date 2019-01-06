@@ -52,6 +52,6 @@ jobs:
     - stage: "SBT Tests"
       script: bash docker.sh scripted
     - stage: "Publish"
-      script: bash travis.sh versionate && bash docker.sh publish
+      script: bash docker.sh versionate publish
     - stage: "Site"
-      script: bash travis.sh versionate && bash docker.sh site
+      script: bash docker.sh versionate site
