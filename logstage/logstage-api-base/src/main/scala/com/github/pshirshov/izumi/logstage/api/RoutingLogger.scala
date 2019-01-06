@@ -14,10 +14,12 @@ trait RoutingLogger extends AbstractLogger {
     val ctx = customContext
     val entryWithCtx = addCustomCtx(entry, ctx)
     receiver.log(entryWithCtx)
+//    receiver.log(entry)
   }
 
   @inline override final def log(logLevel: Log.Level)(message: Log.Message)(implicit pos: CodePositionMaterializer): Unit = {
     log(Log.Entry(logLevel, message)(pos))
+//    receiver.log(Log.Entry(logLevel, message)(pos))
   }
 
   @inline private[this] def addCustomCtx(entry: Log.Entry, ctx: CustomContext): Entry = {

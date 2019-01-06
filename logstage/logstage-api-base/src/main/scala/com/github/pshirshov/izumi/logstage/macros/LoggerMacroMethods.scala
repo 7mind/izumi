@@ -10,38 +10,32 @@ object LoggerMacroMethods {
 
   def scTraceMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Trace)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Trace)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   def scDebugMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Debug)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Debug)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   def scInfoMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Info)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Info)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   def scWarnMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Warn)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Warn)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   def scErrorMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Error)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Error)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   def scCritMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(message: c.Expr[String]): c.Expr[Unit] = {
     import c.universe.reify
-    val logLevel = reify(Log.Level.Crit)
-    reify(c.prefix.splice.log(logLevel.splice)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
+    reify(c.prefix.splice.log(Log.Level.Crit)(logMessageMacro(c)(message).splice)(mkPos(c).splice))
   }
 
   @inline private[this] def mkPos(c: blackbox.Context): c.Expr[CodePositionMaterializer] = {

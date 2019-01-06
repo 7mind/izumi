@@ -79,8 +79,8 @@ object Log {
   final case class LoggerId(id: String) extends AnyVal
 
   object LoggerId {
-    def fromCodePosition(pos: CodePosition): LoggerId = {
-      LoggerId(pos.applicationPointId)
+    @inline final def fromCodePosition(pos: CodePosition): LoggerId = {
+      new LoggerId(pos.applicationPointId)
     }
   }
 
@@ -121,7 +121,14 @@ object Log {
 
   object Entry {
     def apply(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): Entry = {
-      val context = Context.sample(logLevel, CustomContext.empty)(pos)
+      val loggerId = LoggerId.fromCodePosition(pos.get)
+
+      val thread = Thread.currentThread()
+      val tsMillis = System.currentTimeMillis()
+      val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
+      val extendedStaticContext = StaticExtendedContext(loggerId, pos.get.position)
+
+      val context = Log.Context(extendedStaticContext, dynamicContext, CustomContext.empty)
       Log.Entry(message, context)
     }
   }
