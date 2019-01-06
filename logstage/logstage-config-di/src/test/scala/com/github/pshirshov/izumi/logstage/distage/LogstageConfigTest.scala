@@ -8,8 +8,8 @@ import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, Renderer, StringRenderer}
-import com.github.pshirshov.izumi.logstage.distage.LogstageConfigTest.TestRenderer.TestRenderingPolicyConstructor
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.distage.LogstageConfigTest.TestRenderingPolicy.TestRenderingPolicyConstructor
 import com.github.pshirshov.izumi.logstage.distage.LogstageConfigTest._
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import com.typesafe.config.ConfigFactory
@@ -96,8 +96,8 @@ class LogstageConfigTest extends WordSpec {
 
       val bootstrapModules = Seq(
         new LogstageCodecsModule {
-          bindRenderingPolicyMapper[TestRenderer, TestRenderingPolicyConstructor] {
-            c => new TestRenderer(c.foo, c.bar)
+          bindRenderingPolicyMapper[TestRenderingPolicy, TestRenderingPolicyConstructor] {
+            c => new TestRenderingPolicy(c.foo, c.bar)
           }
         }
         , configModule
@@ -113,7 +113,7 @@ class LogstageConfigTest extends WordSpec {
       withCtx(bootstrapModules, goodDef).asGood {
         l =>
           val p = l.get[RenderingPolicyWrapper].policy
-          assert(p.isInstanceOf[TestRenderer])
+          assert(p.isInstanceOf[TestRenderingPolicy])
       }
 
       val bad1Def = new ModuleDef {
@@ -180,8 +180,8 @@ class LogstageConfigTest extends WordSpec {
 
       val codecsModule = new LogstageCodecsModule {
 
-        bindRenderingPolicyMapper[StringRenderer, StringPolicyConstructor] {
-          c => new StringRenderer(c.options, c.renderingLayout)
+        bindRenderingPolicyMapper[StringRenderingPolicy, StringPolicyConstructor] {
+          c => new StringRenderingPolicy(c.options, c.renderingLayout)
         }
 
         bindLogSinkMapper[ConsoleSink, ConsoleSinkConstructor] {
@@ -278,8 +278,8 @@ class LogstageConfigTest extends WordSpec {
 
       val bootstrapModules = Seq(
         new LogstageCodecsModule {
-          bindRenderingPolicyMapper[StringRenderer, StringPolicyConstructor] {
-            c => new StringRenderer(c.options, c.renderingLayout)
+          bindRenderingPolicyMapper[StringRenderingPolicy, StringPolicyConstructor] {
+            c => new StringRenderingPolicy(c.options, c.renderingLayout)
           }
           bindLogSinkMapper[ConsoleSink, ConsoleSinkConstructor] {
             c => new ConsoleSink(c.policy)
@@ -329,18 +329,18 @@ object LogstageConfigTest {
 
   case class ThresholdWrapper(level: Log.Level)
 
-  class TestRenderer(foo: Int, bar: Option[String]) extends Renderer {
+  class TestRenderingPolicy(foo: Int, bar: Option[String]) extends RenderingPolicy {
     Quirks.discard(foo, bar)
     override def render(entry: Log.Entry): String = entry.toString
   }
 
-  object TestRenderer {
+  object TestRenderingPolicy {
 
     case class TestRenderingPolicyConstructor(foo: Int, bar: Option[String])
 
   }
 
-  class TestSink(policy: Renderer) extends LogSink {
+  class TestSink(policy: RenderingPolicy) extends LogSink {
     Quirks.discard(policy)
 
     override def flush(e: Log.Entry): Unit = {
@@ -350,13 +350,13 @@ object LogstageConfigTest {
 
   object TestSink {
 
-    case class Constructor(policy: Renderer)
+    case class Constructor(policy: RenderingPolicy)
 
   }
 
-  case class RenderingPolicyWrapper(policy: Renderer)
+  case class RenderingPolicyWrapper(policy: RenderingPolicy)
 
-  case class ConsoleSinkConstructor(policy: Renderer)
+  case class ConsoleSinkConstructor(policy: RenderingPolicy)
 
   case class StringPolicyConstructor(options: RenderingOptions, renderingLayout: Option[String])
 

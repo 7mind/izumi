@@ -4,14 +4,14 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.Renderer
+import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
 import com.github.pshirshov.izumi.logstage.sink.file.models.FileRotation.{DisabledRotation, FileLimiterRotation}
 import com.github.pshirshov.izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 
 import scala.util.{Failure, Success, Try}
 
 abstract class FileSink[T <: LogFile](
-                                       val renderingPolicy: Renderer
+                                       val renderingPolicy: RenderingPolicy
                                        , val fileService: FileService[T]
                                        , val rotation: FileRotation
                                        , val config: FileSinkConfig

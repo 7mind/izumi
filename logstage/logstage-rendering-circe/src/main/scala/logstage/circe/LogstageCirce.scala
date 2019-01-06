@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 
 trait LogstageCirce {
 
-  type LogstageCirceRenderingPolicy = json.LogstageCirceRenderer
+  type LogstageCirceRenderingPolicy = json.LogstageCirceRenderingPolicy
 
   @inline implicit final def ToConsoleSinkJsonCtor(consoleSink: ConsoleSink.type): ConsoleSinkJsonCtor = new ConsoleSinkJsonCtor(consoleSink)
 

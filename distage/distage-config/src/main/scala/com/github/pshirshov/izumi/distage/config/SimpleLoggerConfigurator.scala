@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigRea
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderer}
-import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderer
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import com.typesafe.config.Config
@@ -22,7 +22,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
     val logconf = readConfig(config)
 
     val renderingPolicy = if (logconf.json.contains(true) || json) {
-      new LogstageCirceRenderer()
+      new LogstageCirceRenderingPolicy()
     } else {
       val options = logconf.options match {
         case Some(value) =>
@@ -30,7 +30,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
         case None =>
           RenderingOptions()
       }
-      new StringRenderer(options, logconf.layout)
+      new StringRenderingPolicy(options, logconf.layout)
     }
 
     val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))

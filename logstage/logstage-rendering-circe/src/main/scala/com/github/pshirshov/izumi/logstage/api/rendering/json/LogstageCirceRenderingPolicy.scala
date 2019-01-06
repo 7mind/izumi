@@ -3,13 +3,13 @@ package com.github.pshirshov.izumi.logstage.api.rendering.json
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogContext
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, Renderer}
+import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import io.circe._
 import io.circe.syntax._
 
 import scala.runtime.RichInt
 
-class LogstageCirceRenderer(prettyPrint: Boolean = false) extends Renderer {
+class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
   override def render(entry: Log.Entry): String = {
     import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
 

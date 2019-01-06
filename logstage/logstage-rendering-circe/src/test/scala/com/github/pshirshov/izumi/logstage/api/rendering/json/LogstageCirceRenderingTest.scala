@@ -19,7 +19,7 @@ class LogstageCirceRenderingTest extends WordSpec {
 
 object LogstageCirceRenderingTest {
 
-  val jsonPolicy = new LogstageCirceRenderer(prettyPrint = true)
+  val jsonPolicy = new LogstageCirceRenderingPolicy(prettyPrint = true)
   val consoleSinkJson = new ConsoleSink(jsonPolicy)
 
   def setupJsonLogger(): IzLogger = {
