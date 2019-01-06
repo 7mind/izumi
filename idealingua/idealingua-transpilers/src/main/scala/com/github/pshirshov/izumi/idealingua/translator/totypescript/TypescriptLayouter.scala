@@ -204,14 +204,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     if (version.release) {
       s"${version.version}"
     } else {
-      val qualifier = version.buildId match {
-        case Some(value) =>
-          s"build.$value"
-        case None =>
-          s"ts.${System.currentTimeMillis()}"
-      }
-
-      s"${version.version}-$qualifier"
+      s"${version.version}-${version.buildId}"
     }
   }
 }

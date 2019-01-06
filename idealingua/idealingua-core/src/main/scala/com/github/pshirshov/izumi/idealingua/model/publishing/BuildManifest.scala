@@ -8,10 +8,10 @@ trait BuildManifest {
   def dependencies: List[ManifestDependency]
 }
 
-case class ProjectVersion(version: String, release: Boolean, buildId: Option[String])
+case class ProjectVersion(version: String, release: Boolean, buildId: String)
 
 object ProjectVersion {
-  def default = ProjectVersion("0.0.1", release = false, None)
+  def default = ProjectVersion("0.0.1", release = false, "UNKNOWNBUILD")
 }
 
 object BuildManifest {
