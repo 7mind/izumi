@@ -1,12 +1,17 @@
 package com.github.pshirshov.izumi
 
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.Log._
+import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 
 object PerfTest {
+  final val acceptingNullRouter = new LogRouter {
+    override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
+
+    override protected def doLog(entry: Log.Entry): Unit = {}
+  }
+
   def main(args: Array[String]): Unit = {
-    val logger = IzLogger.NullLogger
+    val logger = IzLogger(acceptingNullRouter)
 
     var i0 = 0
     while (i0 < 10000) {
@@ -21,7 +26,6 @@ object PerfTest {
       var i = 0
       while (i < 100000) {
         i += 1
-
 
         logger.debug("heya-ya-hey")
 //        if (logger.receiver.acceptable(LoggerId(pos.applicationPointId), Log.Level.Debug)) {
@@ -60,6 +64,16 @@ object PerfTest {
   }
 }
 
+// accepting null tests:
+// Result: avg of 1000 runs 13581504 nanos
+// Result: avg of 1000 runs 15451058 nanos
+// Result: avg of 1000 runs 18213739 nanos
+// Result: avg of 1000 runs 15764597 nanos
+
+
+
+// null tests:
+
 // new:
 // Result: avg of 1000 runs 14102548 nanos
 // Result: avg of 1000 runs 13658187 nanos
@@ -77,6 +91,13 @@ object PerfTest {
 // lambda + no-anyval-codeposition
 // Result: avg of 1000 runs 1031065 nanos
 
+// lambda + anyval codeposition
+// Result: avg of 1000 runs 461838 nanos
+// Result: avg of 1000 runs 483007 nanos
+
+// lambda-abstract + anyval codeposition
+// Result: avg of 1000 runs 447830 nanos
+
 // old:
 // Result: avg of 1000 runs 1114780 nanos
 
@@ -86,6 +107,11 @@ object PerfTest {
 
 // old = inlined-with-proper-if:
 // Result: avg of 1000 runs 1066996 nanos
+
+
+
+
+// print tests:
 
 // Result: 2733118063 nanos
 // Result: 2803161680 nanos

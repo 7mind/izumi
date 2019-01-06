@@ -7,25 +7,11 @@ import com.github.pshirshov.izumi.logstage.macros.LoggerMacroMethods
 import scala.language.experimental.macros
 
 trait AbstractLogger {
-  /** Log irrespective of minimum log level */
-  def unsafeLog(entry: Log.Entry): Unit
-  def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
 
-  @inline final def unsafeLog(logLevel: Log.Level)(message: Log.Message)(implicit pos: CodePositionMaterializer): Unit = {
-    unsafeLog(Log.Entry(logLevel, message)(pos))
-  }
+  def log(entry: Log.Entry): Unit
+  def log(logLevel: Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): Unit
 
-  @inline final def log(entry: Log.Entry): Unit = {
-    if (acceptable(entry.context.static.id, entry.context.dynamic.level)) {
-      unsafeLog(entry)
-    }
-  }
-
-  @inline final def log(logLevel: Log.Level)(messageThunk: => Log.Message)(implicit pos: CodePositionMaterializer): Unit = {
-    if (acceptable(LoggerId(pos.get.applicationPointId), logLevel)) {
-      unsafeLog(logLevel)(messageThunk)(pos)
-    }
-  }
+//  def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
 
   import LoggerMacroMethods._
 
