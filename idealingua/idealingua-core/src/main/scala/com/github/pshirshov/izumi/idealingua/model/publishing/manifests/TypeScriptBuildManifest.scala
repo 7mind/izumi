@@ -1,54 +1,41 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
 
 sealed trait TypeScriptModuleSchema
 
 object TypeScriptModuleSchema {
+
   final case object PER_DOMAIN extends TypeScriptModuleSchema
+
   final case object UNITED extends TypeScriptModuleSchema
+
 }
 
+// https://docs.npmjs.com/files/package.json
 case class TypeScriptBuildManifest(
-                            name: String,
-                            tags: String,
-                            description: String,
-                            notes: String,
-                            publisher: Publisher,
-                            version: String,
-                            license: String,
-                            website: String,
-                            copyright: String,
-                            dependencies: List[ManifestDependency],
-                            scope: String,
-                            moduleSchema: TypeScriptModuleSchema,
-                            // this one only works with scoped namespaces, this way you can
-                            // get rid of @scope/net-company-project and use @scope/project
-                            // by using dropnameSpaceSegments = Some(2)
-                            dropNameSpaceSegments: Option[Int],
-                          ) extends BuildManifest
+                                    common: Common,
+                                    dependencies: List[ManifestDependency],
+                                    scope: String,
+                                    moduleSchema: TypeScriptModuleSchema,
+                                    /** This one only works with scoped namespaces, this way you can
+                                      * get rid of @scope/net-company-project and use @scope/project
+                                      * by using dropnameSpaceSegments = Some(2)
+                                      */
+                                    dropFQNSegments: Option[Int],
+                                  ) extends BuildManifest
 
 object TypeScriptBuildManifest {
-  def generatePackage(manifest: TypeScriptBuildManifest, main: String, name: List[String], peerDependencies: List[ManifestDependency] = List.empty): String = {
-    val finalName = if(manifest.moduleSchema != TypeScriptModuleSchema.PER_DOMAIN ||
-        manifest.scope.isEmpty || manifest.dropNameSpaceSegments.isEmpty)
-      name.mkString("-") else
-      name.drop(manifest.dropNameSpaceSegments.get).mkString("-")
-    s"""{
-       |  "name": "${if (manifest.scope.isEmpty) finalName else manifest.scope + "/" + finalName}",
-       |  "version": "${manifest.version}",
-       |  "description": "${manifest.description}",
-       |  "main": "$main.js",
-       |  "typings": "$main.d.ts",
-       |  "author": "${manifest.publisher.name} (${manifest.publisher.id})",
-       |  "license": "${manifest.license}",
-       |  "dependencies": {
-       |${manifest.dependencies.map(md => s"""    "${md.module}": "${md.version}"""").mkString(",\n    ")}
-       |  },
-       |  "peerDependencies": {
-       |${peerDependencies.map(pd => s"""    "${pd.module}": "${pd.version}"""").mkString(",\n    ")}
-       |  }
-       |}
-     """.stripMargin
-  }
+  def default: TypeScriptBuildManifest = TypeScriptBuildManifest(
+    common = BuildManifest.Common.default,
+    dependencies = List(
+      ManifestDependency("moment", "^2.20.1"),
+      ManifestDependency("@types/node", "^10.7.1"),
+      ManifestDependency("@types/websocket", "0.0.39"),
+    ),
+    scope = "@TestScope",
+    moduleSchema = TypeScriptModuleSchema.PER_DOMAIN,
+    dropFQNSegments = None
+  )
 }

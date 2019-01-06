@@ -1,19 +1,20 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.distage
-import com.github.pshirshov.izumi.distage.model
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
-import com.github.pshirshov.izumi.distage.roles.roles
-import com.github.pshirshov.izumi.distage.roles.roles.{RoleId, RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.{model, roles}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.reflect.ClassTag
 
 class RoleProviderImpl(
+                        logger: IzLogger,
                         requiredRoles: Set[String],
                         mirrorProvider: MirrorProvider,
                       ) extends RoleProvider {
@@ -27,7 +28,7 @@ class RoleProviderImpl(
       .filter(b => isEnabledRole(b.tpe))
 
 
-    distage.roles.roles.RolesInfo(
+    RolesInfo(
       Set(
         RuntimeDIUniverse.DIKey.get[RoleStarter]) ++ enabledRoles.map(_.binding.key)
       , enabledRoles
@@ -38,7 +39,7 @@ class RoleProviderImpl(
     )
   }
 
-  private def availableRoleNames(bindings: Iterable[roles.RoleBinding]): Seq[String] = {
+  private def availableRoleNames(bindings: Iterable[RoleBinding]): Seq[String] = {
     bindings
       .map(_.tpe)
       .flatMap(r => getAnno(r).toSeq)
@@ -46,20 +47,30 @@ class RoleProviderImpl(
       .distinct
   }
 
-  private def getRoles(bb: Iterable[Binding]): Seq[roles.RoleBinding] = {
-
+  private def getRoles(bb: Iterable[Binding]): Seq[RoleBinding] = {
     val availableBindings =
       bb
         .map(b => (b, bindingToType(b, isAvailableRoleType)))
         .collect {
           case (b, Some(rt)) =>
             val runtimeClass = mirrorProvider.mirror.runtimeClass(rt.tpe)
-
             val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-            roles.RoleBinding(b, rt, getAnno(rt), src)
+            val annos = getAnno(rt)
+
+            annos.headOption match {
+              case Some(value) if annos.size == 1 =>
+                Seq(roles.RoleBinding(b, rt, value, src))
+              case Some(_) =>
+                logger.warn(s"${runtimeClass -> "role"} has multiple identifiers defined: $annos thus ignored")
+                Seq.empty
+              case None =>
+                logger.warn(s"${runtimeClass -> "role"} has no identifier defined thus ignored")
+                Seq.empty
+            }
+
         }
 
-    availableBindings.toSeq
+    availableBindings.flatten.toSeq
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {

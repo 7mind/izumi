@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bootstra
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
-import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -28,7 +27,7 @@ class CustomizationModule extends BootstrapModuleDef {
     .add(new AssignableFromEarlyAutoSetHook[Conflict])
 }
 
-class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapStrategy[EmptyCfg]#Context) => Unit) extends OpinionatedDiApp {
+class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends OpinionatedDiApp {
   override type CommandlineConfig = EmptyCfg
 
   override def handler: AppFailureHandler = AppFailureHandler.NullHandler
@@ -37,11 +36,11 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
 
   val config = AppConfig(ConfigFactory.load())
 
-  override protected def commandlineSetup(args: Array[String]): Strategy = {
-    val bsContext: BootstrapContext = BootstrapContextDefaultImpl(
-      EmptyCfg()
-      , pluginConfig
-    )
+  override protected def commandlineSetup(args: Array[String]): EmptyCfg = EmptyCfg()
+
+  override protected def makeStrategy(cliConfig: EmptyCfg): ApplicationBootstrapStrategy = {
+    Quirks.discard(cliConfig)
+    val bsContext: BootstrapContext = BootstrapContext.BootstrapContextDefaultImpl(pluginConfig)
 
     new ApplicationBootstrapStrategyBaseImpl(bsContext) {
       override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
@@ -54,7 +53,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
         Seq(
           new ConfigModule(config)
           , new CustomizationModule
-//          , new GraphDumpBootstrapModule()
+          //          , new GraphDumpBootstrapModule()
           , new TracingGcModule(Set(
             RuntimeDIUniverse.DIKey.get[TestApp],
             RuntimeDIUniverse.DIKey.get[DisabledByKey],
@@ -73,8 +72,8 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator, ApplicationBootstrapS
     }
   }
 
-  override protected def start(context: Locator, bootstrapContext: Strategy#Context): Unit = {
-    callback(this, context, bootstrapContext)
+  override protected def start(context: Locator): Unit = {
+    callback(this, context)
   }
 
   private val pluginMergeConfig = PluginMergeConfig(
@@ -101,7 +100,7 @@ class OpinionatedDIAppTest extends WordSpec {
     "support dynamic app loading" in {
 
       val app = new TestAppLauncher({
-        case (launcher, context, _) =>
+        case (launcher, context) =>
           assert(context.find[TestApp].nonEmpty)
           assert(context.find[BadApp].isEmpty)
           assert(context.find[DisabledByGc].isEmpty)

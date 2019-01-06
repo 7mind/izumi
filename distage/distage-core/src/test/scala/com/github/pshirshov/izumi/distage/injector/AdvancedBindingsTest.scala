@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
 import com.github.pshirshov.izumi.distage.fixtures.SetCases.SetCase2
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
 import org.scalatest.WordSpec
@@ -15,15 +16,15 @@ class AdvancedBindingsTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
 
-    val def1 = new ModuleDef {
+    val def1 = PlannerInput(new ModuleDef {
       todo[TestDependency0]
-    }
-    val def2 = new ModuleDef {
+    })
+    val def2 = PlannerInput(new ModuleDef {
       make[TestDependency0].todo
-    }
-    val def3 = new ModuleDef {
+    })
+    val def3 = PlannerInput(new ModuleDef {
       make[TestDependency0].named("fug").todo
-    }
+    })
 
     val plan1 = injector.plan(def1)
     val plan2 = injector.plan(def2)
@@ -37,12 +38,12 @@ class AdvancedBindingsTest extends WordSpec with MkInjector {
   "Set element references are the same as their referees" in {
     import SetCase2._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Service1]
 
       many[Service]
         .ref[Service1]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)

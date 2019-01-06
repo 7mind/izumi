@@ -198,13 +198,24 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     id
   }
 
+  def onWsSessionOpened(): Unit = {
+  }
+
+  def onWsClientIdUpdate(maybeNewId: Option[ClientId], oldId: WsClientId[ClientId]): Unit = {
+    logger.debug(s"Id updated to $maybeNewId, was: ${oldId.id}")
+  }
+
+  def onWsSessionClosed(): Unit = {
+    logger.debug("Finish called. Clear request state")
+  }
+
   protected[http4s] def updateId(maybeNewId: Option[ClientId]): Unit = {
     val oldId = id
     maybeId.set(maybeNewId)
     val newId = id
 
     def notifyListeners(): Unit = {
-      logger.debug(s"Id updated to $maybeNewId, was: ${oldId.id}")
+      onWsClientIdUpdate(maybeNewId, oldId)
       listeners.foreach { listener =>
         listener.onClientIdUpdate(newId, oldId)
       }
@@ -241,7 +252,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     fs2.Stream.awakeEvery[CatsIO](pingTimeout) >> fs2.Stream(Ping())
 
   override def finish(): Unit = {
-    logger.debug("Finish called. Clear request state")
+    onWsSessionClosed()
     Quirks.discard(wsSessionStorage.deleteClient(sessionId))
     listeners.foreach { listener =>
       listener.onSessionClosed(id)
@@ -251,6 +262,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
 
   protected[http4s] def start(): Unit = {
     Quirks.discard(wsSessionStorage.addClient(sessionId, this))
+    onWsSessionOpened()
     listeners.foreach { listener =>
       listener.onSessionOpened(id)
     }

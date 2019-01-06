@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
@@ -13,7 +14,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
 
@@ -35,7 +36,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
 
@@ -50,7 +51,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       stat[TestDependency]
     }
 
-    val context = mkInjector().produce(definition)
+    val context = mkInjector().produce(PlannerInput(definition))
 
     assert(context.get[TestDependency] == TestDependency())
   }
@@ -64,7 +65,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       stat[TestClass]
     }
 
-    val context = mkInjector().produce(definition)
+    val context = mkInjector().produce(PlannerInput(definition))
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }
@@ -78,7 +79,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
         stat[TestFactory]
       }
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produce(PlannerInput(definition))
 
       assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
       """)
@@ -92,7 +93,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
 
     def testCase = {
       val injector = mkInjector()
-      val plan = injector.plan(definition)
+      val plan = injector.plan(PlannerInput(definition))
 
       val context = injector.produce(plan)
 

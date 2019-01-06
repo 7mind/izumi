@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
 import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
@@ -14,7 +15,7 @@ class BasicTest extends WordSpec with MkInjector {
 
   "maintain correct operation order" in {
     import BasicCase1._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TestClass]
       make[TestDependency3]
       make[TestDependency0].from[TestImpl0]
@@ -22,7 +23,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestCaseClass]
       make[LocatorDependent]
       make[TestInstanceBinding].from(TestInstanceBinding())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -44,10 +45,10 @@ class BasicTest extends WordSpec with MkInjector {
   "correctly handle empty typed sets" in {
     import SetCase1._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -62,10 +63,10 @@ class BasicTest extends WordSpec with MkInjector {
 
   "fails on wrong @Id annotation" in {
     import BadAnnotationsCase._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TestDependency0]
       make[TestClass]
-    }
+    })
 
     val injector = mkInjector()
 
@@ -78,7 +79,7 @@ class BasicTest extends WordSpec with MkInjector {
 
   "support multiple bindings" in {
     import BasicCase1._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
@@ -90,7 +91,7 @@ class BasicTest extends WordSpec with MkInjector {
 
       many[JustTrait].named("named.set")
         .add[Impl3]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -105,10 +106,10 @@ class BasicTest extends WordSpec with MkInjector {
   "support nested multiple bindings" in {
     // https://github.com/pshirshov/izumi-r2/issues/261
     import BasicCase1._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       many[JustTrait]
         .add(new Impl1)
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -124,7 +125,7 @@ class BasicTest extends WordSpec with MkInjector {
 
   "support named bindings" in {
     import BasicCase2._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
       make[TestDependency0].from[TestImpl0Bad]
@@ -134,7 +135,7 @@ class BasicTest extends WordSpec with MkInjector {
         .from(TestInstanceBinding())
       make[TestDependency0].namedByImpl
         .from[TestImpl0Good]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -146,11 +147,11 @@ class BasicTest extends WordSpec with MkInjector {
   "fail on unbindable" in {
     import BasicCase3._
 
-    val definition: ModuleBase = new ModuleBase {
+    val definition = PlannerInput(new ModuleBase {
       override def bindings: Set[Binding] = Set(
         SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]))
       )
-    }
+    })
 
     val injector = mkInjector()
     intercept[UnsupportedWiringException] {
@@ -161,10 +162,10 @@ class BasicTest extends WordSpec with MkInjector {
   "fail on unsolvable conflicts" in {
     import BasicCase3._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Dependency].from[Impl1]
       make[Dependency].from[Impl2]
-    }
+    })
 
     val injector = mkInjector()
     val exc = intercept[UntranslatablePlanException] {
@@ -176,10 +177,10 @@ class BasicTest extends WordSpec with MkInjector {
   // BasicProvisionerTest
   "instantiate simple class" in {
     import BasicCase1._
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -192,7 +193,7 @@ class BasicTest extends WordSpec with MkInjector {
   "handle set bindings" in {
     import SetCase1._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Service2]
       make[Service0]
       make[Service1]
@@ -217,7 +218,7 @@ class BasicTest extends WordSpec with MkInjector {
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -233,15 +234,15 @@ class BasicTest extends WordSpec with MkInjector {
   "support Plan.providerImport and Plan.resolveImport" in {
     import BasicCase1._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[TestCaseClass2]
-    }
+    })
 
     val injector = mkInjector()
 
     val plan1 = injector.plan(definition)
     val plan2 = injector.finish(plan1.providerImport {
-      verse: String @Id("verse") =>
+      verse: String@Id("verse") =>
         TestInstanceBinding(verse)
     })
     val plan3 = plan2.resolveImport[String](id = "verse") {
@@ -257,10 +258,10 @@ class BasicTest extends WordSpec with MkInjector {
   "preserve type annotations" in {
     import BasicCase4._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Dependency].named("special")
       make[TestClass]
-    }
+    })
 
     val injector = mkInjector()
 
@@ -282,7 +283,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "handle set inclusions" in {
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Set[Int]].named("x").from(Set(1, 2, 3))
       make[Set[Int]].named("y").from(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
@@ -292,7 +293,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[Set[Some[Int]]].from(Set(Some(7)))
       many[Option[Int]].refSet[Set[None.type]]
       many[Option[Int]].refSet[Set[Some[Int]]]
-    }
+    })
 
     val context = Injector.Standard().produce(definition)
 
@@ -301,7 +302,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "handle multiple set element binds" in {
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Int].from(7)
 
       many[Int].add(5)
@@ -314,7 +315,7 @@ class BasicTest extends WordSpec with MkInjector {
         i: Int =>
           Set(i, i + 1, i + 2)
       }
-    }
+    })
 
     val context = Injector.Standard().produce(definition)
 
@@ -323,10 +324,10 @@ class BasicTest extends WordSpec with MkInjector {
 
   "support empty sets" in {
     import BasicCase5._
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       many[TestDependency]
       make[TestImpl1]
-    }
+    })
 
     val context = Injector.Standard().produce(definition)
 
@@ -335,14 +336,14 @@ class BasicTest extends WordSpec with MkInjector {
 
   "preserve tags in multi set bindings" in {
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       many[Int].named("zzz")
         .add(5).tagged("t3")
         .addSet(Set(1, 2, 3)).tagged("t1", "t2")
         .addSet(Set(1, 2, 3)).tagged("t3", "t4")
-    }
+    })
 
-    assert(definition.bindings.collectFirst {
+    assert(definition.bindings.bindings.collectFirst {
       case SetElementBinding(_, _, s, _) if Set(BindingTag("t1"), BindingTag("t2")).diff(s).isEmpty => true
     }.nonEmpty)
   }

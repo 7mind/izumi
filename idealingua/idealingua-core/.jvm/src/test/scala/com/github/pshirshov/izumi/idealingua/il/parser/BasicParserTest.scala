@@ -61,6 +61,12 @@ class BasicParserTest
       assertParses(defStructure.enumBlock(_), "enum MyEnum {  X  Y  Z  }")
       assertParses(defStructure.enumBlock(_),
         """enum MyEnum {
+          | + BaseEnum
+          | - REMOVED_BASE_ELEMENT
+          | NEW_ELEMENT
+          |}""".stripMargin)
+      assertParses(defStructure.enumBlock(_),
+        """enum MyEnum {
           |X
           | Y
           |Z

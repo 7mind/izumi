@@ -1,6 +1,7 @@
 package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase5
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import distage.Injector
 import distage.plugins.{ConfigurablePluginMergeStrategy, PluginDef}
@@ -30,7 +31,7 @@ class PluginMergeStrategyTest extends WordSpec {
         }
       ))
 
-      val definition = mergeStrategy.merge(Seq(plugin1, plugin2)).definition
+      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)).definition)
       assert(Injector.Standard().produce(definition).get[TestImpl1].justASet == Set.empty)
     }
 
@@ -54,7 +55,7 @@ class PluginMergeStrategyTest extends WordSpec {
         }
       ))
 
-      val definition = mergeStrategy.merge(Seq(plugin1, plugin2)).definition
+      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)).definition)
       assert(Injector.Standard().produce(definition).get[TestDependency] != null)
     }
   }

@@ -28,8 +28,8 @@ class TestkitMemoizationTest extends DistagePluginSpec {
       ctx: Ctx =>
         assert(r.get().get() == ctx)
         assert(ctx.initCounter.startedRoleComponents.size == 3)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 7)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(instanceStore.memoizedInstances.size() == 7)
+        assert(instanceStore.memoizedInstances.values().contains(ctx))
         assert(ctx.initCounter.closedCloseables.isEmpty)
     }
 
@@ -37,13 +37,15 @@ class TestkitMemoizationTest extends DistagePluginSpec {
       ctx: Ctx =>
         assert(r.get().get() == ctx)
         assert(ctx.initCounter.startedRoleComponents.size == 3)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.size() == 7)
-        assert(MemoizingDistageResourceCollection.memoizedInstances.values().contains(ctx))
+        assert(instanceStore.memoizedInstances.size() == 7)
+        assert(instanceStore.memoizedInstances.values().contains(ctx))
         assert(ctx.initCounter.closedCloseables.isEmpty)
     }
   }
 
-  override protected val resourceCollection: DistageResourceCollection = new MemoizingDistageResourceCollection {
+  val instanceStore = new DirtyGlobalTestResourceStoreImpl
+
+  override protected val resourceCollection: DistageResourceCollection = new MemoizingDistageResourceCollection(instanceStore) {
     override def memoize(ref: IdentifiedRef): Boolean = {
       if (ref.key == DIKey.get[Ctx]) {
         r.set(new WeakReference(ref.value.asInstanceOf[Ctx]))
@@ -59,6 +61,26 @@ class TestkitMemoizationTest extends DistagePluginSpec {
       } else {
         false
       }
+    }
+  }
+}
+
+class TestkitMemoizationOrderTest extends DistagePluginSpec {
+
+  "testkit" must {
+    "progression test: can't start memoized and non-memoized components with interdependencies in correct order" in intercept[AssertionError] {
+      di {
+        _: Ctx => ()
+      }
+    }
+  }
+
+  val instanceStore = new DirtyGlobalTestResourceStoreImpl
+
+  override protected val resourceCollection: DistageResourceCollection = new MemoizingDistageResourceCollection(instanceStore) {
+    override def memoize(ref: IdentifiedRef): Boolean = {
+      ref.key == DIKey.get[TestComponent1] ||
+        ref.key == DIKey.get[TestComponent3]
     }
   }
 }

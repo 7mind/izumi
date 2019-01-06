@@ -10,16 +10,32 @@ import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.
 
 import scala.reflect.ClassTag
 
-case class ProvidedRuntime(modules: Seq[Module])
+case class ProvidedRuntime(modules: Seq[Module]) {
+  def isEmpty: Boolean = modules.isEmpty
+  def maybe: Option[ProvidedRuntime] = {
+    if (isEmpty) {
+      None
+    } else {
+      Some(this)
+    }
+  }
+  def ++(other: ProvidedRuntime): ProvidedRuntime = {
+    ProvidedRuntime(modules ++ other.modules)
+  }
+}
+
+object ProvidedRuntime {
+  def empty: ProvidedRuntime = ProvidedRuntime(Seq.empty)
+}
 
 sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifest] {
   def language: IDLLanguage
 
   def extensions: Seq[E]
 
-  def withRuntime: Boolean
+  def withBundledRuntime: Boolean
 
-  def manifest: Option[M]
+  def manifest: M
 
   def providedRuntime: Option[ProvidedRuntime]
 }
@@ -29,8 +45,8 @@ final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
 (
   language: IDLLanguage
   , extensions: Seq[E]
-  , withRuntime: Boolean = true
-  , manifest: Option[M] = None
+  , manifest: M
+  , withBundledRuntime: Boolean = true
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[E, M]
 
@@ -45,11 +61,9 @@ object CompilerOptions {
       case e: E => e
     }
 
-    val manifest = options.manifest.collect {
-      case m: M => m
-    }
+    val manifest = options.manifest.asInstanceOf[M]
 
-    CompilerOptions(options.language, extensions, options.withRuntime, manifest, options.providedRuntime)
+    CompilerOptions(options.language, extensions, manifest, options.withBundledRuntime, options.providedRuntime)
   }
 }
 
@@ -57,16 +71,15 @@ final case class UntypedCompilerOptions
 (
   language: IDLLanguage
   , extensions: Seq[TranslatorExtension]
-  , withRuntime: Boolean = true
-  , manifest: Option[BuildManifest] = None
+  , manifest: BuildManifest
+  , withBundledRuntime: Boolean = true
   , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
   override def toString: String = {
-    val rtRepr = Option(withRuntime).filter(_ == true).map(_ => "+rt").getOrElse("-rt")
-    val mfRepr = manifest.map(_ => "+mf").getOrElse("-mf")
+    val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rtb").getOrElse("-rtb")
+    val rtfRepr = providedRuntime.map(rt => s"rtu=${rt.modules.size}").getOrElse("-rtu")
     val extRepr = extensions.mkString("(", ", ", ")")
-    val rtfRepr = providedRuntime.map(rt => s"rtf=${rt.modules.size}").getOrElse("-rtf")
-    Seq(language, mfRepr, extRepr, rtRepr, rtfRepr).mkString(" ")
+    Seq(language, rtRepr, rtfRepr, extRepr).mkString(" ")
   }
 }
 

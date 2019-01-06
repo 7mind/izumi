@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases.{CircularCase1, CircularCase2}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import distage.ModuleBase
 import org.scalatest.WordSpec
@@ -16,7 +17,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjectorWithProxy()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[Circular1] != null)
@@ -33,7 +34,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjectorWithProxy()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[Circular1] != null)
@@ -53,7 +54,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjectorWithProxy()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
     val c3 = context.get[Circular3]
     val traitArg = c3.arg

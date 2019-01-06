@@ -98,6 +98,8 @@ class Http4sTransportTest extends WordSpec {
     badJson match {
       case Error(value: IRTUnexpectedHttpStatus) =>
         assert(value.status == Status.BadRequest).discard()
+      case Error(value) =>
+        fail(s"Unexpected error: $value")
       case Success(value) =>
         fail(s"Unexpected success: $value")
       case Termination(exception, _) =>

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.roles
+package com.github.pshirshov.izumi.distage.roles
 
 trait RoleComponent {
   /** Should be idempotent, i.e. [[start()]] on a running component shouldn't spawn a second component, interfere with the current instance or throw */

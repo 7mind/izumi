@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
-import java.util.concurrent.{CountDownLatch, ExecutorService, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{CountDownLatch, ExecutorService, TimeUnit}
 
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
-import com.github.pshirshov.izumi.distage.roles.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger

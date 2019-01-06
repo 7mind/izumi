@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.ConcurrentLinkedDeque
 
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
-import com.github.pshirshov.izumi.distage.roles.roles.{ComponentsLifecycleManager, RoleComponent}
+import com.github.pshirshov.izumi.distage.roles.{ComponentsLifecycleManager, RoleComponent}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -12,8 +12,8 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
 class ComponentsLifecycleManagerImpl(
-                                      components: Set[RoleComponent],
-                                      logger: IzLogger
+                                      components: Set[RoleComponent]
+                                      , logger: IzLogger
                                     ) extends ComponentsLifecycleManager {
 
   private val started = new ConcurrentLinkedDeque[ComponentLifecycle]()

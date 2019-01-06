@@ -14,7 +14,7 @@ import scala.util.control.Breaks._
 
 final case class TypeScriptImport(id: TypeId, pkg: String)
 
-final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None) {
+final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest) {
   private def renderTypeImports(id: TypeId, ts: Typespace): String = id match {
     case adt: AdtId => s"${adt.name}, ${adt.name}Serialized, ${adt.name}Helpers"
     case i: IdentifierId => s"${i.name}"
@@ -49,24 +49,24 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
 }
 
 object TypeScriptImports {
-  def apply(imports: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
+  def apply(imports: List[TypeScriptImport], manifest: TypeScriptBuildManifest): TypeScriptImports =
     new TypeScriptImports(imports, manifest)
 
-  def apply(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest] = None): TypeScriptImports =
+  def apply(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): TypeScriptImports =
     TypeScriptImports(fromDefinition(ts, definition, fromPkg, extra, manifest), manifest)
 
-  def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
+  def apply(ts: Typespace, i: Service, fromPkg: Package, extra: List[TypeScriptImport], manifest: TypeScriptBuildManifest): TypeScriptImports =
     TypeScriptImports(fromService(ts, i, fromPkg, extra, manifest), manifest)
 
-  def apply(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport], manifest: Option[TypeScriptBuildManifest]): TypeScriptImports =
+  def apply(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport], manifest: TypeScriptBuildManifest): TypeScriptImports =
     TypeScriptImports(fromBuzzer(ts, i, fromPkg, extra, manifest), manifest)
 
-  protected def withImport(t: TypeId, fromPackage: Package, manifest: Option[TypeScriptBuildManifest]): Seq[String] = {
+  protected def withImport(t: TypeId, fromPackage: Package, manifest: TypeScriptBuildManifest): Seq[String] = {
     var pathToRoot = ""
-    (1 to (if(manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN &&
-      manifest.get.dropNameSpaceSegments.isDefined) fromPackage.size - manifest.get.dropNameSpaceSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
+    (1 to (if(manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN &&
+      manifest.dropFQNSegments.isDefined) fromPackage.size - manifest.dropFQNSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
 
-    val scopeRoot = if (manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) manifest.get.scope + "/" else pathToRoot
+    val scopeRoot = if (manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) manifest.scope + "/" else pathToRoot
 
     t match {
       case g: Generic => g match {
@@ -117,9 +117,9 @@ object TypeScriptImports {
     var importOffset = ""
     var importFile = ""
 
-    if (srcPkg.nonEmpty && manifest.isDefined && manifest.get.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
-      importOffset = manifest.get.scope + "/" +
-        (if (manifest.get.dropNameSpaceSegments.isDefined) t.path.toPackage.drop(manifest.get.dropNameSpaceSegments.get) else t.path.toPackage).mkString("-")
+    if (srcPkg.nonEmpty && manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+      importOffset = manifest.scope + "/" +
+        (if (manifest.dropFQNSegments.isDefined) t.path.toPackage.drop(manifest.dropFQNSegments.get) else t.path.toPackage).mkString("-")
       importFile = importOffset
     } else {
       if (srcPkg.nonEmpty) {
@@ -134,7 +134,7 @@ object TypeScriptImports {
     Seq(importFile)
   }
 
-  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
+  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
     val imports = types.distinct
     if (fromPkg.isEmpty) {
       return List.empty
@@ -183,7 +183,7 @@ object TypeScriptImports {
   val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
    */
 
-  protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
+  protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
     val types = collectTypes(ts, definition)
     fromTypes(types, fromPkg, extra, manifest)
   }
@@ -198,7 +198,7 @@ object TypeScriptImports {
     }
   }
 
-  protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
+  protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
     val types = svc.methods.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ fromRPCMethodOutput(ts, m.signature.output)
     }
@@ -206,7 +206,7 @@ object TypeScriptImports {
     fromTypes(types, fromPkg, extra, manifest)
   }
 
-  protected def fromBuzzer(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: Option[TypeScriptBuildManifest]): List[TypeScriptImport] = {
+  protected def fromBuzzer(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
     val types = i.events.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ fromRPCMethodOutput(ts, m.signature.output)
     }

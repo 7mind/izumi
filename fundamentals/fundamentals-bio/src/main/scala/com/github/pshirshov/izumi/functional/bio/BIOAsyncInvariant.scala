@@ -3,7 +3,11 @@ package com.github.pshirshov.izumi.functional.bio
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 trait BIOAsyncInvariant[R[ _, _]] extends BIOInvariant[R] {
+  final type Canceler = R[Nothing, Unit]
+
   @inline def async[E, A](register: (Either[E, A] => Unit) => Unit): R[E, A]
+
+  @inline def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): R[E, A]
 
   @inline def sleep(duration: Duration): R[Nothing, Unit]
 

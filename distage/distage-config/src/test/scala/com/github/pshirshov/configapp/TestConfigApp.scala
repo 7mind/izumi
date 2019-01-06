@@ -2,6 +2,7 @@ package com.github.pshirshov.configapp
 
 import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
@@ -51,7 +52,7 @@ class HttpServer3(@AutoConf val listenOn: HostPort) extends TestAppService {
 }
 
 object TestConfigApp {
-  final val definition = new ModuleDef {
+  final val definition = PlannerInput(new ModuleDef {
     make[HttpServer1]
     make[HttpServer2]
     make[HttpServer3]
@@ -80,10 +81,10 @@ object TestConfigApp {
       .ref[TestAppService]("puller6")
 
     make[TestConfigApp]
-  }
+  })
 
-  final val setDefinition = new ModuleDef {
+  final val setDefinition = PlannerInput(new ModuleDef {
     many[TestAppService]
         .add[DataPuller1]
-  }
+  })
 }

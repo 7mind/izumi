@@ -24,6 +24,7 @@ trait LoggingMacro {
   final def error(message: String): Unit = macro scErrorMacro
   final def crit(message: String): Unit = macro scCritMacro
   final def entry(logLevel: Log.Level)(message: String): Log.Entry = macro scEntryMacro
+  final def entry(logLevel: Log.Level)(message: Message): Log.Entry = macro scMkEntryMacro
 }
 
 object LoggingMacro {
@@ -60,6 +61,11 @@ object LoggingMacro {
   def scEntryMacro(c: blackbox.Context)(logLevel: c.Expr[Log.Level])(message: c.Expr[String]): c.Expr[Log.Entry] = {
     val (pos, loggerId) = mkPosLoggerId(c)
     mkLogEntry(c)(mkLogMessage(c)(message), logLevel, pos, loggerId)
+  }
+
+  def scMkEntryMacro(c: blackbox.Context)(logLevel: c.Expr[Log.Level])(message: c.Expr[Message]): c.Expr[Log.Entry] = {
+    val (pos, loggerId) = mkPosLoggerId(c)
+    mkLogEntry(c)(message, logLevel, pos, loggerId)
   }
 
   def logMessageMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Log.Message] = {

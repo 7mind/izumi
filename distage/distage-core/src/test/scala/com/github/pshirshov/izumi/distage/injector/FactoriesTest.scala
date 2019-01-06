@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.FactoryCases._
-import distage.{ModuleBase, ModuleDef}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
+import distage.ModuleDef
 import org.scalatest.WordSpec
 
 import scala.util.Try
@@ -11,13 +12,13 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle factory injections" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Factory]
       make[Dependency]
       make[OverridingFactory]
       make[AssistedFactory]
       make[AbstractFactory]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -48,10 +49,10 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle generic arguments in cglib factory methods" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -67,12 +68,12 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle named assisted dependencies in cglib factory methods" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[NamedAssistedFactory]
       make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -92,10 +93,10 @@ class FactoriesTest extends WordSpec with MkInjector {
     val fail = Try {
       import FactoryCase1._
 
-      val definition: ModuleBase = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[FactoryProducingFactory]
         make[Dependency]
-      }
+      })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -111,11 +112,11 @@ class FactoriesTest extends WordSpec with MkInjector {
   "cglib factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Dependency]
       make[TestClass]
       make[Factory]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)

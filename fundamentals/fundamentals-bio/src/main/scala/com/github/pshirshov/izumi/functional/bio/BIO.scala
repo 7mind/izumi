@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import scalaz.zio.{ExitResult, FiberFailure, IO, Schedule}
+import scalaz.zio._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.higherKinds
@@ -167,10 +167,21 @@ object BIO extends BIOSyntax {
             case Left(t) =>
               cb(ExitResult.checked(t))
           }
-
       }
     }
 
+    @inline override def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): IO[E, A] = {
+      IO.async0[E, A] {
+        cb =>
+          val canceler = register {
+            case Right(v) =>
+              cb(ExitResult.Succeeded(v))
+            case Left(t) =>
+              cb(ExitResult.checked(t))
+          }
+          Async.maybeLater(canceler)
+      }
+    }
 
   }
 

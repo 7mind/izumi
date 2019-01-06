@@ -18,13 +18,13 @@ object IzumiDeps {
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.5.0" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.1.0-M1"
+    val cats_effect = "1.1.0"
     val zio = "0.5.0"
 
-    val circe = "0.10.1" // 2.13+ , "0.10.0-M2" pulls cats 1.2.0
-    val circe_derivation = "0.10.0-M1"
-
-    val http4s = "0.20.0-M3" // https://github.com/http4s/http4s/issues/1797
+    val circe = "0.11.0" // 2.13+
+    val circe_derivation = "0.11.0-M1"
+    val jawn = "0.14.0"
+    val http4s = "0.20.0-M4" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "4.1.0" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
@@ -44,7 +44,7 @@ object IzumiDeps {
     val typesafe_config = "1.3.3" // java
 
     // good to drop - scala
-    val scopt = "3.7.0" // 2.13+
+    val scopt = "3.7.1" // 2.13+
 
     // good to drop - java
     val cglib_nodep = "3.2.8" // java
@@ -64,7 +64,7 @@ object IzumiDeps {
     val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop" % V.zio
 
     private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials = Seq(scala_java8_compat, collection_compat)
+    val essentials: Seq[ModuleID] = Seq(scala_java8_compat, collection_compat)
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
@@ -93,6 +93,7 @@ object IzumiDeps {
       , "io.circe" %% "circe-generic"
       , "io.circe" %% "circe-generic-extras"
       , "io.circe" %% "circe-parser"
+      , "io.circe" %% "circe-literal"
     ).map(_ % V.circe) ++ Seq(
       "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
       ).map(
@@ -115,7 +116,7 @@ object IzumiDeps {
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
     @deprecated("we must throw this out once http4s implements client-side websockets", "2018-12-01")
-    val java_websocket = Seq(
+    val java_websocket: Seq[ModuleID] = Seq(
       "org.java-websocket" % "Java-WebSocket" % V.java_websocket
       , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
       , "com.sun.xml.bind" % "jaxb-core" % V.jaxb_core
@@ -131,11 +132,15 @@ object IzumiDeps {
     val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
   }
 
+  object C {
+    val jawn = "org.typelevel" %% "jawn-parser" % V.jawn % Compile
+  }
+
   object T {
     val scalatest = R.scalatest % Test
     val slf4j_simple = R.slf4j_simple % Test
 
-    val essentials = Seq(scalatest)
+    val essentials: Seq[ModuleID] = Seq(scalatest)
 
     val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)

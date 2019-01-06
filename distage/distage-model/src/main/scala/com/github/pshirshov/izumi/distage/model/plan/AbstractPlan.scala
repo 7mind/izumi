@@ -44,6 +44,8 @@ sealed trait AbstractPlan {
     }
   }
 
+  final def keys: Set[DIKey] = steps.map(_.target).toSet
+
   final def toSemi: SemiPlan = {
     val safeSteps = steps.flatMap {
       case _: InitProxy =>
@@ -72,7 +74,7 @@ sealed trait AbstractPlan {
   }
 
   override def toString: String = {
-    steps.map(_.format).mkString("\n")
+    steps.map(_.toString).mkString("\n")
   }
 }
 
@@ -136,7 +138,7 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp]) e
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], topology: PlanTopology) extends AbstractPlan {
 
-  def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
+  //def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
 
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
@@ -162,4 +164,8 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
 
 object OrderedPlan {
   implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
+
+  implicit class PlanSyntax(r: OrderedPlan) {
+    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
+  }
 }

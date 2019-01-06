@@ -1,78 +1,86 @@
 package com.github.pshirshov.izumi.distage.app
 
-import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan, CompactPlanFormatter}
+import com.github.pshirshov.izumi.distage.model.plan.{CompactPlanFormatter, OrderedPlan}
 import com.github.pshirshov.izumi.distage.plugins._
+import com.github.pshirshov.izumi.distage.plugins.merge.PluginMergeStrategy
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import distage.Injector
+import distage._
 
-case class DIAppStartupContext(
-                                bsModule: BootstrapModule,
-                                bsPlugins: Seq[PluginBase],
-                                appPlugins: Seq[PluginBase],
-                                strategy: (LoadedPlugins, LoadedPlugins) => ModuleBase
-                              )
+case class DIAppStartupContext(startupContext: StartupContext)
+
+trait StartupContext {
+  val logger: IzLogger
+  def injector: Injector
+  def plan: OrderedPlan
+  def startup(args: Array[String]): StartupContext
+}
 
 abstract class OpinionatedDiApp {
   type CommandlineConfig
 
-  type Strategy = ApplicationBootstrapStrategy[CommandlineConfig]
-  type BootstrapContext = Strategy#Context
-
   def main(args: Array[String]): Unit = {
     try {
-      doMain(commandlineSetup(args))
+      val startupContext = startup(args)
+      val context = makeContext(startupContext)
+      start(context)
     } catch {
       case t: Throwable =>
         handler.onError(t)
     }
   }
 
-  protected def commandlineSetup(args: Array[String]): Strategy
+  private def startup(args: Array[String]): StartupContext = {
+    val config = commandlineSetup(args)
+    val strategy = makeStrategy(config)
+    new StartupContextImpl(strategy)
+  }
 
-  protected def doMain(strategy: Strategy): Unit = {
-    val loggerRouter = strategy.router()
+  class StartupContextImpl(val strategy: ApplicationBootstrapStrategy) extends StartupContext {
+    val loggerRouter: LogRouter = strategy.router()
     val logger: IzLogger = makeLogger(loggerRouter)
-    val bsLoggerDef = new BootstrapModuleDef {
+    val bsLoggerDef: BootstrapModuleDef = new BootstrapModuleDef {
       make[LogRouter].from(loggerRouter)
     }
 
-    val pluginsBs = strategy.mkBootstrapLoader().load()
-    val pluginsApp = strategy.mkLoader().load()
+    val pluginsBs: Seq[PluginBase] = strategy.mkBootstrapLoader().load()
+    val pluginsApp: Seq[PluginBase] = strategy.mkLoader().load()
 
-    val mergeStrategy = strategy.mergeStrategy(pluginsBs, pluginsApp)
+    val mergeStrategy: PluginMergeStrategy[LoadedPlugins] = strategy.mergeStrategy(pluginsBs, pluginsApp)
 
-    val mergedBs = mergeStrategy.merge(pluginsBs)
-    val mergedApp = mergeStrategy.merge(pluginsApp)
+    val mergedBs: LoadedPlugins = mergeStrategy.merge(pluginsBs)
+    val mergedApp: LoadedPlugins = mergeStrategy.merge(pluginsApp)
 
     validate(mergedBs, mergedApp)
 
-    val makeMainModule = makeModule(strategy) _
-    val appDef = makeMainModule(mergedBs, mergedApp)
-    val bsModules = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    val appDef: ModuleBase = makeModule(strategy)(mergedBs, mergedApp)
+    val bsModules: BootstrapModule = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
 
-    val accessibleBs = new BootstrapModuleDef {
-      make[DIAppStartupContext].from(DIAppStartupContext(bsModules, pluginsBs, pluginsApp, makeMainModule))
+    val accessibleBs: BootstrapModuleDef = new BootstrapModuleDef {
+      make[DIAppStartupContext].from(DIAppStartupContext(StartupContextImpl.this))
     }
 
-    val bootstrapCustomDef = bsModules ++ accessibleBs
-    val bsdef = bootstrapCustomDef ++ mergedBs.definition
+    val bootstrapCustomDef: BootstrapModule = bsModules ++ accessibleBs
+    val bsdef: BootstrapModule = bootstrapCustomDef ++ mergedBs.definition
 
     logger.trace(s"Have bootstrap definition\n$bsdef")
     logger.trace(s"Have app definition\n$appDef")
 
-    val injector = makeInjector(logger, bsdef)
-    val plan = makePlan(logger, appDef, injector)
-    val context = makeContext(logger, injector, plan)
+    val injector: Injector = makeInjector(logger, bsdef)
+    val plan: OrderedPlan = makePlan(logger, appDef, injector)
 
-    start(context, strategy.context)
+    override def startup(args: Array[String]): StartupContext = OpinionatedDiApp.this.startup(args)
   }
 
-  private def makeModule(strategy: Strategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
+  protected def commandlineSetup(args: Array[String]): CommandlineConfig
+
+  protected def makeStrategy(cliConfig: CommandlineConfig): ApplicationBootstrapStrategy
+
+  private def makeModule(strategy: ApplicationBootstrapStrategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
     mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
   }
 
@@ -82,17 +90,17 @@ abstract class OpinionatedDiApp {
     logger
   }
 
-  protected def makeContext(logger: IzLogger, injector: distage.Injector, plan: OrderedPlan): Locator = {
-    val locator = injector.produce(plan)
-    logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
-    locator
+  protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
+    val plan = injector.plan(PlannerInput(appDef))
+    import CompactPlanFormatter._
+    logger.trace(s"Planning completed\n${plan.render() -> "plan"}")
+    plan
   }
 
-  protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
-    val plan = injector.plan(appDef)
-    import CompactPlanFormatter._
-    logger.trace(s"Planning completed\n${plan.render -> "plan"}")
-    plan
+  protected def makeContext(context: StartupContext): Locator = {
+    val locator = context.injector.produce(context.plan)
+    context.logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
+    locator
   }
 
   protected def makeInjector(logger: IzLogger, bsdef: BootstrapModule): distage.Injector = {
@@ -111,7 +119,7 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  protected def start(context: Locator, bootstrapContext: Strategy#Context): Unit
+  protected def start(context: Locator): Unit
 
   def handler: AppFailureHandler = AppFailureHandler.TerminatingHandler
 }

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.ImplicitCases.ImplicitCase2
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
@@ -17,7 +18,7 @@ class StaticImplicitInjectionTest extends WordSpec with MkInjector {
       stat[TestDependency3]
       stat[TestClass]
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[TestClass].a != null)
@@ -39,7 +40,7 @@ class StaticImplicitInjectionTest extends WordSpec with MkInjector {
       stat[TestDependency3]
       stat[TestClass]
     }
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
     val context = injector.produce(plan)
 
     assert(context.get[TestClass].b == context.get[TestClass].d)

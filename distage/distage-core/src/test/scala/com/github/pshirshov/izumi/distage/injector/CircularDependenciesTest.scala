@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.injector
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase4.{IdParamCircular, IdTypeCircular}
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
@@ -15,10 +16,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support circular dependencies" in {
     import CircularCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Circular2]
       make[Circular1]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -32,10 +33,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support trait initialization" in {
     import CircularCase2._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[CircularBad1]
       make[CircularBad2]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -51,7 +52,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support circular dependencies in providers" in {
     import CircularCase1._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Circular2].from { c: Circular1 => new Circular2(c) }
       make[Circular1].from { c: Circular2 =>
         val a = new Circular1 {
@@ -59,7 +60,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
         }
         a
       }
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -73,13 +74,13 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support complex circular dependencies" in {
     import CircularCase2._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
       make[Circular5]
       make[Circular4]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -100,9 +101,9 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Supports self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[SelfReference]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -116,12 +117,12 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Support self-referencing provider" in {
     import CircularCase3._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[SelfReference].from {
         self: SelfReference =>
           new SelfReference(self)
       }
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -135,9 +136,9 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Support by-name self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[ByNameSelfReference]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -151,13 +152,13 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Locator.instances returns instances in the order they were created in" in {
     import CircularCase2._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
       make[Circular5]
       make[Circular4]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -182,11 +183,11 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support by-name circular dependencies" in {
     import ByNameCycle._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[Circular2]
       make[Circular1]
       make[Int].from(1)
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -205,10 +206,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support generic circular dependencies when generics are erased by type-erasure" in {
     import CircularCase5._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[ErasedCircular[Dependency]]
       make[PhantomDependency[Dependency]]
-    }
+    })
 
     val injector = mkInjector()
     val context = injector.produce(definition)
@@ -223,10 +224,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support fully generic circular dependencies" in {
     import CircularCase5._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[GenericCircular[Dependency]]
       make[Dependency]
-    }
+    })
 
     val injector = mkInjector()
     val context = injector.produce(definition)
@@ -241,12 +242,12 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support named circular dependencies" in {
     import CircularCase4._
 
-    val definition: ModuleBase = new ModuleDef {
+    val definition = PlannerInput(new ModuleDef {
       make[IdTypeCircular]
       make[IdParamCircular]
       make[Dependency[IdTypeCircular]].named("special")
       make[Dependency[IdParamCircular]].named("special")
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -262,19 +263,19 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support type refinements in circular dependencies" in {
     import CircularCase6._
 
-    val definition: ModuleBase = new ModuleDef {
-      make[Dependency { def dep: RefinedCircular }].from[RealDependency]
+    val definition = PlannerInput(new ModuleDef {
+      make[Dependency {def dep: RefinedCircular}].from[RealDependency]
       make[RefinedCircular]
-    }
+    })
 
     val injector = mkInjector()
     val context = injector.produce(definition)
 
-    assert(context.get[Dependency { def dep: RefinedCircular }] != null)
+    assert(context.get[Dependency {def dep: RefinedCircular}] != null)
     assert(context.get[RefinedCircular] != null)
 
-    assert(context.get[RefinedCircular] eq context.get[Dependency { def dep: RefinedCircular }].dep)
-    assert(context.get[Dependency { def dep: RefinedCircular }] eq context.get[RefinedCircular].dep)
+    assert(context.get[RefinedCircular] eq context.get[Dependency {def dep: RefinedCircular}].dep)
+    assert(context.get[Dependency {def dep: RefinedCircular}] eq context.get[RefinedCircular].dep)
   }
 
 }

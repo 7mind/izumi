@@ -12,10 +12,9 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.idealingua.il.loader._
 import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, TypeScriptBuildManifest, TypeScriptModuleSchema}
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ManifestDependency, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
@@ -25,6 +24,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 import scala.sys.process._
 
@@ -32,9 +32,9 @@ import scala.sys.process._
 final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
   def absoluteTargetDir: Path = targetDir.toAbsolutePath
 
-  def phase3: Path = absoluteTargetDir.getParent.resolve("phase3-compiler-output")
+  def phase2: Path = absoluteTargetDir.getParent.resolve("phase2-compiler-output")
 
-  def phase3Relative: Path = absoluteTargetDir.relativize(phase3)
+  def phase2Relative: Path = absoluteTargetDir.relativize(phase2)
 
   def relativeOutputs: Seq[String] = allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
 }
@@ -77,64 +77,48 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions))
+    val manifest = ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
     val cmd = Seq(
       "scalac"
       , "-deprecation"
       , "-opt-warnings:_"
-      , "-d", out.phase3Relative.toString
+      , "-d", out.phase2Relative.toString
       , "-classpath", classpath
-    ) ++ out.relativeOutputs
+    ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0
   }
 
   def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
-    val manifest = new TypeScriptBuildManifest(
-      name = "TestBuild",
-      tags = "",
-      description = "Test Description",
-      notes = "",
-      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
-      version = "0.0.0",
-      license = "MIT",
-      website = "http://project.website",
-      copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("moment", "^2.20.1"),
-        ManifestDependency("@types/node", "^10.7.1"),
-        ManifestDependency("@types/websocket", "0.0.39"),
-      ),
-      scope = "@TestScope",
-      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED,
-      None
+    val manifest = TypeScriptBuildManifest.default.copy(
+      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
     )
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, manifest))
 
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, true, if (scoped) Some(manifest) else None))
+    val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
+    val tsconfigBytes = new String(Files.readAllBytes(outputTsconfigPath), StandardCharsets.UTF_8)
+      .replace("\"dist\"", s""""${out.phase2.toString}"""")
+      .getBytes
+    Files.write(outputTsconfigPath, tsconfigBytes)
 
-    val outputTspackagePath = out.targetDir.resolve("package.json")
-    Files.write(outputTspackagePath, TypeScriptBuildManifest.generatePackage(manifest, "index", List("TestPackage"), List.empty).getBytes)
-    val npmCmd = Seq("npm", "install")
-    if (run(out.absoluteTargetDir, npmCmd, Map.empty, "npm") != 0) {
+    if (run(out.absoluteTargetDir, Seq("yarn", "install"), Map.empty, "yarn") != 0) {
       return false
     }
 
-    val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
-    val tsconfigBytes = IzResources.readAsString("tsconfig-compiler-test.json")
-      .get
-      .replace("../phase3-compiler-output", out.phase3.toString)
-    Files.write(outputTsconfigPath, tsconfigBytes.getBytes)
-    val tscCmd = Seq("tsc", "-p", outputTsconfigPath.toFile.getName)
+    val tscCmd = Seq("tsc", "-p", "tsconfig.json")
 
     val exitCode = run(out.absoluteTargetDir, tscCmd, Map.empty, "tsc")
     exitCode == 0
   }
 
   def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val manifest = CSharpBuildManifest.default
     val lang = IDLLanguage.CSharp
-    val out = compiles(id, domains, CompilerOptions(lang, extensions))
+    val out = compiles(id, domains, CompilerOptions(lang, extensions, manifest))
     val refsDir = out.absoluteTargetDir.resolve("refs")
 
     IzFiles.recreateDirs(refsDir)
@@ -142,40 +126,28 @@ object IDLTestTools {
     val refsSrc = s"refs/${lang.toString.toLowerCase()}"
     val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
       .filter(f => f.toFile.isFile && f.toString.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
-    IzResources.copyFromClasspath(refsSrc, out.phase3)
+    IzResources.copyFromClasspath(refsSrc, out.phase2)
 
 
     val outname = "test-output.dll"
     val refs = s"/reference:${refDlls.mkString(",")}"
-    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase3Relative}/$outname", "-recurse:\\*.cs", refs)
+    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase2Relative}/$outname", "-recurse:\\*.cs", refs)
     val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
 
     val cmdTest = Seq("nunit-console", outname)
-    val exitCodeTest = run(out.phase3, cmdTest, Map.empty, "cs-test")
+    val exitCodeTest = run(out.phase2, cmdTest, Map.empty, "cs-test")
 
     exitCodeBuild == 0 && exitCodeTest == 0
   }
 
-  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, scoped: Boolean): Boolean = {
-    val manifest = new GoLangBuildManifest(
-      name = "TestBuild",
-      tags = "",
-      description = "Test Description",
-      notes = "",
-      publisher = Publisher("Test Publisher Name", "test_publisher_id"),
-      version = "0.0.0",
-      license = "MIT",
-      website = "http://project.website",
-      copyright = "Copyright (C) Test Inc.",
-      dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
-      repository = "github.com/TestCompany/TestRepo",
-      useRepositoryFolders = true
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, repoLayout: Boolean): Boolean = {
+    val manifest = GoLangBuildManifest.default.copy(
+      useRepositoryFolders = repoLayout
     )
-
-    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, true, if (scoped) Some(manifest) else None))
+    val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
     val outDir = out.absoluteTargetDir
 
-    val tmp = outDir.getParent.resolve("phase2-compiler-tmp")
+    val tmp = outDir.getParent.resolve("phase1-compiler-tmp")
     tmp.toFile.mkdirs()
     Files.move(outDir, tmp.resolve("src"))
     Files.move(tmp, outDir)
@@ -188,7 +160,7 @@ object IDLTestTools {
       })
     }
 
-    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase3.toString, "./...")
+    val cmdBuild = Seq("go", "install", "-pkgdir", out.phase2.toString, "./...")
     val cmdTest = Seq("go", "test", "./...")
 
 
@@ -213,25 +185,21 @@ object IDLTestTools {
 
     val runDir = tmpdir.resolve(dirPrefix)
     val domainsDir = runDir.resolve("phase0-rerender")
-    val layoutDir = runDir.resolve("phase1-layout")
-    val compilerDir = runDir.resolve("phase2-compiler-input")
+    val compilerDir = runDir.resolve("phase1-compiler-input")
 
-    IzFiles.recreateDirs(runDir, domainsDir, layoutDir, compilerDir)
+    IzFiles.recreateDirs(runDir, domainsDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
-    //val options = TypespaceCompiler.UntypedCompilerOptions(language, extensions)
 
     val products = new TypespaceCompilerFSFacade(domains)
-      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.withRuntime, options.manifest))
+      .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.manifest, options.withBundledRuntime))
       .compilationProducts
-
-    val allPaths = products.flatMap(_._2.paths).toSeq
+    assert(products.paths.toSet.size == products.paths.size)
 
     rerenderDomains(domainsDir, domains)
-    saveDebugLayout(layoutDir, products)
 
-    val out = CompilerOutput(compilerDir, allPaths)
-    out.phase3.toFile.mkdirs()
+    val out = CompilerOutput(compilerDir, products.paths)
+    out.phase2.toFile.mkdirs()
     out
   }
 
@@ -240,34 +208,10 @@ object IDLTestTools {
     domains.foreach {
       d =>
         val rendered = new IDLRenderer(d.typespace.domain, IDLRenderingOptions(expandIncludes = false)).render()
-        Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.getBytes(StandardCharsets.UTF_8))
+        Files.write(domainsDir.resolve(s"${d.typespace.domain.id.id}.domain"), rendered.utf8)
     }
   }
 
-  private def saveDebugLayout(layoutDir: Path, products: Map[DomainId, IDLCompilationResult.Success]): Unit = {
-    products.foreach {
-      case (did, s) =>
-        val mapped = s.paths.map {
-          f =>
-            val domainDir = layoutDir.resolve(did.toPackage.mkString("."))
-            val marker = did.toPackage.mkString("/")
-            val target = if (f.toString.contains(marker)) {
-              domainDir.resolve(f.toFile.getName)
-            } else {
-
-              domainDir.resolve(s.target.relativize(f))
-            }
-            (f, target)
-        }
-        mapped.foreach {
-          case (src, tgt) =>
-            tgt.getParent.toFile.mkdirs()
-            Files.copy(src, tgt)
-        }
-
-        assert(s.paths.toSet.size == s.paths.size)
-    }
-  }
 
   private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
     tmpdir

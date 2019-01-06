@@ -65,14 +65,14 @@ alias GoAlias2 = GoAliasTest
 /** docstring
   */
 mixin AllTypes {
-  boolean : bool
-  string  : str
+  b       : bool
+  s       : str
   int8    : i08
   int16   : i16
   int32   : i32
   int64   : i64
-  float   : flt
-  double  : dbl
+  f       : flt
+  d       : dbl
   uuid    : uid
   ts      : tsz
   tslocal : tsl
@@ -87,10 +87,10 @@ mixin AllTypes {
 
   list    : list[AllTypes]
   another : lst[AllTypes]
-  map     : map[str, AllTypes]
+  selfMap : map[str, AllTypes]
   enumMap : map[GoAliasEnumTest, str]
   option  : opt[AllTypes]
-  set     : set[AllTypes]
+  selfSet : set[AllTypes]
 
 
   optionDate: opt[tsl]
@@ -121,7 +121,7 @@ data AllTypesObject {
 /** docstring
   */
 mixin AnyValTest {
-  boolean: bool
+  boolField: bool
 }
 
 /** docstring

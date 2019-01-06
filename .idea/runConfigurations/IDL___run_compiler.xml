@@ -2,8 +2,7 @@
   <configuration default="false" name="IDL / run compiler" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler" />
     <module name="idealingua-compiler" />
-    <option name="PROGRAM_PARAMETERS" value="-s ./idealingua/idealingua-test-defs/src/main/resources/defs -t target/idl.out scala -m xxx.json go typescript csharp " />
-    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+    <option name="PROGRAM_PARAMETERS" value="-s ./idealingua/idealingua-test-defs/src/main/resources/defs/any -t target/idl.out scala go typescript -d x=y -d y=z csharp -d x=y -d y=z -m +" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="com.github.pshirshov.izumi.idealingua.compiler.*" />

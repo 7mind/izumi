@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
+import java.time.ZonedDateTime
 import java.util.concurrent.RejectedExecutionException
 
 import _root_.io.circe.parser._
@@ -7,6 +8,8 @@ import cats.implicits._
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -18,7 +21,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{Binary, Text}
+import org.http4s.websocket.WebSocketFrame.{Binary, Pong, Text}
 
 class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
                                      , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
@@ -79,14 +82,38 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       }
   }
 
-
   protected def handleWsClose(context: WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext]): Unit = {
     logger.debug(s"${context -> null}: Websocket client disconnected")
     context.finish()
   }
 
+  protected def onWsOpened(): Unit = {
+  }
+
+  protected def onWsUpdate(maybeNewId: Option[C#ClientId], old: WsClientId[ClientId]): Unit = {
+  }
+
+  protected def onWsClosed(): Unit = {
+  }
+
   protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
-    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger)
+    val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger) {
+
+      override def onWsSessionOpened(): Unit = {
+          onWsOpened()
+          super.onWsSessionOpened()
+      }
+
+      override def onWsClientIdUpdate(maybeNewId: Option[C#ClientId], oldId: WsClientId[C#ClientId]): Unit = {
+        onWsUpdate(maybeNewId, oldId)
+        super.onWsClientIdUpdate(maybeNewId, oldId)
+      }
+
+      override def onWsSessionClosed(): Unit = {
+        onWsClosed()
+        super.onWsSessionClosed()
+      }
+    }
     context.start()
     logger.debug(s"${context -> null}: Websocket client connected")
 
@@ -105,7 +132,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
     }
   }
 
-  protected def handleWsMessage(context: WebsocketClientContextImpl[C]): WebSocketFrame => CatsIO[Option[String]] = {
+  protected def handleWsMessage(context: WebsocketClientContextImpl[C], requestTime: ZonedDateTime = IzTime.utcNow): WebSocketFrame => CatsIO[Option[String]] = {
     case Text(msg, _) =>
       val ioresponse = makeResponse(context, msg)
       CIO.async {
@@ -118,6 +145,13 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
 
     case v: Binary =>
       CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+
+    case _: Pong =>
+      onHeartbeat(requestTime).map(_ => None)
+  }
+
+  def onHeartbeat(requestTime: ZonedDateTime): C#CatsIO[Unit] = CIO.point {
+    Quirks.discard(requestTime)
   }
 
   protected def handleResult(context: WebsocketClientContextImpl[C], result: BIOExit[Throwable, Option[RpcPacket]]): Option[String] = {

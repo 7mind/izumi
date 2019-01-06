@@ -17,13 +17,13 @@ import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(contextDefinition: BootstrapContextModule) extends AbstractLocator {
+class DefaultBootstrapContext(bindings: BootstrapContextModule) extends AbstractLocator {
 
   import DefaultBootstrapContext._
 
   val parent: Option[AbstractLocator] = None
 
-  val plan: OrderedPlan = bootstrapPlanner.plan(contextDefinition)
+  val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: ProvisionImmutable = {
     bootstrapProducer.provision(plan, this)
@@ -50,16 +50,18 @@ object DefaultBootstrapContext {
   protected val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
   protected lazy val bootstrapPlanner: Planner = {
-
-    val bootstrapObserver = new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap"))
-
     val analyzer = new PlanAnalyzerDefaultImpl
+
+    val bootstrapObservers: Set[PlanningObserver] = Set(
+      new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap")),
+      //new GraphObserver(analyzer, Set.empty),
+    )
 
     new PlannerDefaultImpl(
       new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
-      , Set(bootstrapObserver)
+      , bootstrapObservers
       , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
       , Set(new PlanningHookDefaultImpl)
     )

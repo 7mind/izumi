@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.logstage.distage
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, ModuleDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.Log
@@ -317,7 +317,7 @@ class LogstageConfigTest extends WordSpec {
     val injector = Injector.Standard(bootstapModules: _*)
 
     val goodCtx = Try {
-      val plan = injector.plan(modules.toList.overrideLeft)
+      val plan = injector.plan(PlannerInput(modules.toList.overrideLeft))
       injector.produce(plan)
     }
     new LocatorWrapper(goodCtx)

@@ -41,11 +41,12 @@ publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTa
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettings")
 
-  override val settings: Seq[sbt.Setting[_]] = Seq(
+  override val settings: Seq[sbt.Setting[_]] = Seq(    
     crossScalaVersions := Seq(
       V.scala_212,
       V.scala_213,
     )
+    , scalaVersion := crossScalaVersions.value.head
     , sonatypeProfileName := "com.github.pshirshov"
     , addCompilerPlugin(R.kind_projector)
   )
@@ -394,7 +395,7 @@ lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScalaJvm)
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
-  .settings(libraryDependencies ++= Seq(R.scalameta).map(_.cross(platformDepsCrossVersion.value)))
+  .settings(libraryDependencies ++= (Seq(R.scalameta) ++ R.circe).map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,
@@ -407,7 +408,9 @@ lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
     idealinguaRuntimeRpcGo,
     idealinguaRuntimeRpcCSharp,
   ).map(_.testOnlyRef))
+
 lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
+  .settings(libraryDependencies += C.jawn)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
@@ -426,6 +429,7 @@ lazy val idealinguaCompilerDeps = Seq[ProjectReferenceEx](
   idealinguaRuntimeRpcTypescript,
   idealinguaRuntimeRpcGo,
   idealinguaRuntimeRpcCSharp,
+  idealinguaTestDefs,
 )
 
 lazy val idealinguaCompiler = inIdealinguaBase.as.module
@@ -433,7 +437,7 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.scopt, R.scalacheck, R.scalacheck_shapeless) ++ R.circe
+    libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(addArtifact(artifact in(Compile, assembly), assembly))

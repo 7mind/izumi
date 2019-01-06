@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import distage._
 import org.scalatest.WordSpec
 
@@ -8,7 +9,7 @@ class AnimalModel extends WordSpec with MkInjector {
   "animal model" must {
     "produce valid plans" in {
       import AnimalModel._
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[Cluster]
         make[UserRepo].from[UserRepoImpl]
         make[AccountsRepo].from[AccountsRepoImpl]
@@ -17,7 +18,7 @@ class AnimalModel extends WordSpec with MkInjector {
         make[UsersApiImpl]
         make[AccountsApiImpl]
         make[App]
-      }
+      })
 
       val injector = Injector.Standard()
       val plan = injector.plan(definition)

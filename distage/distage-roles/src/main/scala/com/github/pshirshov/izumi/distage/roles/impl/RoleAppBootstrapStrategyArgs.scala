@@ -15,4 +15,5 @@ final case class RoleAppBootstrapStrategyArgs(
                                                , addOverrides: ModuleBase
                                                , primaryConfig: Option[File]
                                                , roleConfigs: Map[String, File]
+                                               , dumpContext: Boolean
                                              )

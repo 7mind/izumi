@@ -1,6 +1,7 @@
 package com.github.pshirshov.configapp
 
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 
 import scala.collection.immutable.ListSet
@@ -32,23 +33,23 @@ case class Wrapper[A](wrap: A)
 case class Service[A](@AutoConf conf: A)
 
 object TestConfigReaders {
-  final val mapDefinition = new ModuleDef {
+  final val mapDefinition = PlannerInput(new ModuleDef {
     make[Service[MapCaseClass]]
-  }
+  })
 
-  final val listDefinition = new ModuleDef {
+  final val listDefinition = PlannerInput(new ModuleDef {
     make[Service[ListCaseClass]]
-  }
+  })
 
-  final val optDefinition = new ModuleDef {
+  final val optDefinition = PlannerInput(new ModuleDef {
     make[Service[OptionCaseClass]]
-  }
+  })
 
-  final val backticksDefinition = new ModuleDef {
+  final val backticksDefinition = PlannerInput(new ModuleDef {
     make[Service[BackticksCaseClass]]
-  }
+  })
 
-  final val sealedDefinition = new ModuleDef {
+  final val sealedDefinition = PlannerInput(new ModuleDef {
     make[Service[SealedCaseClass]]
-  }
+  })
 }

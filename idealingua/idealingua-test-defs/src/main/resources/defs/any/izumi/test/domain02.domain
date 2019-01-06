@@ -68,7 +68,7 @@ alias AliasedTestObject = izumi.test.domain01#TestObject
 alias AliasedGoAliasEnumTest = izumi.test.domain01#GoAliasEnumTest
 data AliasedUsageData {
     testObj: AliasedTestObject
-    enum: AliasedGoAliasEnumTest
+    enumField: AliasedGoAliasEnumTest
 }
 
 alias RTestObject1 = izumi.test.domain01#RTestObject1

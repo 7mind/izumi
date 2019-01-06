@@ -20,6 +20,7 @@ trait Distage {
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer
+  type PlannerInput = model.PlannerInput
 
   type OrderedPlan = model.plan.OrderedPlan
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
@@ -44,6 +45,8 @@ trait Distage {
 
   type BootstrapModule = model.definition.BootstrapModule
   val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
+
+  val CompactPlanFormatter: model.plan.CompactPlanFormatter.type = model.plan.CompactPlanFormatter
 
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

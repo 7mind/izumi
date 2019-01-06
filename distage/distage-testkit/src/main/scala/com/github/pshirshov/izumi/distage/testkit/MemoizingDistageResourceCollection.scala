@@ -7,9 +7,9 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentLifecycle
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
-import com.github.pshirshov.izumi.distage.roles.roles.RoleComponent
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
@@ -22,36 +22,38 @@ import scala.util.{Failure, Try}
   * Allows you to remember instances produced during your tests by a predicate
   * then reuse these instances in other tests within the same classloader.
   */
-abstract class MemoizingDistageResourceCollection extends DistageResourceCollection {
+abstract class MemoizingDistageResourceCollection
+(
+  protected val instanceStore: DirtyGlobalTestResourceStore = MemoizingDistageResourceCollection
+) extends DistageResourceCollection {
 
-  import MemoizingDistageResourceCollection._
-
-  init() // this way we would start shutdown hook only in case we use memoizer
+  instanceStore.init() // add shutdown hook only when we use memoizer
 
   // synchronization needed to avoid race between memoized components start
-  override def startMemoizedComponents(components: Set[RoleComponent])(implicit logger: IzLogger): Unit = memoizedComponentsLifecycle.synchronized {
-    components.foreach{
-      component =>
-        component.synchronized {
-          if (!isMemoizedComponentStarted(component)) {
-            logger.info(s"Starting memoized component $component...")
-            memoizedComponentsLifecycle.push(ComponentLifecycle.Starting(component))
-            component.start()
-            memoizedComponentsLifecycle.pop().discard()
-            memoizedComponentsLifecycle.push(ComponentLifecycle.Started(component))
-          } else {
-            logger.info(s"Memoized component already started $component.")
+  override def startMemoizedComponents(components: Set[RoleComponent])(implicit logger: IzLogger): Unit =
+    instanceStore.memoizedComponentsLifecycle.synchronized {
+      components.foreach {
+        component =>
+          component.synchronized {
+            if (!isMemoizedComponentStarted(component)) {
+              logger.info(s"Starting memoized component $component...")
+              instanceStore.memoizedComponentsLifecycle.push(ComponentLifecycle.Starting(component))
+              component.start()
+              instanceStore.memoizedComponentsLifecycle.pop().discard()
+              instanceStore.memoizedComponentsLifecycle.push(ComponentLifecycle.Started(component))
+            } else {
+              logger.info(s"Memoized component already started $component.")
+            }
           }
-        }
-    }
+      }
   }
 
   override def isMemoized(resource: Any): Boolean = {
-    memoizedInstances.containsValue(resource)
+    instanceStore.memoizedInstances.containsValue(resource)
   }
 
   override def transformPlanElement(op: ExecutableOp): ExecutableOp = synchronized {
-    Option(memoizedInstances.get(op.target)) match {
+    Option(instanceStore.memoizedInstances.get(op.target)) match {
       case Some(value) =>
         ExecutableOp.WiringOp.ReferenceInstance(op.target, Wiring.UnaryWiring.Instance(op.target.tpe, value), op.origin)
       case None =>
@@ -63,31 +65,58 @@ abstract class MemoizingDistageResourceCollection extends DistageResourceCollect
     context.instances.foreach {
       instanceRef =>
         if (memoize(instanceRef)) {
-          memoizedInstances.put(instanceRef.key, instanceRef.value)
+          instanceStore.memoizedInstances.put(instanceRef.key, instanceRef.value)
         }
     }
   }
 
   private def isMemoizedComponentStarted(component: RoleComponent): Boolean = {
-    memoizedComponentsLifecycle.contains(ComponentLifecycle.Started(component)) ||
-      memoizedComponentsLifecycle.contains(ComponentLifecycle.Starting(component))
+    instanceStore.memoizedComponentsLifecycle.contains(ComponentLifecycle.Started(component)) ||
+      instanceStore.memoizedComponentsLifecycle.contains(ComponentLifecycle.Starting(component))
   }
 
   def memoize(ref: IdentifiedRef): Boolean
 }
 
-object MemoizingDistageResourceCollection {
+object MemoizingDistageResourceCollection extends DirtyGlobalTestResourceStoreImpl
+
+
+
+trait DirtyGlobalTestResourceStore {
+
+  def init(): Unit
+
+  def memoizedInstances: ConcurrentHashMap[DIKey, Any]
+
+  def memoizedComponentsLifecycle: ConcurrentLinkedDeque[ComponentLifecycle]
+
+}
+
+class DirtyGlobalTestResourceStoreImpl() extends DirtyGlobalTestResourceStore {
   /**
     * All the memoized instances available in current classloader.
     *
     * Be VERY careful when accessing this field.
     */
-  val memoizedInstances = new ConcurrentHashMap[DIKey, Any]()
+  override val memoizedInstances = new ConcurrentHashMap[DIKey, Any]()
 
   /**
-    * Contains all lifecycle states of memoized [[com.github.pshirshov.izumi.distage.roles.roles.RoleComponent]]
+    * Contains all lifecycle states of memoized [[RoleComponent]]
     */
-  private val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
+  override val memoizedComponentsLifecycle = new ConcurrentLinkedDeque[ComponentLifecycle]()
+
+  override def init(): Unit = {
+    if (initialized.compareAndSet(false, true)) {
+      val shutdownHook = new Thread(() => {
+          val ignore = shutdownComponents()
+          shutdownCloseables(ignore)
+          shutdownExecutors()
+          memoizedInstances.clear()
+        }, "distage-testkit-finalizer")
+
+      Runtime.getRuntime.addShutdownHook(shutdownHook)
+    }
+  }
 
   private val initialized = new AtomicBoolean(false)
 
@@ -136,16 +165,4 @@ object MemoizingDistageResourceCollection {
     stopped.map(_._1).toSet
   }
 
-  private val shutdownHook = new Thread(() => {
-    val ignore = shutdownComponents()
-    shutdownCloseables(ignore)
-    shutdownExecutors()
-    memoizedInstances.clear()
-  }, "distage-testkit-finalizer")
-
-  private def init(): Unit = {
-    if (initialized.compareAndSet(false, true)) {
-      Runtime.getRuntime.addShutdownHook(shutdownHook)
-    }
-  }
 }

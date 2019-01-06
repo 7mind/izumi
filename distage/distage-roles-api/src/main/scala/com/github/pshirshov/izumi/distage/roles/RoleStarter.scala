@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.roles.roles
+package com.github.pshirshov.izumi.distage.roles
 
 trait RoleStarter {
   /**
-    * Calls [[com.github.pshirshov.izumi.distage.roles.roles.RoleService.start]] on
+    * Calls [[com.github.pshirshov.izumi.distage.roles.RoleService.start]] on
     * each service in the object graph.
     */
   def start(): Unit

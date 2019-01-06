@@ -6,10 +6,10 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, Si
 import com.github.pshirshov.izumi.distage.plugins.{LoadedPlugins, PluginBase}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-abstract class ApplicationBootstrapStrategyBaseImpl[CommandlineConfig]
+abstract class ApplicationBootstrapStrategyBaseImpl
 (
-  override val context: BootstrapContext[CommandlineConfig]
-) extends ApplicationBootstrapStrategy[CommandlineConfig] {
+  override val context: BootstrapContext
+) extends ApplicationBootstrapStrategy {
   def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
     Quirks.discard(bs, app)
     SimplePluginMergeStrategy

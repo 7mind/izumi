@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
@@ -27,7 +28,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated = context.get[TestTrait]
@@ -44,7 +45,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated = context.get[TestTrait]("named-trait")
@@ -65,7 +66,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated1 = context.get[Trait1]
@@ -91,7 +92,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated3 = context.get[Trait2]
@@ -110,7 +111,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated = context.get[Trait]
@@ -133,7 +134,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(PlannerInput(definition))
 
     val context = injector.produce(plan)
     val instantiated = context.get[TestTrait]

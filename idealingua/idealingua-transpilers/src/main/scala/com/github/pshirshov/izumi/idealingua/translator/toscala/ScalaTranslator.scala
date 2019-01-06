@@ -4,11 +4,11 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.Translator
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ClassSource
+import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
 
 import scala.meta._
 
@@ -24,13 +24,14 @@ object ScalaTranslator {
 }
 
 
+
 class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
   extends Translator {
   protected val ctx: STContext = new STContext(ts, options.extensions)
 
 
 
-  def translate(): Seq[Module] = {
+  def translate(): Translated = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val aliases = ctx.typespace.domain.types
       .collect {
@@ -50,7 +51,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
              |${content.map(_.toString()).mkString("\n\n")}
              |}
            """.stripMargin
-        Module(id, ctx.modules.withPackage(id.path.init, code))
+        Module(id.copy(name = "package-object.scala"), ctx.modules.withPackage(id.path.init, code))
     }
 
     val modules = Seq(
@@ -60,7 +61,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
       , packageObjects
     ).flatten
 
-    addRuntime(options, ctx.ext.extend(modules))
+    Translated(ts, ctx.ext.extend(modules))
   }
 
   protected def translateBuzzer(definition: Buzzer): Seq[Module] = {

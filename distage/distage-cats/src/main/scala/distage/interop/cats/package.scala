@@ -5,6 +5,7 @@ import _root_.cats.Applicative
 import _root_.cats.instances.vector._
 import _root_.cats.syntax.functor._
 import _root_.cats.syntax.traverse._
+import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
@@ -25,7 +26,7 @@ package object cats
     def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =
       Sync[F].delay(injector.produce(plan))
 
-    def produceIO[F[_]: Sync](definition: ModuleBase): F[Locator] =
+    def produceIO[F[_]: Sync](definition: PlannerInput): F[Locator] =
       Sync[F].delay(injector.produce(definition))
   }
 

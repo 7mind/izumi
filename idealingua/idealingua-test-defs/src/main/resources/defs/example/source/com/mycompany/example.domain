@@ -1,0 +1,6 @@
+domain com.mycompany.example
+
+data User {
+  name: str
+  email: str
+}

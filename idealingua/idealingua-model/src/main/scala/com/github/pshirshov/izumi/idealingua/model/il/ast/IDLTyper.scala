@@ -133,7 +133,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
       case d: RawTypeDef.Enumeration =>
-        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.members.map(fixEnumMember), meta = fixMeta(d.meta))
+        typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.struct.members.map(fixEnumMember), meta = fixMeta(d.meta))
 
       case d: RawTypeDef.Alias =>
         typed.TypeDef.Alias(id = fixSimpleId(d.id): TypeId.AliasId, target = fixId(d.target): TypeId, meta = fixMeta(d.meta))
