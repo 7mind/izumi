@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.macros
 
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import com.github.pshirshov.izumi.logstage.api.Log.{LoggerId, Message}
 import com.github.pshirshov.izumi.logstage.api.{AbstractLogger, Log}
 import com.github.pshirshov.izumi.logstage.macros.LogMessageMacro._
 
@@ -40,6 +41,18 @@ object LoggerMacroMethods {
 
   @inline private[this] def mkPos(c: blackbox.Context): c.Expr[CodePositionMaterializer] = {
     CodePositionMaterializer.getEnclosingPosition(c)
+  }
+
+  private def logMacro(c: blackbox.Context { type PrefixType = AbstractLogger })(level: c.Expr[Log.Level], message: c.Expr[Message], position: c.Expr[CodePositionMaterializer]): c.Expr[Unit] = {
+    c.universe.reify {
+      {
+        val self = c.prefix.splice
+        val pos = position.splice
+        if (self.acceptable(LoggerId(pos.get.applicationPointId), level.splice)) {
+          self.unsafeLog(level.splice)(message.splice)(pos)
+        }
+      }
+    }
   }
 
 }

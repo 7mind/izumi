@@ -21,7 +21,11 @@ object PerfTest {
       var i = 0
       while (i < 100000) {
         i += 1
+
+
         logger.debug("heya-ya-hey")
+//        if (logger.receiver.acceptable(LoggerId(pos.applicationPointId), Log.Level.Debug)) {
+//        }
 //
 //        val pos = CodePositionMaterializer.materialize.get
 //        val logLevel = Log.Level.Debug
@@ -45,10 +49,6 @@ object PerfTest {
 //          receiver.log(entry)
 //        }
 
-//        logger.receiver.log(Log.Entry.apply(Log.Level.Debug,
-//          new Message(new StringContext("heya-ya-hey"), List(LogArg(Seq("@type"), "const", hidden = false)))
-//          Message("heya-ya-hey")
-//        ))
       }
       val end = System.nanoTime()
 
@@ -73,6 +73,9 @@ object PerfTest {
 
 // val all:
 // Result: avg of 1000 runs 832194 nanos
+
+// lambda + no-anyval-codeposition
+// Result: avg of 1000 runs 1031065 nanos
 
 // old:
 // Result: avg of 1000 runs 1114780 nanos

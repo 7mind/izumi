@@ -9,17 +9,15 @@ trait LogRouter extends AutoCloseable {
   private final val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
 
   final def log(entry: Log.Entry): Unit = {
-    if (acceptable(entry.context.static.id, entry.context.dynamic.level)) {
-      try {
-        doLog(entry)
-      } catch {
-        case NonFatal(e) =>
-          fallback.log("Log router failed", e)
-      }
+    try {
+      doLog(entry)
+    } catch {
+      case NonFatal(e) =>
+        fallback.log("Log router failed", e)
     }
   }
 
-  def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean
+  def acceptable(id: Log.LoggerId, logLevel: Log.Level): Boolean
 
   @inline protected def doLog(entry: Log.Entry): Unit
 
