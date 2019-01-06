@@ -18,7 +18,6 @@ before_install:
 before_script:
   - git config --global user.name "$USER"
   - git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
-  - bash travis.sh versionate
 
 branches:
   except:
@@ -53,6 +52,6 @@ jobs:
     - stage: "SBT Tests"
       script: bash docker.sh scripted
     - stage: "Publish"
-      script: bash docker.sh publish
+      script: bash travis.sh versionate && bash docker.sh publish
     - stage: "Site"
-      script: bash docker.sh site
+      script: bash travis.sh versionate && bash docker.sh site
