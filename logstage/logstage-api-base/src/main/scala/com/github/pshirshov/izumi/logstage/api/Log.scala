@@ -101,7 +101,7 @@ object Log {
   }
 
   object Context {
-    def sample(logLevel: Log.Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): Context = {
+    @inline final def sample(logLevel: Log.Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): Context = {
       val pos0 = pos.get
       val thread = Thread.currentThread()
       val tsMillis = System.currentTimeMillis()
@@ -119,16 +119,8 @@ object Log {
   }
 
   object Entry {
-    def apply(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): Entry = {
-      val pos0 = pos.get
-
-      val thread = Thread.currentThread()
-      val tsMillis = System.currentTimeMillis()
-      val dynamicContext = DynamicContext(logLevel, ThreadData(thread.getName, thread.getId), tsMillis)
-      val extendedStaticContext = StaticExtendedContext(LoggerId(pos0.applicationPointId), pos0.position)
-
-      val context = Log.Context(extendedStaticContext, dynamicContext, CustomContext.empty)
-      Log.Entry(message, context)
+    @inline final def apply(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): Entry = {
+      Log.Entry(message, Context.sample(logLevel, CustomContext.empty)(pos))
     }
   }
 
