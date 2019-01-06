@@ -11,7 +11,7 @@ trait BuildManifest {
 case class ProjectVersion(version: String, release: Boolean, buildId: String)
 
 object ProjectVersion {
-  def default = ProjectVersion("0.0.1", release = false, "UNKNOWNBUILD")
+  def default = ProjectVersion("0.0.1", release = false, "UNSET-BUILD-ID")
 }
 
 object BuildManifest {
@@ -42,7 +42,7 @@ object BuildManifest {
       licenses = List(License("MIT", MFUrl("https://opensource.org/licenses/MIT"))),
       website = MFUrl("http://project.website"),
       copyright = "Copyright (C) Test Inc.",
-      izumiVersion = "0.0.0-SNAPSHOT"
+      izumiVersion = "UNSET-IZUMI-VERSION"
     )
   }
 
