@@ -22,7 +22,7 @@ object RawTypeDef {
 
   final case class DTO(id: DTOId, struct: RawStructure, meta: RawNodeMeta) extends WithId
 
-  final case class Enumeration(id: EnumId, members: List[RawEnumMember], meta: RawNodeMeta) extends WithId
+  final case class Enumeration(id: EnumId, struct: RawEnum, meta: RawNodeMeta) extends WithId
 
   final case class Alias(id: AliasId, target: AbstractIndefiniteId, meta: RawNodeMeta) extends WithId
 

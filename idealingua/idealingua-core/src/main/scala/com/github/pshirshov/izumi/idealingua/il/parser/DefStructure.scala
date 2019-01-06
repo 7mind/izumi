@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDNewtype
@@ -95,12 +96,20 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adt[_: P](sep: => P[Unit]): P[RawAdt] = P((nestedAdtMember | adtMember).rep(min = 1, sep = sep))
     .map(_.toList).map(RawAdt.apply)
 
-  def enumMember[_: P]: P[RawEnumMember] = P(metaAgg.withMeta(ids.symbol ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
-    case (meta, (name, const)) =>
-      RawEnumMember(name, const.map(_.value), meta)
-  }
+  object Enum {
+    def embed[_: P]: P[EnumOp.Extend] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.identifier)).map(_.toEnumId).map(EnumOp.Extend)
 
-  def enum[_: P](sep: => P[Unit]): P[Seq[RawEnumMember]] = P(enumMember.rep(min = 1, sep = sep))
+    def enumMember[_: P]: P[EnumOp.AddMember] = P(metaAgg.withMeta(ids.symbol ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
+      case (meta, (name, const)) =>
+        EnumOp.AddMember(RawEnumMember(name, const.map(_.value), meta))
+    }
+
+    def minus[_: P]: P[EnumOp.RemoveMember] = P(("-" ~ "--".?) ~/ (inline ~ ids.symbol)).map(EnumOp.RemoveMember)
+
+    def anyPart[_: P]: P[EnumOp] = P(enumMember | minus | embed)
+
+    def enum[_: P](sep: => P[Unit]): P[RawEnum] = P(anyPart.rep(min = 1, sep = sep)).map(RawEnum.Aux.apply).map(_.structure)
+  }
 
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
@@ -151,14 +160,14 @@ class DefStructure(context: IDLParserContext) extends Separators {
         Adt(i.toAdtId, v.alternatives, c)
     }
 
-  def enumFreeForm[_: P]: P[Seq[RawEnumMember]] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ enum(sepEnumFreeForm))
+  def enumFreeForm[_: P]: P[RawEnum] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ Enum.enum(sepEnumFreeForm))
 
-  def enumEnclosed[_: P]: P[Seq[RawEnumMember]] = P(NoCut(aggregates.enclosed(enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(enum(sepEnumFreeForm)))
+  def enumEnclosed[_: P]: P[RawEnum] = P(NoCut(aggregates.enclosed(Enum.enum(sepEnum) ~ sepEnum.?)) | aggregates.enclosed(Enum.enum(sepEnumFreeForm)))
 
 
   def enumBlock[_: P]: P[Enumeration] = P(metaAgg.cstarting(kw.enum, enumEnclosed | enumFreeForm))
     .map {
       case (c, i, v) =>
-        Enumeration(i.toEnumId, v.toList, c)
+        Enumeration(i.toEnumId, v, c)
     }
 }
