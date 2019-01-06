@@ -61,6 +61,44 @@ service UserService {
 }
 ```
 
+## Quickstart
+
+You may use our preconfigured [Docker environment](https://github.com/pshirshov/izumi-docker/blob/master/izumi-env/Dockerfile) to experiment with Izumi IDL compiler:
+
+```bash
+docker run -ti --rm septimalmind/izumi-env
+```
+
+Then try this snippet:
+
+```bash
+export COMPILER="com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$"
+export REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+
+# create sample project in `testproject` directory
+coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- -i testproject
+
+cd testproject
+
+# compile Scala and Typescript projects using all the defaults
+coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- typescript -m + scala -m +
+
+# Run SBT on generated Scala project
+pushd .
+cd target/scala
+sbt package
+popd
+
+# Run SBT on generated Typescript project
+pushd .
+cd target/typescript
+yarn install
+tsc
+popd
+```
+
+
+
 ## Pet Store Example
 
 See [izumi-petstore](https://github.com/kaishh/izumi-petstore) for examples in Scala, TypeScript, Go, C# and other languages.
