@@ -76,7 +76,7 @@ function publish {
 
   echo "PUBLISH..."
 
-  export IZUMI_VERSION=$(cat version.sbt | awk 'match($0, /"(.+)"/, arr) { print arr[1] }' | sed -En "s/SNAPSHOT/build."${TRAVIS_BUILD_NUMBER}"/p")
+  export IZUMI_VERSION=$(cat version.sbt | sed -rn 's/.*\"(.*)\".**/\1/p' | sed -En "s/SNAPSHOT/build."${TRAVIS_BUILD_NUMBER}"/p")
   ./idealingua/idealingua-runtime-rpc-typescript/src/npmjs/publish.sh
 
   csbt clean package publishSigned || exit 1
