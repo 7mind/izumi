@@ -206,7 +206,7 @@ lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
   .settings(
-    libraryDependencies ++= (Seq(R.zio_core) ++ R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value) % Optional)
   )
 
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
@@ -326,7 +326,7 @@ lazy val logstageApi = inLogStage.as.module
   .depends(fundamentalsReflection)
 
 lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApi)
+  .depends(logstageApi, fundamentalsBioJvm)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
@@ -378,7 +378,10 @@ lazy val idealinguaCoreJs = idealinguaCore.js.remember
 
 lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
   .dependsOn(fundamentalsBio)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
+  .settings(
+    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
+    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+  )
 
 lazy val idealinguaRuntimeRpcScalaJvm = idealinguaRuntimeRpcScala.jvm.remember
 lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember

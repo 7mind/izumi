@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.logstage.sink
 
+import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import logstage.LogF
 
 import scala.util.Random
 
@@ -41,6 +43,16 @@ class ExampleService(logger: IzLogger) {
       override def toString: String = throw exception
     }
     logger.crit(s"[Cornercase] exception: ${badObj -> "bad"}")
+
+    implicit val thunkSyncSafe: SyncSafe[Function0] = new SyncSafe[Function0] {
+      override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
+    }
+
+    val logF = LogF.fromLogger(logger)
+    val suspended = logF.crit("Suspended message: clap your hands!")
+
+    logger.crit("This should appear before the suspended message!")
+    suspended()
   }
 
   def work(): Unit = {
