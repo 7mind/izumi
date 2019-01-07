@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
 import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
@@ -64,7 +64,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
   }
 
   private def irtImportPath(ctx: TSTContext, id: TypeId): String = {
-    if (ctx.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    if (ctx.manifest.layout == TypeScriptProjectLayout.YARN) {
       s"${ctx.manifest.scope}/irt"
     } else {
       id.path.toPackage.map(_ => "..").mkString("/") + "/irt"

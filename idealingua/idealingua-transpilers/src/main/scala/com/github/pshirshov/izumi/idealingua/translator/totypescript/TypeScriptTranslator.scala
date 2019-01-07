@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptModuleSchema
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
@@ -885,7 +885,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
   protected def importFromIRT(names: List[String], pkg: Package): String = {
     var importOffset = ""
     (1 to pkg.length).foreach(_ => importOffset += "../")
-    if (manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    if (manifest.layout == TypeScriptProjectLayout.YARN) {
       importOffset = manifest.scope + "/"
     }
 

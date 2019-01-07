@@ -13,8 +13,8 @@ case class ArtifactVersion(version: String) {
   override def toString: String = version
 }
 
-case class BuildStatus(user: String, jdk: String, timestamp: ZonedDateTime) {
-  override def toString: String = s"$user@${timestamp.isoFormatUtc}, JDK $jdk"
+case class BuildStatus(user: String, jdk: String, sbt: String, timestamp: ZonedDateTime) {
+  override def toString: String = s"$user@${timestamp.isoFormatUtc}, JDK $jdk, SBT $sbt"
 }
 
 case class GitStatus(branch: String, repoClean: Boolean, revision: String) {

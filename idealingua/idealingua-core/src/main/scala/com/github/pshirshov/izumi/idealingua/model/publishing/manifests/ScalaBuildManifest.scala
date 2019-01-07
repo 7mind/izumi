@@ -21,13 +21,16 @@ case class ScalaBuildManifest(
                              ) extends BuildManifest
 
 object ScalaBuildManifest {
-  def default: ScalaBuildManifest = ScalaBuildManifest(
-    common = BuildManifest.Common.default,
-    dependencies = List.empty,
-    layout = ScalaProjectLayout.SBT,
-    dropFQNSegments = Some(0),
-    projectIdPostfix = Some("api"),
-  )
+  def example: ScalaBuildManifest = {
+    val common = BuildManifest.Common.example
+    ScalaBuildManifest(
+      common = common.copy(version = common.version.copy(snapshotQualifier = "SNAPSHOT")),
+      dependencies = List.empty,
+      layout = ScalaProjectLayout.SBT,
+      dropFQNSegments = Some(0),
+      projectIdPostfix = Some("api"),
+    )
+  }
 }
 
 

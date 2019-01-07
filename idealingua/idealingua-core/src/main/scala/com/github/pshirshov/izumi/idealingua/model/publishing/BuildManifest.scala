@@ -8,7 +8,7 @@ trait BuildManifest {
   def dependencies: List[ManifestDependency]
 }
 
-case class ProjectVersion(version: String, release: Boolean, buildId: String)
+case class ProjectVersion(version: String, release: Boolean, snapshotQualifier: String)
 
 object ProjectVersion {
   def default = ProjectVersion("0.0.1", release = false, "UNSET-BUILD-ID")
@@ -31,7 +31,7 @@ object BuildManifest {
                    )
 
   object Common {
-    final val default = Common(
+    final val example = Common(
       name = "idealingua-project",
       group = "com.mycompany.generated",
       tags = List.empty,

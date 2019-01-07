@@ -130,10 +130,12 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
   }
 
   private def renderVersion(version: ProjectVersion): String = {
+    val baseVersion = version.version
+
     if (version.release) {
-      version.version
+      baseVersion
     } else {
-      s"${version.version}-SNAPSHOT"
+      s"$baseVersion-${version.snapshotQualifier}"
     }
   }
 }

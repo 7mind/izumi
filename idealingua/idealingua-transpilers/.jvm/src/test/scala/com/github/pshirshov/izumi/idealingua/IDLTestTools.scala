@@ -77,7 +77,7 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val manifest = ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
+    val manifest = ScalaBuildManifest.example.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
@@ -94,8 +94,8 @@ object IDLTestTools {
   }
 
   def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
-    val manifest = TypeScriptBuildManifest.default.copy(
-      moduleSchema = if (scoped) TypeScriptModuleSchema.PER_DOMAIN else TypeScriptModuleSchema.UNITED
+    val manifest = TypeScriptBuildManifest.example.copy(
+      layout = if (scoped) TypeScriptProjectLayout.YARN else TypeScriptProjectLayout.PLAIN
     )
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, manifest))
 
@@ -116,7 +116,7 @@ object IDLTestTools {
   }
 
   def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val manifest = CSharpBuildManifest.default
+    val manifest = CSharpBuildManifest.example
     val lang = IDLLanguage.CSharp
     val out = compiles(id, domains, CompilerOptions(lang, extensions, manifest))
     val refsDir = out.absoluteTargetDir.resolve("refs")
@@ -141,7 +141,7 @@ object IDLTestTools {
   }
 
   def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, repoLayout: Boolean): Boolean = {
-    val manifest = GoLangBuildManifest.default.copy(
+    val manifest = GoLangBuildManifest.example.copy(
       useRepositoryFolders = repoLayout
     )
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))

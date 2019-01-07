@@ -14,8 +14,8 @@ case class CSharpBuildManifest(
                               ) extends BuildManifest
 
 object CSharpBuildManifest {
-  def default = CSharpBuildManifest(
-    common = BuildManifest.Common.default,
+  def example = CSharpBuildManifest(
+    common = BuildManifest.Common.example,
     dependencies = List.empty,
     id = "test-library",
     iconUrl = "",

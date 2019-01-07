@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
@@ -18,7 +18,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val modules = outputs.flatMap(applyLayout)
     val rt = toRuntimeModules(options)
 
-    val withLayout = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    val withLayout = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       val inSubdir = modules
       val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), options.manifest.scope)
       addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(options.manifest)
@@ -32,7 +32,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   private def applyLayout(translated: Translated): Seq[ExtendedModule.DomainModule] = {
     val ts = translated.typespace
     val modules = translated.modules ++ (
-      if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN)
+      if (options.manifest.layout == TypeScriptProjectLayout.YARN)
         List(
           buildIndexModule(ts),
           buildPackageModule(ts),
@@ -42,7 +42,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       )
 
 
-    val mm = if (options.manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    val mm = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       modules.map {
         m =>
           m.copy(id = toScopedId(m.id))
@@ -63,7 +63,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
   private def buildRootModules(mf: TypeScriptBuildManifest): Seq[ExtendedModule.RuntimeModule] = {
-    val rootDir = if (mf.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    val rootDir = if (mf.layout == TypeScriptProjectLayout.YARN) {
       "packages"
     } else {
       "."
@@ -204,7 +204,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     if (version.release) {
       s"${version.version}"
     } else {
-      s"${version.version}-${version.buildId}"
+      s"${version.version}-${version.snapshotQualifier}"
     }
   }
 }

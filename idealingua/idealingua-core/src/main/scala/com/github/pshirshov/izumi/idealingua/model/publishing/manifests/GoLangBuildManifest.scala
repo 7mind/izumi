@@ -12,12 +12,14 @@ case class GoLangBuildManifest(
                               ) extends BuildManifest
 
 object GoLangBuildManifest {
-  def default: GoLangBuildManifest = GoLangBuildManifest(
-    common = BuildManifest.Common.default,
-    dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
-    repository = "github.com/TestCompany/TestRepo",
-    useRepositoryFolders = false,
-  )
+  def example: GoLangBuildManifest = {
+    GoLangBuildManifest(
+      common = BuildManifest.Common.example,
+      dependencies = List(ManifestDependency("github.com/gorilla/websocket", "")),
+      repository = "github.com/TestCompany/TestRepo",
+      useRepositoryFolders = false,
+    )
+  }
 
   def importPrefix(manifest: GoLangBuildManifest): String = {
     if (!manifest.useRepositoryFolders || manifest.repository.isEmpty) {

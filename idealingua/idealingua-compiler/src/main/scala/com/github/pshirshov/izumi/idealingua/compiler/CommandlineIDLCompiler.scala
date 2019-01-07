@@ -168,7 +168,7 @@ object CommandlineIDLCompiler {
       case Some(value) =>
         Some(value)
       case None if default.toFile.exists() =>
-        log.log(s"Found $default, using as version overlay...")
+        log.log(s"Found $default, using as version overlay for $lang...")
         Some(loadVersionOverlay(default))
       case None =>
         None

@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.Typescri
 import com.github.pshirshov.izumi.idealingua.translator._
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTranslatorOptions] {
-  override def defaultManifest: BuildManifest = TypeScriptBuildManifest.default
+  override def defaultManifest: BuildManifest = TypeScriptBuildManifest.example
 
   override def typedOptions(options: UntypedCompilerOptions): TypescriptTranslatorOptions = CompilerOptions.from(options)
 
