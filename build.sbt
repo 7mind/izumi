@@ -322,11 +322,11 @@ lazy val distageStatic = inDiStage.as.module
 
 //-----------------------------------------------------------------------------
 
-lazy val logstageApiBase = inLogStage.as.module
+lazy val logstageApi = inLogStage.as.module
   .depends(fundamentalsReflection)
 
 lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApiBase)
+  .depends(logstageApi)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
@@ -355,7 +355,7 @@ lazy val logstageRenderingCirce = inLogStage.as.module
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
-    logstageApiBase
+    logstageApi
     , logstageCore.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
