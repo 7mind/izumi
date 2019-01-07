@@ -29,7 +29,7 @@ class StaticLogRouter extends LogRouter {
     }
   }
 
-  override protected def doLog(entry: Log.Entry): Unit = {
+  override def log(entry: Log.Entry): Unit = {
     proxied.get() match {
       case p if p != null =>
         p.log(entry)
