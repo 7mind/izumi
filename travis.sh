@@ -75,7 +75,8 @@ function publish {
   fi
 
   echo "PUBLISH..."
-
+  echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+  npm whoami
   export IZUMI_VERSION=$(cat version.sbt | sed -rn 's/.*\"(.*)\".**/\1/p' | sed -En "s/SNAPSHOT/build."${TRAVIS_BUILD_NUMBER}"/p")
   ./idealingua/idealingua-runtime-rpc-typescript/src/npmjs/publish.sh
 
