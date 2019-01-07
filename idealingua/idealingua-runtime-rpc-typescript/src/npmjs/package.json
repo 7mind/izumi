@@ -1,8 +1,8 @@
 {
   "private": false,
-  "name": "izumi-runtime",
-  "version": "0.1.1-UNSET",
-  "description": "preliminary Izumi TypeScript runtime",
+  "name": "izumi-runtime-typescript",
+  "version": "0.0.1-buid.0",
+  "description": "Preliminary Izumi TypeScript runtime",
   "author": "Izumi Framework contributors",
   "license": "MIT",
   "dependencies": {
