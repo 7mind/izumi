@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import scalaz.zio._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -105,55 +106,6 @@ object BIO extends BIOSyntax {
 
     @inline override def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.traverse(l)(f)
 
-    case class ComplexFailureEithers[E](failures: List[Either[List[Throwable], E]]) extends RuntimeException
-
-    @inline def toBIOExit[E, A](result: ExitResult[E, A]): BIOExit[E, A] = result match {
-      case ExitResult.Succeeded(v) =>
-        Success(v)
-      case ExitResult.Failed(cause) =>
-        toBIOExit(cause)
-    }
-
-    @inline def toBIOExit[E](result: ExitResult.Cause[E]): BIOExit.Failure[E] = {
-      result.checkedOrRefail match {
-        case Left(err) =>
-          Error(err)
-        case Right(cause) =>
-          val unchecked = cause.unchecked
-          val exceptions = if (cause.interrupted) {
-            new InterruptedException :: unchecked
-          } else {
-            unchecked
-          }
-          val compound = (exceptions: @unchecked) match {
-            case e :: Nil => e
-            case _ => FiberFailure(cause)
-          }
-          Termination(compound, exceptions)
-      }
-    }
-
-    @inline def toEither[E](result: ExitResult.Cause[E]): Either[List[Throwable], E] = {
-      toBIOExit(result) match {
-        case Error(error) => Right(error)
-        case Termination(_, exceptions) => Left(exceptions)
-      }
-    }
-
-    @inline def eitherToCause[E](errEither: Either[List[Throwable], E]): ExitResult.Cause[E] = {
-      errEither match {
-        case Right(err) =>
-          ExitResult.Cause.Checked(err)
-        case Left(Nil) =>
-          ExitResult.Cause.Unchecked(new IllegalArgumentException(s"Unexpected empty cause list from sandboxWith: $errEither"))
-        case Left(exceptions) =>
-          exceptions.map {
-            case _: InterruptedException => ExitResult.Cause.Interruption
-            case e => ExitResult.Cause.Unchecked(e)
-          }.reduce(_ ++ _)
-      }
-    }
-
     @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] = {
       r.sandboxWith(r => f(r.leftMap(toEither)).leftMap(eitherToCause))
     }
@@ -183,11 +135,54 @@ object BIO extends BIOSyntax {
       }
     }
 
+    @inline def toBIOExit[E, A](result: ExitResult[E, A]): BIOExit[E, A] = result match {
+      case ExitResult.Succeeded(v) =>
+        Success(v)
+      case ExitResult.Failed(cause) =>
+        toBIOExit(cause)
+    }
+
+    @inline def toBIOExit[E](result: ExitResult.Cause[E]): BIOExit.Failure[E] = {
+      result.checkedOrRefail match {
+        case Left(err) =>
+          Error(err)
+        case Right(cause) =>
+          val unchecked = cause.unchecked
+          val exceptions = if (cause.interrupted) {
+            new InterruptedException :: unchecked
+          } else {
+            unchecked
+          }
+          val compound = (exceptions: @unchecked) match {
+            case e :: Nil => e
+            case _ => FiberFailure(cause)
+          }
+          Termination(compound, exceptions)
+      }
+    }
+
+    @inline private[this] def toEither[E](result: ExitResult.Cause[E]): Either[List[Throwable], E] = {
+      toBIOExit(result) match {
+        case Error(error) => Right(error)
+        case Termination(_, exceptions) => Left(exceptions)
+      }
+    }
+
+    @inline private[this] def eitherToCause[E](errEither: Either[List[Throwable], E]): ExitResult.Cause[E] = {
+      errEither match {
+        case Right(err) =>
+          ExitResult.Cause.Checked(err)
+        case Left(Nil) =>
+          ExitResult.Cause.Unchecked(new IllegalArgumentException(s"Unexpected empty cause list from sandboxWith: $errEither"))
+        case Left(exceptions) =>
+          exceptions.map {
+            case _: InterruptedException => ExitResult.Cause.Interruption
+            case e => ExitResult.Cause.Unchecked(e)
+          }.reduce(_ ++ _)
+      }
+    }
+
   }
 
 }
-
-
-
-
 
