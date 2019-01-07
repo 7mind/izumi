@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.distage.model
 import com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-import scala.language.higherKinds
-
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef

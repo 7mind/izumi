@@ -5,7 +5,6 @@ import com.github.pshirshov.izumi.distage.model.PlannerInput
 import distage._
 import org.scalatest.WordSpec
 
-import scala.language.higherKinds
 import scala.reflect.runtime.universe.typeOf
 
 class HigherKindsTest extends WordSpec with MkInjector {

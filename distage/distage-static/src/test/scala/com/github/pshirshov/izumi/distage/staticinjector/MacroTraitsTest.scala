@@ -144,11 +144,11 @@ class MacroTraitsTest extends WordSpec with MkInjector {
   "handle AnyVals" in {
     import com.github.pshirshov.izumi.distage.fixtures.TraitCases.TraitCase6._
 
-    val definition = new StaticModuleDef {
+    val definition = PlannerInput(new StaticModuleDef {
       stat[Dep]
       stat[AnyValDep]
       stat[TestTrait]
-    }
+    })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)

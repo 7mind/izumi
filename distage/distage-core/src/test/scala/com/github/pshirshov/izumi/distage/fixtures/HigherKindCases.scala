@@ -3,8 +3,6 @@ package com.github.pshirshov.izumi.distage.fixtures
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 
-import scala.language.higherKinds
-
 @ExposedTestScope
 object HigherKindCases {
 

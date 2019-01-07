@@ -6,8 +6,6 @@ import com.github.pshirshov.izumi.distage.model.PlannerInput
 import distage.ModuleDef
 import org.scalatest.WordSpec
 
-import scala.util.Try
-
 class FactoriesTest extends WordSpec with MkInjector {
 
   "handle factory injections" in {

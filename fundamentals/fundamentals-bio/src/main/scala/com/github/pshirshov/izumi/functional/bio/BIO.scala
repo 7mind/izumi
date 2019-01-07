@@ -4,7 +4,6 @@ import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termin
 import scalaz.zio._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.language.higherKinds
 
 trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
   override type Or[+E, +V] = R[E, V]

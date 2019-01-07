@@ -9,7 +9,6 @@ import io.circe.Json
 import com.github.pshirshov.izumi.functional.bio.BIO._
 
 import scala.concurrent.duration.FiniteDuration
-import scala.language.higherKinds
 
 class RequestState[Or[+ _, + _] : BIOAsync] {
   val R: BIOAsync[Or] = implicitly

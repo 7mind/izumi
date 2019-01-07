@@ -12,8 +12,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import distage._
 
-import scala.language.higherKinds
-
 package object cats
   extends DistageInteropCats {
 

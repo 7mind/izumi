@@ -134,11 +134,11 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     intercept[ClassCastException] {
       import TraitCase6._
 
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[Dep]
         make[AnyValDep].from(AnyValDep(_))
         make[TestTrait]
-      }
+      })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)

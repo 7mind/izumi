@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.functional.mono.CIORunner
 import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 class Http4sRuntime[
   _BiIO[+ _, + _] : BIOAsync : BIORunner

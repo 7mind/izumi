@@ -202,13 +202,11 @@ lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
 lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
 lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 
-
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
   .settings(
     libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value) % Optional)
   )
-
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
 

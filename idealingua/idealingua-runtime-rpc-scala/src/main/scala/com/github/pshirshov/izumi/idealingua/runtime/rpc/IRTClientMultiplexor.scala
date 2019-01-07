@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import io.circe.Json
 
-import scala.language.higherKinds
-
 class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
   protected val BIO: BIO[R] = implicitly
 

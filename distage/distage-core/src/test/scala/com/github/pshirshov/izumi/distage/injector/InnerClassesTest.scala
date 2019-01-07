@@ -154,10 +154,10 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
-      val definition = new ModuleDef {
+      val definition = PlannerInput(new ModuleDef {
         make[ByNameCircular1]
         make[ByNameCircular2]
-      }
+      })
 
       val context = mkInjector().produce(definition)
 

@@ -3,8 +3,6 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.functional.bio.BIO
 import io.circe.{DecodingFailure, Json}
 
-import scala.language.higherKinds
-
 abstract class IRTCirceMarshaller {
   def encodeRequest: PartialFunction[IRTReqBody, Json]
 

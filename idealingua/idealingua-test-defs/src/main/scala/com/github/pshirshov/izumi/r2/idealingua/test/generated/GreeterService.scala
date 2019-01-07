@@ -6,8 +6,6 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 
-import scala.language.higherKinds
-
 trait GreeterServiceServer[Or[+ _, + _], C] {
   type Just[T] = Or[Nothing, T]
 
