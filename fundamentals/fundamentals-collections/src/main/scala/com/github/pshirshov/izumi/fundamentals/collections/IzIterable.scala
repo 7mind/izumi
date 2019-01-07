@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.fundamentals.collections
 
 import scala.collection.compat._
 import scala.collection.mutable
-import scala.language.higherKinds
 
 class IzIterable[A, Repr[_] <: Iterable[_]](xs: Repr[A]) {
 

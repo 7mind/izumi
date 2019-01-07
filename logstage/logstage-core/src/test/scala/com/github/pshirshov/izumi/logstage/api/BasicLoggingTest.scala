@@ -14,9 +14,7 @@ class BasicLoggingTest extends WordSpec {
       val arg1 = 1
       val arg2 = "argument 2"
 
-      import ExtractingStringInterpolator._
-
-      val message = m"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
+      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
       assert(message.args ==
         List(
           LogArg(Seq("arg1"), 1, hidden = false),
@@ -28,7 +26,7 @@ class BasicLoggingTest extends WordSpec {
       )
       assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
 
-      val message1 = m"expression: ${Random.self.nextInt() + 1}"
+      val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
     }
@@ -42,10 +40,8 @@ class BasicLoggingTest extends WordSpec {
     }
   }
 
-  "logstage package" should {
+  "logstage" should {
     "allow constructing Log.Message" in {
-      import logstage._
-
       val i = 5
       val s = "hi"
       val msg = Message(s"begin $i $s end")

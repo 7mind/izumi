@@ -23,12 +23,10 @@ trait LogStage {
   type Level = api.Log.Level
   val Level: api.Log.Level.type = api.Log.Level
 
-  val Trace: Level.Trace.type = Level.Trace
-  val Debug: Level.Debug.type = Level.Debug
-  val Info: Level.Info.type = Level.Info
-  val Warn: Level.Warn.type = Level.Warn
-  val Error: Level.Error.type = Level.Error
-  val Crit: Level.Crit.type = Level.Crit
-
-  @inline implicit def ToLogMessageMacroCtor(log: api.Log.Message.type): LogMessageMacroCtor = new LogMessageMacroCtor(log)
+  val Trace: api.Log.Level.Trace.type = api.Log.Level.Trace
+  val Debug: api.Log.Level.Debug.type = api.Log.Level.Debug
+  val Info: api.Log.Level.Info.type = api.Log.Level.Info
+  val Warn: api.Log.Level.Warn.type = api.Log.Level.Warn
+  val Error: api.Log.Level.Error.type = api.Log.Level.Error
+  val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
 }

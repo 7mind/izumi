@@ -3,8 +3,6 @@ package com.github.pshirshov.izumi.r2.idealingua.test.impls
 import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.r2.idealingua.test.generated._
 
-import scala.language.higherKinds
-
 abstract class AbstractGreeterServer[R[+_, +_] : BIO, C]
   extends GreeterServiceServer[R, C] {
 

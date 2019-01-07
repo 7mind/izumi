@@ -303,7 +303,7 @@ class TagMacro(val c: blackbox.Context) {
 
 }
 
-class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
+class TagLambdaMacro(override val c: whitebox.Context { type PrefixType <: WithTags#TagObject }) extends TagMacro(c) {
   import c.universe._
   import c.universe.internal.decorators._
 

@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Com
 
 
 // https://docs.microsoft.com/en-us/nuget/reference/nuspec
+// https://docs.microsoft.com/en-us/nuget/reference/package-versioning
 case class CSharpBuildManifest(
                                 common: Common,
                                 dependencies: List[ManifestDependency],
@@ -14,8 +15,8 @@ case class CSharpBuildManifest(
                               ) extends BuildManifest
 
 object CSharpBuildManifest {
-  def default = CSharpBuildManifest(
-    common = BuildManifest.Common.default,
+  def example = CSharpBuildManifest(
+    common = BuildManifest.Common.example,
     dependencies = List.empty,
     id = "test-library",
     iconUrl = "",

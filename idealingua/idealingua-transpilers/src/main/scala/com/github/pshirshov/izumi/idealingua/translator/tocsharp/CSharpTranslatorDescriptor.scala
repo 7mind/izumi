@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator._
 
 object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorOptions] {
 
-  override def defaultManifest: BuildManifest = CSharpBuildManifest.default
+  override def defaultManifest: BuildManifest = CSharpBuildManifest.example
 
   override def typedOptions(options: UntypedCompilerOptions): CSharpTranslatorOptions = CompilerOptions.from(options)
 

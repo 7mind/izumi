@@ -16,6 +16,7 @@ trait IzManifest {
   val GitHeadRev = "X-Git-Head-Rev"
   val BuiltBy = "X-Built-By"
   val BuildJdk = "X-Build-JDK"
+  val BuildSbt = "X-Build-SBT"
 
   val Version = "X-Version"
   val VersionJava = "Version"
@@ -112,13 +113,14 @@ trait IzManifest {
     (
       Option(mf.getMainAttributes.getValue(BuiltBy))
       , Option(mf.getMainAttributes.getValue(BuildJdk))
+      , Option(mf.getMainAttributes.getValue(BuildSbt))
       , Try(Option(mf.getMainAttributes.getValue(BuildTimestamp)).map(_.toTsZ))
     ) match {
-      case (Some(user), Some(jdk), Success(Some(time))) =>
-        BuildStatus(user, jdk, time)
+      case (Some(user), Some(jdk), Some(sbt), Success(Some(time))) =>
+        BuildStatus(user, jdk, sbt, time)
 
       case _ =>
-        BuildStatus("?user", "?jdk", IzTime.EPOCH)
+        BuildStatus("?user", "?jdk", "?sbt", IzTime.EPOCH)
 
     }
   }

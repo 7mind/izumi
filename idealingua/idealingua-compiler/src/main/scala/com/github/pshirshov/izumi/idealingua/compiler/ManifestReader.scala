@@ -35,40 +35,45 @@ class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: ID
   def read(): BuildManifest = {
     lang match {
       case IDLLanguage.Scala =>
-        readManifest(ScalaBuildManifest.default)
+        readManifest(ScalaBuildManifest.example)
       case IDLLanguage.Typescript =>
-        readManifest(TypeScriptBuildManifest.default)
+        readManifest(TypeScriptBuildManifest.example)
       case IDLLanguage.Go =>
-        readManifest(GoLangBuildManifest.default)
+        readManifest(GoLangBuildManifest.example)
       case IDLLanguage.CSharp =>
-        readManifest(CSharpBuildManifest.default)
+        readManifest(CSharpBuildManifest.example)
     }
   }
 
   private def readManifest[T <: BuildManifest : ClassTag : Decoder : Encoder](default: T): T = {
     val defaultJson = default.asJson.deepMerge(patch)
+    val defaultMfFile = Paths.get("manifests", s"${lang.toString.toLowerCase}.json").toFile
 
     val mf = file match {
       case Some(path) if path.toString == "@" =>
-        RawMf.Default(defaultJson, suppressed = true)
+        RawMf.Default(defaultJson, defaultMfFile, suppressed = true)
 
       case Some(path) if path.toString == "+" =>
-        readMfFromFile(Paths.get("manifests", s"${lang.toString.toLowerCase}.json").toFile)
+        readMfFromFile(defaultMfFile)
 
       case Some(path) =>
         readMfFromFile(path)
 
+      case None if defaultMfFile.exists() =>
+        log.log(s"Will use default manifest ${defaultMfFile.toPath} for $lang")
+        readMfFromFile(defaultMfFile)
+
       case None =>
-        RawMf.Default(defaultJson, suppressed = false)
+        RawMf.Default(defaultJson, defaultMfFile, suppressed = false)
     }
 
     val rawMf = mf match {
       case RawMf.Loaded(json) =>
         json
 
-      case RawMf.Default(json, suppressed) =>
+      case RawMf.Default(json, d, suppressed) =>
         if (!suppressed) {
-          log.log(s"No manifest defined for $lang, using default (you may suppress this message by using `-m @` switch):")
+          log.log(s"No manifest defined for $lang and default manifest file `${d.toPath}` is missing, using default (you may suppress this message by using `-m @` switch):")
           log.log(json.toString())
           log.log("")
         }
@@ -115,7 +120,7 @@ object RawMf {
 
   final case class Loaded(json: Json) extends RawMf
 
-  final case class Default(json: Json, suppressed: Boolean) extends RawMf
+  final case class Default(json: Json, defaultFile: File, suppressed: Boolean) extends RawMf
 
   final case class FailedToLoad(e: Throwable, path: File) extends RawMf
 

@@ -20,7 +20,7 @@ trait Codecs {
 
   implicit def decPublisher: Decoder[Publisher] = deriveDecoder
 
-  implicit def decTsModuleSchema: Decoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationDecoder
+  implicit def decTsModuleSchema: Decoder[TypeScriptProjectLayout] = semiauto.deriveEnumerationDecoder
 
   implicit def decScala: Decoder[ScalaBuildManifest] = deriveDecoder
 
@@ -42,7 +42,7 @@ trait Codecs {
 
   implicit def encPublisher: Encoder[Publisher] = deriveEncoder
 
-  implicit def encTsModuleSchema: Encoder[TypeScriptModuleSchema] = semiauto.deriveEnumerationEncoder
+  implicit def encTsModuleSchema: Encoder[TypeScriptProjectLayout] = semiauto.deriveEnumerationEncoder
 
   implicit def encScala: Encoder[ScalaBuildManifest] = deriveEncoder
 
@@ -57,6 +57,10 @@ trait Codecs {
   implicit def decProjectVersion: Decoder[ProjectVersion] = deriveDecoder
 
   implicit def encProjectVersion: Encoder[ProjectVersion] = deriveEncoder
+
+  implicit def decVersionOverlay: Decoder[VersionOverlay] = deriveDecoder
+
+  implicit def encVersionOverlay: Encoder[VersionOverlay] = deriveEncoder
 }
 
 object Codecs extends Codecs {

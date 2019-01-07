@@ -5,7 +5,7 @@ import java.util.concurrent.Executors
 import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.functional.bio.BIORunner
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import io.circe.Printer
 import scalaz.zio
@@ -25,13 +25,15 @@ object RT {
   final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](global)
 
   private def makeLogger(): IzLogger = {
-    val out = IzLogger(Log.Level.Info, levels = Map(
+    val router = ConfigurableLogRouter(Log.Level.Info, levels = Map(
       "org.http4s" -> Log.Level.Warn
       , "org.http4s.server.blaze" -> Log.Level.Error
       , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
       , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Trace
     ))
-    StaticLogRouter.instance.setup(out.receiver)
+
+    val out = IzLogger(router)
+    StaticLogRouter.instance.setup(router)
     out
   }
 

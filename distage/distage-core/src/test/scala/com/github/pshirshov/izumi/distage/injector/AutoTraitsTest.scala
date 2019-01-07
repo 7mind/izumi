@@ -13,15 +13,17 @@ import scala.language.reflectiveCalls
 class AutoTraitsTest extends WordSpec with MkInjector {
 
   "support trait fields" in {
+    import TraitCase3._
+
     val definition = PlannerInput(new ModuleDef {
-      make[TraitCase3.ATraitWithAField]
+      make[ATraitWithAField]
     })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
     val context = injector.produce(plan)
-    assert(context.get[TraitCase3.ATraitWithAField].field == 1)
+    assert(context.get[ATraitWithAField].field == 1)
   }
 
   "support named bindings in cglib traits" in {
@@ -126,6 +128,28 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
     assert(instantiated1.dep == context.get[Dep2])
     assert(instantiated2.dep == context.get[Dep])
+  }
+
+  "progression test: can't handle AnyVals" in {
+    intercept[ClassCastException] {
+      import TraitCase6._
+
+      val definition = PlannerInput(new ModuleDef {
+        make[Dep]
+        make[AnyValDep].from(AnyValDep(_))
+        make[TestTrait]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produce(plan)
+
+      assert(context.get[TestTrait].anyValDep != null)
+
+      // AnyVal reboxing happened
+      assert(context.get[TestTrait].anyValDep ne context.get[AnyValDep].asInstanceOf[AnyRef])
+      assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
+    }
   }
 
 }

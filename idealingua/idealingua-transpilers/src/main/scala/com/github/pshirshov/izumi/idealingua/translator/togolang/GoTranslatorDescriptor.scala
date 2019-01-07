@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.GoTransl
 import com.github.pshirshov.izumi.idealingua.translator._
 
 object GoTranslatorDescriptor extends TranslatorDescriptor[GoTranslatorOptions] {
-  override def defaultManifest: BuildManifest = GoLangBuildManifest.default
+  override def defaultManifest: BuildManifest = GoLangBuildManifest.example
 
   override def typedOptions(options: UntypedCompilerOptions): GoTranslatorOptions = CompilerOptions.from(options)
 

@@ -41,7 +41,7 @@ publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTa
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettings")
 
-  override val settings: Seq[sbt.Setting[_]] = Seq(    
+  override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212,
       V.scala_213,
@@ -202,13 +202,11 @@ lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
 lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
 lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 
-
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
   .settings(
-    libraryDependencies ++= (Seq(R.zio_core) ++ R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value) % Optional)
   )
-
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
 
@@ -322,27 +320,18 @@ lazy val distageStatic = inDiStage.as.module
 
 //-----------------------------------------------------------------------------
 
-lazy val logstageApiBase = inLogStage.as.module
-
-lazy val logstageApiBaseMacro = inLogStage.as.module
-  .depends(logstageApiBase, fundamentalsReflection)
-  .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-    )
-  )
+lazy val logstageApi = inLogStage.as.module
+  .depends(fundamentalsReflection)
 
 lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApiBaseMacro)
+  .depends(logstageApi, fundamentalsBioJvm)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageCore
     , distageModel
+    , distageCore.testOnlyRef
   )
-  .dependsSeq(Seq(
-    distageCore
-  ).map(_.testOnlyRef))
 
 lazy val logstageConfig = inLogStage.as.module
   .depends(fundamentalsTypesafeConfig, logstageCore)
@@ -360,13 +349,13 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingCirce = inLogStage.as.module
   .depends(logstageCore)
-  .settings(libraryDependencies ++= Seq(R.circe).flatten)
+  .settings(libraryDependencies ++= R.circe)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageCore
-  ).map(_.testOnlyRef))
+  .depends(
+    logstageApi
+    , logstageCore.testOnlyRef
+  )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
 
@@ -387,7 +376,10 @@ lazy val idealinguaCoreJs = idealinguaCore.js.remember
 
 lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
   .dependsOn(fundamentalsBio)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
+  .settings(
+    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
+    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+  )
 
 lazy val idealinguaRuntimeRpcScalaJvm = idealinguaRuntimeRpcScala.jvm.remember
 lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember

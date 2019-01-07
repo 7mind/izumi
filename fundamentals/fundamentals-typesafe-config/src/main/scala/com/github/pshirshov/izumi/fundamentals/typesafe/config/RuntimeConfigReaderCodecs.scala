@@ -1,17 +1,9 @@
 package com.github.pshirshov.izumi.fundamentals.typesafe.config
 
-import java.io.File
-import java.math.BigInteger
-import java.net.{InetAddress, URI, URL}
-import java.time.{Instant, ZoneId, ZoneOffset, _}
-import java.util.UUID
-import java.util.regex.Pattern
-
 import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config._
 
-import scala.concurrent.duration.FiniteDuration
-import scala.reflect.io.Path
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.reflect.runtime.{universe => ru}
 import scala.util.matching.Regex
 
@@ -34,7 +26,7 @@ object RuntimeConfigReaderCodecs {
       , SafeType0.get[Long] -> longConfigReader
       , SafeType0.get[Short] -> shortConfigReader
 
-      , SafeType0.get[BigInteger] -> javaBigIntegerReader
+      , SafeType0.get[java.math.BigInteger] -> javaBigIntegerReader
       , SafeType0.get[java.math.BigDecimal] -> javaBigDecimalReader
       , SafeType0.get[BigInt] -> scalaBigIntReader
       , SafeType0.get[BigDecimal] -> scalaBigDecimalReader
@@ -42,21 +34,21 @@ object RuntimeConfigReaderCodecs {
       , SafeType0.get[Duration] -> durationConfigReader
       , SafeType0.get[FiniteDuration] -> finiteDurationConfigReader
 
-      , SafeType0.get[Instant] -> instantConfigReader
-      , SafeType0.get[ZoneOffset] -> zoneOffsetConfigReader
-      , SafeType0.get[ZoneId] -> zoneIdConfigReader
-      , SafeType0.get[Period] -> periodConfigReader
+      , SafeType0.get[java.time.Instant] -> instantConfigReader
+      , SafeType0.get[java.time.ZoneOffset] -> zoneOffsetConfigReader
+      , SafeType0.get[java.time.ZoneId] -> zoneIdConfigReader
+      , SafeType0.get[java.time.Period] -> periodConfigReader
       , SafeType0.get[java.time.Duration] -> javaDurationConfigReader
-      , SafeType0.get[Year] -> yearConfigReader
+      , SafeType0.get[java.time.Year] -> yearConfigReader
 
-      , SafeType0.get[URL] -> urlConfigReader
-      , SafeType0.get[URI] -> uriConfigReader
-      , SafeType0.get[UUID] -> uuidConfigReader
-      , SafeType0.get[Path] -> pathConfigReader
-      , SafeType0.get[File] -> fileConfigReader
-      , SafeType0.get[InetAddress] -> inetAddressConfigReader
+      , SafeType0.get[java.net.URL] -> urlConfigReader
+      , SafeType0.get[java.net.URI] -> uriConfigReader
+      , SafeType0.get[java.util.UUID] -> uuidConfigReader
+      , SafeType0.get[java.nio.file.Path] -> pathConfigReader
+      , SafeType0.get[java.io.File] -> fileConfigReader
+      , SafeType0.get[java.net.InetAddress] -> inetAddressConfigReader
 
-      , SafeType0.get[Pattern] -> patternReader
+      , SafeType0.get[java.util.regex.Pattern] -> patternReader
       , SafeType0.get[Regex] -> regexReader
 
       , SafeType0.get[Config] -> configConfigReader

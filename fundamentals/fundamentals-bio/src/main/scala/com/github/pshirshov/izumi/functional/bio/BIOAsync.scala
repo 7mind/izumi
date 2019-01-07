@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.language.higherKinds
 
 trait BIOAsync[R[+ _, + _]] extends BIO[R] with BIOAsyncInvariant[R] {
   override type Or[+E, +V] = R[E, V]

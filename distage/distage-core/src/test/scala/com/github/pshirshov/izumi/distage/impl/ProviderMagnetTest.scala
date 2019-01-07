@@ -8,8 +8,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.WordSpec
 
-import scala.language.higherKinds
-
 class ProviderMagnetTest extends WordSpec {
   import ProviderCase1._
 

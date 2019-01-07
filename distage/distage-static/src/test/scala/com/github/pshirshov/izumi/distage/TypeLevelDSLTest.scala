@@ -17,7 +17,7 @@ class TypeLevelDSLTest extends WordSpec {
         .bind[TestDependency0, TestImpl0]
     }
 
-    "can reflect back from types" in {
+    "can reflect a value back from its singleton type" in {
       val z = new X {
         override def bark: String = "MOO"
       }
@@ -31,7 +31,7 @@ class TypeLevelDSLTest extends WordSpec {
       assert(singletonImpl2.repr.instance.asInstanceOf[X].bark == "MOO")
     }
 
-    "cannot reflect back from types when singleton value is out of scope" in {
+    "cannot reflect a value back from its singleton type when singleton value goes out of scope" in {
       assertTypeError("""
         val singletonImpl = {
           val z = new X {

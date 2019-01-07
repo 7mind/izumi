@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, DefMethod, Service, TypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptModuleSchema}
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 
 import scala.util.control.Breaks._
@@ -63,10 +63,10 @@ object TypeScriptImports {
 
   protected def withImport(t: TypeId, fromPackage: Package, manifest: TypeScriptBuildManifest): Seq[String] = {
     var pathToRoot = ""
-    (1 to (if(manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN &&
+    (1 to (if(manifest.layout == TypeScriptProjectLayout.YARN &&
       manifest.dropFQNSegments.isDefined) fromPackage.size - manifest.dropFQNSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
 
-    val scopeRoot = if (manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) manifest.scope + "/" else pathToRoot
+    val scopeRoot = if (manifest.layout == TypeScriptProjectLayout.YARN) manifest.scope + "/" else pathToRoot
 
     t match {
       case g: Generic => g match {
@@ -117,7 +117,7 @@ object TypeScriptImports {
     var importOffset = ""
     var importFile = ""
 
-    if (srcPkg.nonEmpty && manifest.moduleSchema == TypeScriptModuleSchema.PER_DOMAIN) {
+    if (srcPkg.nonEmpty && manifest.layout == TypeScriptProjectLayout.YARN) {
       importOffset = manifest.scope + "/" +
         (if (manifest.dropFQNSegments.isDefined) t.path.toPackage.drop(manifest.dropFQNSegments.get) else t.path.toPackage).mkString("-")
       importFile = importOffset

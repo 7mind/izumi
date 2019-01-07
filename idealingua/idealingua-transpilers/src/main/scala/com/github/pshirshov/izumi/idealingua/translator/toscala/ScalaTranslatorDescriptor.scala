@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.translator._
 import com.github.pshirshov.izumi.idealingua.translator.toscala.layout.ScalaLayouter
 
 object ScalaTranslatorDescriptor extends TranslatorDescriptor[ScalaTranslatorOptions] {
-  override def defaultManifest: BuildManifest = ScalaBuildManifest.default
+  override def defaultManifest: BuildManifest = ScalaBuildManifest.example
 
   override def typedOptions(options: UntypedCompilerOptions): ScalaTranslatorOptions = CompilerOptions.from(options)
 

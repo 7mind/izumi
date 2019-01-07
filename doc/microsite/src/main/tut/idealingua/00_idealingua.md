@@ -6,14 +6,13 @@ IdeaLingua RPC & Domain Modeling Language
 
 IdeaLingua is an RPC framework & Domain Modeling Language, it's purpose is to:
 
-* Publish APIs & data definitions in a common format and create idiomatic API clients and servers in any language.
-* Enable remote calls to service via their public API definitions.
-* Abstract irrelevant details such as network protocol and serialization format.
-* Deliver our souls from REST and its brittle boilerplate.
+* Share & publish APIs and data models in a common concise format
+* Create idiomatic API clients and servers for any programming language.
+* Allow remote calls to services given their public API definitions.
+* Abstract away details such as the network protocol or the serialization format.
+* Save users from the brittleness of REST.
 
 ## User Service Example
-
-Example definition of a user database service:
 
 ```
 package user.api
@@ -61,7 +60,7 @@ service UserService {
 }
 ```
 
-## Quickstart
+## Quick start
 
 You may use our preconfigured [Docker environment](https://github.com/pshirshov/izumi-docker/blob/master/izumi-env/Dockerfile) to experiment with Izumi IDL compiler:
 
@@ -73,15 +72,16 @@ Then try this snippet:
 
 ```bash
 export COMPILER="com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$"
-export REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 
 # create sample project in `testproject` directory
-coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- -i testproject
+coursier launch -E '*:*' -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- -i testproject
 
 cd testproject
 
 # compile Scala and Typescript projects using all the defaults
-coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- typescript -m + scala -m +
+coursier launch -E '*:*' -r S_REPOSITORY -r $R_REPOSITORY $COMPILER -- typescript scala go csharp
 
 # Run SBT on generated Scala project
 pushd .
@@ -101,7 +101,7 @@ popd
 
 ## Pet Store Example
 
-See [izumi-petstore](https://github.com/kaishh/izumi-petstore) for examples in Scala, TypeScript, Go, C# and other languages.
+See [izumi-petstore](https://github.com/kaishh/izumi-petstore) for samples in Scala, TypeScript, Go, C# and other languages.
 
 # Installation
 
@@ -122,6 +122,8 @@ Place your domain definitions into `/src/main/izumi` directory, then enable the 
 For the generated code to compile, you will also need to add dependencies on the Idealingua RTS modules: 
 
 ```scala
+val izumi = prop
+
 izumiProject
   .enablePlugins(IdealinguaPlugin)
   .settings(
@@ -142,9 +144,11 @@ project.dependsOn(izumiProject)
 
 ## Using the standalone compiler
 
-The compiler executable is built as an uberjar and published on [Maven Central](https://search.maven.org/).
+The compiler is built as an uberjar and published to [Maven Central](https://search.maven.org/).
 
-The preferred way to install the compiler is with [coursier](https://github.com/coursier/coursier#command-line)
+The preferred way to install the compiler is via [coursier](https://github.com/coursier/coursier#command-line)
+
+To install current release version:
 
 @@@vars
 
@@ -157,11 +161,11 @@ coursier bootstrap com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi
 
 @@@
 
-To install snapshot:
+To install development snapshot:
 
 ```bash
 # install snapshot
-coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.6.0-SNAPSHOT -o idlc
+coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.7.0-SNAPSHOT -o idlc
 
 ./idlc --help
 ```
@@ -169,28 +173,31 @@ coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ c
 Commandline examples:
 
 ```
+# compile sources in ./src and output generated code to ./target/scala and ./target/typescript 
+# all compiler plugins for Scala and TypeScript are enabled by * pattern
+
 ./idlc -s src -t target -L scala=* -L typescript=*
 ```
 
 ```
+# compile with `AnyValExtension` compiler plugin for Scala disabled
+
 ./idlc -s src -t target -L scala=-AnyvalExtension -L typescript=*
 ```
 
 ## Scala http4s Transport
 
-Most likely you will need to use [Kind Projector](https://github.com/non/kind-projector) compiler plugin and enable partial unification:
+Most likely you'll need to use [Kind Projector](https://github.com/non/kind-projector) and enable partial unification:
 
 ```scala
 scalacOptions += "-Ypartial-unification"
 
 resolvers += Resolver.sonatypeRepo("releases")
 
-addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.6" cross CrossVersion.binary)
+addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.8" cross CrossVersion.binary)
 ``` 
 
-You may find a test suite for the whole http4s pipeline [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
-
-Please note that service definitons for the test suite are _not_ generated from Idealingua definitions, you can find the Scala sources [here](https://github.com/pshirshov/izumi-r2/tree/develop/idealingua/idealingua-test-defs/src/main/scala/com/github/pshirshov/izumi/r2/idealingua/test).
+You may find the test suite for the http4s backend [here](blob/develop/idealingua/idealingua-runtime-rpc-http4s/src/test/scala/com/github/pshirshov/izumi/idealingua/runtime/rpc/http4s/Http4sServer.scala).
 
 @@@ index
 

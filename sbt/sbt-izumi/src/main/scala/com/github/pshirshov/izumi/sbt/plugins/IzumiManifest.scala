@@ -9,6 +9,8 @@ object IzumiManifest {
   val GitHeadRev = "X-Git-Head-Rev"
   val BuiltBy = "X-Built-By"
   val BuildJdk = "X-Build-JDK"
+  val BuildSbt = "X-Build-SBT"
+  val BuildScala = "X-Build-Scala"
   val Version = "X-Version"
   val BuildTimestamp = "X-Build-Timestamp"
   val TsFormat: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME

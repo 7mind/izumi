@@ -5,8 +5,6 @@ import java.util.concurrent.ExecutorService
 import scalaz.zio.ExitResult.Cause
 import scalaz.zio._
 
-import scala.language.higherKinds
-
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: F[E, A]): A
 

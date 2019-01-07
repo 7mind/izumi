@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.functional.bio.{BIOAsync, BIORunner, CIORunner}
+import com.github.pshirshov.izumi.functional.bio.{BIOAsync, BIORunner}
+import com.github.pshirshov.izumi.functional.mono.CIORunner
 import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
-import scala.language.higherKinds
 
 class Http4sRuntime[
   _BiIO[+ _, + _] : BIOAsync : BIORunner
