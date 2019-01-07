@@ -41,7 +41,7 @@ object LoggerMacroMethods {
       {
         val self = c.prefix.splice
         if (self.acceptable(Log.LoggerId(CodePositionMaterializer.getApplicationPointId(c).splice), level.splice)) {
-          self.unsafeLog(Log.Entry(level.splice, message.splice)(position.splice))
+          self.unsafeLog(Log.Entry.create(level.splice, message.splice)(position.splice))
         }
       }
     }
