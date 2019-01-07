@@ -1,6 +1,6 @@
 {
   "private": false,
-  "name": "izumi-runtime-typescript",
+  "name": "@izumi-framework/izumi-runtime-typescript",
   "version": "0.0.1-buid.0",
   "description": "Preliminary Izumi TypeScript runtime",
   "author": "Izumi Framework contributors",
