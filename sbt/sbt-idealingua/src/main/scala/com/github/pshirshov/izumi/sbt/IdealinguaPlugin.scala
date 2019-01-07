@@ -98,10 +98,10 @@ object IdealinguaPlugin extends AutoPlugin {
     idlExtensionsTypescript := TypeScriptTranslator.defaultExtensions,
     idlExtensionsGolang := GoLangTranslator.defaultExtensions,
     idlExtensionsCSharp := CSharpTranslator.defaultExtensions,
-    idlManifestScala := ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.PLAIN),
-    idlManifestTypescript := TypeScriptBuildManifest.default,
-    idlManifestGolang := GoLangBuildManifest.default,
-    idlManifestCSharp := CSharpBuildManifest.default,
+    idlManifestScala := ScalaBuildManifest.example.copy(layout = ScalaProjectLayout.PLAIN),
+    idlManifestTypescript := TypeScriptBuildManifest.example,
+    idlManifestGolang := GoLangBuildManifest.example,
+    idlManifestCSharp := CSharpBuildManifest.example,
 
     compilationTargets := Seq(
       Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value), Mode.CompiledArtifact)
