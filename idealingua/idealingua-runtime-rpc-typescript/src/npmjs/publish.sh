@@ -12,5 +12,6 @@ cp package.json dist/
 cd dist
 npm install -g json
 json -I -f package.json -e "this.version=\"${IZUMI_VERSION}\""
+npm publish
 
 popd
