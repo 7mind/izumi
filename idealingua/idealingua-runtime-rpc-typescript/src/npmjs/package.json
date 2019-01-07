@@ -1,0 +1,15 @@
+{
+  "private": false,
+  "name": "izumi-runtime",
+  "version": "0.1.1-UNSET",
+  "description": "preliminary Izumi TypeScript runtime",
+  "author": "Izumi Framework contributors",
+  "license": "MIT",
+  "dependencies": {
+    "moment": "^2.20.1",
+    "websocket": "1.0.26",
+    "@types/node": "^10.7.1",
+    "@types/websocket": "0.0.39"
+  },
+  "peerDependencies": {}
+}

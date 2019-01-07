@@ -14,6 +14,8 @@ before_install:
   - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
   - sudo rm -rf ~/.ivy2/local
   - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+  - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+  - npm whoami
 
 before_script:
   - git config --global user.name "$USER"
@@ -47,11 +49,11 @@ env:
 
 jobs:
   include:
+    - stage: "Publish"
+      script: bash docker.sh versionate publish
     - stage: "Tests & Coverage"
       script: bash docker.sh coverage
     - stage: "SBT Tests"
       script: bash docker.sh scripted
-    - stage: "Publish"
-      script: bash docker.sh versionate publish
     - stage: "Site"
       script: bash docker.sh versionate site
