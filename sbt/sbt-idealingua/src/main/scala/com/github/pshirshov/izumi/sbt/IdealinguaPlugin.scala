@@ -51,7 +51,7 @@ object IdealinguaPlugin extends AutoPlugin {
     val idlManifestScala = settingKey[ScalaBuildManifest]("scala manifest")
     val idlManifestTypescript = settingKey[TypeScriptBuildManifest]("typescript manifest")
     val idlManifestGolang = settingKey[GoLangBuildManifest]("golang manifest")
-    val idlManifestCsharp = settingKey[CSharpBuildManifest]("csharp manifest")
+    val idlManifestCSharp = settingKey[CSharpBuildManifest]("csharp manifest")
   }
 
   import Keys._
@@ -101,7 +101,7 @@ object IdealinguaPlugin extends AutoPlugin {
     idlManifestScala := ScalaBuildManifest.default.copy(layout = ScalaProjectLayout.PLAIN),
     idlManifestTypescript := TypeScriptBuildManifest.default,
     idlManifestGolang := GoLangBuildManifest.default,
-    idlManifestCsharp := CSharpBuildManifest.default,
+    idlManifestCSharp := CSharpBuildManifest.default,
 
     compilationTargets := Seq(
       Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value), Mode.CompiledArtifact)
@@ -111,7 +111,7 @@ object IdealinguaPlugin extends AutoPlugin {
 
       , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlExtensionsGolang.value, idlManifestGolang.value), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlExtensionsCSharp.value, idlManifestCsharp.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlExtensionsCSharp.value, idlManifestCSharp.value), Mode.SourceArtifact)
     ),
 
     watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi"),
