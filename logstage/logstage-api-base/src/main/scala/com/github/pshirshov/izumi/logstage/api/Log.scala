@@ -73,7 +73,7 @@ object Log {
   }
 
   object CustomContext {
-    def empty: CustomContext = CustomContext(Nil)
+    val empty: CustomContext = CustomContext(Nil)
   }
 
   final case class LoggerId(id: String) extends AnyVal
