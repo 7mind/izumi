@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import scalaz.zio._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}

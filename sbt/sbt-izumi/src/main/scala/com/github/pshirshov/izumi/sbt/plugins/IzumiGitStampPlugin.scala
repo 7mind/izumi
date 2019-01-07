@@ -6,7 +6,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib._
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import sbt.Keys._
-import sbt._
+import sbt.{Def, _}
 import sbt.internal.util.ConsoleLogger
 
 
@@ -23,7 +23,7 @@ object IzumiGitStampPlugin extends AutoPlugin {
 
   import Keys._
 
-  override def globalSettings = Seq(
+  override def globalSettings: Seq[Def.Setting[_]] = Seq(
     izGitObject := {
       new Git(izGitRepositoryObject.value)
     }
@@ -54,7 +54,7 @@ object IzumiGitStampPlugin extends AutoPlugin {
 
       gitValues.foreach {
         case (k, v) =>
-          logger.info(s"Manifest value: $k = $v")
+          logger.debug(s"Manifest value: $k = $v")
       }
 
       Package.ManifestAttributes(gitValues.toSeq: _*)

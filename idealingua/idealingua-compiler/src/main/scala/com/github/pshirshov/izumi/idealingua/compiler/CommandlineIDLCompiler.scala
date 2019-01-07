@@ -13,6 +13,7 @@ import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
 import com.github.pshirshov.izumi.idealingua.translator._
 import com.typesafe.config.ConfigFactory
+import io.circe
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Json, JsonObject}
@@ -66,7 +67,7 @@ object CommandlineIDLCompiler {
             Files.write(mfdir.resolve(s"${d.language.toString.toLowerCase}.json"), new ManifestWriter().write(d.defaultManifest).utf8).discard()
         }
 
-        Files.write(p.resolve(s"version.json"), ProjectVersion.default.asJson.toString().utf8).discard()
+        Files.write(p.resolve(s"version.json"), VersionOverlay.example.asJson.toString().utf8).discard()
         true
       case None =>
         false
@@ -164,12 +165,12 @@ object CommandlineIDLCompiler {
   private def readManifest(conf: IDLCArgs, env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage): BuildManifest = {
     val default = Paths.get("version.json")
 
-    val overlay = conf.versionOverlay.map(loadVersionOverlay) match {
+    val overlay = conf.versionOverlay.map(loadVersionOverlay(lang)) match {
       case Some(value) =>
         Some(value)
       case None if default.toFile.exists() =>
         log.log(s"Found $default, using as version overlay for $lang...")
-        Some(loadVersionOverlay(default))
+        Some(loadVersionOverlay(lang)(default))
       case None =>
         None
     }
@@ -193,9 +194,17 @@ object CommandlineIDLCompiler {
     manifest
   }
 
-  private def loadVersionOverlay(path: Path) = {
+  private def loadVersionOverlay(lang: IDLLanguage)(path: Path): Either[circe.Error, Json] = {
     import io.circe.literal._
-    parse(IzFiles.readString(path.toFile)).map(vj => json"""{"common": {"version": $vj}}""")
+
+    for {
+      parsed <- parse(IzFiles.readString(path.toFile))
+      decoded <- parsed.as[VersionOverlay]
+    } yield {
+      val qualifier = decoded.snapshotQualifiers.getOrElse(lang.toString.toLowerCase, "UNSET")
+      val version = ProjectVersion(decoded.version, decoded.release, qualifier)
+      json"""{"common": {"version": $version}}"""
+    }
   }
 
   private def toJson(env: Map[String, String]) = {
@@ -228,5 +237,20 @@ object CommandlineIDLCompiler {
   }
 }
 
+case class VersionOverlay(version: String, release: Boolean, snapshotQualifiers: Map[String, String])
 
-
+object VersionOverlay {
+  def example: VersionOverlay = {
+    VersionOverlay(
+      "0.0.1",
+      release = false,
+      Map(
+        IDLLanguage.Scala -> "SNAPSHOT",
+        IDLLanguage.Typescript -> "build.0",
+        IDLLanguage.Go -> "0",
+        IDLLanguage.CSharp -> "alpha",
+      )
+        .map { case (k, v) => k.toString.toLowerCase -> v }
+    )
+  }
+}

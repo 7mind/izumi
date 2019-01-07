@@ -14,6 +14,7 @@ object TypeScriptProjectLayout {
 }
 
 // https://docs.npmjs.com/files/package.json
+// https://github.com/npm/node-semver#prerelease-tags
 case class TypeScriptBuildManifest(
                                     common: Common,
                                     dependencies: List[ManifestDependency],

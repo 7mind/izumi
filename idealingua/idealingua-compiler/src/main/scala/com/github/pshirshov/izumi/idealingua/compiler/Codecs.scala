@@ -57,6 +57,10 @@ trait Codecs {
   implicit def decProjectVersion: Decoder[ProjectVersion] = deriveDecoder
 
   implicit def encProjectVersion: Encoder[ProjectVersion] = deriveEncoder
+
+  implicit def decVersionOverlay: Decoder[VersionOverlay] = deriveDecoder
+
+  implicit def encVersionOverlay: Encoder[VersionOverlay] = deriveEncoder
 }
 
 object Codecs extends Codecs {

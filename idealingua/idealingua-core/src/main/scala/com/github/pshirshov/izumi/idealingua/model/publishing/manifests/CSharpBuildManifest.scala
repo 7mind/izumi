@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Com
 
 
 // https://docs.microsoft.com/en-us/nuget/reference/nuspec
+// https://docs.microsoft.com/en-us/nuget/reference/package-versioning
 case class CSharpBuildManifest(
                                 common: Common,
                                 dependencies: List[ManifestDependency],
