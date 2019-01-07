@@ -7,12 +7,12 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-final case class CodePositionMaterializer(get: CodePosition)
+final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 
 object CodePositionMaterializer {
   implicit def materialize: CodePositionMaterializer = macro getEnclosingPosition
 
-  def apply()(implicit ev: CodePositionMaterializer): CodePositionMaterializer = ev
+  def apply()(implicit ev: CodePositionMaterializer, dummy: DummyImplicit): CodePositionMaterializer = ev
 
   def codePosition(implicit ev: CodePositionMaterializer): CodePosition = ev.get
 
@@ -26,7 +26,7 @@ object CodePositionMaterializer {
     }
   }
 
-  private def getCodePosition(c: blackbox.Context): c.Expr[CodePosition] = {
+  def getCodePosition(c: blackbox.Context): c.Expr[CodePosition] = {
     import c.universe._
     getEnclosingPositionImpl(c) match {
       case CodePosition(SourceFilePosition(file, line), applicationPointId) =>
@@ -42,6 +42,10 @@ object CodePositionMaterializer {
     }
   }
 
+  def getApplicationPointId(c: blackbox.Context): c.Expr[String] = {
+    import c.universe._
+    c.Expr[String](Literal(Constant(getEnclosingPositionImpl(c).applicationPointId)))
+  }
 
   private def getEnclosingPositionImpl(c: blackbox.Context): CodePosition = {
 

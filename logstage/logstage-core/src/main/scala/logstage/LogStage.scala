@@ -29,6 +29,4 @@ trait LogStage {
   val Warn: Level.Warn.type = Level.Warn
   val Error: Level.Error.type = Level.Error
   val Crit: Level.Crit.type = Level.Crit
-
-  @inline implicit def ToLogMessageMacroCtor(log: api.Log.Message.type): LogMessageMacroCtor = new LogMessageMacroCtor(log)
 }

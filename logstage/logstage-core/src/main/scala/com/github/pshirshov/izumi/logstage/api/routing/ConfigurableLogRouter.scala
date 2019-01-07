@@ -1,10 +1,10 @@
 package com.github.pshirshov.izumi.logstage.api.routing
 
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.Log
+import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.sink.FallbackConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
 class ConfigurableLogRouter
 (
@@ -38,7 +38,7 @@ class ConfigurableLogRouter
 }
 
 object ConfigurableLogRouter {
-  final def apply(threshold: Log.Level, sink: LogSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
+  final def apply(threshold: Log.Level, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): ConfigurableLogRouter = {
     apply(threshold, Seq(sink), levels)
   }
 

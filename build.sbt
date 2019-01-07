@@ -41,7 +41,7 @@ publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTa
 val GlobalSettings = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettings")
 
-  override val settings: Seq[sbt.Setting[_]] = Seq(    
+  override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
       V.scala_212,
       V.scala_213,
@@ -323,26 +323,17 @@ lazy val distageStatic = inDiStage.as.module
 //-----------------------------------------------------------------------------
 
 lazy val logstageApiBase = inLogStage.as.module
-
-lazy val logstageApiBaseMacro = inLogStage.as.module
-  .depends(logstageApiBase, fundamentalsReflection)
-  .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-    )
-  )
+  .depends(fundamentalsReflection)
 
 lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApiBaseMacro)
+  .depends(logstageApiBase)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageCore
     , distageModel
+    , distageCore.testOnlyRef
   )
-  .dependsSeq(Seq(
-    distageCore
-  ).map(_.testOnlyRef))
 
 lazy val logstageConfig = inLogStage.as.module
   .depends(fundamentalsTypesafeConfig, logstageCore)
@@ -360,13 +351,13 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
 
 lazy val logstageRenderingCirce = inLogStage.as.module
   .depends(logstageCore)
-  .settings(libraryDependencies ++= Seq(R.circe).flatten)
+  .settings(libraryDependencies ++= R.circe)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
-  .depends(logstageApiBase)
-  .dependsSeq(Seq(
-    logstageCore
-  ).map(_.testOnlyRef))
+  .depends(
+    logstageApiBase
+    , logstageCore.testOnlyRef
+  )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
 

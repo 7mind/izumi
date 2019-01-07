@@ -9,15 +9,12 @@ import scala.language.implicitConversions
 
 class IzLogger
 (
-  override val receiver: LogRouter
-  , override val contextCustom: Log.CustomContext
-) extends LoggingMacro
-  with AbstractLogger {
-
-  final def log(entry: Log.Entry): Unit = receiver.log(entry)
+  override protected val router: LogRouter
+, override val customContext: Log.CustomContext
+) extends RoutingLogger {
 
   implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
-    new IzLogger(receiver, contextCustom + newCustomContext)
+    new IzLogger(router, customContext + newCustomContext)
   }
 
   implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {
@@ -35,7 +32,7 @@ object IzLogger {
   val Level: Log.Level.type = Log.Level
 
   /**
-    * By default, a basic colored console logger with global [[Level.Trace]] threshold
+    * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
     */
   final def apply(threshold: Log.Level = IzLogger.Level.Trace, sink: LogSink = ConsoleSink.ColoredConsoleSink, levels: Map[String, Log.Level] = Map.empty): IzLogger = {
     val r = ConfigurableLogRouter(threshold, sink, levels)

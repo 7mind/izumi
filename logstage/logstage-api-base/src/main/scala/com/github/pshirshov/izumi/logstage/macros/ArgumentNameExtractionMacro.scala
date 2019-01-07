@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api
+package com.github.pshirshov.izumi.logstage.macros
 
 import com.github.pshirshov.izumi.logstage.api.Log.LogArg
 
@@ -6,7 +6,7 @@ import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 object ArgumentNameExtractionMacro {
-  protected[api] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
+  protected[macros] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
     object Arrow {

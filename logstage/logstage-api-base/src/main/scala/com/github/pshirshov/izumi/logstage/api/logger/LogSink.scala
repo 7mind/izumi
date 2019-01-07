@@ -6,7 +6,3 @@ trait LogSink extends AutoCloseable {
   def flush(e: Log.Entry): Unit
   def close(): Unit = {}
 }
-
-
-
-
