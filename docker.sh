@@ -20,7 +20,7 @@ docker run --rm --name $CNAME \
     -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
     --volume "${SOURCEDIR}":/work:z \
     --volume "${HOMEDIR}":/root:z \
-    $IMAGE bash -xe travis.sh $1
+    $IMAGE bash -xe travis.sh $*
 
     #--volume $SSH_AUTH_SOCK:/ssh-agent --env SSH_AUTH_SOCK=/ssh-agent \
     #--volume $(cat $SOURCEDIR/.git/objects/info/alternates):/work/.git/objects:z \
