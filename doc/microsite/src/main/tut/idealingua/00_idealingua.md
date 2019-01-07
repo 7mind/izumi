@@ -61,7 +61,7 @@ service UserService {
 }
 ```
 
-## Quickstart
+## Quick start
 
 You may use our preconfigured [Docker environment](https://github.com/pshirshov/izumi-docker/blob/master/izumi-env/Dockerfile) to experiment with Izumi IDL compiler:
 
@@ -73,15 +73,16 @@ Then try this snippet:
 
 ```bash
 export COMPILER="com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$"
-export REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 
 # create sample project in `testproject` directory
-coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- -i testproject
+coursier launch -E '*:*' -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- -i testproject
 
 cd testproject
 
 # compile Scala and Typescript projects using all the defaults
-coursier launch -E '*:*' -r $REPOSITORY $COMPILER -- typescript -m + scala -m +
+coursier launch -E '*:*' -r S_REPOSITORY -r $R_REPOSITORY $COMPILER -- typescript scala go csharp
 
 # Run SBT on generated Scala project
 pushd .
