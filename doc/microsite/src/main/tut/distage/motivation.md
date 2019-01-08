@@ -36,7 +36,7 @@ On the contrary, that while `registry` can _trace_ its execution to print an ope
 input to registry itself. Registry Ops do not define the steps the algorithm will take, only trace, thus failing to achieve
 extensibility in that direction.
 
-Registry also lacks Set Bindings and module groups (tags)
+Registry also lacks Set Bindings and module groups (tags); distage doesn't require manual lifting of arguments (funTo, valTo, etc.) for use with monads
 
 // Haskell-land is a nightmare for anyone concerned with modularity. importing B into A should ALWAYS succeed, A should not be impacted by internal implementation of B, even if B imports A – this can, and SHOULD always be resolved.
 // Similarly, modules should not be dependent on application data flow, if a module changes signature as to require a new collaborator, it's users SHOULD not be affected by this change – they should NEVER be impacted by changes in a module's implementation
