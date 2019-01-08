@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.io.File
 import java.nio.file.{Path, Paths}
-
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import scopt.OptionParser
 
 case class LanguageOpts(
@@ -47,8 +47,8 @@ object IDLCArgs {
       .unbounded()
       .action {
         (a, c) =>
-          val kv = a.split("=")
-          c.copy(overrides = c.overrides.updated(kv.head, kv(1)))
+          val (k, v) = a.splitFirst('=')
+          c.copy(overrides = c.overrides.updated(k, v))
       }
 
     opt[File]('v', "version-overlay").optional().valueName("<version.json>")
@@ -92,8 +92,8 @@ object IDLCArgs {
           .unbounded()
           .action {
             (a, c) =>
-              val kv = a.split("=")
-              c.copy(languages = c.languages.init :+ c.languages.last.copy(overrides = c.languages.last.overrides.updated(kv.head, kv(1))))
+              val (k, v) = a.splitFirst('=')
+              c.copy(languages = c.languages.init :+ c.languages.last.copy(overrides = c.languages.last.overrides.updated(k, v)))
           },
         opt[String]("extensions").abbr("e").valueName("spec")
           .optional()

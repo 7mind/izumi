@@ -40,4 +40,13 @@ trait TranslationLayouter {
   protected def withRuntime(options: CompilerOptions[_, _], generated: Seq[Translated]): Seq[ExtendedModule] = {
     toRuntimeModules(options) ++ toDomainModules(generated)
   }
+
+  protected def addPrefix(rt: Seq[ExtendedModule], prefix: Seq[String]): Seq[ExtendedModule] = {
+    rt.map {
+      case ExtendedModule.DomainModule(domain, module) =>
+        ExtendedModule.DomainModule(domain, module.copy(id = module.id.copy(path = prefix ++ module.id.path)))
+      case ExtendedModule.RuntimeModule(module) =>
+        ExtendedModule.RuntimeModule(module.copy(id = module.id.copy(path = prefix ++ module.id.path)))
+    }
+  }
 }

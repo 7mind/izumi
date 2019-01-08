@@ -20,8 +20,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val withLayout = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       val inSubdir = modules
-      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), options.manifest.scope)
-      addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(options.manifest)
+      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), Seq(options.manifest.yarn.scope))
+      addPrefix(inSubdir ++ inRtSubdir, Seq("packages")) ++ buildRootModules(options.manifest)
     } else {
       modules ++ rt ++ buildRootModules(options.manifest)
     }
@@ -53,14 +53,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
 
-  private def addPrefix(rt: Seq[ExtendedModule], prefix: String): Seq[ExtendedModule] = {
-    rt.map {
-      case ExtendedModule.DomainModule(domain, module) =>
-        ExtendedModule.DomainModule(domain, module.copy(id = module.id.copy(path = prefix +: module.id.path)))
-      case ExtendedModule.RuntimeModule(module) =>
-        ExtendedModule.RuntimeModule(module.copy(id = module.id.copy(path = prefix +: module.id.path)))
-    }
-  }
+
 
   private def buildRootModules(mf: TypeScriptBuildManifest): Seq[ExtendedModule.RuntimeModule] = {
     val rootDir = if (mf.layout == TypeScriptProjectLayout.YARN) {
@@ -107,7 +100,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       json"""{
             "private": true,
             "workspaces": {
-              "packages": [${s"packages/${mf.scope}/*"}]
+              "packages": [${s"packages/${mf.yarn.scope}/*"}]
+            },
+            "scripts": {
+              "build": "tsc"
             }
           }"""
     val fullRootJson = packageJson.deepMerge(rootJson)
@@ -119,24 +115,24 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
   private def toDirName(parts: Seq[String]): String = {
-    val dropped = options.manifest.dropFQNSegments.fold(parts)(toDrop => parts.drop(toDrop))
+    val dropped = options.manifest.yarn.dropFQNSegments.fold(parts)(toDrop => parts.drop(toDrop))
     dropped.mkString("-")
   }
 
   private def toScopedId(parts: Seq[String]): String = {
-    s"${options.manifest.scope}/${toDirName(parts)}"
+    s"${options.manifest.yarn.scope}/${toDirName(parts)}"
   }
 
   private def toScopedId(id: ModuleId): ModuleId = {
-    val path = Seq(options.manifest.scope, makeName(id))
+    val path = Seq(options.manifest.yarn.scope, makeName(id))
 
     ModuleId(path, id.name)
   }
 
   private def makeName(m: ModuleId): String = {
     (
-      if (options.manifest.dropFQNSegments.isDefined)
-        m.path.drop(options.manifest.dropFQNSegments.get)
+      if (options.manifest.yarn.dropFQNSegments.isDefined)
+        m.path.drop(options.manifest.yarn.dropFQNSegments.get)
       else
         m.path
       ).mkString("-")
@@ -155,10 +151,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val content = generatePackage(options.manifest, Some("index"), name, peerDeps.toList)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
-  private def irtDependency: String = s"${options.manifest.scope}/irt"
+  private def irtDependency: String = s"${options.manifest.yarn.scope}/irt"
 
   private def buildIRTPackageModule(): Module = {
-    val content = generatePackage(options.manifest.copy(dropFQNSegments = None), Some("index"), irtDependency)
+    val content = generatePackage(options.manifest.copy(yarn = options.manifest.yarn.copy(dropFQNSegments = None)), Some("index"), irtDependency)
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
@@ -175,7 +171,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
   private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
     val author = s"${manifest.common.publisher.name} (${manifest.common.publisher.id})"
-    val deps = manifest.dependencies.map(d => d.module -> d.version).toMap.asJson
+    val deps = manifest.yarn.dependencies.map(d => d.module -> d.version).toMap.asJson
     val peerDeps = peerDependencies.map(d => d.module -> d.version).toMap.asJson
 
     val base =

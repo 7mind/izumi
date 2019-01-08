@@ -85,7 +85,10 @@ object IzFiles {
         p =>
           candidates.map(ext => Paths.get(p).resolve(ext))
       }
-      .find(p => p.toFile.exists())
+      .find {
+        p =>
+          p.toFile.exists()
+      }
   }
 
   def haveExecutables(names: String*): Boolean = {

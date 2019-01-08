@@ -16,7 +16,7 @@ import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSharpLayouter, CSharpTranslator}
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
@@ -76,27 +76,32 @@ object IDLTestTools {
     resolved.successful
   }
 
-  def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val manifest = ScalaBuildManifest.example.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
+  def compilesScala(id: String, domains: Seq[LoadedDomain.Success], layout: ScalaProjectLayout, extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
+    val mf = ScalaBuildManifest.example
+    val manifest = mf.copy(layout = ScalaProjectLayout.SBT, sbt = mf.sbt.copy(dropFQNSegments = Some(2)))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
-    val cmd = Seq(
-      "scalac"
-      , "-deprecation"
-      , "-opt-warnings:_"
-      , "-d", out.phase2Relative.toString
-      , "-classpath", classpath
-    ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
+
+    val cmd = layout match {
+      case ScalaProjectLayout.PLAIN =>
+        Seq(
+          "scalac"
+          , "-deprecation"
+          , "-opt-warnings:_"
+          , "-d", out.phase2Relative.toString
+          , "-classpath", classpath
+        ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
+      case ScalaProjectLayout.SBT =>
+        Seq("sbt", "clean", "compile")
+    }
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0
   }
 
-  def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions, scoped: Boolean): Boolean = {
-    val manifest = TypeScriptBuildManifest.example.copy(
-      layout = if (scoped) TypeScriptProjectLayout.YARN else TypeScriptProjectLayout.PLAIN
-    )
+  def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], layout: TypeScriptProjectLayout, extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
+    val manifest = TypeScriptBuildManifest.example.copy(layout = layout)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, manifest))
 
     val outputTsconfigPath = out.targetDir.resolve("tsconfig.json")
@@ -109,41 +114,58 @@ object IDLTestTools {
       return false
     }
 
-    val tscCmd = Seq("tsc", "-p", "tsconfig.json")
+
+    val tscCmd = layout match {
+      case TypeScriptProjectLayout.YARN =>
+        Seq("yarn", "build")
+      case TypeScriptProjectLayout.PLAIN =>
+        Seq("tsc", "-p", "tsconfig.json")
+    }
 
     val exitCode = run(out.absoluteTargetDir, tscCmd, Map.empty, "tsc")
     exitCode == 0
   }
 
-  def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
-    val manifest = CSharpBuildManifest.example
+  def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], layout: CSharpProjectLayout, extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
+    val mf = CSharpBuildManifest.example
+    val manifest = mf.copy(layout = layout)
+
     val lang = IDLLanguage.CSharp
     val out = compiles(id, domains, CompilerOptions(lang, extensions, manifest))
-    val refsDir = out.absoluteTargetDir.resolve("refs")
 
-    IzFiles.recreateDirs(refsDir)
+    layout match {
+      case CSharpProjectLayout.NUGET =>
+        val cmdNuget = Seq("nuget", "pack", s"${CSharpLayouter.nuspecName(manifest)}")
+        val exitCodeBuild = run(out.targetDir, cmdNuget, Map.empty, "cs-nuget")
+        exitCodeBuild == 0
 
-    val refsSrc = s"refs/${lang.toString.toLowerCase()}"
-    val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
-      .filter(f => f.toFile.isFile && f.toString.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
-    IzResources.copyFromClasspath(refsSrc, out.phase2)
+      case CSharpProjectLayout.PLAIN =>
+        val refsDir = out.absoluteTargetDir.resolve("refs")
+
+        IzFiles.recreateDirs(refsDir)
+
+        val refsSrc = s"refs/${lang.toString.toLowerCase()}"
+        val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
+          .filter(f => f.toFile.isFile && f.toString.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
+        IzResources.copyFromClasspath(refsSrc, out.phase2)
 
 
-    val outname = "test-output.dll"
-    val refs = s"/reference:${refDlls.mkString(",")}"
-    val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase2Relative}/$outname", "-recurse:\\*.cs", refs)
-    val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
+        val outname = "test-output.dll"
+        val refs = s"/reference:${refDlls.mkString(",")}"
+        val cmdBuild = Seq("csc", "-target:library", s"-out:${out.phase2Relative}/$outname", "-recurse:\\*.cs", refs)
+        val exitCodeBuild = run(out.absoluteTargetDir, cmdBuild, Map.empty, "cs-build")
 
-    val cmdTest = Seq("nunit-console", outname)
-    val exitCodeTest = run(out.phase2, cmdTest, Map.empty, "cs-test")
+        val cmdTest = Seq("nunit-console", outname)
+        val exitCodeTest = run(out.phase2, cmdTest, Map.empty, "cs-test")
 
-    exitCodeBuild == 0 && exitCodeTest == 0
+        exitCodeBuild == 0 && exitCodeTest == 0
+
+    }
   }
 
-  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, repoLayout: Boolean): Boolean = {
-    val manifest = GoLangBuildManifest.example.copy(
-      useRepositoryFolders = repoLayout
-    )
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], layout: GoProjectLayout, extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
+    val mf = GoLangBuildManifest.example
+    val manifest = mf.copy(layout = layout)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
     val outDir = out.absoluteTargetDir
 
@@ -154,8 +176,8 @@ object IDLTestTools {
 
     val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
     val goSrc = out.absoluteTargetDir.resolve("src")
-    if (manifest.dependencies.nonEmpty) {
-      manifest.dependencies.foreach(md => {
+    if (manifest.repository.dependencies.nonEmpty) {
+      manifest.repository.dependencies.foreach(md => {
         run(goSrc, Seq("go", "get", md.module), env, "go-dep-install")
       })
     }
