@@ -12,4 +12,8 @@ trait Planner {
   def finish(semiPlan: SemiPlan): OrderedPlan
 
   def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
+
+  final def plan(input: ModuleBase): OrderedPlan = {
+    plan(PlannerInput(input))
+  }
 }
