@@ -141,11 +141,11 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       case d: RawTypeDef.Identifier =>
         val typedFields = d.fields.map {
           case f if isIdPrimitive(f.typeId) =>
-            IdField.PrimitiveField(toIdPrimitive(f.typeId), f.name, fixMeta(f.meta))
+            IdField.PrimitiveField(toIdPrimitive(f.typeId), idNameFix(f, d.fields.size), fixMeta(f.meta))
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[IdentifierId]) =>
-            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), f.name, fixMeta(f.meta))
+            IdField.SubId(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[IdentifierId]), idNameFix(f, d.fields.size), fixMeta(f.meta))
           case f if mapping.get(toIndefinite(f.typeId)).exists(_.isInstanceOf[EnumId]) =>
-            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), f.name, fixMeta(f.meta))
+            IdField.Enum(fixSimpleId(makeDefinite(f.typeId).asInstanceOf[TypeId.EnumId]), idNameFix(f, d.fields.size), fixMeta(f.meta))
           case f =>
             throw new IDLException(s"[$domainId] Unsupporeted ID field $f while handling ${d.id} You may use primitive fields, enums or other IDs only")
         }
@@ -183,6 +183,23 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
       case RawTypeDef.ForeignType(id, _, _) =>
         throw new IDLException(s"[$domainId] TODO: foreign type isn't supported yet for $id")
+    }
+  }
+
+  private def idNameFix(f: RawField, fieldsCount: Int) = {
+    f.name match {
+      case Some(value) =>
+        value
+      case None if fieldsCount == 1 =>
+        "value"
+      case None =>
+        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        val name = fixId[AbstractIndefiniteId, TypeId](f.typeId).name.uncapitalize
+        if (name.startsWith("#")) {
+          name.substring(1)
+        } else {
+          name
+        }
     }
   }
 
@@ -297,7 +314,8 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
   }
 
   protected def fixFields(fields: RawTuple): typed.Tuple = {
-    fields.map(f => typed.Field(name = f.name, typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta)))
+    fields.map{f =>
+      typed.Field(name = idNameFix(f, fields.size), typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta))}
   }
 
   protected def fixMethod(method: RawMethod): typed.DefMethod = {

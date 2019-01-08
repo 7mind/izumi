@@ -9,6 +9,19 @@ data TestDto {
   _ : TestMixin
 }
 
+data TestDto1 {
+  : TestMixin
+}
+
+id TestId {
+  _ : str
+}
+
+id TestId1 {
+  : str
+}
+
+
 
 data TestOneliners { _: TestDto, _: str, _: i08 }
 

@@ -92,7 +92,11 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
   }
 
   private def isParent(typeId: TypeId, maybeParent: TypeId): Boolean = {
-    ts.inheritance.parentsInherited(typeId).contains(maybeParent)
+    if (typeId.isInstanceOf[Primitive] || maybeParent.isInstanceOf[Primitive]) {
+      typeId == maybeParent
+    } else {
+      ts.inheritance.parentsInherited(typeId).contains(maybeParent)
+    }
   }
 
   def conversions(id: InterfaceId): List[ConverterDef] = {

@@ -49,4 +49,23 @@ trait TranslationLayouter {
         ExtendedModule.RuntimeModule(module.copy(id = module.id.copy(path = prefix ++ module.id.path)))
     }
   }
+
+  protected def baseProjectId(did: DomainId, drop: Option[Int], postfix: Seq[String]): Seq[String] = {
+    val pkg = did.toPackage
+    val parts = drop.getOrElse(0) match {
+      case v if v < 0 =>
+        pkg.takeRight(-v)
+      case 0 =>
+        Seq(pkg.last)
+      case v =>
+        pkg.drop(v) match {
+          case Nil =>
+            Seq(pkg.last)
+          case shortened =>
+            shortened
+        }
+    }
+    parts ++ postfix
+  }
+
 }

@@ -60,7 +60,7 @@ protected[typespace] class InheritanceQueriesImpl(ts: Typespace) extends Inherit
         List()
 
       case e: Builtin =>
-        throw new IDLException(s"Unexpected id: $e")
+        throw new IDLException(s"Unexpected parent id for $id: $e")
     }
   }
 

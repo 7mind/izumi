@@ -112,21 +112,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
   }
 
   private def projectId(did: DomainId): String = {
-    val pkg = did.toPackage
-    val parts = options.manifest.sbt.dropFQNSegments.getOrElse(0) match {
-      case v if v < 0 =>
-        pkg.takeRight(-v)
-      case 0 =>
-        Seq(pkg.last)
-      case v =>
-        pkg.drop(v) match {
-          case Nil =>
-            Seq(pkg.last)
-          case shortened =>
-            shortened
-        }
-    }
-    (parts ++ options.manifest.sbt.projectIdPostfix.toSeq).mkString("-").toLowerCase()
+    baseProjectId(did, options.manifest.sbt.dropFQNSegments, options.manifest.sbt.projectIdPostfix.toSeq).mkString("-").toLowerCase()
   }
 
   private def renderVersion(version: ProjectVersion): String = {

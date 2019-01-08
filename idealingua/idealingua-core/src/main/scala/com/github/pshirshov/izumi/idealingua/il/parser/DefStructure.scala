@@ -1,14 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDNewtype
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
@@ -19,13 +18,13 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   import context._
 
-  def field[_: P]: P[RawField] = P(metaAgg.withMeta((ids.symbol | P("_").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric))
+  def field[_: P]: P[RawField] = P(metaAgg.withMeta((ids.symbol | P("_" | "").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric))
     .map {
       case (meta, (name, tpe)) if name.isEmpty =>
-        defns.RawField(tpe, tpe.name.uncapitalize, meta)
+        defns.RawField(tpe, None, meta)
 
       case (meta, (name, tpe)) =>
-        defns.RawField(tpe, name, meta)
+        defns.RawField(tpe, Some(name), meta)
     }
 
   object Struct {
