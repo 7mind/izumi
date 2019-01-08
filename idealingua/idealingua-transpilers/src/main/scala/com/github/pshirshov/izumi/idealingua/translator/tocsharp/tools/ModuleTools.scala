@@ -70,7 +70,7 @@ class ModuleTools() {
          |
          |#endif
        """.stripMargin
-    Seq(Module(moduleId, text))
+    Seq(Module(moduleId, text, Map("scope" -> "test")))
   }
 
   def toTestModuleId(id: TypeId, prefix: Option[String] = None): ModuleId = {
