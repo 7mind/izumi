@@ -195,7 +195,6 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       case None =>
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
         val name = fixId[AbstractIndefiniteId, TypeId](f.typeId).name.uncapitalize
-        println(name)
         if (name.startsWith("#")) {
           name.substring(1)
         } else {
