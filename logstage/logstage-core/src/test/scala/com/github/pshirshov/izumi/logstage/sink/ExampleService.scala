@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.logstage.sink
 import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import logstage.LogF
+import logstage.LogIO
 
 import scala.util.Random
 
@@ -48,7 +48,7 @@ class ExampleService(logger: IzLogger) {
       override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
     }
 
-    val logF = LogF.fromLogger(logger)
+    val logF = LogIO.fromLogger(logger)
     val suspended = logF.crit("Suspended message: clap your hands!")
 
     logger.crit("This should appear before the suspended message!")

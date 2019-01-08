@@ -27,27 +27,27 @@ package object logstage extends LogStage {
   override final val Error: api.Log.Level.Error.type = api.Log.Level.Error
   override final val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
 
-  type Log2[F[_, _]] = LogF[F[Nothing, ?]]
-  object Log2 {
-    def apply[F[_, _]: Log2]: Log2[F] = implicitly
+  type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
+  object LogBIO {
+    def apply[F[_, _]: LogBIO]: LogBIO[F] = implicitly
 
-    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): Log2[F] = {
-      LogF.fromLogger(logger)
+    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): LogBIO[F] = {
+      LogIO.fromLogger(logger)
     }
   }
 
-  type UnsafeLog2[F[_, _]] = UnsafeLogF[F[Nothing, ?]]
-  object UnsafeLog2 {
-    def apply[F[_, _]: UnsafeLog2]: UnsafeLog2[F] = implicitly
+  type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
+  object UnsafeLogBIO {
+    def apply[F[_, _]: UnsafeLogBIO]: UnsafeLogBIO[F] = implicitly
 
-    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): UnsafeLog2[F] = {
-      UnsafeLogF.fromLogger(logger)
+    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): UnsafeLogBIO[F] = {
+      UnsafeLogIO.fromLogger(logger)
     }
   }
 
-  type LogInfo2[F[_, _]] = LogInfoF[F[Nothing, ?]]
-  object LogInfo2 {
-    def apply[F[_, _]: LogInfo2]: LogInfo2[F] = implicitly
+  type LogInfoBIO[F[_, _]] = LogInfoIO[F[Nothing, ?]]
+  object LogInfoBIO {
+    def apply[F[_, _]: LogInfoBIO]: LogInfoBIO[F] = implicitly
   }
 
 }
