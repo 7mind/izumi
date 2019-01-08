@@ -179,7 +179,7 @@ object CommandlineIDLCompiler {
       case Some(Right(value)) =>
         value
       case Some(Left(e)) =>
-        shutdown.shutdown(s"Failed to parse version overlay: ${e.getMessage()}")
+        shutdown.shutdown(s"Failed to parse version overlay: ${e.getMessage}")
       case None =>
         JsonObject.empty.asJson
     }

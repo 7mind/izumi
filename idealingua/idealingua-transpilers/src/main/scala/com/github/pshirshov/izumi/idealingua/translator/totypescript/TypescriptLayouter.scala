@@ -109,7 +109,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
             "workspaces": {
               "packages": [${s"packages/${mf.yarn.scope}/*"}],
               "scripts": {
-                "build": "tsc",
+                "build": "tsc"
               }
             }
           }"""
