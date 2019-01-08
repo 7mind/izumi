@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, GoProjectLayout}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.GoTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
 
@@ -9,7 +9,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
 
   override def layout(outputs: Seq[Translated]): Layouted = {
-    val scoped = options.manifest.useRepositoryFolders
+    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
 
     val modules = outputs.flatMap {
       out =>

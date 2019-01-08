@@ -4,8 +4,6 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest._
 
 trait BuildManifest {
   def common: Common
-
-  def dependencies: List[ManifestDependency]
 }
 
 case class ProjectVersion(version: String, release: Boolean, snapshotQualifier: String)

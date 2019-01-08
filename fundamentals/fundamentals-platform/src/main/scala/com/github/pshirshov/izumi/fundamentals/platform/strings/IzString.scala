@@ -82,6 +82,22 @@ class IzString(s: String) {
     })
   }
 
+  def splitFirst(separator: Char): (String, String) = {
+    s.indexOf(separator.toInt) match {
+      case -1 => ("", s)
+      case idx =>
+        (s.substring(0, idx), s.substring(idx+1, s.length))
+    }
+  }
+
+  def splitLast(separator: Char): (String, String) = {
+    s.lastIndexOf(separator.toInt) match {
+      case -1 => ("", s)
+      case idx =>
+        (s.substring(0, idx), s.substring(idx+1, s.length))
+    }
+  }
+
 }
 
 class IzIterable[A](s: Iterable[A]) {

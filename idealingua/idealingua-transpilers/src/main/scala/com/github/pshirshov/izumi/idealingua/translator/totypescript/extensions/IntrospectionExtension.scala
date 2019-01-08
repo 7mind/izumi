@@ -65,7 +65,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
 
   private def irtImportPath(ctx: TSTContext, id: TypeId): String = {
     if (ctx.manifest.layout == TypeScriptProjectLayout.YARN) {
-      s"${ctx.manifest.scope}/irt"
+      s"${ctx.manifest.yarn.scope}/irt"
     } else {
       id.path.toPackage.map(_ => "..").mkString("/") + "/irt"
     }

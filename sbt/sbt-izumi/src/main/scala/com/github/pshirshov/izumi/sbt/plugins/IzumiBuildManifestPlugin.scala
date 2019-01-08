@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import sbt.Keys._
 import sbt.internal.util.ConsoleLogger
-import sbt.{AutoPlugin, Compile, Def, Package, PackageOption, PluginTrigger, settingKey, taskKey}
+import sbt.{AutoPlugin, Compile, Def, Package, PackageOption, PluginTrigger, taskKey}
 
 object IzumiBuildManifestPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()

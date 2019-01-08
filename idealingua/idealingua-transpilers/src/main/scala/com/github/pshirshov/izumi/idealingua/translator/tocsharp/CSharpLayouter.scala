@@ -15,14 +15,14 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
     s"""<?xml version="1.0"?>
        |<package >
        |    <metadata>
-       |        <id>${manifest.id}</id>
+       |        <id>${manifest.nuget.id}</id>
        |        <version>${renderVersion(manifest.common.version)}</version>
        |        <authors>${manifest.common.publisher.name}</authors>
        |        <owners>${manifest.common.publisher.id}</owners>
        |        <licenseUrl>${manifest.common.licenses.head.url.url}</licenseUrl>
        |        <projectUrl>${manifest.common.website.url}</projectUrl>
-       |        <iconUrl>${manifest.iconUrl}</iconUrl>
-       |        <requireLicenseAcceptance>${if (manifest.requireLicenseAcceptance) "true" else "false"}</requireLicenseAcceptance>
+       |        <iconUrl>${manifest.nuget.iconUrl}</iconUrl>
+       |        <requireLicenseAcceptance>${if (manifest.nuget.requireLicenseAcceptance) "true" else "false"}</requireLicenseAcceptance>
        |        <releaseNotes>${manifest.common.releaseNotes}</releaseNotes>
        |        <description>${manifest.common.description}</description>
        |        <copyright>${manifest.common.copyright}</copyright>

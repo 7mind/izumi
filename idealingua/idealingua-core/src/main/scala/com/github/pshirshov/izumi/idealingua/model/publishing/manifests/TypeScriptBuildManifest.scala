@@ -13,18 +13,35 @@ object TypeScriptProjectLayout {
 
 }
 
+case class YarnOptions(
+                        scope: String,
+
+                        /** This one only works with scoped namespaces, this way you can
+                          * get rid of @scope/net-company-project and use @scope/project
+                          * by using dropnameSpaceSegments = Some(2)
+                          */
+                        dropFQNSegments: Option[Int],
+                        dependencies: List[ManifestDependency],
+                      )
+
+object YarnOptions {
+  def example: YarnOptions = YarnOptions(
+    dependencies = List(
+      ManifestDependency("moment", "^2.20.1"),
+      ManifestDependency("@types/node", "^10.7.1"),
+      ManifestDependency("@types/websocket", "0.0.39"),
+    ),
+    scope = "@TestScope",
+    dropFQNSegments = None,
+  )
+}
+
 // https://docs.npmjs.com/files/package.json
 // https://github.com/npm/node-semver#prerelease-tags
 case class TypeScriptBuildManifest(
                                     common: Common,
-                                    dependencies: List[ManifestDependency],
-                                    scope: String,
                                     layout: TypeScriptProjectLayout,
-                                    /** This one only works with scoped namespaces, this way you can
-                                      * get rid of @scope/net-company-project and use @scope/project
-                                      * by using dropnameSpaceSegments = Some(2)
-                                      */
-                                    dropFQNSegments: Option[Int],
+                                    yarn: YarnOptions
                                   ) extends BuildManifest
 
 object TypeScriptBuildManifest {
@@ -32,14 +49,8 @@ object TypeScriptBuildManifest {
     val common = BuildManifest.Common.example
     TypeScriptBuildManifest(
       common = common.copy(version = common.version.copy(snapshotQualifier = "build.0")),
-      dependencies = List(
-        ManifestDependency("moment", "^2.20.1"),
-        ManifestDependency("@types/node", "^10.7.1"),
-        ManifestDependency("@types/websocket", "0.0.39"),
-      ),
-      scope = "@TestScope",
       layout = TypeScriptProjectLayout.YARN,
-      dropFQNSegments = None
+      yarn = YarnOptions.example,
     )
   }
 }

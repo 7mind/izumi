@@ -77,7 +77,8 @@ object IDLTestTools {
   }
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
-    val manifest = ScalaBuildManifest.example.copy(layout = ScalaProjectLayout.SBT, dropFQNSegments = Some(2))
+    val mf = ScalaBuildManifest.example
+    val manifest = mf.copy(layout = ScalaProjectLayout.SBT, sbt = mf.sbt.copy(dropFQNSegments = Some(2)))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
@@ -141,9 +142,13 @@ object IDLTestTools {
   }
 
   def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions, repoLayout: Boolean): Boolean = {
-    val manifest = GoLangBuildManifest.example.copy(
-      useRepositoryFolders = repoLayout
-    )
+    val mf = GoLangBuildManifest.example
+    val layout = if (repoLayout) {
+      GoProjectLayout.REPOSITORY
+    } else {
+      GoProjectLayout.PLAIN
+    }
+    val manifest = mf.copy(layout = layout)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
     val outDir = out.absoluteTargetDir
 
@@ -154,8 +159,8 @@ object IDLTestTools {
 
     val env = Map("GOPATH" -> out.absoluteTargetDir.toString)
     val goSrc = out.absoluteTargetDir.resolve("src")
-    if (manifest.dependencies.nonEmpty) {
-      manifest.dependencies.foreach(md => {
+    if (manifest.repository.dependencies.nonEmpty) {
+      manifest.repository.dependencies.foreach(md => {
         run(goSrc, Seq("go", "get", md.module), env, "go-dep-install")
       })
     }

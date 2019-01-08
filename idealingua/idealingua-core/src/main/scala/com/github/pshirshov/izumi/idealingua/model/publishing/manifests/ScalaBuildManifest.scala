@@ -6,29 +6,38 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Com
 
 case class ScalaBuildManifest(
                                common: Common,
-                               dependencies: List[ManifestDependency],
                                layout: ScalaProjectLayout,
-
-                               /**
-                                 * Positive value will work as .drop on fully qualified module name
-                                 * Zero value will leave name untouched
-                                 * Negative value will work as .takeRight
-                                 *
-                                 * Does not apply for layout == PLAIN
-                                 */
-                               dropFQNSegments: Option[Int],
-                               projectIdPostfix: Option[String],
+                               sbt: SbtOptions,
                              ) extends BuildManifest
+
+case class SbtOptions(
+                       /**
+                         * Positive value will work as .drop on fully qualified module name
+                         * Zero value will leave name untouched
+                         * Negative value will work as .takeRight
+                         *
+                         * Does not apply for layout == PLAIN
+                         */
+                       dropFQNSegments: Option[Int],
+                       projectIdPostfix: Option[String],
+                     )
+
+object SbtOptions {
+  def example: SbtOptions = {
+    SbtOptions(
+      dropFQNSegments = Some(0),
+      projectIdPostfix = Some("api"),
+    )
+  }
+}
 
 object ScalaBuildManifest {
   def example: ScalaBuildManifest = {
     val common = BuildManifest.Common.example
     ScalaBuildManifest(
       common = common.copy(version = common.version.copy(snapshotQualifier = "SNAPSHOT")),
-      dependencies = List.empty,
       layout = ScalaProjectLayout.SBT,
-      dropFQNSegments = Some(0),
-      projectIdPostfix = Some("api"),
+      sbt = SbtOptions.example,
     )
   }
 }

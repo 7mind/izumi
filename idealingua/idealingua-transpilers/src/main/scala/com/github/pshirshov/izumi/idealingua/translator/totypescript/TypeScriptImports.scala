@@ -64,9 +64,9 @@ object TypeScriptImports {
   protected def withImport(t: TypeId, fromPackage: Package, manifest: TypeScriptBuildManifest): Seq[String] = {
     var pathToRoot = ""
     (1 to (if(manifest.layout == TypeScriptProjectLayout.YARN &&
-      manifest.dropFQNSegments.isDefined) fromPackage.size - manifest.dropFQNSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
+      manifest.yarn.dropFQNSegments.isDefined) fromPackage.size - manifest.yarn.dropFQNSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
 
-    val scopeRoot = if (manifest.layout == TypeScriptProjectLayout.YARN) manifest.scope + "/" else pathToRoot
+    val scopeRoot = if (manifest.layout == TypeScriptProjectLayout.YARN) manifest.yarn.scope + "/" else pathToRoot
 
     t match {
       case g: Generic => g match {
@@ -118,8 +118,8 @@ object TypeScriptImports {
     var importFile = ""
 
     if (srcPkg.nonEmpty && manifest.layout == TypeScriptProjectLayout.YARN) {
-      importOffset = manifest.scope + "/" +
-        (if (manifest.dropFQNSegments.isDefined) t.path.toPackage.drop(manifest.dropFQNSegments.get) else t.path.toPackage).mkString("-")
+      importOffset = manifest.yarn.scope + "/" +
+        (if (manifest.yarn.dropFQNSegments.isDefined) t.path.toPackage.drop(manifest.yarn.dropFQNSegments.get) else t.path.toPackage).mkString("-")
       importFile = importOffset
     } else {
       if (srcPkg.nonEmpty) {

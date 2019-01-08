@@ -39,6 +39,19 @@ class IzStringTest extends WordSpec {
       assert("com.github.izumi.Class".minimize(1) == "c.g.i.Class")
       assert("com.github.izumi.Class".minimize(2) == "c.g.izumi.Class")
     }
+
+    "support splitFirst" in {
+      assert("=1=2".splitFirst('=') == ("" -> "1=2"))
+      assert("1=".splitFirst('=') == ("1" -> ""))
+      assert("key=value=xxx".splitFirst('=') == ("key" -> "value=xxx"))
+    }
+
+    "support splitLast" in {
+      assert("=1=2".splitLast('=') == ("=1" -> "2"))
+      assert("1=".splitLast('=') == ("1" -> ""))
+      assert("key=value=xxx".splitLast('=') == ("key=value" -> "xxx"))
+    }
+
   }
 
 

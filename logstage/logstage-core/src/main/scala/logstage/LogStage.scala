@@ -2,7 +2,6 @@ package logstage
 
 import com.github.pshirshov.izumi.logstage.{api, sink}
 
-import scala.language.implicitConversions
 
 trait LogStage {
   type IzLogger = api.IzLogger

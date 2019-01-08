@@ -886,7 +886,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
     var importOffset = ""
     (1 to pkg.length).foreach(_ => importOffset += "../")
     if (manifest.layout == TypeScriptProjectLayout.YARN) {
-      importOffset = manifest.scope + "/"
+      importOffset = manifest.yarn.scope + "/"
     }
 
     s"""import {
