@@ -87,7 +87,11 @@ object IzumiPublishingPlugin extends AutoPlugin {
       }
 
       def filter(targets: Option[MavenTarget]*): Seq[MavenTarget] = {
-        targets.flatMap(_.toSeq)
+        val out = targets.flatMap(_.toSeq)
+        if (out.isEmpty) {
+          logger.warn(s"All repositories were filtered out!")
+        }
+        out
       }
 
       def env(prefix: String, url: String): Option[MavenTarget] = {
