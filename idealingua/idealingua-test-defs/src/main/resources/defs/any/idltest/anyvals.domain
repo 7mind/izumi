@@ -26,7 +26,7 @@ data Test00Data1AnyVal {
 
 data Test00Data2AnyVal {
   + Test00Data1AnyVal
-  _: i08
+  someInt: i08
 }
 
 
@@ -37,12 +37,12 @@ mixin Test01MixinAnyVal {
 
 data Test01DataAnyVal1 {
   & Test01MixinAnyVal
-  _: i08
+  someInt: i08
 }
 
 data Test01DataAnyVal2 {
   + Test01MixinAnyVal
-  _: i08
+  someInt: i08
 }
 
 //
