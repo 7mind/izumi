@@ -22,7 +22,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
 
   private def buildNugetProject(withRt: Seq[ExtendedModule]): Seq[ExtendedModule] = {
     // TODO: this is a dummy implementation, it does produce per-domain artifacts
-    val nuspec = generateNuspec(options.manifest, List("src//**"))
+    val nuspec = generateNuspec(options.manifest, List("src/**"))
     val nuspecName = CSharpLayouter.nuspecName(options.manifest)
     val nuspecModule = ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, nuspecName), nuspec))
     addPrefix(withRt, Seq("src")) ++ Seq(nuspecModule)

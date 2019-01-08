@@ -22,7 +22,7 @@ case class NugetOptions(
 object NugetOptions {
   def example: NugetOptions = NugetOptions(
     id = "test-library",
-    iconUrl = "",
+    iconUrl = "https://raw.githubusercontent.com/pshirshov/izumi-r2/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png",
     requireLicenseAcceptance = false,
   )
 }
