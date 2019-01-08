@@ -20,8 +20,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val withLayout = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       val inSubdir = modules
-      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), options.manifest.yarn.scope)
-      addPrefix(inSubdir ++ inRtSubdir, "packages") ++ buildRootModules(options.manifest)
+      val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), Seq(options.manifest.yarn.scope))
+      addPrefix(inSubdir ++ inRtSubdir, Seq("packages")) ++ buildRootModules(options.manifest)
     } else {
       modules ++ rt ++ buildRootModules(options.manifest)
     }
@@ -53,14 +53,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
 
-  private def addPrefix(rt: Seq[ExtendedModule], prefix: String): Seq[ExtendedModule] = {
-    rt.map {
-      case ExtendedModule.DomainModule(domain, module) =>
-        ExtendedModule.DomainModule(domain, module.copy(id = module.id.copy(path = prefix +: module.id.path)))
-      case ExtendedModule.RuntimeModule(module) =>
-        ExtendedModule.RuntimeModule(module.copy(id = module.id.copy(path = prefix +: module.id.path)))
-    }
-  }
+
 
   private def buildRootModules(mf: TypeScriptBuildManifest): Seq[ExtendedModule.RuntimeModule] = {
     val rootDir = if (mf.layout == TypeScriptProjectLayout.YARN) {
@@ -107,10 +100,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       json"""{
             "private": true,
             "workspaces": {
-              "packages": [${s"packages/${mf.yarn.scope}/*"}],
-              "scripts": {
-                "build": "tsc"
-              }
+              "packages": [${s"packages/${mf.yarn.scope}/*"}]
+            },
+            "scripts": {
+              "build": "tsc"
             }
           }"""
     val fullRootJson = packageJson.deepMerge(rootJson)

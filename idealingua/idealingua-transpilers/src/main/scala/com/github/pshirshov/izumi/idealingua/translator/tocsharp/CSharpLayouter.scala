@@ -1,17 +1,35 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp
 
+import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, CSharpProjectLayout}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator.{Layouted, Translated, TranslationLayouter}
+import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
 
 class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayouter {
   override def layout(outputs: Seq[Translated]): Layouted = {
-    Layouted(withRuntime(options, outputs))
+    val withRt = withRuntime(options, outputs)
+    val layouted = options.manifest.layout match {
+      case CSharpProjectLayout.NUGET =>
+        buildNugetProject(withRt)
+
+      case CSharpProjectLayout.PLAIN =>
+        withRt
+
+    }
+    Layouted(layouted)
   }
 
-  // TODO: this is not in use for now
-  def generateNuspec(manifest: CSharpBuildManifest, filesFolder: List[String] = List("csharp\\**")): String = {
+  private def buildNugetProject(withRt: Seq[ExtendedModule]): Seq[ExtendedModule] = {
+    // TODO: this is a dummy implementation, it does produce per-domain artifacts
+    val nuspec = generateNuspec(options.manifest, List("src//**"))
+    val nuspecName = CSharpLayouter.nuspecName(options.manifest)
+    val nuspecModule = ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, nuspecName), nuspec))
+    addPrefix(withRt, Seq("src")) ++ Seq(nuspecModule)
+  }
+
+  private def generateNuspec(manifest: CSharpBuildManifest, filesFolder: List[String]): String = {
+    // TODO: use safe xml builder
     s"""<?xml version="1.0"?>
        |<package >
        |    <metadata>
@@ -22,7 +40,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
        |        <licenseUrl>${manifest.common.licenses.head.url.url}</licenseUrl>
        |        <projectUrl>${manifest.common.website.url}</projectUrl>
        |        <iconUrl>${manifest.nuget.iconUrl}</iconUrl>
-       |        <requireLicenseAcceptance>${if (manifest.nuget.requireLicenseAcceptance) "true" else "false"}</requireLicenseAcceptance>
+       |        <requireLicenseAcceptance>${manifest.nuget.requireLicenseAcceptance}</requireLicenseAcceptance>
        |        <releaseNotes>${manifest.common.releaseNotes}</releaseNotes>
        |        <description>${manifest.common.description}</description>
        |        <copyright>${manifest.common.copyright}</copyright>
@@ -31,7 +49,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
        |        </dependencies>
        |     </metadata>
        |    <files>
-       |${filesFolder.map(ff => s"""        <file src="$ff" target="build" />""")}
+       |${filesFolder.map(ff => s"""        <file src="$ff" target="build" />""").mkString("\n")}
        |    </files>
        |</package>
      """.stripMargin
@@ -40,4 +58,13 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
   private def renderVersion(version: ProjectVersion): String = {
     version.version
   }
+}
+
+object CSharpLayouter {
+  protected[idealingua] def nuspecName(mf: CSharpBuildManifest): String = {
+    val baseid = mf.nuget.id.replace(".", "-")
+    val nuspecName = s"$baseid.nuspec"
+    nuspecName
+  }
+
 }

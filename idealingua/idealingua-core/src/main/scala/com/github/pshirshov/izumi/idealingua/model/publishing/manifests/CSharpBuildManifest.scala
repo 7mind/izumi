@@ -34,6 +34,7 @@ case class CSharpBuildManifest(
                                 common: Common,
                                 dependencies: List[ManifestDependency],
                                 nuget: NugetOptions,
+                                layout: CSharpProjectLayout,
                               ) extends BuildManifest
 
 object CSharpBuildManifest {
@@ -41,5 +42,6 @@ object CSharpBuildManifest {
     common = BuildManifest.Common.example,
     dependencies = List.empty,
     nuget = NugetOptions.example,
+    layout = CSharpProjectLayout.NUGET,
   )
 }
