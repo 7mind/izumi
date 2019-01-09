@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.translator
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.Module
+import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
 
 sealed trait ExtendedModule {
   def module: Module
@@ -68,4 +69,13 @@ trait TranslationLayouter {
     parts ++ postfix
   }
 
+  protected def renderVersion(version: ProjectVersion): String = {
+    val baseVersion = version.version
+
+    if (version.release) {
+      baseVersion
+    } else {
+      s"$baseVersion-${version.snapshotQualifier}"
+    }
+  }
 }

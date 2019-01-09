@@ -115,14 +115,6 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
     baseProjectId(did, options.manifest.sbt.dropFQNSegments, options.manifest.sbt.projectIdPostfix.toSeq).mkString("-").toLowerCase()
   }
 
-  private def renderVersion(version: ProjectVersion): String = {
-    val baseVersion = version.version
 
-    if (version.release) {
-      baseVersion
-    } else {
-      s"$baseVersion-${version.snapshotQualifier}"
-    }
-  }
 }
 

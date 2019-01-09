@@ -28,25 +28,28 @@ case class NugetOptions(
                          dropFQNSegments: Option[Int],
                          projectIdPostfix: Option[String],
                          dependencies: List[ManifestDependency],
+                         testDependencies: List[ManifestDependency],
                        )
 
 object NugetOptions {
   def example: NugetOptions = NugetOptions(
-    id = "test-library",
+    id = "Company.Example.Library",
     iconUrl = "https://raw.githubusercontent.com/pshirshov/izumi-r2/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png",
     requireLicenseAcceptance = false,
     dropFQNSegments = Some(-1),
     projectIdPostfix = Some("api"),
-    dependencies = List.empty,
+    dependencies = List(
+      ManifestDependency("WebSocketSharp", "1.0.3-rc11"),
+      ManifestDependency("Newtonsoft.Json", "12.0.1"),
+    ),
+    testDependencies = List(
+      ManifestDependency("NUnit", "3.11.0"),
+    ),
   )
 }
 
-
-// https://docs.microsoft.com/en-us/nuget/reference/nuspec
-// https://docs.microsoft.com/en-us/nuget/reference/package-versioning
 case class CSharpBuildManifest(
                                 common: Common,
-                                dependencies: List[ManifestDependency],
                                 nuget: NugetOptions,
                                 layout: CSharpProjectLayout,
                               ) extends BuildManifest
@@ -54,7 +57,6 @@ case class CSharpBuildManifest(
 object CSharpBuildManifest {
   def example = CSharpBuildManifest(
     common = BuildManifest.Common.example,
-    dependencies = List.empty,
     nuget = NugetOptions.example,
     layout = CSharpProjectLayout.NUGET,
   )

@@ -12,6 +12,8 @@ object GoProjectLayout {
 
   final case object PLAIN extends GoProjectLayout
 
+  // TODO: we would have to support go modules at ~ go 1.13: https://github.com/golang/go/wiki/Modules
+
 }
 
 case class GoRepositoryOptions(
