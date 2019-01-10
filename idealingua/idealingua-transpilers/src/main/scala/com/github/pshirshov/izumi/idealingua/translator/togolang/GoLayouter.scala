@@ -19,20 +19,23 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
     val allModules = modules ++ rtModules
 
-    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
-    val out = if (scoped) {
-      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split('/')
-      allModules.map {
-        case ExtendedModule.DomainModule(domain, module) =>
-          ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
-        case ExtendedModule.RuntimeModule(module) =>
-          ExtendedModule.RuntimeModule(withPrefix(module, prefix))
-      }
-    } else {
-      allModules
+    val out = options.manifest.layout match {
+      case GoProjectLayout.REPOSITORY =>
+        val prefix = GoLangBuildManifest.importPrefix(options.manifest).split('/')
+        allModules.map {
+          case ExtendedModule.DomainModule(domain, module) =>
+            ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
+          case ExtendedModule.RuntimeModule(module) =>
+            ExtendedModule.RuntimeModule(withPrefix(module, prefix))
+        }
+
+      case GoProjectLayout.PLAIN =>
+        allModules
+
     }
 
-    Layouted(allModules)
+
+    Layouted(out)
   }
 
   private def withPrefix(m: Module, prefix: Seq[String]): Module = Module(ModuleId(prefix ++ m.id.path, m.id.name), m.content)
