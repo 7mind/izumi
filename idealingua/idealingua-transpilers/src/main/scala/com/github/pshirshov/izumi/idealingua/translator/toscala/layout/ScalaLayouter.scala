@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
