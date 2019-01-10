@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.verification.Verifi
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.layout.TypescriptLayouter
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTranslatorOptions] {
   override def defaultManifest: BuildManifest = TypeScriptBuildManifest.example

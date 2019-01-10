@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectNamingRule}
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
 
 sealed trait TypeScriptProjectLayout
@@ -14,25 +14,24 @@ object TypeScriptProjectLayout {
 }
 
 case class YarnOptions(
+                        projectNaming: ProjectNamingRule,
                         scope: String,
-
-                        /** This one only works with scoped namespaces, this way you can
-                          * get rid of @scope/net-company-project and use @scope/project
-                          * by using dropnameSpaceSegments = Some(2)
-                          */
-                        dropFQNSegments: Option[Int],
                         dependencies: List[ManifestDependency],
+                        devDependencies: List[ManifestDependency],
                       )
 
 object YarnOptions {
   def example: YarnOptions = YarnOptions(
+    projectNaming = ProjectNamingRule.example,
     dependencies = List(
       ManifestDependency("moment", "^2.20.1"),
       ManifestDependency("@types/node", "^10.7.1"),
       ManifestDependency("@types/websocket", "0.0.39"),
     ),
+    devDependencies = List(
+      ManifestDependency("typescript", "3.2.2"),
+    ),
     scope = "@TestScope",
-    dropFQNSegments = None,
   )
 }
 

@@ -1,8 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.translator
 
+import com.github.pshirshov.izumi.idealingua.model.common
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectVersion
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion}
 
 sealed trait ExtendedModule {
   def module: Module
@@ -51,23 +52,6 @@ trait TranslationLayouter {
     }
   }
 
-  protected def baseProjectId(did: DomainId, drop: Option[Int], postfix: Seq[String]): Seq[String] = {
-    val pkg = did.toPackage
-    val parts = drop.getOrElse(0) match {
-      case v if v < 0 =>
-        pkg.takeRight(-v)
-      case 0 =>
-        Seq(pkg.last)
-      case v =>
-        pkg.drop(v) match {
-          case Nil =>
-            Seq(pkg.last)
-          case shortened =>
-            shortened
-        }
-    }
-    parts ++ postfix
-  }
 
   protected def renderVersion(version: ProjectVersion): String = {
     val baseVersion = version.version
@@ -78,4 +62,29 @@ trait TranslationLayouter {
       s"$baseVersion-${version.snapshotQualifier}"
     }
   }
+}
+
+class BaseNamingConvention(rule: ProjectNamingRule) {
+  def baseProjectId(did: DomainId): Seq[String] = {
+    val pkg = did.toPackage
+    baseProjectId(pkg)
+  }
+
+  def baseProjectId(pkg: common.Package): Seq[String] = {
+    val parts = rule.dropFQNSegments.getOrElse(0) match {
+      case v if v < 0 =>
+        pkg.takeRight(-v)
+      case 0 =>
+        pkg.lastOption.toSeq
+      case v =>
+        pkg.drop(v) match {
+          case Nil =>
+            pkg.lastOption.toSeq
+          case shortened =>
+            shortened
+        }
+    }
+    rule.prefix ++ parts ++ rule.postfix
+  }
+
 }

@@ -4,12 +4,14 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
+import com.github.pshirshov.izumi.idealingua.translator._
 
 case class RawExpr(e: String)
 
 
 class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter {
+  private val naming = new ScalaNamingConvention(options.manifest.sbt.projectNaming)
+
   override def layout(outputs: Seq[Translated]): Layouted = {
     val modules = options.manifest.layout match {
       case ScalaProjectLayout.PLAIN =>
@@ -33,7 +35,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val projects = outputs
           .map {
             out =>
-              projectId(out.typespace.domain.id) -> out
+              naming.projectId(out.typespace.domain.id) -> out
           }
           .toMap
 
@@ -43,7 +45,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
           .map {
             id =>
               val d = projects(id)
-              val deps = d.typespace.domain.meta.directImports.map(i => s"`${projectId(i.id)}`")
+              val deps = d.typespace.domain.meta.directImports.map(i => s"`${naming.projectId(i.id)}`")
 
               val depends = if (deps.nonEmpty) {
                 deps.mkString("\n    .dependsOn(\n        ", ",\n        ", "\n    )")
@@ -54,12 +56,27 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
               s"""lazy val `$id` = (project in file("$id"))$depends"""
           }
 
+        val bundleId = naming.bundleId
+        val rootId = naming.pkgId
+
         val agg =
           s"""
-             |lazy val root = (project in file("."))
+             |lazy val `$rootId` = (project in file("."))
              |  .aggregate(
-             |    ${projIds.map(id => s"`$id`").mkString(",\n    ")}
+             |    ${(projIds ++ Seq(bundleId)).map(id => s"`$id`").mkString(",\n    ")}
              |  )
+         """.stripMargin
+
+        val allDeps = projIds.map(i => s"`$i`")
+        val depends = if (allDeps.nonEmpty) {
+          allDeps.mkString("\n    .dependsOn(\n        ", ",\n        ", "\n    )")
+        } else {
+          ""
+        }
+
+        val bundle =
+          s"""
+             |lazy val `$bundleId` = (project in file("$bundleId"))$depends
          """.stripMargin
 
         import SbtDslOp._
@@ -90,7 +107,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val renderer = new SbtRenderer()
         val keys = (metadata ++ resolvers ++ deps).map(renderer.renderOp)
 
-        val content = keys ++ projDefs ++ Seq(agg)
+        val content = keys ++ projDefs ++ Seq(bundle, agg)
 
         val sbtModules = Seq(
           ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "build.sbt"), content.map(_.trim).mkString("\n\n")))
@@ -105,13 +122,9 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
   private def asSbtModule(out: Seq[Module], did: DomainId): Seq[Module] = {
     out.map {
       m =>
-        val pid = projectId(did)
+        val pid = naming.projectId(did)
         m.copy(id = m.id.copy(path = Seq(pid, "src", "main", "scala") ++ m.id.path))
     }
-  }
-
-  private def projectId(did: DomainId): String = {
-    baseProjectId(did, options.manifest.sbt.dropFQNSegments, options.manifest.sbt.projectIdPostfix.toSeq).mkString("-").toLowerCase()
   }
 
 

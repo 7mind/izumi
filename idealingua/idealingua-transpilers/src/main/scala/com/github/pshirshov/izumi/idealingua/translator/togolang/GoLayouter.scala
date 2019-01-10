@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.translator.togolang
 
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{GoLangBuildManifest, GoProjectLayout}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.GoTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
 
@@ -9,7 +7,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
 
   override def layout(outputs: Seq[Translated]): Layouted = {
-    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
+
 
     val modules = outputs.flatMap {
       out =>
@@ -19,21 +17,22 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
     val allModules = modules ++ rtModules
 
-    val out = if (scoped) {
-      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split("/")
-      allModules.map {
-        case ExtendedModule.DomainModule(domain, module) =>
-          ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
-        case ExtendedModule.RuntimeModule(module) =>
-          ExtendedModule.RuntimeModule(withPrefix(module, prefix))
-      }
-    } else {
-      allModules
-    }
+//    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
+//    val out = if (scoped) {
+//      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split("/")
+//      allModules.map {
+//        case ExtendedModule.DomainModule(domain, module) =>
+//          ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
+//        case ExtendedModule.RuntimeModule(module) =>
+//          ExtendedModule.RuntimeModule(withPrefix(module, prefix))
+//      }
+//    } else {
+//      allModules
+//    }
 
-    Layouted(out)
+    Layouted(allModules)
   }
 
-  private def withPrefix(m: Module, prefix: Seq[String]): Module = Module(ModuleId(prefix ++ m.id.path, m.id.name), m.content)
+//  private def withPrefix(m: Module, prefix: Seq[String]): Module = Module(ModuleId(prefix ++ m.id.path, m.id.name), m.content)
 
 }

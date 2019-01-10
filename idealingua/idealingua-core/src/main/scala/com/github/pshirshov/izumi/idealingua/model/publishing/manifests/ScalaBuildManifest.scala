@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.Common
+import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectNamingRule}
 
 
 case class ScalaBuildManifest(
@@ -11,22 +11,13 @@ case class ScalaBuildManifest(
                              ) extends BuildManifest
 
 case class SbtOptions(
-                       /**
-                         * Positive value will work as .drop on fully qualified module name
-                         * Zero value will leave name untouched
-                         * Negative value will work as .takeRight
-                         *
-                         * Does not apply for layout == PLAIN
-                         */
-                       dropFQNSegments: Option[Int],
-                       projectIdPostfix: Option[String],
+                       projectNaming: ProjectNamingRule,
                      )
 
 object SbtOptions {
   def example: SbtOptions = {
     SbtOptions(
-      dropFQNSegments = Some(0),
-      projectIdPostfix = Some("api"),
+      projectNaming = ProjectNamingRule.example,
     )
   }
 }
