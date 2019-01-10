@@ -22,7 +22,7 @@ sealed trait FSPath {
 object FSPath {
   final val separator = '/'
 
-  final case class Full(location: Seq[String], name: String) extends FSPath {
+  final case class Full private(location: Seq[String], name: String) extends FSPath {
     override def segments: Seq[String] = location :+ name
 
     override def asString: String = (location :+ name).mkString("/", "/", "")
@@ -32,7 +32,7 @@ object FSPath {
     override def toString: String = asString
   }
 
-  final case class Name(name: String) extends FSPath {
+  final case class Name private(name: String) extends FSPath {
     override def asString: String = name
 
     override def segments: Seq[String] = Seq(name)
@@ -45,7 +45,7 @@ object FSPath {
   def apply(pkg: Seq[String]): FSPath = {
     val path = pkg.init.dropWhile(_.isEmpty)
     val name = pkg.last
-    assert(path.forall(_.nonEmpty))
+    assert(path.forall(p => p.nonEmpty && !p.contains(separator)))
     assert(name.nonEmpty)
     if (path.nonEmpty) {
       FSPath.Full(path, name)
