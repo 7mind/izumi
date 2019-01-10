@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.Mani
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, CSharpProjectLayout}
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, TranslationLayouter}
-
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 /**
   * Directory structure:
@@ -41,6 +41,8 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
   private def buildNugetProject(outputs: Seq[Translated]): Seq[ExtendedModule] = {
     val rt = addPrefix(toRuntimeModules(options), Seq("src"))
     val irtId = s"${options.manifest.nuget.id}-IRT"
+    val pkgId = s"${options.manifest.nuget.id}"
+    val pkgIdTest = s"${options.manifest.nuget.id}-$testSuffix"
 
     val sources = outputs.flatMap {
       t =>
@@ -68,35 +70,74 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
 
     }
 
-    val everythingNuspecModule = mkBundle(outputs)
+    val everythingNuspecModule = mkBundle(outputs, pkgId)
 
-    val everythingNuspecModuleTest = mkTestBundle(outputs)
+    val everythingNuspecModuleTest = mkTestBundle(outputs, pkgId, pkgIdTest)
 
     val unifiedNuspecModule = mkNuspecModule(List("src/**", "tests/**"), withTests = true, s"${options.manifest.nuget.id}-Bundle", options.manifest)
     val irtModule = mkNuspecModule(List("src/IRT/**"), withTests = false, irtId, options.manifest)
 
-    rt ++ sources ++ Seq(unifiedNuspecModule, everythingNuspecModule, everythingNuspecModuleTest, irtModule)
+
+    val allIds = Seq(
+      irtId,
+      pkgId,
+    ) ++ outputs.map {
+      t =>
+        projectId(t.typespace.domain.id)
+    }
+
+
+    val packagesConfig = mkPackagesConfig(allIds)
+
+    rt ++ sources ++ Seq(unifiedNuspecModule, everythingNuspecModule, everythingNuspecModuleTest, irtModule) ++ packagesConfig
   }
 
 
+  private def mkPackagesConfig(allIds: Seq[String]): Seq[ExtendedModule.RuntimeModule] = {
+    val pkgConfigEntries = allIds.map(id => s"""<package id="$id" version="$mfVersion" />""")
+    val packagesConfig =
+      s"""<?xml version="1.0" encoding="utf-8"?>
+         |<packages>
+         |${pkgConfigEntries.mkString("\n").shift(2)}
+         |</packages>
+      """.stripMargin
 
-  private def mkBundle(outputs: Seq[Translated]): ExtendedModule = {
+    val projectEntries = allIds.map{
+      id =>
+        s"""<PackageReference Include="$id" Version="$mfVersion">
+           |  <PrivateAssets>all</PrivateAssets>
+           |</PackageReference>""".stripMargin
+    }
+
+    val importsProject =
+      s"""<?xml version="1.0" encoding="utf-8"?>
+         |<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+         |    <ItemGroup>
+         |${projectEntries.mkString("\n").shift(8)}
+         |    </ItemGroup>
+         |</Project>""".stripMargin
+
+    Seq(
+      ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "packages.config"), packagesConfig, Map.empty)),
+      ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, "references.csproj.import"), importsProject, Map.empty)),
+    )
+  }
+
+  private def mkBundle(outputs: Seq[Translated], pkgId: String): ExtendedModule = {
     val allModules = outputs.map {
       t =>
         ManifestDependency(projectId(t.typespace.domain.id), mfVersion)
     }
-    val pkgId = s"${options.manifest.nuget.id}"
     val pkgMf = options.manifest.copy(nuget = options.manifest.nuget.copy(dependencies = options.manifest.nuget.dependencies ++ allModules.toList))
     val everythingNuspecModule = mkNuspecModule(List.empty, withTests = false, pkgId, pkgMf)
     everythingNuspecModule
   }
 
-  private def mkTestBundle(outputs: Seq[Translated]): ExtendedModule = {
-    val allModulesTest = Seq(ManifestDependency(s"${options.manifest.nuget.id}", mfVersion)) ++ outputs.map {
+  private def mkTestBundle(outputs: Seq[Translated], pkgId: String, pkgIdTest: String): ExtendedModule = {
+    val allModulesTest = Seq(ManifestDependency(pkgId, mfVersion)) ++ outputs.map {
       t =>
         ManifestDependency(testProjectId(t.typespace.domain.id), mfVersion)
     }
-    val pkgIdTest = s"${options.manifest.nuget.id}-$testSuffix"
     val pkgMfTest = options.manifest.copy(nuget = options.manifest.nuget.copy(dependencies = options.manifest.nuget.dependencies ++ allModulesTest.toList))
     val everythingNuspecModuleTest = mkNuspecModule(List.empty, withTests = true, pkgIdTest, pkgMfTest)
     everythingNuspecModuleTest
@@ -162,7 +203,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
        |${allDependencies.map(d => s"""            <dependency id="${d.module}" version="${d.version}" />""").mkString("\n")}
        |        </dependencies>
        |        <contentFiles>
-       |${filesFolder.map(ff => s"""        <files include="**/*.cs" buildAction="Compile" copyToOutput="true" />""").mkString("\n")}
+       |          <files include="**/*.cs" buildAction="Compile" copyToOutput="false" />
        |        </contentFiles>
        |     </metadata>
        |    <files>
