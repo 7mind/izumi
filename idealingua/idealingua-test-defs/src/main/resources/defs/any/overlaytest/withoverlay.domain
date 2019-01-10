@@ -1,0 +1,11 @@
+domain overlaytest.withoverlay
+
+include "withoverlay.model"
+
+data Class1 {
+    _: Class3
+}
+
+data Class2 {
+    _: Class4
+}

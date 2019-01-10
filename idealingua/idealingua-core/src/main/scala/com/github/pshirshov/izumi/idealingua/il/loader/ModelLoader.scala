@@ -8,10 +8,6 @@ trait ModelLoader {
 }
 
 
-
-
-
-
-
-
-
+object ModelLoader {
+  final val overlayVirtualDir = "[overlays]"
+}

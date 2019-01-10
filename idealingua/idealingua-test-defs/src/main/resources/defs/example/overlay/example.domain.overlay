@@ -1,0 +1,4 @@
+data Email {
+  address  : str
+  verified : bit
+}

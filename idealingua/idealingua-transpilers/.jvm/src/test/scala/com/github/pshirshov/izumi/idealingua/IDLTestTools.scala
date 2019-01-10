@@ -50,7 +50,7 @@ object IDLTestTools {
 
   def makeLoader(base: String): LocalModelLoaderContext = {
     val src = new File(getClass.getResource(base).toURI).toPath
-    val context = new LocalModelLoaderContext(src, Seq.empty)
+    val context = new LocalModelLoaderContext(Seq(src), Seq.empty)
     context
   }
 

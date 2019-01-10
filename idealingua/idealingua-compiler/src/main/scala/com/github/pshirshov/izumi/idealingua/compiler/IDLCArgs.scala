@@ -16,6 +16,7 @@ case class LanguageOpts(
 
 case class IDLCArgs(
                      source: Path,
+                     overlay: Path,
                      target: Path,
                      languages: List[LanguageOpts],
                      init: Option[Path],
@@ -26,6 +27,7 @@ case class IDLCArgs(
 object IDLCArgs {
   def default: IDLCArgs = IDLCArgs(
     Paths.get("source")
+    , Paths.get("overlay")
     , Paths.get("target")
     , List.empty
     , None
@@ -58,6 +60,10 @@ object IDLCArgs {
     opt[File]('s', "source").optional().valueName("<dir>")
       .action((a, c) => c.copy(source = a.toPath))
       .text("source directory (default: `./source`)")
+
+    opt[File]('o', "overlay").optional().valueName("<dir>")
+      .action((a, c) => c.copy(overlay = a.toPath))
+      .text("overlay model (default: `./overlay`)")
 
     opt[File]('t', "target").optional().valueName("<dir>")
       .action((a, c) => c.copy(target = a.toPath))

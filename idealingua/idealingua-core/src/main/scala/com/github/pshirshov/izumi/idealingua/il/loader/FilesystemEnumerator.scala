@@ -17,7 +17,7 @@ object FilesystemEnumerator {
           val fspath = if (loc.isEmpty) {
             FSPath.Name(name)
           } else {
-            FSPath.Full(loc.mkString("/"), name)
+            FSPath.Full(loc, name)
           }
 
           fspath -> content

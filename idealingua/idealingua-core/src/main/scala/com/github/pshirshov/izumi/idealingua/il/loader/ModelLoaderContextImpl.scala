@@ -5,9 +5,11 @@ class ModelLoaderContextImpl(makeEnumerator: BaseModelLoadContext => FilesystemE
 
   val modelExt: String = ".model"
 
+  val overlayExt: String = ".overlay"
+
   val parser = new ModelParserImpl()
 
   val enumerator: FilesystemEnumerator = makeEnumerator(this)
 
-  val loader = new ModelLoaderImpl(enumerator, parser, modelExt, domainExt)
+  val loader = new ModelLoaderImpl(enumerator, parser, modelExt, domainExt, overlayExt)
 }

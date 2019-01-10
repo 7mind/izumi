@@ -1,0 +1,3 @@
+data Class3 {
+    _: str
+}
