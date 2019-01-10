@@ -1,6 +1,6 @@
 domain com.mycompany.example
 
-include 'email.model'
+include "email.model"
 
 data User {
   name: str
