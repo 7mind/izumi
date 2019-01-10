@@ -1,4 +1,5 @@
-data Email {
-  address  : str
-  verified : bit
+data ExtendedUser {
+  name   : str
+  email  : Email
+  tags   : set[str]
 }

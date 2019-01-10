@@ -33,7 +33,6 @@ object FSPath {
   }
 
   final case class Name(name: String) extends FSPath {
-
     override def asString: String = name
 
     override def segments: Seq[String] = Seq(name)
@@ -44,10 +43,14 @@ object FSPath {
   }
 
   def apply(pkg: Seq[String]): FSPath = {
-    if (pkg.init.nonEmpty) {
-      FSPath.Full(pkg.init, pkg.last)
+    val path = pkg.init.dropWhile(_.isEmpty)
+    val name = pkg.last
+    assert(path.forall(_.nonEmpty))
+    assert(name.nonEmpty)
+    if (path.nonEmpty) {
+      FSPath.Full(path, name)
     } else {
-      FSPath.Name(pkg.last)
+      FSPath.Name(name)
     }
   }
 
