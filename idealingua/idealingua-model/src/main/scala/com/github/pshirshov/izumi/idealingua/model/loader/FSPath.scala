@@ -20,15 +20,16 @@ sealed trait FSPath {
 }
 
 object FSPath {
+  final val separator = '/'
 
-  final case class Full(segments: Seq[String] , name: String) extends FSPath {
-    def location: String = segments.mkString("/")
+  final case class Full(location: Seq[String], name: String) extends FSPath {
+    override def segments: Seq[String] = location :+ name
 
-    override def asString: String = (segments :+ name).mkString("/")
+    override def asString: String = (location :+ name).mkString("/", "/", "")
 
-    override def rename(update: String => String): FSPath = Full(segments, update(name))
+    override def rename(update: String => String): FSPath = Full(location, update(name))
 
-    override def toString: String = s"/$location/$name"
+    override def toString: String = asString
   }
 
   final case class Name(name: String) extends FSPath {
@@ -49,4 +50,6 @@ object FSPath {
       FSPath.Name(pkg.last)
     }
   }
+
+  def parse(path: String): FSPath = apply(path.split(separator))
 }

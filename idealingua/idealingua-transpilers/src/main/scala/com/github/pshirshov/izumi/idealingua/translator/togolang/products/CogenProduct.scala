@@ -7,15 +7,15 @@ object CogenProduct {
                               , tests: String = ""
                              ) extends RenderableCogenProduct {
     def render: List[String] = {
-      (iface + "\n" + companion).split("\n").toList
+      (iface + "\n" + companion).split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
-      tests.split("\n").toList
+      tests.split('\n').toList
     }
   }
 
@@ -24,15 +24,15 @@ object CogenProduct {
                              , tests: String = ""
                              ) extends RenderableCogenProduct {
     def render: List[String] = {
-      more.split("\n").toList
+      more.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
-      tests.split("\n").toList
+      tests.split('\n').toList
     }
   }
 
@@ -41,15 +41,15 @@ object CogenProduct {
                               , tests: String = ""
                               ) extends RenderableCogenProduct {
     def render: List[String] = {
-      identitier.split("\n").toList
+      identitier.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
-      tests.split("\n").toList
+      tests.split('\n').toList
     }
   }
 
@@ -57,11 +57,11 @@ object CogenProduct {
                             , header: String = ""
                            ) extends RenderableCogenProduct {
     def render: List[String] = {
-      client.split("\n").toList
+      client.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
@@ -73,11 +73,11 @@ object CogenProduct {
                                  , header: String = ""
                                  ) extends RenderableCogenProduct {
     def render: List[String] = {
-      client.split("\n").toList
+      client.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
@@ -90,15 +90,15 @@ object CogenProduct {
                         , tests: String = ""
                         ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
-      tests.split("\n").toList
+      tests.split('\n').toList
     }
   }
 
@@ -106,11 +106,11 @@ object CogenProduct {
                           , header: String = ""
                          ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
@@ -123,15 +123,15 @@ object CogenProduct {
                         , tests: String = ""
                        ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
 
     def renderTests: List[String] = {
-      tests.split("\n").toList
+      tests.split('\n').toList
     }
   }
 }

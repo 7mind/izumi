@@ -22,7 +22,7 @@ object IzumiBuildInfoPlugin extends AutoPlugin {
 
     def shift(delta: Int): String = {
       val shift = " " * delta
-      s.split("\n").map(s => s"$shift$s").mkString("\n")
+      s.split('\n').map(s => s"$shift$s").mkString("\n")
     }
   }
 

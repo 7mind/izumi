@@ -39,7 +39,7 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
 
     imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
       .map(i => if (i._1.startsWith("import")) i._1 else
-              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(",").map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
+              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(',').map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
             .mkString(",\n") + s"\n} from '${i._1}';")
       .mkString("\n")
   }

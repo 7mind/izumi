@@ -55,7 +55,7 @@ object IDLTestTools {
   }
 
   def makeResolver(base: String): ModelResolver = {
-    val last = base.split("/").last
+    val last = base.split('/').last
     val rules = if (last == "any") {
       TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
     } else {

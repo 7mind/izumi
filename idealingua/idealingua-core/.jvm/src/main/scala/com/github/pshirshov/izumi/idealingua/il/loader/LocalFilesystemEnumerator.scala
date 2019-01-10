@@ -5,7 +5,6 @@ import java.nio.file.{Files, Path}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath.{Full, Name}
 
 class LocalFilesystemEnumerator(roots: Seq[Path], cp: Seq[File], expectedExtensions: Set[String]) extends FilesystemEnumerator {
   def enumerate(): Map[FSPath, String] = {
@@ -32,15 +31,7 @@ class LocalFilesystemEnumerator(roots: Seq[Path], cp: Seq[File], expectedExtensi
   }
 
   def toFsPath(path: Path): FSPath = {
-    val name = path.getFileName.toString
-
-    Option(path.getParent) match {
-      case Some(p) =>
-        Full(p.toString.split("/"), name)
-
-      case None =>
-        Name(name)
-    }
+    FSPath.parse(path.toString)
   }
 
   def enumerateZip(directory: Path): Seq[(FSPath, String)] = {

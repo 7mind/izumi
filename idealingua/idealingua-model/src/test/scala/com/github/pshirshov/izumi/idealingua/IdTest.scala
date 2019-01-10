@@ -52,7 +52,7 @@ object IdTest {
     def parse(s: String): UserWithEnumId = {
       import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
-      val parts = withoutPrefix.split(":").map(part => unescape(part))
+      val parts = withoutPrefix.split(':').map(part => unescape(part))
       UserWithEnumId(company = parsePart[UUID](parts(0), classOf[UUID]), dept = DepartmentEnum.parse(parts(1)), value = parsePart[UUID](parts(2), classOf[UUID]))
     }
   }
@@ -70,7 +70,7 @@ object IdTest {
     def parse(s: String): BucketID = {
       import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
-      val parts = withoutPrefix.split(":").map(part => unescape(part))
+      val parts = withoutPrefix.split(':').map(part => unescape(part))
       BucketID(app = parsePart[UUID](parts(0), classOf[UUID]), bucket = parsePart[String](parts(1), classOf[String]), user = parsePart[UUID](parts(2), classOf[UUID]))
     }
   }
@@ -88,7 +88,7 @@ object IdTest {
     def parse(s: String): ComplexID = {
       import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
-      val parts = withoutPrefix.split(":").map(part => unescape(part))
+      val parts = withoutPrefix.split(':').map(part => unescape(part))
       ComplexID(bucket = BucketID.parse(parts(0)), str = parsePart[String](parts(1), classOf[String]), uid = parsePart[UUID](parts(2), classOf[UUID]), user = UserWithEnumId.parse(parts(3)))
     }
   }

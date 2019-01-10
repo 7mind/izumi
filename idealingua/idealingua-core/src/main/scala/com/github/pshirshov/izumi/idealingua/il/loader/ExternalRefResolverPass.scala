@@ -165,7 +165,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   }
 
   private def findModel(forDomain: DomainId, includePath: Inclusion): Option[ModelParsingResult] = {
-    val includeparts = includePath.i.split("/")
+    val includeparts = includePath.i.split('/')
     val absolute = FSPath(includeparts)
     val prefixed = FSPath("idealingua" +: includeparts)
     val relativeToDomain = FSPath(forDomain.toPackage.init ++ includeparts)

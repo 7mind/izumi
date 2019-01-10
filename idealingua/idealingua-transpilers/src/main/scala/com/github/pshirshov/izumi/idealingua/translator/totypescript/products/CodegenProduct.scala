@@ -7,11 +7,11 @@ object CogenProduct {
                               , preamble: String = ""
                              ) extends RenderableCogenProduct {
     def render: List[String] = {
-      (iface + "\n" + companion).split("\n").toList
+      (iface + "\n" + companion).split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -20,11 +20,11 @@ object CogenProduct {
                               , preamble: String = ""
                              ) extends RenderableCogenProduct {
     def render: List[String] = {
-      more.split("\n").toList
+      more.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -34,11 +34,11 @@ object CogenProduct {
                                , preamble: String = ""
                               ) extends RenderableCogenProduct {
     def render: List[String] = {
-      (identitier + "\n" + identifierInterface).split("\n").toList
+      (identitier + "\n" + identifierInterface).split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -47,11 +47,11 @@ object CogenProduct {
                             , preamble: String = ""
                            ) extends RenderableCogenProduct {
     def render: List[String] = {
-      client.split("\n").toList
+      client.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -60,11 +60,11 @@ object CogenProduct {
                                   , preamble: String = ""
                                  ) extends RenderableCogenProduct {
     def render: List[String] = {
-      client.split("\n").toList
+      client.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -72,7 +72,7 @@ object CogenProduct {
                         , preamble: String = ""
                         ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
@@ -85,11 +85,11 @@ object CogenProduct {
                               , preamble: String = ""
                              ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 
@@ -98,11 +98,11 @@ object CogenProduct {
                           , preamble: String = ""
                          ) extends RenderableCogenProduct {
     def render: List[String] = {
-      content.split("\n").toList
+      content.split('\n').toList
     }
 
     def renderHeader: List[String] = {
-      header.split("\n").toList
+      header.split('\n').toList
     }
   }
 }

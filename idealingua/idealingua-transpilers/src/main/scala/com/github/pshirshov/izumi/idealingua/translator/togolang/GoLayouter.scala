@@ -19,7 +19,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
 //    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
 //    val out = if (scoped) {
-//      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split("/")
+//      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split('/')
 //      allModules.map {
 //        case ExtendedModule.DomainModule(domain, module) =>
 //          ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
