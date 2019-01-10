@@ -19,15 +19,6 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def redeem[E, A, E2, B](r: R[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
-  @inline override def maybe[V](v: => Either[Throwable, V]): R[Nothing, V] = {
-    v match {
-      case Left(f) =>
-        terminate(f).asInstanceOf[R[Nothing, V]]
-      case Right(r) =>
-        point(r)
-    }
-  }
-
   @inline override def now[A](a: A): R[Nothing, A]
 
   @inline override def syncThrowable[A](effect: => A): R[Throwable, A]

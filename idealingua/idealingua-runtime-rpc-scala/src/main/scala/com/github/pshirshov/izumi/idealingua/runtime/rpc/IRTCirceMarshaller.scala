@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import io.circe.{DecodingFailure, Json}
 
 abstract class IRTCirceMarshaller {
@@ -12,5 +13,7 @@ abstract class IRTCirceMarshaller {
 
   def decodeResponse[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]]
 
-  protected def decoded[Or[+_, +_] : BIO, V](result: Either[DecodingFailure, V]): Or[Nothing, V] = implicitly[BIO[Or]].maybe(result)
+  protected def decoded[Or[+_, +_] : BIO, V](result: Either[DecodingFailure, V]): Or[Nothing, V] = {
+    BIO[Or].fromEither(result).orTerminate
+  }
 }
