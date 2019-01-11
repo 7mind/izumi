@@ -277,7 +277,7 @@ final case class CSharpType (
       }
     }
 
-    def renderFromString(src: String, unescape: Boolean): String = {
+    def renderFromString(src: String, unescape: Boolean, currentDomain: String = ""): String = {
       val source = if (unescape) s"Uri.UnescapeDataString($src)" else src
       id match {
           case Primitive.TString => source
@@ -292,7 +292,7 @@ final case class CSharpType (
           case Primitive.TBool => s"bool.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
           case Primitive.TBLOB => ???
-          case e: EnumId => s"${e.name}Helpers.From($source)"
+          case e: EnumId => s"${renderType(currentDomain != "" && currentDomain != id.uniqueDomainName)}Helpers.From($source)"
           case i: IdentifierId => s"${i.name}.From($source)"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }

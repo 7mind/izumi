@@ -113,13 +113,13 @@ object GoLangImports {
     } ++ extra
   }
 
-  def collectTypes(id: TypeId, skipPrimitive: Boolean = false): List[TypeId] = id match {
-    case p: Primitive => if(skipPrimitive) List.empty else List(p)
+  def collectTypes(id: TypeId): List[TypeId] = id match {
+    case p: Primitive => List(p)
     case g: Generic => g match {
-      case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType, skipPrimitive = true)
-      case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType, skipPrimitive = true)
-      case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType, skipPrimitive = true)
-      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, skipPrimitive = false)
+      case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType)
+      case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType)
+      case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType)
+      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType)
     }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)

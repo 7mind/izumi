@@ -389,7 +389,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
         val returnValue = if (isServiceMethodReturnExistent(method.asInstanceOf[DefMethod.RPCMethod])) s"<${renderRPCMethodOutputSignature(svcOrBuzzer, m)}>" else ""
 
         val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action$returnValue onSuccess, Action<Exception> onFailure, Action onAny = null, C ctx = null"
-        val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + f.name).mkString(", ")
+        val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + CSharpField.safeVarName(f.name)).mkString(", ")
         val context = s"C ctx${if (m.signature.input.fields.isEmpty) "" else ", "}"
         if (forClient) {
           s"void ${m.name.capitalize}($fields$callback)"
@@ -416,7 +416,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
     case m: DefMethod.RPCMethod => m.signature.output match {
       case _: Struct | _: Algebraic | _: Alternative =>
         s"""public ${renderRPCMethodSignature(svcOrBuzzer, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => CSharpField.safeVarName(ff.name)).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrBuzzer.In${m.name.capitalize}" else "object"}, ${renderRPCMethodOutputModel(svcOrBuzzer, m)}>("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<${renderRPCMethodOutputModel(svcOrBuzzer, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
@@ -424,7 +424,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
       case _: Singular =>
         s"""public ${renderRPCMethodSignature(svcOrBuzzer, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => CSharpField.safeVarName(ff.name)).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrBuzzer.In${m.name.capitalize}" else "object"}, ${renderRPCMethodOutputModel(svcOrBuzzer, m)}>("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<${renderRPCMethodOutputModel(svcOrBuzzer, m)}>(onSuccess, onFailure, onAny), ctx);
            |}
@@ -432,7 +432,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
       case _: Void =>
         s"""public ${renderRPCMethodSignature(svcOrBuzzer, method, forClient = true)} {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => ff.name).mkString(", ")});"}
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"var inData = new $svcOrBuzzer.In${m.name.capitalize}(${m.signature.input.fields.map(ff => CSharpField.safeVarName(ff.name)).mkString(", ")});"}
            |    Transport.Send<${if (m.signature.input.fields.nonEmpty) s"$svcOrBuzzer.In${m.name.capitalize}" else "object"}, IRT.Void>("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "null" else "inData"},
            |        new ClientTransportCallback<IRT.Void>(_ => onSuccess(), onFailure, onAny), ctx);
            |}
