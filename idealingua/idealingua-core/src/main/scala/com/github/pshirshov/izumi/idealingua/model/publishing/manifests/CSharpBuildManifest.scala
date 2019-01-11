@@ -14,6 +14,7 @@ object CSharpProjectLayout {
 }
 
 case class NugetOptions(
+                         targetFramework: String,
                          projectNaming: ProjectNamingRule,
                          iconUrl: String,
                          requireLicenseAcceptance: Boolean,
@@ -23,6 +24,7 @@ case class NugetOptions(
 
 object NugetOptions {
   def example: NugetOptions = NugetOptions(
+    targetFramework = "net461",
     projectNaming = ProjectNamingRule.example,
     iconUrl = "https://raw.githubusercontent.com/pshirshov/izumi-r2/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png",
     requireLicenseAcceptance = false,

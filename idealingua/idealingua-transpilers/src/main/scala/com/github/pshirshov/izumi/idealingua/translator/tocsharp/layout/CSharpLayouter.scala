@@ -60,8 +60,8 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
         val prjDir = naming.projectDirName(did)
 
         val prjId = naming.projectId(did)
-        val nuspecModule = mkNuspecModule(List(s"src/$prjDir/**"), deps, prjId, pkgMf)
-        val csdeps = t.typespace.domain.meta.directImports.map{
+        val nuspecModule = mkNuspecModule(List(s"../src/$prjDir/**"), deps, prjId, pkgMf)
+        val csdeps = t.typespace.domain.meta.directImports.map {
           i =>
             val id = i.id
             val prjDirName = s"${naming.projectDirName(id)}"
@@ -75,9 +75,9 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
         val testDeps = pkgMf.nuget.dependencies ++ pkgMf.nuget.testDependencies ++ Seq(ManifestDependency(naming.projectId(t.typespace.domain.id), mfVersion))
         val pkgMfTest = pkgMf.copy(nuget = pkgMf.nuget.copy(dependencies = testDeps))
         val prjIdTest = naming.testProjectId(did)
-        val nuspecTestModule = mkNuspecModule(List(s"tests/$prjDir/**"), testDeps, prjIdTest, pkgMfTest)
+        val nuspecTestModule = mkNuspecModule(List(s"../tests/$prjDir/**"), testDeps, prjIdTest, pkgMfTest)
 
-        val csdepsTest = t.typespace.domain.meta.directImports.map{
+        val csdepsTest = t.typespace.domain.meta.directImports.map {
           i =>
             val id = i.id
             val prjDirName = s"${naming.projectDirName(id)}"
@@ -89,20 +89,36 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
 
         val tests = testsSrcs ++ csproj(prjDir + "Test", csdepsTest ++ Seq(s"src/$prjDir/$prjDir.csproj"), basicTestDeps)
 
+        val nuspecs = Seq(nuspecModule, nuspecTestModule)
         addPrefix(src, Seq(s"src", prjDir)) ++
           addPrefix(tests, Seq(s"tests", prjDir)) ++
-          Seq(nuspecModule, nuspecTestModule)
-
+          addPrefix(nuspecs, Seq("nuspec"))
     }
 
 
+    val nuspecs = mkNuspecs(outputs, basicDeps, basicTestDeps)
+    val packagesConfig = makeExamples(outputs)
+    val solution = generateSolution(outputs)
+
+    rt ++
+      solution ++
+      sources ++
+      nuspecs ++
+      packagesConfig
+  }
+
+
+  private def mkNuspecs(outputs: Seq[Translated], basicDeps: List[ManifestDependency], basicTestDeps: List[ManifestDependency]): Seq[ExtendedModule] = {
     val everythingNuspecModule = mkBundle(outputs, naming.pkgId)
     val everythingNuspecModuleTest = mkTestBundle(outputs, naming.pkgId, naming.pkgIdTest)
 
-    val unifiedNuspecModule = mkNuspecModule(List("src/**", "tests/**"), basicTestDeps, naming.bundleId, options.manifest)
-    val irtModule = mkNuspecModule(List(s"src/${naming.irtId}/**"), basicDeps, naming.irtId, options.manifest)
+    val unifiedNuspecModule = mkNuspecModule(List("../src/**", "../tests/**"), basicTestDeps, naming.bundleId, options.manifest)
+    val irtModule = mkNuspecModule(List(s"../src/${naming.irtId}/**"), basicDeps, naming.irtId, options.manifest)
+    val bundleNuspecs = Seq(everythingNuspecModule, everythingNuspecModuleTest) ++ Seq(unifiedNuspecModule)
+    addPrefix(bundleNuspecs ++ Seq(irtModule), Seq("nuspec"))
+  }
 
-
+  private def makeExamples(outputs: Seq[Translated]): Seq[ExtendedModule.RuntimeModule] = {
     val allIds = Seq(
       naming.irtId,
       naming.pkgId,
@@ -113,6 +129,10 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
 
 
     val packagesConfig = mkPackagesConfig(allIds)
+    addPrefix(packagesConfig, Seq("samples"))
+  }
+
+  private def generateSolution(outputs: Seq[Translated]): Seq[ExtendedModule.RuntimeModule] = {
     val projects = outputs.flatMap {
       out =>
         val id = out.typespace.domain.id
@@ -121,19 +141,13 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
         val prjName = prjDirName
         val prjTestName = s"${naming.projectDirName(id)}Test"
         Seq(
-          CSProj(naming.projectId(id), s"src/$prjDirName/$prjDirName.csproj",  isTest = false),
-          CSProj(naming.projectId(id), s"tests/$prjDirName/$prjTestName.csproj",  isTest = true),
+          CSProj(naming.projectId(id), s"src/$prjDirName/$prjDirName.csproj", isTest = false),
+          CSProj(naming.projectId(id), s"tests/$prjDirName/$prjTestName.csproj", isTest = true),
         )
     } ++ Seq(CSProj(naming.irtId, s"src/${naming.irtId}/${naming.irtId}.csproj", isTest = false))
     val sln = solution(projects)
-
-    rt ++ Seq(irtModule) ++
-      sln ++
-      sources ++
-      Seq(everythingNuspecModule, everythingNuspecModuleTest) ++ packagesConfig ++
-      Seq(unifiedNuspecModule)
+    sln
   }
-
 
   private def mkPackagesConfig(allIds: Seq[String]): Seq[ExtendedModule.RuntimeModule] = {
     val pkgConfigEntries = allIds.map(id => s"""<package id="$id" version="$mfVersion" />""")
@@ -198,7 +212,9 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
   }
 
   case class CSProj(name: String, path: String, isTest: Boolean)
+
   case class CSProjEx(name: String, path: String, uid: String, folderId: String)
+
   case class CSFolder(name: String, path: String, folderId: String)
 
   implicit class StringEx(s: Seq[String]) {
@@ -254,32 +270,33 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
            |EndProject""".stripMargin
     }.mkString("\n")
 
-    val sln = s"""
-       |Microsoft Visual Studio Solution File, Format Version 12.00
-       |# Visual Studio 15
-       |VisualStudioVersion = 15.0.26124.0
-       |MinimumVisualStudioVersion = 15.0.26124.0
-       |$foldersProjs
-       |$projectDefs
-       |Global
-       |	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-       |		Debug|Any CPU = Debug|Any CPU
-       |		Debug|x64 = Debug|x64
-       |		Debug|x86 = Debug|x86
-       |		Release|Any CPU = Release|Any CPU
-       |		Release|x64 = Release|x64
-       |		Release|x86 = Release|x86
-       |	EndGlobalSection
-       |	GlobalSection(SolutionProperties) = preSolution
-       |		HideSolutionNode = FALSE
-       |	EndGlobalSection
-       |	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-       |$projectConfigs
-       | 	EndGlobalSection
-       |	GlobalSection(NestedProjects) = preSolution
-       |$folders
-       | 	EndGlobalSection
-       |EndGlobal
+    val sln =
+      s"""
+         |Microsoft Visual Studio Solution File, Format Version 12.00
+         |# Visual Studio 15
+         |VisualStudioVersion = 15.0.26124.0
+         |MinimumVisualStudioVersion = 15.0.26124.0
+         |$foldersProjs
+         |$projectDefs
+         |Global
+         |	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+         |		Debug|Any CPU = Debug|Any CPU
+         |		Debug|x64 = Debug|x64
+         |		Debug|x86 = Debug|x86
+         |		Release|Any CPU = Release|Any CPU
+         |		Release|x64 = Release|x64
+         |		Release|x86 = Release|x86
+         |	EndGlobalSection
+         |	GlobalSection(SolutionProperties) = preSolution
+         |		HideSolutionNode = FALSE
+         |	EndGlobalSection
+         |	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+         |$projectConfigs
+         | 	EndGlobalSection
+         |	GlobalSection(NestedProjects) = preSolution
+         |$folders
+         | 	EndGlobalSection
+         |EndGlobal
      """.stripMargin
 
     Seq(ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, s"${naming.pkgId}.sln"), sln)))
@@ -295,7 +312,7 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
     val csproj =
       s"""<Project Sdk="Microsoft.NET.Sdk">
          |  <PropertyGroup>
-         |    <TargetFramework>net461</TargetFramework>
+         |    <TargetFramework>${options.manifest.nuget.targetFramework}</TargetFramework>
          |    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
          |    <PackageVersion>$mfVersion</PackageVersion>
          |
