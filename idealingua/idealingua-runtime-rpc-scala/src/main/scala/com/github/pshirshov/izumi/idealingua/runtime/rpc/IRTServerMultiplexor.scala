@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.functional.bio.BIO._
 import io.circe.Json
 
 class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]]) {
-  protected val R: BIO[R] = implicitly
+  protected val BIO: BIO[R] = implicitly
 
   val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
 
@@ -19,28 +19,25 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
       case Some(value) =>
         invoke(context, toInvoke, value, parsedBody).map(Some.apply)
       case None =>
-        R.point(None)
+        BIO.now(None)
     }
   }
 
   @inline private[this] def invoke(context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C], parsedBody: Json): R[Throwable, Json] = {
     for {
-      decoded <- R.sandboxWith(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody))) {
-        _.redeem(
-          {
-            case Left(exceptions) =>
-              R.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption)))
-            case Right(_) => // impossible case, v is Nothing, exhaustive match check fails
-              R.terminate(new IllegalStateException())
-          }, {
-            succ => R.point(succ)
-          }
-        )
+      decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
+      safeDecoded <- BIO.sandboxWith(decodeAction) {
+        _.catchAll {
+          case Left(exceptions) =>
+            BIO.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption)))
+          case Right(decodingFailure) =>
+            BIO.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", Some(decodingFailure))))
+        }
       }
-      casted <- R.syncThrowable(decoded.value.asInstanceOf[method.signature.Input])
-      result <- R.syncThrowable(method.invoke(context, casted))
-      safeResult <- result
-      encoded <- R.syncThrowable(method.marshaller.encodeResponse(IRTResBody(safeResult)))
+      casted <- BIO.syncThrowable(safeDecoded.value.asInstanceOf[method.signature.Input])
+      resultAction <- BIO.syncThrowable(method.invoke(context, casted))
+      safeResult <- resultAction
+      encoded <- BIO.syncThrowable(method.marshaller.encodeResponse.apply(IRTResBody(safeResult)))
     } yield {
       encoded
     }

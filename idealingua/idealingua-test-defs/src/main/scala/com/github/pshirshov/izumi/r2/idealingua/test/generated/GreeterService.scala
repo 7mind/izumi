@@ -39,7 +39,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R
   override def greet(name: String, surname: String): R.Just[String] = {
     R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))( { err => R.terminate(err) }, {
       case IRTMuxResponse(IRTResBody(v: _M.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
-        R.point(v.value)
+        R.now(v.value)
       case v =>
         R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
     })
@@ -54,7 +54,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R
             case va: GreeterServiceMethods.alternative.AlternativeOutput.Failure =>
               R.fail(va.value)
             case va: GreeterServiceMethods.alternative.AlternativeOutput.Success =>
-              R.point(va.value)
+              R.now(va.value)
             case _ =>
               R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
           }
@@ -102,7 +102,7 @@ class GreeterServiceServerWrapped[F[+ _, + _] : BIO, C](service: GreeterServiceS
     override val marshaller: GreeterServerMarshallers.alternative.type = GreeterServerMarshallers.alternative
 
     override def invoke(ctx: C, input: Input): Just[Output] = {
-      F.redeem(service.alternative(ctx))(err => F.point(AlternativeOutput.Failure(err)), succ => F.point(AlternativeOutput.Success(succ)))
+      F.redeem(service.alternative(ctx))(err => F.now(AlternativeOutput.Failure(err)), succ => F.now(AlternativeOutput.Success(succ)))
     }
   }
 
@@ -184,12 +184,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }
@@ -207,12 +207,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }
