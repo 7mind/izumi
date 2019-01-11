@@ -146,7 +146,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     Module(ModuleId(Seq("irt"), "package.json"), content.toString())
   }
 
-  private def buildBundlePackageModule(translated: Seq[Translated]): ExtendedModule.RuntimeModule = {
+  private def buildBundlePackageModules(translated: Seq[Translated]): Seq[ExtendedModule.RuntimeModule] = {
     val allDeps = translated.map {
       ts =>
         ManifestDependency(naming.toScopedId(ts.typespace.domain.id.toPackage), mfVersion)
@@ -154,7 +154,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val mf = options.manifest.copy(yarn = options.manifest.yarn.copy(dependencies = options.manifest.yarn.dependencies ++ allDeps))
     val content = generatePackage(mf, None, naming.bundleId)
-    ExtendedModule.RuntimeModule(Module(ModuleId(Seq(naming.bundleId), "package.json"), content.toString()))
+    Seq(
+      ExtendedModule.RuntimeModule(Module(ModuleId(Seq(naming.bundleId), "package.json"), content.toString())),
+      ExtendedModule.RuntimeModule(Module(ModuleId(Seq(naming.bundleId), "empty.ts"), "")),
+    )
   }
 
   private def mfVersion: String = {
