@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package >
     <metadata>
-        <id>Izumi.Runtime.CS</id>
+        <id>Izumi.RPC.Runtime.CS</id>
         <version>0.0.1-UNSET</version>
         <authors>Izumi Framework</authors>
-        <owners>com.my.company</owners>
+        <owners>izumi</owners>
         <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
         <projectUrl>https://izumi.7mind.io</projectUrl>
         <iconUrl>https://raw.githubusercontent.com/pshirshov/izumi-r2/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png</iconUrl>
