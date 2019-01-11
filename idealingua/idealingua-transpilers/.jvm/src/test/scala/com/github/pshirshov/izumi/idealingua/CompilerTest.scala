@@ -30,7 +30,7 @@ class CompilerTest extends WordSpec {
     }
 
     "be able to compile into csharp" in {
-      require("csc", "nunit-console", "src/main/nuget")
+      require("csc", "nunit-console", "nuget")
       assert(compilesCSharp(s"$id-plain", loadDefs(), CSharpProjectLayout.PLAIN))
       assert(compilesCSharp(s"$id-nuget", loadDefs(), CSharpProjectLayout.NUGET))
     }

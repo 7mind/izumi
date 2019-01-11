@@ -137,7 +137,7 @@ object IDLTestTools {
     layout match {
       case CSharpProjectLayout.NUGET =>
         val conv = new CSharpNamingConvention(manifest.nuget.projectNaming)
-        val cmdNuget = Seq("src/main/nuget", "pack", s"${conv.nuspecName(conv.pkgId)}")
+        val cmdNuget = Seq("nuget", "pack", s"${conv.nuspecName(conv.pkgId)}")
         val exitCodeBuild = run(out.targetDir, cmdNuget, Map.empty, "cs-nuget")
         exitCodeBuild == 0
 
