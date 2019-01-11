@@ -13,11 +13,11 @@ cat $NUSPEC
 nuget pack $NUSPEC
 rm $NUSPEC
 
-nuget setapikey $NUGET_TOKEN
+#nuget setapikey $NUGET_TOKEN
 
 for TRG in $(find . -name '*.nupkg' -type f -print)
 do
-    nuget push $TRG -Source https://www.nuget.org -Verbosity detailed
+    dotnet nuget --verbosity Debug push $TRG -k $NUGET_TOKEN --source https://www.nuget.org
 done
 
 popd
