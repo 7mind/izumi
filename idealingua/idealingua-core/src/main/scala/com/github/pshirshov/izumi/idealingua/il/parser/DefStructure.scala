@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDNewtype
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDNewtype}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
@@ -141,6 +141,12 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (c, i, v) => Alias(i.toAliasId, v.toIndefinite, c)
     }
+
+  def declaredBlock[_: P]: P[TLDDeclared] = P(metaAgg.cstarting(kw.declared, inline))
+    .map {
+      case (meta, id, _) =>
+        TLDDeclared(DeclaredType(id.toIndefinite, meta))
+  }
 
   def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {

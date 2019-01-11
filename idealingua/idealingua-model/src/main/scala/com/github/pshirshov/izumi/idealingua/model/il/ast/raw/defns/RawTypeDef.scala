@@ -34,6 +34,8 @@ object RawTypeDef {
 
   final case class ForeignType(id: AbstractIndefiniteId, mapping: Map[String, InterpContext], meta: RawNodeMeta) extends RawTypeDef
 
+  final case class DeclaredType(id: AbstractIndefiniteId, meta: RawNodeMeta) extends RawTypeDef
+
 }
 
 

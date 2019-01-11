@@ -26,7 +26,8 @@ class DefMember(context: IDLParserContext) extends Aggregates {
 
   def typeMember[_: P]: P[RawTopLevelDefn.TypeDefn] = P(
     defStructure.foreignBlock |
-      defStructure.cloneBlock
+      defStructure.cloneBlock |
+      defStructure.declaredBlock
   )
 
   def otherMember[_: P]: P[RawTopLevelDefn] = P(
@@ -38,8 +39,8 @@ class DefMember(context: IDLParserContext) extends Aggregates {
 
   def topLevelDefn[_: P]: P[ModelMember] = P(
     baseTypeMember |
-    typeMember |
-    otherMember
+      typeMember |
+      otherMember
   ).map(ModelMember.MMTopLevelDefn)
 
   def anyMember[_: P]: P[ModelMember] = P(topLevelDefn | inclusion.map(ModelMember.MMInclusion))
