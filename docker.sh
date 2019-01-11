@@ -20,6 +20,7 @@ docker run --rm --name $CNAME \
     -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
     -e TRAVIS_BUILD_NUMBER=$TRAVIS_BUILD_NUMBER \
     -e NPM_TOKEN=$NPM_TOKEN \
+    -e NUGET_TOKEN=$NUGET_TOKEN \
     --volume "${SOURCEDIR}":/work:z \
     --volume "${HOMEDIR}":/root:z \
     $IMAGE bash -xe travis.sh $*
