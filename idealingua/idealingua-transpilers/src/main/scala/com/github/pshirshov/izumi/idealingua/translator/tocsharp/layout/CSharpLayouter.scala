@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout
 
+import java.util.UUID
+
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
@@ -39,7 +41,9 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
   }
 
   private def buildNugetProject(outputs: Seq[Translated]): Seq[ExtendedModule] = {
-    val rt = addPrefix(toRuntimeModules(options), Seq("src"))
+    val basicDeps = options.manifest.nuget.dependencies
+    val basicTestDeps = basicDeps ++ options.manifest.nuget.testDependencies
+    val rt = addPrefix(toRuntimeModules(options) ++ csproj(naming.irtId, Seq.empty, basicDeps), Seq("src", naming.irtId))
 
 
     val sources = outputs.flatMap {
@@ -50,30 +54,53 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
           .map(m => ExtendedModule.DomainModule(did, m))
           .partition(_.module.meta.get("scope").contains("test"))
 
-        val src = ensureNotEmpty(mainSrcs)
-        val tests = ensureNotEmpty(testsSrcs)
-
         val deps = t.typespace.domain.meta.directImports.map(i => ManifestDependency(naming.projectId(i.id), mfVersion))
         val pkgMf = options.manifest.copy(nuget = options.manifest.nuget.copy(dependencies = options.manifest.nuget.dependencies ++ deps.toList ++ Seq(ManifestDependency(naming.irtId, mfVersion))))
 
-        val pid = naming.projectDirName(did)
-        val nuspecModule = mkNuspecModule(List(s"src/$pid/**"), withTests = false, naming.projectId(did), pkgMf)
+        val prjDir = naming.projectDirName(did)
 
-        val pkgMfTest = pkgMf.copy(nuget = pkgMf.nuget.copy(dependencies = pkgMf.nuget.dependencies ++ Seq(ManifestDependency(naming.projectId(t.typespace.domain.id), mfVersion))))
-        val nuspecTestModule = mkNuspecModule(List(s"tests/$pid/**"), withTests = true, naming.testProjectId(did), pkgMfTest)
+        val prjId = naming.projectId(did)
+        val nuspecModule = mkNuspecModule(List(s"src/$prjDir/**"), deps, prjId, pkgMf)
+        val csdeps = t.typespace.domain.meta.directImports.map{
+          i =>
+            val id = i.id
+            val prjDirName = s"${naming.projectDirName(id)}"
+            val prjName = prjDirName
 
-        addPrefix(src, Seq(s"src", pid)) ++
-          addPrefix(tests, Seq(s"tests", pid)) ++
+            s"src/$prjDirName/$prjDirName.csproj"
+        } ++ Seq(s"src/${naming.irtId}/${naming.irtId}.csproj")
+
+        val src = mainSrcs ++ csproj(prjDir, csdeps, basicDeps)
+
+        val testDeps = pkgMf.nuget.dependencies ++ pkgMf.nuget.testDependencies ++ Seq(ManifestDependency(naming.projectId(t.typespace.domain.id), mfVersion))
+        val pkgMfTest = pkgMf.copy(nuget = pkgMf.nuget.copy(dependencies = testDeps))
+        val prjIdTest = naming.testProjectId(did)
+        val nuspecTestModule = mkNuspecModule(List(s"tests/$prjDir/**"), testDeps, prjIdTest, pkgMfTest)
+
+        val csdepsTest = t.typespace.domain.meta.directImports.map{
+          i =>
+            val id = i.id
+            val prjDirName = s"${naming.projectDirName(id)}"
+            val prjTestName = s"${naming.projectDirName(id)}Test"
+
+            s"tests/$prjDirName/$prjTestName.csproj"
+        }
+
+
+        val tests = testsSrcs ++ csproj(prjDir + "Test", csdepsTest ++ Seq(s"src/$prjDir/$prjDir.csproj"), basicTestDeps)
+
+        addPrefix(src, Seq(s"src", prjDir)) ++
+          addPrefix(tests, Seq(s"tests", prjDir)) ++
           Seq(nuspecModule, nuspecTestModule)
 
     }
 
-    val everythingNuspecModule = mkBundle(outputs, naming.pkgId)
 
+    val everythingNuspecModule = mkBundle(outputs, naming.pkgId)
     val everythingNuspecModuleTest = mkTestBundle(outputs, naming.pkgId, naming.pkgIdTest)
 
-    val unifiedNuspecModule = mkNuspecModule(List("src/**", "tests/**"), withTests = true, naming.bundleId, options.manifest)
-    val irtModule = mkNuspecModule(List("src/IRT/**"), withTests = false, naming.irtId, options.manifest)
+    val unifiedNuspecModule = mkNuspecModule(List("src/**", "tests/**"), basicTestDeps, naming.bundleId, options.manifest)
+    val irtModule = mkNuspecModule(List(s"src/${naming.irtId}/**"), basicDeps, naming.irtId, options.manifest)
 
 
     val allIds = Seq(
@@ -86,8 +113,25 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
 
 
     val packagesConfig = mkPackagesConfig(allIds)
+    val projects = outputs.flatMap {
+      out =>
+        val id = out.typespace.domain.id
 
-    rt ++ sources ++ Seq(unifiedNuspecModule, everythingNuspecModule, everythingNuspecModuleTest, irtModule) ++ packagesConfig
+        val prjDirName = s"${naming.projectDirName(id)}"
+        val prjName = prjDirName
+        val prjTestName = s"${naming.projectDirName(id)}Test"
+        Seq(
+          CSProj(naming.projectId(id), s"src/$prjDirName/$prjDirName.csproj",  isTest = false),
+          CSProj(naming.projectId(id), s"tests/$prjDirName/$prjTestName.csproj",  isTest = true),
+        )
+    } ++ Seq(CSProj(naming.irtId, s"src/${naming.irtId}/${naming.irtId}.csproj", isTest = false))
+    val sln = solution(projects)
+
+    rt ++ Seq(irtModule) ++
+      sln ++
+      sources ++
+      Seq(everythingNuspecModule, everythingNuspecModuleTest) ++ packagesConfig ++
+      Seq(unifiedNuspecModule)
   }
 
 
@@ -126,8 +170,8 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
       t =>
         ManifestDependency(naming.projectId(t.typespace.domain.id), mfVersion)
     }
-    val pkgMf = options.manifest.copy(nuget = options.manifest.nuget.copy(dependencies = options.manifest.nuget.dependencies ++ allModules.toList))
-    val everythingNuspecModule = mkNuspecModule(List.empty, withTests = false, pkgId, pkgMf)
+    val deps = options.manifest.nuget.dependencies ++ allModules.toList
+    val everythingNuspecModule = mkNuspecModule(List.empty, deps, pkgId, options.manifest)
     everythingNuspecModule
   }
 
@@ -136,8 +180,8 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
       t =>
         ManifestDependency(naming.testProjectId(t.typespace.domain.id), mfVersion)
     }
-    val pkgMfTest = options.manifest.copy(nuget = options.manifest.nuget.copy(dependencies = options.manifest.nuget.dependencies ++ allModulesTest.toList))
-    val everythingNuspecModuleTest = mkNuspecModule(List.empty, withTests = true, pkgIdTest, pkgMfTest)
+    val testDeps = options.manifest.nuget.dependencies ++ options.manifest.nuget.testDependencies ++ allModulesTest.toList
+    val everythingNuspecModuleTest = mkNuspecModule(List.empty, testDeps, pkgIdTest, options.manifest)
     everythingNuspecModuleTest
   }
 
@@ -146,46 +190,163 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
   }
 
 
-  private def mkNuspecModule(files: List[String], withTests: Boolean, id: String, mf0: CSharpBuildManifest): ExtendedModule = {
-    val unifiedNuspec = generateNuspec(mf0, id, files, withTests)
+  private def mkNuspecModule(files: List[String], deps: Seq[ManifestDependency], id: String, mf0: CSharpBuildManifest): ExtendedModule = {
+    val unifiedNuspec = generateNuspec(mf0, id, files, deps)
     val unifiedNuspecName = naming.nuspecName(id)
     val unifiedNuspecModule = ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, unifiedNuspecName), unifiedNuspec))
     unifiedNuspecModule
   }
 
-  private def ensureNotEmpty(sources: Seq[ExtendedModule.DomainModule]): Seq[ExtendedModule] = {
-    if (sources.nonEmpty) {
-      sources
-    } else {
-      Seq(ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, ".keep"), "")))
+  case class CSProj(name: String, path: String, isTest: Boolean)
+  case class CSProjEx(name: String, path: String, uid: String, folderId: String)
+  case class CSFolder(name: String, path: String, folderId: String)
+
+  implicit class StringEx(s: Seq[String]) {
+    def slnShift(size: Int): String = {
+      s.mkString("\n").split('\n').map(l => s"${"\t" * size}$l").mkString("\n")
     }
   }
 
-  private def generateNuspec(manifest: CSharpBuildManifest, id: String, filesFolder: List[String], withTests: Boolean): String = {
-    val allDependencies = if (withTests) {
-      manifest.nuget.dependencies ++ manifest.nuget.testDependencies
-    } else {
-      manifest.nuget.dependencies
+  private def solution(projects: Seq[CSProj]): Seq[ExtendedModule.RuntimeModule] = {
+    val csProjectType = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}" //uid()
+    val folderProjectType = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}"
+    val testId = uid()
+    val srcId = uid()
+    val exProjects = projects.map {
+      p =>
+        val folder = if (p.isTest) {
+          testId
+        } else {
+          srcId
+        }
+        CSProjEx(p.name, p.path, uid(), folder)
     }
+    val projectConfigs = exProjects.map {
+      p =>
+        s"""${p.uid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+           |${p.uid}.Debug|Any CPU.Build.0 = Debug|Any CPU
+           |${p.uid}.Debug|x64.ActiveCfg = Debug|Any CPU
+           |${p.uid}.Debug|x64.Build.0 = Debug|Any CPU
+           |${p.uid}.Debug|x86.ActiveCfg = Debug|Any CPU
+           |${p.uid}.Debug|x86.Build.0 = Debug|Any CPU
+           |${p.uid}.Release|Any CPU.ActiveCfg = Release|Any CPU
+           |${p.uid}.Release|Any CPU.Build.0 = Release|Any CPU
+           |${p.uid}.Release|x64.ActiveCfg = Release|Any CPU
+           |${p.uid}.Release|x64.Build.0 = Release|Any CPU
+           |${p.uid}.Release|x86.ActiveCfg = Release|Any CPU
+           |${p.uid}.Release|x86.Build.0 = Release|Any CPU""".stripMargin
+    }.slnShift(2)
+
+    val folders = exProjects.map {
+      p =>
+        s"${p.uid} = ${p.folderId}"
+    }.slnShift(2)
+
+    val projectDefs = exProjects.map {
+      p =>
+        s"""Project("$csProjectType") = "${p.name}", "${p.path.replace('/', '\\')}", "${p.uid}"
+           |EndProject""".stripMargin
+    }.mkString("\n")
+
+    val foldersProjs = Seq(CSFolder("src", "src", srcId), CSFolder("tests", "tests", testId)).map {
+      f =>
+        s"""Project("$folderProjectType") = "${f.name}", "${f.path.replace('/', '\\')}", "${f.folderId}"
+           |EndProject""".stripMargin
+    }.mkString("\n")
+
+    val sln = s"""
+       |Microsoft Visual Studio Solution File, Format Version 12.00
+       |# Visual Studio 15
+       |VisualStudioVersion = 15.0.26124.0
+       |MinimumVisualStudioVersion = 15.0.26124.0
+       |$foldersProjs
+       |$projectDefs
+       |Global
+       |	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+       |		Debug|Any CPU = Debug|Any CPU
+       |		Debug|x64 = Debug|x64
+       |		Debug|x86 = Debug|x86
+       |		Release|Any CPU = Release|Any CPU
+       |		Release|x64 = Release|x64
+       |		Release|x86 = Release|x86
+       |	EndGlobalSection
+       |	GlobalSection(SolutionProperties) = preSolution
+       |		HideSolutionNode = FALSE
+       |	EndGlobalSection
+       |	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+       |$projectConfigs
+       | 	EndGlobalSection
+       |	GlobalSection(NestedProjects) = preSolution
+       |$folders
+       | 	EndGlobalSection
+       |EndGlobal
+     """.stripMargin
+
+    Seq(ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, s"${naming.pkgId}.sln"), sln)))
+
+  }
+
+  private def uid(): String = {
+    // TODO: scalajs
+    s"{${UUID.randomUUID().toString}}".toUpperCase
+  }
+
+  private def csproj(pid: String, projDeps: Seq[String], deps: Seq[ManifestDependency]): Seq[ExtendedModule] = {
+    val csproj =
+      s"""<Project Sdk="Microsoft.NET.Sdk">
+         |  <PropertyGroup>
+         |    <TargetFramework>net461</TargetFramework>
+         |    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+         |    <PackageVersion>$mfVersion</PackageVersion>
+         |
+         |    <IsPackable>true</IsPackable>
+         |    <IncludeBuildOutput>false</IncludeBuildOutput>
+         |    <ContentTargetFolders>contentFiles</ContentTargetFolders>
+         |    <!--GenerateAssemblyInfo>false</GenerateAssemblyInfo-->
+         |    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+         |    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+         |  </PropertyGroup>
+         |
+         |  <ItemGroup>
+         |${deps.map(d => s"""            <PackageReference Include="${d.module}" Version="${d.version}" />""").mkString("\n")}
+         |  </ItemGroup>
+         |
+         |  <ItemGroup>
+         |${projDeps.map(d => s"""            <ProjectReference Include="$$(SolutionDir)/$d" />""").mkString("\n")}
+         |  </ItemGroup>
+         |
+         |  <ItemGroup>
+         |    <Compile Update="@(Compile)">
+         |      <Pack>true</Pack>
+         |      <PackagePath>$$(ContentTargetFolders)/cs/any/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+         |    </Compile>
+         |  </ItemGroup>
+         |</Project>
+       """.stripMargin
+    Seq(ExtendedModule.RuntimeModule(Module(ModuleId(Seq.empty, s"$pid.csproj"), csproj)))
+  }
+
+  private def generateNuspec(manifest: CSharpBuildManifest, id: String, filesFolder: List[String], deps: Seq[ManifestDependency]): String = {
 
     // TODO: use safe xml builder
+    val mfCommon = manifest.common
     s"""<?xml version="1.0"?>
        |<package >
        |    <metadata>
        |        <id>$id</id>
-       |        <version>${renderVersion(manifest.common.version)}</version>
-       |        <authors>${manifest.common.publisher.name}</authors>
-       |        <owners>${manifest.common.publisher.id}</owners>
-       |        <licenseUrl>${manifest.common.licenses.head.url.url}</licenseUrl>
-       |        <projectUrl>${manifest.common.website.url}</projectUrl>
+       |        <version>${renderVersion(mfCommon.version)}</version>
+       |        <authors>${mfCommon.publisher.name}</authors>
+       |        <owners>${mfCommon.publisher.id}</owners>
+       |        <licenseUrl>${mfCommon.licenses.head.url.url}</licenseUrl>
+       |        <projectUrl>${mfCommon.website.url}</projectUrl>
+       |        <releaseNotes>${mfCommon.releaseNotes}</releaseNotes>
+       |        <description>${mfCommon.description}</description>
+       |        <copyright>${mfCommon.copyright}</copyright>
+       |        <tags>${mfCommon.tags.mkString(" ")}</tags>
        |        <iconUrl>${manifest.nuget.iconUrl}</iconUrl>
        |        <requireLicenseAcceptance>${manifest.nuget.requireLicenseAcceptance}</requireLicenseAcceptance>
-       |        <releaseNotes>${manifest.common.releaseNotes}</releaseNotes>
-       |        <description>${manifest.common.description}</description>
-       |        <copyright>${manifest.common.copyright}</copyright>
-       |        <tags>${manifest.common.tags.mkString(" ")}</tags>
        |        <dependencies>
-       |${allDependencies.map(d => s"""            <dependency id="${d.module}" version="${d.version}" />""").mkString("\n")}
+       |${deps.map(d => s"""            <dependency id="${d.module}" version="${d.version}" />""").mkString("\n")}
        |        </dependencies>
        |        <contentFiles>
        |          <files include="**/*.cs" buildAction="Compile" copyToOutput="false" />
