@@ -22,7 +22,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val withLayout = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       val inSubdir = modules
       val inRtSubdir = addPrefix(rt ++ Seq(ExtendedModule.RuntimeModule(buildIRTPackageModule())), Seq(options.manifest.yarn.scope))
-      val inBundleSubdir = Seq(buildBundlePackageModule(outputs))
+      val inBundleSubdir = buildBundlePackageModules(outputs)
 
       addPrefix(inSubdir ++ inRtSubdir ++ inBundleSubdir, Seq("packages")) ++
         buildRootModules(options.manifest)
