@@ -8,7 +8,11 @@ class TypescriptNamingConvention(manifest: TypeScriptBuildManifest) {
   private val naming = new BaseNamingConvention(manifest.yarn.projectNaming)
 
   def toDirName(parts: Seq[String]): String = {
-    naming.baseProjectId(parts).map(_.toLowerCase).mkString("-")
+    toDirParts(parts).mkString("-")
+  }
+
+  private def toDirParts(parts: Seq[String]): Seq[String] = {
+    naming.baseProjectId(parts).map(_.toLowerCase)
   }
 
   def toScopedId(parts: Seq[String]): String = {
@@ -20,7 +24,8 @@ class TypescriptNamingConvention(manifest: TypeScriptBuildManifest) {
   }
 
   def specialId(what: String): String = {
-    s"${manifest.yarn.scope}/$what-${toDirName(Seq.empty)}"
+    val parts = Seq(what) ++ toDirParts(Seq.empty)
+    s"${manifest.yarn.scope}/${parts.mkString("-")}"
   }
 
   def irtDependency: String = specialId("irt")

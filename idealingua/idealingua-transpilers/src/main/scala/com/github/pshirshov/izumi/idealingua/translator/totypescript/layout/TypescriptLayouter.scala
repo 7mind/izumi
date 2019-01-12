@@ -99,7 +99,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
               }
           """.toString()
 
-    val packageJson = generatePackage(mf, None, "root", List.empty)
+    val packageJson = generatePackage(mf, None, "root")
     val rootJson =
       json"""{
             "private": true,
@@ -127,7 +127,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
 
   private def buildPackageModule(ts: Typespace): Module = {
-    val peerDeps = ts.domain.meta.directImports
+    val allDeps = ts.domain.meta.directImports
       .map {
         i =>
           ManifestDependency(naming.toScopedId(i.id.toPackage), mfVersion)
@@ -136,7 +136,8 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
 
     val name = naming.toScopedId(ts.domain.id.toPackage)
 
-    val content = generatePackage(options.manifest, Some("index"), name, peerDeps.toList)
+    val mf = options.manifest.copy(yarn = options.manifest.yarn.copy(dependencies = options.manifest.yarn.dependencies ++ allDeps))
+    val content = generatePackage(mf, Some("index"), name)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
 
@@ -175,11 +176,10 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
   }
 
-  private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String, peerDependencies: List[ManifestDependency] = List.empty): Json = {
+  private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String): Json = {
     val author = s"${manifest.common.publisher.name} (${manifest.common.publisher.id})"
     val deps = manifest.yarn.dependencies.map(d => d.module -> d.version).toMap.asJson
     val devDeps = manifest.yarn.devDependencies.map(d => d.module -> d.version).toMap.asJson
-    val peerDeps = peerDependencies.map(d => d.module -> d.version).toMap.asJson
 
     val base =
       json"""{
@@ -189,8 +189,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
          "author": $author,
          "license": ${manifest.common.licenses.head.name},
          "dependencies": $deps,
-         "devDependencies": $devDeps,
-         "peerDependencies": $peerDeps
+         "devDependencies": $devDeps
        }
      """
 
