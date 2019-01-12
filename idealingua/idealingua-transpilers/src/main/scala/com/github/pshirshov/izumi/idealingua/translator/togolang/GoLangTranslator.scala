@@ -94,7 +94,6 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
   protected def renderDto(i: DTO): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.path.toPackage, ts, manifest = options.manifest)
-
     val fields = typespace.structure.structure(i).all.map(f => if (f.defn.variance.nonEmpty) f.defn.variance.last else f.field)
     val distinctFields = fields.groupBy(_.name).map(_._2.head)
 
@@ -1215,6 +1214,23 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     i.methods.map(me => renderServiceMethodModels(i, me, imports)).mkString("\n")
   }
 
+  protected def calcServiceMethodOutModels(out: DefMethod.Output): Int = out match {
+    case _: Struct => 1
+    case _: Algebraic => 1
+    case _: Singular => 0
+    case _: Void => 0
+    case _: Alternative => 1
+  }
+
+  protected def calcServiceMethodModels(method: DefMethod): Int = method match {
+    case m: DefMethod.RPCMethod =>
+      (if (m.signature.input.fields.isEmpty) 0 else 1) + calcServiceMethodOutModels(m.signature.output)
+  }
+
+  protected def calcServiceModels(i: Service): Int = {
+    i.methods.map(me => calcServiceMethodModels(me)).sum
+  }
+
   protected def renderService(i: Service): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
     val prefix = GoLangBuildManifest.importPrefix(options.manifest)
@@ -1233,7 +1249,13 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
-    ServiceProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", "time", prefix + "irt")))
+    val serviceModelsCount = calcServiceModels(i)
+    ServiceProduct(svc, imports.renderImports(
+      if (serviceModelsCount > 0)
+        Seq("encoding/json", "fmt", "time", prefix + "irt")
+      else
+        Seq("fmt", "time", prefix + "irt")
+    ))
   }
 
   protected def renderBuzzerModels(i: Buzzer, imports: GoLangImports): String = {
@@ -1363,6 +1385,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
      """.stripMargin
   }
 
+  protected def calcBuzzerModels(i: Buzzer): Int = {
+    i.events.map(me => calcServiceMethodModels(me)).sum
+  }
+
   protected def renderBuzzer(i: Buzzer): RenderableCogenProduct = {
     val imports = GoLangImports(i, i.id.domain.toPackage, List.empty, options.manifest)
     val prefix = GoLangBuildManifest.importPrefix(options.manifest)
@@ -1381,6 +1407,13 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |${renderBuzzerHandlersDummy(i, imports)}
          """.stripMargin
 
-    BuzzerProduct(svc, imports.renderImports(Seq("encoding/json", "fmt", prefix + "irt")))
+    val buzzerModelsCount = calcBuzzerModels(i)
+
+    BuzzerProduct(svc, imports.renderImports(
+      if (buzzerModelsCount > 0)
+        Seq("encoding/json", "fmt", prefix + "irt")
+      else
+        Seq("fmt", prefix + "irt")
+    ))
   }
 }

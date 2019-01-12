@@ -80,7 +80,15 @@ final case class GoLangType (
   }
 
   def isPolymorph(id: TypeId): Boolean = id match {
-    case _: Primitive => false
+    case p: Primitive => {
+//      case Primitive.TUUID => true
+//      case Primitive.TTsU => true
+//      case Primitive.TTs => true
+//      case Primitive.TTsTz => true
+//      case Primitive.TDate => true
+//      case Primitive.TTime => true
+      _ => false
+    }
     case _: DTOId => true
     case _: IdentifierId => true
     case _: AdtId => true
