@@ -289,9 +289,12 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           prepareReadPropertyValue(src, dst, CSharpType(ts.dealias(al)), createDst = createDst, currentDomain)
 
         case _: DTOId =>
+//          Some(
+//            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+//               |$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
+//          )
           Some(
-            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-               |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
+            s"""${if (createDst) "var " else ""}$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
           )
 
         case _ => throw new Exception("Other cases should have been checked already.")
