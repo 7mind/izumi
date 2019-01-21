@@ -90,7 +90,7 @@ object CommandlineIDLCompiler {
 
       val loaded = Timed {
         if (path.toFile.exists() && path.toFile.isDirectory) {
-          val context = new LocalModelLoaderContext(path, Seq.empty)
+          val context = new LocalModelLoaderContext(Seq(path, conf.overlay.toAbsolutePath), Seq.empty)
           context.loader.load()
         } else {
           shutdown.shutdown(s"Not exists or not a directory: $path")

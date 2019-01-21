@@ -72,7 +72,7 @@ final case class GoLangType (
     case al: AliasId => isPrimitive(ts.dealias(al))
     case g: Generic => g match {
       case _: Generic.TOption => false //isPrimitive(go.valueType)
-      case _: Generic.TList => true //isPrimitive(gl.valueType)
+      case _: Generic.TList => true // isPrimitive(gl.valueType)
       case _: Generic.TSet => true // isPrimitive(gs.valueType)
       case _: Generic.TMap => true // isPrimitive(gm.valueType)
     }
@@ -80,7 +80,15 @@ final case class GoLangType (
   }
 
   def isPolymorph(id: TypeId): Boolean = id match {
-    case _: Primitive => false
+    case p: Primitive => p match {
+//      case Primitive.TUUID => true
+      case Primitive.TTsU => true
+      case Primitive.TTs => true
+      case Primitive.TTsTz => true
+      case Primitive.TDate => true
+      case Primitive.TTime => true
+      case _ => false
+    }
     case _: DTOId => true
     case _: IdentifierId => true
     case _: AdtId => true
@@ -306,6 +314,7 @@ final case class GoLangType (
     }
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
     case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.tools.implId(i).name}()"
+    case ad: AdtId => s"${im.withImport(id)}NewTest${ad.name}()"
     case _ => "nil"
   }
 

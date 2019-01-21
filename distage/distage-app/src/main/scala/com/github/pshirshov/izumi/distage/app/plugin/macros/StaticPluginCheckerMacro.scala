@@ -117,7 +117,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(",").toSet
+    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(',').toSet
 
     check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, disableTags, abort = abort)
 

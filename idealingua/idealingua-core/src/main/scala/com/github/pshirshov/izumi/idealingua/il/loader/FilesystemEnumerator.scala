@@ -7,21 +7,14 @@ trait FilesystemEnumerator {
 }
 
 object FilesystemEnumerator {
+
   class Pseudo(files: Map[String, String]) extends FilesystemEnumerator {
     override def enumerate(): Map[FSPath, String] = {
       files.map {
         case (path, content) =>
-          val parts = path.split('/')
-          val (loc, name) = (parts.init, parts.last)
-
-          val fspath = if (loc.isEmpty) {
-            FSPath.Name(name)
-          } else {
-            FSPath.Full(loc.mkString("/"), name)
-          }
-
-          fspath -> content
+          FSPath.parse(path) -> content
       }
     }
   }
+
 }

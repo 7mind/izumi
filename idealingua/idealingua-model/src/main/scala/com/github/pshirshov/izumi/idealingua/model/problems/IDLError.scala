@@ -42,6 +42,10 @@ object RefResolverIssue {
     override def toString: String = s"$imported: can't lookup domain, multiple domains have that identifier: ${paths.niceList()}"
   }
 
+  final case class InclusionsInOverlay(domain: DomainId, path: FSPath, inclusions: Seq[Inclusion]) extends RefResolverIssue {
+    override def toString: String = s"$domain: inclusions are prohibited in overlays at $path: ${inclusions.niceList()} "
+  }
+
   final case class UnparseableInclusion(domain: DomainId, stack: List[Inclusion], failure: ModelParsingResult.Failure) extends RefResolverIssue {
     override def toString: String = s"$domain: can't parse inclusion ${failure.path}, inclusion chain: $domain->${stack.mkString("->")}. Message: ${failure.message}"
   }

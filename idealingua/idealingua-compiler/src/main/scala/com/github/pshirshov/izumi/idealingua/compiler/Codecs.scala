@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, License, MFUrl, ManifestDependency}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectVersion, Publisher}
+import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion, Publisher}
 
 trait Codecs {
 
@@ -19,6 +19,8 @@ trait Codecs {
   implicit def decMdep: Decoder[ManifestDependency] = deriveDecoder
 
   implicit def decPublisher: Decoder[Publisher] = deriveDecoder
+
+  implicit def decProjectNamingRule: Decoder[ProjectNamingRule] = deriveDecoder
 
 
   //
@@ -56,6 +58,9 @@ trait Codecs {
   implicit def encMdep: Encoder[ManifestDependency] = deriveEncoder
 
   implicit def encPublisher: Encoder[Publisher] = deriveEncoder
+
+  implicit def encProjectNamingRule: Encoder[ProjectNamingRule] = deriveEncoder
+
 
   //
   implicit def encScalaProjectLayout: Encoder[ScalaProjectLayout] = semiauto.deriveEnumerationEncoder

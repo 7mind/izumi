@@ -28,6 +28,8 @@ trait Keywords extends Separators {
   def streams[_:P]: P[Unit] = kw("streams", "tunnel", "pump")
   def consts[_:P]: P[Unit] = kw("const", "values")
 
+  def declared[_:P]: P[Unit] = kw("declared")
+
   def defm[_:P]: P[Unit] = kw("def", "fn", "fun", "func")
   def defe[_:P]: P[Unit] = kw("line", "event")
   def upstream[_:P]: P[Unit] = kw("toserver", "up", "upstream")

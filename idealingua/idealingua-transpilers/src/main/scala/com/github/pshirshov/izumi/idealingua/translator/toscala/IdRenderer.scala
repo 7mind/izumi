@@ -57,7 +57,7 @@ class IdRenderer(ctx: STContext) {
                 throw new IllegalArgumentException($errorInterp)
               }
               val withoutPrefix = s.substring(s.indexOf("#") + 1)
-              val parts = withoutPrefix.split(":").map(part => unescape(part))
+              val parts = withoutPrefix.split(':').map(part => unescape(part))
               ${t.termName}(..$parsers)
             }
       }"""

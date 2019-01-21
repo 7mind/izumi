@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.idealingua
 import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator
+import com.github.pshirshov.izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerator, ModelLoaderImpl}
 import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
-import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import org.scalatest.WordSpec
 
 
@@ -21,7 +20,7 @@ class LoaderTest extends WordSpec {
   "FS enumerator" should {
     "be able to find files in jars" in {
       val classpath = IzJvm.safeClasspath().split(':')
-      val enumerator = new LocalFilesystemEnumerator(Paths.get("/tmp/nonexistent"), classpath.filter(_.contains("fastparse")).map(p => Paths.get(p).toFile), Set(".MF"))
+      val enumerator = new LocalFilesystemEnumerator(Seq(Paths.get("/tmp/nonexistent")), classpath.filter(_.contains("fastparse")).map(p => Paths.get(p).toFile), Set(".MF"))
       assert(enumerator.enumerate().size == 1)
     }
   }
@@ -49,10 +48,11 @@ class LoaderTest extends WordSpec {
         val rendered = new IDLRenderer(ts.domain, IDLRenderingOptions(expandIncludes = false)).render()
         val updated = files.updated(original.path, rendered)
 
-        // TODO: ModelLoaderImpl
-        val domains = loader.parser.parseDomains(updated.filter(_._1.name.endsWith(loader.domainExt)))
-        val models = loader.parser.parseModels(updated.filter(_._1.name.endsWith(loader.modelExt)))
-        val unresolved = UnresolvedDomains(domains, models)
+        val enumerator = new FilesystemEnumerator.Pseudo(updated.map {
+          case (k, v) => k.asString -> v
+        })
+        val unresolved = new ModelLoaderImpl(enumerator, loader.parser, loader.modelExt, loader.domainExt, loader.overlayExt).load()
+
         val typespaces = resolver.resolve(unresolved).throwIfFailed().successful
         val restoredTypespace = typespaces.find(_.typespace.domain.id == domainId).get.typespace
 

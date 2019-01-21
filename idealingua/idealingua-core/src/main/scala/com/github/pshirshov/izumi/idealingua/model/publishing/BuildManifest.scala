@@ -12,6 +12,27 @@ object ProjectVersion {
   def default = ProjectVersion("0.0.1", release = false, "UNSET-BUILD-ID")
 }
 
+case class ProjectNamingRule(
+                              prefix: Seq[String],
+                              /**
+                                * Positive value will work as .drop on fully qualified module name
+                                * Zero value will leave name untouched
+                                * Negative value will work as .takeRight
+                                *
+                                * Does not apply for layout == PLAIN
+                                */
+                              dropFQNSegments: Option[Int],
+                              postfix: Seq[String],
+                            )
+
+object ProjectNamingRule {
+  def example = ProjectNamingRule(
+    prefix = Seq("company", "example", "library"),
+    dropFQNSegments = Some(-1),
+    postfix = Seq("api"),
+  )
+}
+
 object BuildManifest {
 
   case class Common(

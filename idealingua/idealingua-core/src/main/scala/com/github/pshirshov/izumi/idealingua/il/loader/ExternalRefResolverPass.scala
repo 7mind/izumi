@@ -26,7 +26,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
 
   private def handleSuccess(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], DomainMeshResolvedMutable] = {
     (for {
-      withIncludes <- resolveIncludes(parsed)
+      withIncludes <- resolveIncludes(domainPath, parsed)
       loaded = new DomainMeshResolvedMutable(
         parsed.decls.id,
         withIncludes.model.definitions,
@@ -89,26 +89,46 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
       .fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
   }
 
-  private def resolveIncludes(parsed: ParsedDomain): Either[Vector[RefResolverIssue], ParsedDomain] = {
-    val m = parsed.model
-    val allIncludes = m.includes
-      .map(i => loadModel(parsed.decls.id, i, Seq(i)))
+  private def resolveOverlay(forDomain: DomainId)(result: ModelParsingResult): Either[Vector[RefResolverIssue], LoadedModel] = {
+    result match {
+      case ModelParsingResult.Success(_, model) if model.includes.isEmpty =>
+        Right(LoadedModel(model.definitions))
 
-    for {
-      model <- merge(m, allIncludes)
-    } yield {
-      parsed.copy(model = parsed.model.copy(definitions = model.definitions.toList, includes = Seq.empty))
+      case ModelParsingResult.Success(path, model) if model.includes.nonEmpty =>
+        Left(Vector(RefResolverIssue.InclusionsInOverlay(forDomain, path, model.includes)))
+
+      case f: ModelParsingResult.Failure =>
+        Left(Vector(RefResolverIssue.UnparseableInclusion(forDomain, List.empty, f)))
     }
   }
 
+  private def resolveIncludes(domainPath: FSPath, parsed: ParsedDomain): Either[Vector[RefResolverIssue], ParsedDomain] = {
+    val m = parsed.model
+    val domainId = parsed.decls.id
+    val domainOverlay = findOverlay(domainPath).map(resolveOverlay(domainId))
+
+    val allIncludes = m.includes
+      .map(i => loadModel(domainId, i, Seq(i)))
+    val withOverlay = allIncludes ++ domainOverlay.toSeq
+
+    val x = for {
+      model <- merge(m, withOverlay)
+    } yield {
+      parsed.copy(model = parsed.model.copy(definitions = model.definitions.toList, includes = Seq.empty))
+    }
+    x
+  }
+
   private def loadModel(forDomain: DomainId, includePath: Inclusion, stack: Seq[Inclusion]): Either[Vector[RefResolverIssue], LoadedModel] = {
-    findModel(forDomain, domains, includePath)
+    findModel(forDomain, includePath)
       .map {
-        case ModelParsingResult.Success(_, model) =>
+        case ModelParsingResult.Success(modelPath, model) =>
+          val modelOverlay = findOverlay(modelPath).map(resolveOverlay(forDomain))
+
           val subincludes = model.includes
             .map(i => loadModel(forDomain, i, stack :+ i))
 
-          merge(model, subincludes)
+          merge(model, subincludes ++ modelOverlay.toSeq)
 
         case f: ModelParsingResult.Failure =>
           Left(Vector(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
@@ -139,8 +159,13 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
     }
   }
 
-  private def findModel(forDomain: DomainId, domains: UnresolvedDomains, includePath: Inclusion): Option[ModelParsingResult] = {
-    val includeparts = includePath.i.split("/")
+  private def findOverlay(forFile: FSPath): Option[ModelParsingResult] = {
+    val candidates = Set(forFile.move(p => ModelLoader.overlayVirtualDir +: p))
+    domains.overlays.results.find(f => candidates.contains(f.path))
+  }
+
+  private def findModel(forDomain: DomainId, includePath: Inclusion): Option[ModelParsingResult] = {
+    val includeparts = includePath.i.split('/')
     val absolute = FSPath(includeparts)
     val prefixed = FSPath("idealingua" +: includeparts)
     val relativeToDomain = FSPath(forDomain.toPackage.init ++ includeparts)

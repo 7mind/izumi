@@ -6,9 +6,9 @@ import java.nio.file.{Files, Path}
 import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
-class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: Set[String]) extends FilesystemEnumerator {
+class LocalFilesystemEnumerator(roots: Seq[Path], cp: Seq[File], expectedExtensions: Set[String]) extends FilesystemEnumerator {
   def enumerate(): Map[FSPath, String] = {
-    val loaded = (root +: cp.map(_.toPath))
+    val loaded = (roots ++ cp.map(_.toPath))
       .filter(_.toFile.exists())
       .flatMap {
         dir =>
@@ -30,11 +30,15 @@ class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: S
     loaded
   }
 
+  def toFsPath(path: Path): FSPath = {
+    FSPath.parse(path.toString)
+  }
+
   def enumerateZip(directory: Path): Seq[(FSPath, String)] = {
     IzZip.findInZips(Seq(directory.toFile), hasExpectedExt)
       .map {
         case (path, content) =>
-          FSPath(path) -> content
+          toFsPath(path) -> content
       }
       .toSeq
   }
@@ -47,7 +51,7 @@ class LocalFilesystemEnumerator(root: Path, cp: Seq[File], expectedExtensions: S
       .filter {
         p => Files.isRegularFile(p) && hasExpectedExt(p)
       }
-      .map(f => FSPath(directory.relativize(f)) -> IzFiles.readString(f))
+      .map(f => toFsPath(directory.relativize(f)) -> IzFiles.readString(f))
       .toSeq
   }
 

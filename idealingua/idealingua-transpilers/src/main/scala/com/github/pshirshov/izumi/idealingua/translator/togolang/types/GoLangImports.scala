@@ -113,21 +113,29 @@ object GoLangImports {
     } ++ extra
   }
 
-  def collectTypes(id: TypeId, skipPrimitive: Boolean = false): List[TypeId] = id match {
-    case p: Primitive => if(skipPrimitive) List.empty else List(p)
-    case g: Generic => g match {
-      case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType, skipPrimitive = true)
-      case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType, skipPrimitive = true)
-      case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType, skipPrimitive = true)
-      case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, skipPrimitive = false)
+  def collectTypes(id: TypeId, fieldNested: Boolean = false): List[TypeId] = {
+    if (fieldNested) {
+      if (id == Primitive.TUUID) {
+        return List.empty
+      }
     }
-    case a: AdtId => List(a)
-    case i: InterfaceId => List(i)
-    case al: AliasId => List(al)
-    case id: IdentifierId => List(id)
-    case e: EnumId => List(e)
-    case dto: DTOId => List(dto)
-    case _ => throw new IDLException(s"Impossible type in collectTypes ${id.name} ${id.path.toPackage.mkString(".")}")
+
+    id match {
+      case p: Primitive => List(p)
+      case g: Generic => g match {
+        case gm: Generic.TMap => List(gm) ++ collectTypes(gm.valueType, fieldNested = true)
+        case gl: Generic.TList => List(gl) ++ collectTypes(gl.valueType, fieldNested = true)
+        case gs: Generic.TSet => List(gs) ++ collectTypes(gs.valueType, fieldNested = true)
+        case go: Generic.TOption => List(go) ++ collectTypes(go.valueType, fieldNested = true)
+      }
+      case a: AdtId => List(a)
+      case i: InterfaceId => List(i)
+      case al: AliasId => List(al)
+      case id: IdentifierId => List(id)
+      case e: EnumId => List(e)
+      case dto: DTOId => List(dto)
+      case _ => throw new IDLException(s"Impossible type in collectTypes ${id.name} ${id.path.toPackage.mkString(".")}")
+    }
   }
 
   protected def collectTypes(definition: TypeDef, ts: Typespace): List[TypeId] = definition match {
@@ -138,9 +146,9 @@ object GoLangImports {
     case i: Identifier =>
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(f.typeId))
     case i: Interface =>
-      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
+      i.struct.superclasses.interfaces ++ ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId, fieldNested = true))
     case d: DTO =>
-      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId))
+      d.struct.superclasses.interfaces ++ ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(f.field.typeId, fieldNested = true))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(al.typeId))
   }

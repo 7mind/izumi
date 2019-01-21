@@ -19,7 +19,7 @@ class IzString(s: String) {
 
   @inline def shift(delta: Int): String = {
     val shift = " " * delta
-    s.split("\n").map(s => s"$shift$s").mkString("\n")
+    s.split('\n').map(s => s"$shift$s").mkString("\n")
   }
 
   @inline def densify(): String = {

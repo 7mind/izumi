@@ -22,6 +22,8 @@ object RawTopLevelDefn {
 
   final case class TLDNewtype(v: RawTypeDef.NewType) extends TypeDefn
 
+  final case class TLDDeclared(v: RawTypeDef.DeclaredType) extends TypeDefn
+
   final case class TLDForeignType(v: RawTypeDef.ForeignType) extends TypeDefn
 
 }

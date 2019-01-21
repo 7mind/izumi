@@ -16,7 +16,7 @@ import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
 import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSharpLayouter, CSharpTranslator}
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
 import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
@@ -25,6 +25,7 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.Scala
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpNamingConvention
 
 import scala.sys.process._
 
@@ -49,12 +50,12 @@ object IDLTestTools {
 
   def makeLoader(base: String): LocalModelLoaderContext = {
     val src = new File(getClass.getResource(base).toURI).toPath
-    val context = new LocalModelLoaderContext(src, Seq.empty)
+    val context = new LocalModelLoaderContext(Seq(src), Seq.empty)
     context
   }
 
   def makeResolver(base: String): ModelResolver = {
-    val last = base.split("/").last
+    val last = base.split('/').last
     val rules = if (last == "any") {
       TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
     } else {
@@ -78,7 +79,7 @@ object IDLTestTools {
 
   def compilesScala(id: String, domains: Seq[LoadedDomain.Success], layout: ScalaProjectLayout, extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val mf = ScalaBuildManifest.example
-    val manifest = mf.copy(layout = ScalaProjectLayout.SBT, sbt = mf.sbt.copy(dropFQNSegments = Some(2)))
+    val manifest = mf.copy(layout = ScalaProjectLayout.SBT, sbt = mf.sbt.copy(projectNaming = mf.sbt.projectNaming.copy(dropFQNSegments = Some(1))))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
@@ -135,9 +136,12 @@ object IDLTestTools {
 
     layout match {
       case CSharpProjectLayout.NUGET =>
-        val cmdNuget = Seq("nuget", "pack", s"${CSharpLayouter.nuspecName(manifest, None)}")
+        val conv = new CSharpNamingConvention(manifest.nuget.projectNaming)
+        val cmdNuget = Seq("nuget", "pack", s"nuspec/${conv.nuspecName(conv.pkgId)}")
         val exitCodeBuild = run(out.targetDir, cmdNuget, Map.empty, "cs-nuget")
-        exitCodeBuild == 0
+        val cmdMsbuild = Seq("msbuild", "/t:Restore", "/t:Rebuild")
+        val exitCodeMsBuild = run(out.targetDir, cmdMsbuild, Map.empty, "cs-msbuild")
+        exitCodeBuild == 0 && exitCodeMsBuild == 0
 
       case CSharpProjectLayout.PLAIN =>
         val refsDir = out.absoluteTargetDir.resolve("refs")

@@ -37,6 +37,46 @@ final case class GoLangField(
     val src =  if (forOption) s"(*$srcOriginal)" else srcOriginal
 
     id match {
+      case Primitive.TTime =>
+        if (forOption)
+          s"""_$dest := irt.WriteTime($src)
+             |$dest = &_$dest
+           """.stripMargin
+        else
+          s"""$dest := irt.WriteTime($src)""".stripMargin
+
+      case Primitive.TDate =>
+        if (forOption)
+          s"""_$dest := irt.WriteDate($src)
+             |$dest = &_$dest
+         """.stripMargin
+        else
+          s"""$dest := irt.WriteDate($src)""".stripMargin
+
+      case Primitive.TTsU =>
+        if (forOption)
+          s"""_$dest := irt.WriteUTCDateTime($src)
+             |$dest = &_$dest
+         """.stripMargin
+        else
+          s"""$dest := irt.WriteUTCDateTime($src)""".stripMargin
+
+      case Primitive.TTs =>
+        if (forOption)
+          s"""_$dest := irt.WriteLocalDateTime($src)
+             |$dest = &_$dest
+           """.stripMargin
+        else
+          s"""$dest := irt.WriteLocalDateTime($src)""".stripMargin
+
+      case Primitive.TTsTz =>
+        if (forOption)
+          s"""_$dest := irt.WriteZoneDateTime($src)
+             |$dest = &_$dest
+           """.stripMargin
+        else
+          s"""$dest := irt.WriteZoneDateTime($src)""".stripMargin
+
       case _: InterfaceId =>
         s"""_$dest, err := json.Marshal($src)
            |if err != nil {
@@ -80,6 +120,9 @@ final case class GoLangField(
       case _: InterfaceId | _: AdtId | _: IdentifierId | _: DTOId | _: EnumId =>
         renderPolymorphSerialized(id, dest, src)
 
+      case Primitive.TDate | Primitive.TTime | Primitive.TTsTz | Primitive.TTs | Primitive.TTsU =>
+          renderPolymorphSerialized(id, dest, src)
+
       case g: Generic => g match {
         case go: Generic.TOption =>
           s"""var $dest ${GoLangType(id, im, ts).renderType(serialized = true)} = nil
@@ -102,7 +145,7 @@ final case class GoLangField(
           val tempVal = s"_$dest"
 
           // TODO This is not going to work well for nested lists
-          if (GoLangType(null, im, ts).isPrimitive(vt))
+          if (!GoLangType(null, im, ts).isPolymorph(vt))
             s"$dest := $src"
           else
             s"""$tempVal := make(${GoLangType(id, im, ts).renderType(serialized = true)}, len($src))
@@ -122,7 +165,7 @@ final case class GoLangField(
           val tempVal = s"_$dest"
 
 
-          if (GoLangType(null, im, ts).isPrimitive(vt.id))
+          if (!GoLangType(null, im, ts).isPolymorph(vt.id))
             s"$dest := $src"
           else
           // TODO: there was this thing in the for loop below
@@ -322,6 +365,41 @@ final case class GoLangField(
   private def renderDeserializedVar(refId: TypeId, dest: String, src: String, usageId: Option[TypeId] = None): String = {
     val id = if (usageId.isDefined) usageId.get else refId
     refId match {
+      case Primitive.TTime =>
+        s"""$dest, err := irt.ReadTime($src)
+           |if err != nil {
+           |    return err
+           |}
+         """.stripMargin
+
+      case Primitive.TDate =>
+        s"""$dest, err := irt.ReadDate($src)
+           |if err != nil {
+           |    return err
+           |}
+         """.stripMargin
+
+      case Primitive.TTsU =>
+        s"""$dest, err := irt.ReadUTCDateTime($src)
+           |if err != nil {
+           |    return err
+           |}
+         """.stripMargin
+
+      case Primitive.TTs =>
+        s"""$dest, err := irt.ReadLocalDateTime($src)
+           |if err != nil {
+           |    return err
+           |}
+         """.stripMargin
+
+      case Primitive.TTsTz =>
+        s"""$dest, err := irt.ReadZoneDateTime($src)
+           |if err != nil {
+           |    return err
+           |}
+         """.stripMargin
+
       case _: InterfaceId =>
         s"""$dest, err := ${im.withImport(id)}Create${id.name}($src)
            |if err != nil {
@@ -411,7 +489,7 @@ final case class GoLangField(
                 case _ => throw new IDLException("Just preventing a warning here...")
               }
 
-              if (GoLangType(null, im, ts).isPrimitive(vt))
+              if (!GoLangType(null, im, ts).isPolymorph(vt))
                 assignVar
               else
                 s"""$tempVal := make(${tp.renderType()}, len($variable))
@@ -427,7 +505,7 @@ final case class GoLangField(
             case gm: Generic.TMap => {
               val vt = gm.valueType
 
-              if (GoLangType(null, im, ts).isPrimitive(vt))
+              if (!GoLangType(null, im, ts).isPolymorph(vt))
                 assignVar
               else
                 s"""$tempVal := make(${tp.renderType()})

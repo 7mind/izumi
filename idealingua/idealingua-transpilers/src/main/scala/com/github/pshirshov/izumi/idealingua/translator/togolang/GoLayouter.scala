@@ -9,7 +9,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
 
   override def layout(outputs: Seq[Translated]): Layouted = {
-    val scoped = options.manifest.layout == GoProjectLayout.REPOSITORY
+
 
     val modules = outputs.flatMap {
       out =>
@@ -19,17 +19,21 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
     val allModules = modules ++ rtModules
 
-    val out = if (scoped) {
-      val prefix = GoLangBuildManifest.importPrefix(options.manifest).split("/")
-      allModules.map {
-        case ExtendedModule.DomainModule(domain, module) =>
-          ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
-        case ExtendedModule.RuntimeModule(module) =>
-          ExtendedModule.RuntimeModule(withPrefix(module, prefix))
-      }
-    } else {
-      allModules
+    val out = options.manifest.layout match {
+      case GoProjectLayout.REPOSITORY =>
+        val prefix = GoLangBuildManifest.importPrefix(options.manifest).split('/')
+        allModules.map {
+          case ExtendedModule.DomainModule(domain, module) =>
+            ExtendedModule.DomainModule(domain, withPrefix(module, prefix))
+          case ExtendedModule.RuntimeModule(module) =>
+            ExtendedModule.RuntimeModule(withPrefix(module, prefix))
+        }
+
+      case GoProjectLayout.PLAIN =>
+        allModules
+
     }
+
 
     Layouted(out)
   }

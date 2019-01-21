@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.verification.Verifi
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpLayouter
 
 object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorOptions] {
 

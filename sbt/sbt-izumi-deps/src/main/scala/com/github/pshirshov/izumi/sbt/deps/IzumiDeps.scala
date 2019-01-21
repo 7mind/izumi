@@ -48,12 +48,15 @@ object IzumiDeps {
 
     // good to drop - java
     val cglib_nodep = "3.2.8" // java
+
+    val scala_xml = "1.1.1"
   }
 
   object R {
     val scala_compiler = "org.scala-lang" % "scala-compiler"
     val scala_library = "org.scala-lang" % "scala-library"
     val scala_reflect = "org.scala-lang" % "scala-reflect"
+    val scala_xml = "org.scala-lang.modules" %% "scala-xml" % V.scala_xml
 
     val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
     val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % V.scalacheck_shapeless
@@ -98,7 +101,7 @@ object IzumiDeps {
       "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
       ).map(
       _.exclude("org.typelevel", "cats-kernel")
-       .exclude("org.typelevel", "cats-core")
+        .exclude("org.typelevel", "cats-core")
     ) ++ Seq(
       cats_core
     )

@@ -14,7 +14,7 @@ class ProviderMagnetTest extends WordSpec {
   def priv(@Id("locargann") x: Int): Unit = x.discard()
 
   val locargannfnval: Int @Id("loctypeann") => Unit = priv
-  val locargannfnvalerased = priv _
+  val locargannfnvalerased: Int => Unit = priv
 
   "Annotation extracting WrappedFunction" should {
     "can't handle opaque function vals, that hide underlying method reference" in {

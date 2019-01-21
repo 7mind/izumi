@@ -99,7 +99,7 @@ final case class GoLangStruct(
   }
 
   private def isFieldPolymorph(f: GoLangField): Boolean = {
-    return f.tp.isPolymorph(f.tp.id)
+    f.tp.isPolymorph(f.tp.id)
   }
 
   private def getRefinedFields(fields: List[GoLangField], polymorph: Boolean): List[GoLangField] = {

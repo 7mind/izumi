@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, DefMeth
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import com.github.pshirshov.izumi.idealingua.translator.totypescript.layout.TypescriptNamingConvention
 
 import scala.util.control.Breaks._
 
@@ -38,7 +39,7 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
 
     imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
       .map(i => if (i._1.startsWith("import")) i._1 else
-              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(",").map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
+              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(',').map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
             .mkString(",\n") + s"\n} from '${i._1}';")
       .mkString("\n")
   }
@@ -62,11 +63,18 @@ object TypeScriptImports {
     TypeScriptImports(fromBuzzer(ts, i, fromPkg, extra, manifest), manifest)
 
   protected def withImport(t: TypeId, fromPackage: Package, manifest: TypeScriptBuildManifest): Seq[String] = {
-    var pathToRoot = ""
-    (1 to (if(manifest.layout == TypeScriptProjectLayout.YARN &&
-      manifest.yarn.dropFQNSegments.isDefined) fromPackage.size - manifest.yarn.dropFQNSegments.get else fromPackage.size)).foreach(_ => pathToRoot += "../")
+    val depth: Int = if(manifest.layout == TypeScriptProjectLayout.YARN) {
+      1
+    } else {
+      fromPackage.size
+    }
 
-    val scopeRoot = if (manifest.layout == TypeScriptProjectLayout.YARN) manifest.yarn.scope + "/" else pathToRoot
+    val pathToRoot = List.fill(depth)("../").mkString
+    val scopeRoot = if (manifest.layout == TypeScriptProjectLayout.YARN) {
+      manifest.yarn.scope + "/"
+    } else {
+      pathToRoot
+    }
 
     t match {
       case g: Generic => g match {
@@ -97,7 +105,7 @@ object TypeScriptImports {
     var matching = 0
 
     breakable{
-      for( i <- 0 to srcPkg.size - 1){
+      for( i <- srcPkg.indices){
         if (destPkg.size < i || srcPkg(i) != destPkg(i)) {
           break
         }
@@ -118,8 +126,8 @@ object TypeScriptImports {
     var importFile = ""
 
     if (srcPkg.nonEmpty && manifest.layout == TypeScriptProjectLayout.YARN) {
-      importOffset = manifest.yarn.scope + "/" +
-        (if (manifest.yarn.dropFQNSegments.isDefined) t.path.toPackage.drop(manifest.yarn.dropFQNSegments.get) else t.path.toPackage).mkString("-")
+      val conv = new TypescriptNamingConvention(manifest)
+      importOffset = conv.toScopedId(t.path.toPackage)
       importFile = importOffset
     } else {
       if (srcPkg.nonEmpty) {

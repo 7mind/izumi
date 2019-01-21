@@ -21,7 +21,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
-import org.http4s.websocket.WebSocketFrame.{Binary, Pong, Text}
+import org.http4s.websocket.WebSocketFrame.{Binary, Close, Pong, Text}
 
 class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
                                      , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
@@ -49,6 +49,9 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
           case Status.Successful(resp) =>
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: success, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
             resp
+          case resp if resp.attributes.get(org.http4s.server.websocket.websocketKey[CatsIO]).isDefined =>
+            logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: websocket request")
+            resp
           case resp =>
             logger.info(s"${req.method.name -> "method"} ${req.pathInfo -> "uri"}: rejection, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
             resp
@@ -68,7 +71,8 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
 
   protected def handler(): PartialFunction[AuthedRequest[CatsIO, RequestContext], CatsIO[Response[CatsIO]]] = {
     case request@GET -> Root / "ws" as ctx =>
-      setupWs(request, ctx)
+      val result = setupWs(request, ctx)
+      result
 
     case request@GET -> Root / service / method as ctx =>
       val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
@@ -142,6 +146,9 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
               cb(Right(handleResult(context, result)))
           }
       }
+
+    case Close(_) =>
+      CIO.point(None)
 
     case v: Binary =>
       CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))

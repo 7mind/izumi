@@ -167,10 +167,12 @@ object IdealinguaPlugin extends AutoPlugin {
       val projectId = thisProjectRef.value.project
       val src = sourceDirectory.value.toPath
       val izumiSrcDir = src.resolve("main/izumi")
+      val overlaysSrcDir = src.resolve("main/izumi.overlay")
+
       logger.debug(s"""$projectId: Loading models from $izumiSrcDir...""")
       val depClasspath = (dependencyClasspath in Compile).value
       val cp = depClasspath.map(_.data)
-      val loaded = new LocalModelLoaderContext(izumiSrcDir, cp).loader.load()
+      val loaded = new LocalModelLoaderContext(Seq(izumiSrcDir, overlaysSrcDir), cp).loader.load()
       logger.debug(s"""$projectId: Preloaded ${loaded.domains.results.size} domains from $izumiSrcDir...""")
       loaded
     },

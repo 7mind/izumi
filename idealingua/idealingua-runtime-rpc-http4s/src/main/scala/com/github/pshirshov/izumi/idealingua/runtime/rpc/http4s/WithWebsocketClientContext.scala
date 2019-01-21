@@ -146,10 +146,10 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 
                             case Some(value: RawResponse.BadRawResponse) =>
                               logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
-                              BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                              BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                             case None =>
-                              BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                              BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                           }
                     }
                 }

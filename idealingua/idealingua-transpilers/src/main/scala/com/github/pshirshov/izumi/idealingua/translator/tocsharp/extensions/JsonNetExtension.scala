@@ -87,6 +87,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   override def postModelEmit(ctx: CSTContext, name: String, struct: CSharpClass)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
     // ${if (struct.fields.isEmpty) "" else "var json = JObject.Load(reader);"}
+    val currentDomain = struct.id.uniqueDomainName
 
     s"""public class ${name}_JsonNetConverter: JsonNetConverter<$name> {
        |    public override void WriteJson(JsonWriter writer, $name v, JsonSerializer serializer) {
@@ -97,9 +98,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |
        |    public override $name ReadJson(JsonReader reader, System.Type objectType, $name existingValue, bool hasExistingValue, JsonSerializer serializer) {
        |        ${if (struct.fields.isEmpty) "reader.Skip();" else "var json = JObject.Load(reader);"}
-       |${struct.fields.map(f => prepareReadProperty(f)).filter(_.isDefined).map(_.get).mkString("\n").shift(8)}
+       |${struct.fields.map(f => prepareReadProperty(f, currentDomain)).filter(_.isDefined).map(_.get).mkString("\n").shift(8)}
        |        return new $name(
-       |${struct.fields.map(f => readProperty(f)).mkString(", \n").shift(12)}
+       |${struct.fields.map(f => readProperty(f, currentDomain)).mkString(", \n").shift(12)}
        |        );
        |    }
        |}
@@ -225,15 +226,15 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     }
   }
 
-  private def prepareReadProperty(f: CSharpField)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
+  private def prepareReadProperty(f: CSharpField, currentDomain: String)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
     if (!propertyNeedsPrepare(f.tp.id)) {
       None
     } else {
-      prepareReadPropertyValue(s"""json["${f.name}"]""", s"_${f.name}", f.tp, createDst = true)
+      prepareReadPropertyValue(s"""json["${f.name}"]""", s"_${f.name}", f.tp, createDst = true, currentDomain)
     }
   }
 
-  private def prepareReadPropertyValue(src: String, dst: String, i: CSharpType, createDst: Boolean)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
+  private def prepareReadPropertyValue(src: String, dst: String, i: CSharpType, createDst: Boolean, currentDomain: String)(implicit im: CSharpImports, ts: Typespace): Option[String] = {
     if (!propertyNeedsPrepare(i.id)) {
       None
     } else {
@@ -245,8 +246,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |foreach (var ${dst}_kv in ((JObject)$src).Properties()) {
                |    ${mt.renderType()} ${dst}_dv;
-               |${(if (propertyNeedsPrepare(mt.id)) prepareReadPropertyValue(dst + "_kv.Value", dst + "_dv", mt, createDst = false).get else s"${dst}_dv = ${readPropertyValue(dst + "_kv.Value", mt)};").shift(4)}
-               |    $dst.Add(${mk.renderFromString(dst + "_kv.Name", unescape = false)}, ${dst}_dv);
+               |${(if (propertyNeedsPrepare(mt.id)) prepareReadPropertyValue(dst + "_kv.Value", dst + "_dv", mt, createDst = false, currentDomain).get else s"${dst}_dv = ${readPropertyValue(dst + "_kv.Value", mt, currentDomain)};").shift(4)}
+               |    $dst.Add(${mk.renderFromString(dst + "_kv.Name", unescape = false, currentDomain)}, ${dst}_dv);
                |}
              """.stripMargin
           )
@@ -257,7 +258,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |foreach (var ${dst}_sv in (JArray)$src) {
                |    ${lt.renderType()} ${dst}_d;
-               |${(if (propertyNeedsPrepare(gl.valueType)) prepareReadPropertyValue(dst + "_sv", dst + "_d", lt, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_sv", lt)};").shift(4)}
+               |${(if (propertyNeedsPrepare(gl.valueType)) prepareReadPropertyValue(dst + "_sv", dst + "_d", lt, createDst = false, currentDomain).get else s"${dst}_d = ${readPropertyValue(dst + "_sv", lt, currentDomain)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
              """.stripMargin
@@ -269,7 +270,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
             s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
                |foreach (var ${dst}_lv in (JArray)$src) {
                |    ${st.renderType()} ${dst}_d;
-               |${(if (propertyNeedsPrepare(gs.valueType)) prepareReadPropertyValue(dst + "_lv", dst + "_d", st, createDst = false).get else s"${dst}_d = ${readPropertyValue(dst + "_lv", st)};").shift(4)}
+               |${(if (propertyNeedsPrepare(gs.valueType)) prepareReadPropertyValue(dst + "_lv", dst + "_d", st, createDst = false, currentDomain).get else s"${dst}_d = ${readPropertyValue(dst + "_lv", st, currentDomain)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
              """.stripMargin
@@ -280,17 +281,20 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           Some(
             s"""${i.renderType()} $dst = null;
                |if ($src != null && $src.Type != JTokenType.Null) {
-               |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = false).get else s"$dst = ${readPropertyValue(src, ot)};").shift(4)}
+               |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = false, currentDomain).get else s"$dst = ${readPropertyValue(src, ot, currentDomain)};").shift(4)}
                |}
              """.stripMargin)
 
         case al: AliasId =>
-          prepareReadPropertyValue(src, dst, CSharpType(ts.dealias(al)), createDst = createDst)
+          prepareReadPropertyValue(src, dst, CSharpType(ts.dealias(al)), createDst = createDst, currentDomain)
 
         case _: DTOId =>
+//          Some(
+//            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+//               |$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
+//          )
           Some(
-            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-               |serializer.Populate($src.CreateReader(), $dst);""".stripMargin
+            s"""${if (createDst) "var " else ""}$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
           )
 
         case _ => throw new Exception("Other cases should have been checked already.")
@@ -298,7 +302,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
     }
   }
 
-  private def readPropertyValue(src: String, t: CSharpType)(implicit im: CSharpImports, ts: Typespace): String = {
+  private def readPropertyValue(src: String, t: CSharpType, currentDomain: String)(implicit im: CSharpImports, ts: Typespace): String = {
     t.id match {
       case p: Primitive => p match {
         case Primitive.TBool => s"$src.Value<bool>()"
@@ -322,20 +326,20 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case Primitive.TTsU => s"DateTime.ParseExact($src.Value<string>(), JsonNetTimeFormats.Tsu, CultureInfo.InvariantCulture, DateTimeStyles.None)"
       }
       case _ => t.id match {
-        case _: EnumId => s"${t.renderType()}Helpers.From($src.Value<string>())"
+        case _: EnumId => s"${t.renderType(t.id.uniqueDomainName != currentDomain)}Helpers.From($src.Value<string>())"
         case _: IdentifierId => s"${t.renderType()}.From($src.Value<string>())"
         case _: InterfaceId | _: AdtId => s"serializer.Deserialize<${t.renderType()}>($src.CreateReader())"
-        case al: AliasId => readPropertyValue(src, CSharpType(ts.dealias(al)))
+        case al: AliasId => readPropertyValue(src, CSharpType(ts.dealias(al)), currentDomain)
         case _ => throw new IDLException(s"Impossible readPropertyValue type: ${t.id}")
       }
     }
   }
 
-  private def readProperty(f: CSharpField)(implicit im: CSharpImports, ts: Typespace): String = {
+  private def readProperty(f: CSharpField, currentDomain: String)(implicit im: CSharpImports, ts: Typespace): String = {
     if (propertyNeedsPrepare(f.tp.id))
       s"_${f.name}"
     else
-      readPropertyValue(s"""json["${f.name}"]""", f.tp)
+      readPropertyValue(s"""json["${f.name}"]""", f.tp, currentDomain)
   }
 
   override def preModelEmit(ctx: CSTContext, id: Interface)(implicit im: CSharpImports, ts: Typespace): String = {
