@@ -66,7 +66,7 @@ logstage {
 Section      |   Explanation |
 ------------ | ------------- |
 `sinks`      | Defines used log sinks*. This section should contain `default` log sinks in case of ignore sinks list if you need to use only default sinks** |
-`root`       | Defines default settings for logging (i.e., sinks and log threshold) | 
+`root`       | Defines default settings for logging (e.g., sinks and log threshold) | 
 `entries`    | Defines log entries settings (threshold and list of sinks) |
 
 Notes:

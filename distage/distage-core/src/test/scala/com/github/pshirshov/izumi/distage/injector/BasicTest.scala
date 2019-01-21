@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{BadIdAnnotationException, ProvisioningException, UnsupportedWiringException, ConflictingDIKeyBindingsException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 import distage._
@@ -70,11 +70,11 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
 
-    val exc = intercept[BadAnnotationException] {
+    val exc = intercept[BadIdAnnotationException] {
       injector.plan(definition)
     }
 
-    assert(exc.getMessage == "Wrong annotation value, only constants are supporeted. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
   }
 
   "support multiple bindings" in {
@@ -168,7 +168,7 @@ class BasicTest extends WordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val exc = intercept[UntranslatablePlanException] {
+    val exc = intercept[ConflictingDIKeyBindingsException] {
       injector.plan(definition)
     }
     assert(exc.conflicts.size == 1 && exc.conflicts.contains(DIKey.get[Dependency]))

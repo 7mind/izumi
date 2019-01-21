@@ -38,7 +38,7 @@ import scala.collection.immutable.ListSet
   *   try { locator.get[App].runMain() } finally {
   *     // reverse closeables list, Auto-Sets preserve order, in the order of *initialization*
   *     // Therefore resources should closed in the *opposite order*
-  *     // i.e. if C depends on B depends on A, create: A -> B -> C, close: C -> B -> A
+  *     // e.g. if C depends on B depends on A, create: A -> B -> C, close: C -> B -> A
   *     closeables.reverse.foreach(_.close())
   *   }
   * }}}

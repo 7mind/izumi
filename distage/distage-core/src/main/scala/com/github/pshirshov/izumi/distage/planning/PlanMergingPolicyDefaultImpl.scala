@@ -1,28 +1,23 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedOpException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedOpException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
+import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl.DIKeyConflictResolution
 import com.github.pshirshov.izumi.fundamentals.graphs._
 import distage.DIKey
 
 import scala.collection.mutable
 
-sealed trait ConflictResolution
-
-object ConflictResolution {
-
-  final case class Successful(op: Set[ExecutableOp]) extends ConflictResolution
-
-  final case class Failed(ops: Set[InstantiationOp]) extends ConflictResolution
-
-}
-
-class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: SymbolIntrospector.Runtime) extends PlanMergingPolicy {
+class PlanMergingPolicyDefaultImpl
+(
+  analyzer: PlanAnalyzer
+  , symbolIntrospector: SymbolIntrospector.Runtime
+) extends PlanMergingPolicy {
 
   override def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan = {
     (currentOp.provisions ++ currentOp.sets.values).foreach {
@@ -35,22 +30,33 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
   }
 
   override def finalizePlan(completedPlan: DodgyPlan): SemiPlan = {
-    val resolved = completedPlan.operations.mapValues(resolve).toMap
-    val allOperations = resolved.values.collect({ case ConflictResolution.Successful(op) => op }).flatten.toSeq
-    val issues = resolved.collect({ case (k, ConflictResolution.Failed(ops)) => (k, ops) }).toMap
+    val resolved = completedPlan.operations.mapValues(resolveConflicts).toMap
+    val allOperations = resolved.values.collect { case DIKeyConflictResolution.Successful(op) => op }.flatten.toSeq
+    val issues = resolved.collect { case (k, DIKeyConflictResolution.Failed(ops)) => (k, ops) }.toMap
 
     if (issues.nonEmpty) {
       import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
       // TODO: issues == slots, we may apply slot logic here
-      val issueRepr = issues.map({case (k, ops) => s"$k: ${ops.niceList().shift(2)}"})
-      throw new UntranslatablePlanException(s"Unresolved operation conflicts: ${issueRepr.niceList()}", issues)
+      val issueRepr = issues.map {
+        case (k, ops) =>
+          s"Conflicting bindings found for key $k: ${ops.niceList().shift(2)}"
+      }
+      throw new ConflictingDIKeyBindingsException(
+        s"""Multiple bindings bind to the same DIKey: ${issueRepr.niceList()}
+           |There must be exactly one valid binding for each DIKey.
+           |
+           |You can use named instances: `make[X].named("id")` method and `distage.Id` annotation to disambiguate
+           |between multiple instances of the same type.
+         """.stripMargin
+        , issues
+      )
     }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
     SemiPlan(completedPlan.definition, allOperations.toVector)
   }
 
-  def addImports(plan: SemiPlan): SemiPlan = {
+  override def addImports(plan: SemiPlan): SemiPlan = {
     val topology = analyzer.topology(plan.steps)
     val imports = topology
       .dependees
@@ -127,15 +133,7 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
     OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
   }
 
-
-  private def hasByNameParameter(fsto: ExecutableOp): Boolean = {
-    val fstoTpe = ExecutableOp.instanceType(fsto)
-    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
-    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
-    hasByName
-  }
-
-  protected def resolve(operations: mutable.Set[InstantiationOp]): ConflictResolution = {
+  protected[this] def resolveConflicts(operations: mutable.Set[InstantiationOp]): DIKeyConflictResolution = {
     operations match {
       case s if s.nonEmpty && s.forall(_.isInstanceOf[CreateSet]) =>
         val ops = s.collect({ case c: CreateSet => c })
@@ -144,14 +142,31 @@ class PlanMergingPolicyDefaultImpl(analyzer: PlanAnalyzer, symbolIntrospector: S
             acc.copy(members = acc.members ++ op.members)
 
         }
-        ConflictResolution.Successful(Set(merged))
+        DIKeyConflictResolution.Successful(Set(merged))
       case s if s.size == 1 =>
-        ConflictResolution.Successful(Set(s.head))
+        DIKeyConflictResolution.Successful(Set(s.head))
       case other =>
-        ConflictResolution.Failed(other.toSet)
+        DIKeyConflictResolution.Failed(other.toSet)
     }
   }
+
+  private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
+    val fstoTpe = ExecutableOp.instanceType(fsto)
+    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
+    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+    hasByName
+  }
+
 }
 
+object PlanMergingPolicyDefaultImpl {
 
+  sealed trait DIKeyConflictResolution
 
+  object DIKeyConflictResolution {
+
+    final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
+
+    final case class Failed(ops: Set[InstantiationOp]) extends DIKeyConflictResolution
+  }
+}

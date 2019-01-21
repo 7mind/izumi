@@ -30,6 +30,23 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(context.get[Circular2].arg != null)
   }
 
+  "support circular dependencies with final class implementations" in {
+    import CircularCase1._
+
+    val definition = PlannerInput(new ModuleDef {
+      make[Circular2].from[Circular2Impl]
+      make[Circular1].from[Circular1Impl]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produce(plan)
+
+    assert(context.get[Circular1] != null)
+    assert(context.get[Circular2] != null)
+    assert(context.get[Circular2].arg != null)
+  }
+
   "support trait initialization" in {
     import CircularCase2._
 

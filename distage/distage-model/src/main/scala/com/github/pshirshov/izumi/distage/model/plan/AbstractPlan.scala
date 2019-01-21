@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.functional.Renderable
 
-// TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semi
+// TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semiplan
 sealed trait AbstractPlan {
   def definition: ModuleBase
 

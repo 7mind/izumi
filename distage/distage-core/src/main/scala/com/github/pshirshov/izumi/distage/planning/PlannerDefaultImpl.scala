@@ -12,7 +12,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
 
-
 class PlannerDefaultImpl
 (
   protected val forwardingRefResolver: ForwardingRefResolver

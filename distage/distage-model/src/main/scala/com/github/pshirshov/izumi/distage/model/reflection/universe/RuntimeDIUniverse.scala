@@ -9,7 +9,7 @@ trait RuntimeDIUniverse extends DIUniverse {
     override def repr(value: T): String = value.toString
   }
 
-  override implicit def stringIdContract: IdContract[String] = new IdContractImpl[String]
+  override implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]
   override implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
 
   implicit def anyIdContract[T]: IdContract[T] = new IdContractImpl[T]

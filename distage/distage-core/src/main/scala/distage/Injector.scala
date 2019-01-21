@@ -110,7 +110,7 @@ object Injector {
     }
   }
 
-  class Gc(roots: Set[DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
+  private[Injector] class Gc(roots: Set[DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
     val gcModule = new TracingGCModule(roots)
 
     def apply(): Injector = {
@@ -123,10 +123,10 @@ object Injector {
     }
   }
 
-  trait InjectorBootstrap {
+  private[Injector] trait InjectorBootstrap {
     def apply(): Injector
 
     def apply(overrides: BootstrapModule*): Injector
-}
+  }
 
 }
