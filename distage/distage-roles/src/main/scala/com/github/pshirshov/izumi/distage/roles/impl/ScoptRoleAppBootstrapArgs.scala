@@ -9,14 +9,9 @@ import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrateg
 // TODO
 object ScoptRoleAppBootstrapArgs {
 
-  def apply(params: ScoptLauncherArgs): RoleAppBootstrapStrategyArgs =
+  def apply[T <: ScoptLauncherArgs](params: T, disabledTags: BindingTag.Expressions.Expr): RoleAppBootstrapStrategyArgs =
     RoleAppBootstrapStrategyArgs(
-      disabledTags =
-        if (params.dummyStorage.contains(true)) {
-          BindingTag.Expressions.all(BackendPluginTags.Production, BackendPluginTags.Storage)
-        } else {
-          BindingTag.Expressions.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
-        }
+      disabledTags = disabledTags
       , roleSet =
           if (params.writeReference.isDefined) {
             params.roles.map(_.name).toSet + "configwriter" // TODO coupling
@@ -33,5 +28,4 @@ object ScoptRoleAppBootstrapArgs {
       , roleConfigs = params.roles.flatMap(r => r.configFile.map(c => r.name -> c).toSeq).toMap
       , dumpContext = params.dumpContext.getOrElse(false)
     )
-
 }

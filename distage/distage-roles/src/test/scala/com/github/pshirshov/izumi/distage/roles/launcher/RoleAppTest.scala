@@ -2,12 +2,14 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.distage.app.AppFailureHandler
+import com.github.pshirshov.izumi.distage.app.{AppFailureHandler, ApplicationBootstrapStrategy}
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.RoleService
-import com.github.pshirshov.izumi.distage.roles.impl.ScoptRoleApp
+import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.IzParser
+import com.github.pshirshov.izumi.distage.roles.impl.{IzumiScoptLauncherArgs, ScoptLauncherArgs, ScoptRoleApp}
 import com.github.pshirshov.izumi.distage.roles.launcher.test._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
@@ -29,16 +31,26 @@ class RoleAppTest extends WordSpec {
     } finally {
       properties.foreach {
         case (k, _) =>
-        System.clearProperty(k)
+          System.clearProperty(k)
       }
       ConfigFactory.invalidateCaches()
     }
   }
 
-
   "Role Launcher" should {
-    "properly discover services to start" in withProperties(overrides.toSeq :_*) {
-      new RoleApp with ScoptRoleApp {
+    "properly discover services to start" in withProperties(overrides.toSeq: _*) {
+      new ScoptRoleApp[IzumiScoptLauncherArgs] {
+
+        override protected def tagDisablingStrategy(params: IzumiScoptLauncherArgs): BindingTag.Expressions.Composite = {
+          this.filterProductionTags(params.dummyStorage)
+        }
+
+        override protected def setupContext(params: IzumiScoptLauncherArgs, args: StrategyArgs): ApplicationBootstrapStrategy = {
+          super.setupContext(params, args)
+        }
+
+        override type CommandlineConfig = IzumiScoptLauncherArgs
+
         override def handler: AppFailureHandler = AppFailureHandler.NullHandler
 
         override final val using = Seq.empty
@@ -57,7 +69,7 @@ class RoleAppTest extends WordSpec {
           assert(services.size == 2)
           assert(services.exists(_.isInstanceOf[TestService]))
 
-          val service = services.collect({case t: TestService => t}).head
+          val service = services.collect({ case t: TestService => t }).head
           val conf = service.conf
           assert(conf.intval == 123)
           assert(conf.strval == "xxx")
@@ -83,8 +95,9 @@ class RoleAppTest extends WordSpec {
       }.main(Array("-wr", "-d", "target/config-dump", "testservice", "configwriter"))
     }
 
-    "support config minimization" in withProperties(overrides.toSeq :_*) {
-      new RoleApp with ScoptRoleApp {
+    "support config minimization" in withProperties(overrides.toSeq: _*) {
+      new ScoptRoleApp[IzumiScoptLauncherArgs] {
+
         override def handler: AppFailureHandler = AppFailureHandler.NullHandler
 
         override final val using = Seq.empty
@@ -101,6 +114,44 @@ class RoleAppTest extends WordSpec {
           ()
         }
       }.main(Array("-wr", "-d", "target/config-dump", "configwriter"))
+    }
+
+    "support external option parsers in scalaopt" in withProperties(overrides.toSeq: _*) {
+
+      val testRole = RoleArgs.apply("CUSTOM", None)
+
+      new ScoptRoleApp[IzumiScoptLauncherArgs] {
+        override def handler: AppFailureHandler = AppFailureHandler.NullHandler
+
+        override final val using = Seq.empty
+
+        override protected val externalParsers: Set[ScoptLauncherArgs.IzParser[IzumiScoptLauncherArgs]] = {
+          Set(
+            new IzParser[IzumiScoptLauncherArgs] {
+              opt[Unit]("custom-parser").abbr("custom")
+                .text("external option parser")
+                .action { (_, c) =>
+                  c.roles = List(testRole)
+                  c
+                }
+            }
+          )
+        }
+
+        override val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
+          debug = false
+          , packagesEnabled = Seq(s"$thisPkg.test")
+          , packagesDisabled = Seq.empty
+        )
+
+        override protected def start(context: Locator): Unit = {
+          super.start(context)
+          val cfg = commandlineSetup(Array("-custom"))
+          assert(cfg.roles.nonEmpty)
+          assert(cfg.roles.head == testRole)
+          ()
+        }
+      }.main(Array.empty)
     }
   }
 
