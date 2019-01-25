@@ -10,8 +10,11 @@ sealed trait ExtendedModule {
 }
 
 object ExtendedModule {
+
   case class DomainModule(domain: DomainId, module: Module) extends ExtendedModule
+
   case class RuntimeModule(module: Module) extends ExtendedModule
+
 }
 
 case class Layouted(emodules: Seq[ExtendedModule]) {
@@ -71,12 +74,14 @@ class BaseNamingConvention(rule: ProjectNamingRule) {
   }
 
   def baseProjectId(pkg: common.Package): Seq[String] = {
-    val parts = rule.dropFQNSegments.getOrElse(0) match {
-      case v if v < 0 =>
+    val parts = rule.dropFQNSegments match {
+      case Some(v) if v < 0 =>
         pkg.takeRight(-v)
-      case 0 =>
+      case Some(0) =>
+        pkg
+      case None =>
         pkg.lastOption.toSeq
-      case v =>
+      case Some(v) =>
         pkg.drop(v) match {
           case Nil =>
             pkg.lastOption.toSeq
