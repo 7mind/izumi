@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.impl
+package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import java.io.File
 
@@ -6,12 +6,7 @@ import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteRefer
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import scopt.{OptionDef, OptionParser}
-
-trait Initializable[T] {
-  implicit def init : T
-}
-
+import scopt.{OptionDef, OptionParser, Zero}
 
 class ScoptLauncherArgs(
                          var configFile: Option[File] = None
@@ -33,8 +28,8 @@ class IzumiScoptLauncherArgs(configFile: Option[File] = None
                              ,roles: List[RoleArgs] = List.empty) extends ScoptLauncherArgs
 
 object IzumiScoptLauncherArgs {
-  implicit val init : Initializable[IzumiScoptLauncherArgs] = new Initializable[IzumiScoptLauncherArgs] {
-    override implicit def init: IzumiScoptLauncherArgs = new IzumiScoptLauncherArgs()
+  implicit val init : Zero[IzumiScoptLauncherArgs] = new Zero[IzumiScoptLauncherArgs] {
+    override implicit def zero: IzumiScoptLauncherArgs = new IzumiScoptLauncherArgs()
   }
 }
 
@@ -44,13 +39,13 @@ object ScoptLauncherArgs {
   private final val parserName = "izumi-launcher"
 
 
-  class IzParser[T <: ScoptLauncherArgs] extends OptionParser[T](parserName) {
+  class ParserExtenstion[T <: ScoptLauncherArgs] extends OptionParser[T](parserName) {
       def getOptions: List[OptionDef[_, T]] = {
         this.options.toList
       }
   }
 
-  class IzOptionParser[T <: ScoptLauncherArgs](parserExtension: Set[IzParser[T]]) extends IzParser[T] {
+  class IzOptionParser[T <: ScoptLauncherArgs](parserExtension: Set[ParserExtenstion[T]]) extends ParserExtenstion[T] {
     private val version = IzManifest.manifest[this.type]()
       .map(IzManifest.read)
       .map(_.version.version)

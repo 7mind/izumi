@@ -1,12 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles.impl
+package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleDef}
-import com.github.pshirshov.izumi.distage.roles.BackendPluginTags
+import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleApp
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 
-// TODO
 object ScoptRoleAppBootstrapArgs {
 
   def apply[T <: ScoptLauncherArgs](params: T, disabledTags: BindingTag.Expressions.Expr): RoleAppBootstrapStrategyArgs =

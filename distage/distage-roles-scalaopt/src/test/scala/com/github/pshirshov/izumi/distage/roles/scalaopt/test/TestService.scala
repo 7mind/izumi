@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.launcher.test
+package com.github.pshirshov.izumi.distage.roles.scalaopt.test
 
 import java.util.concurrent.ExecutorService
 

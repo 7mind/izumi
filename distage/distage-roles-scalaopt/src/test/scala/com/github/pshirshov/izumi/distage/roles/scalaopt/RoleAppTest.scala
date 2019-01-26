@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import java.nio.file.Paths
 
@@ -8,9 +8,9 @@ import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.RoleService
-import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.IzParser
-import com.github.pshirshov.izumi.distage.roles.impl.{IzumiScoptLauncherArgs, ScoptLauncherArgs, ScoptRoleApp}
-import com.github.pshirshov.izumi.distage.roles.launcher.test._
+import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
+import com.github.pshirshov.izumi.distage.roles.scalaopt.ScoptLauncherArgs.ParserExtenstion
+import com.github.pshirshov.izumi.distage.roles.scalaopt.test._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
@@ -125,9 +125,9 @@ class RoleAppTest extends WordSpec {
 
         override final val using = Seq.empty
 
-        override protected val externalParsers: Set[ScoptLauncherArgs.IzParser[IzumiScoptLauncherArgs]] = {
+        override protected val externalParsers: Set[ScoptLauncherArgs.ParserExtenstion[IzumiScoptLauncherArgs]] = {
           Set(
-            new IzParser[IzumiScoptLauncherArgs] {
+            new ParserExtenstion[IzumiScoptLauncherArgs] {
               opt[Unit]("custom-parser").abbr("custom")
                 .text("external option parser")
                 .action { (_, c) =>

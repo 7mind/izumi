@@ -288,6 +288,9 @@ lazy val distageRolesApi = inDiStage.as.module
 
 lazy val distageRoles = inDiStage.as.module
   .depends(distageRolesApi, distageApp)
+
+lazy val distageRolesScalaopt = inDiStage.as.module
+  .depends(distageRoles)
   .settings(
     libraryDependencies += R.scopt
   )
@@ -461,6 +464,7 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
+  , distageRolesScalaopt
   , distageCats
   , distageStatic
   , distageTestkit

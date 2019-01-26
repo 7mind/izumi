@@ -1,15 +1,16 @@
-package com.github.pshirshov.izumi.distage.roles.impl
+package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapContext}
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.roles.BackendPluginTags
-import com.github.pshirshov.izumi.distage.roles.impl.ScoptLauncherArgs.{IzOptionParser, IzParser}
+import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleApp, RoleAppBootstrapStrategy}
+import com.github.pshirshov.izumi.distage.roles.scalaopt.ScoptLauncherArgs.{IzOptionParser, ParserExtenstion}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import scopt.Zero
 
-// TODO
-abstract class ScoptRoleApp[T <: ScoptLauncherArgs: Initializable] extends RoleApp {
+abstract class ScoptRoleApp[T <: ScoptLauncherArgs: Zero] extends RoleApp {
 
   override type CommandlineConfig = T
 
@@ -17,12 +18,12 @@ abstract class ScoptRoleApp[T <: ScoptLauncherArgs: Initializable] extends RoleA
 
   protected def using: Seq[Using]
 
-  protected def externalParsers : Set[IzParser[ScoptRoleApp[T]#CommandlineConfig]] = Set.empty
+  protected def externalParsers : Set[ParserExtenstion[ScoptRoleApp[T]#CommandlineConfig]] = Set.empty
 
   protected lazy val parser: IzOptionParser[ScoptRoleApp[T]#CommandlineConfig] = new IzOptionParser[ScoptRoleApp[T]#CommandlineConfig](externalParsers)
 
   override protected def commandlineSetup(args: Array[String]): ScoptRoleApp[T]#CommandlineConfig = {
-    parser.parse(args, implicitly[Initializable[T]].init)
+    parser.parse(args, implicitly[Zero[T]].zero)
       .getOrElse {
         parser.showUsageAsError()
         throw new IllegalArgumentException("Unexpected commandline parameters")
