@@ -35,7 +35,7 @@ class LoggerInjectionTest extends WordSpec {
 
       val injector = Injector.Standard(loggerModule)
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
       assert(context.get[ExampleApp].test == 265)
 
       val messages = testSink.fetch()

@@ -4,8 +4,8 @@ import com.github.pshirshov.izumi.distage.model
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait MirrorProvider {
-  def runtimeClass(tpe: SafeType): Class[_]
-  def runtimeClass(tpe: TypeNative): Class[_]
+  def runtimeClass(tpe: SafeType): Option[Class[_]]
+  def runtimeClass(tpe: TypeNative): Option[Class[_]]
   def mirror: u.Mirror
 }
 
@@ -14,13 +14,22 @@ object MirrorProvider {
 
     override val mirror: model.reflection.universe.RuntimeDIUniverse.u.Mirror = scala.reflect.runtime.currentMirror
 
-    override def runtimeClass(tpe: SafeType): Class[_] = {
+    override def runtimeClass(tpe: SafeType): Option[Class[_]] = {
       runtimeClass(tpe.tpe)
     }
 
-    override def runtimeClass(tpe: TypeNative): Class[_] = {
-      mirror.runtimeClass(tpe.erasure)
+    override def runtimeClass(tpe: TypeNative): Option[Class[_]] = {
+      try {
+        val rtc = mirror.runtimeClass(tpe.erasure)
+        assert(rtc != null)
+        Some(rtc)
+      } catch {
+        case t: ClassNotFoundException =>
+          None
+      }
     }
+
+
   }
 
 }

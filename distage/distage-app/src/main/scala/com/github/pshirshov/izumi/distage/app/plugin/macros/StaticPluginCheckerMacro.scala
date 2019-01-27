@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.app.plugin.macros
 
 import com.github.pshirshov.izumi.distage.app.ModuleRequirements
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
 import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
@@ -146,7 +146,7 @@ object StaticPluginCheckerMacro {
     })
     val bootstrapOverrides = (config :: gc.toList).merge
 
-    val bootstrap = new DefaultBootstrapContext(DefaultBootstrapContext.noCogensBootstrap overridenBy bootstrapOverrides)
+    val bootstrap = new DefaultBootstrapLocator(DefaultBootstrapLocator.noCogensBootstrap overridenBy bootstrapOverrides)
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module)).locateImports(bootstrap)

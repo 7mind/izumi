@@ -3,11 +3,11 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProviderStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 class ProviderStrategyDefaultImpl extends ProviderStrategy  {
-  def callProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallProvider): Seq[OpResult.NewInstance] = {
+  def callProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallProvider): Seq[ContextAssignment.NewInstance] = {
 
     val args: Seq[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
       key =>
@@ -21,7 +21,7 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
     }
 
     val instance = op.wiring.provider.unsafeApply(args: _*)
-    Seq(OpResult.NewInstance(op.target, instance))
+    Seq(ContextAssignment.NewInstance(op.target, instance))
   }
 }
 

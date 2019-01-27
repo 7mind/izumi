@@ -23,7 +23,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
@@ -59,7 +59,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
 
     val exc = intercept[ProvisioningException] {
-      injector.produce(plan)
+      injector.produceUnsafe(plan)
     }
 
     assert(exc.getSuppressed.head.isInstanceOf[TraitInitializationFailedException])
@@ -81,7 +81,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
@@ -104,7 +104,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(plan.topology.dependencies.tree(DIKey.get[Circular1], Some(3)).children.size == 1)
     assert(plan.topology.dependees.tree(DIKey.get[Circular1], Some(3)).children.size == 2)
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val c3 = context.get[Circular3]
     val traitArg = c3.arg
 
@@ -124,7 +124,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instance = context.get[SelfReference]
 
@@ -143,7 +143,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instance = context.get[SelfReference]
 
@@ -159,7 +159,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instance = context.get[ByNameSelfReference]
 
@@ -179,7 +179,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val planTypes: Seq[SafeType] = plan.steps
       .collect {
@@ -208,7 +208,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
@@ -268,7 +268,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[IdTypeCircular] != null)
     assert(context.get[IdParamCircular] != null)

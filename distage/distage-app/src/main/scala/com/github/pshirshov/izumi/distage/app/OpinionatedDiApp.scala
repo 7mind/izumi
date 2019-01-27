@@ -98,7 +98,7 @@ abstract class OpinionatedDiApp {
   }
 
   protected def makeContext(context: StartupContext): Locator = {
-    val locator = context.injector.produce(context.plan)
+    val locator = context.injector.produceUnsafe(context.plan)
     context.logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
     locator
   }

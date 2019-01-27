@@ -26,7 +26,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[HttpServer1].listenOn.port == 8081)
       assert(context.get[HttpServer2].listenOn.port == 8082)
@@ -49,7 +49,7 @@ class ConfigTest extends WordSpec {
       val plan = injector.plan(TestConfigApp.definition)
 
       val plan2 = injector.finish(plan.toSemi)
-      val context = injector.produce(plan2)
+      val context = injector.produceUnsafe(plan2)
 
       assert(context.get[HttpServer1].listenOn.port == 8081)
       assert(context.get[HttpServer2].listenOn.port == 8082)
@@ -69,7 +69,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(mkModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[Set[TestAppService]].head.asInstanceOf[DataPuller1].target.port == 9001)
     }
@@ -79,7 +79,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(new ConfigModule(config))
       val plan = injector.plan(TestConfigReaders.mapDefinition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.ListMap[_, _]])
       assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3"))
@@ -90,7 +90,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(mkModule("list-test.conf"))
       val plan = injector.plan(TestConfigReaders.listDefinition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
       assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
@@ -107,7 +107,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(mkModule("opt-test.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
@@ -116,7 +116,7 @@ class ConfigTest extends WordSpec {
       val injector = Injector.Standard(mkModule("opt-test-missing.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
@@ -151,7 +151,7 @@ class ConfigTest extends WordSpec {
         make[TestTrait]
       })
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
       assert(context.get[TestTrait].testConf == TestConf(true))
@@ -169,7 +169,7 @@ class ConfigTest extends WordSpec {
         make[TestGenericConfFactory[TestConfAlias]]
       })
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       val factory = context.get[TestFactory]
       assert(factory.make(5) == ConcreteProduct(TestConf(true), 5))

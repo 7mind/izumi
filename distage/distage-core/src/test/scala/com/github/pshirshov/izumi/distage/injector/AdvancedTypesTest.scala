@@ -23,7 +23,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[List[Dep]]("As").forall(_.isInstanceOf[DepA]))
     assert(context.get[List[DepA]].forall(_.isInstanceOf[DepA]))
@@ -41,7 +41,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass2[TypeAliasDepA]].inner.isInstanceOf[TypeAliasDepA])
   }
@@ -56,7 +56,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
   }
@@ -71,7 +71,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Dependency1]
     val instantiated1 = context.get[Dependency1 @Id("special")]
@@ -90,7 +90,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait2 with Trait1]
 
@@ -109,7 +109,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
     val instantiated2 = context.get[{def dep: Dep}]
@@ -132,7 +132,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(new Definition[Dep2]))
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait1[Dep, Dep2]]
 
@@ -152,7 +152,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait1 { def dep: Dep }]
 
@@ -171,7 +171,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait3[Dep] with Trait1]
 
@@ -190,7 +190,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait3[Dep] with Trait4]
 

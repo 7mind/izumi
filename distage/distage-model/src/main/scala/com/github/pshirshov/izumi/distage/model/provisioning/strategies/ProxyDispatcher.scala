@@ -10,6 +10,7 @@ trait DistageProxy {
 }
 
 trait ProxyDispatcher {
+  def key: RuntimeDIUniverse.DIKey
   def init(real: Any): Unit
 }
 
@@ -23,7 +24,7 @@ trait AtomicProxyDispatcher extends ProxyDispatcher {
   }
 }
 
-class ByNameDispatcher(key: RuntimeDIUniverse.DIKey)
+class ByNameDispatcher(val key: RuntimeDIUniverse.DIKey)
   extends Function0[Any] with AtomicProxyDispatcher {
   override def apply(): Any = {
     Option(reference.get()) match {

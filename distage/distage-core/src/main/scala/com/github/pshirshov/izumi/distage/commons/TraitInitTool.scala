@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitFi
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.reflection._
 
-object TraitTools {
+class TraitInitTool {
 
   def traitIndex(tpe: RuntimeDIUniverse.SafeType, methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): TraitIndex = {
     val vals = tpe.tpe.decls.collect {
@@ -28,13 +28,6 @@ object TraitTools {
     }.toMap
 
     TraitIndex(makeTraitIndex(methods), getters, setters)
-  }
-
-  private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): Map[Method, RuntimeDIUniverse.Association.AbstractMethod] = {
-    methods.map {
-      m =>
-        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.context.methodSymbol.underlying) -> m
-    }.toMap
   }
 
   def initTrait(instanceType: RuntimeDIUniverse.SafeType, runtimeClass: Class[_], instance: AnyRef): Unit = {
@@ -59,6 +52,13 @@ object TraitTools {
         }
       case None =>
     }
+  }
+
+  private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): Map[Method, RuntimeDIUniverse.Association.AbstractMethod] = {
+    methods.map {
+      m =>
+        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.context.methodSymbol.underlying) -> m
+    }.toMap
   }
 
 }

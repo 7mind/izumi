@@ -3,14 +3,16 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.provisioning.ProvisionOperationVerifier
 
 import scala.collection.immutable.ListSet
 
-class SetStrategyDefaultImpl(mirror: MirrorProvider) extends SetStrategy {
-  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[OpResult.NewInstance] = {
+class SetStrategyDefaultImpl(
+                              verifier: ProvisionOperationVerifier,
+                            ) extends SetStrategy {
+  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[ContextAssignment.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]
     val setErasure = scalaCollectionSetType.tpe.typeSymbol
@@ -33,30 +35,26 @@ class SetStrategyDefaultImpl(mirror: MirrorProvider) extends SetStrategy {
       .map(m => (m, context.fetchKey(m, byName = false)))
 
     val newSet = fetched.flatMap {
-      case (m, Some(value)) if m.tpe == op.tpe => // in case member type == set type we just add
+      case (m, Some(value)) if m.tpe == op.tpe =>
+        // in case member type == set type we just merge them
         value.asInstanceOf[collection.Set[Any]]
-      // if member set element type is compatible with this set element type we also just add it
       case (m, Some(value)) if m.tpe.tpe.baseClasses.contains(setErasure) && m.tpe.tpe.typeArgs.headOption.exists(SafeType(_) weak_<:< keyType) =>
+        // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[collection.Set[Any]]
       case (m, Some(value)) if m.tpe weak_<:< keyType =>
         ListSet(value)
       case (m, Some(value)) =>
         // Member key type may not conform to set parameter (valid case for autosets) while implementation is still valid
-        // so sanity check has to be done agains implementation type.
+        // so sanity check has to be done against implementation type.
         // Though at this point we have no accessible static descriptor of set member implementation type
         // This check itself is kinda excessive but in case it fails it would be a very bad signal
-        val runtimeKeyClass = mirror.runtimeClass(keyType.tpe)
-
-        if (!runtimeKeyClass.isAssignableFrom(value.getClass)) {
-          throw new IncompatibleTypesException(s"Set ${op.target} got member $m of unexpected type ${m.tpe}. Expected: $keyType", keyType, m.tpe)
-        }
-
+        verifier.verify(op.target, op.members, value, s"Set ${op.target} has member $m of unexpected type ${m.tpe}. Expected: $keyType")
         ListSet(value)
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }
 
-    Seq(OpResult.NewInstance(op.target, newSet))
+    Seq(ContextAssignment.NewInstance(op.target, newSet))
   }
 }
 

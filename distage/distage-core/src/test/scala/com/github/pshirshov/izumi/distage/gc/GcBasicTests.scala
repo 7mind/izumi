@@ -19,7 +19,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Trash]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.find[Trash].isEmpty)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
@@ -36,7 +36,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[App]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[App] != null)
     }
 
@@ -52,7 +52,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[S3Component]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[Ctx].upload.client != null)
       val c1 = result.get[MkS3Client]
       val c2 = result.get[Ctx].upload.client
@@ -70,7 +70,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         many[IntegrationComponent].add[S3Component]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[Ctx] != null)
     }
 
@@ -85,7 +85,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[T2].using[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -100,7 +100,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[T2].from[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[T1] != null)
       assert(result.get[T2] != null)
     }
@@ -131,7 +131,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
             }
         }
       }))
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
       assert(result.get[Circular1].nothing == 1)
       assert(result.get[Circular2].nothing == 2)
       assert(result.get[Circular1].c2.nothing == 2)
@@ -146,7 +146,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2 != null)
@@ -172,7 +172,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -186,7 +186,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)
@@ -205,7 +205,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
           .ref[Circular2]
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)
@@ -221,7 +221,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Box[T1]].from(new Box(new T1))
       }))
 
-      val result = injector.produce(plan)
+      val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)

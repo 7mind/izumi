@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 
 trait Injector extends Planner with Producer {
   def produce(input: PlannerInput): Locator =
-    produce(plan(input))
+    produceUnsafe(plan(input))
 
   final def produce(input: ModuleBase): Locator = {
     produce(PlannerInput(input))

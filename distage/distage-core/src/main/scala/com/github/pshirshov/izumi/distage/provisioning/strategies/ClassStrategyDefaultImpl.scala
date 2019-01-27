@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import java.lang.reflect.Method
-
+import com.github.pshirshov.izumi.distage.commons.UnboxingTool
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -15,15 +14,18 @@ import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeU
 
 case class Dep(key: DIKey, value: Any)
 
+
+
 class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime,
   mirrorProvider: MirrorProvider,
+  unboxingTool: UnboxingTool,
 ) extends ClassStrategy {
 
   import ClassStrategyDefaultImpl._
 
-  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
+  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ContextAssignment.NewInstance] = {
     val wiring = op.wiring
     val args = wiring.associations.map {
       key =>
@@ -37,7 +39,7 @@ class ClassStrategyDefaultImpl
     }
 
     val instance = mkScala(context, op, args)
-    Seq(OpResult.NewInstance(op.target, instance))
+    Seq(ContextAssignment.NewInstance(op.target, instance))
   }
 
 
@@ -107,12 +109,12 @@ class ClassStrategyDefaultImpl
     val argValues = prefix.map(_.asInstanceOf[AnyRef]).toSeq ++ args
       .map {
         case Dep(key, value) =>
-          unbox(key, value)
+          unboxingTool.unbox(key, value)
       }
 
-    val allConstructors = clazz
-      .getDeclaredConstructors
+    val allConstructors = clazz.map(_.getDeclaredConstructors)
       .toList
+      .flatten
 
     val sameArityConstructors = allConstructors
       .filter(_.getParameterCount == argValues.size)
@@ -140,28 +142,12 @@ class ClassStrategyDefaultImpl
           }
 
         throw new ProvisioningException(
-          s"""Can't find constructor for $targetType, signature: ${argValues.map(_.getClass)}
+          s"""Can't find constructor for $targetType in class $clazz, signature: ${argValues.map(_.getClass)}
              |issues: ${discrepancies.niceList().shift(2)}
            """.stripMargin, null)
     }
   }
 
-  protected def unbox(info: DIKey, value: Any): AnyRef = {
-    val tpe = info.tpe.tpe
-    if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isDerivedValueClass) {
-      val u = getUnboxMethod(tpe)
-      u.invoke(value)
-    } else {
-      value.asInstanceOf[AnyRef]
-    }
-  }
-
-  protected def getUnboxMethod(info: Type): Method = {
-    val symbol = info.typeSymbol.asType
-    val fields@(field :: _) = symbol.toType.decls.collect { case ts: TermSymbol if ts.isParamAccessor && ts.isMethod => ts }.toList
-    assert(fields.length == 1, s"$symbol: $fields")
-    mirrorProvider.mirror.runtimeClass(symbol.asClass).getDeclaredMethod(field.name.toString)
-  }
 }
 
 object ClassStrategyDefaultImpl {
@@ -188,7 +174,7 @@ object ClassStrategyDefaultImpl {
 
 
 class ClassStrategyFailingImpl extends ClassStrategy {
-  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[OpResult.NewInstance] = {
+  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ContextAssignment.NewInstance] = {
     Quirks.discard(context)
     throw new NoopProvisionerImplCalled(s"ClassStrategyFailingImpl does not support instantiation, failed op: $op", this)
   }

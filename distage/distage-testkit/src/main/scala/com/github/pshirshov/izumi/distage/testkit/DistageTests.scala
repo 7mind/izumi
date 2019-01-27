@@ -229,7 +229,7 @@ trait DistageTests {
   }
 
   protected def makeContext(injector: Injector, plan: OrderedPlan): Locator = {
-    injector.produce(plan)
+    injector.produceUnsafe(plan)
   }
 
   protected def makeInjector(roots: Set[DIKey]): Injector = {
