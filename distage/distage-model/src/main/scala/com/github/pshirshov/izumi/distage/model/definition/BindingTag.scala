@@ -16,6 +16,10 @@ object BindingTag {
     override def toString: String = "<singleton>"
   }
 
+  final case object TResource extends BindingTag {
+    override def toString: String = "<resource>"
+  }
+
   final case object TSet extends BindingTag {
     override def toString: String = "<set>"
   }

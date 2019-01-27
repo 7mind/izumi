@@ -59,7 +59,7 @@ trait WithDICallable {
     def fun: Seq[Any] => Any
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
 
-    override val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
+    override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
 
     override protected def call(args: Any*): Any =
       fun.apply(args: Seq[Any])

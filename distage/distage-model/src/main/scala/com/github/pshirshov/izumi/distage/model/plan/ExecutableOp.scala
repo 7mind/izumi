@@ -49,6 +49,15 @@ object ExecutableOp {
 
   }
 
+  sealed trait ControlOp extends ExecutableOp
+
+  object ControlOp {
+
+    final case class AllocateResource(target: DIKey, typeCtor: SafeType, wiring: Wiring, origin: Option[Binding]) extends WiringOp
+
+    final case class MonadicBind(target: DIKey, typeCtor: SafeType, wiring: Wiring, origin: Option[Binding]) extends WiringOp
+  }
+
   sealed trait ProxyOp extends ExecutableOp
 
   object ProxyOp {

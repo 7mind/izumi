@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 sealed trait Binding {
+
   def key: DIKey
 
   def origin: SourceFilePosition
@@ -14,23 +15,19 @@ sealed trait Binding {
   def tags: Set[BindingTag]
 
   def withTarget[K <: DIKey](key: K): Binding
-
   def withTags(tags: Set[BindingTag]): Binding
-
   def addTags(tags: Set[BindingTag]): Binding
 }
 
 object Binding {
 
   sealed trait ImplBinding extends Binding {
+
     def implementation: ImplDef
 
     def withImplDef(implDef: ImplDef): ImplBinding
-
     override def withTarget[K <: DIKey](key: K): ImplBinding
-
     override def withTags(tags: Set[BindingTag]): ImplBinding
-
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
@@ -49,12 +46,27 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSingleton
 
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
-
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SingletonBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
+  }
+
+  final case class ResourceBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding {
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: ResourceBinding[_] =>
+        key == that.key && implementation == that.implementation
+      case _ =>
+        false
+    }
+
+    override val hashCode: Int = (3, key, implementation).hashCode()
+
+    override def tags: Set[BindingTag] = _tags + BindingTag.TResource
+
+    override def withImplDef(implDef: ImplDef): ResourceBinding[K] = copy(implementation = implDef)
+    override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): ResourceBinding[T] = copy(key = key)
+    override def withTags(newTags: Set[BindingTag]): ResourceBinding[K] = copy(_tags = newTags)
+    override def addTags(moreTags: Set[BindingTag]): ResourceBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object SingletonBinding {
@@ -75,11 +87,8 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSetElement
 
     override def withImplDef(implDef: ImplDef): SetElementBinding[K] = copy(implementation = implDef)
-
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): SetElementBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding[K] = withTags(this.tags ++ moreTags)
   }
 
@@ -101,9 +110,7 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSet
 
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
