@@ -10,5 +10,7 @@ class IRTTypeMismatchException(message: String, val v: Any, cause: Option[Throwa
 
 class IRTMissingHandlerException(message: String, val v: Any, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
+class IRTLimitReachedException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
+
 class IRTGenericFailure(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
