@@ -48,7 +48,7 @@ class SetStrategyDefaultImpl(
         // so sanity check has to be done against implementation type.
         // Though at this point we have no accessible static descriptor of set member implementation type
         // This check itself is kinda excessive but in case it fails it would be a very bad signal
-        verifier.verify(op.target, op.members, value, s"Set ${op.target} has member $m of unexpected type ${m.tpe}. Expected: $keyType")
+        verifier.verify(DIKey.TypeKey(keyType), op.members, value, s"Set ${op.target} has incompatible member $m. Expected type: $keyType")
         ListSet(value)
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)

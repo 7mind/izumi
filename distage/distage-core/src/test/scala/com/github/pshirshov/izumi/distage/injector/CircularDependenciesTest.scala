@@ -40,7 +40,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
