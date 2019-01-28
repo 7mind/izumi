@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning
 
+import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning._
@@ -13,8 +13,10 @@ import scala.util.{Failure, Success, Try}
 
 
 
+
+
 // TODO: add introspection capabilities
-class ProvisionerDefaultImpl
+class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
   , proxyStrategy: ProxyStrategy
@@ -26,8 +28,9 @@ class ProvisionerDefaultImpl
   , importStrategy: ImportStrategy
   , instanceStrategy: InstanceStrategy
   , failureHandler: ProvisioningFailureInterceptor
-) extends Provisioner with OperationExecutor {
-  override def provision(plan: OrderedPlan, parentContext: Locator): ProvisionImmutable = {
+  , verifier: ProvisionOperationVerifier
+) extends PlanInterpreter with OperationExecutor {
+  override def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator] = {
     val excluded = mutable.Set[DIKey]()
 
     val provisioningContext = ProvisionActive()
@@ -65,43 +68,40 @@ class ProvisionerDefaultImpl
     }
 
     if (failures.nonEmpty) {
-      failureHandler.onProvisioningFailed(provisioningContext.toImmutable, plan, parentContext, failures.toVector)
+      Left(FailedProvision(provisioningContext.toImmutable, plan, parentContext, failures.toVector))
     } else {
-      ProvisionImmutable(provisioningContext.instances, provisioningContext.imports)
+      Right(ProvisionImmutable(provisioningContext.instances, provisioningContext.imports))
+        .map {
+          context =>
+            val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
+            locator.get[Locator.LocatorRef].ref.set(locator)
+            locator
+        }
     }
   }
 
-  private def interpretResult(active: ProvisionActive, result: OpResult): Unit = {
+
+  private def interpretResult(active: ProvisionActive, result: ContextAssignment): Unit = {
     result match {
-      case OpResult.NewImport(target, value) =>
-        value match {
-          case _ if active.imports.contains(target) =>
-            throw new DuplicateInstancesException("Cannot continue, key is already in the object graph", target)
-          case opResult: OpResult =>
-            throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
-          case _ =>
-            active.imports += (target -> value)
-        }
+      case ContextAssignment.NewImport(target, instance) =>
+        verifier.verify(target, active.imports.keySet, instance, s"import")
+        active.imports += (target -> instance)
 
-      case OpResult.NewInstance(target, value) =>
-        value match {
-          case _ if active.instances.contains(target) =>
-            throw new DuplicateInstancesException("Cannot continue, key is already in the object graph", target)
-          case opResult: OpResult =>
-            throw new TriedToAddSetIntoSetException(s"Pathological case. Tried to add set into itself: $target -> $value", target, opResult)
-          case _ =>
-            active.instances += (target -> value)
-        }
-
-      case OpResult.UpdatedSet(target, instance) =>
+      case ContextAssignment.NewInstance(target, instance) =>
+        verifier.verify(target, active.instances.keySet, instance, "instance")
         active.instances += (target -> instance)
 
-      case OpResult.DoNothing() =>
+      case ContextAssignment.UpdatedSet(target, instance) =>
+        verifier.verify(target, active.instances.keySet, instance, "set")
+        active.instances += (target -> instance)
+
+      case ContextAssignment.DoNothing() =>
         ()
     }
   }
 
-  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[OpResult] = {
+
+  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[ContextAssignment] = {
     step match {
       case op: ImportDependency =>
         importStrategy.importDependency(context, op)

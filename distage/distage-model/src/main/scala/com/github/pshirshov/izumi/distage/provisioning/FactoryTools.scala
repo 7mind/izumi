@@ -3,19 +3,19 @@ package com.github.pshirshov.izumi.distage.provisioning
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.OpResult
-import com.github.pshirshov.izumi.distage.model.provisioning.OpResult.{NewImport, NewInstance}
+import com.github.pshirshov.izumi.distage.model.provisioning.ContextAssignment
+import com.github.pshirshov.izumi.distage.model.provisioning.ContextAssignment.{NewImport, NewInstance}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 
 object FactoryTools {
 
-  def interpret(results: Seq[OpResult]): AnyRef = {
+  def interpret(results: Seq[ContextAssignment]): AnyRef = {
     results.toList match {
       case List(i: NewInstance) =>
-        i.value.asInstanceOf[AnyRef]
+        i.instance.asInstanceOf[AnyRef]
       case List(i: NewImport) =>
-        i.value.asInstanceOf[AnyRef]
+        i.instance.asInstanceOf[AnyRef]
       case List(_) =>
         throw new UnexpectedProvisionResultException(
           s"Factory returned a result class other than NewInstance or NewImport in $results", results)

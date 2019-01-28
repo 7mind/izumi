@@ -29,7 +29,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestTrait]
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -46,7 +46,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestTrait]("named-trait")
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -67,7 +67,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated1 = context.get[Trait1]
     assert(instantiated1.isInstanceOf[Trait1])
 
@@ -93,7 +93,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated3 = context.get[Trait2]
     assert(instantiated3.isInstanceOf[Trait2])
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
@@ -112,7 +112,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[Trait]
 
     assert(instantiated.depA.isA)
@@ -135,7 +135,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestTrait]
 
     assert(instantiated.rd == Dep().toString)
@@ -152,7 +152,7 @@ class MacroTraitsTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestTrait].anyValDep != null)
 

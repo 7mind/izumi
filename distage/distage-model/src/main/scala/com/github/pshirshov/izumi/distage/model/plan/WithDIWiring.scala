@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.references.WithDIKey
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 trait WithDIWiring {
   this: DIUniverseBase
@@ -15,7 +16,10 @@ trait WithDIWiring {
 
   sealed trait Wiring {
     def associations: Seq[Association]
+
     def requiredKeys: Set[DIKey] = associations.map(_.wireWith).toSet
+
+    def replaceKeys(f: Association => DIKey.BasicKey): Wiring
   }
 
   object Wiring {
@@ -23,37 +27,53 @@ trait WithDIWiring {
     sealed trait UnaryWiring extends Wiring {
       def instanceType: SafeType
 
-      def associations: Seq[Association]
-
+      override def replaceKeys(f: Association => DIKey.BasicKey): UnaryWiring
     }
 
 
     object UnaryWiring {
 
-      sealed trait ProductWiring extends UnaryWiring
+      sealed trait ProductWiring extends UnaryWiring {
+        override def replaceKeys(f: Association => DIKey.BasicKey): ProductWiring
+      }
 
       sealed trait InstantiationWiring extends ProductWiring {
         def prefix: Option[DIKey]
 
-        override def requiredKeys: Set[DIKey] = super.requiredKeys ++ prefix.toSet
+        override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ prefix.toSet
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): ProductWiring
       }
 
-      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter], prefix: Option[DIKey]) extends InstantiationWiring
+      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter], prefix: Option[DIKey]) extends InstantiationWiring {
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Constructor =
+          this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
+      }
 
-      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod], prefix: Option[DIKey]) extends InstantiationWiring
+      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod], prefix: Option[DIKey]) extends InstantiationWiring {
+        override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol =
+          this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
+      }
 
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
         override def instanceType: SafeType = provider.ret
+
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Function =
+          this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
       }
 
       case class Instance(instanceType: SafeType, instance: Any) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
       }
 
       case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends UnaryWiring {
         override def associations: Seq[Association] = Seq.empty
 
         override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
       }
     }
 
@@ -71,6 +91,12 @@ trait WithDIWiring {
 
         factorySuppliedProductDeps ++ fieldDependencies
       }
+
+      override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryMethod =
+        this.copy(
+          fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a)))
+          , factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+        )
     }
 
     object FactoryMethod {
@@ -93,6 +119,12 @@ trait WithDIWiring {
 
         factorySuppliedProductDeps ++ providerArguments
       }
+
+      override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
+        this.copy(
+          providerArguments = this.providerArguments.map(a => a.withWireWith(f(a)))
+          , factoryIndex = this.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
+        )
     }
 
     object FactoryFunction {
@@ -102,68 +134,6 @@ trait WithDIWiring {
       }
     }
 
-    implicit class WiringReplaceKeys(wiring: Wiring) {
-      def replaceKeys(f: Association => DIKey.BasicKey): Wiring =
-        wiring match {
-          case w: UnaryWiring.Constructor => w.replaceKeys(f) // duplication only because of 'the outer reference in this type test cannot be checked at runtime warning'
-          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
-          case w: UnaryWiring.Function => w.replaceKeys(f)
-          case w: UnaryWiring.Instance => w.replaceKeys(f)
-          case w: UnaryWiring.Reference => w.replaceKeys(f)
-          case w: FactoryMethod => w.replaceKeys(f)
-          case w: FactoryFunction => w.replaceKeys(f)
-        }
-    }
-
-    implicit class UnaryWiringReplaceKeys(wiring: UnaryWiring) {
-      def replaceKeys(f: Association => DIKey.BasicKey): UnaryWiring =
-        wiring match {
-          case w: UnaryWiring.Constructor => w.replaceKeys(f)
-          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
-          case w: UnaryWiring.Function => w.replaceKeys(f)
-          case w: UnaryWiring.Instance => w
-          case w: UnaryWiring.Reference => w
-        }
-    }
-
-    implicit class ProductWiringReplaceKeys(wiring: UnaryWiring.ProductWiring) {
-      def replaceKeys(f: Association => DIKey.BasicKey): UnaryWiring.ProductWiring =
-        wiring match {
-          case w: UnaryWiring.Constructor => w.replaceKeys(f)
-          case w: UnaryWiring.AbstractSymbol => w.replaceKeys(f)
-        }
-    }
-
-    implicit class ConstructorReplaceKeys(constructor: UnaryWiring.Constructor) {
-      def replaceKeys(f: Association.Parameter => DIKey.BasicKey): UnaryWiring.Constructor =
-        constructor.copy(associations = constructor.associations.map(a => a.withWireWith(f(a))))
-    }
-
-    implicit class AbstractSymbolReplaceKeys(abstractSymbol: UnaryWiring.AbstractSymbol) {
-      def replaceKeys(f: Association.AbstractMethod => DIKey.BasicKey): UnaryWiring.AbstractSymbol =
-        abstractSymbol.copy(associations = abstractSymbol.associations.map(a => a.withWireWith(f(a))))
-    }
-
-    implicit class FunctionReplaceKeys(function: UnaryWiring.Function) {
-      def replaceKeys(f: Association.Parameter => DIKey.BasicKey): UnaryWiring.Function =
-        function.copy(associations = function.associations.map(a => a.withWireWith(f(a))))
-    }
-
-    implicit class FactoryMethodReplaceKeys(factoryMethod: FactoryMethod) {
-      def replaceKeys(f: Association => DIKey.BasicKey): FactoryMethod =
-        factoryMethod.copy(
-          fieldDependencies = factoryMethod.fieldDependencies.map(a => a.withWireWith(f(a)))
-          , factoryMethods = factoryMethod.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
-        )
-    }
-
-    implicit class FactoryFunctionReplaceKeys(factoryMethod: FactoryFunction) {
-      def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
-        factoryMethod.copy(
-          providerArguments = factoryMethod.providerArguments.map(a => a.withWireWith(f(a)))
-          , factoryIndex = factoryMethod.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
-        )
-    }
-
   }
+
 }

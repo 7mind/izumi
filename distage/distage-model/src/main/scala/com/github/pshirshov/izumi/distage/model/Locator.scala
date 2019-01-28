@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.immutable.Queue
@@ -18,16 +19,19 @@ import scala.collection.immutable.Queue
 trait Locator {
   /** Instances in order of creation
     *
-    * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators
+    * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators. All the keys must be unique
     */
   def instances: Seq[IdentifiedRef]
 
-  /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment
+  /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
+    * Keys may be not unique.
     *
-    * @see [[com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext]]
+    * @see [[com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator]]
     */
   final def allInstances: Seq[IdentifiedRef] =
     parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances
+
+  def index: Map[RuntimeDIUniverse.DIKey, Any] = instances.map(i => i.key -> i.value).toMap
 
   def plan: OrderedPlan
 

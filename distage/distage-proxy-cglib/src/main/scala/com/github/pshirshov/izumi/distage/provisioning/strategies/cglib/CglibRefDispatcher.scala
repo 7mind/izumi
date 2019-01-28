@@ -3,10 +3,11 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{AtomicProxyDispatcher, DistageProxy}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu
-protected[distage] class CglibRefDispatcher(nullProxy: AnyRef)
+protected[distage] class CglibRefDispatcher(val key: RuntimeDIUniverse.DIKey, nullProxy: AnyRef)
   extends AtomicProxyDispatcher
     with MethodInterceptor {
 

@@ -318,7 +318,7 @@ class LogstageConfigTest extends WordSpec {
 
     val goodCtx = Try {
       val plan = injector.plan(PlannerInput(modules.toList.overrideLeft))
-      injector.produce(plan)
+      injector.produceUnsafe(plan)
     }
     new LocatorWrapper(goodCtx)
   }

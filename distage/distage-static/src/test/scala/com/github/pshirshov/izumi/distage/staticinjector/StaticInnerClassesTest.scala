@@ -16,7 +16,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TopLevelPathDepTest.TestClass].a != null)
   }
@@ -38,7 +38,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput(definition))
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[testModule.TestClass].a != null)
   }
@@ -95,7 +95,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(PlannerInput(definition))
 
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[TestClass].a != null)
     }

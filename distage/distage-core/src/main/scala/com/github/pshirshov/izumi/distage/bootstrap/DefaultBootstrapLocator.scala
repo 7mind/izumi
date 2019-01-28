@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.bootstrap
 
-import com.github.pshirshov.izumi.distage._
+import com.github.pshirshov.izumi.distage.commons.{TraitInitTool, UnboxingTool}
 import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -14,32 +14,32 @@ import com.github.pshirshov.izumi.distage.planning._
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
+import com.github.pshirshov.izumi.distage.{provisioning, _}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
 
-class DefaultBootstrapContext(bindings: BootstrapContextModule) extends AbstractLocator {
+class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
 
-  import DefaultBootstrapContext._
+  import DefaultBootstrapLocator._
 
   val parent: Option[AbstractLocator] = None
 
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
-  protected val bootstrappedContext: ProvisionImmutable = {
-    bootstrapProducer.provision(plan, this)
+  protected val bootstrappedContext: Locator = {
+    bootstrapProducer.instantiate(plan, this).throwIfFailure()
   }
 
-  def instances: Seq[IdentifiedRef] = {
-    bootstrappedContext.enumerate
-  }
+  def instances: Seq[IdentifiedRef] = bootstrappedContext.instances
+
+  override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = instances.map(i => i.key -> i.value).toMap
 
   protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = {
-    bootstrappedContext.get(key)
+    index.get(key)
   }
-
 }
 
-object DefaultBootstrapContext {
+object DefaultBootstrapLocator {
   protected val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
 
   protected val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
@@ -53,7 +53,7 @@ object DefaultBootstrapContext {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObservers: Set[PlanningObserver] = Set(
-      new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapContext]("izumi.distage.debug.bootstrap")),
+      new BootstrapPlanningObserver(TrivialLogger.make[DefaultBootstrapLocator]("izumi.distage.debug.bootstrap")),
       //new GraphObserver(analyzer, Set.empty),
     )
 
@@ -67,11 +67,12 @@ object DefaultBootstrapContext {
     )
   }
 
-  protected lazy val bootstrapProducer: Provisioner = {
+  protected lazy val bootstrapProducer: PlanInterpreter = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
-
-    new ProvisionerDefaultImpl(
-      new SetStrategyDefaultImpl(mirrorProvider)
+    val unboxingTool = new UnboxingTool(mirrorProvider)
+    val verifier = new provisioning.ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
+    new PlanInterpreterDefaultRuntimeImpl(
+      new SetStrategyDefaultImpl(verifier)
 
       , new ProxyStrategyFailingImpl
       , new FactoryStrategyFailingImpl
@@ -79,10 +80,11 @@ object DefaultBootstrapContext {
 
       , new FactoryProviderStrategyDefaultImpl(loggerHook)
       , new ProviderStrategyDefaultImpl
-      , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider)
+      , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool)
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
       , new ProvisioningFailureInterceptorDefaultImpl
+      , verifier
     )
   }
 
@@ -101,9 +103,12 @@ object DefaultBootstrapContext {
     make[LoggerHook].from[LoggerHookDefaultImpl]
     make[MirrorProvider].from[MirrorProvider.Impl.type]
 
+    make[UnboxingTool]
+    make[TraitInitTool]
+    make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
+
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
-    make[TheFactoryOfAllTheFactories].from[TheFactoryOfAllTheFactoriesDefaultImpl]
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]
@@ -113,7 +118,7 @@ object DefaultBootstrapContext {
     make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
-    make[Provisioner].from[ProvisionerDefaultImpl]
+    make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]
       .add[PlanningHookDefaultImpl]

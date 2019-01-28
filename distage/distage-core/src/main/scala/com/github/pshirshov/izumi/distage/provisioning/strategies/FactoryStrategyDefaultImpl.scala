@@ -1,24 +1,28 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.commons.TraitTools
-import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import com.github.pshirshov.izumi.distage.commons.TraitInitTool
+import com.github.pshirshov.izumi.distage.model.exceptions.{NoRuntimeClassException, NoopProvisionerImplCalled}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
-class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider, mirror: MirrorProvider) extends FactoryStrategy {
-  def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+class FactoryStrategyDefaultImpl(
+                                  proxyProvider: ProxyProvider,
+                                  mirror: MirrorProvider,
+                                  traitInit: TraitInitTool,
+                                ) extends FactoryStrategy {
+  def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[ContextAssignment] = {
     // at this point we definitely have all the dependencies instantiated
     val narrowedContext = context.narrow(op.wiring.requiredKeys)
 
     val factoryMethodIndex = makeFactoryIndex(op)
-    val traitIndex = TraitTools.traitIndex(op.wiring.factoryType, op.wiring.fieldDependencies)
+    val traitIndex = traitInit.traitIndex(op.wiring.factoryType, op.wiring.fieldDependencies)
 
     val instanceType = op.wiring.factoryType
-    val runtimeClass = mirror.runtimeClass(instanceType)
+    val runtimeClass = mirror.runtimeClass(instanceType).getOrElse(throw new NoRuntimeClassException(op.target))
 
     val factoryContext = FactoryContext(
       factoryMethodIndex
@@ -29,8 +33,8 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider, mirror: MirrorPro
     )
 
     val proxyInstance = proxyProvider.makeFactoryProxy(factoryContext, ProxyContext(runtimeClass, op, ProxyParams.Empty))
-    TraitTools.initTrait(instanceType, runtimeClass, proxyInstance)
-    Seq(OpResult.NewInstance(op.target, proxyInstance))
+    traitInit.initTrait(instanceType, runtimeClass, proxyInstance)
+    Seq(ContextAssignment.NewInstance(op.target, proxyInstance))
   }
 
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
@@ -43,7 +47,7 @@ class FactoryStrategyDefaultImpl(proxyProvider: ProxyProvider, mirror: MirrorPro
 
 
 class FactoryStrategyFailingImpl extends FactoryStrategy {
-  override def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[OpResult] = {
+  override def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[ContextAssignment] = {
     Quirks.discard(context, executor)
     throw new NoopProvisionerImplCalled(s"FactoryStrategyFailingImpl does not support proxies, failed op: $op", this)
   }

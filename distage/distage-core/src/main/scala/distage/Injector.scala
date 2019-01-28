@@ -1,7 +1,7 @@
 package distage
 
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
-import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapContext}
+import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapLocator}
 import com.github.pshirshov.izumi.distage.model.definition.BootstrapContextModule
 
 object Injector {
@@ -24,7 +24,7 @@ object Injector {
   /**
     * Create a new Injector with a different [[BootstrapContextModule]]
     *
-    * @see [[DefaultBootstrapContext]] and [[CglibBootstrap]] for a list available bootstraps
+    * @see [[DefaultBootstrapLocator]] and [[CglibBootstrap]] for a list available bootstraps
     */
   def apply(gcRoots: Set[DIKey], bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
     new Gc(gcRoots, bootstrapBase)(overrides: _*)
@@ -46,7 +46,7 @@ object Injector {
                  overrides: BootstrapModule = BootstrapModule.empty,
                ): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
-    val bootstrapLocator = new DefaultBootstrapContext(bootstrapDefinition)
+    val bootstrapLocator = new DefaultBootstrapLocator(bootstrapDefinition)
     inherit(bootstrapLocator)
   }
 
@@ -61,12 +61,12 @@ object Injector {
 
   @deprecated("Use Injector.NoCogen", "2018-10-29")
   def noReflection: Injector = {
-    bootstrap(bootstrapBase = DefaultBootstrapContext.noCogensBootstrap)
+    bootstrap(bootstrapBase = DefaultBootstrapLocator.noCogensBootstrap)
   }
 
   @deprecated("Use Injector.NoCogen", "2018-10-29")
   def noReflection(overrides: BootstrapModule*): Injector = {
-    bootstrap(bootstrapBase = DefaultBootstrapContext.noCogensBootstrap, overrides = overrides.merge)
+    bootstrap(bootstrapBase = DefaultBootstrapLocator.noCogensBootstrap, overrides = overrides.merge)
   }
   /**
     * Create a new injector inheriting plugins, hooks and object graph from a previous Injector's run
@@ -92,25 +92,25 @@ object Injector {
 
   object NoCogen extends InjectorBootstrap {
     def apply(): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapContext.noCogensBootstrap)
+      bootstrap(bootstrapBase = DefaultBootstrapLocator.noCogensBootstrap)
     }
 
     def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapContext.noCogensBootstrap, overrides = overrides.merge)
+      bootstrap(bootstrapBase = DefaultBootstrapLocator.noCogensBootstrap, overrides = overrides.merge)
     }
   }
 
   object NoProxies extends InjectorBootstrap {
     def apply(): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapContext.noProxiesBootstrap)
+      bootstrap(bootstrapBase = DefaultBootstrapLocator.noProxiesBootstrap)
     }
 
     def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapContext.noProxiesBootstrap, overrides = overrides.merge)
+      bootstrap(bootstrapBase = DefaultBootstrapLocator.noProxiesBootstrap, overrides = overrides.merge)
     }
   }
 
-  class Gc(roots: Set[DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
+  private[Injector] class Gc(roots: Set[DIKey], bootstrapBase: BootstrapContextModule) extends InjectorBootstrap {
     val gcModule = new TracingGCModule(roots)
 
     def apply(): Injector = {
@@ -123,10 +123,10 @@ object Injector {
     }
   }
 
-  trait InjectorBootstrap {
+  private[Injector] trait InjectorBootstrap {
     def apply(): Injector
 
     def apply(overrides: BootstrapModule*): Injector
-}
+  }
 
 }

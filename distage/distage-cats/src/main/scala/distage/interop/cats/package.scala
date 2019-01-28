@@ -17,12 +17,12 @@ package object cats
 
   implicit final class ProducerIOExts(private val producer: Producer) extends AnyVal {
     def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =
-      Sync[F].delay(producer.produce(plan))
+      Sync[F].delay(producer.produceUnsafe(plan))
   }
 
   implicit final class InjectorIOExts(private val injector: Injector) extends AnyVal {
     def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =
-      Sync[F].delay(injector.produce(plan))
+      Sync[F].delay(injector.produceUnsafe(plan))
 
     def produceIO[F[_]: Sync](definition: PlannerInput): F[Locator] =
       Sync[F].delay(injector.produce(definition))

@@ -251,7 +251,7 @@ class TagTest extends WordSpec with X[String] {
       assert(t1.x.tpe == safe[OptionT[List, Either[Int, Byte]]])
     }
 
-    "Can create custom type tags to support bounded generics, i.e. <: Dep in TagK" in {
+    "Can create custom type tags to support bounded generics, e.g. <: Dep in TagK" in {
       import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
 
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]

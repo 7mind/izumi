@@ -22,7 +22,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     assert(context.get[ATraitWithAField].field == 1)
   }
 
@@ -39,7 +39,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[Trait]
 
     assert(instantiated.depA.isA)
@@ -62,7 +62,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestTrait]
 
     assert(instantiated.rd == Dep().toString)
@@ -79,7 +79,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
       val instantiated = context.get[TestTrait]
 
       assert(instantiated.rd == Dep().toString)
@@ -99,7 +99,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       val instantiated = context.get[Trait2 with Trait1]
 
@@ -121,7 +121,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated1: Trait1 {def dep: Dep2} = context.get[Trait1 {def dep: Dep2}]
     val instantiated2 = context.get[ {def dep: Dep}]
@@ -142,7 +142,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       assert(context.get[TestTrait].anyValDep != null)
 

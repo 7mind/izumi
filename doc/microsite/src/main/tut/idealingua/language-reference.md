@@ -47,7 +47,7 @@ Type name   | Aliases                | Explanation                              
 
 *Notes:*
 
-1. When the target language lacks a corresponding numeric type, we use the smallest type available that includes the required type. i.e. in TypeScript `i08` is `number`
+1. When the target language lacks a corresponding numeric type, we use the smallest type available that includes the required type. e.g. in TypeScript `i08` is `number`
 2. When the target language lacks types for `time`
 
 ## Collections

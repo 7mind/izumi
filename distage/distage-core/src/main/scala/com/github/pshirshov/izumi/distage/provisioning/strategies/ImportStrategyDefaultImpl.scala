@@ -3,20 +3,20 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryExecutor, ImportStrategy}
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
-  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[OpResult] = {
+  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[ContextAssignment] = {
     import op._
 
     context.importKey(target) match {
       case Some(v) =>
-        Seq(OpResult.NewImport(target, v))
+        Seq(ContextAssignment.NewImport(target, v))
       // support FactoryStrategyMacro
       case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
-        Seq(OpResult.DoNothing())
+        Seq(ContextAssignment.DoNothing())
       case _ =>
         throw new MissingInstanceException(s"Instance is not available in the object graph: $target. " +
           s"required by refs: $references", target)
@@ -26,7 +26,7 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
 
 
 class ImportStrategyFailingImpl extends ImportStrategy {
-  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[OpResult] = {
+  override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[ContextAssignment] = {
     Quirks.discard(context)
 
     import op._

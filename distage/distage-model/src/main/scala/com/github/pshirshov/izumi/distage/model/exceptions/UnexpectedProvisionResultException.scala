@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.distage.model.exceptions
 
-import com.github.pshirshov.izumi.distage.model.provisioning.OpResult
+import com.github.pshirshov.izumi.distage.model.provisioning.ContextAssignment
 
-class UnexpectedProvisionResultException(message: String, val results: Seq[OpResult]) extends DIException(message, null)
+class UnexpectedProvisionResultException(message: String, val results: Seq[ContextAssignment]) extends DIException(message, null)

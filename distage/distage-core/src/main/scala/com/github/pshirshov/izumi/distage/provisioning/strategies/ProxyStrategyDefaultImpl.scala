@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
@@ -22,12 +22,12 @@ class ProxyStrategyDefaultImpl(
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
-  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[OpResult] = {
+  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[ContextAssignment] = {
     val key = proxyKey(initProxy.target)
     context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
-          case OpResult.NewInstance(_, instance) =>
+          case ContextAssignment.NewInstance(_, instance) =>
             adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
@@ -40,7 +40,7 @@ class ProxyStrategyDefaultImpl(
     Seq()
   }
 
-  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[OpResult] = {
+  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[ContextAssignment] = {
 
     val cogenNotRequired = makeProxy.byNameAllowed
 
@@ -56,8 +56,8 @@ class ProxyStrategyDefaultImpl(
     }
 
     Seq(
-      OpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
-      , OpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+      ContextAssignment.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , ContextAssignment.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
     )
   }
 
@@ -93,14 +93,19 @@ class ProxyStrategyDefaultImpl(
           (parameterType, value)
       }
 
-      val argClasses = args.map(_._1).map(mirror.runtimeClass).toArray
+      val argClasses = args.map(_._1)
+        .map {
+          t =>
+          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, t))
+        }
+        .toArray
       val argValues = args.map(_._2).toArray
       ProxyParams.Params(argClasses, argValues)
     } else { // this shouldn't happen anymore
       ProxyParams.Empty
     }
 
-    val runtimeClass = mirror.runtimeClass(tpe.tpe)
+    val runtimeClass = mirror.runtimeClass(tpe.tpe).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
     val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
     val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)

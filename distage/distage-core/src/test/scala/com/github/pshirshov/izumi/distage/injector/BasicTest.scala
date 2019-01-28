@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.fixtures.SetCases._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{BadAnnotationException, ProvisioningException, UnsupportedWiringException, UntranslatablePlanException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{BadIdAnnotationException, ProvisioningException, UnsupportedWiringException, ConflictingDIKeyBindingsException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 import distage._
@@ -30,7 +30,7 @@ class BasicTest extends WordSpec with MkInjector {
     assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
 
     val exc = intercept[ProvisioningException] {
-      injector.produce(plan)
+      injector.produceUnsafe(plan)
     }
 
     assert(exc.getMessage.startsWith("Provisioner stopped after 5 instances, 1/9 operations failed"))
@@ -38,7 +38,7 @@ class BasicTest extends WordSpec with MkInjector {
     val fixedPlan = plan.resolveImports {
       case i if i.target == DIKey.get[NotInContext] => new NotInContext {}
     }
-    val locator = injector.produce(fixedPlan)
+    val locator = injector.produceUnsafe(fixedPlan)
     assert(locator.get[LocatorDependent].ref.get == locator)
   }
 
@@ -52,7 +52,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val s = context.get[TypedService[Int]]
     val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
@@ -70,11 +70,11 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
 
-    val exc = intercept[BadAnnotationException] {
+    val exc = intercept[BadIdAnnotationException] {
       injector.plan(definition)
     }
 
-    assert(exc.getMessage == "Wrong annotation value, only constants are supporeted. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
   }
 
   "support multiple bindings" in {
@@ -95,7 +95,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Set[JustTrait]].size == 2)
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
@@ -113,11 +113,11 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val sub = Injector.inherit(context)
     val subplan = sub.plan(definition)
-    val subcontext = injector.produce(subplan)
+    val subcontext = injector.produceUnsafe(subplan)
 
     assert(context.get[Set[JustTrait]].size == 1)
     assert(subcontext.get[Set[JustTrait]].size == 1)
@@ -139,7 +139,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
@@ -168,7 +168,7 @@ class BasicTest extends WordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val exc = intercept[UntranslatablePlanException] {
+    val exc = intercept[ConflictingDIKeyBindingsException] {
       injector.plan(definition)
     }
     assert(exc.conflicts.size == 1 && exc.conflicts.contains(DIKey.get[Dependency]))
@@ -184,7 +184,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
     val instantiated = context.get[TestCaseClass2]
 
     assert(instantiated.a.z.nonEmpty)
@@ -223,7 +223,7 @@ class BasicTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
 
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[Service0].set.size == 3)
     assert(context.get[Service1].set.size == 3)
@@ -250,7 +250,7 @@ class BasicTest extends WordSpec with MkInjector {
         | Take two of these feel like Goku""".stripMargin
     }
 
-    val context = injector.produce(plan3)
+    val context = injector.produceUnsafe(plan3)
 
     assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
   }
@@ -266,7 +266,7 @@ class BasicTest extends WordSpec with MkInjector {
     val injector = mkInjector()
 
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass] != null)
   }

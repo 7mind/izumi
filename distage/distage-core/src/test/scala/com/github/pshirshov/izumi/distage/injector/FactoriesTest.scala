@@ -21,7 +21,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val factory = context.get[Factory]
     assert(factory.wiringTargetForDependency != null)
@@ -55,7 +55,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[GenericAssistedFactory]
     val product = instantiated.x(List(SpecialDep()), List(5))
@@ -76,7 +76,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     assert(!context.get[Dependency].isSpecial)
     assert(context.get[Dependency]("special").isSpecial)
@@ -99,7 +99,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produce(plan)
+      val context = injector.produceUnsafe(plan)
 
       val instantiated = context.get[FactoryProducingFactory]
 
@@ -118,7 +118,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
-    val context = injector.produce(plan)
+    val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Factory]
 

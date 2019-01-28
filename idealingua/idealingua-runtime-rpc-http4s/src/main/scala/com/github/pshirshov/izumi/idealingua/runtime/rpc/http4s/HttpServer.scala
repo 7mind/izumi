@@ -285,6 +285,10 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
         logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
         dsl.BadRequest()
 
+      case Error(error: IRTLimitReachedException) =>
+        logger.debug(s"${context -> null}: Request failed because of request limit reached $method: $error")
+        dsl.TooManyRequests()
+
       case Error(error) =>
         logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
         dsl.InternalServerError()

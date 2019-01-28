@@ -25,7 +25,7 @@ import shapeless.{Cached, Lazy}
  * Error:(26, 19) super constructor cannot be passed a self reference unless parameter is declared by-name
  * object X extends WithCirceGeneric[X]
  *
- * (if you rename object to i.e. XCodecs it will work though)
+ * (if you rename object to e.g. `XCodecs` it will work though)
  *
  * This is still useful to derive sealed traits since WithCirce doees not support them:
  *   {{{

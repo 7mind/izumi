@@ -1,31 +1,35 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.commons.TraitTools
-import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import com.github.pshirshov.izumi.distage.commons.TraitInitTool
+import com.github.pshirshov.izumi.distage.model.exceptions.{NoRuntimeClassException, NoopProvisionerImplCalled}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-class TraitStrategyDefaultImpl(proxyProvider: ProxyProvider, mirror: MirrorProvider) extends TraitStrategy {
-  def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
+class TraitStrategyDefaultImpl(
+                                proxyProvider: ProxyProvider,
+                                mirror: MirrorProvider,
+                                traitInit: TraitInitTool,
+                              ) extends TraitStrategy {
+  def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[ContextAssignment] = {
     val traitDeps = context.narrow(op.wiring.requiredKeys)
 
-    val wiredMethodIndex = TraitTools.traitIndex(op.wiring.instanceType, op.wiring.associations)
+    val wiredMethodIndex = traitInit.traitIndex(op.wiring.instanceType, op.wiring.associations)
 
     val instanceType = op.wiring.instanceType
-    val runtimeClass = mirror.runtimeClass(instanceType)
+    val runtimeClass = mirror.runtimeClass(instanceType).getOrElse(throw new NoRuntimeClassException(op.target))
 
     val traitProxy = proxyProvider.makeTraitProxy(TraitContext(wiredMethodIndex, traitDeps), ProxyContext(runtimeClass, op, ProxyParams.Empty))
-    TraitTools.initTrait(instanceType, runtimeClass, traitProxy)
-    Seq(OpResult.NewInstance(op.target, traitProxy))
+    traitInit.initTrait(instanceType, runtimeClass, traitProxy)
+    Seq(ContextAssignment.NewInstance(op.target, traitProxy))
   }
 
 }
 
 class TraitStrategyFailingImpl extends TraitStrategy {
-  override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[OpResult] = {
+  override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[ContextAssignment] = {
     Quirks.discard(context)
     throw new NoopProvisionerImplCalled(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", this)
   }

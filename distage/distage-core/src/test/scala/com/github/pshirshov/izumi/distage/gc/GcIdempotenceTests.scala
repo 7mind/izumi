@@ -34,6 +34,7 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
           make[App]
         }))
 
+        println(plan.render())
         val result = injector.fproduce(plan)
         assert(result.get[App] != null)
       }
@@ -134,7 +135,7 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
         }))
 
         val updated = injector.finish(plan.toSemi)
-        val result = injector.produce(updated)
+        val result = injector.produceUnsafe(updated)
         assert(updated.steps.size == plan.steps.size)
 
         assert(result.get[App].components.size == 1)

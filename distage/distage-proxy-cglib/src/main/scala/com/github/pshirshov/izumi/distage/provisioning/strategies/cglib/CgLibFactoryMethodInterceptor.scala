@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.provisioning.{OpResult, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
@@ -51,10 +51,14 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val providedValues = wiringWithContext.methodArguments.zip(arguments).toMap
 
-    val unmatchedTypes = providedValues.filter {
+    val unmatchedTypes = providedValues.filterNot {
       case (key, value) =>
-        val runtimeClass = mirror.runtimeClass(key.tpe.tpe)
-        !TypeUtil.isAssignableFrom(runtimeClass, value)
+        mirror.runtimeClass(key.tpe.tpe) match {
+          case Some(runtimeClass) =>
+            TypeUtil.isAssignableFrom(runtimeClass, value)
+          case None =>
+            false // here we cannot check the types so may let cglib try
+        }
     }
 
     if (unmatchedTypes.nonEmpty) {
@@ -67,7 +71,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val extendedContext = narrowedContext.extend(providedValues)
     new JustExecutor {
-      override def execute(step: ExecutableOp): Seq[OpResult] = {
+      override def execute(step: ExecutableOp): Seq[ContextAssignment] = {
         executor.execute(extendedContext, step)
       }
     }

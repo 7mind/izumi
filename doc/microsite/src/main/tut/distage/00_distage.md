@@ -1042,7 +1042,7 @@ try {
 
 Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined [Sets](#multibindings--set-bindings).
 Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies:
-i.e. if C depends on B depends on A, autoset order is: `A, B, C`, to start: `A -> B -> C`, to close: `C -> B -> A`
+e.g. if C depends on B depends on A, autoset order is: `A, B, C`, to start: `A -> B -> C`, to close: `C -> B -> A`
 When you use auto-sets for finalization, you **must** `.reverse` the autoset
 
 ```scala

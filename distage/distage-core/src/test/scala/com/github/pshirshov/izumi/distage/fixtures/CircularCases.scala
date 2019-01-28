@@ -14,7 +14,11 @@ object CircularCases {
       def arg: Circular2
     }
 
+    final class Circular1Impl(override val arg: Circular2) extends Circular1
+
     class Circular2(val arg: Circular1)
+
+    final class Circular2Impl(override val arg: Circular1) extends Circular2(arg)
 
   }
 

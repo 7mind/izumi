@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.config
 import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.BadAnnotationException
+import com.github.pshirshov.izumi.distage.model.exceptions.BadIdAnnotationException
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -89,7 +89,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
       case Literal(Constant(str: String)) =>
         str
       case o =>
-        throw new BadAnnotationException(ann.tree.tpe.toString, o)
+        throw new BadIdAnnotationException(ann.tree.tpe.toString, o)
     }
   }
 }

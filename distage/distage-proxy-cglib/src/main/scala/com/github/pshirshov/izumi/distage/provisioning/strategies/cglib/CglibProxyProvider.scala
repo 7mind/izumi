@@ -15,7 +15,7 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
   override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
     val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)
     val nullProxy = mkDynamic(nullDispatcher, proxyContext)
-    val dispatcher = new CglibRefDispatcher(nullProxy)
+    val dispatcher = new CglibRefDispatcher(cycleContext.deferredKey, nullProxy)
     val proxy = mkDynamic(dispatcher, proxyContext)
     strategies.DeferredInit(dispatcher, proxy)
   }
@@ -44,14 +44,19 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
     val enhancer = new Enhancer()
 
     // Enhancer.setSuperclass is sideffectful, so we had to copypaste
-    if (runtimeClass != null && runtimeClass.isInterface) {
-      enhancer.setInterfaces(Array[Class[_]](runtimeClass, classOf[DistageProxy]))
-    } else if (runtimeClass != null && runtimeClass == classOf[Any]) {
-      enhancer.setInterfaces(Array(classOf[DistageProxy]))
-    } else {
-      enhancer.setSuperclass(runtimeClass)
-      enhancer.setInterfaces(Array(classOf[DistageProxy]))
+    Option(runtimeClass) match {
+      case Some(value) if value.isInterface =>
+        enhancer.setInterfaces(Array[Class[_]](value, classOf[DistageProxy]))
+      case Some(value) if value == classOf[Any] =>
+        enhancer.setInterfaces(Array(classOf[DistageProxy]))
+      case Some(value) =>
+        enhancer.setSuperclass(value)
+        enhancer.setInterfaces(Array(classOf[DistageProxy]))
+      case None =>
+        enhancer.setSuperclass(null)
+        enhancer.setInterfaces(Array(classOf[DistageProxy]))
     }
+
 
     enhancer.setCallback(dispatcher)
 

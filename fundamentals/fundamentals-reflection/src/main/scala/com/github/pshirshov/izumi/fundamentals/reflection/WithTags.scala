@@ -36,7 +36,7 @@ trait WithTags extends UniverseGeneric { self =>
   *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
   *   * Further details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
   */
-  @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ...")
+  @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {
     def tag: TypeTag[T]
 
@@ -107,7 +107,7 @@ trait WithTags extends UniverseGeneric { self =>
     /**
       * Create a Tag of a type formed from an `intersection` of types (A with B) with a structural refinement taken from `structType`
       *
-      * `structType` is assumed to be a weak type of final result type, i.e.
+      * `structType` is assumed to be a weak type of final result type, e.g.
       * {{{
       * Tag[A with B {def abc: Unit}] == refinedTag(List(typeTag[A], typeTag[B]), weakTypeTag[A with B { def abc: Unit }])
       * }}}
@@ -288,7 +288,7 @@ trait WithTags extends UniverseGeneric { self =>
 
 object WithTags {
   final val defaultTagImplicitError: String =
-    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? i.e. def x[T: Tag, F[_]: TagK] = ..."
+    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
 
   def hktagFormatMap: Map[Kind, String] = Map(
     Kind(Nil) -> "Tag"
