@@ -12,7 +12,7 @@ import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
 class ConfigTest extends WordSpec {
-  def mkModule(path: String): ConfigModule = {
+  def mkConfigModule(path: String): ConfigModule = {
     mkModule(ConfigFactory.load(path))
   }
 
@@ -23,7 +23,7 @@ class ConfigTest extends WordSpec {
 
   "Config resolver" should {
     "resolve config references" in {
-      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
       val context = injector.produceUnsafe(plan)
@@ -45,7 +45,7 @@ class ConfigTest extends WordSpec {
     }
 
     "be idempotent under Injector.finish" in {
-      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.definition)
 
       val plan2 = injector.finish(plan.toSemi)
@@ -66,7 +66,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config references in set elements" in {
-      val injector = Injector.Standard(mkModule("distage-config-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("distage-config-test.conf"))
       val plan = injector.plan(TestConfigApp.setDefinition)
 
       val context = injector.produceUnsafe(plan)
@@ -75,19 +75,25 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config maps" in {
-      val config = AppConfig(ConfigFactory.load("map-test.conf"))
-      val injector = Injector.Standard(new ConfigModule(config))
+      val injector = Injector.Standard(mkConfigModule("map-test.conf"))
       val plan = injector.plan(TestConfigReaders.mapDefinition)
 
       val context = injector.produceUnsafe(plan)
 
-      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.ListMap[_, _]])
-      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3"))
+      assert(context.get[Service[MapCaseClass]].conf.mymap.isInstanceOf[mutable.LinkedHashMap[_, _]])
+      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
       assert(context.get[Service[MapCaseClass]].conf.mymap.values.forall(_.host == "localhost"))
     }
 
+    "The order is not preserved in config maps due to limitations of typesafe-config" in {
+      val context = Injector(mkConfigModule("map-test.conf")).produce(TestConfigReaders.mapDefinition)
+
+      assert(context.get[Service[MapCaseClass]].conf.mymap.toList.map(_._1) != List("service1", "service2", "service3", "service4", "service5", "service6"))
+      assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
+    }
+
     "resolve config lists" in {
-      val injector = Injector.Standard(mkModule("list-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("list-test.conf"))
       val plan = injector.plan(TestConfigReaders.listDefinition)
 
       val context = injector.produceUnsafe(plan)
@@ -104,7 +110,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve config options" in {
-      val injector = Injector.Standard(mkModule("opt-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("opt-test.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produceUnsafe(plan)
@@ -112,8 +118,15 @@ class ConfigTest extends WordSpec {
       assert(context.get[Service[OptionCaseClass]].conf == OptionCaseClass(optInt = None))
     }
 
+    "resolve config tuples" in {
+      val context = Injector(mkConfigModule("tuple-test.conf"))
+        .produce(TestConfigReaders.tupleDefinition)
+
+      assert(context.get[Service[TupleCaseClass]].conf == TupleCaseClass(tuple = (1, "two", false, Some(Right(List("r"))))))
+    }
+
     "resolve config options (missing field)" in {
-      val injector = Injector.Standard(mkModule("opt-test-missing.conf"))
+      val injector = Injector.Standard(mkConfigModule("opt-test-missing.conf"))
       val plan = injector.plan(TestConfigReaders.optDefinition)
 
       val context = injector.produceUnsafe(plan)
@@ -122,7 +135,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve backticks" in {
-      val context = Injector.Standard(mkModule("backticks-test.conf"))
+      val context = Injector.Standard(mkConfigModule("backticks-test.conf"))
         .produce(TestConfigReaders.backticksDefinition)
 
       assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
@@ -130,11 +143,11 @@ class ConfigTest extends WordSpec {
 
     "resolve config sealed traits" in {
       val context1 =
-        Injector.Standard(mkModule("sealed-test1.conf"))
+        Injector.Standard(mkConfigModule("sealed-test1.conf"))
           .produce(TestConfigReaders.sealedDefinition)
 
       val context2 =
-        Injector.Standard(mkModule("sealed-test2.conf"))
+        Injector.Standard(mkConfigModule("sealed-test2.conf"))
           .produce(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
@@ -144,7 +157,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for trait methods" in {
       import ConfigFixtures._
 
-      val injector = Injector.Standard(mkModule("fixtures-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
 
       val definition = PlannerInput(new ModuleDef {
         make[TestDependency]
@@ -161,7 +174,7 @@ class ConfigTest extends WordSpec {
     "Inject config works for concrete and abstract factory products and factory methods" in {
       import ConfigFixtures._
 
-      val injector = Injector.Standard(mkModule("fixtures-test.conf"))
+      val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
 
       val definition = PlannerInput(new ModuleDef {
         make[TestDependency]

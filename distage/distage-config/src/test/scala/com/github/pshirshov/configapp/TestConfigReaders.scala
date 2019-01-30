@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import scala.collection.immutable.ListSet
 import scala.collection.mutable
 
-case class MapCaseClass(mymap: mutable.ListMap[String, HostPort])
+case class MapCaseClass(mymap: mutable.LinkedHashMap[String, HostPort])
 
 case class ListCaseClass(mylist: IndexedSeq[ListSet[Wrapper[HostPort]]])
 
@@ -16,6 +16,8 @@ case class OptionCaseClass(optInt: Option[Int])
 case class BackticksCaseClass(`boo-lean`: Boolean)
 
 case class SealedCaseClass(sealedTrait1: SealedTrait1)
+
+case class TupleCaseClass(tuple: (Int, String, Boolean, Option[Either[Boolean, List[String]]]))
 
 sealed trait SealedTrait1
 object SealedTrait {
@@ -51,5 +53,9 @@ object TestConfigReaders {
 
   final val sealedDefinition = PlannerInput(new ModuleDef {
     make[Service[SealedCaseClass]]
+  })
+
+  final val tupleDefinition = PlannerInput(new ModuleDef {
+    make[Service[TupleCaseClass]]
   })
 }
