@@ -13,12 +13,12 @@ class AggregatingObserver(planningObservers: Set[PlanningObserver]) extends Plan
   }
 
 
-  override def onPhase05PreFinalization(plan: SemiPlan): Unit = {
-    planningObservers.foreach(_.onPhase05PreFinalization(plan))
+  override def onPhase05PreGC(plan: SemiPlan): Unit = {
+    planningObservers.foreach(_.onPhase05PreGC(plan))
   }
 
-  override def onPhase10PostFinalization(plan: SemiPlan): Unit = {
-    planningObservers.foreach(_.onPhase10PostFinalization(plan))
+  override def onPhase10PostGC(plan: SemiPlan): Unit = {
+    planningObservers.foreach(_.onPhase10PostGC(plan))
   }
 
   override def onPhase20Customization(plan: SemiPlan): Unit = {

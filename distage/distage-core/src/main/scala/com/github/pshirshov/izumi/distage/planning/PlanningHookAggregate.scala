@@ -34,10 +34,10 @@ class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
     }
   }
 
-  override def phase10PostFinalization(plan: SemiPlan): SemiPlan = {
+  override def phase10PostGC(plan: SemiPlan): SemiPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
-        hook.phase10PostFinalization(acc)
+        hook.phase10PostGC(acc)
     }
   }
 

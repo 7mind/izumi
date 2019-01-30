@@ -81,27 +81,27 @@ class PlanInterpreterDefaultRuntimeImpl
   }
 
 
-  private def interpretResult(active: ProvisionActive, result: ContextAssignment): Unit = {
+  private def interpretResult(active: ProvisionActive, result: ExecutableOpResult): Unit = {
     result match {
-      case ContextAssignment.NewImport(target, instance) =>
+      case ExecutableOpResult.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)
 
-      case ContextAssignment.NewInstance(target, instance) =>
+      case ExecutableOpResult.NewInstance(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "instance")
         active.instances += (target -> instance)
 
-      case ContextAssignment.UpdatedSet(target, instance) =>
+      case ExecutableOpResult.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
         active.instances += (target -> instance)
 
-      case ContextAssignment.DoNothing() =>
+      case ExecutableOpResult.DoNothing() =>
         ()
     }
   }
 
 
-  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[ContextAssignment] = {
+  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[ExecutableOpResult] = {
     step match {
       case op: ImportDependency =>
         importStrategy.importDependency(context, op)

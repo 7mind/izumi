@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bootstra
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.{BindingPreference, PluginMergeConfig}
@@ -54,7 +54,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends Opin
           new ConfigModule(config)
           , new CustomizationModule
           //          , new GraphDumpBootstrapModule()
-          , new TracingGcModule(Set(
+          , new TracingGCModule(Set(
             RuntimeDIUniverse.DIKey.get[TestApp],
             RuntimeDIUniverse.DIKey.get[DisabledByKey],
             RuntimeDIUniverse.DIKey.get[DisabledByImpl],

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
@@ -22,12 +22,12 @@ class ProxyStrategyDefaultImpl(
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
-  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[ContextAssignment] = {
+  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[ExecutableOpResult] = {
     val key = proxyKey(initProxy.target)
     context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).head match {
-          case ContextAssignment.NewInstance(_, instance) =>
+          case ExecutableOpResult.NewInstance(_, instance) =>
             adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
@@ -40,7 +40,7 @@ class ProxyStrategyDefaultImpl(
     Seq()
   }
 
-  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[ContextAssignment] = {
+  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[ExecutableOpResult] = {
 
     val cogenNotRequired = makeProxy.byNameAllowed
 
@@ -56,8 +56,8 @@ class ProxyStrategyDefaultImpl(
     }
 
     Seq(
-      ContextAssignment.NewInstance(makeProxy.target, proxyInstance.proxy)
-      , ContextAssignment.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+      ExecutableOpResult.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , ExecutableOpResult.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
     )
   }
 

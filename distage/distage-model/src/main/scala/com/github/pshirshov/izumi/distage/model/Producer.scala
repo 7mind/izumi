@@ -7,6 +7,6 @@ trait Producer {
   def produce(plan: OrderedPlan): Either[FailedProvision, Locator]
 
   def produceUnsafe(plan: OrderedPlan): Locator = {
-    produce(plan).throwIfFailure()
+    produce(plan).throwOnFailure()
   }
 }

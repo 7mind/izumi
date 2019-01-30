@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -138,7 +138,7 @@ object StaticPluginCheckerMacro {
       .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
       .definition
 
-    val gc = root.map(r => new TracingGcModule(r.keys))
+    val gc = root.map(r => new TracingGCModule(r.keys))
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
       many[PlanningHook]

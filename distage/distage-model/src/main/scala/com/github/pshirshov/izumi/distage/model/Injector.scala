@@ -7,6 +7,6 @@ trait Injector extends Planner with Producer {
     produceUnsafe(plan(input))
 
   final def produce(input: ModuleBase): Locator = {
-    produce(PlannerInput(input))
+    produce(PlannerInput(input, Set.empty))
   }
 }

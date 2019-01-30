@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
@@ -71,7 +71,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val extendedContext = narrowedContext.extend(providedValues)
     new JustExecutor {
-      override def execute(step: ExecutableOp): Seq[ContextAssignment] = {
+      override def execute(step: ExecutableOp): Seq[ExecutableOpResult] = {
         executor.execute(extendedContext, step)
       }
     }

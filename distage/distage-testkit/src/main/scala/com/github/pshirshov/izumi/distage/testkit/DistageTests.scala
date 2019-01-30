@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
@@ -238,7 +238,7 @@ trait DistageTests {
     val roleStarterBootstrapModule = makeRoleStarterBootstrapModule
 
     val bootstrapModules = Seq[BootstrapModule](
-      new TracingGcModule(roots),
+      new TracingGCModule(roots),
       new LogstageModule(makeLogRouter(maybeConfig)),
       roleStarterBootstrapModule,
     ) ++

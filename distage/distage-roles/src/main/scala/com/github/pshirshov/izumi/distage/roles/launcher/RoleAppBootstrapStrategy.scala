@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
@@ -134,7 +134,7 @@ class RoleAppBootstrapStrategy(
 
     val roles = roleInfo.get()
 
-    val gcModule = new TracingGcModule(roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig]))
+    val gcModule = new TracingGCModule(roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig]))
 
     val rolesModule = new BootstrapModuleDef {
       make[RolesInfo].from(roles)

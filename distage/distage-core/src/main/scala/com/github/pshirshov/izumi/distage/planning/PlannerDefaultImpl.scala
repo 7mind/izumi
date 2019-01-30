@@ -17,6 +17,7 @@ class PlannerDefaultImpl
   protected val forwardingRefResolver: ForwardingRefResolver
   , protected val reflectionProvider: ReflectionProvider.Runtime
   , protected val sanityChecker: SanityChecker
+  , protected val gc: DIGarbageCollector
   , protected val planningObservers: Set[PlanningObserver]
   , protected val planMergingPolicy: PlanMergingPolicy
   , protected val planningHooks: Set[PlanningHook]
@@ -42,16 +43,17 @@ class PlannerDefaultImpl
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
       .map(planMergingPolicy.finalizePlan)
-      .map(finish)
+      .map(finish(_, input.roots))
       .get
   }
 
-  def finish(semiPlan: SemiPlan): OrderedPlan = {
+  def finish(semiPlan: SemiPlan, roots: GCRootPredicate): OrderedPlan = {
     Value(semiPlan)
       .map(planMergingPolicy.addImports)
-      .eff(planningObserver.onPhase05PreFinalization)
-      .map(hook.phase10PostFinalization)
-      .eff(planningObserver.onPhase10PostFinalization)
+      .eff(planningObserver.onPhase05PreGC)
+      .map(gc.gc(_, roots))
+      .map(hook.phase10PostGC)
+      .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
       .eff(planningObserver.onPhase20Customization)
       .map(order)
@@ -163,7 +165,6 @@ class PlannerDefaultImpl
         RuntimeDIUniverse.DIKey.TypeKey(i.implType).named(s"provider:$goodIdx")
       case p: ImplDef.ProviderImpl =>
         RuntimeDIUniverse.DIKey.TypeKey(p.implType).named(s"instance:$goodIdx")
-
     }
 
     tpe

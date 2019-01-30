@@ -39,14 +39,7 @@ case class FailedProvision(
 
 object FailedProvision {
   implicit class FailedProvisionExt(p: Either[FailedProvision, Locator]) {
-    def throwIfFailure(): Locator = {
-      p match {
-        case Left(value) =>
-          value.throwException()
-        case Right(value) =>
-          value
-      }
-    }
+    def throwOnFailure(): Locator = p.fold(throw _, identity)
   }
 }
 

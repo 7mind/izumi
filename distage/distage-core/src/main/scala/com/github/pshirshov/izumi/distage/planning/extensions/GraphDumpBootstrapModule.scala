@@ -6,6 +6,5 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 class GraphDumpBootstrapModule extends BootstrapModuleDef {
   many[RuntimeDIUniverse.DIKey].named("gc.roots")
-  many[PlanningObserver].add[GraphObserver]
-
+  many[PlanningObserver].add[GraphDumpObserver]
 }

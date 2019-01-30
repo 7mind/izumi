@@ -89,14 +89,11 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
   }
 
   private def implClassName(binding: Binding): Option[String] = {
-    (binding match {
+    binding match {
       case b: ImplBinding =>
-        Option(b.implementation)
+        Some(typeName(b.implementation.implType))
       case _ =>
         None
-    }).flatMap {
-      i =>
-        Option(typeName(i.implType))
     }
   }
 

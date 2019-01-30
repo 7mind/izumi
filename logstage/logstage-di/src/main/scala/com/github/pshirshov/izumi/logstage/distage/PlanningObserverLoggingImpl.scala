@@ -14,11 +14,11 @@ class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
   }
 
 
-  override def onPhase05PreFinalization(plan: SemiPlan): Unit = {
+  override def onPhase05PreGC(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase05PreFinalization]:\n$plan")
   }
 
-  override def onPhase10PostFinalization(plan: SemiPlan): Unit = {
+  override def onPhase10PostGC(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase10PostOrdering]:\n$plan")
   }
 

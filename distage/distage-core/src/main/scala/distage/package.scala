@@ -44,7 +44,7 @@ package object distage extends Distage {
 
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 
-  override type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+  override type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 
   override type AutoSetModule = planning.AutoSetModule
   override val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule

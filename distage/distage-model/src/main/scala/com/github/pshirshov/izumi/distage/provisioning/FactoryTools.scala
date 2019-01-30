@@ -3,14 +3,14 @@ package com.github.pshirshov.izumi.distage.provisioning
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.ContextAssignment
-import com.github.pshirshov.izumi.distage.model.provisioning.ContextAssignment.{NewImport, NewInstance}
+import com.github.pshirshov.izumi.distage.model.provisioning.ExecutableOpResult
+import com.github.pshirshov.izumi.distage.model.provisioning.ExecutableOpResult.{NewImport, NewInstance}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 
 object FactoryTools {
 
-  def interpret(results: Seq[ContextAssignment]): AnyRef = {
+  def interpret(results: Seq[ExecutableOpResult]): AnyRef = {
     results.toList match {
       case List(i: NewInstance) =>
         i.instance.asInstanceOf[AnyRef]

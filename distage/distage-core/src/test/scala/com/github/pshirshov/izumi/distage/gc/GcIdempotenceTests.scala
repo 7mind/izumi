@@ -34,7 +34,6 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
           make[App]
         }))
 
-        println(plan.render())
         val result = injector.fproduce(plan)
         assert(result.get[App] != null)
       }

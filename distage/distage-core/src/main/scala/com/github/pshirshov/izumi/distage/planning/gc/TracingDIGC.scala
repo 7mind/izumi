@@ -10,10 +10,14 @@ import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
 
 import scala.collection.mutable
 
+class TracingDIGC
+(
+  plan: SemiPlan
+  , isRoot: GCRootPredicate
+) extends AbstractGCTracer[DIKey, ExecutableOp] {
 
-class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTracer[DIKey, ExecutableOp] {
   @inline
-  override protected def extract(index: Map[DIKey, ExecutableOp], node: ExecutableOp): Set[DIKey] = {
+  override protected def extractDependencies(index: Map[DIKey, ExecutableOp], node: ExecutableOp): Set[DIKey] = {
     node match {
       case op: ExecutableOp.InstantiationOp =>
         op match {
@@ -27,23 +31,24 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
                     case o: ExecutableOp.WiringOp =>
                       o.wiring
                   }
-                  .collect {
+                  .exists {
                     case r: Wiring.UnaryWiring.Reference =>
-                      r
+                      r.weak
+                    case _ =>
+                      false
                   }
-                  .exists(_.weak == true)
             }
         }
       case _: ImportDependency =>
         Set.empty
       case p: ProxyOp =>
-        throw new UnsupportedOpException(s"Garbage collector didn't expect a proxy operation", p)
+        throw new UnsupportedOpException(s"Garbage collector didn't expect a proxy operation; proxies can't exist at this stage", p)
     }
   }
 
+  /** This method removes unreachable weak set members. */
   @inline
   override protected def prePrune(pruned: Pruned): Pruned = {
-    // this method removes unreachable weak set members
     val newTraced = new mutable.HashSet[DIKey]()
     newTraced ++= pruned.reachable
 
@@ -59,7 +64,6 @@ class TracingDIGC(plan: SemiPlan, isRoot: GCRootPredicate) extends AbstractGCTra
             case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
               (k, r)
           }
-
 
         val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => newTraced.contains(kv._2.key))
 
@@ -87,8 +91,12 @@ object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: SemiPlan, isRoot: GCRootPredicate): SemiPlan = {
     val collected = new TracingDIGC(plan, isRoot).gc(plan.steps)
 
-    val oldDefn = plan.definition.bindings
-    val updatedDefn = Module.make(oldDefn.filter(b => collected.reachable.contains(b.key)))
+    val updatedDefn = {
+      val oldDefn = plan.definition.bindings
+      val reachable = collected.reachable
+      Module.make(oldDefn.filter(reachable contains _.key))
+    }
+
     SemiPlan(updatedDefn, collected.nodes)
   }
 }

@@ -43,7 +43,7 @@ import scala.collection.immutable.ListSet
   *   }
   * }}}
   *
-  * Auto-Sets are NOT subject to [[gc.TracingGcModule Garbage Collection]], they are assembled *after* garbage collection is done,
+  * Auto-Sets are NOT subject to [[gc.TracingGCModule Garbage Collection]], they are assembled *after* garbage collection is done,
   * as such they can't contain garbage by construction.
   *
   **/
