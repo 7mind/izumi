@@ -11,6 +11,7 @@ import scala.collection.{GenMap, GenTraversable}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{currentMirror, universe => ru}
 import scala.util.{Failure, Try}
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class RuntimeConfigReaderDefaultImpl
 (
@@ -56,9 +57,11 @@ class RuntimeConfigReaderDefaultImpl
       case _ if tpe <:< SafeType0.get[GenMap[String, Any]] =>
         objectMapReader(tpe.tpe.dealias)
       case _ if tpe <:< SafeType0.get[GenTraversable[Any]] =>
-        listReader(tpe.tpe.dealias)
+        listReader(tpe.tpe.dealias)(configListReader)
       case _ if key.tpe =:= ru.typeOf[Option[_]].dealias.erasure =>
         optionReader(tpe.tpe.dealias)
+      case _ if tupleTypes.exists(_ =:= key.tpe) =>
+        listReader(tpe.tpe.dealias)(tupleReader)
       case _ if !tpe.tpe.typeSymbol.isAbstract && tpe.tpe.typeSymbol.isClass && tpe.tpe.typeSymbol.asClass.isCaseClass =>
         deriveCaseClassReader(tpe)
       case _ if tpe.tpe.typeSymbol.isAbstract && tpe.tpe.typeSymbol.isClass && tpe.tpe.typeSymbol.asClass.isSealed =>
@@ -82,12 +85,12 @@ class RuntimeConfigReaderDefaultImpl
           }
 
           val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-            (e, p) => p match {
+            (e, param) => param match {
               case (name, typ) =>
                 val value = obj.get(name)
 
                 val res = anyReader(SafeType0(typ))(value).fold(
-                  exc => Left(s"Couldn't parse field `$name` because of exception: ${exc.getMessage}")
+                  exc => Left(s"Couldn't parse field `$name` of case class $tpe because of exception: ${exc.getMessage}")
                   , Right(_)
                 )
 
@@ -99,7 +102,7 @@ class RuntimeConfigReaderDefaultImpl
             errors => throw new ConfigReadException(
               s"""Couldn't read config object as a case class $targetType, there were errors when trying to parse it's fields from value: $obj
                  |The errors were:
-                 |  ${errors.mkString("\n  ")}
+                 |  ${errors.niceList()}
                """.stripMargin
             )
             , identity
@@ -194,7 +197,7 @@ class RuntimeConfigReaderDefaultImpl
       mirror.reflectModule(mapType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
         case companionFactory: GenMapFactory[GenMap] @unchecked =>
 
-          val map = co.asScala.toMap
+          val map = co.asScala
 
           val parsedResult = map.foldLeft[Either[Queue[String], Queue[(String, Any)]]](Right(Queue.empty)) {
             (e, kv) => kv match {
@@ -212,13 +215,14 @@ class RuntimeConfigReaderDefaultImpl
             errors => throw new ConfigReadException(
               s"""Couldn't read config object as Map type $mapType, there were errors when trying to parse it's fields from value: $co
                  |The errors were:
-                 |  ${errors.mkString("\n  ")}
+                 |  ${errors.niceList()}
                """.stripMargin
             )
             , identity
           )
 
-          companionFactory.apply(parsedArgs: _*)
+          val res = companionFactory.newBuilder.++=(parsedArgs).result()
+          res
         case c =>
           throw new ConfigReadException(
             s"""When trying to read a Map type $mapType: can't instantiate class. Expected a companion object of type
@@ -233,13 +237,13 @@ class RuntimeConfigReaderDefaultImpl
            | ConfigValue was: $cv""".stripMargin))
   }
 
-  def listReader(listType: ru.Type): ConfigReader[GenTraversable[_]] = {
+  def listReader[T](listType: ru.Type)(reader: (ru.Type, ConfigList) => Try[T]): ConfigReader[T] = {
     case cl: ConfigList =>
-      configListReader(listType, cl)
+      reader(listType, cl)
 
     case cl: ConfigObject if isList(cl) =>
       val asList = ConfigValueFactory.fromIterable(cl.unwrapped().values())
-      configListReader(listType, asList)
+      reader(listType, asList)
 
     case cv =>
       Failure(new ConfigReadException(
@@ -247,7 +251,7 @@ class RuntimeConfigReaderDefaultImpl
            | ConfigValue was: $cv""".stripMargin))
   }
 
-  private def configListReader(listType: ru.Type, cl: ConfigList): Try[GenTraversable[_]] = {
+  private[this] def configListReader(listType: ru.Type, cl: ConfigList): Try[GenTraversable[_]] = {
     Try {
       val tyParam = SafeType0(listType.dealias.typeArgs.last)
 
@@ -256,10 +260,10 @@ class RuntimeConfigReaderDefaultImpl
           val list = cl.asScala
 
           val parsedResult = list.zipWithIndex.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-            (e, vk) => vk match {
+            (e, configValue) => configValue match {
               case (value, idx) =>
                 val res = anyReader(tyParam)(value).fold(
-                  exc => Left(s"Couldn't parse value at index `${idx+1}` because of exception: ${exc.getMessage}")
+                  exc => Left(s"Couldn't parse value at index `${idx+1}` of a list $listType because of exception: ${exc.getMessage}")
                   , Right(_)
                 )
 
@@ -271,7 +275,7 @@ class RuntimeConfigReaderDefaultImpl
             errors => throw new ConfigReadException(
               s"""Couldn't read config list as a collectionType $listType, there were errors when trying to parse it's fields from value: $cl
                  |The errors were:
-                 |  ${errors.mkString("\n  ")}
+                 |  ${errors.niceList()}
                """.stripMargin
             )
             , identity
@@ -302,6 +306,69 @@ class RuntimeConfigReaderDefaultImpl
       }
     }
   }
+
+  def tupleReader(tpe: ru.Type, cl: ConfigList): Try[_] = Try {
+    val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
+    val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
+      _.typeSignatureIn(tpe).finalResultType
+    }.zipWithIndex
+
+    val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
+      (e, param) => param match {
+        case (typ, idx) =>
+
+          val value = Try(cl.get(idx))
+
+          val res = value.flatMap(anyReader(SafeType0(typ))(_)).fold(
+            exc =>
+              Left(s"Couldn't parse parameter #$idx of a tuple $tpe because of exception: ${exc.getMessage}")
+            , Right(_)
+          )
+
+          res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
+      }
+    }
+
+    val parsedArgs = parsedResult.fold(
+      errors => throw new ConfigReadException(
+        s"""Couldn't read config object as a tuple $tpe, there were errors when trying to parse it's fields from value: $cl
+           |The errors were:
+           |  ${errors.niceList()}
+         """.stripMargin
+      )
+      , identity
+    )
+
+    val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
+    val constructor = reflectedClass.reflectConstructor(constructorSymbol)
+
+    constructor.apply(parsedArgs: _*)
+  }
+
+  private[this] val tupleTypes: Seq[ru.Type] = Seq(
+    SafeType0.get[Tuple1[_]].tpe.erasure
+  , SafeType0.get[Tuple2[_, _]].tpe.erasure
+  , SafeType0.get[Tuple3[_, _, _]].tpe.erasure
+  , SafeType0.get[Tuple4[_, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple5[_, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple6[_, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple7[_, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple8[_, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple9[_, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple10[_, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple11[_, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple12[_, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple13[_, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple14[_, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  , SafeType0.get[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+  )
 }
 
 object RuntimeConfigReaderDefaultImpl {
