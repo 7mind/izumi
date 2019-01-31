@@ -280,7 +280,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       case _: Algebraic => leftTypeName + "Helpers.deserialize(content)"
       case _: Void => "{}"
       case _: Struct => s"new $leftTypeName(content)"
-      case si: Singular => conv.deserializeType("content", si.typeId, typespace)
+      case si: Singular => conv.deserializeType("content", si.typeId, typespace, asAny = true)
     }
 
     val rightTypeName = renderServiceMethodAlternativeOutput(method, alternative, success = true)
@@ -302,7 +302,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
       case _: Algebraic => rightTypeName + "Helpers.deserialize(content)"
       case _: Void => "{}"
       case _: Struct => s"new $rightTypeName(content)"
-      case si: Singular => conv.deserializeType("content", si.typeId, typespace)
+      case si: Singular => conv.deserializeType("content", si.typeId, typespace, asAny = true)
     }
 
     val name = s"$method"
