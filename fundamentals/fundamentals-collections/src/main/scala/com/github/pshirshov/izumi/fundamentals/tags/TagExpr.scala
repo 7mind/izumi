@@ -13,6 +13,39 @@ object TagExpr {
 
     object Expr {
 
+      implicit final class TOps(t : T) {
+
+        private val singleTagEpr = Has(t)
+
+        def &&[O <: Expr](o: O): And = {
+          And(Set(singleTagEpr, o))
+        }
+
+        def ||[O <: Expr](o: O): Or = {
+          Or(Set(singleTagEpr, o))
+        }
+
+        def ^^[O <: Expr](o: O): Xor = {
+          Xor(Set(singleTagEpr, o))
+        }
+
+        def unary_! : Not = {
+          Not(singleTagEpr)
+        }
+
+        def &&(o: T): And = {
+          And(Set(singleTagEpr, Has(o)))
+        }
+
+        def ||(o: T): Or = {
+          Or(Set(singleTagEpr, Has(o)))
+        }
+
+        def ^^(o: T): Xor = {
+          Xor(Set(singleTagEpr, Has(o)))
+        }
+      }
+
       implicit class ExprOps(e: Expr) {
         def &&[O <: Expr](o: O): And = {
           And(Set(e, o))
