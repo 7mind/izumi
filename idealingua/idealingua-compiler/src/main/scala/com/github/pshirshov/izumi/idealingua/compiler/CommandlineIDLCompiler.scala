@@ -19,6 +19,7 @@ import io.circe.syntax._
 import io.circe.{Json, JsonObject}
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 object CommandlineIDLCompiler {
   private val log: CompilerLog = CompilerLog.Default
@@ -26,7 +27,7 @@ object CommandlineIDLCompiler {
 
   def main(args: Array[String]): Unit = {
     val mf = IzManifest.manifest[CommandlineIDLCompiler.type]().map(IzManifest.read)
-    val izumiVersion = mf.map(_.version.toString).getOrElse("UKNNOWN-IZUMI")
+    val izumiVersion = mf.map(_.version.toString).getOrElse("0.6.25")
     val izumiInfoVersion = mf.map(_.justVersion).getOrElse("UNKNOWN-BUILD")
 
     log.log(s"Izumi IDL Compiler $izumiInfoVersion")
@@ -36,12 +37,38 @@ object CommandlineIDLCompiler {
     val results = Seq(
       initDir(conf),
       runCompilations(izumiVersion, conf),
+      runPublish(conf)
     )
 
     if (!results.contains(true)) {
       log.log("There was nothing to do. Try to run with `--help`")
     }
   }
+
+  private def runPublish(conf: IDLCArgs): Boolean = {
+    if (conf.publish && conf.languages.nonEmpty) {
+      conf.languages.foreach { lang =>
+        publishLangArtifacts(conf, lang) match {
+          case Left(err) => throw err
+          case _ => ()
+        }
+      }
+      true
+    } else
+      false
+  }
+
+  def publishLangArtifacts(conf: IDLCArgs, langOpts: LanguageOpts): Either[Throwable, Unit] = for {
+    credsFile <- Either.cond(langOpts.credentials.isDefined, langOpts.credentials.get,
+      new IllegalArgumentException(s"Can't publish ${langOpts.id} with empty credentials file. " +
+        s"Use `--credentials` command line arg to set it"
+      )
+    )
+    lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
+    creds <- new CredentialsReader(lang, credsFile).read()
+    target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
+    res <- new ArtifactPublisher(target, lang, creds).publish()
+  } yield res
 
   private def initDir(conf: IDLCArgs): Boolean = {
     conf.init match {
