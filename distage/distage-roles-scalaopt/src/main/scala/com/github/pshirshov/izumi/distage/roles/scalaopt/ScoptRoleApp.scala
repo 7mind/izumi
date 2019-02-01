@@ -38,7 +38,7 @@ abstract class ScoptRoleApp[T <: ScoptLauncherArgs: Zero] extends RoleApp {
     if (useDummy.contains(true)) {
       BindingTag.Expressions.all(BackendPluginTags.Production, BackendPluginTags.Storage)
     } else {
-      BindingTag.Expressions.any(BackendPluginTags.Test, BackendPluginTags.Dummy, BackendPluginTags.Storage)
+      BindingTag.Expressions.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
     }
   }
 
