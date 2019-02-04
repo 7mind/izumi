@@ -11,7 +11,8 @@ sealed trait Credentials {
   def lang: IDLLanguage
 }
 class LangCredentials(override val lang: IDLLanguage) extends Credentials
-case class ScalaCredentials(realm: String, host: String, user: String, password: String) extends LangCredentials(IDLLanguage.Scala)
+case class ScalaCredentials(realm: String, host: String, user: String, password: String,
+                            releasesRepo: String, snapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
 case class TypescriptCredentials() extends LangCredentials(IDLLanguage.Typescript)
 case class GoCredentials() extends LangCredentials(IDLLanguage.Go)
 case class CsharpCredentials() extends LangCredentials(IDLLanguage.CSharp)

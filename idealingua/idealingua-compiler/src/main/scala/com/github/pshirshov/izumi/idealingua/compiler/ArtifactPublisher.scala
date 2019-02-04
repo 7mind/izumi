@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
 
@@ -33,8 +33,21 @@ class ArtifactPublisher(path: Path, lang: IDLLanguage, creds: Credentials) {
     val buildFile = path.toAbsolutePath.resolve("build.sbt")
     val sbtCredsFile = path.toAbsolutePath.resolve(".credentials")
 
-    (Process("echo") #>> buildFile.toFile).!
-    Process(s"""echo credentials += Credentials(Path("${sbtCredsFile.toAbsolutePath.toString}").asFile)""") #>> buildFile.toFile !
+    val credsLines = Seq(
+      "\n",
+      s"""credentials += Credentials(Path("${sbtCredsFile.toAbsolutePath.toString}").asFile)""",
+      "\n",
+      s"""
+        |publishTo := {
+        |  if (isSnapshot.value)
+        |    Some("snapshots" at "${creds.snapshotsRepo}")
+        |  else
+        |    Some("releases"  at "${creds.releasesRepo}")
+        |}
+      """.stripMargin
+    )
+
+    Files.write(buildFile, credsLines.asJava, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
 
     Files.write(sbtCredsFile, Seq[String](
       s"realm=${creds.realm}",
