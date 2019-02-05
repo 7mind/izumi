@@ -15,7 +15,7 @@ case class ScalaCredentials(realm: String, host: String, user: String, password:
                             releasesRepo: String, snapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
 case class TypescriptCredentials(npmRepo: String, user: String, password: String, email: String) extends LangCredentials(IDLLanguage.Typescript)
 case class GoCredentials() extends LangCredentials(IDLLanguage.Go)
-case class CsharpCredentials() extends LangCredentials(IDLLanguage.CSharp)
+case class CsharpCredentials(nugetRepo: String, user: String, password: String) extends LangCredentials(IDLLanguage.CSharp)
 
 class CredentialsReader(lang: IDLLanguage, file: File) {
   def read(): Either[Throwable, Credentials] = lang match {

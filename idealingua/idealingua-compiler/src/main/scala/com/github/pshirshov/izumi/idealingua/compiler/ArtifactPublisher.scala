@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.util.Base64
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
 
 import scala.sys.process.Process
@@ -10,14 +11,14 @@ import scala.util.Try
 import scala.collection.JavaConverters._
 
 
-class ArtifactPublisher(path: Path, lang: IDLLanguage, creds: Credentials, langOpts: LanguageOpts) {
+class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, langOpts: LanguageOpts) {
   private val log: CompilerLog = CompilerLog.Default
 
   def publish(): Either[Throwable, Unit] = (creds, lang) match {
-    case (c: ScalaCredentials, IDLLanguage.Scala) => publishScala(path, c)
-    case (c: TypescriptCredentials, IDLLanguage.Typescript) => publishTypescript(path, c)
+    case (c: ScalaCredentials, IDLLanguage.Scala) => publishScala(targetDir, c)
+    case (c: TypescriptCredentials, IDLLanguage.Typescript) => publishTypescript(targetDir, c)
     case (c: GoCredentials, IDLLanguage.Go) => ???
-    case (c: CsharpCredentials, IDLLanguage.CSharp) => ???
+    case (c: CsharpCredentials, IDLLanguage.CSharp) => publishCsharp(targetDir, c)
     case (c, l) if c.lang != l =>
       Left(new IllegalArgumentException(s"Language and credentials type didn't match. " +
         s"Got credentials for $l, expect for ${c.lang}"))
@@ -104,6 +105,38 @@ class ArtifactPublisher(path: Path, lang: IDLLanguage, creds: Credentials, langO
       log.log(s"Publish ${module.getFileName}. Cmd: `$cmd`")
       Files.copy(packagesDir.resolve(s"${module.getFileName}/package.json"), module.resolve("package.json"))
       Process(cmd, targetDir.toFile).lineStream.foreach(log.log)
+    }
+  }.toEither
+
+  private def publishCsharp(targetDir: Path, creds: CsharpCredentials): Either[Throwable, Unit] = Try {
+    log.log("Prepare to package C# sources")
+
+    /*
+    nuget sources Add -Name TGArtifactory -Source $REPO_NUGET || true
+    nuget setapikey "${PUBLISH_USER}:${PUBLISH_PASSWORD}" -Source TGArtifactory
+     */
+
+    log.log("Preparing credentials")
+    Process(
+      s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", targetDir.toFile
+    ).#||("true").lineStream.foreach(log.log)
+
+    Process(
+      s"nuget setapikey ${creds.user}:${creds.password} -Source IzumiPublishSource", targetDir.toFile
+    ).lineStream.foreach(log.log)
+
+    log.log("Publishing")
+    Files.list(targetDir.resolve("nuspec")).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
+      Try(Process(
+        s"nuget pack ${module.getFileName.toString}", targetDir.resolve("nuspec").toFile
+      ).lineStream.foreach(log.log)
+      )
+    }
+
+    IzFiles.walk(targetDir.resolve("nuspec").toFile).filter(_.getFileName.toString.endsWith(".nupkg")).foreach { pack =>
+      Process(
+        s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", targetDir.resolve("nuspec").toFile
+      ).lineStream.foreach(log.log)
     }
   }.toEither
 }
