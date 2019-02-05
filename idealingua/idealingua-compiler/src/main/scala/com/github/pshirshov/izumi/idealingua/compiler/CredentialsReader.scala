@@ -13,20 +13,20 @@ sealed trait Credentials {
 class LangCredentials(override val lang: IDLLanguage) extends Credentials
 case class ScalaCredentials(realm: String, host: String, user: String, password: String,
                             releasesRepo: String, snapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
-case class TypescriptCredentials() extends LangCredentials(IDLLanguage.Typescript)
+case class TypescriptCredentials(npmRepo: String, user: String, password: String, email: String) extends LangCredentials(IDLLanguage.Typescript)
 case class GoCredentials() extends LangCredentials(IDLLanguage.Go)
 case class CsharpCredentials() extends LangCredentials(IDLLanguage.CSharp)
 
 class CredentialsReader(lang: IDLLanguage, file: File) {
   def read(): Either[Throwable, Credentials] = lang match {
-    case IDLLanguage.Scala => readScala(file)
-    case IDLLanguage.Typescript => ???
-    case IDLLanguage.Go => ???
-    case IDLLanguage.CSharp => ???
+    case IDLLanguage.Scala => read[ScalaCredentials](file)
+    case IDLLanguage.Typescript => read[TypescriptCredentials](file)
+    case IDLLanguage.Go => read[GoCredentials](file)
+    case IDLLanguage.CSharp => read[CsharpCredentials](file)
   }
 
-  def readScala(file: File): Either[Throwable, Credentials] = for {
+  def read[T <: Credentials](file: File)(implicit d: io.circe.Decoder[T]): Either[Throwable, Credentials] = for {
     json <- parse(IzFiles.readString(file))
-    creds <- json.as[ScalaCredentials]
+    creds <- json.as[T]
   } yield creds.asInstanceOf[Credentials]
 }

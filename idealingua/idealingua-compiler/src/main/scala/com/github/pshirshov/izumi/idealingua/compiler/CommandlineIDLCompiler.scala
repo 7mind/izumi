@@ -67,7 +67,7 @@ object CommandlineIDLCompiler {
     lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
     creds <- new CredentialsReader(lang, credsFile).read()
     target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
-    res <- new ArtifactPublisher(target, lang, creds).publish()
+    res <- new ArtifactPublisher(target, lang, creds, langOpts).publish()
   } yield res
 
   private def initDir(conf: IDLCArgs): Boolean = {
