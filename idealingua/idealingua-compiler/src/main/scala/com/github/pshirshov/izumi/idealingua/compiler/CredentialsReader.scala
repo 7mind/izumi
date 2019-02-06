@@ -14,7 +14,7 @@ class LangCredentials(override val lang: IDLLanguage) extends Credentials
 case class ScalaCredentials(realm: String, host: String, user: String, password: String,
                             releasesRepo: String, snapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
 case class TypescriptCredentials(npmRepo: String, user: String, password: String, email: String) extends LangCredentials(IDLLanguage.Typescript)
-case class GoCredentials() extends LangCredentials(IDLLanguage.Go)
+case class GoCredentials(gitUser: String, gitEmail: String, gitRepoUrl: String, gitRepoName: String, gitPubKey: String) extends LangCredentials(IDLLanguage.Go)
 case class CsharpCredentials(nugetRepo: String, user: String, password: String) extends LangCredentials(IDLLanguage.CSharp)
 
 class CredentialsReader(lang: IDLLanguage, file: File) {

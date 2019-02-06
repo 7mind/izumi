@@ -48,7 +48,8 @@ object CommandlineIDLCompiler {
   private def runPublish(conf: IDLCArgs): Boolean = {
     if (conf.publish && conf.languages.nonEmpty) {
       conf.languages.foreach { lang =>
-        publishLangArtifacts(conf, lang) match {
+        val manifest = toOption(conf, Map.empty)(lang).manifest
+        publishLangArtifacts(conf, lang, manifest) match {
           case Left(err) => throw err
           case _ => ()
         }
@@ -58,7 +59,7 @@ object CommandlineIDLCompiler {
       false
   }
 
-  def publishLangArtifacts(conf: IDLCArgs, langOpts: LanguageOpts): Either[Throwable, Unit] = for {
+  def publishLangArtifacts(conf: IDLCArgs, langOpts: LanguageOpts, manifest: BuildManifest): Either[Throwable, Unit] = for {
     credsFile <- Either.cond(langOpts.credentials.isDefined, langOpts.credentials.get,
       new IllegalArgumentException(s"Can't publish ${langOpts.id} with empty credentials file. " +
         s"Use `--credentials` command line arg to set it"
@@ -67,7 +68,7 @@ object CommandlineIDLCompiler {
     lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
     creds <- new CredentialsReader(lang, credsFile).read()
     target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
-    res <- new ArtifactPublisher(target, lang, creds, langOpts).publish()
+    res <- new ArtifactPublisher(target, lang, creds, manifest).publish()
   } yield res
 
   private def initDir(conf: IDLCArgs): Boolean = {

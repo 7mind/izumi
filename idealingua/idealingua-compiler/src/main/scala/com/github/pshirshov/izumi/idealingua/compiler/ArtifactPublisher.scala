@@ -1,9 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file._
+import java.time.ZonedDateTime
 import java.util.Base64
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
 
 import scala.sys.process.Process
@@ -11,15 +14,15 @@ import scala.util.Try
 import scala.collection.JavaConverters._
 
 
-class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, langOpts: LanguageOpts) {
+class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, manifest: BuildManifest) {
   private val log: CompilerLog = CompilerLog.Default
 
-  def publish(): Either[Throwable, Unit] = (creds, lang) match {
-    case (c: ScalaCredentials, IDLLanguage.Scala) => publishScala(targetDir, c)
-    case (c: TypescriptCredentials, IDLLanguage.Typescript) => publishTypescript(targetDir, c)
-    case (c: GoCredentials, IDLLanguage.Go) => ???
-    case (c: CsharpCredentials, IDLLanguage.CSharp) => publishCsharp(targetDir, c)
-    case (c, l) if c.lang != l =>
+  def publish(): Either[Throwable, Unit] = (creds, lang, manifest) match {
+    case (c: ScalaCredentials, IDLLanguage.Scala, _) => publishScala(targetDir, c)
+    case (c: TypescriptCredentials, IDLLanguage.Typescript, _) => publishTypescript(targetDir, c)
+    case (c: GoCredentials, IDLLanguage.Go, m: GoLangBuildManifest) => publishGo(targetDir, c, m)
+    case (c: CsharpCredentials, IDLLanguage.CSharp, _) => publishCsharp(targetDir, c)
+    case (c, l, _) if c.lang != l =>
       Left(new IllegalArgumentException(s"Language and credentials type didn't match. " +
         s"Got credentials for $l, expect for ${c.lang}"))
   }
@@ -111,11 +114,6 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
   private def publishCsharp(targetDir: Path, creds: CsharpCredentials): Either[Throwable, Unit] = Try {
     log.log("Prepare to package C# sources")
 
-    /*
-    nuget sources Add -Name TGArtifactory -Source $REPO_NUGET || true
-    nuget setapikey "${PUBLISH_USER}:${PUBLISH_PASSWORD}" -Source TGArtifactory
-     */
-
     log.log("Preparing credentials")
     Process(
       s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", targetDir.toFile
@@ -127,9 +125,10 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
 
     log.log("Publishing")
     Files.list(targetDir.resolve("nuspec")).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
-      Try(Process(
-        s"nuget pack ${module.getFileName.toString}", targetDir.resolve("nuspec").toFile
-      ).lineStream.foreach(log.log)
+      Try(
+        Process(
+          s"nuget pack ${module.getFileName.toString}", targetDir.resolve("nuspec").toFile
+        ).lineStream.foreach(log.log)
       )
     }
 
@@ -138,5 +137,78 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
         s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", targetDir.resolve("nuspec").toFile
       ).lineStream.foreach(log.log)
     }
+  }.toEither
+
+  private def publishGo(targetDir: Path, creds: GoCredentials, manifest: GoLangBuildManifest): Either[Throwable, Unit] = Try {
+    log.log("Prepare to package GoLang sources")
+
+    val env = "GOPATH" -> s"${targetDir.toAbsolutePath.toString}"
+    IzFiles.recreateDir(targetDir.resolve("src"))
+
+    Files.move(targetDir.resolve("github.com"), targetDir.resolve("src/github.com"), StandardCopyOption.REPLACE_EXISTING)
+
+    Process(
+      "go get github.com/gorilla/websocket", targetDir.toFile, env
+    ).lineStream.foreach(log.log)
+
+    log.log("Testing")
+    Process(
+      "go test ./...", targetDir.resolve("src").toFile, env
+    ).lineStream.foreach(log.log)
+    log.log("Testing - OK")
+
+    log.log("Publishing to github repo")
+
+    log.log("Seting up Git")
+    val pubKey = targetDir.resolve("go-key.pub")
+    Files.write(pubKey, Seq(creds.gitPubKey).asJava)
+
+    Process(
+      s"""git config --global core.sshCommand "ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" """
+    ).lineStream.foreach(log.log)
+    Process(
+      s"""git config --global user.name "${creds.gitUser}""""
+    ).lineStream.foreach(log.log)
+    Process(
+      s"""git config --global user.email "${creds.gitEmail}""""
+    ).lineStream.foreach(log.log)
+
+    Process(
+      s"git clone ${creds.gitRepoUrl}",targetDir.toFile
+    ).lineStream.foreach(log.log)
+
+    Files.list(targetDir.resolve(creds.gitRepoName)).iterator().asScala
+      .filter(_.getFileName.toString.charAt(0) != '.')
+      .foreach { path =>
+        IzFiles.removeDir(path)
+      }
+
+    Files.list(targetDir.resolve("src").resolve(manifest.repository.repository)).iterator().asScala.foreach { srcDir =>
+      Files.move(srcDir, targetDir.resolve(creds.gitRepoName).resolve(srcDir.getFileName.toString))
+    }
+
+    Files.write(targetDir.resolve(creds.gitRepoName).resolve(".timestamp"), Seq(
+      ZonedDateTime.now().toString
+    ).asJava)
+    Files.write(targetDir.resolve(creds.gitRepoName).resolve("README.md"), Seq(
+      s"# ${creds.gitRepoName}",
+      s"Auto-generated golang apis, ${manifest.common.version.toString}"
+    ).asJava)
+
+    Process(
+      "git add .", targetDir.resolve(creds.gitRepoName).toFile
+    ).lineStream.foreach(log.log)
+    Process(
+      s"""git commit --no-edit -am "golang-api-update,version=${manifest.common.version}"""", targetDir.resolve(creds.gitRepoName).toFile
+    ).lineStream.foreach(log.log)
+    Process(
+      s"git tag -f v${manifest.common.version.toString}}", targetDir.resolve(creds.gitRepoName).toFile
+    ).lineStream.foreach(log.log)
+    Process(
+      "git push --all -f", targetDir.resolve(creds.gitRepoName).toFile
+    ).lineStream.foreach(log.log)
+    Process(
+      "git push --tags -f", targetDir.resolve(creds.gitRepoName).toFile
+    ).lineStream.foreach(log.log)
   }.toEither
 }
