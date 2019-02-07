@@ -23,7 +23,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     case (c: GoCredentials, IDLLanguage.Go, m: GoLangBuildManifest) => publishGo(targetDir, c, m)
     case (c: CsharpCredentials, IDLLanguage.CSharp, _) => publishCsharp(targetDir, c)
     case (c, l, _) if c.lang != l =>
-      Left(new IllegalArgumentException(s"Language and credentials type didn't match. " +
+      Left(new IllegalArgumentException("Language and credentials type didn't match. " +
         s"Got credentials for $l, expect for ${c.lang}"))
   }
 
