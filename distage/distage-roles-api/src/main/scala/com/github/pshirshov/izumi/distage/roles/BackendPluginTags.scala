@@ -14,6 +14,8 @@ trait BackendPluginTags {
   final val Repositories = BindingTag("repositories")
   final val Http = BindingTag("http")
   final val Implicits = BindingTag("implicits")
+  final val AppOnly = BindingTag("app-only")
+
 }
 
 object BackendPluginTags extends BackendPluginTags

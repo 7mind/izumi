@@ -15,8 +15,12 @@ import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorConfig: ConfigInjectionOptions)
-  extends PlanningHook {
+class ConfigProvider
+(
+  config: AppConfig
+, reader: RuntimeConfigReader
+, injectorConfig: ConfigInjectionOptions
+) extends PlanningHook {
 
   import ConfigProvider._
 
@@ -79,7 +83,7 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
     loaded.headOption match {
       case Some((loadedPath, loadedValue)) =>
         try {
-          val loaded = toProduct(step, loadedPath, loadedValue)
+          val loaded = toProduct(loadedPath)(step.targetType, loadedValue)
           val product = injectorConfig.transformer.transform.lift((ci, loaded)).getOrElse(loaded)
           TranslationResult.Success(
             ExecutableOp.WiringOp.ReferenceInstance(
@@ -99,14 +103,14 @@ class ConfigProvider(config: AppConfig, reader: RuntimeConfigReader, injectorCon
     }
   }
 
-  private def toProduct(step: RequiredConfigEntry, loadedPath: ConfigPath, loadedValue: ConfigValue): Any = {
-    loadedValue match {
+  private def toProduct(loadedPath: ConfigPath)(targetType: SafeType, configValue: ConfigValue): Any = {
+    configValue match {
       case obj: ConfigObject =>
-        reader.readConfigAsCaseClass(obj.toConfig, step.targetType)
-      case o if injectorConfig.enableScalars =>
-        reader.readValue(o, step.targetType)
-      case o =>
-        throw new ConfigException.WrongType(o.origin(), loadedPath.toPath, "Object", o.valueType().toString)
+        reader.readConfigAsCaseClass(obj.toConfig, targetType)
+      case cv if injectorConfig.enableScalars =>
+        reader.readValue(cv, targetType)
+      case cv =>
+        throw new ConfigException.WrongType(cv.origin(), loadedPath.toPath, "Object", cv.valueType().toString)
     }
   }
 

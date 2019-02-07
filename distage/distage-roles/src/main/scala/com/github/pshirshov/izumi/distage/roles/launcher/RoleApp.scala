@@ -15,7 +15,6 @@ abstract class RoleApp extends OpinionatedDiApp {
 
   protected def paramsToStrategyArgs(params: CommandlineConfig): StrategyArgs
 
-
   protected def makeStrategy(cliConfig: CommandlineConfig): ApplicationBootstrapStrategy = {
     val strategyArgs = paramsToStrategyArgs(cliConfig)
     setupContext(cliConfig, strategyArgs)

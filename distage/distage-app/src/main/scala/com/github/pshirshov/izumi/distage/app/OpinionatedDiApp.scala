@@ -14,7 +14,7 @@ import distage._
 case class DIAppStartupContext(startupContext: StartupContext)
 
 trait StartupContext {
-  val logger: IzLogger
+  def logger: IzLogger
   def injector: Injector
   def plan: OrderedPlan
   def startup(args: Array[String]): StartupContext
@@ -73,7 +73,9 @@ abstract class OpinionatedDiApp {
     val injector: Injector = makeInjector(logger, bsdef)
     val plan: OrderedPlan = makePlan(logger, appDef, injector)
 
-    override def startup(args: Array[String]): StartupContext = OpinionatedDiApp.this.startup(args)
+    override def startup(args: Array[String]): StartupContext = {
+      OpinionatedDiApp.this.startup(args)
+    }
   }
 
   protected def commandlineSetup(args: Array[String]): CommandlineConfig
@@ -93,13 +95,13 @@ abstract class OpinionatedDiApp {
   protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
     val plan = injector.plan(PlannerInput(appDef))
     import CompactPlanFormatter._
-    logger.trace(s"Planning completed\n${plan.render() -> "plan"}")
+    logger.debug(s"Planning completed\n${plan.render() -> "plan"}")
     plan
   }
 
   protected def makeContext(context: StartupContext): Locator = {
     val locator = context.injector.produceUnsafe(context.plan)
-    context.logger.trace(s"Object graph produced with ${locator.instances.size -> "instances"}")
+    context.logger.debug(s"Object graph produced with ${locator.instances.size -> "instances"}")
     locator
   }
 
