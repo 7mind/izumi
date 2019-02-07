@@ -66,7 +66,7 @@ object CommandlineIDLCompiler {
       )
     )
     lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
-    creds <- new CredentialsReader(lang, credsFile).read()
+    creds <- new CredentialsReader(lang, credsFile).read(toJson(langOpts.overrides))
     target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
     res <- new ArtifactPublisher(target, lang, creds, manifest).publish()
   } yield res

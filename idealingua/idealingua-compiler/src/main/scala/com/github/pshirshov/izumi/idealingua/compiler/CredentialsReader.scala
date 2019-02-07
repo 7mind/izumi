@@ -4,6 +4,7 @@ import java.io.File
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
+import io.circe.Json
 import io.circe.parser.parse
 import io.circe.generic.auto._
 
@@ -11,22 +12,22 @@ sealed trait Credentials {
   def lang: IDLLanguage
 }
 class LangCredentials(override val lang: IDLLanguage) extends Credentials
-case class ScalaCredentials(realm: String, host: String, user: String, password: String,
-                            releasesRepo: String, snapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
-case class TypescriptCredentials(npmRepo: String, user: String, password: String, email: String) extends LangCredentials(IDLLanguage.Typescript)
+case class ScalaCredentials(sbtRealm: String, sbtHost: String, sbtUser: String, sbtPassword: String,
+                            sbtReleasesRepo: String, sbtSnapshotsRepo: String) extends LangCredentials(IDLLanguage.Scala)
+case class TypescriptCredentials(npmRepo: String, npmUser: String, npmPassword: String, npmEmail: String) extends LangCredentials(IDLLanguage.Typescript)
 case class GoCredentials(gitUser: String, gitEmail: String, gitRepoUrl: String, gitRepoName: String, gitPubKey: String) extends LangCredentials(IDLLanguage.Go)
-case class CsharpCredentials(nugetRepo: String, user: String, password: String) extends LangCredentials(IDLLanguage.CSharp)
+case class CsharpCredentials(nugetRepo: String, nugetUser: String, nugetPassword: String) extends LangCredentials(IDLLanguage.CSharp)
 
 class CredentialsReader(lang: IDLLanguage, file: File) {
-  def read(): Either[Throwable, Credentials] = lang match {
-    case IDLLanguage.Scala => read[ScalaCredentials](file)
-    case IDLLanguage.Typescript => read[TypescriptCredentials](file)
-    case IDLLanguage.Go => read[GoCredentials](file)
-    case IDLLanguage.CSharp => read[CsharpCredentials](file)
+  def read(overrides: Json): Either[Throwable, Credentials] = lang match {
+    case IDLLanguage.Scala => read[ScalaCredentials](file, overrides)
+    case IDLLanguage.Typescript => read[TypescriptCredentials](file, overrides)
+    case IDLLanguage.Go => read[GoCredentials](file, overrides)
+    case IDLLanguage.CSharp => read[CsharpCredentials](file, overrides)
   }
 
-  def read[T <: Credentials](file: File)(implicit d: io.circe.Decoder[T]): Either[Throwable, Credentials] = for {
+  def read[T <: Credentials](file: File, overrides: Json)(implicit d: io.circe.Decoder[T]): Either[Throwable, Credentials] = for {
     json <- parse(IzFiles.readString(file))
-    creds <- json.as[T]
+    creds <- json.deepMerge(overrides).as[T]
   } yield creds.asInstanceOf[Credentials]
 }

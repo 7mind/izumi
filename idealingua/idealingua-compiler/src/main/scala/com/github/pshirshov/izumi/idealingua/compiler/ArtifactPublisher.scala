@@ -45,9 +45,9 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       s"""
         |publishTo := {
         |  if (isSnapshot.value)
-        |    Some("snapshots" at "${creds.snapshotsRepo}")
+        |    Some("snapshots" at "${creds.sbtSnapshotsRepo}")
         |  else
-        |    Some("releases"  at "${creds.releasesRepo}")
+        |    Some("releases"  at "${creds.sbtReleasesRepo}")
         |}
       """.stripMargin
     )
@@ -55,10 +55,10 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     Files.write(buildFile, credsLines.asJava, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
 
     Files.write(sbtCredsFile, Seq[String](
-      s"realm=${creds.realm}",
-      s"host=${creds.host}",
-      s"user=${creds.user}",
-      s"password=${creds.password}"
+      s"realm=${creds.sbtRealm}",
+      s"host=${creds.sbtHost}",
+      s"user=${creds.sbtUser}",
+      s"password=${creds.sbtPassword}"
     ).asJava)
 
     Process(
@@ -87,7 +87,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     val scope = packagesDir.getFileName
 
     val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
-    val auth = Base64.getEncoder.encode(creds.password.getBytes)
+    val auth = Base64.getEncoder.encode(creds.npmPassword.getBytes)
     val repoName = creds.npmRepo.replaceAll("http://", "").replaceAll("https://", "")
     log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
     Process(
@@ -97,8 +97,8 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       s"""
          |$scope:registry=${creds.npmRepo}
          |//$repoName:_password=$auth
-         |//$repoName:username=${creds.user}
-         |//$repoName:email=${creds.email}
+         |//$repoName:username=${creds.npmUser}
+         |//$repoName:email=${creds.npmEmail}
          |//$repoName:always-auth=true
       """.stripMargin
     ).asJava)
@@ -120,7 +120,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     ).#||("true").lineStream.foreach(log.log)
 
     Process(
-      s"nuget setapikey ${creds.user}:${creds.password} -Source IzumiPublishSource", targetDir.toFile
+      s"nuget setapikey ${creds.nugetUser}:${creds.nugetPassword} -Source IzumiPublishSource", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     log.log("Publishing")
