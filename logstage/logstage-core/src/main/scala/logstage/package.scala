@@ -1,4 +1,5 @@
 import com.github.pshirshov.izumi.functional.bio.SyncSafe2
+import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.{api, sink}
 
 package object logstage extends LogStage {
@@ -31,7 +32,7 @@ package object logstage extends LogStage {
   object LogBIO {
     def apply[F[_, _]: LogBIO]: LogBIO[F] = implicitly
 
-    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): LogBIO[F] = {
+    def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): LogBIO[F] = {
       LogIO.fromLogger(logger)
     }
   }
@@ -40,7 +41,7 @@ package object logstage extends LogStage {
   object UnsafeLogBIO {
     def apply[F[_, _]: UnsafeLogBIO]: UnsafeLogBIO[F] = implicitly
 
-    def fromLogger[F[_, _]: SyncSafe2](logger: IzLogger): UnsafeLogBIO[F] = {
+    def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogBIO[F] = {
       UnsafeLogIO.fromLogger(logger)
     }
   }

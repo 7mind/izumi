@@ -3,6 +3,8 @@ package com.github.pshirshov.izumi.distage.config
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.collection.JavaConverters._
+
 case class ConfigPath(parts: Seq[String]) {
   def toPath: String = parts.mkString(".")
 
@@ -10,12 +12,19 @@ case class ConfigPath(parts: Seq[String]) {
 }
 
 
-case class ResolvedConfig(source: AppConfig, requiredPaths: Set[ConfigPath]) {
+case class ResolvedConfig(
+                           source: AppConfig
+                         , requiredPaths: Set[ConfigPath]
+                         ) {
 
   final def minimized(): Config = {
-    import scala.collection.JavaConverters._
     val paths = requiredPaths.map(_.toPath)
-    ConfigFactory.parseMap(source.config.root().unwrapped().asScala.filterKeys(key => paths.exists(_.startsWith(key))).asJava)
+
+    ConfigFactory.parseMap {
+      source.config.root().unwrapped().asScala
+        .filterKeys(key => paths.exists(_.startsWith(key)))
+        .asJava
+    }
   }
 
 }

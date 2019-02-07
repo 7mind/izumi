@@ -55,7 +55,7 @@ class RoleAppBootstrapStrategy(
 
   private val roleProvider: RoleProvider = new RoleProviderImpl(logger, roleSet, mp)
 
-  def init(): RoleAppBootstrapStrategy = {
+  def init(): this.type = {
     showDepData(logger, "Application is about to start", this.getClass)
     using.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
     showDepData(logger, "... using izumi-r2", classOf[OpinionatedDiApp])
@@ -78,6 +78,7 @@ class RoleAppBootstrapStrategy(
     val allConfigs = roleConfigFiles :+ commonConfigFile
 
     logger.info(s"Using ${allConfigs.niceList() -> "config files"}")
+    logger.info(s"Using system properties")
 
     val loaded = allConfigs.map {
       case s@ConfigSource.File(file) =>
@@ -100,9 +101,8 @@ class RoleAppBootstrapStrategy(
 
     val folded = foldConfigs(good.collect({ case (_, Success(c)) => c }))
 
-    val config = ConfigFactory.defaultOverrides()
+    val config = ConfigFactory.systemProperties()
       .withFallback(folded)
-      .withFallback(ConfigFactory.defaultApplication())
       .resolve()
 
     AppConfig(config)
@@ -231,6 +231,3 @@ object RoleAppBootstrapStrategy {
     .register[IntegrationComponent]
     .register[ExecutorService]
 }
-
-
-

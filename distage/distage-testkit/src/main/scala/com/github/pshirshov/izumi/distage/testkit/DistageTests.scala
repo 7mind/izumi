@@ -264,7 +264,7 @@ trait DistageTests {
     if (resource.isEmpty) {
       None
     } else {
-      Some(AppConfig(resource.resolveWith(ConfigFactory.defaultOverrides())))
+      Some(AppConfig(resource.resolveWith(ConfigFactory.systemProperties())))
     }
   }
 
@@ -273,7 +273,7 @@ trait DistageTests {
     if (resource.isEmpty) {
       throw new testkit.DistageTests.TestkitException(s"Can't parse config resource $name")
     } else {
-      AppConfig(resource.resolveWith(ConfigFactory.defaultOverrides()))
+      AppConfig(resource.resolveWith(ConfigFactory.systemProperties()))
     }
   }
 
