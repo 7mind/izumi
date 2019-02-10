@@ -8,11 +8,12 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-class TraitStrategyDefaultImpl(
-                                proxyProvider: ProxyProvider,
-                                mirror: MirrorProvider,
-                                traitInit: TraitInitTool,
-                              ) extends TraitStrategy {
+class TraitStrategyDefaultImpl
+(
+  proxyProvider: ProxyProvider,
+  mirror: MirrorProvider,
+  traitInit: TraitInitTool,
+) extends TraitStrategy {
   def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[ExecutableOpResult] = {
     val traitDeps = context.narrow(op.wiring.requiredKeys)
 

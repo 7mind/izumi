@@ -11,7 +11,6 @@ import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
@@ -138,18 +137,16 @@ object StaticPluginCheckerMacro {
       .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
       .definition
 
-    val gc = root.map(r => new TracingGCModule(r.keys))
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
       many[PlanningHook]
         .add[ConfigReferenceExtractor]
     })
-    val bootstrapOverrides = (config :: gc.toList).merge
 
-    val bootstrap = new DefaultBootstrapLocator(DefaultBootstrapLocator.noCogensBootstrap overridenBy bootstrapOverrides)
+    val bootstrap = new DefaultBootstrapLocator(DefaultBootstrapLocator.noReflectionBootstrap overridenBy config)
     val injector = Injector.inherit(bootstrap)
 
-    val finalPlan = injector.plan(PlannerInput(module)).locateImports(bootstrap)
+    val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true

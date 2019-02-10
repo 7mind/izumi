@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bootstra
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.AssignableFromEarlyAutoSetHook
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.{BindingPreference, PluginMergeConfig}
@@ -18,6 +17,7 @@ import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import com.github.pshirshov.test.testapp._
 import com.typesafe.config.ConfigFactory
+import distage.{DIKey, Module}
 import org.scalatest.WordSpec
 
 case class EmptyCfg()
@@ -40,10 +40,11 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends Opin
 
   override protected def makeStrategy(cliConfig: EmptyCfg): ApplicationBootstrapStrategy = {
     Quirks.discard(cliConfig)
-    val bsContext: BootstrapContext = BootstrapContext.BootstrapContextDefaultImpl(pluginConfig)
 
-    new ApplicationBootstrapStrategyBaseImpl(bsContext) {
-      override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
+    new ApplicationBootstrapStrategy {
+      override val context: BootstrapConfig = BootstrapConfig(pluginConfig)
+
+      override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy = {
         Quirks.discard(bs, app)
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
@@ -54,15 +55,24 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends Opin
           new ConfigModule(config)
           , new CustomizationModule
           //          , new GraphDumpBootstrapModule()
-          , new TracingGCModule(Set(
-            RuntimeDIUniverse.DIKey.get[TestApp],
-            RuntimeDIUniverse.DIKey.get[DisabledByKey],
-            RuntimeDIUniverse.DIKey.get[DisabledByImpl],
-            RuntimeDIUniverse.DIKey.get[DisabledByTag],
-            RuntimeDIUniverse.DIKey.get[WithGoodTag],
-            RuntimeDIUniverse.DIKey.get[Set[SetEl]],
-            RuntimeDIUniverse.DIKey.get[WeakSetDep],
-          ))
+        )
+      }
+
+      override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[Module] = {
+        Quirks.discard(bs, app)
+        Seq.empty
+      }
+
+      override def gcRoots(bs: LoadedPlugins, app: LoadedPlugins): Set[DIKey] = {
+        Quirks.discard(bs, app)
+        Set(
+          RuntimeDIUniverse.DIKey.get[TestApp],
+          RuntimeDIUniverse.DIKey.get[DisabledByKey],
+          RuntimeDIUniverse.DIKey.get[DisabledByImpl],
+          RuntimeDIUniverse.DIKey.get[DisabledByTag],
+          RuntimeDIUniverse.DIKey.get[WithGoodTag],
+          RuntimeDIUniverse.DIKey.get[Set[SetEl]],
+          RuntimeDIUniverse.DIKey.get[WeakSetDep],
         )
       }
 

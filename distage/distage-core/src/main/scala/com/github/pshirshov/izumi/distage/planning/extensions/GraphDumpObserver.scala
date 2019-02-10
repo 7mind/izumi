@@ -18,7 +18,6 @@ import scala.collection.mutable
 final class GraphDumpObserver
 (
   planAnalyzer: PlanAnalyzer
-, roots: Set[DIKey] @Id("gc.roots")
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
 
@@ -84,6 +83,7 @@ final class GraphDumpObserver
     val missingKeysSeq = missingKeys.toSeq
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
+    val roots = finalPlan.roots
 
     goodKeys.foreach {
       k =>

@@ -1,32 +1,30 @@
 package com.github.pshirshov.izumi.fundamentals.platform.language
 
-private[language] trait Const[_Unit] {
-  protected val unit: _Unit
+import scala.language.implicitConversions
 
-  @inline def forget(trash: LazyDiscarder[_]*): _Unit = {
-    val _ = trash
-    unit
-  }
-
-  implicit final class LazyDiscarder[T](t: => T) {
-    @inline def forget: _Unit = {
-      Const.this.forget(t)
-      unit
-    }
-  }
-
-}
-
-
-object Quirks extends Const[Unit] {
-  override protected val unit: Unit = ()
+object Quirks {
 
   @inline def discard(trash: Any*): Unit = {
     val _ = trash
   }
 
+  @inline def forget(trash: LazyDiscarder[_]*): Unit = {
+    val _ = trash
+  }
+
   implicit final class Discarder[T](private val t: T) extends AnyVal {
-    @inline def discard(): Unit = Quirks.discard(t)
+    @inline def discard(): Unit = {
+      val _ = t
+    }
+  }
+
+  @inline implicit def LazyDiscarder[T](t: => T): LazyDiscarder[T] = {
+    def x = t
+    new LazyDiscarder[T]()
+  }
+
+  final class LazyDiscarder[T](private val dummy: Boolean = false) extends AnyVal {
+    @inline def forget: Unit = {}
   }
 
 }

@@ -3,14 +3,13 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategyBaseImpl, BootstrapContext, OpinionatedDiApp}
+import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig, SimpleLoggerConfigurator}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGCModule
 import com.github.pshirshov.izumi.distage.plugins._
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
@@ -23,13 +22,13 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.typesafe.config.{Config, ConfigFactory}
+import distage.DIKey
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-sealed trait ConfigSource {
-}
+sealed trait ConfigSource
 
 object ConfigSource {
 
@@ -45,8 +44,8 @@ object ConfigSource {
 
 class RoleAppBootstrapStrategy(
                                 params: RoleAppBootstrapStrategyArgs
-                                , bsContext: BootstrapContext
-                              ) extends ApplicationBootstrapStrategyBaseImpl(bsContext) {
+                              , override val context: BootstrapConfig
+                              ) extends ApplicationBootstrapStrategy {
 
   import params._
 
@@ -128,23 +127,17 @@ class RoleAppBootstrapStrategy(
   }
 
   override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
-    bs.discard()
 
     logger.info(s"Loaded ${app.definition.bindings.size -> "app bindings"} and ${bs.definition.bindings.size -> "bootstrap bindings"}...")
 
     val roles = roleInfo.get()
 
-    val gcModule = new TracingGCModule(roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig]))
-
     val rolesModule = new BootstrapModuleDef {
       make[RolesInfo].from(roles)
     }
-
     val autosetModule = RoleAppBootstrapStrategy.roleAutoSetModule
-
     val configModule = new ConfigModule(config)
-
-    val maybeDumpModule = if (dumpContext) {
+    val maybeDumpGraphModule = if (dumpContext) {
       Seq(new GraphDumpBootstrapModule())
     } else {
       Seq.empty
@@ -153,20 +146,31 @@ class RoleAppBootstrapStrategy(
     Seq(
       configModule,
       autosetModule,
-      gcModule,
       rolesModule,
     ) ++
-      maybeDumpModule
+      maybeDumpGraphModule
   }
 
-  override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy[LoadedPlugins] = {
+  override def gcRoots(bs: LoadedPlugins, app: LoadedPlugins): Set[DIKey] = {
+    (bs, app).discard()
+
+    val roles = roleInfo.get()
+
+    roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig])
+  }
+
+  override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy = {
+
     val bindings = app.flatMap(_.bindings)
     logger.info(s"Available ${app.size -> "app plugins"} and ${bs.size -> "bootstrap plugins"} and ${bindings.size -> "app bindings"}...")
+
+    // extract
     val roles: RolesInfo = roleProvider.getInfo(bindings)
     roleInfo.set(roles) // TODO: mutable logic isn't so pretty. We need to maintain an immutable context somehow
     printRoleInfo(roles)
 
     val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => BindingTag.Expressions.Has(BindingTag(v)): BindingTag.Expressions.Expr)
+    //
     val allDisabledTags = BindingTag.Expressions.Or(Set(disabledTags) ++ unrequiredRoleTags)
     logger.trace(s"Raw disabled tags ${allDisabledTags -> "expression"}")
     logger.info(s"Disabled ${BindingTag.Expressions.TagDNF.toDNF(allDisabledTags) -> "tags"}")
@@ -188,7 +192,7 @@ class RoleAppBootstrapStrategy(
     logger.info(s"Requested ${roles.requiredRoleBindings.map(_.name).mkString("\n - ", "\n - ", "") -> "roles"}")
   }
 
-  override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[ModuleBase] = {
+  override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[Module] = {
     bs.discard()
     app.discard()
 
@@ -201,7 +205,7 @@ class RoleAppBootstrapStrategy(
     Seq(baseMod overridenBy addOverrides)
   }
 
-  private lazy val _router = {
+  private[this] lazy val _router = {
     new SimpleLoggerConfigurator(logger)
       .makeLogRouter(
         config.config.getConfig("logger")

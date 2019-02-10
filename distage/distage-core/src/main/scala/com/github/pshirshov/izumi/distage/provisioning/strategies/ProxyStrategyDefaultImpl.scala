@@ -119,8 +119,6 @@ class ProxyStrategyDefaultImpl(
     !hasNoDependencies
   }
 
-
-
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {
       case op: WiringOp.InstantiateTrait =>

@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.planning
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
 
-class AggregatingObserver(planningObservers: Set[PlanningObserver]) extends PlanningObserver {
+final class PlanningObserverAggregate(planningObservers: Set[PlanningObserver]) extends PlanningObserver {
   override def onSuccessfulStep(next: DodgyPlan): Unit = {
     planningObservers.foreach(_.onSuccessfulStep(next))
   }
@@ -11,7 +11,6 @@ class AggregatingObserver(planningObservers: Set[PlanningObserver]) extends Plan
   override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {
     planningObservers.foreach(_.onPhase00PlanCompleted(plan))
   }
-
 
   override def onPhase05PreGC(plan: SemiPlan): Unit = {
     planningObservers.foreach(_.onPhase05PreGC(plan))

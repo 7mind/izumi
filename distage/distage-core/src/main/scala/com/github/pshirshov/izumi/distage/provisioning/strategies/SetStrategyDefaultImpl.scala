@@ -9,9 +9,10 @@ import com.github.pshirshov.izumi.distage.provisioning.ProvisionOperationVerifie
 
 import scala.collection.immutable.ListSet
 
-class SetStrategyDefaultImpl(
-                              verifier: ProvisionOperationVerifier,
-                            ) extends SetStrategy {
+class SetStrategyDefaultImpl
+(
+  verifier: ProvisionOperationVerifier,
+) extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[ExecutableOpResult.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]

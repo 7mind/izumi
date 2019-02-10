@@ -35,16 +35,24 @@ package object cats
     def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => plan.copy(steps = s.flatten))
 
+    def resolveImportF[T]: ResolveImportFSemiPlanPartiallyApplied[T] = new ResolveImportFSemiPlanPartiallyApplied(plan)
+
+    def resolveImportF[F[_]: Applicative, T: Tag](f: F[T]): F[SemiPlan] = resolveImportF[T](f)
+
     def resolveImportsF[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[SemiPlan] =
       resolveImportsImpl(f, plan.steps).map(s => plan.copy(steps = s))
   }
 
   implicit final class OrderedPlanExts(private val plan: OrderedPlan) extends AnyVal {
     def traverse[F[_]: Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
-      plan.steps.traverse(f).map(SemiPlan(plan.definition, _))
+      plan.steps.traverse(f).map(SemiPlan(plan.definition, _, plan.roots))
 
     def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
-      plan.steps.traverse(f).map(s => SemiPlan(plan.definition, s.flatten))
+      plan.steps.traverse(f).map(s => SemiPlan(plan.definition, s.flatten, plan.roots))
+
+    def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
+
+    def resolveImportF[F[_]: Applicative, T: Tag](f: F[T]): F[OrderedPlan] = resolveImportF[T](f)
 
     def resolveImportsF[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[OrderedPlan] =
       resolveImportsImpl(f, plan.steps).map(s => plan.copy(steps = s))
@@ -60,4 +68,18 @@ package object cats
       case op =>
         Applicative[F].pure(op)
     }
+
+  private[cats] final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
+    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
+      plan.resolveImportsF[F] {
+        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
+      }
+  }
+
+  private[cats] final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
+    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
+      plan.resolveImportsF[F] {
+        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
+      }
+  }
 }

@@ -9,11 +9,12 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvid
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
-class FactoryStrategyDefaultImpl(
-                                  proxyProvider: ProxyProvider,
-                                  mirror: MirrorProvider,
-                                  traitInit: TraitInitTool,
-                                ) extends FactoryStrategy {
+class FactoryStrategyDefaultImpl
+(
+  proxyProvider: ProxyProvider,
+  mirror: MirrorProvider,
+  traitInit: TraitInitTool,
+) extends FactoryStrategy {
   def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[ExecutableOpResult] = {
     // at this point we definitely have all the dependencies instantiated
     val narrowedContext = context.narrow(op.wiring.requiredKeys)

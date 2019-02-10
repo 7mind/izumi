@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.immutable.ListSet
 
 /**
-  * A hook that will collect all bindings to types {{{<: T}}} into a `Set[T]` available for injection as a dependency.
+  * A hook that will collect all implementations with types that are {{{_ <: T}}} into a `Set[T]` set binding
+  * available for summoning
   *
   * Usage:
   *
@@ -52,7 +53,6 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
   protected val setElemetType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
-
   override def phase45PreForwardingCleanup(plan: SemiPlan): SemiPlan = {
     val cleaned = plan.steps.flatMap {
       op =>
@@ -70,7 +70,7 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
         }
     }
 
-    SemiPlan(plan.definition, cleaned)
+    plan.copy(steps = cleaned)
   }
 
   override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
@@ -110,7 +110,8 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
 
     val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet(newMembers: _*)
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
-    SemiPlan(plan.definition, newSteps :+ newSetOp)
+
+    plan.copy(steps = newSteps :+ newSetOp)
   }
 
   override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {

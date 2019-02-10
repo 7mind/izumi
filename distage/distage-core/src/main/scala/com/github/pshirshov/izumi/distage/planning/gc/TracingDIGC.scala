@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Module
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.planning.{DIGarbageCollector, GCRootPredicate}
+import com.github.pshirshov.izumi.distage.model.planning.DIGarbageCollector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
 
@@ -13,7 +13,6 @@ import scala.collection.mutable
 class TracingDIGC
 (
   plan: SemiPlan
-  , isRoot: GCRootPredicate
 ) extends AbstractGCTracer[DIKey, ExecutableOp] {
 
   @inline
@@ -82,14 +81,14 @@ class TracingDIGC
     Pruned(prefiltered, newTraced.toSet)
   }
 
-  override protected def isRoot(node: DIKey): Boolean = isRoot.isRoot(node)
+  override protected def isRoot(node: DIKey): Boolean = plan.roots(node)
 
   override protected def id(node: ExecutableOp): DIKey = node.target
 }
 
 object TracingDIGC extends DIGarbageCollector {
-  override def gc(plan: SemiPlan, isRoot: GCRootPredicate): SemiPlan = {
-    val collected = new TracingDIGC(plan, isRoot).gc(plan.steps)
+  override def gc(plan: SemiPlan): SemiPlan = {
+    val collected = new TracingDIGC(plan).gc(plan.steps)
 
     val updatedDefn = {
       val oldDefn = plan.definition.bindings
@@ -97,6 +96,6 @@ object TracingDIGC extends DIGarbageCollector {
       Module.make(oldDefn.filter(reachable contains _.key))
     }
 
-    SemiPlan(updatedDefn, collected.nodes)
+    SemiPlan(updatedDefn, collected.nodes, plan.roots)
   }
 }

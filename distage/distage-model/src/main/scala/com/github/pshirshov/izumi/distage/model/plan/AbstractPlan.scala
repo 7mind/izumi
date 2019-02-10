@@ -15,11 +15,11 @@ import com.github.pshirshov.izumi.functional.Renderable
 sealed trait AbstractPlan {
   def definition: ModuleBase
   def steps: Seq[ExecutableOp]
-  def roots: DIKey => Boolean
+  def roots: Set[DIKey]
 
   /** Get all imports (unresolved dependencies).
     *
-    * Note, presence of imports doesn't automatically mean that a plan is invalid,
+    * Note, presence of imports does not automatically mean that a plan is invalid,
     * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
     * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
     * */
@@ -27,7 +27,7 @@ sealed trait AbstractPlan {
     steps.collect { case i: ImportDependency => i }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector))
+    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector), roots)
   }
 
   final def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
@@ -54,7 +54,7 @@ sealed trait AbstractPlan {
         Seq(i.op)
       case o => Seq(o)
     }
-    SemiPlan(definition, safeSteps.toVector)
+    SemiPlan(definition, safeSteps.toVector, roots)
   }
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
@@ -91,26 +91,30 @@ object AbstractPlan {
     Function.unlift(i => f.lift(i).map(instance => Seq(ReferenceInstance(i.target, Instance(i.target.tpe, instance), i.origin))))
 }
 
-/** Unordered plan. You can turn into an [[OrderedPlan]] by using [[com.github.pshirshov.izumi.distage.model.Planner#finish]] **/
-final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: DIKey => Boolean) extends AbstractPlan {
+/**
+  * An unordered plan.
+  *
+  * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
+  */
+final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey]) extends AbstractPlan {
   lazy val index: Map[DIKey, ExecutableOp] = {
     steps.map(s => s.target -> s).toMap
   }
 
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    SemiPlan(definition, steps.map(f).toVector)
+    SemiPlan(definition, steps.map(f).toVector, roots)
   }
 
   def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.flatMap(f).toVector)
+    SemiPlan(definition, steps.flatMap(f).toVector, roots)
   }
 
   def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.collect(f).toVector)
+    SemiPlan(definition, steps.collect(f).toVector, roots)
   }
 
   def ++(that: AbstractPlan): SemiPlan = {
-    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps)
+    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps, roots)
   }
 
   override def resolveImport[T: Tag](instance: T): SemiPlan =

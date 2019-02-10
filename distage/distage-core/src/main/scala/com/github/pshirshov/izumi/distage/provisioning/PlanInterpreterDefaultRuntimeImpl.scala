@@ -11,25 +11,23 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-
-
-
-
 // TODO: add introspection capabilities
 class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
-  , proxyStrategy: ProxyStrategy
-  , factoryStrategy: FactoryStrategy
-  , traitStrategy: TraitStrategy
-  , factoryProviderStrategy: FactoryProviderStrategy
-  , providerStrategy: ProviderStrategy
-  , classStrategy: ClassStrategy
-  , importStrategy: ImportStrategy
-  , instanceStrategy: InstanceStrategy
-  , failureHandler: ProvisioningFailureInterceptor
-  , verifier: ProvisionOperationVerifier
-) extends PlanInterpreter with OperationExecutor {
+, proxyStrategy: ProxyStrategy
+, factoryStrategy: FactoryStrategy
+, traitStrategy: TraitStrategy
+, factoryProviderStrategy: FactoryProviderStrategy
+, providerStrategy: ProviderStrategy
+, classStrategy: ClassStrategy
+, importStrategy: ImportStrategy
+, instanceStrategy: InstanceStrategy
+, failureHandler: ProvisioningFailureInterceptor
+, verifier: ProvisionOperationVerifier
+)
+  extends PlanInterpreter
+     with OperationExecutor {
   override def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator] = {
     val excluded = mutable.Set[DIKey]()
 

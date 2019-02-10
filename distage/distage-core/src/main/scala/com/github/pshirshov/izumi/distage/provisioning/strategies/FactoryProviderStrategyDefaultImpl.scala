@@ -8,7 +8,10 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 
-class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends FactoryProviderStrategy  {
+class FactoryProviderStrategyDefaultImpl
+(
+  loggerHook: LoggerHook
+) extends FactoryProviderStrategy  {
   def callFactoryProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallFactoryProvider): Seq[ExecutableOpResult.NewInstance] = {
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {

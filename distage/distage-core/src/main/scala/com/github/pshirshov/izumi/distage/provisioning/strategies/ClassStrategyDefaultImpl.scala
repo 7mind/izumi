@@ -12,10 +12,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
-case class Dep(key: DIKey, value: Any)
-
-
-
 class ClassStrategyDefaultImpl
 (
   symbolIntrospector: SymbolIntrospector.Runtime,
@@ -41,7 +37,6 @@ class ClassStrategyDefaultImpl
     val instance = mkScala(context, op, args)
     Seq(ExecutableOpResult.NewInstance(op.target, instance))
   }
-
 
   protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Dep]): Any = {
     val wiring = op.wiring
@@ -152,6 +147,8 @@ class ClassStrategyDefaultImpl
 
 object ClassStrategyDefaultImpl {
 
+  final case class Dep(key: DIKey, value: Any)
+
   sealed trait Module {
     def toPrefix: Option[Any]
 
@@ -159,15 +156,13 @@ object ClassStrategyDefaultImpl {
   }
 
   object Module {
-
-    case class Static(instance: Any) extends Module {
+    final case class Static(instance: Any) extends Module {
       override def toPrefix: Option[Any] = None
     }
 
-    case class Prefix(instance: Any) extends Module {
+    final case class Prefix(instance: Any) extends Module {
       override def toPrefix: Option[Any] = Some(instance)
     }
-
   }
 
 }

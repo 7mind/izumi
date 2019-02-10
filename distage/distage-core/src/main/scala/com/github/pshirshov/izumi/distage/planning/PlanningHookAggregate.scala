@@ -5,7 +5,11 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, Order
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-class PlanningHookAggregate(hooks: Set[PlanningHook]) extends PlanningHook {
+final class PlanningHookAggregate
+(
+  hooks: Set[PlanningHook]
+) extends PlanningHook {
+
   override def hookWiring(binding: Binding.ImplBinding, wiring: RuntimeDIUniverse.Wiring): RuntimeDIUniverse.Wiring = {
     hooks.foldLeft(wiring) {
       case (acc, hook) =>

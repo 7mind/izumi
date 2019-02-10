@@ -15,20 +15,20 @@ import com.github.pshirshov.izumi.functional.Value
 class PlannerDefaultImpl
 (
   protected val forwardingRefResolver: ForwardingRefResolver
-  , protected val reflectionProvider: ReflectionProvider.Runtime
-  , protected val sanityChecker: SanityChecker
-  , protected val gc: DIGarbageCollector
-  , protected val planningObservers: Set[PlanningObserver]
-  , protected val planMergingPolicy: PlanMergingPolicy
-  , protected val planningHooks: Set[PlanningHook]
+, protected val reflectionProvider: ReflectionProvider.Runtime
+, protected val sanityChecker: SanityChecker
+, protected val gc: DIGarbageCollector
+, protected val planningObservers: Set[PlanningObserver]
+, protected val planMergingPolicy: PlanMergingPolicy
+, protected val planningHooks: Set[PlanningHook]
 )
   extends Planner {
 
   private val hook = new PlanningHookAggregate(planningHooks)
-  private val planningObserver = new AggregatingObserver(planningObservers)
+  private val planningObserver = new PlanningObserverAggregate(planningObservers)
 
   override def plan(input: PlannerInput): OrderedPlan = {
-    val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings)) {
+    val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
       case (currentPlan, binding) =>
         Value(computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -43,15 +43,15 @@ class PlannerDefaultImpl
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
       .map(planMergingPolicy.finalizePlan)
-      .map(finish(_, input.roots))
+      .map(finish)
       .get
   }
 
-  def finish(semiPlan: SemiPlan, roots: GCRootPredicate): OrderedPlan = {
+  def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(planMergingPolicy.addImports)
       .eff(planningObserver.onPhase05PreGC)
-      .map(gc.gc(_, roots))
+      .map(doGC)
       .map(hook.phase10PostGC)
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
@@ -62,10 +62,18 @@ class PlannerDefaultImpl
 
   // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector))
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.roots ++ b.roots))
   }
 
-  private def order(semiPlan: SemiPlan): OrderedPlan = {
+  private[this] def doGC(semiPlan: SemiPlan): SemiPlan = {
+    if (semiPlan.roots.nonEmpty) {
+      gc.gc(semiPlan)
+    } else {
+      semiPlan
+    }
+  }
+
+  private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(hook.phase45PreForwardingCleanup)
       .map(hook.phase50PreForwarding)
