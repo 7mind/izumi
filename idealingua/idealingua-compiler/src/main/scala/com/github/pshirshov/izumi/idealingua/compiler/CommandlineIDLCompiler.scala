@@ -27,7 +27,7 @@ object CommandlineIDLCompiler {
 
   def main(args: Array[String]): Unit = {
     val mf = IzManifest.manifest[CommandlineIDLCompiler.type]().map(IzManifest.read)
-    val izumiVersion = mf.map(_.version.toString).getOrElse("0.6.25")
+    val izumiVersion = mf.map(_.version.toString).getOrElse("UKNNOWN-IZUMI")
     val izumiInfoVersion = mf.map(_.justVersion).getOrElse("UNKNOWN-BUILD")
 
     log.log(s"Izumi IDL Compiler $izumiInfoVersion")
