@@ -6,7 +6,12 @@ trait BuildManifest {
   def common: Common
 }
 
-case class ProjectVersion(version: String, release: Boolean, snapshotQualifier: String)
+case class ProjectVersion(version: String, release: Boolean, snapshotQualifier: String) {
+  override def toString: String = {
+    val snapshot = if (release) "" else snapshotQualifier
+    s"$version-$snapshot"
+  }
+}
 
 object ProjectVersion {
   def default = ProjectVersion("0.0.1", release = false, "UNSET-BUILD-ID")
