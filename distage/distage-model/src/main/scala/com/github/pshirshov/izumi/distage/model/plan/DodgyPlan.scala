@@ -7,18 +7,23 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-final case class DodgyPlan(operations: OpMap
-                           , definition: ModuleBase
+final case class DodgyPlan(
+                            operations: OpMap
+                          , definition: ModuleBase
+                          , roots: Set[DIKey]
                           )
 
 object DodgyPlan {
 
   type OpMap = mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
 
-  def empty(definition: ModuleBase): DodgyPlan = DodgyPlan(
-    new mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
-    , definition
-  )
+  def empty(definition: ModuleBase, roots: Set[DIKey]): DodgyPlan = {
+    DodgyPlan(
+      new mutable.HashMap[DIKey, mutable.Set[InstantiationOp]] with mutable.MultiMap[DIKey, InstantiationOp]
+      , definition
+      , roots
+    )
+  }
 }
 
 

@@ -16,7 +16,7 @@ import scala.collection.mutable
 trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
-  protected def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
+  private[definition] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
 

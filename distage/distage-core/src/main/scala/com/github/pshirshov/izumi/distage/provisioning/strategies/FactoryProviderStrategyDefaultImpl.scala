@@ -4,12 +4,15 @@ import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
-import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 
-class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends FactoryProviderStrategy  {
-  def callFactoryProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallFactoryProvider): Seq[ContextAssignment.NewInstance] = {
+class FactoryProviderStrategyDefaultImpl
+(
+  loggerHook: LoggerHook
+) extends FactoryProviderStrategy  {
+  def callFactoryProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
       key =>
@@ -25,7 +28,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
     }
 
     val instance = op.wiring.provider.unsafeApply(args: _*)
-    Seq(ContextAssignment.NewInstance(op.target, instance))
+    Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
   private def mkExecutor(context: ProvisioningKeyProvider, executor: OperationExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext], op: WiringOp.CallFactoryProvider): FactoryExecutor =
@@ -49,7 +52,7 @@ class FactoryProviderStrategyDefaultImpl(loggerHook: LoggerHook) extends Factory
 
       loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
 
-      val res: Seq[ContextAssignment] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(op.target, step.wireWith, op.origin))
+      val res: Seq[NewObjectOp] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(op.target, step.wireWith, op.origin))
       loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
 
       res

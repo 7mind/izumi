@@ -4,17 +4,13 @@ import com.github.pshirshov.izumi.distage.commons.UnboxingTool
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
-
-case class Dep(key: DIKey, value: Any)
-
-
 
 class ClassStrategyDefaultImpl
 (
@@ -25,7 +21,7 @@ class ClassStrategyDefaultImpl
 
   import ClassStrategyDefaultImpl._
 
-  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ContextAssignment.NewInstance] = {
+  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[NewObjectOp.NewInstance] = {
     val wiring = op.wiring
     val args = wiring.associations.map {
       key =>
@@ -39,9 +35,8 @@ class ClassStrategyDefaultImpl
     }
 
     val instance = mkScala(context, op, args)
-    Seq(ContextAssignment.NewInstance(op.target, instance))
+    Seq(NewObjectOp.NewInstance(op.target, instance))
   }
-
 
   protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Dep]): Any = {
     val wiring = op.wiring
@@ -152,6 +147,8 @@ class ClassStrategyDefaultImpl
 
 object ClassStrategyDefaultImpl {
 
+  final case class Dep(key: DIKey, value: Any)
+
   sealed trait Module {
     def toPrefix: Option[Any]
 
@@ -159,22 +156,20 @@ object ClassStrategyDefaultImpl {
   }
 
   object Module {
-
-    case class Static(instance: Any) extends Module {
+    final case class Static(instance: Any) extends Module {
       override def toPrefix: Option[Any] = None
     }
 
-    case class Prefix(instance: Any) extends Module {
+    final case class Prefix(instance: Any) extends Module {
       override def toPrefix: Option[Any] = Some(instance)
     }
-
   }
 
 }
 
 
 class ClassStrategyFailingImpl extends ClassStrategy {
-  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ContextAssignment.NewInstance] = {
+  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[NewObjectOp.NewInstance] = {
     Quirks.discard(context)
     throw new NoopProvisionerImplCalled(s"ClassStrategyFailingImpl does not support instantiation, failed op: $op", this)
   }

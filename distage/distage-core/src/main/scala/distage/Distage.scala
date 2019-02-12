@@ -48,8 +48,6 @@ trait Distage {
 
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
 
-  type TracingGCModule = com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
-
   type AutoSetModule = planning.AutoSetModule
   val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 

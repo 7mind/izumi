@@ -8,16 +8,18 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
 import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import com.github.pshirshov.izumi.fundamentals.graphs.dotml.Digraph
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 
 import scala.collection.mutable
 
-
-
-class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey]) extends PlanningObserver {
-  private val beforeFinalization = new AtomicReference[SemiPlan](null)
+final class GraphDumpObserver
+(
+  planAnalyzer: PlanAnalyzer
+) extends PlanningObserver {
+  private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
 
   override def onSuccessfulStep(next: DodgyPlan): Unit = {}
 
@@ -25,11 +27,11 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     beforeFinalization.set(null)
   }
 
-  override def onPhase05PreFinalization(plan: SemiPlan): Unit = synchronized {
+  override def onPhase05PreGC(plan: SemiPlan): Unit = synchronized {
     beforeFinalization.set(plan)
   }
 
-  override def onPhase10PostFinalization(plan: SemiPlan): Unit = {}
+  override def onPhase10PostGC(plan: SemiPlan): Unit = {}
 
   override def onPhase20Customization(plan: SemiPlan): Unit = {}
 
@@ -42,20 +44,19 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     save(dotfileMin, "nogc")
   }
 
-  def save(dotfile: String, kind: String): Unit = {
+  def save(dotfile: RenderedDot, kind: String): Unit = {
     val name = s"plan-${System.currentTimeMillis()}-$kind.gv"
     val last = Paths.get(s"target", s"plan-last-$kind.gv")
-
 
     Paths.get("target").toFile.mkdirs().discard()
 
     val path = Paths.get(s"target", name)
-    Files.write(path, dotfile.getBytes(StandardCharsets.UTF_8)).discard()
+    Files.write(path, dotfile.raw.getBytes(StandardCharsets.UTF_8)).discard()
     Files.deleteIfExists(last).discard()
     Files.createLink(last, path).discard()
   }
 
-  private def render(finalPlan: OrderedPlan, withGc: Boolean): String = {
+  def render(finalPlan: OrderedPlan, withGc: Boolean): RenderedDot = {
     val g = new Digraph(graphAttr = mutable.Map("rankdir" -> "TB"))
 
     val legend = new Digraph("cluster_legend", graphAttr = mutable.Map("label" -> "Legend", "style" -> "dotted"))
@@ -82,6 +83,7 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     val missingKeysSeq = missingKeys.toSeq
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
+    val roots = finalPlan.roots
 
     goodKeys.foreach {
       k =>
@@ -135,10 +137,11 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
       g.subGraph(collected)
     }
     g.subGraph(legend)
-    g.source()
+    val res = g.source()
+    new RenderedDot(res)
   }
 
-  private def modify(name: String, attrs: mutable.Map[String, String], op: ExecutableOp): Unit = {
+  private[this] def modify(name: String, attrs: mutable.Map[String, String], op: ExecutableOp): Unit = {
     val label = op match {
       case op: ExecutableOp.InstantiationOp =>
         op match {
@@ -189,6 +192,9 @@ class GraphObserver(planAnalyzer: PlanAnalyzer, @Id("gc.roots") roots: Set[DIKey
     attrs.put("label", s"$name:=$label").discard()
   }
 
+}
 
+object GraphDumpObserver {
+  final class RenderedDot(val raw: String) extends AnyVal
 }
 

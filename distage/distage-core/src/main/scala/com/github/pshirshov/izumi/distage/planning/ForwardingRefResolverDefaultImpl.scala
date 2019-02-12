@@ -49,7 +49,7 @@ class ForwardingRefResolverDefaultImpl
     val proxyOps = addInits(proxies.toList, resolvedSteps)
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })
-    OrderedPlan(plan.definition, imports ++ proxyOps, plan.topology)
+    OrderedPlan(plan.definition, imports ++ proxyOps, plan.roots, plan.topology)
   }
 
   protected def addInits(proxies: List[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {

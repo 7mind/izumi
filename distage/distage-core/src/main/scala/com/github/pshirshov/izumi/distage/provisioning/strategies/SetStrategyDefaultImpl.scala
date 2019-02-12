@@ -3,16 +3,17 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies
 import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{ContextAssignment, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.provisioning.ProvisionOperationVerifier
 
 import scala.collection.immutable.ListSet
 
-class SetStrategyDefaultImpl(
-                              verifier: ProvisionOperationVerifier,
-                            ) extends SetStrategy {
-  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[ContextAssignment.NewInstance] = {
+class SetStrategyDefaultImpl
+(
+  verifier: ProvisionOperationVerifier,
+) extends SetStrategy {
+  def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]
     val setErasure = scalaCollectionSetType.tpe.typeSymbol
@@ -54,7 +55,7 @@ class SetStrategyDefaultImpl(
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }
 
-    Seq(ContextAssignment.NewInstance(op.target, newSet))
+    Seq(NewObjectOp.NewInstance(op.target, newSet))
   }
 }
 
