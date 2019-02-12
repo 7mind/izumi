@@ -308,22 +308,8 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
       make[Sonar]
       make[ComponentsLifecycleManager]
       make[RoleStarter]
-      make[TgHttpComponent]
-      make[HttpServerLauncher]
-      make[IRTServerBindings]
-      make[IRTClientMultiplexor]
-      make[ConfigurationRepository]
-      make[DynamoQueryExecutorService]
-      make[IRTMultiplexorWithRateLimiter]
-      make[HealthCheckService]
-      make[HealthCheckHttpRoutes]
-      make[K8ProbesHttpRoutes]
 
-      many[IRTWrappedService]
-      many[IRTWrappedClient]
-      many[WsSessionListener[String]]
-      many[HealthChecker]
-      many[TGLegacyRestService]
+      make[DynamoQueryExecutorService]
     })
 
     val injector = Injector(

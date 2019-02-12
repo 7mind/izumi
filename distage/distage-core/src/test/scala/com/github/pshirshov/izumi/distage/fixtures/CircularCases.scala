@@ -121,29 +121,7 @@ object CircularCases {
     trait RoleComponent
     trait IntegrationComponent
 
-    class K8ProbesHttpRoutes
-    (
-      healthCheckService: HealthCheckService
-    )
-
-    class TGLegacyRestService
-    class HealthChecker
-
-    class HealthCheckHttpRoutes(healthCheckService: HealthCheckService)
-    class HealthCheckService(healthCheckers: Set[HealthChecker])
-
-    class IRTMultiplexorWithRateLimiter
-    (
-       list: Set[IRTWrappedService]
-    )
-
-    class WsSessionListener[A]
-
-    class IRTWrappedClient
-    class IRTWrappedService
-
-
-    class DynamoClient(dynamoComponent: DynamoComponent)
+    class DynamoClient(val dynamoComponent: DynamoComponent)
 
     class DynamoComponent(
                            val dynamoDDLService: DynamoDDLService
@@ -152,54 +130,24 @@ object CircularCases {
       with IntegrationComponent
 
     class DynamoDDLService(
-                          groups: Set[DynamoDDLGroup]
-                          , dynamoClient: DynamoClient
+                           val dynamoClient: DynamoClient
                           )
 
+
+    class ComponentsLifecycleManager(val components: Set[RoleComponent])
+
+    // roots
     class DynamoQueryExecutorService(
-                                    client: DynamoClient
+                                      val client: DynamoClient
                                     )
 
-    case class DynamoDDLGroup(a: Set[DynamoTable])
-    case class DynamoTable()
-
-
-    class ConfigurationRepository
-    (
-      dynamoQueryExecutorService: DynamoQueryExecutorService
-    )
-
-    class IRTClientMultiplexor(clients: Set[IRTWrappedClient])
-    class IRTServerBindings(
-                             codec: IRTClientMultiplexor
-                              , listeners: Set[WsSessionListener[String]]
-                            , limiter: IRTMultiplexorWithRateLimiter
-                           )
-
-    class HttpServerLauncher(
-                              bindings: IRTServerBindings
-                            , healthCheck: HealthCheckHttpRoutes
-                            , restServices: Set[TGLegacyRestService]
-                            , k8Probes: K8ProbesHttpRoutes
-                            ) extends AutoCloseable {
-      override def close(): Unit = ()
-    }
-
-    class TgHttpComponent(
-                           server: HttpServerLauncher
-                         ) extends RoleComponent
-
     class RoleStarter(
-                      services: Set[RoleService]
-                     , closeables: Set[AutoCloseable]
-                     , lifecycleManager: ComponentsLifecycleManager
+                       val services: Set[RoleService]
+                     , val closeables: Set[AutoCloseable]
+                     , val lifecycleManager: ComponentsLifecycleManager
                      )
-
-    class ComponentsLifecycleManager(components: Set[RoleComponent])
-
     class Sonar(
-                TgHttpComponent: TgHttpComponent
-               , dynamoDDL: DynamoDDLService
+                val dynamoDDL: DynamoDDLService
                ) extends RoleService
   }
 
