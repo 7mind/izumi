@@ -8,9 +8,11 @@ abstract class IRTCirceMarshaller {
 
   def encodeResponse: PartialFunction[IRTResBody, Json]
 
-  def decodeRequest[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]]
+  def decodeRequest[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]]
 
-  def decodeResponse[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]]
+  def decodeResponse[Or[+_, +_] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]]
 
-  protected def decoded[Or[+_, +_] : BIO, V](result: Either[DecodingFailure, V]): Or[Nothing, V] = implicitly[BIO[Or]].maybe(result)
+  protected def decoded[Or[+_, +_] : BIO, V](result: Either[DecodingFailure, V]): Or[DecodingFailure, V] = {
+    BIO[Or].fromEither(result)
+  }
 }

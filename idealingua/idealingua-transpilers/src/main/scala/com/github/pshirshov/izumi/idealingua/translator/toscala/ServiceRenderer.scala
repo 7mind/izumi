@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala
 
-import _root_.io.circe.Json
+import _root_.io.circe.{DecodingFailure, Json}
 import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
@@ -104,6 +104,7 @@ class ServiceRenderer(ctx: STContext) {
         runtime.Import.from(runtime.Pkg.language, "higherKinds")
         , runtime.Import[BIO[Dummy]](Some("IRTBIO"))
         , runtime.Import[Json](Some("IRTJson"))
+        , runtime.Import[DecodingFailure](Some("IRTDecodingFailure"))
         , runtime.Pkg.of[_root_.io.circe.syntax.EncoderOps[Nothing]].`import`
         , rt.services.`import`
       )

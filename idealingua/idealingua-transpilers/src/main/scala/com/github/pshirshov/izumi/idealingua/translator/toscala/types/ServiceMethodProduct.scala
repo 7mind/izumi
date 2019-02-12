@@ -69,8 +69,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         q"""
            def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               ${sp.BIO.n}.redeem(_service.$nameTerm(ctx, ..${Input.sigCall}))(
-                      err => _F.point(new ${Output.negativeBranchType.typeFull}(err))
-                      , succ => _F.point(new ${Output.positiveBranchType.typeFull}(succ))
+                      err => _F.now(new ${Output.negativeBranchType.typeFull}(err))
+                      , succ => _F.now(new ${Output.positiveBranchType.typeFull}(succ))
                    )
            }"""
     }
@@ -103,7 +103,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                   { err => ${sp.BIO.n}.terminate(err) },
                   {
                     case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                      ${sp.BIO.n}.point(v.value)
+                      ${sp.BIO.n}.now(v.value)
                     case v => $exception
                   })
            }"""
@@ -116,7 +116,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                    { err => ${sp.BIO.n}.terminate(err) },
                    {
                      case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                       ${sp.BIO.n}.point(())
+                       ${sp.BIO.n}.now(())
                      case v => $exception
             })
            }"""
@@ -129,7 +129,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                     { err => ${sp.BIO.n}.terminate(err) },
                     {
                       case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                        ${sp.BIO.n}.point(v)
+                        ${sp.BIO.n}.now(v)
                       case v => $exception
                     })
            }"""
@@ -147,7 +147,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                              ${sp.BIO.n}.fail(va.value)
 
                            case va : ${Output.positiveBranchType.typeFull} =>
-                             ${sp.BIO.n}.point(va.value)
+                             ${sp.BIO.n}.now(va.value)
 
                            case v =>
                              $exception
@@ -200,7 +200,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
           }"""
 
     def defnDecoder: Defn.Def =
-      q"""def decodeRequest[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTReqBody]] = {
+      q"""def decodeRequest[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[IRTDecodingFailure, IRTReqBody]] = {
             case IRTJsonBody(m, packet) if m == id => this.decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
           }
        """
@@ -260,7 +260,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     }
 
     def defnDecoder: Defn.Def = {
-      q"""def decodeResponse[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[Nothing, IRTResBody]] = {
+      q"""def decodeResponse[Or[+_, +_] : IRTBIO]: PartialFunction[IRTJsonBody, Or[IRTDecodingFailure, IRTResBody]] = {
             case IRTJsonBody(m, packet) if m == id =>
               decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
           }"""
