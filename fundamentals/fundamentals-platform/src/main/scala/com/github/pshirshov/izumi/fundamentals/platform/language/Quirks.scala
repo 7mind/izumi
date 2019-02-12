@@ -19,12 +19,14 @@ object Quirks {
   }
 
   @inline implicit def LazyDiscarder[T](t: => T): LazyDiscarder[T] = {
-    def x = t
+    def _x: T = { _x; t }
     new LazyDiscarder[T]()
   }
 
   final class LazyDiscarder[T](private val dummy: Boolean = false) extends AnyVal {
-    @inline def forget: Unit = {}
+    type U >: Unit // Workaround scalac warning
+
+    @inline def forget: U = {}
   }
 
 }
