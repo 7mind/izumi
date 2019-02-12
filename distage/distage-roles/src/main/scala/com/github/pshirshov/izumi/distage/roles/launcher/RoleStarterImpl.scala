@@ -23,10 +23,10 @@ class RoleStarterImpl
   logger: IzLogger
 ) extends RoleStarter {
 
-  private val tasksCount = services.count(_.isInstanceOf[RoleTask])
-  private val componentsCount = lifecycleManager.componentsNumber
-  private val servicesCount = services.size
-  private val integrationsCount = integrations.size
+  private def tasksCount: Int = services.count(_.isInstanceOf[RoleTask])
+  private def componentsCount: Int = lifecycleManager.componentsNumber
+  private def servicesCount: Int = services.size
+  private def integrationsCount: Int = integrations.size
 
   private val state = new AtomicReference[StarterState](StarterState.NotYetStarted)
   private val latch = new CountDownLatch(1)

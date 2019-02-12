@@ -12,13 +12,13 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
 class ComponentsLifecycleManagerImpl(
-                                      components: Set[RoleComponent]
+                                      components: => Set[RoleComponent]
                                       , logger: IzLogger
                                     ) extends ComponentsLifecycleManager {
 
   private val started = new ConcurrentLinkedDeque[ComponentLifecycle]()
 
-  override val componentsNumber: Int = components.size
+  override def componentsNumber: Int = components.size
 
   override def startComponents(): Unit = {
     components.foreach {
