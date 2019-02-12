@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.commons.UnboxingTool
 import com.github.pshirshov.izumi.distage.model.exceptions._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -21,7 +21,7 @@ class ClassStrategyDefaultImpl
 
   import ClassStrategyDefaultImpl._
 
-  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ExecutableOpResult.NewInstance] = {
+  def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[NewObjectOp.NewInstance] = {
     val wiring = op.wiring
     val args = wiring.associations.map {
       key =>
@@ -35,7 +35,7 @@ class ClassStrategyDefaultImpl
     }
 
     val instance = mkScala(context, op, args)
-    Seq(ExecutableOpResult.NewInstance(op.target, instance))
+    Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
   protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Dep]): Any = {
@@ -169,7 +169,7 @@ object ClassStrategyDefaultImpl {
 
 
 class ClassStrategyFailingImpl extends ClassStrategy {
-  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[ExecutableOpResult.NewInstance] = {
+  override def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[NewObjectOp.NewInstance] = {
     Quirks.discard(context)
     throw new NoopProvisionerImplCalled(s"ClassStrategyFailingImpl does not support instantiation, failed op: $op", this)
   }

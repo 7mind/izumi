@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.commons.TraitInitTool
 import com.github.pshirshov.izumi.distage.model.exceptions.{NoRuntimeClassException, NoopProvisionerImplCalled}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{ExecutableOpResult, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
@@ -15,7 +15,7 @@ class FactoryStrategyDefaultImpl
   mirror: MirrorProvider,
   traitInit: TraitInitTool,
 ) extends FactoryStrategy {
-  def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[ExecutableOpResult] = {
+  def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[NewObjectOp] = {
     // at this point we definitely have all the dependencies instantiated
     val narrowedContext = context.narrow(op.wiring.requiredKeys)
 
@@ -35,7 +35,7 @@ class FactoryStrategyDefaultImpl
 
     val proxyInstance = proxyProvider.makeFactoryProxy(factoryContext, ProxyContext(runtimeClass, op, ProxyParams.Empty))
     traitInit.initTrait(instanceType, runtimeClass, proxyInstance)
-    Seq(ExecutableOpResult.NewInstance(op.target, proxyInstance))
+    Seq(NewObjectOp.NewInstance(op.target, proxyInstance))
   }
 
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
@@ -48,7 +48,7 @@ class FactoryStrategyDefaultImpl
 
 
 class FactoryStrategyFailingImpl extends FactoryStrategy {
-  override def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[ExecutableOpResult] = {
+  override def makeFactory(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.InstantiateFactory): Seq[NewObjectOp] = {
     Quirks.discard(context, executor)
     throw new NoopProvisionerImplCalled(s"FactoryStrategyFailingImpl does not support proxies, failed op: $op", this)
   }
