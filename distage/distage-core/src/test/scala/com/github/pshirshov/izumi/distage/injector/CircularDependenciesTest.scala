@@ -295,4 +295,48 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(context.get[Dependency {def dep: RefinedCircular}] eq context.get[RefinedCircular].dep)
   }
 
+  "Regression test 1: isolated cycles causing spooky action at a distance" in {
+    import CircularCase7._
+
+    val definition = PlannerInput(new ModuleDef {
+      // cycle
+      make[DynamoDDLService]
+      make[DynamoComponent]
+      make[DynamoClient]
+      //
+
+      make[Sonar]
+      make[ComponentsLifecycleManager]
+      make[RoleStarter]
+      make[TgHttpComponent]
+      make[HttpServerLauncher]
+      make[IRTServerBindings]
+      make[IRTClientMultiplexor]
+      make[ConfigurationRepository]
+      make[DynamoQueryExecutorService]
+      make[IRTMultiplexorWithRateLimiter]
+      make[HealthCheckService]
+      make[HealthCheckHttpRoutes]
+      make[K8ProbesHttpRoutes]
+
+      many[IRTWrappedService]
+      many[IRTWrappedClient]
+      many[WsSessionListener[String]]
+      many[HealthChecker]
+      many[TGLegacyRestService]
+    })
+
+    val injector = Injector(
+      AutoSetModule()
+        .register[RoleComponent]
+        .register[RoleService]
+        .register[IntegrationComponent]
+        .register[AutoCloseable]
+    )
+
+    val plan = injector.plan(definition)
+    println(plan.render())
+    injector.produce(plan)
+  }
+
 }
