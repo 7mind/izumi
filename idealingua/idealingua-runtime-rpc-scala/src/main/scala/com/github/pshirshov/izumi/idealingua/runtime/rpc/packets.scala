@@ -78,7 +78,7 @@ object RPCPacketKind extends RPCPacketKindCirce {
 case class RpcPacketId(v: String)
 
 object RpcPacketId {
-  def random(): RpcPacketId = RpcPacketId(UUIDGen.getTimeUUID.toString)
+  def random(): RpcPacketId = RpcPacketId(UUIDGen.getTimeUUID().toString)
 
   implicit def dec0: Decoder[RpcPacketId] = Decoder.decodeString.map(RpcPacketId.apply)
 
