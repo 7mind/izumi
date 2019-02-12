@@ -58,7 +58,7 @@ object DefaultBootstrapLocator {
     )
 
     new PlannerDefaultImpl(
-      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
+      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
       , NoopDIGC
@@ -112,6 +112,7 @@ object DefaultBootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
+    make[Boolean].named("distage.init-proxies-asap").from(true)
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]
