@@ -1,0 +1,12 @@
+domain idltest.doubles
+
+data DoublesSuccess {
+}
+
+data DoublesFailure {
+}
+
+
+service Doubles {
+    def doubles() => DoublesSuccess !! DoublesFailure
+}
