@@ -40,10 +40,13 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
 
     val credsLines = Seq(
       "\n",
+      // TODO: Gigahorse apears to be cause of `Too many follow-up requests: 21` exception during publishing
+      "updateOptions in ThisBuild := updateOptions.value.withGigahorse(false)",
+      "\n",
       s"""credentials += Credentials(Path("${sbtCredsFile.toAbsolutePath.toString}").asFile)""",
       "\n",
       s"""
-        |publishTo := {
+        |publishTo in ThisBuild := {
         |  if (isSnapshot.value)
         |    Some("snapshots" at "${creds.sbtSnapshotsRepo}")
         |  else
