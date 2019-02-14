@@ -6,7 +6,10 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, Provisi
 import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-final case class LocatorContext(provision: Provision, locator: Locator) extends ProvisioningKeyProvider {
+final case class LocatorContext(
+                                 provision: Provision
+                               , locator: Locator
+                               ) extends ProvisioningKeyProvider {
 
   override def fetchUnsafe(key: universe.RuntimeDIUniverse.DIKey): Option[Any] = provision.get(key)
 

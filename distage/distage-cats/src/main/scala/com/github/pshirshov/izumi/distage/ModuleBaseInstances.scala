@@ -34,7 +34,7 @@ trait SemiPlanInstances {
 
   implicit def catsKernelStdMonoidForSemiPlan: Monoid[SemiPlan] =
     new Monoid[SemiPlan] {
-      override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty)
+      override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty, Set.empty)
 
       override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
     }

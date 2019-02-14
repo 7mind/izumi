@@ -78,7 +78,7 @@ object RPCPacketKind extends RPCPacketKindCirce {
 case class RpcPacketId(v: String)
 
 object RpcPacketId {
-  def random(): RpcPacketId = RpcPacketId(UUIDGen.getTimeUUID.toString)
+  def random(): RpcPacketId = RpcPacketId(UUIDGen.getTimeUUID().toString)
 
   implicit def dec0: Decoder[RpcPacketId] = Decoder.decodeString.map(RpcPacketId.apply)
 
@@ -105,11 +105,13 @@ object RpcPacket {
     RpcPacket(RPCPacketKind.Fail, Some(Map("data" -> data, "cause" -> cause).asJson), None, None, None, None, None)
   }
 
-  def rpcRequest(method: IRTMethodId, data: Json): RpcPacket = {
+  def rpcRequestRndId(method: IRTMethodId, data: Json): RpcPacket = {
+    val rndId = RpcPacketId.random()
+
     RpcPacket(
       RPCPacketKind.RpcRequest,
       Some(data),
-      Some(RpcPacketId.random()),
+      Some(rndId),
       None,
       Some(method.service.value),
       Some(method.methodId.value),
@@ -125,11 +127,13 @@ object RpcPacket {
     RpcPacket(RPCPacketKind.RpcFail, Some(Map("cause" -> cause).asJson), None, ref, None, None, None)
   }
 
-  def buzzerRequest(method: IRTMethodId, data: Json): RpcPacket = {
+  def buzzerRequestRndId(method: IRTMethodId, data: Json): RpcPacket = {
+    val rndId = RpcPacketId.random()
+
     RpcPacket(
       RPCPacketKind.BuzzRequest,
       Some(data),
-      Some(RpcPacketId.random()),
+      Some(rndId),
       None,
       Some(method.service.value),
       Some(method.methodId.value),

@@ -16,13 +16,13 @@ case class ProvisioningFailure(op: ExecutableOp, failure: Throwable)
 trait ProvisioningFailureInterceptor {
   def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]
 
-  def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[ContextAssignment]]]
+  def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]]
 }
 
 class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInterceptor {
 
   override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty
 
-  override def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[ContextAssignment]]] = PartialFunction.empty
+  override def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]] = PartialFunction.empty
 
 }

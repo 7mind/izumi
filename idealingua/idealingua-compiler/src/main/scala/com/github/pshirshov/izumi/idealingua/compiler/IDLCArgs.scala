@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.io.File
 import java.nio.file.{Path, Paths}
+
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import scopt.OptionParser
 
@@ -9,6 +10,7 @@ case class LanguageOpts(
                          id: String,
                          withRuntime: Boolean,
                          manifest: Option[File],
+                         credentials: Option[File],
                          extensions: List[String],
                          overrides: Map[String, String],
                        )
@@ -22,6 +24,7 @@ case class IDLCArgs(
                      init: Option[Path],
                      versionOverlay: Option[Path],
                      overrides: Map[String, String],
+                     publish: Boolean = false
                    )
 
 object IDLCArgs {
@@ -42,6 +45,10 @@ object IDLCArgs {
     opt[File]('i', "init").optional().valueName("<dir>")
       .action((a, c) => c.copy(init = Some(a.toPath)))
       .text("init directory (must be empty or non-existing)")
+
+    opt[Unit]('p', "publish").optional()
+      .action((a, c) => c.copy(publish = true))
+      .text("publish compiled files to repos")
 
     opt[String]('g', "global-define").valueName("name=value")
       .text("Define global manifest override")
@@ -73,11 +80,18 @@ object IDLCArgs {
       .text("{scala|typescript|go|csharp} (may repeat, like `scala -mf + typescript -mf + -nrt go`")
       .action {
         (a, c) =>
-          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, List.empty, Map.empty))
+          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, None, List.empty, Map.empty))
       }
       .optional()
       .unbounded()
       .children(
+        opt[File]("credentials").abbr("cr")
+          .optional()
+          .text("Language-specific credentials file")
+          .action {
+            (a, c) =>
+              c.copy(languages = c.languages.init :+ c.languages.last.copy(credentials = Some(a)))
+          },
         opt[File]("manifest").abbr("m")
           .optional()
           .text("Language-specific compiler manifest. Use `@` for builtin stub, `+` for default path (./manifests/<language>.json)")

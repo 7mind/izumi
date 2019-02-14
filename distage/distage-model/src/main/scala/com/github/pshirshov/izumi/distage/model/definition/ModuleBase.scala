@@ -6,24 +6,25 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
-  def bindings: Set[Binding]
 
-  final def keys: Set[DIKey] = bindings.map(_.key)
+  def bindings: Set[Binding]
 
   type Self <: ModuleBase
 
-  override def equals(obj: scala.Any): Boolean = obj match {
+  final def keys: Set[DIKey] = bindings.map(_.key)
+
+  override final def equals(obj: Any): Boolean = obj match {
     case that: ModuleBase => bindings == that.bindings
     case _ => false
   }
 
-  override def hashCode: Int = bindings.hashCode()
+  override final def hashCode: Int = bindings.hashCode()
 
-  override def toString: String = bindings.toString()
+  override final def toString: String = bindings.toString()
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase {type Self <: S}
+  type Aux[S] = ModuleBase { type Self <: S }
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
@@ -141,9 +142,7 @@ object ModuleBase {
     // Using lawless equals/hashcode
     bs.groupBy(identity)
       .values
-      .map {
-        _.reduce(_ addTags _.tags)
-      }
+      .map(_.reduce(_ addTags _.tags))
       .toSet
   }
 

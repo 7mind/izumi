@@ -18,14 +18,7 @@ class ScoptLauncherArgs(
                          , var roles: List[RoleArgs] = List.empty
                        )
 
-
-class IzumiScoptLauncherArgs(configFile: Option[File] = None
-                             ,writeReference: Option[WriteReference] = None
-                             ,dummyStorage: Option[Boolean] = Some(false)
-                             ,rootLogLevel: Log.Level = Log.Level.Info
-                             ,jsonLogging: Option[Boolean] = Some(false)
-                             ,dumpContext: Option[Boolean] = Some(false)
-                             ,roles: List[RoleArgs] = List.empty) extends ScoptLauncherArgs
+class IzumiScoptLauncherArgs extends ScoptLauncherArgs
 
 object IzumiScoptLauncherArgs {
   implicit val init : Zero[IzumiScoptLauncherArgs] = new Zero[IzumiScoptLauncherArgs] {

@@ -34,9 +34,11 @@ including the following components:
 Docs
 ----
 
-1. Documentation [Latest release](https://izumi.7mind.io/latest/release/doc/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/doc/)
-2. Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
-3. Slides: [https://github.com/7mind/slides](https://github.com/7mind/slides)
+* Documentation [Latest release](https://izumi.7mind.io/latest/release/doc/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/doc/)
+* [distage Sample Project](https://github.com/ratoshniuk/distage-sample)
+* [Idealingua Sample Project](https://github.com/kaishh/izumi-petstore)
+* [Slides from previous Presentations](https://github.com/7mind/slides)
+* Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
 
 Key goals 
 =========

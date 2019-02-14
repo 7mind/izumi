@@ -24,7 +24,7 @@ import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Binary, Close, Pong, Text}
 
 class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
-                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
+                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext]
                                      , val codec: IRTClientMultiplexor[C#BiIO]
                                      , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
                                      , val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]
@@ -151,10 +151,14 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       CIO.point(None)
 
     case v: Binary =>
-      CIO.point(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+      CIO.pure(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
 
     case _: Pong =>
       onHeartbeat(requestTime).map(_ => None)
+
+    case unknownMessage =>
+      logger.error(s"Cannot handle unknown websocket message $unknownMessage")
+      CIO.pure(None)
   }
 
   def onHeartbeat(requestTime: ZonedDateTime): C#CatsIO[Unit] = CIO.point {
@@ -181,20 +185,16 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandboxWith {
-        _.redeem(
-          {
-            case Left(exception :: otherIssues) =>
-              logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
-              BIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
-            case Left(Nil) =>
-              BIO.terminate(new IllegalStateException())
-            case Right(exception) =>
-              logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-              BIO.point(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
-          }, {
-            succ => BIO.point(succ)
-          }
-        )
+        _.catchAll {
+          case Left(exception :: otherIssues) =>
+            logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
+            BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+          case Left(Nil) =>
+            BIO.fail(Right(new IllegalStateException()))
+          case Right(exception) =>
+            logger.error(s"${context -> null}: WS processing failed, $message, $exception")
+            BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+        }
       }
     } yield {
       response
@@ -211,16 +211,16 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         for {
           userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
-          _ <- BIO.point(logger.debug(s"${context -> null}: $id, $userCtx"))
+          _ <- BIO.sync(logger.debug(s"${context -> null}: $id, $userCtx"))
           result <- muxer.doInvoke(data, userCtx, methodId)
-          asBio <- result match {
+          packet <- result match {
             case None =>
               BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
             case Some(resp) =>
-              BIO.point(Some(rpc.RpcPacket.rpcResponse(id, resp)))
+              BIO.now(rpc.RpcPacket.rpcResponse(id, resp))
           }
         } yield {
-          asBio
+          Some(packet)
         }
 
       case RpcPacket(RPCPacketKind.BuzzResponse, Some(data), _, id, _, _, _) =>

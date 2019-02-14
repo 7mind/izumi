@@ -20,7 +20,7 @@ trait PlanningHook {
 
   def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = plan
 
-  def phase10PostFinalization(plan: SemiPlan): SemiPlan = plan
+  def phase10PostGC(plan: SemiPlan): SemiPlan = plan
 
   def phase20Customization(plan: SemiPlan): SemiPlan = plan
 

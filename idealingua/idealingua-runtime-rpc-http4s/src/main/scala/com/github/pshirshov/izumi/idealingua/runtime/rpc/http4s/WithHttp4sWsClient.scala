@@ -28,7 +28,7 @@ class ClientWsDispatcher[C <: Http4sContext]
   val c: C#IMPL[C],
   protected val baseUri: URI,
   protected val codec: IRTClientMultiplexor[C#BiIO],
-  protected val buzzerMuxer: IRTServerMultiplexor[C#BiIO, C#ClientContext],
+  protected val buzzerMuxer: IRTServerMultiplexor[C#BiIO, C#ClientContext, C#ClientMethodContext],
   protected val wsClientContextProvider: WsClientContextProvider[C#ClientContext],
   logger: IzLogger,
   printer: Printer,
@@ -94,23 +94,19 @@ class ClientWsDispatcher[C <: Http4sContext]
 
         for {
           maybePacket <- responsePkt.sandboxWith {
-            _.redeem(
-              {
-                case Left(exception :: otherIssues) =>
-                  logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $otherIssues")
-                  BIO.point(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
-                case Left(Nil) =>
-                  BIO.terminate(new IllegalStateException())
-                case Right(exception) =>
-                  logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
-                  BIO.point(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
-              }, {
-                succ => BIO.point(succ)
-              }
-            )
+            _.catchAll {
+              case Left(exception :: otherIssues) =>
+                logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $otherIssues")
+                BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+              case Left(Nil) =>
+                BIO.fail(Right(new IllegalStateException()))
+              case Right(exception) =>
+                logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
+                BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+            }
           }
           maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
-          _ <- BIO.point {
+          _ <- BIO.syncThrowable {
             maybeEncoded match {
               case Some(response) =>
                 logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
@@ -158,10 +154,9 @@ class ClientWsDispatcher[C <: Http4sContext]
       .encode(request)
       .flatMap {
         encoded =>
-          val wrapped = BIO.point(RpcPacket.rpcRequest(request.method, encoded))
+          val wrapped = BIO.sync(RpcPacket.rpcRequestRndId(request.method, encoded))
 
-
-          BIO.bracket[Throwable, RpcPacket, IRTMuxResponse](wrapped) {
+          BIO.bracket(wrapped) {
             id =>
               logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
               BIO.sync(requestState.forget(id.id.get))
@@ -186,10 +181,10 @@ class ClientWsDispatcher[C <: Http4sContext]
 
                         case Some(value: RawResponse.BadRawResponse) =>
                           logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                          BIO.terminate(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                          BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                         case None =>
-                          BIO.terminate(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                          BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                       }
                 }
           }

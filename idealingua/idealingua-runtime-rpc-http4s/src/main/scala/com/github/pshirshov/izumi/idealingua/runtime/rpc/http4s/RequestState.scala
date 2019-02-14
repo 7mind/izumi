@@ -77,8 +77,8 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
             case None =>
               R.fail(())
             case Some(value) =>
-              R.point(Some(value))
+              R.now(Some(value))
           }
       }
-      .retryOrElse(timeout, R.point(None))
+      .retryOrElse(timeout, R.now(None))
 }

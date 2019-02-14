@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase4.{IdParamCircular, IdTypeCircular}
 import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.PlannerInput

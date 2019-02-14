@@ -34,13 +34,13 @@ abstract class OpinionatedDiApp {
     }
   }
 
-  private def startup(args: Array[String]): StartupContext = {
+  private[this] def startup(args: Array[String]): StartupContext = {
     val config = commandlineSetup(args)
     val strategy = makeStrategy(config)
     new StartupContextImpl(strategy)
   }
 
-  class StartupContextImpl(val strategy: ApplicationBootstrapStrategy) extends StartupContext {
+  private[this] class StartupContextImpl(val strategy: ApplicationBootstrapStrategy) extends StartupContext {
     val loggerRouter: LogRouter = strategy.router()
     val logger: IzLogger = makeLogger(loggerRouter)
     val bsLoggerDef: BootstrapModuleDef = new BootstrapModuleDef {
@@ -50,7 +50,7 @@ abstract class OpinionatedDiApp {
     val pluginsBs: Seq[PluginBase] = strategy.mkBootstrapLoader().load()
     val pluginsApp: Seq[PluginBase] = strategy.mkLoader().load()
 
-    val mergeStrategy: PluginMergeStrategy[LoadedPlugins] = strategy.mergeStrategy(pluginsBs, pluginsApp)
+    val mergeStrategy: PluginMergeStrategy = strategy.mergeStrategy(pluginsBs, pluginsApp)
 
     val mergedBs: LoadedPlugins = mergeStrategy.merge(pluginsBs)
     val mergedApp: LoadedPlugins = mergeStrategy.merge(pluginsApp)
@@ -59,6 +59,7 @@ abstract class OpinionatedDiApp {
 
     val appDef: ModuleBase = makeModule(strategy)(mergedBs, mergedApp)
     val bsModules: BootstrapModule = (Seq(bsLoggerDef) ++ strategy.bootstrapModules(mergedBs, mergedApp)).merge
+    val gcRoots: Set[DIKey] = strategy.gcRoots(mergedBs, mergedApp)
 
     val accessibleBs: BootstrapModuleDef = new BootstrapModuleDef {
       make[DIAppStartupContext].from(DIAppStartupContext(StartupContextImpl.this))
@@ -71,7 +72,7 @@ abstract class OpinionatedDiApp {
     logger.trace(s"Have app definition\n$appDef")
 
     val injector: Injector = makeInjector(logger, bsdef)
-    val plan: OrderedPlan = makePlan(logger, appDef, injector)
+    val plan: OrderedPlan = makePlan(logger, appDef, injector, gcRoots)
 
     override def startup(args: Array[String]): StartupContext = {
       OpinionatedDiApp.this.startup(args)
@@ -82,8 +83,8 @@ abstract class OpinionatedDiApp {
 
   protected def makeStrategy(cliConfig: CommandlineConfig): ApplicationBootstrapStrategy
 
-  private def makeModule(strategy: ApplicationBootstrapStrategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): ModuleBase = {
-    mergedApp.definition ++ strategy.appModules(mergedBs, mergedApp).merge
+  private def makeModule(strategy: ApplicationBootstrapStrategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): Module = {
+    strategy.appModules(mergedBs, mergedApp).merge ++ mergedApp.definition
   }
 
   protected def makeLogger(loggerRouter: LogRouter): IzLogger = {
@@ -92,8 +93,8 @@ abstract class OpinionatedDiApp {
     logger
   }
 
-  protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: distage.Injector): OrderedPlan = {
-    val plan = injector.plan(PlannerInput(appDef))
+  protected def makePlan(logger: IzLogger, appDef: ModuleBase, injector: Injector, roots: Set[DIKey]): OrderedPlan = {
+    val plan = injector.plan(PlannerInput(appDef, roots))
     import CompactPlanFormatter._
     logger.debug(s"Planning completed\n${plan.render() -> "plan"}")
     plan
@@ -105,7 +106,7 @@ abstract class OpinionatedDiApp {
     locator
   }
 
-  protected def makeInjector(logger: IzLogger, bsdef: BootstrapModule): distage.Injector = {
+  protected def makeInjector(logger: IzLogger, bsdef: BootstrapModule): Injector = {
     logger.discard()
     Injector.Standard(bsdef)
   }

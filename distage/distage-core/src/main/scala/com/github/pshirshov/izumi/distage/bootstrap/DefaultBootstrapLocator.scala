@@ -11,23 +11,23 @@ import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import com.github.pshirshov.izumi.distage.planning._
+import com.github.pshirshov.izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.distage.{provisioning, _}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 
-
 class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
 
-  import DefaultBootstrapLocator._
+  import DefaultBootstrapLocator.{bootstrapPlanner, bootstrapProducer}
 
   val parent: Option[AbstractLocator] = None
 
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    bootstrapProducer.instantiate(plan, this).throwIfFailure()
+    bootstrapProducer.instantiate(plan, this).throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances
@@ -40,16 +40,16 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
 }
 
 object DefaultBootstrapLocator {
-  protected val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+  final val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
 
-  protected val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+  final val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
     new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
     , symbolIntrospector
   )
 
-  protected val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+  final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
-  protected lazy val bootstrapPlanner: Planner = {
+  final lazy val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObservers: Set[PlanningObserver] = Set(
@@ -58,16 +58,17 @@ object DefaultBootstrapLocator {
     )
 
     new PlannerDefaultImpl(
-      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider)
+      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true)
       , reflectionProvider
       , new SanityCheckerDefaultImpl(analyzer)
+      , NoopDIGC
       , bootstrapObservers
       , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
       , Set(new PlanningHookDefaultImpl)
     )
   }
 
-  protected lazy val bootstrapProducer: PlanInterpreter = {
+  final lazy val bootstrapProducer: PlanInterpreter = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
     val unboxingTool = new UnboxingTool(mirrorProvider)
     val verifier = new provisioning.ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
@@ -107,8 +108,11 @@ object DefaultBootstrapLocator {
     make[TraitInitTool]
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
+    make[DIGarbageCollector].from[TracingDIGC.type]
+
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
+    make[Boolean].named("distage.init-proxies-asap").from(true)
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]
@@ -130,7 +134,7 @@ object DefaultBootstrapLocator {
 
   final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
-  final lazy val noCogensBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
+  final lazy val noReflectionBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ClassStrategy].from[ClassStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
     make[FactoryStrategy].from[FactoryStrategyFailingImpl]

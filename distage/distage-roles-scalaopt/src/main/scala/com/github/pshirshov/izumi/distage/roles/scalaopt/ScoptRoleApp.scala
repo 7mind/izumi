@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.scalaopt
 
-import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapContext}
+import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig}
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.roles.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
@@ -47,10 +47,9 @@ abstract class ScoptRoleApp[T <: ScoptLauncherArgs: Zero] extends RoleApp {
     args.copy(using = args.using ++ using)
   }
 
-
   override protected def setupContext(params: ScoptRoleApp[T]#CommandlineConfig, args: ScoptRoleApp[T]#StrategyArgs): ApplicationBootstrapStrategy = {
     Quirks.discard(params)
-    val bsContext: BootstrapContext = BootstrapContext.BootstrapContextDefaultImpl(pluginConfig)
+    val bsContext: BootstrapConfig = BootstrapConfig(pluginConfig)
 
     new RoleAppBootstrapStrategy(args, bsContext)
       .init()

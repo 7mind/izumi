@@ -36,7 +36,7 @@ object AbstractDIGcTest {
       pruned
     }
 
-    override protected def extract(index: Map[NodeId, Node], node: Node): Set[NodeId] = {
+    override protected def extractDependencies(index: Map[NodeId, Node], node: Node): Set[NodeId] = {
       node.deps
     }
 

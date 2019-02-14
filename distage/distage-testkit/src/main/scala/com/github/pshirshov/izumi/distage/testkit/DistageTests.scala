@@ -5,14 +5,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule, SimpleLoggerConfigurator}
-import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.planning.gc.TracingGcModule
+import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
@@ -111,10 +110,10 @@ trait DistageTests {
 
   /** Synchronization over this section needed for parallel tests to avoid race over the resourceCollection instances **/
   protected def createContextLocator(roots: Set[DIKey]): Locator = DirtyGlobalSynchronizedObject.synchronized {
-    val injector = makeInjector(roots)
+    val injector = makeInjector()
     val primaryModule = makeBindings
     val finalModule = refineBindings(roots, primaryModule)
-    val plan = makePlan(injector, finalModule)
+    val plan = makePlan(injector, finalModule, roots)
     val finalPlan = refinePlan(injector, plan)
     val context = try {
       makeContext(injector, finalPlan)
@@ -220,25 +219,20 @@ trait DistageTests {
     }
   }
 
-  protected def makePlan(injector: Injector, primaryModule: ModuleBase): OrderedPlan = {
-    val modules = Seq(
-      primaryModule
-    )
-
-    injector.plan(PlannerInput(modules.overrideLeft))
+  protected def makePlan(injector: Injector, primaryModule: ModuleBase, roots: Set[DIKey]): OrderedPlan = {
+    injector.plan(PlannerInput(primaryModule, roots))
   }
 
   protected def makeContext(injector: Injector, plan: OrderedPlan): Locator = {
     injector.produceUnsafe(plan)
   }
 
-  protected def makeInjector(roots: Set[DIKey]): Injector = {
+  protected def makeInjector(): Injector = {
     val maybeConfig = makeConfig
 
     val roleStarterBootstrapModule = makeRoleStarterBootstrapModule
 
     val bootstrapModules = Seq[BootstrapModule](
-      new TracingGcModule(roots),
       new LogstageModule(makeLogRouter(maybeConfig)),
       roleStarterBootstrapModule,
     ) ++
@@ -246,7 +240,7 @@ trait DistageTests {
 
     val finalModules = refineBootstrapModules(bootstrapModules)
 
-    Injector.bootstrap(overrides = finalModules.merge)
+    Injector(overrides = finalModules.merge)
   }
 
   protected def makeRoleStarterBootstrapModule: BootstrapModule = {

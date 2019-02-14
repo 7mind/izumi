@@ -53,7 +53,7 @@ class PlanMergingPolicyDefaultImpl
     }
 
     // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    SemiPlan(completedPlan.definition, allOperations.toVector)
+    SemiPlan(completedPlan.definition, allOperations.toVector, completedPlan.roots)
   }
 
   override def addImports(plan: SemiPlan): SemiPlan = {
@@ -68,7 +68,8 @@ class PlanMergingPolicyDefaultImpl
           missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin)
       }
       .toMap
-    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector)
+
+    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector, plan.roots)
   }
 
   override def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -130,10 +131,11 @@ class PlanMergingPolicyDefaultImpl
     )
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
-    OrderedPlan(completedPlan.definition, sortedOps.toVector, topology)
+
+    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.roots, topology)
   }
 
-  protected[this] def resolveConflicts(operations: mutable.Set[InstantiationOp]): DIKeyConflictResolution = {
+  protected def resolveConflicts(operations: mutable.Set[InstantiationOp]): DIKeyConflictResolution = {
     operations match {
       case s if s.nonEmpty && s.forall(_.isInstanceOf[CreateSet]) =>
         val ops = s.collect({ case c: CreateSet => c })

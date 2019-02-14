@@ -11,25 +11,23 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-
-
-
-
 // TODO: add introspection capabilities
 class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
-  , proxyStrategy: ProxyStrategy
-  , factoryStrategy: FactoryStrategy
-  , traitStrategy: TraitStrategy
-  , factoryProviderStrategy: FactoryProviderStrategy
-  , providerStrategy: ProviderStrategy
-  , classStrategy: ClassStrategy
-  , importStrategy: ImportStrategy
-  , instanceStrategy: InstanceStrategy
-  , failureHandler: ProvisioningFailureInterceptor
-  , verifier: ProvisionOperationVerifier
-) extends PlanInterpreter with OperationExecutor {
+, proxyStrategy: ProxyStrategy
+, factoryStrategy: FactoryStrategy
+, traitStrategy: TraitStrategy
+, factoryProviderStrategy: FactoryProviderStrategy
+, providerStrategy: ProviderStrategy
+, classStrategy: ClassStrategy
+, importStrategy: ImportStrategy
+, instanceStrategy: InstanceStrategy
+, failureHandler: ProvisioningFailureInterceptor
+, verifier: ProvisionOperationVerifier
+)
+  extends PlanInterpreter
+     with OperationExecutor {
   override def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator] = {
     val excluded = mutable.Set[DIKey]()
 
@@ -81,27 +79,27 @@ class PlanInterpreterDefaultRuntimeImpl
   }
 
 
-  private def interpretResult(active: ProvisionActive, result: ContextAssignment): Unit = {
+  private def interpretResult(active: ProvisionActive, result: NewObjectOp): Unit = {
     result match {
-      case ContextAssignment.NewImport(target, instance) =>
+      case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)
 
-      case ContextAssignment.NewInstance(target, instance) =>
+      case NewObjectOp.NewInstance(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "instance")
         active.instances += (target -> instance)
 
-      case ContextAssignment.UpdatedSet(target, instance) =>
+      case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
         active.instances += (target -> instance)
 
-      case ContextAssignment.DoNothing() =>
+      case NewObjectOp.DoNothing() =>
         ()
     }
   }
 
 
-  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[ContextAssignment] = {
+  def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[NewObjectOp] = {
     step match {
       case op: ImportDependency =>
         importStrategy.importDependency(context, op)

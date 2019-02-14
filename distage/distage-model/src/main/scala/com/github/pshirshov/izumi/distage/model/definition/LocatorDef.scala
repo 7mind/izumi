@@ -21,7 +21,8 @@ import scala.collection.mutable
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able to unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef
-  extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.SetDSL] {
+  extends AbstractLocator
+     with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.SetDSL] {
 
   override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
@@ -52,7 +53,7 @@ trait LocatorDef
       }.toSet
     )
 
-    OrderedPlan(moduleDef, ops, topology)
+    OrderedPlan(moduleDef, ops, Set.empty, topology)
   }
 
   override def parent: Option[Locator] = None

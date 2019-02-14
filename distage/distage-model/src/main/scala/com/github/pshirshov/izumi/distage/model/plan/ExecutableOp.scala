@@ -7,7 +7,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 
-// TODO: typeclass?..
 sealed trait ExecutableOp {
   def target: DIKey
 
@@ -15,7 +14,6 @@ sealed trait ExecutableOp {
 
   override def toString: String = new plan.OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full).format(this)
 }
-
 
 object ExecutableOp {
 

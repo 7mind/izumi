@@ -5,11 +5,11 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.macros.LogFMacros._
-import logstage.LogInfoIO.LogInfoIOSyncSafeInstance
+import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.experimental.macros
 
-trait LogIO[+F[_]] extends LogInfoIO[F] {
+trait LogIO[+F[_]] extends LogCreateIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
@@ -23,8 +23,10 @@ trait LogIO[+F[_]] extends LogInfoIO[F] {
 }
 
 object LogIO {
+  def apply[F[_]: LogIO]: LogIO[F] = implicitly
+
   def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
-    new LogInfoIOSyncSafeInstance[F] with LogIO[F] {
+    new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }

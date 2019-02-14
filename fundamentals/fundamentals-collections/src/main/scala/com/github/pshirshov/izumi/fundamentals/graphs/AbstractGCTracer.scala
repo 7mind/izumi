@@ -26,7 +26,7 @@ trait AbstractGCTracer[NodeId, Node] {
   private def trace(index: Map[NodeId, Node], toTrace: Set[NodeId], reachable: mutable.HashSet[NodeId]): Unit = {
     val newDeps = toTrace
       .map(index.apply)
-      .flatMap(extract(index, _))
+      .flatMap(extractDependencies(index, _))
       .diff(reachable)
 
     if (newDeps.nonEmpty) {
@@ -38,7 +38,7 @@ trait AbstractGCTracer[NodeId, Node] {
   protected def prePrune(pruned: Pruned): Pruned
 
   @inline
-  protected def extract(index: Map[NodeId, Node], node: Node): Set[NodeId]
+  protected def extractDependencies(index: Map[NodeId, Node], node: Node): Set[NodeId]
 
   protected def isRoot(node: NodeId): Boolean
 

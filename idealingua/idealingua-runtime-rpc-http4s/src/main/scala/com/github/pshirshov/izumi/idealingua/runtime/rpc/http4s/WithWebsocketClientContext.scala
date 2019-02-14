@@ -57,6 +57,7 @@ object WsSessionListener {
   }
 }
 
+
 trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
   def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
 
@@ -67,11 +68,12 @@ trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
 }
 
 class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextProvider[C#BiIO, C#RequestContext, C#ClientId] {
+
   import c._
 
-  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial:  C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
+  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
     Quirks.discard(id, initial, packet)
-    (None, BIO.point(None))
+    (None, BIO.now(None))
   }
 
   override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#RequestContext = {
@@ -123,34 +125,29 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 
     buzzerClient
       .map {
-        sess =>
+        session =>
           new IRTDispatcher[BiIO] {
             override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
               for {
-                session <- BIO.point(sess)
                 json <- codec.encode(request)
                 id <- BIO.sync(session.enqueue(request.method, json))
-                resp <- BIO.bracket[Throwable, RpcPacketId, IRTMuxResponse](BIO.point(id)) {
+                resp <- BIO.bracket(BIO.now(id)) {
                   id =>
                     logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                    BIO.sync(sess.requestState.forget(id))
+                    BIO.sync(session.requestState.forget(id))
                 } {
-                  w =>
-                    BIO.point(w).flatMap {
-                      id =>
-                        sess.requestState.poll(id, pollingInterval, timeout)
-                          .flatMap {
-                            case Some(value: RawResponse.GoodRawResponse) =>
-                              logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                              codec.decode(value.data, value.method)
+                  id =>
+                    session.requestState.poll(id, pollingInterval, timeout).flatMap {
+                      case Some(value: RawResponse.GoodRawResponse) =>
+                        logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                        codec.decode(value.data, value.method)
 
-                            case Some(value: RawResponse.BadRawResponse) =>
-                              logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
-                              BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                      case Some(value: RawResponse.BadRawResponse) =>
+                        logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
+                        BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
-                            case None =>
-                              BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                          }
+                      case None =>
+                        BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                     }
                 }
               } yield {
@@ -190,7 +187,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   }
 
   def enqueue(method: IRTMethodId, data: Json): RpcPacketId = {
-    val request = RpcPacket.buzzerRequest(method, data)
+    val request = RpcPacket.buzzerRequestRndId(method, data)
     val id = request.id.get
     logger.debug(s"Enqueue $request with $id to request state & send queue")
     sendQueue.add(Text(request.asJson.noSpaces))

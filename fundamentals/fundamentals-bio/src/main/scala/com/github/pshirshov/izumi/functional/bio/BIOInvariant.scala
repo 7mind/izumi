@@ -28,15 +28,6 @@ trait BIOInvariant[R[_, _]] {
 
   @inline def terminate(v: => Throwable): R[Nothing, Nothing]
 
-  @inline def maybe[V](v: => Either[Throwable, V]): R[Nothing, V] = {
-    v match {
-      case Left(f) =>
-        terminate(f).asInstanceOf[R[Nothing, V]]
-      case Right(r) =>
-        point(r)
-    }
-  }
-
   @inline def now[A](a: A): R[Nothing, A]
 
   @inline def unit: R[Nothing, Unit] = now(())

@@ -5,13 +5,15 @@ import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import distage.Id
 
 import scala.collection.mutable
 
 class ForwardingRefResolverDefaultImpl
 (
-  protected val planAnalyzer: PlanAnalyzer
-  , protected val reflectionProvider: ReflectionProvider.Runtime
+  protected val planAnalyzer: PlanAnalyzer,
+  protected val reflectionProvider: ReflectionProvider.Runtime,
+  @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
 ) extends ForwardingRefResolver {
   override def resolve(plan: OrderedPlan): OrderedPlan = {
     val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
@@ -46,13 +48,17 @@ class ForwardingRefResolverDefaultImpl
           Seq(step)
       }
 
-    val proxyOps = addInits(proxies.toList, resolvedSteps)
+    val proxyOps = if (initProxiesAsap) {
+      iniProxiesJustInTime(proxies.to, resolvedSteps)
+    } else {
+      initProxiesAtTheEnd(proxies.to, resolvedSteps)
+    }
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })
-    OrderedPlan(plan.definition, imports ++ proxyOps, plan.topology)
+    OrderedPlan(plan.definition, imports ++ proxyOps, plan.roots, plan.topology)
   }
 
-  protected def addInits(proxies: List[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
+  protected def initProxiesAtTheEnd(proxies: List[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
     resolvedSteps ++ proxies.map {
       proxyDep =>
         val key = proxyDep.target
@@ -60,29 +66,29 @@ class ForwardingRefResolverDefaultImpl
     }
   }
 
-  //  protected def addInitsX(proxies: mutable.HashSet[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
-  //    // more expensive eager just-in-time policy
-  //    val passed = mutable.HashSet[DIKey]()
-  //    val proxyOps = resolvedSteps.flatMap {
-  //      op =>
-  //        passed.add(op.target)
-  //
-  //        val completedProxies = proxies.filter(_.forwardRefs.diff(passed).isEmpty)
-  //        val inits = completedProxies.map {
-  //          proxy =>
-  //            ProxyOp.InitProxy(proxy.target, proxy.forwardRefs, proxy, op.origin)
-  //        }.toVector
-  //
-  //        completedProxies.foreach {
-  //          i =>
-  //            proxies.remove(i)
-  //        }
-  //
-  //        op +: inits
-  //    }
-  //    assert(proxies.isEmpty)
-  //    proxyOps
-  //  }
+    protected def iniProxiesJustInTime(proxies: mutable.HashSet[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
+      // more expensive eager just-in-time policy
+      val passed = mutable.HashSet[DIKey]()
+      val proxyOps = resolvedSteps.flatMap {
+        op =>
+          passed.add(op.target)
+
+          val completedProxies = proxies.filter(_.forwardRefs.diff(passed).isEmpty)
+          val inits = completedProxies.map {
+            proxy =>
+              ProxyOp.InitProxy(proxy.target, proxy.forwardRefs, proxy, op.origin)
+          }.toVector
+
+          completedProxies.foreach {
+            i =>
+              proxies.remove(i)
+          }
+
+          op +: inits
+      }
+      assert(proxies.isEmpty)
+      proxyOps
+    }
 
 
   protected def allUsagesAreByName(index: Map[DIKey, Vector[ExecutableOp]], target: DIKey, usages: Set[DIKey]): Boolean = {
