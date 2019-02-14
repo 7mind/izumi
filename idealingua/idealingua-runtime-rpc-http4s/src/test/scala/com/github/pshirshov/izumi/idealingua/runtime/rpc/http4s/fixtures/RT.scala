@@ -22,7 +22,7 @@ object RT {
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool(), handler)
 
 
-  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, String, Unit](global)
+  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, DummyRequestContext, String, Unit, Unit](global)
 
   private def makeLogger(): IzLogger = {
     val router = ConfigurableLogRouter(Log.Level.Info, levels = Map(

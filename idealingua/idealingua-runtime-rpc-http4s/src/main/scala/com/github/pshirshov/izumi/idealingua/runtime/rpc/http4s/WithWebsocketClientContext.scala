@@ -57,6 +57,7 @@ object WsSessionListener {
   }
 }
 
+
 trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
   def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
 
@@ -67,9 +68,10 @@ trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
 }
 
 class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextProvider[C#BiIO, C#RequestContext, C#ClientId] {
+
   import c._
 
-  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial:  C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
+  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
     Quirks.discard(id, initial, packet)
     (None, BIO.now(None))
   }

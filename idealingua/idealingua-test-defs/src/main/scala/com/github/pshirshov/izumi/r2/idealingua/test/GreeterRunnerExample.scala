@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.r2.idealingua.test
 
 import _root_.io.circe.syntax._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTServerMultiplexor
+import com.github.pshirshov.izumi.idealingua.runtime.rpc.{ContextExtender, IRTServerMultiplexor}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
 import scalaz.zio._
 import com.github.pshirshov.izumi.functional.bio.BIO._
@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.functional.bio.BIO._
 object GreeterRunnerExample {
   def main(args: Array[String]): Unit = {
     val greeter = new GreeterServiceServerWrapped[IO, Unit](new impls.AbstractGreeterServer.Impl[IO, Unit]())
-    val multiplexor = new IRTServerMultiplexor[IO, Unit](Set(greeter))
+    val multiplexor = new IRTServerMultiplexor[IO, Unit, Unit](Set(greeter), ContextExtender.id)
 
     val req1 = new greeter.greet.signature.Input("John", "Doe")
     val json1 = req1.asJson

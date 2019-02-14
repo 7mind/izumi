@@ -24,7 +24,7 @@ import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Binary, Close, Pong, Text}
 
 class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
-                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext]
+                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext]
                                      , val codec: IRTClientMultiplexor[C#BiIO]
                                      , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
                                      , val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]

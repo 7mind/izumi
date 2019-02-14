@@ -2,12 +2,28 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
 import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import io.circe.Json
 
-class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]]) {
+
+trait ContextExtender[B[+ _, + _], Ctx, Ctx2] {
+  def extend(context: Ctx, body: Json): Ctx2
+}
+
+object ContextExtender {
+  def id[B[+ _, + _], Ctx]: ContextExtender[B, Ctx, Ctx] = new ContextExtender[B, Ctx, Ctx] {
+    override def extend(context: Ctx, body: Json): Ctx = {
+      Quirks.discard(body)
+      context
+    }
+  }
+}
+
+
+class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R, C2]], extender: ContextExtender[R, C, C2]) {
   protected val BIO: BIO[R] = implicitly
 
-  val services: Map[IRTServiceId, IRTWrappedService[R, C]] = list.map(s => s.serviceId -> s).toMap
+  val services: Map[IRTServiceId, IRTWrappedService[R, C2]] = list.map(s => s.serviceId -> s).toMap
 
   def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): R[Throwable, Option[Json]] = {
     (for {
@@ -17,13 +33,13 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
       method
     }) match {
       case Some(value) =>
-        invoke(context, toInvoke, value, parsedBody).map(Some.apply)
+        invoke(extender.extend(context, parsedBody), toInvoke, value, parsedBody).map(Some.apply)
       case None =>
         BIO.now(None)
     }
   }
 
-  @inline private[this] def invoke(context: C, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C], parsedBody: Json): R[Throwable, Json] = {
+  @inline private[this] def invoke(context: C2, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C2], parsedBody: Json): R[Throwable, Json] = {
     for {
       decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
       safeDecoded <- BIO.sandboxWith(decodeAction) {
@@ -43,3 +59,4 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C](list: Set[IRTWrappedService[R, C]
     }
   }
 }
+
