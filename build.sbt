@@ -1,12 +1,9 @@
-import com.typesafe.sbt.pgp.PgpSettings
-import sbt.Keys.{baseDirectory, publishMavenStyle, sourceDirectory}
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
-import IzumiConvenienceTasksPlugin.Keys._
-import IzumiPublishingPlugin.Keys._
-import ReleaseTransformations._
-import com.github.pshirshov.izumi.sbt.plugins.optional.CoursierFetch
-import org.portablescala.sbtplatformdeps.PlatformDepsGroupID
-
+import com.github.pshirshov.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
+import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
+import com.typesafe.sbt.pgp.PgpSettings
+import sbt.Keys.{publishMavenStyle, sourceDirectory}
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
@@ -20,7 +17,6 @@ licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licen
 developers in ThisBuild := List(
   Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/pshirshov"), email = "team@7mind.io"),
 )
-
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
@@ -390,7 +386,7 @@ lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember
 lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScalaJvm)
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
-  .settings(libraryDependencies += R.scala_xml) 
+  .settings(libraryDependencies += R.scala_xml)
   .settings(libraryDependencies ++= (Seq(R.scalameta) ++ R.circe).map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,

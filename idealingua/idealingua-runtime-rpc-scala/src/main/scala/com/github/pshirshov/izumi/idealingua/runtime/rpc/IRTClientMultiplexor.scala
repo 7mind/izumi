@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import cats.syntax.apply
 import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import io.circe.Json

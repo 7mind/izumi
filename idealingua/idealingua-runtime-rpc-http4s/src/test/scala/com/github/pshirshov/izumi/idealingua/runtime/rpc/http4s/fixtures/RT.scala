@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.functional.bio.BIORunner
@@ -19,7 +19,11 @@ object RT {
 
   implicit val contextShift: ContextShift[cats.effect.IO] = IO.contextShift(global)
   implicit val timer: Timer[cats.effect.IO] = IO.timer(global)
-  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool(), handler)
+  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(
+    Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
+  , Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor]
+  , handler
+  )
 
 
   final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, DummyRequestContext, String, Unit, Unit](global)
