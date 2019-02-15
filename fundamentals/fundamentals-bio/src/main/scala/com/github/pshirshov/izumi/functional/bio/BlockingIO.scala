@@ -12,7 +12,10 @@ trait BlockingIO[F[_, _]] {
 
   /** Execute a blocking impure task in `Unyielding` thread pool, current task will be safely parked until the blocking task finishes
     *
-    * If canceled, the task will be killed via [[Thread.interrupt]] **/
+    * If canceled, the task will be killed via [[Thread.interrupt]]
+    *
+    * THIS IS USUALLY UNSAFE unless calling well-written libraries that specifically handle [[InterruptedException]]
+    * **/
   def syncInterruptibleBlocking[A](f: => A): F[Throwable, A]
 
 }
