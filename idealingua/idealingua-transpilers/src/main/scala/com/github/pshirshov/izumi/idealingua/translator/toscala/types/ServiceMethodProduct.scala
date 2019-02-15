@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Adt
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
@@ -210,6 +210,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     private def typename: String = ctx.typespace.tools.methodToOutputName(method)
 
+
+
     def outputType: Type = method.signature.output match {
       case DefMethod.Output.Void() =>
         t"Just[Unit]"
@@ -219,8 +221,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       case DefMethod.Output.Struct(_) | DefMethod.Output.Algebraic(_) =>
         val aliasType: ScalaType = sp.svcMethods.within(name).within("Output")
         t"Just[${aliasType.typeFull}]"
-      case DefMethod.Output.Alternative(_, _) =>
-        t"Or[${negativeType.typeFull}, ${positiveType.typeFull}]"
+      case DefMethod.Output.Alternative(s, f) =>
+        t"Or[${render_Id_SHIM(f, negativeType.typeFull)}, ${render_Id_SHIM(s, positiveType.typeFull)}]"
     }
 
     private def positiveId: String = ctx.typespace.tools.methodToPositiveTypeName(method)
@@ -279,10 +281,38 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
         case DefMethod.Output.Alternative(success, failure) =>
           ctx.adtRenderer.renderAdt(ctx.typespace.apply(adtId).asInstanceOf[Adt], List.empty).render ++
-            renderOutput(positiveId, success) ++
-            renderOutput(negativeId, failure)
+            render_SHIM(positiveId, success) ++
+            render_SHIM(negativeId, failure)
       }
     }
+
+    private def render_SHIM(typename: String, out: DefMethod.Output) = {
+      out match {
+        case o: DefMethod.Output.Singular =>
+          List.empty
+        case o =>
+          renderOutput(typename, o)
+
+      }
+    }
+
+    def render_Id_SHIM(s: DefMethod.Output.NonAlternativeOutput, typeFull: Type): Type = {
+      s match {
+        case o: DefMethod.Output.Singular =>
+          ctx.conv.toScala(o.typeId).typeFull
+        case o => typeFull
+      }
+    }
+//    private def render_Id_SHIM(typename: String, out: DefMethod.Output) = {
+//      out match {
+//        case o: DefMethod.Output.Singular =>
+//          List.empty
+//        case o =>
+//          renderOutput(positiveId, o)
+//
+//      }
+//    }
+//
   }
 
 

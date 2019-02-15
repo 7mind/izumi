@@ -146,17 +146,26 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
         Seq(Adt(outId, o.alternatives, NodeMeta.empty))
 
       case o: Output.Alternative =>
-        val success = outputEphemeral(serviceId, baseName, ts.tools.goodAltSuffix, o.success)
-        val failure = outputEphemeral(serviceId, baseName, ts.tools.badAltSuffix, o.failure)
-        val successId = success.head.id
-        val failureId = failure.head.id
-        val adtId = AdtId(serviceId, s"$baseName$suffix")
+        val (success, successId) = toOutDef(serviceId, baseName, ts.tools.goodAltSuffix, o.success) //outputEphemeral(serviceId, baseName, ts.tools.goodAltSuffix, o.success)
+      val (failure, failureId) = toOutDef(serviceId, baseName, ts.tools.badAltSuffix, o.failure) //outputEphemeral(serviceId, baseName, ts.tools.badAltSuffix, o.failure)
+      val adtId = AdtId(serviceId, s"$baseName$suffix")
         val altAdt = Output.Algebraic(List(
           AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)), NodeMeta.empty)
           , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)), NodeMeta.empty)
         ))
         val alt = outputEphemeral(serviceId, baseName, suffix, altAdt)
         success ++ failure ++ alt
+    }
+  }
+
+  private def toOutDef(serviceId: ServiceId, baseName: String, suffix: String, out: Output): (Seq[TypeDef], TypeId) = {
+    out match {
+      case o: Output.Singular =>
+        (Seq.empty, o.typeId)
+      case o =>
+        // TODO: this is untested an probably incorrect!
+        val res = outputEphemeral(serviceId, baseName, suffix, out)
+        (res, res.head.id)
     }
   }
 
