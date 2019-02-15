@@ -46,9 +46,9 @@ package object logstage extends LogStage {
     }
   }
 
-  type LogInfoBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
-  object LogInfoBIO {
-    def apply[F[_, _]: LogInfoBIO]: LogInfoBIO[F] = implicitly
+  type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
+  object LogCreateBIO {
+    def apply[F[_, _]: LogCreateBIO]: LogCreateBIO[F] = implicitly
   }
 
 }
