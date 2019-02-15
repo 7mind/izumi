@@ -162,7 +162,7 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 class WebsocketClientContextImpl[C <: Http4sContext]
 (
   val c: C#IMPL[C]
-  , val initialRequest: AuthedRequest[C#CatsIO, C#RequestContext]
+  , val initialRequest: AuthedRequest[C#MonoIO, C#RequestContext]
   , val initialContext: C#RequestContext
   , listeners: Seq[WsSessionListener[C#ClientId]]
   , wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
@@ -171,13 +171,19 @@ class WebsocketClientContextImpl[C <: Http4sContext]
 
   import c._
 
-  private val sessionId = WsSessionId(UUIDGen.getTimeUUID())
-
   private val maybeId = new AtomicReference[Option[ClientId]]()
+  private val sendQueue = new ConcurrentLinkedDeque[WebSocketFrame]()
+  override val requestState = new RequestState()
+
+  private val sessionId = WsSessionId(UUIDGen.getTimeUUID())
+  private val openingTime: ZonedDateTime = IzTime.utcNow
+
+  private val pingTimeout: FiniteDuration = 25.seconds
+  private val queuePollTimeout: FiniteDuration = 100.millis
+
+  private val queueBatchSize: Int = 10
 
   def id: WsClientId[ClientId] = WsClientId(sessionId, Option(maybeId.get()).flatten)
-
-  val openingTime: ZonedDateTime = IzTime.utcNow
 
   def duration(): FiniteDuration = {
     val now = IzTime.utcNow
@@ -225,28 +231,20 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     }
   }
 
-  private val pingTimeout: FiniteDuration = 25.seconds
+  protected[http4s] val queue: MonoIO[Queue[MonoIO, WebSocketFrame]] = Queue.unbounded[MonoIO, WebSocketFrame]
 
-  private val queuePollTimeout: FiniteDuration = 100.millis
-
-  private val queueBatchSize: Int = 10
-
-  private val sendQueue = new ConcurrentLinkedDeque[WebSocketFrame]()
-
-  protected[http4s] val queue: CatsIO[Queue[CatsIO, WebSocketFrame]] = Queue.unbounded[CatsIO, WebSocketFrame]
-
-  protected[http4s] val outStream: fs2.Stream[CatsIO, WebSocketFrame] =
-    fs2.Stream.awakeEvery[CatsIO](queuePollTimeout) >> {
+  protected[http4s] val outStream: fs2.Stream[MonoIO, WebSocketFrame] =
+    fs2.Stream.awakeEvery[MonoIO](queuePollTimeout) >> {
       val messages = (0 until queueBatchSize).map(_ => Option(sendQueue.poll())).collect {
         case Some(m) => m
       }
       if (messages.nonEmpty)
         logger.debug(s"Going to stream $messages from send queue")
-      fs2.Stream(messages: _*)
+      fs2.Stream.emits(messages)
     }
 
-  protected[http4s] val pingStream: fs2.Stream[CatsIO, WebSocketFrame] =
-    fs2.Stream.awakeEvery[CatsIO](pingTimeout) >> fs2.Stream(Ping())
+  protected[http4s] val pingStream: fs2.Stream[MonoIO, WebSocketFrame] =
+    fs2.Stream.awakeEvery[MonoIO](pingTimeout) >> fs2.Stream(Ping())
 
   override def finish(): Unit = {
     onWsSessionClosed()
@@ -264,8 +262,6 @@ class WebsocketClientContextImpl[C <: Http4sContext]
       listener.onSessionOpened(id)
     }
   }
-
-  val requestState = new RequestState()
 
   override def toString: String = s"[${id.toString}, ${duration().toSeconds}s]"
 }

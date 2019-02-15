@@ -4,6 +4,7 @@ import java.net.URI
 import java.util.concurrent.TimeoutException
 
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
@@ -63,7 +64,6 @@ class ClientWsDispatcher[C <: Http4sContext]
 
         case Termination(cause, _) =>
           logger.error(s"Failed to process request, termination: $cause")
-
       }
     }
 
@@ -93,17 +93,13 @@ class ClientWsDispatcher[C <: Http4sContext]
         }
 
         for {
-          maybePacket <- responsePkt.sandboxWith {
-            _.catchAll {
-              case Left(exception :: otherIssues) =>
-                logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $otherIssues")
-                BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
-              case Left(Nil) =>
-                BIO.fail(Right(new IllegalStateException()))
-              case Right(exception) =>
-                logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
-                BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
-            }
+          maybePacket <- responsePkt.sandbox.catchAll {
+            case BIOExit.Termination(exception, allExceptions) =>
+              logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $allExceptions")
+              BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+            case BIOExit.Error(exception) =>
+              logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
+              BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
           maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
           _ <- BIO.syncThrowable {

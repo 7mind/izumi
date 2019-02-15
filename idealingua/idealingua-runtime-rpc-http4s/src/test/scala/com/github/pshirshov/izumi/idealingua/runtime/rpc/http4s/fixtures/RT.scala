@@ -1,28 +1,31 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
-import cats.effect.{ContextShift, IO, Timer}
 import com.github.pshirshov.izumi.functional.bio.BIORunner
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import io.circe.Printer
 import scalaz.zio
+import scalaz.zio.Clock
+import scalaz.zio.interop.catz._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.global
 
 object RT {
   final val logger = makeLogger()
   final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
   final val handler = BIORunner.DefaultHandler.Custom(message => zio.IO.sync(logger.warn(s"Fiber failed: $message")))
 
-  implicit val contextShift: ContextShift[cats.effect.IO] = IO.contextShift(global)
-  implicit val timer: Timer[cats.effect.IO] = IO.timer(global)
-  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(Executors.newWorkStealingPool(), handler)
+  implicit val clock: Clock = Clock.Live
+  implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(
+    Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
+  , Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor]
+  , handler
+  )
 
-
-  final val rt = new Http4sRuntime[zio.IO, cats.effect.IO, DummyRequestContext, DummyRequestContext, String, Unit, Unit](global)
+  final val rt = new Http4sRuntime[zio.IO, DummyRequestContext, DummyRequestContext, String, Unit, Unit](global)
 
   private def makeLogger(): IzLogger = {
     val router = ConfigurableLogRouter(Log.Level.Info, levels = Map(

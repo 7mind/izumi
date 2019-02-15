@@ -4,44 +4,42 @@ import java.time.ZonedDateTime
 import java.util.concurrent.RejectedExecutionException
 
 import _root_.io.circe.parser._
-import cats.implicits._
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.runtime.rpc
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import io.circe
-import io.circe.{Json, Printer}
 import io.circe.syntax._
+import io.circe.{Json, Printer}
+import logstage.{LogBIO, LogIO}
 import org.http4s._
-import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Binary, Close, Pong, Text}
 
-class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
-                                     , val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext]
-                                     , val codec: IRTClientMultiplexor[C#BiIO]
-                                     , val contextProvider: AuthMiddleware[C#CatsIO, C#RequestContext]
-                                     , val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]
-                                     , val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
-                                     , val listeners: Seq[WsSessionListener[C#ClientId]]
-                                     , logger: IzLogger
-                                     , printer: Printer
-                                    ) {
+class HttpServer[C <: Http4sContext]
+(
+  val c: C#IMPL[C]
+, val muxer: IRTServerMultiplexor[C#BiIO, C#RequestContext, C#MethodContext]
+, val codec: IRTClientMultiplexor[C#BiIO]
+, val contextProvider: AuthMiddleware[C#MonoIO, C#RequestContext]
+, val wsContextProvider: WsContextProvider[C#BiIO, C#RequestContext, C#ClientId]
+, val wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
+, val listeners: Seq[WsSessionListener[C#ClientId]]
+, logger: IzLogger
+, printer: Printer
+) {
 
   import c._
+  import c.dsl._
 
-  protected val dsl: Http4sDsl[CatsIO] = c.dsl
-
-  import dsl._
-
-  protected def loggingMiddle(service: HttpRoutes[CatsIO]): HttpRoutes[CatsIO] = cats.data.Kleisli {
-    req: Request[CatsIO] =>
+  protected def loggingMiddle(service: HttpRoutes[MonoIO]): HttpRoutes[MonoIO] = cats.data.Kleisli {
+    req: Request[MonoIO] =>
       logger.trace(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: initiated")
 
       try {
@@ -49,7 +47,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
           case Status.Successful(resp) =>
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: success, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
             resp
-          case resp if resp.attributes.get(org.http4s.server.websocket.websocketKey[CatsIO]).isDefined =>
+          case resp if resp.attributes.get(org.http4s.server.websocket.websocketKey[MonoIO]).isDefined =>
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: websocket request")
             resp
           case resp =>
@@ -63,13 +61,13 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       }
   }
 
-  def service: HttpRoutes[CatsIO] = {
+  def service: HttpRoutes[MonoIO] = {
     val svc = AuthedService(handler())
-    val aservice: HttpRoutes[CatsIO] = contextProvider(svc)
+    val aservice: HttpRoutes[MonoIO] = contextProvider(svc)
     loggingMiddle(aservice)
   }
 
-  protected def handler(): PartialFunction[AuthedRequest[CatsIO, RequestContext], CatsIO[Response[CatsIO]]] = {
+  protected def handler(): PartialFunction[AuthedRequest[MonoIO, RequestContext], MonoIO[Response[MonoIO]]] = {
     case request@GET -> Root / "ws" as ctx =>
       val result = setupWs(request, ctx)
       result
@@ -95,12 +93,13 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
   }
 
   protected def onWsUpdate(maybeNewId: Option[C#ClientId], old: WsClientId[ClientId]): Unit = {
+    (maybeNewId, old).forget
   }
 
   protected def onWsClosed(): Unit = {
   }
 
-  protected def setupWs(request: AuthedRequest[CatsIO, RequestContext], initialContext: RequestContext): CatsIO[Response[CatsIO]] = {
+  protected def setupWs(request: AuthedRequest[MonoIO, RequestContext], initialContext: RequestContext): MonoIO[Response[MonoIO]] = {
     val context = new WebsocketClientContextImpl[C](c, request, initialContext, listeners, wsSessionStorage, logger) {
 
       override def onWsSessionOpened(): Unit = {
@@ -121,48 +120,46 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
     context.start()
     logger.debug(s"${context -> null}: Websocket client connected")
 
-    context.queue.flatMap { q =>
-      val d = q.dequeue.through {
+    context.queue.flatMap[Throwable, Response[MonoIO]] { q =>
+      val dequeueStream = q.dequeue.through {
         stream =>
           stream
             .evalMap(handleWsMessage(context))
             .collect({ case Some(v) => WebSocketFrame.Text(v) })
       }
-      val e = q.enqueue
-      WebSocketBuilder[CatsIO].build(
-        d.merge(context.outStream).merge(context.pingStream)
-        , e
-        , onClose = CIO.delay(handleWsClose(context)))
+      val enqueueSink = q.enqueue
+      WebSocketBuilder[MonoIO].build(
+        send = dequeueStream.merge(context.outStream).merge(context.pingStream)
+      , receive = enqueueSink
+      , onClose = BIO.syncThrowable(handleWsClose(context))
+      )
     }
   }
 
-  protected def handleWsMessage(context: WebsocketClientContextImpl[C], requestTime: ZonedDateTime = IzTime.utcNow): WebSocketFrame => CatsIO[Option[String]] = {
+  protected def handleWsMessage(context: WebsocketClientContextImpl[C], requestTime: ZonedDateTime = IzTime.utcNow): WebSocketFrame => MonoIO[Option[String]] = {
     case Text(msg, _) =>
-      val ioresponse = makeResponse(context, msg)
-      CIO.async {
-        cb =>
-          BIORunner.unsafeRunAsyncAsEither(ioresponse) {
-            result =>
-              cb(Right(handleResult(context, result)))
-          }
-      }
+      makeResponse(context, msg)
+        .sandbox
+        .redeemPure(identity, BIOExit.Success(_))
+        .map(handleResult(context, _))
 
     case Close(_) =>
-      CIO.point(None)
+      BIO.now(None)
 
     case v: Binary =>
-      CIO.pure(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+      BIO.now(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
 
     case _: Pong =>
       onHeartbeat(requestTime).map(_ => None)
 
     case unknownMessage =>
       logger.error(s"Cannot handle unknown websocket message $unknownMessage")
-      CIO.pure(None)
+      BIO.now(None)
   }
 
-  def onHeartbeat(requestTime: ZonedDateTime): C#CatsIO[Unit] = CIO.point {
-    Quirks.discard(requestTime)
+  def onHeartbeat(requestTime: ZonedDateTime): C#MonoIO[Unit] = {
+    requestTime.discard()
+    BIO.unit
   }
 
   protected def handleResult(context: WebsocketClientContextImpl[C], result: BIOExit[Throwable, Option[RpcPacket]]): Option[String] = {
@@ -184,21 +181,15 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
       id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
-      response <- respond(context, unmarshalled).sandboxWith {
-        _.catchAll {
-          case Left(exception :: otherIssues) =>
-            logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $otherIssues")
-            BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
-          case Left(Nil) =>
-            BIO.fail(Right(new IllegalStateException()))
-          case Right(exception) =>
-            logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-            BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
-        }
+      response <- respond(context, unmarshalled).sandbox.catchAll {
+        case BIOExit.Termination(exception, allExceptions) =>
+          logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions")
+          BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+        case BIOExit.Error(exception) =>
+          logger.error(s"${context -> null}: WS processing failed, $message, $exception")
+          BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
       }
-    } yield {
-      response
-    }
+    } yield response
   }
 
   protected def respond(context: WebsocketClientContextImpl[C], input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
@@ -248,7 +239,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
   }
 
 
-  protected def run(context: HttpRequestContext[CatsIO, RequestContext], body: String, method: IRTMethodId): CatsIO[Response[CatsIO]] = {
+  protected def run(context: HttpRequestContext[MonoIO, RequestContext], body: String, method: IRTMethodId): MonoIO[Response[MonoIO]] = {
     val ioR = for {
       parsed <- BIO.fromEither(parse(body))
       maybeResult <- muxer.doInvoke(parsed, context.context, method)
@@ -256,17 +247,12 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
       maybeResult
     }
 
-    CIO.async[CatsIO[Response[CatsIO]]] {
-      cb =>
-        BIORunner.unsafeRunAsyncAsEither(ioR) {
-          result =>
-            cb(Right(handleResult(context, method, result)))
-        }
-    }
-      .flatten
+    ioR.sandbox
+      .redeemPure(identity, BIOExit.Success(_))
+      .flatMap(handleResult(context, method, _))
   }
 
-  private def handleResult(context: HttpRequestContext[CatsIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): CatsIO[Response[CatsIO]] = {
+  private def handleResult(context: HttpRequestContext[MonoIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): MonoIO[Response[MonoIO]] = {
     result match {
       case Success(v) =>
         v match {
@@ -295,7 +281,7 @@ class HttpServer[C <: Http4sContext](val c: C#IMPL[C]
 
       case Termination(_, (cause: IRTHttpFailureException) :: _) =>
         logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
-        CIO.pure(Response(status = cause.status))
+        BIO.now(Response(status = cause.status))
 
       case Termination(_, (cause: RejectedExecutionException) :: _) =>
         logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")

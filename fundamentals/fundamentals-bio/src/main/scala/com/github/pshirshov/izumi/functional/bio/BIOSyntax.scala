@@ -35,7 +35,9 @@ object BIOSyntax {
     @inline def redeemPure[B](err: E => B, succ: A => B): R[Nothing, B] =
       redeem(err.andThen(R.now), succ.andThen(R.now))
 
-    @inline def sandboxWith[E2, B](f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B] = R.sandboxWith(r)(f)
+    @inline def sandboxWith[E2, B](f: R[BIOExit.Failure[E], A] => R[BIOExit.Failure[E2], B]): R[E2, B] = R.sandboxWith(r)(f)
+
+    @inline def sandbox: R[BIOExit.Failure[E], A] = R.sandbox(r)
 
     @inline def bracket[E1 >: E, B](release: A => R[Nothing, Unit])(use: A => R[E1, B]): R[E1, B] =
       R.bracket(r: R[E1, A])(release)(use)

@@ -2,16 +2,16 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.ConcurrentHashMap
 
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.functional.bio.BIOAsync
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import io.circe.Json
-import com.github.pshirshov.izumi.functional.bio.BIO._
 
 import scala.concurrent.duration.FiniteDuration
 
-class RequestState[Or[+ _, + _] : BIOAsync] {
-  val R: BIOAsync[Or] = implicitly
+class RequestState[F[+ _, + _] : BIOAsync] {
+  private val BIO: BIOAsync[F] = implicitly
 
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
@@ -22,7 +22,7 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
   }
 
   def request(id: RpcPacketId, methodId: IRTMethodId): Unit = {
-    Quirks.discard(requests.put(id, methodId))
+    requests.put(id, methodId).discard()
   }
 
   def checkResponse(id: RpcPacketId): Option[RawResponse] = {
@@ -30,13 +30,14 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
   }
 
   def forget(id: RpcPacketId): Unit = {
-    Quirks.discard(requests.remove(id), responses.remove(id))
+    requests.remove(id)
+    responses.remove(id).discard()
   }
 
   def respond(id: RpcPacketId, response: RawResponse): Unit = {
     Option(requests.remove(id)) match {
       case Some(_) =>
-        Quirks.discard(responses.put(id, response))
+        responses.put(id, response).discard()
       case None =>
       // We ignore responses for unknown requests
     }
@@ -44,12 +45,13 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
 
   def clear(): Unit = {
     // TODO: autocloseable + latch?
-    Quirks.discard(requests.clear(), responses.clear())
+    requests.clear()
+    responses.clear().discard()
   }
 
-  def handleResponse(maybePacketId: Option[RpcPacketId], data: Json): Or[Throwable, PacketInfo] = {
+  def handleResponse(maybePacketId: Option[RpcPacketId], data: Json): F[Throwable, PacketInfo] = {
     for {
-      maybeMethod <- R.sync {
+      maybeMethod <- BIO.sync {
         for {
           id <- maybePacketId
           method <- methodOf(id)
@@ -59,26 +61,26 @@ class RequestState[Or[+ _, + _] : BIOAsync] {
       method <- maybeMethod match {
         case Some(m@PacketInfo(method, id)) =>
           respond(id, RawResponse.GoodRawResponse(data, method))
-          R.now(m)
+          BIO.now(m)
 
         case None =>
-          R.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
+          BIO.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
       }
     } yield {
       method
     }
   }
 
-  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): Or[Nothing, Option[RawResponse]] =
-    R.sleep(interval)
+  def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): F[Nothing, Option[RawResponse]] =
+    BIO.sleep(interval)
       .flatMap {
         _ =>
           checkResponse(id) match {
             case None =>
-              R.fail(())
+              BIO.fail(())
             case Some(value) =>
-              R.now(Some(value))
+              BIO.now(Some(value))
           }
       }
-      .retryOrElse(timeout, R.now(None))
+      .retryOrElse(timeout, BIO.now(None))
 }
