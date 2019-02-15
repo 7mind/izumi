@@ -149,6 +149,7 @@ object IzumiDeps {
     val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)
+    val zio_core = R.zio_core % Test
   }
 
 }

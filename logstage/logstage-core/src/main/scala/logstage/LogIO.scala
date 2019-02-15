@@ -9,7 +9,7 @@ import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.experimental.macros
 
-trait LogIO[+F[_]] extends LogCreateIO[F] {
+trait LogIO[F[_]] extends LogCreateIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
@@ -22,10 +22,10 @@ trait LogIO[+F[_]] extends LogCreateIO[F] {
   final def crit(message: String): F[Unit] = macro scCritMacro[F]
 }
 
-object LogIO {
-  def apply[F[_]: LogIO]: LogIO[F] = implicitly
+object LogIO extends LowPriorityLogIO {
+  def apply[F[_] : LogIO]: LogIO[F] = implicitly
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
+  def fromLogger[F[_] : SyncSafe](logger: AbstractLogger): LogIO[F] = {
     new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
@@ -36,4 +36,8 @@ object LogIO {
       }
     }
   }
+}
+
+trait LowPriorityLogIO {
+  implicit def covariance[G[x] >: F[x], F[_]](implicit ev: F[Any] <:< G[Any], log: LogIO[F]): LogIO[G] = log.asInstanceOf[LogIO[G]]
 }
