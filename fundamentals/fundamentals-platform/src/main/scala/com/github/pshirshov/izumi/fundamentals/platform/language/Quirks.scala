@@ -8,7 +8,7 @@ object Quirks {
     val _ = trash
   }
 
-  @inline def forget(trash: LazyDiscarder[_]*): Unit = {
+  @inline def forget(trash: LazyDiscarder[_, _]*): Unit = {
     val _ = trash
   }
 
@@ -18,15 +18,13 @@ object Quirks {
     }
   }
 
-  @inline implicit def LazyDiscarder[T](t: => T): LazyDiscarder[T] = {
+  @inline implicit def LazyDiscarder[T](t: => T): LazyDiscarder[T, Unit] = {
     def _x: T = { _x; t }
-    new LazyDiscarder[T]()
+    new LazyDiscarder[T, Unit]()
   }
 
-  final class LazyDiscarder[T](private val dummy: Boolean = false) extends AnyVal {
-    type U >: Unit // Workaround scalac warning
-
-    @inline def forget: U = {}
+  final class LazyDiscarder[T, U >: Unit](private val dummy: Boolean = false) extends AnyVal {
+    @inline def forget: U = ()
   }
 
 }

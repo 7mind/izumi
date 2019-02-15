@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import io.circe.Json
@@ -42,13 +42,11 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R
   @inline private[this] def invoke(context: C2, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C2], parsedBody: Json): R[Throwable, Json] = {
     for {
       decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
-      safeDecoded <- BIO.sandboxWith(decodeAction) {
-        _.catchAll {
-          case Left(exceptions) =>
-            BIO.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption)))
-          case Right(decodingFailure) =>
-            BIO.fail(Right(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", Some(decodingFailure))))
-        }
+      safeDecoded <- decodeAction.sandbox.catchAll {
+        case BIOExit.Termination(_, exceptions) =>
+          BIO.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption))
+        case BIOExit.Error(decodingFailure) =>
+          BIO.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", Some(decodingFailure)))
       }
       casted <- BIO.syncThrowable(safeDecoded.value.asInstanceOf[method.signature.Input])
       resultAction <- BIO.syncThrowable(method.invoke(context, casted))

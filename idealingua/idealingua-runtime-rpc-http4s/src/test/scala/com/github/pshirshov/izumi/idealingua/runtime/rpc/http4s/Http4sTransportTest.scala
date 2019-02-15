@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
-import cats.effect.IO
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
@@ -9,6 +8,8 @@ import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceCl
 import org.http4s._
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
+import scalaz.zio.interop.Task
+import scalaz.zio.interop.catz._
 
 class Http4sTransportTest extends WordSpec {
 
@@ -83,13 +84,17 @@ class Http4sTransportTest extends WordSpec {
   }
 
   def withServer(f: => Unit): Unit = {
-    BlazeBuilder[rt.CatsIO]
+    val io = BlazeBuilder[rt.MonoIO]
       .bindHttp(port, host)
       .withWebSockets(true)
       .mountService(ioService.service, "/")
       .stream
-      .mapAsync(1)(_ => IO(f))
-      .compile.drain.unsafeRunSync()
+      // FIXME: parEvalMap/mapAsync/parJoin etc. doesn't work on ZIO https://github.com/functional-streams-for-scala/fs2/issues/1396
+//      .mapAsync(1)(_ => Task(f))
+      .evalMap(_ => Task(f))
+      .compile.drain
+
+    BIOR.unsafeRun(io.supervise)
   }
 
   def checkBadBody(body: String, disp: IRTDispatcher[rt.BiIO] with TestHttpDispatcher): Unit = {

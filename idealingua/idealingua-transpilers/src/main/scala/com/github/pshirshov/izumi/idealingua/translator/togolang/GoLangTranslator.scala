@@ -400,10 +400,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |
        |    for eitherSide, content := range raw {
        |        if eitherSide == "Success" {
-       |            v.left = true
+       |            v.left = false
        |        } else
        |        if eitherSide == "Failure" {
-       |            v.left = false
+       |            v.left = true
        |        } else {
        |            return fmt.Errorf("$name encountered an unknown either type '%s' during deserialization", eitherSide)
        |        }

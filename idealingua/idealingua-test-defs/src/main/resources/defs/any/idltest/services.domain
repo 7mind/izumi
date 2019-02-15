@@ -89,7 +89,7 @@ service TestService {
 
   // alternatives
 
-  def greetAlgebraicMultilineCurlyBracesSyntax
+/*  def greetAlgebraicMultilineCurlyBracesSyntax
    {
      firstName: str
      secondName: str
@@ -98,10 +98,10 @@ service TestService {
    } !! {
      ErrorData
    }
-
+*/
    def alternative(firstName: str, secondName: str) => SuccessData !! ErrorData
-   def alternativeSame(firstName: str, secondName: str) => SuccessData !! SuccessData
-   def voidAlternative(firstName: str, secondName: str) => () !! ()
+  // def alternativeSame(firstName: str, secondName: str) => SuccessData !! SuccessData
+  // def voidAlternative(firstName: str, secondName: str) => () !! ()
 
 }
 
