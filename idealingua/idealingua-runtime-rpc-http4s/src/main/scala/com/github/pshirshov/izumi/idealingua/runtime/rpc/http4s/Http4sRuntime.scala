@@ -2,14 +2,12 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import cats.effect.{ConcurrentEffect, Timer}
 import com.github.pshirshov.izumi.functional.bio.{BIOAsync, BIORunner}
-import com.github.pshirshov.izumi.functional.mono.CIORunner
 import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
 
 class Http4sRuntime[
   _BiIO[+ _, + _] : BIOAsync : BIORunner
-  , _CatsIO[+ _] : ConcurrentEffect : CIORunner : Timer
   , _RequestContext
   , _MethodContext
   , _ClientId
@@ -18,12 +16,13 @@ class Http4sRuntime[
 ]
 (
   override val clientExecutionContext: ExecutionContext
+)(implicit
+  C: ConcurrentEffect[_BiIO[Throwable, ?]]
+, T: Timer[_BiIO[Throwable, ?]]
 )
   extends Http4sContext {
 
   override type BiIO[+E, +V] = _BiIO[E, V]
-
-  override type CatsIO[+T] = _CatsIO[T]
 
   override type RequestContext = _RequestContext
 
@@ -37,13 +36,11 @@ class Http4sRuntime[
 
   override val BIO: BIOAsync[BiIO] = implicitly
 
-  override val CIO: ConcurrentEffect[CatsIO] = implicitly
+  override val CIO: ConcurrentEffect[MonoIO] = implicitly
 
-  override val CIOT: Timer[CatsIO] = implicitly
-
-  override val CIORunner: CIORunner[_CatsIO] = implicitly
+  override val CIOT: Timer[MonoIO] = implicitly
 
   override val BIORunner: BIORunner[BiIO] = implicitly
 
-  override val dsl: Http4sDsl[CatsIO] = Http4sDsl.apply[CatsIO]
+  override val dsl: Http4sDsl[MonoIO] = Http4sDsl[MonoIO]
 }

@@ -4,7 +4,6 @@ import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
-import cats.effect.IO
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
@@ -16,7 +15,8 @@ import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import scalaz.zio
-
+import scalaz.zio.interop.Task
+import scalaz.zio.interop.catz._
 
 object Http4sTestContext {
   //
@@ -33,13 +33,12 @@ object Http4sTestContext {
 
   final val demo = new DummyServices[rt.type#BiIO, DummyRequestContext]()
 
-
   //
-  final val authUser: Kleisli[OptionT[CatsIO, ?], Request[CatsIO], DummyRequestContext] =
+  final val authUser: Kleisli[OptionT[MonoIO, ?], Request[MonoIO], DummyRequestContext] =
     Kleisli {
-      request: Request[CatsIO] =>
+      request: Request[MonoIO] =>
         val context = DummyRequestContext(request.remoteAddr.getOrElse("0.0.0.0"), request.headers.get(Authorization).map(_.credentials))
-        OptionT.liftF(IO(context))
+        OptionT.liftF(Task(context))
     }
 
   final val wsContextProvider = new WsContextProvider[BiIO, DummyRequestContext, String] {
@@ -123,7 +122,7 @@ object Http4sTestContext {
         runRequest(handleResponse(request, _), req)
       }
 
-      override protected def transformRequest(request: Request[CatsIO]): Request[CatsIO] = {
+      override protected def transformRequest(request: Request[MonoIO]): Request[MonoIO] = {
         request.withHeaders(Headers(creds.get(): _*))
       }
     }

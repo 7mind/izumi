@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import scalaz.zio._
-import scalaz.zio.duration.Duration.{Zero, fromScala}
+import scalaz.zio.duration.Duration.fromScala
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -14,9 +14,9 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def point[V](v: => V): R[Nothing, V]
 
-  @inline override def fail[E](v: => E): R[E, Nothing]
+  @inline override def fail[E](v: E): R[E, Nothing]
 
-  @inline override def terminate(v: => Throwable): R[Nothing, Nothing]
+  @inline override def terminate(v: Throwable): R[Nothing, Nothing]
 
   @inline override def redeem[E, A, E2, B](r: R[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
@@ -28,7 +28,7 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def flatMap[E, A, E1 >: E, B](r: R[E, A])(f0: A => R[E1, B]): R[E1, B]
 
-  override final val unit: R[Nothing, Unit] = now(())
+  @inline override final val unit: R[Nothing, Unit] = now(())
 
   @inline override def void[E, A](r: R[E, A]): R[E, Unit]
 
@@ -36,11 +36,13 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def bimap[E, A, E2, B](r: R[E, A])(f: E => E2, g: A => B): R[E2, B]
 
-  @inline override def fromEither[E, V](v: => Either[E, V]): R[E, V]
+  @inline override def fromEither[E, V](v: Either[E, V]): R[E, V]
 
   @inline override def bracket[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
-  @inline override def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[Either[List[Throwable], E], A] => R[Either[List[Throwable], E2], B]): R[E2, B]
+  @inline override def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[BIOExit.Failure[E], A] => R[BIOExit.Failure[E2], B]): R[E2, B]
+
+  @inline override def sandbox[E, A](r: R[E, A]): R[BIOExit.Failure[E], A]
 }
 
 
@@ -54,7 +56,7 @@ object BIO extends BIOSyntax {
 
     @inline override def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(fromScala(duration))
 
-    @inline override def `yield`: IO[Nothing, Unit] = IO.sleep(Zero)
+    @inline override def `yield`: IO[Nothing, Unit] = IO.yieldNow
 
     @inline override def sync[A](effect: => A): IO[Nothing, A] = IO.sync(effect)
 
@@ -62,15 +64,15 @@ object BIO extends BIOSyntax {
 
     @inline override def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.syncThrowable(effect)
 
-    @inline override def fromEither[L, R](v: => Either[L, R]): IO[L, R] = IO.fromEither(v)
+    @inline override def fromEither[L, R](v: Either[L, R]): IO[L, R] = IO.fromEither(v)
 
-    @inline override def point[R](v: => R): IO[Nothing, R] = IO.succeed(v)
+    @inline override def point[R](v: => R): IO[Nothing, R] = IO.succeedLazy(v)
 
     @inline override def void[E, A](r: IO[E, A]): IO[E, Unit] = r.void
 
-    @inline override def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.die(v)
+    @inline override def terminate(v: Throwable): IO[Nothing, Nothing] = IO.die(v)
 
-    @inline override def fail[E](v: => E): IO[E, Nothing] = IO.fail(v)
+    @inline override def fail[E](v: E): IO[E, Nothing] = IO.fail(v)
 
     @inline override def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
 
@@ -96,9 +98,11 @@ object BIO extends BIOSyntax {
 
     @inline override def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.foreach(l)(f)
 
-    @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[Either[List[Throwable], E], A] => IO[Either[List[Throwable], E2], B]): IO[E2, B] = {
-      r.sandboxWith(r => f(r.mapError(toEither)).mapError(eitherToCause))
+    @inline override def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[BIOExit.Failure[E], A] => IO[BIOExit.Failure[E2], B]): IO[E2, B] = {
+      r.sandboxWith(r => f(r.mapError(toBIOExit[E])).mapError(failureToCause[E2]))
     }
+
+    @inline override def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(toBIOExit[E])
 
     @inline override def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
       IO.async[E, A] {
@@ -151,20 +155,13 @@ object BIO extends BIOSyntax {
       }
     }
 
-    @inline private[this] def toEither[E](result: Exit.Cause[E]): Either[List[Throwable], E] = {
-      toBIOExit(result) match {
-        case Error(error) => Right(error)
-        case Termination(_, exceptions) => Left(exceptions)
-      }
-    }
-
-    @inline private[this] def eitherToCause[E](errEither: Either[List[Throwable], E]): Exit.Cause[E] = {
+    @inline def failureToCause[E](errEither: BIOExit.Failure[E]): Exit.Cause[E] = {
       errEither match {
-        case Right(err) =>
+        case Error(err) =>
           Exit.Cause.Fail(err)
-        case Left(Nil) =>
+        case Termination(_, Nil) =>
           Exit.Cause.Die(new IllegalArgumentException(s"Unexpected empty cause list from sandboxWith: $errEither"))
-        case Left(exceptions) =>
+        case Termination(_, exceptions) =>
           exceptions.map {
             case _: InterruptedException => Exit.Cause.Interrupt
             case e => Exit.Cause.Die(e)

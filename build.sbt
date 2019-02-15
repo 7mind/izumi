@@ -1,4 +1,4 @@
-import com.github.pshirshov.izumi.sbt.deps.IzumiDeps._
+import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.{R, _}
 import com.github.pshirshov.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
 import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
 import com.typesafe.sbt.pgp.PgpSettings
@@ -377,7 +377,7 @@ lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
   .dependsOn(fundamentalsBio)
   .settings(
     libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
-    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+    libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
 lazy val idealinguaRuntimeRpcScalaJvm = idealinguaRuntimeRpcScala.jvm.remember
@@ -387,7 +387,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
-  .settings(libraryDependencies ++= (Seq(R.scalameta) ++ R.circe).map(_.cross(platformDepsCrossVersion.value)))
+  .settings(libraryDependencies ++= (R.scalameta +: R.circe).map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,
