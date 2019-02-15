@@ -39,7 +39,10 @@ object BIORunner {
     case class Custom(handler: BIOExit.Failure[Any] => IO[Nothing, Unit]) extends DefaultHandler
   }
 
-  class ZIORunner(env: Env) extends BIORunner[IO] {
+  class ZIORunner
+  (
+    val env: Env
+  ) extends BIORunner[IO] {
     override def unsafeRun[E, A](io: IO[E, A]): A = {
       env.unsafeRun(io)
     }
