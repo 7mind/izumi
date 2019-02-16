@@ -598,7 +598,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def renderServiceMethodAdtUsings(method: DefMethod)(implicit imports: CSharpImports, ts: Typespace): List[String] = method match {
     case m: DefMethod.RPCMethod => m.signature.output match {
       case al: Algebraic => al.alternatives.map(adtm => renderAdtUsings(adtm))
-      case at: Alternative => (outputToAdtMember(at.failure) ++ outputToAdtMember(at.success)).map(adtm => renderAdtUsings(adtm))
+//      case at: Alternative => (outputToAdtMember(at.failure) ++ outputToAdtMember(at.success)).map(adtm => renderAdtUsings(adtm))
       case _ => List.empty
     }
   }

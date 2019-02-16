@@ -202,9 +202,9 @@ class TypeScriptTypeConverter() {
     s"${deserializeName("this." + safeName(field.name), field.typeId)} = ${deserializeType(s"slice.${field.name}", field.typeId, ts)};"
   }
 
-  def serializeValue(name: String, id: TypeId, ts: Typespace, nonMember: Boolean = false): String = id match {
+  def serializeValue(name: String, id: TypeId, ts: Typespace, nonMember: Boolean = false, asAny: Boolean = false): String = id match {
     case p: Primitive => serializePrimitive(name, p, nonMember)
-    case _: Generic => serializeGeneric(name, id, ts)
+    case _: Generic => serializeGeneric(name, id, ts, asAny)
     case _ => serializeCustom(name, id, ts)
   }
 
@@ -230,15 +230,15 @@ class TypeScriptTypeConverter() {
     case Primitive.TTsU => if(nonMember) s"Formatter.writeUTCDateTime($name)" else s"${name}AsString";
   }
 
-  def serializeGeneric(name: String, id: TypeId, ts: Typespace): String = id match {
+  def serializeGeneric(name: String, id: TypeId, ts: Typespace, asAny: Boolean = false): String = id match {
     case m: Generic.TMap => s"Object.keys($name).reduce((previous, current) => {previous[current] = ${serializeValue(s"$name[current]", m.valueType, ts, nonMember = true)}; return previous; }, {})"
     case s: Generic.TSet => s.valueType match {
       case _: Primitive => s"$name.slice()"
-      case _ => s"$name.map(e => { return ${serializeValue("e", s.valueType, ts, nonMember = true)}; })"
+      case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", s.valueType, ts, nonMember = true)}; })"
     }
     case l: Generic.TList => l.valueType match {
       case _: Primitive => s"$name.slice()"
-      case _ => s"$name.map(e => { return ${serializeValue("e", l.valueType, ts, nonMember = true)}; })"
+      case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", l.valueType, ts, nonMember = true)}; })"
     }
     case o: Generic.TOption => s"typeof $name !== 'undefined' ? ${serializeValue(name, o.valueType, ts)} : undefined"
     case _ => s"$name: 'Error here! Not Implemented!'"
