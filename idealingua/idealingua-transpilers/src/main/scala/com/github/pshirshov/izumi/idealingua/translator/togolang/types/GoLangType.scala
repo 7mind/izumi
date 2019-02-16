@@ -195,10 +195,12 @@ final case class GoLangType (
          """.stripMargin
 
       case g: Generic => g match {
-        case _: Generic.TMap => "{Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TList => "{Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TMap"
-        case _: Generic.TSet => "{Not implemented renderUnmarshal.Generic.TMap"
+        case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TOption"
+        case _: Generic.TMap | _: Generic.TList | _: Generic.TSet =>
+          s"""$tempContent := &${renderType(forAlias = true)}{}
+             |${renderUnmarshalShared(content, tempContent, errorCheck = true)}
+             |$assignLeft*$tempContent$assignRight
+           """.stripMargin
       }
 
       case _ => throw new IDLException(s"Primitive types should not be unmarshalled manually ${id.name}")

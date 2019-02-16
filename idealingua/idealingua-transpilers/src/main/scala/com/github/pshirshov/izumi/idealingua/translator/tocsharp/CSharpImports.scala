@@ -113,7 +113,7 @@ object CSharpImports {
     // import so it can be distinctly used in the types reference
     packages.flatMap(pt =>
       if (pt._2.length == 1 || pt._2.head._1.isInstanceOf[Generic])
-        Seq(CSharpImport(pt._2.head._1, pt._2.head._2, ""))
+        Seq(CSharpImport(pt._2.head._1, pt._2.head._2, s""))
       else
         pt._2.zipWithIndex.map { case (pt2, index) =>
           CSharpImport(pt2._1, pt2._2, s"${pt2._1.name}_$index")
