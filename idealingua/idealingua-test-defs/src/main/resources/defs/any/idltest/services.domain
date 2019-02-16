@@ -100,7 +100,9 @@ service TestService {
    }
 */
    def alternative(firstName: str, secondName: str) => SuccessData !! ErrorData
-  // def alternativeSame(firstName: str, secondName: str) => SuccessData !! SuccessData
+   def alternativeSame(firstName: str, secondName: str) => SuccessData !! SuccessData
+   def alternativeGeneric() => list[SuccessData] !! list[ErrorData]
+
   // def voidAlternative(firstName: str, secondName: str) => () !! ()
 
 }

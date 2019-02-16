@@ -11,7 +11,12 @@ final case class JavaType(pkg: Package, name: String, parameters: Seq[String] = 
   }
 
   def withRoot: JavaType = {
-    JavaType("_root_" +: pkg, name, parameters)
+    if (pkg.nonEmpty) {
+      JavaType("_root_" +: pkg, name, parameters)
+    } else {
+      // TODO: this is just one more unsafe workaround
+      JavaType(Seq.empty, name, parameters)
+    }
   }
 
 
