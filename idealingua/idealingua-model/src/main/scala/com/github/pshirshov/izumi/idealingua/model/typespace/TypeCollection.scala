@@ -164,7 +164,7 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
         (Seq.empty, o.typeId)
       case o =>
         // TODO: this is untested an probably incorrect!
-        val res = outputEphemeral(serviceId, baseName, suffix, out)
+        val res = outputEphemeral(serviceId, baseName, suffix, o)
         (res, res.head.id)
     }
   }
