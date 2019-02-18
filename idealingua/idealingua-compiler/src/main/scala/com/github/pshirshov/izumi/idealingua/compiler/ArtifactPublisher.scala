@@ -112,29 +112,32 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
   }.toEither
 
   private def publishCsharp(targetDir: Path, creds: CsharpCredentials): Either[Throwable, Unit] = Try {
+    val nuspecDir = targetDir.resolve("nuspec")
+    val nuspecFile = nuspecDir.toFile
+
     log.log("Prepare to package C# sources")
 
     log.log("Preparing credentials")
     Process(
-      s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", targetDir.toFile
+      s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", nuspecFile
     ).#||("true").lineStream.foreach(log.log)
 
     Process(
-      s"nuget setapikey ${creds.nugetUser}:${creds.nugetPassword} -Source IzumiPublishSource", targetDir.toFile
+      s"nuget setapikey ${creds.nugetUser}:${creds.nugetPassword} -Source IzumiPublishSource", nuspecFile
     ).lineStream.foreach(log.log)
 
     log.log("Publishing")
-    Files.list(targetDir.resolve("nuspec")).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
+    Files.list(nuspecDir).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
       Try(
         Process(
-          s"nuget pack ${module.getFileName.toString}", targetDir.resolve("nuspec").toFile
+          s"nuget pack ${module.getFileName.toString}", nuspecFile
         ).lineStream.foreach(log.log)
       )
     }
 
-    IzFiles.walk(targetDir.resolve("nuspec").toFile).filter(_.getFileName.toString.endsWith(".nupkg")).foreach { pack =>
+    IzFiles.walk(nuspecFile).filter(_.getFileName.toString.endsWith(".nupkg")).foreach { pack =>
       Process(
-        s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", targetDir.resolve("nuspec").toFile
+        s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", nuspecFile
       ).lineStream.foreach(log.log)
     }
   }.toEither
