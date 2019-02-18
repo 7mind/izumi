@@ -73,6 +73,24 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
   private def publishTypescript(targetDir: Path, creds: TypescriptCredentials): Either[Throwable, Unit] = Try {
     log.log("Prepare to package Typescript sources")
 
+    val packagesDir = Files.list(targetDir.resolve("packages")).filter(_.toFile.isDirectory).iterator().asScala.toSeq.head
+    val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
+    val auth = Base64.getEncoder.encodeToString(s"${creds.npmUser}:${creds.npmPassword}".getBytes)
+
+    log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
+
+    Process(s"npm config set registry ${creds.npmRepo}", targetDir.toFile).lineStream.foreach(log.log)
+
+    Files.write(Paths.get(System.getProperty("user.home")).resolve(".npmrc"), Seq(
+      s"""
+         |_auth = $auth
+         |email = ${creds.npmEmail}
+         |always-auth = true
+      """.stripMargin
+    ).asJava)
+
+    log.log("Publishing NPM packages")
+
     log.log("Yarn installing")
     Process(
       "yarn install" ,
@@ -84,27 +102,6 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       "yarn build" ,
       targetDir.toFile
     ).lineStream.foreach(log.log)
-
-    log.log("Publishing NPM packages")
-    val packagesDir = Files.list(targetDir.resolve("packages")).filter(_.toFile.isDirectory).iterator().asScala.toSeq.head
-    val scope = packagesDir.getFileName
-
-    val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
-    val auth = Base64.getEncoder.encode(creds.npmPassword.getBytes)
-    val repoName = creds.npmRepo.replaceAll("http://", "").replaceAll("https://", "")
-    log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
-    Process(
-      s"npm config set registry ${creds.npmRepo}"
-    )
-    Files.write(Paths.get(System.getProperty("user.home")).resolve(".npmrc"), Seq(
-      s"""
-         |$scope:registry=${creds.npmRepo}
-         |//$repoName:_password=$auth
-         |//$repoName:username=${creds.npmUser}
-         |//$repoName:email=${creds.npmEmail}
-         |//$repoName:always-auth=true
-      """.stripMargin
-    ).asJava)
 
     Files.list(targetDir.resolve("dist")).filter(_.toFile.isDirectory).iterator().asScala.foreach { module =>
       val cmd = s"npm publish --force --registry ${creds.npmRepo} ${module.toAbsolutePath.toString}"
