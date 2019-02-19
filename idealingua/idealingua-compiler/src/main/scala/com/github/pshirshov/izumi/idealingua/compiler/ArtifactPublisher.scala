@@ -171,7 +171,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     Process(Seq("git", "config", "--global", "--replace-all", "core.sshCommand", s"ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no")).lineStream.foreach(println)
 
     Process(
-      s"""git config --global --list""", targetDir.toFile
+      "git config --global --list", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     Process(
@@ -210,7 +210,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       s"git tag -f v${manifest.common.version.toString}}", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
 
-    log.log(s"Git push")
+    log.log("Git push")
     Process(
       "git push --all -f", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
