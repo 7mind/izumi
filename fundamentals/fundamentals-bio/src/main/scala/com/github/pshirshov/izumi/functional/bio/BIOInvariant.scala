@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
+import scala.util.Try
+
 trait BIOInvariant[R[_, _]] {
   type Or[E, V] = R[E, V]
   type Just[V] = R[Nothing, V]
@@ -18,15 +20,15 @@ trait BIOInvariant[R[_, _]] {
 
   @inline def bimap[E, A, E2, B](r: R[E, A])(f: E => E2, g: A => B): R[E2, B]
 
-  @inline def fromEither[E, V](v: Either[E, V]): R[E, V]
+  @inline def fromEither[E, V](v: => Either[E, V]): R[E, V]
 
   @inline def sync[A](effect: => A): R[Nothing, A]
 
   @inline def point[V](v: => V): R[Nothing, V]
 
-  @inline def fail[E](v: E): R[E, Nothing]
+  @inline def fail[E](v: => E): R[E, Nothing]
 
-  @inline def terminate(v: Throwable): R[Nothing, Nothing]
+  @inline def terminate(v: => Throwable): R[Nothing, Nothing]
 
   @inline def now[A](a: A): R[Nothing, A]
 
@@ -52,7 +54,9 @@ trait BIOInvariant[R[_, _]] {
 
   @inline final def sequence_[E](l: Iterable[R[E, Unit]]): R[E, Unit] = void(traverse(l)(identity))
 
-  @inline final def fromOption[E, A](errorOnNone: E)(option: Option[A]): R[E, A] = fromEither(option.toRight(errorOnNone))
+  @inline final def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): R[E, A] = flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
+
+  @inline final def fromTry[A](effect: => Try[A]): R[Throwable, A] = syncThrowable(effect.get)
 }
 
 object BIOInvariant {
