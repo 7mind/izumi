@@ -51,6 +51,8 @@ trait BIOInvariant[R[_, _]] {
   @inline final def sequence[E, A, B](l: Iterable[R[E, A]]): R[E, List[A]] = traverse(l)(identity)
 
   @inline final def sequence_[E](l: Iterable[R[E, Unit]]): R[E, Unit] = void(traverse(l)(identity))
+
+  @inline final def fromOption[E, A](errorOnNone: E)(option: Option[A]): R[E, A] = fromEither(option.toRight(errorOnNone))
 }
 
 object BIOInvariant {
