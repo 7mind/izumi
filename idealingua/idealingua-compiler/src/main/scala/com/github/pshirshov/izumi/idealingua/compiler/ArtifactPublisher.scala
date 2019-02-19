@@ -2,14 +2,13 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
 import java.time.ZonedDateTime
-import java.util.Base64
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
 
-import scala.sys.process.Process
+import scala.sys.process._
 import scala.util.Try
 import scala.collection.JavaConverters._
 
@@ -75,31 +74,33 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
 
     val packagesDir = Files.list(targetDir.resolve("packages")).filter(_.toFile.isDirectory).iterator().asScala.toSeq.head
     val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
-    val auth = Base64.getEncoder.encodeToString(s"${creds.npmUser}:${creds.npmPassword}".getBytes)
+    val repoName = creds.npmRepo.replaceAll("http://", "").replaceAll("https://", "")
+    val scope = packagesDir.getFileName
 
     log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
 
-    Process(s"npm config set registry ${creds.npmRepo}", targetDir.toFile).lineStream.foreach(log.log)
+    val scriptLines =
+      List(
+        Seq("echo", "Setting NPM registry for scope $scope to $repoName using _auth method..."),
+        Seq("npm", "config", "set", s"$scope:registry", s"${creds.npmRepo}"),
+        Seq("npm", "config", "set", s"//$repoName:email", s"${creds.npmEmail}"),
+        Seq("npm", "config", "set", s"//$repoName:always-auth", "true"),
+        Seq("npm", "config", "set", s"//$repoName:_auth", (Seq("echo", "-n", s"${creds.npmUser}:${creds.npmPassword}") #| Seq("openssl", "base64")).!!),
+      )
 
-    Files.write(Paths.get(System.getProperty("user.home")).resolve(".npmrc"), Seq(
-      s"""
-         |_auth = $auth
-         |email = ${creds.npmEmail}
-         |always-auth = true
-      """.stripMargin
-    ).asJava)
+    scriptLines.foreach(s => Process(s, targetDir.toFile).lineStream.foreach(log.log))
 
     log.log("Publishing NPM packages")
 
     log.log("Yarn installing")
     Process(
-      "yarn install" ,
+      "yarn install",
       targetDir.toFile
     ).lineStream.foreach(log.log)
 
     log.log("Yarn building")
     Process(
-      "yarn build" ,
+      "yarn build",
       targetDir.toFile
     ).lineStream.foreach(log.log)
 
@@ -175,7 +176,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     ).lineStream.foreach(log.log)
 
     Process(
-      s"git clone ${creds.gitRepoUrl}",targetDir.toFile
+      s"git clone ${creds.gitRepoUrl}", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     Files.list(targetDir.resolve(creds.gitRepoName)).iterator().asScala
