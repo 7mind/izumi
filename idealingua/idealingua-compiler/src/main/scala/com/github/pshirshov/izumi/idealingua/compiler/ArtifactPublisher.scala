@@ -166,14 +166,12 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     val pubKey = targetDir.resolve("go-key.pub")
     Files.write(pubKey, Seq(creds.gitPubKey).asJava)
 
+    Process(Seq("git", "config", "--global", "--replace-all", "user.name", creds.gitUser)).lineStream.foreach(log.log)
+    Process(Seq("git", "config", "--global", "--replace-all", "user.email", creds.gitEmail)).lineStream.foreach(println)
+    Process(Seq("git", "config", "--global", "--replace-all", "core.sshCommand", s"ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no")).lineStream.foreach(println)
+
     Process(
-      s"""git config --global core.sshCommand "ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" """
-    ).lineStream.foreach(log.log)
-    Process(
-      s"""git config --global user.name "${creds.gitUser}""""
-    ).lineStream.foreach(log.log)
-    Process(
-      s"""git config --global user.email "${creds.gitEmail}""""
+      s"""git config --global --list""", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     Process(
@@ -201,12 +199,18 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     Process(
       "git add .", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log(s"Git commit: 'golang-api-update,version=${manifest.common.version}'")
     Process(
-      s"""git commit --no-edit -am "golang-api-update,version=${manifest.common.version}"""", targetDir.resolve(creds.gitRepoName).toFile
+      s"""git commit --no-edit -am 'golang-api-update,version=${manifest.common.version}'""", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log(s"Setting git tag: v${manifest.common.version.toString}")
     Process(
       s"git tag -f v${manifest.common.version.toString}}", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log(s"Git push")
     Process(
       "git push --all -f", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
