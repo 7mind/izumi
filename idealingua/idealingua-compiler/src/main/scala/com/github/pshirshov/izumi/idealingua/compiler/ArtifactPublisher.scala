@@ -85,7 +85,8 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
         Seq("npm", "config", "set", s"$scope:registry", s"${creds.npmRepo}"),
         Seq("npm", "config", "set", s"//$repoName:email", s"${creds.npmEmail}"),
         Seq("npm", "config", "set", s"//$repoName:always-auth", "true"),
-        Seq("npm", "config", "set", s"//$repoName:_auth", (Seq("echo", "-n", s"${creds.npmUser}:${creds.npmPassword}") #| Seq("openssl", "base64")).!!),
+        Seq("npm", "config", "set", s"//$repoName:username", s"${creds.npmUser}"),
+        Seq("npm", "config", "set", s"//$repoName:_password", (Seq("echo", "-n", s"${creds.npmPassword}") #| Seq("openssl", "base64")).!!),
       )
 
     scriptLines.foreach(s => Process(s, targetDir.toFile).lineStream.foreach(log.log))
