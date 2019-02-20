@@ -88,12 +88,12 @@ object StaticPluginCheckerMacro {
       None
     } else {
       val scanResult = new ClassGraph().scan()
-      val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
       val configUrls = try {
-        resourceList.getURLs.asScala.toList
-      } finally {
-        resourceList.close()
-      }
+        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+        try {
+          resourceList.getURLs.asScala.toList
+        } finally resourceList.close()
+      } finally scanResult.close()
 
       val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
 

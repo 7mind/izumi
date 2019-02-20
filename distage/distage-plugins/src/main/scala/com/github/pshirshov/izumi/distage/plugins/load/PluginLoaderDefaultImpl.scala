@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.plugins.load
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
+import distage.plugins.PluginConfig
 import io.github.classgraph.{ClassGraph, ClassInfo}
 
 import scala.collection.JavaConverters._
@@ -12,7 +13,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
     val base = classOf[PluginBase]
     val defClass = classOf[PluginDef]
     // Add package with PluginDef & PluginBase so that classgraph will resolve them
-    val config = pluginConfig.copy(packagesEnabled =  base.getPackage.getName +: defClass.getPackage.getName +: pluginConfig.packagesEnabled)
+    val config = pluginConfig.copy(packagesEnabled = base.getPackage.getName +: defClass.getPackage.getName +: pluginConfig.packagesEnabled)
 
     val enabledPackages = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
     val disabledPackages = config.packagesDisabled
@@ -26,17 +27,21 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
       .map(_.scan())
       .get
 
-    val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
-    val plugins = implementors.filter {
-      case classInfo: ClassInfo =>
-        classInfo.getConstructorInfo.asScala.exists(_.getParameterInfo.isEmpty)
+    try {
+      val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
+      val plugins = implementors.filter {
+        case classInfo: ClassInfo =>
+          classInfo.getConstructorInfo.asScala.exists(_.getParameterInfo.isEmpty)
+      }
+
+      val pluginClasses = plugins.loadClasses(base).asScala
+
+      pluginClasses
+        .map(_.getDeclaredConstructor().newInstance())
+        .toSeq // 2.13 compat
+    } finally {
+      scanResult.close()
     }
-
-    val pluginClasses = plugins.loadClasses(base).asScala
-
-    pluginClasses
-      .map(_.getDeclaredConstructor().newInstance())
-      .toSeq // 2.13 compat
   }
 }
 
