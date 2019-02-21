@@ -14,9 +14,9 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def point[V](v: => V): R[Nothing, V]
 
-  @inline override def fail[E](v: E): R[E, Nothing]
+  @inline override def fail[E](v: => E): R[E, Nothing]
 
-  @inline override def terminate(v: Throwable): R[Nothing, Nothing]
+  @inline override def terminate(v: => Throwable): R[Nothing, Nothing]
 
   @inline override def redeem[E, A, E2, B](r: R[E, A])(err: E => R[E2, B], succ: A => R[E2, B]): R[E2, B]
 
@@ -36,7 +36,7 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def bimap[E, A, E2, B](r: R[E, A])(f: E => E2, g: A => B): R[E2, B]
 
-  @inline override def fromEither[E, V](v: Either[E, V]): R[E, V]
+  @inline override def fromEither[E, V](effect: => Either[E, V]): R[E, V]
 
   @inline override def bracket[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
@@ -64,15 +64,15 @@ object BIO extends BIOSyntax {
 
     @inline override def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.syncThrowable(effect)
 
-    @inline override def fromEither[L, R](v: Either[L, R]): IO[L, R] = IO.fromEither(v)
+    @inline override def fromEither[L, R](v: => Either[L, R]): IO[L, R] = IO.sync(v).flatMap(IO.fromEither)
 
     @inline override def point[R](v: => R): IO[Nothing, R] = IO.succeedLazy(v)
 
     @inline override def void[E, A](r: IO[E, A]): IO[E, Unit] = r.void
 
-    @inline override def terminate(v: Throwable): IO[Nothing, Nothing] = IO.die(v)
+    @inline override def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.sync(v).flatMap(IO.die)
 
-    @inline override def fail[E](v: E): IO[E, Nothing] = IO.fail(v)
+    @inline override def fail[E](v: => E): IO[E, Nothing] = IO.sync(v).flatMap(IO.fail)
 
     @inline override def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
 
