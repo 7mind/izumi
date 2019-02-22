@@ -81,7 +81,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
 
     val scriptLines =
       List(
-        Seq("echo", "Setting NPM registry for scope $scope to $repoName using _auth method..."),
+        Seq("echo", s"Setting NPM registry for scope $scope to $repoName using user & _password method..."),
         Seq("npm", "config", "set", s"$scope:registry", s"${creds.npmRepo}"),
         Seq("npm", "config", "set", s"//$repoName:email", s"${creds.npmEmail}"),
         Seq("npm", "config", "set", s"//$repoName:always-auth", "true"),
@@ -209,7 +209,7 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
 
     log.log(s"Setting git tag: v${manifest.common.version.toString}")
     Process(
-      s"git tag -f v${manifest.common.version.toString}}", targetDir.resolve(creds.gitRepoName).toFile
+      s"git tag -f v${manifest.common.version.toString}", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
 
     log.log("Git push")
