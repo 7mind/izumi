@@ -8,8 +8,8 @@ trait BuildManifest {
 
 case class ProjectVersion(version: String, release: Boolean, snapshotQualifier: String) {
   override def toString: String = {
-    val snapshot = if (release) "" else snapshotQualifier
-    s"$version-$snapshot"
+    val snapshot = if (release) "" else s"-$snapshotQualifier"
+    s"$version$snapshot"
   }
 }
 
