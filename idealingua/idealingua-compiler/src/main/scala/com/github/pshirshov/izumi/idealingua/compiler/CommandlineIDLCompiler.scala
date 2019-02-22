@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
+import java.time.{ZoneId, ZonedDateTime}
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -229,7 +230,9 @@ object CommandlineIDLCompiler {
       parsed <- parse(IzFiles.readString(path.toFile))
       decoded <- parsed.as[VersionOverlay]
     } yield {
-      val qualifier = decoded.snapshotQualifiers.getOrElse(lang.toString.toLowerCase, "UNSET")
+      val defQualifier = decoded.snapshotQualifiers.getOrElse(lang.toString.toLowerCase, "UNSET")
+      val timestamp = ZonedDateTime.now(ZoneId.of("UTC")).toEpochSecond
+      val qualifier = if (lang == IDLLanguage.Typescript) s"$defQualifier-$timestamp" else defQualifier
       val version = ProjectVersion(decoded.version, decoded.release, qualifier)
       json"""{"common": {"version": $version}}"""
     }
