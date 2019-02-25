@@ -36,6 +36,7 @@ trait Toposort {
         done
       } else { // circular dependency
         val loopMembers = hasPreds.filterKeys(isInvolvedIntoCycle(hasPreds))
+        assert(loopMembers.nonEmpty, s"Cannot progress, loop members not detected (outer reference?): $hasPreds")
         val breakLoopAt = break(loopMembers.keySet)
         val found = Set(breakLoopAt)
         val next = hasPreds.filterKeys(k => k != breakLoopAt).mapValues(_ -- found).toMap

@@ -11,12 +11,23 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshLoaded, DomainMeshResolved, SingleImport}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2
 
 import scala.reflect._
 
 
 class IDLTyper(defn: DomainMeshResolved) {
   def perform(): Either[IDLDiagnostics, typed.DomainDefinition] = {
+    try {
+      val t2 = new Typer2(defn)
+      t2.run()
+    } catch {
+      case t: Throwable =>
+        import IzThrowable._
+        //System.out.println(s"Typer2 failed on ${defn.id}: ${t.stackTrace}")
+        System.out.println(s"Typer2 failed on ${defn.id}:\n >> ${t.getMessage}")
+    }
+
     try {
       Right(new IDLPostTyper(new IDLPretyper(defn).perform()).perform())
     } catch {
