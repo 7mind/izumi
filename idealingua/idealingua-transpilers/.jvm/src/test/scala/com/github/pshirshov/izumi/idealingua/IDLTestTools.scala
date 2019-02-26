@@ -67,7 +67,7 @@ object IDLTestTools {
 
   def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
-    val resolved = resolver.resolve(loaded).ifWarnings(w => System.err.println(w)).throwIfFailed()
+    val resolved = resolver.resolve(loaded, runt2 = true).ifWarnings(w => System.err.println(w)).throwIfFailed()
 
     val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
     val good = resolved.successful.map(_.path).toSet

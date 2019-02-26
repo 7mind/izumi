@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.idealingua.il.loader.verification.DuplicateDomainsRule
 import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
@@ -9,11 +10,12 @@ import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
 import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.VerificationException
 import com.github.pshirshov.izumi.idealingua.model.typespace.verification.{TypespaceVerifier, VerificationRule}
 import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2
 
 
 class ModelResolver(rules: Seq[VerificationRule]) {
 
-  def resolve(domains: UnresolvedDomains): LoadedModels = {
+  def resolve(domains: UnresolvedDomains, runt2: Boolean): LoadedModels = {
     val globalChecks = Seq(
       DuplicateDomainsRule
     )
@@ -21,6 +23,25 @@ class ModelResolver(rules: Seq[VerificationRule]) {
 
     val typed = domains.domains.results
       .map(importResolver.resolveReferences)
+      .map {
+        m =>
+          if (runt2) {
+            m.foreach {
+              defn =>
+                try {
+                  val t2 = new Typer2(defn)
+                  t2.run()
+                } catch {
+                  case t: Throwable =>
+                    import IzThrowable._
+                    //System.out.println(s"Typer2 failed on ${defn.id}: ${t.stackTrace}")
+                    System.out.println(s"Typer2 failed on ${defn.id}:\n >> ${t.getMessage}")
+                }
+            }
+          }
+
+          m
+      }
       .map(makeTyped)
 
     val result = LoadedModels(typed, IDLDiagnostics.empty)

@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
+import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzName, IzNamespace, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.IzTypeArgName
 
 sealed trait TypePrefix
 
@@ -99,8 +101,29 @@ object IzType {
 //  case class PartiallyAppliedGeneric(id: IzTypeId, args: Seq[IzTypeArg], free: Seq[IzTypeArgName]) extends IzType
 //
 //  // impl
-  case class IzTypeArgName(name: String)
-  case class IzTypeArgValue(name: IzType)
-  case class IzTypeArg(name: IzTypeArgName, value: IzTypeArgValue)
+  case class NodeMeta(doc: Option[String], annos: Seq[Nothing], pos: InputPosition)
+
+  case class FName(name: String)
+
+  case class Field2(name: FName, tpe: IzTypeReference, defined: Seq[IzTypeId], meta: NodeMeta) {
+    def basic: Basic = Basic(name, tpe)
+  }
+  case class Basic(name: FName, ref: IzTypeReference)
+
+  case class IzAlias(id: IzTypeId, source: IzTypeId, meta: NodeMeta) extends IzType
+
+  sealed trait IzStructure extends IzType {
+    def id: IzTypeId
+    def fields: Seq[Field2]
+    def parents: Seq[IzTypeId]
+    def meta: NodeMeta
+  }
+  case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
+  case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
 
 }
+
+
+
+
+

@@ -53,7 +53,7 @@ class LoaderTest extends WordSpec {
         })
         val unresolved = new ModelLoaderImpl(enumerator, loader.parser, loader.modelExt, loader.domainExt, loader.overlayExt).load()
 
-        val typespaces = resolver.resolve(unresolved).throwIfFailed().successful
+        val typespaces = resolver.resolve(unresolved, runt2 = false).throwIfFailed().successful
         val restoredTypespace = typespaces.find(_.typespace.domain.id == domainId).get.typespace
 
         // TODO: custom equality check ignoring meta
