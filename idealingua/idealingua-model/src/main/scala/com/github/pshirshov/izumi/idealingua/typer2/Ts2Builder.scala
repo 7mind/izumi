@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId, StructureId, TypeId}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawStructure, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.typer2.IzType._
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
@@ -51,24 +52,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     existing.toSet
   }
 
-
-  def own(id: IzTypeId): Boolean = {
-    id match {
-      case IzTypeId.BuiltinType(_) =>
-        false
-      case IzTypeId.UserType(prefix, name) =>
-        prefix == thisPrefix
-    }
-  }
-
-  def makeP(member: TsMember.UserType): ProcessedOp = {
-    if (own(member.tpe.id)) {
-      ProcessedOp.Exported(member)
-    } else {
-      ProcessedOp.Imported(member)
-    }
-  }
-
   def add(ops: Identified): Unit = {
     ops.defns match {
       case defns if defns.isEmpty =>
@@ -81,40 +64,42 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           importedIndexes(single.source)
         }
         val interpreter = new Interpreter(dindex, types.toMap)
-        single.defn match {
+
+        val product = single.defn match {
           case RawTopLevelDefn.TLDBaseType(v) =>
             v match {
               case i: RawTypeDef.Interface =>
-                val product = interpreter.makeInterface(i)
-                register(product)
+                interpreter.makeInterface(i)
 
               case d: RawTypeDef.DTO =>
-                val product = interpreter.makeDto(d)
-                register(product)
+                interpreter.makeDto(d)
 
               case a: RawTypeDef.Alias =>
-                val product = interpreter.makeAlias(a)
-                register(product)
+                interpreter.makeAlias(a)
 
-              case RawTypeDef.Enumeration(id, struct, meta) =>
-              case RawTypeDef.Identifier(id, fields, meta) =>
-              case RawTypeDef.Adt(id, alternatives, meta) =>
+              case e: RawTypeDef.Enumeration =>
+                interpreter.makeEnum(e)
+
+              case i: RawTypeDef.Identifier =>
+                interpreter.makeIdentifier(i)
+              case a: RawTypeDef.Adt =>
+                interpreter.makeAdt(a)
             }
 
-          case RawTopLevelDefn.TLDNewtype(v) =>
-          case RawTopLevelDefn.TLDDeclared(v) =>
+          case c: RawTopLevelDefn.TLDNewtype =>
+            interpreter.cloneType(c.v)
+
           case RawTopLevelDefn.TLDForeignType(v) =>
+            interpreter.makeForeign(v)
+
+          case RawTopLevelDefn.TLDDeclared(v) =>
+            Left(List(SingleDeclaredType(v)))
         }
+        register(ops, product)
 
       case o =>
-        println("Unhandled case")
+        println(s"Unhandled case: ${o.size} defs")
     }
-    existing.add(ops.id)
-  }
-
-  private def register(product: IzType): Option[ProcessedOp] = {
-    val member = TsMember.UserType(product, List.empty)
-    types.put(product.id, makeP(member))
   }
 
   def fail(ops: Identified, failures: List[InterpretationFail]): Unit = {
@@ -140,25 +125,65 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
+  private def register(ops: Identified, product: Either[List[InterpretationFail], IzType]): Unit = {
+    product match {
+      case Left(value) =>
+        fail(ops, value)
 
+      case Right(value) =>
+        val member = TsMember.UserType(value, List.empty)
+        types.put(value.id, makeMember(member))
+        existing.add(ops.id).discard()
+    }
+  }
+
+  private def isOwn(id: IzTypeId): Boolean = {
+    id match {
+      case IzTypeId.BuiltinType(_) =>
+        false
+      case IzTypeId.UserType(prefix, _) =>
+        prefix == thisPrefix
+    }
+  }
+
+  private def makeMember(member: TsMember.UserType): ProcessedOp = {
+    if (isOwn(member.tpe.id)) {
+      ProcessedOp.Exported(member)
+    } else {
+      ProcessedOp.Imported(member)
+    }
+  }
 }
 
 class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private val index: DomainIndex = _index
 
-  def makeInterface(i: RawTypeDef.Interface): IzType.Interface = {
+  def makeForeign(v: RawTypeDef.ForeignType): Either[List[InterpretationFail], IzType] = ???
+
+  def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = ???
+
+  def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = ???
+
+  def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = ???
+
+  def makeEnum(e: RawTypeDef.Enumeration): Either[List[InterpretationFail], IzType] = ???
+
+
+  def makeInterface(i: RawTypeDef.Interface): Either[List[InterpretationFail], IzType.Interface] = {
     val struct = i.struct
     val id = toId(i.id)
-    make[IzType.Interface](struct, id, i.meta)
+    Right(make[IzType.Interface](struct, id, i.meta))
   }
 
-  def makeDto(i: RawTypeDef.DTO): IzType.DTO = {
+  def makeDto(i: RawTypeDef.DTO): Either[List[InterpretationFail], IzType.DTO] = {
     val struct = i.struct
     val id = toId(i.id)
-    make[IzType.DTO](struct, id, i.meta)
+    Right(make[IzType.DTO](struct, id, i.meta))
   }
 
-  def makeAlias(a: RawTypeDef.Alias): IzType = IzAlias(toId(a.id), resolve(a.target), meta(a.meta))
+  def makeAlias(a: RawTypeDef.Alias): Either[List[InterpretationFail], IzType.IzAlias] = {
+    Right(IzAlias(toId(a.id), resolve(a.target), meta(a.meta)))
+  }
 
 
   private def resolve(id: AbstractIndefiniteId): IzTypeId = {
@@ -240,7 +265,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }
   }
 
-  private def meta(meta: RawNodeMeta) = {
+  private def meta(meta: RawNodeMeta): NodeMeta = {
     IzType.NodeMeta(meta.doc, Seq.empty, meta.position)
   }
 }
