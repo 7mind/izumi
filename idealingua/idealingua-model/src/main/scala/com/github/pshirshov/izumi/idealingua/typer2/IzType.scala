@@ -2,44 +2,16 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzName, IzNamespace, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.IzTypeArgName
 
 import scala.language.implicitConversions
 
-sealed trait TypePrefix
-
-object TypePrefix {
-  case class UserTLT(location: IzPackage) extends TypePrefix
-  case class UserT(location: IzPackage, subpath: Seq[IzNamespace]) extends TypePrefix
-}
-
-sealed trait IzTypeId {
-  import IzTypeId._
-  def name: IzName
-}
-
-object IzTypeId {
-  final case class BuiltinType(name: IzName) extends IzTypeId
-  final case class UserType(prefix: TypePrefix, name: IzName) extends IzTypeId
-
-
-  // impl
-  case class IzDomainPath(name: String)
-  case class IzNamespace(name: String)
-
-  case class IzName(name: String)
-
-  case class IzPackage(path: Seq[IzDomainPath])
-}
 
 sealed trait IzType {
   def id: IzTypeId
 }
 
-object IzNameTools {
-  implicit def convert(name: String): IzName  = IzName(name)
-}
 
 object IzType {
   sealed trait Generic extends IzType {
@@ -51,16 +23,13 @@ object IzType {
     def id: IzTypeId.BuiltinType
   }
 
-
-
   sealed class BuiltinGeneric(val args: Seq[IzTypeArgName], val names: IzName*) extends Generic with BuiltinType {
     def id: IzTypeId.BuiltinType = IzTypeId.BuiltinType(names.head)
   }
 
-
   sealed class BuiltinScalar(val names: IzName*) extends BuiltinType {
      def id: IzTypeId.BuiltinType = IzTypeId.BuiltinType(names.head)
-   }
+  }
 
   object BuiltinScalar {
     import IzNameTools._
@@ -94,16 +63,6 @@ object IzType {
     final case object TMap extends BuiltinGeneric(Seq(IzTypeArgName("K"), IzTypeArgName("V")), "map", "dict")
   }
 
-//  case object Dummy extends IzType
-//
-//  case class Scalar(id: IzTypeId) extends IzType
-//
-//
-//  case class AppliedGeneric(id: IzTypeId, args: Seq[IzTypeArg]) extends IzType
-//
-//  case class PartiallyAppliedGeneric(id: IzTypeId, args: Seq[IzTypeArg], free: Seq[IzTypeArgName]) extends IzType
-//
-//  // impl
   case class NodeMeta(doc: Option[String], annos: Seq[Nothing], pos: InputPosition)
 
   case class FName(name: String)
@@ -140,8 +99,6 @@ object IzType {
   case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
   case class AdtMemberNested(name: String, tpe: IzType, meta: NodeMeta) extends AdtMember
   case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta) extends IzType
-
-  //case class TODO(id: IzTypeId) extends IzType
 }
 
 

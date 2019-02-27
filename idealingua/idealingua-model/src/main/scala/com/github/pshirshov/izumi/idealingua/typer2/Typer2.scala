@@ -19,7 +19,8 @@ class Typer2(defn: DomainMeshResolved) {
     val r = run1()
     r match {
       case Left(value) =>
-        println(s"  ... failed")
+        import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+        println(s"  ... failed: ${value}")
 
       case Right(value) =>
         val types = value.types.collect({case t: TsMember.UserType => t}).size

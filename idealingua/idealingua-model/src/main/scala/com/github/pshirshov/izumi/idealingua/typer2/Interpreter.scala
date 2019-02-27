@@ -31,7 +31,11 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = {
-    val id = toId(a.id)
+    makeAdt(a, Seq.empty)
+  }
+
+  private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType] = {
+    val id = toId(a.id, subpath)
     val members = a.alternatives.map {
       case Member.TypeRef(typeId, memberName, m) =>
         val tpe = resolve(typeId)
@@ -50,17 +54,17 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
       case Member.NestedDefn(nested) =>
         val tpe = nested match {
           case n: RawTypeDef.Interface =>
-            makeInterface(n)
+             makeInterface(n, subpath)
           case n: RawTypeDef.DTO =>
-            makeDto(n)
+            makeDto(n, subpath)
           case n: RawTypeDef.Enumeration =>
-            makeEnum(n)
+            makeEnum(n, subpath)
           case n: RawTypeDef.Alias =>
-            makeAlias(n)
+            makeAlias(n, subpath)
           case n: RawTypeDef.Identifier =>
-            makeIdentifier(n)
+            makeIdentifier(n, subpath)
           case n: RawTypeDef.Adt =>
-            makeAdt(n)
+            makeAdt(n, subpath :+ IzNamespace(n.id.name))
         }
         tpe match {
           case Left(_) =>
@@ -137,7 +141,11 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
 
   def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = {
-    val id = toId(i.id)
+    makeIdentifier(i, Seq.empty)
+  }
+
+  private def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType] = {
+    val id = toId(i.id, subpath)
 
     val fields = i.fields.map {
       f =>
@@ -147,8 +155,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   def makeEnum(e: RawTypeDef.Enumeration): Either[List[InterpretationFail], IzType.Enum] = {
-    val id = toId(e.id)
-    val parents = e.struct.parents.map(toId).map(types.apply).map(_.member)
+    makeEnum(e, Seq.empty)
+  }
+
+  private def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.Enum] = {
+    val id = toId(e.id, subpath)
+    val parents = e.struct.parents.map(toTopId).map(types.apply).map(_.member)
     val parentMembers = parents.flatMap(enumMembers)
     val localMembers = e.struct.members.map {
       m =>
@@ -162,19 +174,29 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
 
   def makeInterface(i: RawTypeDef.Interface): Either[List[InterpretationFail], IzType.Interface] = {
+    makeInterface(i, Seq.empty)
+  }
+  private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.Interface] = {
     val struct = i.struct
-    val id = toId(i.id)
+    val id = toId(i.id, subpath)
     Right(make[IzType.Interface](struct, id, i.meta))
   }
 
   def makeDto(i: RawTypeDef.DTO): Either[List[InterpretationFail], IzType.DTO] = {
+    makeDto(i, Seq.empty)
+  }
+  private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.DTO] = {
     val struct = i.struct
-    val id = toId(i.id)
+    val id = toId(i.id, subpath)
     Right(make[IzType.DTO](struct, id, i.meta))
   }
 
+
   def makeAlias(a: RawTypeDef.Alias): Either[List[InterpretationFail], IzType.IzAlias] = {
-    Right(IzAlias(toId(a.id), resolve(a.target), meta(a.meta)))
+    makeAlias(a, Seq.empty)
+  }
+  private def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.IzAlias] = {
+    Right(IzAlias(toId(a.id, subpath), resolve(a.target), meta(a.meta)))
   }
 
   private def resolveId(id: ParsedId): IzTypeId = {
@@ -207,8 +229,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     IzPackage(unresolved.pkg.map(IzDomainPath))
   }
 
-  private def toId(id: TypeId): IzTypeId = {
-    val namespace = id.path.within.map(IzNamespace)
+  private def toTopId(id: TypeId): IzTypeId = {
+    toId(id, Seq.empty)
+  }
+  private def toId(id: TypeId, subpath: Seq[IzNamespace]): IzTypeId = {
+    assert(id.path.within.isEmpty)
+    val namespace = subpath
     val unresolvedName = index.makeAbstract(id)
     toId(namespace, unresolvedName)
   }
@@ -224,7 +250,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): T = {
-    val parentsIds = struct.interfaces.map(toId)
+    val parentsIds = struct.interfaces.map(toTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
     val `+concepts` = struct.concepts.map(resolveId).map(types.apply).map(_.member)
     val `-concepts` = struct.removedConcepts.map(resolveId).map(types.apply).map(_.member)

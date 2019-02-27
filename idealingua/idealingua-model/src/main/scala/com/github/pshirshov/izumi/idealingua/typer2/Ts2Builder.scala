@@ -53,8 +53,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   def add(ops: Identified): Unit = {
     ops.defns match {
       case defns if defns.isEmpty =>
-      // type requires no ops => builtin
-
+        // type requires no ops => builtin
+        existing.add(ops.id)
+        
       case single :: Nil =>
         val dindex = if (single.source == index.defn.id) {
           index
