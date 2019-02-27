@@ -237,3 +237,41 @@ service OptionalService {
   def optionalMethod(a: opt[NestedGenerics2], b: opt[i32], c: opt[NestedClass]) => i32
 }
 
+id ImportAppId {
+    id: uid
+}
+
+
+
+// generic failure
+data OffsetLimit {
+    offset: i32
+    limit: i16
+}
+
+enum GenericFailureCode {
+    EntityNotFound
+    EntityAlreadyExists
+    ExpirationFailure
+    ConditionNotMet
+    AccessDenied
+    AssertionFailed
+    UnexpectedException
+    CodecFailed
+    Unknown
+}
+
+mixin GenericFailureData {
+    message: str
+    diagnostics: opt[str]
+
+    /* This should not be used normally.
+    Only in case when we need to pass some additional data in a minor release keeping compatibility
+    */
+    reserved: map[str, str]
+}
+
+data GenericFailure {
+    + GenericFailureData
+    code: GenericFailureCode
+}

@@ -153,7 +153,7 @@ final case class GoLangType (
           case _: Primitive => id.name
           case _: EnumId => id.name
           case _: InterfaceId => s"${im.withImport(id)}${id.name}"
-          case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(al)}${al.name}"
+          case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
           case _ => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         }
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
@@ -181,7 +181,7 @@ final case class GoLangType (
            |if err := json.Unmarshal($content, &rawMap${content.capitalize}); err != nil {
            |    return err
            |}
-           |$tempContent, err := Create${id.name}(rawMap${content.capitalize})
+           |$tempContent, err := ${im.withImport(id)}Create${id.name}(rawMap${content.capitalize})
            |if err != nil {
            |    return err
            |}
