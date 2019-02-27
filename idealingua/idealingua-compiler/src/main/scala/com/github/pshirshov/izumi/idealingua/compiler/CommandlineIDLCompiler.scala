@@ -194,12 +194,12 @@ object CommandlineIDLCompiler {
   private def readManifest(conf: IDLCArgs, env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage): BuildManifest = {
     val default = Paths.get("version.json")
 
-    val overlay = conf.versionOverlay.map(loadVersionOverlay(lang)) match {
+    val overlay = conf.versionOverlay.map(loadVersionOverlay(lang, lopt)) match {
       case Some(value) =>
         Some(value)
       case None if default.toFile.exists() =>
         log.log(s"Found $default, using as version overlay for $lang...")
-        Some(loadVersionOverlay(lang)(default))
+        Some(loadVersionOverlay(lang, lopt)(default))
       case None =>
         None
     }
@@ -223,16 +223,14 @@ object CommandlineIDLCompiler {
     manifest
   }
 
-  private def loadVersionOverlay(lang: IDLLanguage)(path: Path): Either[circe.Error, Json] = {
+  private def loadVersionOverlay(lang: IDLLanguage, lopt: LanguageOpts)(path: Path): Either[circe.Error, Json] = {
     import io.circe.literal._
 
     for {
       parsed <- parse(IzFiles.readString(path.toFile))
       decoded <- parsed.as[VersionOverlay]
     } yield {
-      val defQualifier = decoded.snapshotQualifiers.getOrElse(lang.toString.toLowerCase, "UNSET")
-      val timestamp = ZonedDateTime.now(ZoneId.of("UTC")).toEpochSecond
-      val qualifier = if (lang == IDLLanguage.Typescript) s"$defQualifier-$timestamp" else defQualifier
+      val qualifier = lopt.qualifierOverride.getOrElse(decoded.snapshotQualifiers.getOrElse(lang.toString.toLowerCase, "UNSET"))
       val version = ProjectVersion(decoded.version, decoded.release, qualifier)
       json"""{"common": {"version": $version}}"""
     }
