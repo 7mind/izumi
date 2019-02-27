@@ -14,9 +14,9 @@ sealed trait TsMember
 
 object TsMember {
 
-  final case class Namespace(prefix: TypePrefix.UserT, types: List[TsMember]) extends TsMember
+  //final case class Namespace(prefix: TypePrefix.UserT, types: List[TsMember]) extends TsMember
 
-  final case class UserType(tpe: IzType, sub: List[TsMember]) extends TsMember
+  final case class UserType(tpe: IzType) extends TsMember
 
 }
 
@@ -54,8 +54,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     ops.defns match {
       case defns if defns.isEmpty =>
         // type requires no ops => builtin
-        existing.add(ops.id)
-        
+        existing.add(ops.id).discard()
+
       case single :: Nil =>
         val dindex = if (single.source == index.defn.id) {
           index
@@ -135,7 +135,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         fail(ops, value)
 
       case Right(value) =>
-        val member = TsMember.UserType(value, List.empty)
+        val member = TsMember.UserType(value)
         types.put(value.id, makeMember(member))
         existing.add(ops.id).discard()
     }

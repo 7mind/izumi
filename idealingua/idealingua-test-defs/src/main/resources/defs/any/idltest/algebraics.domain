@@ -54,3 +54,19 @@ adt AdtWithInterface {
     AFace
     Success
 }
+
+adt Nested {
+    mixin M1 {
+
+    }
+
+    data D1 {
+
+    }
+
+    enum E1 {
+        V1
+    }
+
+    alias A1 = str
+}

@@ -82,14 +82,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     val sid = resolveId(v.source)
     val source = types(sid)
     val copy = source.member match {
-      case _: TsMember.Namespace =>
-        ???
       case t: TsMember.UserType =>
         t.tpe match {
-          case _: Generic =>
-            ???
-          case _: Foreign =>
-            ???
           case builtinType: BuiltinType =>
             assert(v.modifiers.isEmpty)
             IzAlias(id, IzTypeReference.Scalar(builtinType.id), meta(v.meta))
@@ -113,6 +107,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
           case e: Enum =>
             assert(v.modifiers.isEmpty)
             e.copy(id = id)
+          case _: Generic =>
+            ???
+          case _: Foreign =>
+            ???
+          case adt: Adt =>
+            ???
         }
     }
 
@@ -326,10 +326,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
   private def structFields(p: TsMember): Seq[Field2] = {
     p match {
-      case TsMember.UserType(tpe, _) =>
+      case TsMember.UserType(tpe) =>
         structFields(tpe)
-      case TsMember.Namespace(_, _) =>
-        ???
     }
   }
 
@@ -361,10 +359,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
   private def enumMembers(p: TsMember): Seq[EnumMember] = {
     p match {
-      case TsMember.UserType(tpe, _) =>
+      case TsMember.UserType(tpe) =>
         enumMembers(tpe)
-      case TsMember.Namespace(_, _) =>
-        ???
     }
   }
 

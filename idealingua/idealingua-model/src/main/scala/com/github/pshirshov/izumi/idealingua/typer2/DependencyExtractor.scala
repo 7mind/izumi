@@ -37,12 +37,13 @@ class DependencyExtractor(index: DomainIndex) {
         Set(index.makeAbstract(t.target))
 
       case t: RawTypeDef.Adt =>
+        // we need to extract top level references only. Nested ephemerals are not required
         t.alternatives
-          .map {
+          .flatMap {
             case a: Member.TypeRef =>
-              index.makeAbstract(a.typeId)
+              Set(index.makeAbstract(a.typeId))
             case a: Member.NestedDefn =>
-              index.makeAbstract(a.nested.id)
+              dependsOn(a.nested)
           }
           .toSet
 
