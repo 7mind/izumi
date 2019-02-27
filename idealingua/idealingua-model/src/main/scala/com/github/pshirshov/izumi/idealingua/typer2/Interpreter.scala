@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.idealingua.model.common._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
-import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta, TODO}
+import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Adt, AdtMemberNested, AdtMemberRef, Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.T2Fail.InterpretationFail
@@ -30,7 +31,46 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = {
-    Right(TODO(toId(a.id)))
+    val id = toId(a.id)
+    val members = a.alternatives.map {
+      case Member.TypeRef(typeId, memberName, m) =>
+        val tpe = resolve(typeId)
+        val name = tpe match {
+          case IzTypeReference.Scalar(mid) =>
+            memberName.getOrElse(mid.name.name)
+          case IzTypeReference.Generic(_, _) =>
+            memberName match {
+              case Some(value) =>
+                value
+              case None =>
+                ??? // name must be defined for generic members
+            }
+        }
+        AdtMemberRef(name, tpe, meta(m))
+      case Member.NestedDefn(nested) =>
+        val tpe = nested match {
+          case n: RawTypeDef.Interface =>
+            makeInterface(n)
+          case n: RawTypeDef.DTO =>
+            makeDto(n)
+          case n: RawTypeDef.Enumeration =>
+            makeEnum(n)
+          case n: RawTypeDef.Alias =>
+            makeAlias(n)
+          case n: RawTypeDef.Identifier =>
+            makeIdentifier(n)
+          case n: RawTypeDef.Adt =>
+            makeAdt(n)
+        }
+        tpe match {
+          case Left(_) =>
+            ???
+          case Right(value) =>
+            AdtMemberNested(value.id.name.name, value, meta(nested.meta))
+        }
+
+    }
+    Right(Adt(id, members, meta(a.meta)))
   }
 
   def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = {
@@ -253,6 +293,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
         ???
       case _: Foreign =>
         ???
+      case _: Adt =>
+        ???
     }
   }
 
@@ -285,6 +327,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
       case _: IzStructure =>
         ???
       case _: Foreign =>
+        ???
+      case _: Adt =>
         ???
     }
   }

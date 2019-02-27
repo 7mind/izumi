@@ -23,9 +23,8 @@ class Typer2(defn: DomainMeshResolved) {
 
       case Right(value) =>
         val types = value.types.collect({case t: TsMember.UserType => t}).size
-        val todos = value.types.collect({case t@TsMember.UserType(_: IzType.TODO, _) => t}).size
         val nss = value.types.collect({case n: TsMember.Namespace => n}).size
-        println(s"  ... ${types-todos} members, $todos TODOs, $nss namespaces")
+        println(s"  ... $types members, $nss namespaces")
     }
 
   }

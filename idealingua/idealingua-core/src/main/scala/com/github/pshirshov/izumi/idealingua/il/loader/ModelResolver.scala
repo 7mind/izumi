@@ -22,6 +22,7 @@ class ModelResolver(rules: Seq[VerificationRule]) {
     val importResolver = new ExternalRefResolver(domains)
 
     val typed = domains.domains.results
+      .sortBy(_.path.toString)
       .map(importResolver.resolveReferences)
       .map {
         m =>

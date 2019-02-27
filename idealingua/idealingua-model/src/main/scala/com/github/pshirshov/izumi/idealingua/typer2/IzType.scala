@@ -135,7 +135,13 @@ object IzType {
   case class Interpolation(parts: Seq[String], parameters: Seq[IzTypeArgName])
   case class ForeignGeneric(id: IzTypeId, args: Seq[IzTypeArgName], mapping: Map[String, Interpolation], meta: NodeMeta) extends Generic with Foreign
 
-  case class TODO(id: IzTypeId) extends IzType
+
+  sealed trait AdtMember
+  case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
+  case class AdtMemberNested(name: String, tpe: IzType, meta: NodeMeta) extends AdtMember
+  case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta) extends IzType
+
+  //case class TODO(id: IzTypeId) extends IzType
 }
 
 

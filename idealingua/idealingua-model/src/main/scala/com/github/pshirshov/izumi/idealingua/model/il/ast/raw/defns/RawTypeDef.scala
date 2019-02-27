@@ -15,6 +15,7 @@ object RawTypeDef {
 
   sealed trait WithId extends RawTypeDef {
     def id: TypeId
+    def meta: RawNodeMeta
   }
 
 
