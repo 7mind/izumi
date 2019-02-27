@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
-import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Adt, AdtMemberNested, AdtMemberRef, Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Adt, AdtMemberNested, AdtMemberRef, Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, FieldSource, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.T2Fail.InterpretationFail
@@ -54,7 +54,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
       case Member.NestedDefn(nested) =>
         val tpe = nested match {
           case n: RawTypeDef.Interface =>
-             makeInterface(n, subpath)
+            makeInterface(n, subpath)
           case n: RawTypeDef.DTO =>
             makeDto(n, subpath)
           case n: RawTypeDef.Enumeration =>
@@ -111,7 +111,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
             ???
           case _: Foreign =>
             ???
-          case adt: Adt =>
+          case _: Adt =>
             ???
         }
     }
@@ -147,9 +147,9 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType] = {
     val id = toId(i.id, subpath)
 
-    val fields = i.fields.map {
-      f =>
-        Field2(fname(f), toRef(f), Seq(id), meta(f.meta))
+    val fields = i.fields.zipWithIndex.map {
+      case (f, idx) =>
+        Field2(fname(f), toRef(f), Seq(FieldSource(id, idx, 0, meta(f.meta))))
     }
     Right(Identifier(id, fields, meta(i.meta)))
   }
@@ -176,6 +176,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   def makeInterface(i: RawTypeDef.Interface): Either[List[InterpretationFail], IzType.Interface] = {
     makeInterface(i, Seq.empty)
   }
+
   private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.Interface] = {
     val struct = i.struct
     val id = toId(i.id, subpath)
@@ -185,6 +186,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   def makeDto(i: RawTypeDef.DTO): Either[List[InterpretationFail], IzType.DTO] = {
     makeDto(i, Seq.empty)
   }
+
   private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.DTO] = {
     val struct = i.struct
     val id = toId(i.id, subpath)
@@ -195,6 +197,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   def makeAlias(a: RawTypeDef.Alias): Either[List[InterpretationFail], IzType.IzAlias] = {
     makeAlias(a, Seq.empty)
   }
+
   private def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): Either[List[InterpretationFail], IzType.IzAlias] = {
     Right(IzAlias(toId(a.id, subpath), resolve(a.target), meta(a.meta)))
   }
@@ -232,6 +235,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private def toTopId(id: TypeId): IzTypeId = {
     toId(id, Seq.empty)
   }
+
   private def toId(id: TypeId, subpath: Seq[IzNamespace]): IzTypeId = {
     assert(id.path.within.isEmpty)
     val namespace = subpath
@@ -255,13 +259,17 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     val `+concepts` = struct.concepts.map(resolveId).map(types.apply).map(_.member)
     val `-concepts` = struct.removedConcepts.map(resolveId).map(types.apply).map(_.member)
 
-    val parentFields = parents.flatMap(structFields)
-    val `+conceptFields` = `+concepts`.flatMap(structFields)
+    val parentFields = addLevel(parents.flatMap(structFields))
+    val `+conceptFields` = addLevel(`+concepts`.flatMap(structFields))
+    /* all the concept fields will be removed
+      in case we have `D {- Concept} extends C {+ conceptField: type} extends B { - conceptField: type } extends A { + Concept }` and
+      conceptField will be removed from D too
+     */
     val `-conceptFields` = `-concepts`.flatMap(structFields).map(_.basic)
 
-    val localFields = struct.fields.map {
-      f =>
-        Field2(fname(f), toRef(f), Seq(id), meta(f.meta))
+    val localFields = struct.fields.zipWithIndex.map {
+      case (f, idx) =>
+        Field2(fname(f), toRef(f), Seq(FieldSource(id, idx, 0, meta(f.meta))))
     }
 
     val removedFields = struct.removedFields.map {
@@ -270,16 +278,43 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }
 
     val allRemovals = (`-conceptFields` ++ removedFields).toSet
-    val allFields = (parentFields ++ `+conceptFields` ++ localFields).filterNot {
-      f => allRemovals.contains(f.basic)
+    val allAddedFields = parentFields ++ `+conceptFields` ++ localFields
+    val nothingToRemove = allRemovals -- allAddedFields.map(_.basic).toSet
+    if (nothingToRemove.nonEmpty) {
+      println(s"Unexpected removals: $nothingToRemove")
     }
-
+    val allFields = merge(allAddedFields.filterNot {
+      f => allRemovals.contains(f.basic)
+    })
 
     (if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
       IzType.Interface(id, allFields, parentsIds, meta(structMeta), struct)
     } else {
       IzType.DTO(id, allFields, parentsIds, meta(structMeta), struct)
     }).asInstanceOf[T]
+  }
+
+  private def merge(parentFields: Seq[Field2]): Seq[Field2] = {
+    parentFields
+      .groupBy(_.name)
+      .map {
+        case (_, v) if v.size == 1 =>
+          v.head
+        case (k, v) =>
+
+          v.tail.foldLeft(v.head) {
+            case (acc, f) =>
+              acc.copy(defined = acc.defined ++ f.defined)
+          }
+      }
+      .toSeq
+  }
+
+  private def addLevel(parentFields: Seq[Field2]): Seq[Field2] = {
+    parentFields.map {
+      f =>
+        f.copy(defined = f.defined.map(d => d.copy(distance = d.distance + 1)))
+    }
   }
 
   private def toRef(f: RawField): IzTypeReference = {

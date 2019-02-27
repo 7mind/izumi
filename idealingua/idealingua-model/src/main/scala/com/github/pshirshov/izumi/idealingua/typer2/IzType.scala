@@ -5,8 +5,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.IzTypeArgName
 
-import scala.language.implicitConversions
-
 
 sealed trait IzType {
   def id: IzTypeId
@@ -67,7 +65,8 @@ object IzType {
 
   case class FName(name: String)
 
-  case class Field2(name: FName, tpe: IzTypeReference, defined: Seq[IzTypeId], meta: NodeMeta) {
+  case class FieldSource(in: IzTypeId, number: Int, distance: Int, meta: NodeMeta)
+  case class Field2(name: FName, tpe: IzTypeReference, defined: Seq[FieldSource]) {
     def basic: Basic = Basic(name, tpe)
   }
   case class Basic(name: FName, ref: IzTypeReference)
