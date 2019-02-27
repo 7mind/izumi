@@ -13,7 +13,6 @@ case class LanguageOpts(
                          credentials: Option[File],
                          extensions: List[String],
                          overrides: Map[String, String],
-                         qualifierOverride: Option[String],
                        )
 
 
@@ -81,7 +80,7 @@ object IDLCArgs {
       .text("{scala|typescript|go|csharp} (may repeat, like `scala -mf + typescript -mf + -nrt go`")
       .action {
         (a, c) =>
-          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, None, List.empty, Map.empty, None))
+          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, None, List.empty, Map.empty))
       }
       .optional()
       .unbounded()
@@ -99,13 +98,6 @@ object IDLCArgs {
           .action {
             (a, c) =>
               c.copy(languages = c.languages.init :+ c.languages.last.copy(manifest = Some(a)))
-          },
-        opt[String]("snapshotQualifier").abbr("q")
-          .optional()
-          .text("Define snapshot qualifier.")
-          .action {
-            (a, c) =>
-              c.copy(languages = c.languages.init :+ c.languages.last.copy(qualifierOverride = Some(a)))
           },
         opt[Unit]("no-runtime").abbr("nrt")
           .optional()
