@@ -113,7 +113,7 @@ object IzType {
   }
   case class Basic(name: FName, ref: IzTypeReference)
 
-  case class IzAlias(id: IzTypeId, source: IzTypeId, meta: NodeMeta) extends IzType
+  case class IzAlias(id: IzTypeId, source: IzTypeReference, meta: NodeMeta) extends IzType
 
   sealed trait IzStructure extends IzType {
     def id: IzTypeId
@@ -129,6 +129,11 @@ object IzType {
 
   case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
   case class Enum(id: IzTypeId, members: Seq[EnumMember], meta: NodeMeta) extends IzType
+
+  sealed trait Foreign extends IzType
+  case class ForeignScalar(id: IzTypeId, mapping: Map[String, String], meta: NodeMeta) extends Foreign
+  case class Interpolation(parts: Seq[String], parameters: Seq[IzTypeArgName])
+  case class ForeignGeneric(id: IzTypeId, args: Seq[IzTypeArgName], mapping: Map[String, Interpolation], meta: NodeMeta) extends Generic with Foreign
 
   case class TODO(id: IzTypeId) extends IzType
 }

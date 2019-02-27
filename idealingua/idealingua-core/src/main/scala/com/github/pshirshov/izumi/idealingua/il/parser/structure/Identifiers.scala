@@ -28,7 +28,7 @@ trait Identifiers extends Separators {
 
   def staticPart[_: P]: P[String] = P(CharsWhile(c => c != '"' && c != '$').!)
 
-  def expr[_: P]: P[ParsedId] = P("${" ~ idShort ~ "}")
+  def expr[_: P]: P[String] = P("${" ~ idShort ~ "}").map(_.name)
 
   def justString[_: P]: P[InterpContext] = P("t\"" ~ staticPart ~ "\"")
     .map(s => InterpContext(Vector(s), Vector.empty))
@@ -37,7 +37,7 @@ trait Identifiers extends Separators {
     case (parts, tail) =>
       val strs = parts.map(_._1) :+ tail.getOrElse("")
       val exprs = parts.map(_._2)
-      InterpContext(strs, exprs.map(_.toIndefinite))
+      InterpContext(strs, exprs)
   }
 
   def typeInterp[_: P]: P[InterpContext] = P(interpString | justString)

@@ -37,7 +37,7 @@ final case class ParsedId(pkg: Seq[String], name: String) {
 
   def toConstId: ConstId = ConstId(typePath.domain, name)
 
-  def toIndefinite: AbstractIndefiniteId = {
+  def toIndefinite: AbstractNongeneric = {
     IndefiniteId(pkg, name)
   }
 

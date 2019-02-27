@@ -7,7 +7,7 @@ object IzTypeReference {
   final case class Generic(id: IzTypeId, args: Seq[IzTypeArg]) extends IzTypeReference
 
   case class IzTypeArgName(name: String)
-  case class IzTypeArgValue(name: IzType)
+  case class IzTypeArgValue(name: IzTypeReference)
   case class IzTypeArg(name: IzTypeArgName, value: IzTypeArgValue)
 }
 

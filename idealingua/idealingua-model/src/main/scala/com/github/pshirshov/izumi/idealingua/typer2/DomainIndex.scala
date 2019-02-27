@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId, TypeId, TypeName}
+import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, Import}
@@ -26,17 +26,6 @@ class DomainIndex(val defn: DomainMeshResolved) {
       v.head._2
     })
   }
-
-//  lazy val thisIndex: Set[UnresolvedName] = types.map {
-//    case RawTopLevelDefn.TLDBaseType(v) =>
-//      makeAbstract(v.id)
-//    case RawTopLevelDefn.TLDNewtype(v) =>
-//      makeAbstract(v.id.toIndefinite)
-//    case RawTopLevelDefn.TLDDeclared(v) =>
-//      makeAbstract(v.id)
-//    case RawTopLevelDefn.TLDForeignType(v) =>
-//      makeAbstract(v.id)
-//  }.toSet
 
   val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
 
@@ -73,6 +62,7 @@ class DomainIndex(val defn: DomainMeshResolved) {
   }
 
   def makeAbstract(id: AbstractIndefiniteId): UnresolvedName = {
+    // generic args are dropped here!
     if (id.pkg.nonEmpty && id.pkg != Seq(".")) {
       UnresolvedName(id.pkg, id.name)
     } else {
