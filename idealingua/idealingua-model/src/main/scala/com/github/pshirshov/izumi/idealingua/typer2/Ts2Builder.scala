@@ -126,7 +126,12 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
   private def register(ops: Identified, product: Either[List[InterpretationFail], IzType]): Unit = {
-    product match {
+    (for {
+      p <- product
+      v <- validate(p)
+    } yield {
+      v
+    }) match {
       case Left(value) =>
         fail(ops, value)
 
@@ -135,6 +140,11 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         types.put(value.id, makeMember(member))
         existing.add(ops.id).discard()
     }
+  }
+
+  private def validate(tpe: IzType): Either[List[InterpretationFail], IzType] = {
+    // TODO: verify
+    Right(tpe)
   }
 
   private def isOwn(id: IzTypeId): Boolean = {
@@ -158,15 +168,36 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private val index: DomainIndex = _index
 
-  def makeForeign(v: RawTypeDef.ForeignType): Either[List[InterpretationFail], IzType] = ???
+  def makeForeign(v: RawTypeDef.ForeignType): Either[List[InterpretationFail], IzType] = {
+    Right(TODO(toId(Seq.empty, index.makeAbstract(v.id))))
+  }
 
-  def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = ???
+  def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = {
+    Right(TODO(toId(Seq.empty, index.makeAbstract(v.id.toIndefinite))))
+  }
 
-  def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = ???
+  def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = {
+    Right(TODO(toId(a.id)))
 
-  def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = ???
+  }
 
-  def makeEnum(e: RawTypeDef.Enumeration): Either[List[InterpretationFail], IzType] = ???
+  def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = {
+    Right(TODO(toId(i.id)))
+  }
+
+  def makeEnum(e: RawTypeDef.Enumeration): Either[List[InterpretationFail], IzType.Enum] = {
+    val id = toId(e.id)
+    val parents = e.struct.parents.map(toId).map(types.apply).map(_.member)
+    val parentMembers = parents.flatMap(enumMembers)
+    val localMembers = e.struct.members.map {
+      m =>
+        EnumMember(m.value, None, meta(m.meta))
+    }
+    val removedFields = e.struct.removed.toSet
+    val allMembers = (parentMembers ++ localMembers).filterNot(m => removedFields.contains(m.name))
+
+    Right(Enum(id, allMembers, meta(e.meta)))
+  }
 
 
   def makeInterface(i: RawTypeDef.Interface): Either[List[InterpretationFail], IzType.Interface] = {
@@ -197,15 +228,20 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   private def toId(id: TypeId): IzTypeId = {
+    val namespace = id.path.within.map(IzNamespace)
     val unresolvedName = index.makeAbstract(id)
-    val pkg = makePkg(unresolvedName)
-    if (id.path.within.isEmpty) {
-      IzTypeId.UserType(TypePrefix.UserTLT(pkg), IzName(id.name))
-    } else {
-      IzTypeId.UserType(TypePrefix.UserT(pkg, id.path.within.map(IzNamespace)), IzName(id.name))
-    }
+    toId(namespace, unresolvedName)
   }
 
+
+  private def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName) = {
+    val pkg = makePkg(unresolvedName)
+    if (namespace.isEmpty) {
+      IzTypeId.UserType(TypePrefix.UserTLT(pkg), IzName(unresolvedName.name))
+    } else {
+      IzTypeId.UserType(TypePrefix.UserT(pkg, namespace), IzName(unresolvedName.name))
+    }
+  }
 
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): T = {
     val parentsIds = struct.interfaces.map(toId)
@@ -264,6 +300,29 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
         ???
     }
   }
+
+  private def enumMembers(tpe: IzType): Seq[EnumMember] = {
+    tpe match {
+      case a: IzAlias =>
+        enumMembers(types.apply(a.source).member)
+      case structure: IzType.Enum =>
+        structure.members
+      case generic: Generic =>
+        ???
+      case builtinType: BuiltinType =>
+        ???
+    }
+  }
+
+  private def enumMembers(p: TsMember): Seq[EnumMember] = {
+    p match {
+      case TsMember.UserType(tpe, _) =>
+        enumMembers(tpe)
+      case TsMember.Namespace(_, _) =>
+        ???
+    }
+  }
+
 
   private def meta(meta: RawNodeMeta): NodeMeta = {
     IzType.NodeMeta(meta.doc, Seq.empty, meta.position)

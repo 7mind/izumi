@@ -121,6 +121,10 @@ object IzType {
   case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
   case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
 
+  case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
+  case class Enum(id: IzTypeId, members: Seq[EnumMember], meta: NodeMeta) extends IzType
+
+  case class TODO(id: IzTypeId) extends IzType
 }
 
 
