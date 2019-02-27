@@ -156,11 +156,15 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       "go get github.com/gorilla/websocket", targetDir.toFile, env
     ).lineStream.foreach(log.log)
 
-    log.log("Testing")
-    Process(
-      "go test ./...", targetDir.resolve("src").toFile, env
-    ).lineStream.foreach(log.log)
-    log.log("Testing - OK")
+    if (manifest.enableTesting) {
+      log.log("Testing")
+      Process(
+        "go test ./...", targetDir.resolve("src").toFile, env
+      ).lineStream.foreach(log.log)
+      log.log("Testing - OK")
+    } else {
+      log.log("Testing is disabled. Skipping.")
+    }
 
     log.log("Publishing to github repo")
 
