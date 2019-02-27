@@ -270,7 +270,7 @@ object IdealinguaPlugin extends AutoPlugin {
     if (isNew.exists({ case (src, tgt) => src.isAfter(tgt) }) || isNew.isEmpty) {
       // TODO: maybe it's unsafe to destroy the whole directory?..
       val rules = TypespaceCompilerBaseFacade.descriptor(invokation.options.language).rules
-      val resolved = new ModelResolver(rules).resolve(loaded)
+      val resolved = new ModelResolver(rules).resolve(loaded, runt2 = false)
 
       val toCompile = resolved
         .ifWarnings(message => logger.warn(message))

@@ -4,6 +4,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.IzTypeArgName
 
+import scala.language.implicitConversions
+
 sealed trait TypePrefix
 
 object TypePrefix {
@@ -120,6 +122,8 @@ object IzType {
   }
   case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
   case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
+
+  case class Identifier(id: IzTypeId, fields: Seq[Field2], meta: NodeMeta) extends IzType
 
   case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
   case class Enum(id: IzTypeId, members: Seq[EnumMember], meta: NodeMeta) extends IzType

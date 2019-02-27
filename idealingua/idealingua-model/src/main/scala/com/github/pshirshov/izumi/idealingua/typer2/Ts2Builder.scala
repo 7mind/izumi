@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawStructure, RawTopLevelDefn, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.typer2.IzType._
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
@@ -182,7 +182,13 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = {
-    Right(TODO(toId(i.id)))
+    val id = toId(i.id)
+
+    val fields = i.fields.map {
+      f =>
+        Field2(fname(f), toRef(f), Seq(id), meta(f.meta))
+    }
+    Right(Identifier(id, fields, meta(i.meta)))
   }
 
   def makeEnum(e: RawTypeDef.Enumeration): Either[List[InterpretationFail], IzType.Enum] = {
@@ -255,16 +261,13 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
     val localFields = struct.fields.map {
       f =>
-        val typeId = resolve(f.typeId)
-        Field2(FName(f.name.getOrElse(typeId.name.name)), IzTypeReference.Scalar(typeId), Seq(id), meta(f.meta))
+        Field2(fname(f), toRef(f), Seq(id), meta(f.meta))
     }
 
     val removedFields = struct.removedFields.map {
       f =>
-        val typeId = resolve(f.typeId)
-        Basic(FName(f.name.getOrElse(typeId.name.name)), IzTypeReference.Scalar(typeId))
+        Basic(fname(f), toRef(f))
     }
-
 
     val allRemovals = (`-conceptFields` ++ removedFields).toSet
     val allFields = (parentFields ++ `+conceptFields` ++ localFields).filterNot {
@@ -279,15 +282,27 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }).asInstanceOf[T]
   }
 
+  private def toRef(f: RawField): IzTypeReference = {
+    IzTypeReference.Scalar(resolve(f.typeId))
+  }
+
+  private def fname(f: RawField): FName = {
+    FName(f.name.getOrElse(resolve(f.typeId).name.name))
+  }
+
   private def structFields(tpe: IzType): Seq[Field2] = {
     tpe match {
       case a: IzAlias =>
         structFields(types.apply(a.source).member)
       case structure: IzStructure =>
         structure.fields
-      case generic: Generic =>
+      case _: Generic =>
         ???
-      case builtinType: BuiltinType =>
+      case _: BuiltinType =>
+        ???
+      case _: Identifier =>
+        ???
+      case _: Enum =>
         ???
     }
   }
@@ -305,11 +320,15 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     tpe match {
       case a: IzAlias =>
         enumMembers(types.apply(a.source).member)
-      case structure: IzType.Enum =>
+      case structure: Enum =>
         structure.members
-      case generic: Generic =>
+      case _: Generic =>
         ???
-      case builtinType: BuiltinType =>
+      case _: BuiltinType =>
+        ???
+      case _: Identifier =>
+        ???
+      case _: IzStructure =>
         ???
     }
   }
