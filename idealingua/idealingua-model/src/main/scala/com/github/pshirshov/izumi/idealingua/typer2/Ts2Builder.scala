@@ -169,17 +169,72 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private val index: DomainIndex = _index
 
   def makeForeign(v: RawTypeDef.ForeignType): Either[List[InterpretationFail], IzType] = {
-    Right(TODO(toId(Seq.empty, index.makeAbstract(v.id))))
-  }
-
-  def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = {
-    Right(TODO(toId(Seq.empty, index.makeAbstract(v.id.toIndefinite))))
+    val id = toId(Seq.empty, index.makeAbstract(v.id))
+    Right(TODO(id))
   }
 
   def makeAdt(a: RawTypeDef.Adt): Either[List[InterpretationFail], IzType] = {
     Right(TODO(toId(a.id)))
-
   }
+
+  def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = {
+    val id = resolve(v.id.toIndefinite)
+    val sid = resolve(v.source)
+    val source = types(sid)
+    val copy = source.member match {
+      case ns: TsMember.Namespace =>
+        ???
+      case t: TsMember.UserType =>
+        t.tpe match {
+          case generic: Generic =>
+            ???
+          case builtinType: BuiltinType =>
+            ???
+          case a: IzAlias =>
+            assert(v.modifiers.isEmpty)
+            a.copy(id = id)
+
+          case d: DTO =>
+            val modified = modify(d, v.modifiers)
+            make[DTO](modified, id, v.meta)
+
+          case d: Interface =>
+            val modified = modify(d, v.modifiers)
+            make[Interface](modified, id, v.meta)
+
+          case i: Identifier =>
+            assert(v.modifiers.isEmpty)
+            i.copy(id = id)
+
+          case e: Enum =>
+            assert(v.modifiers.isEmpty)
+            e.copy(id = id)
+        }
+    }
+
+    Right(copy)
+  }
+
+  private def modify(source: IzType, modifiers: Option[RawStructure]): RawStructure = {
+    source match {
+      case structure: IzStructure =>
+        val struct = structure.defn
+        modifiers.map(m => mergeStructs(struct, m)).getOrElse(struct)
+      case _ =>
+        ???
+    }
+  }
+
+  private def mergeStructs(struct: RawStructure, value: RawStructure): RawStructure = {
+    struct.copy(
+      interfaces = struct.interfaces ++ value.interfaces,
+      concepts = struct.concepts ++ value.concepts,
+      removedConcepts = struct.removedConcepts ++ value.removedConcepts,
+      fields = struct.fields ++ value.removedFields,
+      removedFields = struct.removedFields ++ value.removedFields,
+    )
+  }
+
 
   def makeIdentifier(i: RawTypeDef.Identifier): Either[List[InterpretationFail], IzType] = {
     val id = toId(i.id)
@@ -240,7 +295,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
 
-  private def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName) = {
+  private def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId.UserType = {
     val pkg = makePkg(unresolvedName)
     if (namespace.isEmpty) {
       IzTypeId.UserType(TypePrefix.UserTLT(pkg), IzName(unresolvedName.name))
@@ -276,9 +331,9 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
 
     (if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
-      IzType.Interface(id, allFields, parentsIds, meta(structMeta))
+      IzType.Interface(id, allFields, parentsIds, meta(structMeta), struct)
     } else {
-      IzType.DTO(id, allFields, parentsIds, meta(structMeta))
+      IzType.DTO(id, allFields, parentsIds, meta(structMeta), struct)
     }).asInstanceOf[T]
   }
 

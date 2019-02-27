@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.IzTypeArgName
 
@@ -119,9 +120,10 @@ object IzType {
     def fields: Seq[Field2]
     def parents: Seq[IzTypeId]
     def meta: NodeMeta
+    def defn: RawStructure
   }
-  case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
-  case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta) extends IzStructure
+  case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
+  case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
 
   case class Identifier(id: IzTypeId, fields: Seq[Field2], meta: NodeMeta) extends IzType
 

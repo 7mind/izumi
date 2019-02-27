@@ -10,3 +10,6 @@ clone M0 into M2 {
   _: i32
 }
 
+mixin M3 {
+  & M2
+}
