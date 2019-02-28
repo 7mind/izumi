@@ -44,7 +44,7 @@ object IzType {
 
   sealed trait AdtMember
   final case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
-  final case class AdtMemberNested(name: String, tpe: IzType, meta: NodeMeta) extends AdtMember
+  final case class AdtMemberNested(name: String, tpe: IzTypeReference, meta: NodeMeta) extends AdtMember
   final case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta) extends IzType
 
   final case class IzAlias(id: IzTypeId, source: IzTypeReference, meta: NodeMeta) extends IzType

@@ -24,7 +24,7 @@ class Typer2(defn: DomainMeshResolved) {
         println(s"  ... failed: ${value}")
 
       case Right(value) =>
-        val types = value.types.collect({case t: TsMember.UserType => t}).size
+        val types = value.types.size
         println(s"  ... $types members")
     }
 

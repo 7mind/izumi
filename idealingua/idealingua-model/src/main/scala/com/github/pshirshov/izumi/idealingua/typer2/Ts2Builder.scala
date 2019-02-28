@@ -1,37 +1,28 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Identified, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
-import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
-import com.github.pshirshov.izumi.idealingua.typer2.TsMember.UserType
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Identified, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 import scala.collection.mutable
 
-sealed trait TsMember
-
-object TsMember {
-
-  //final case class Namespace(prefix: TypePrefix.UserT, types: List[TsMember]) extends TsMember
-
-  final case class UserType(tpe: IzType) extends TsMember
-
-}
 
 sealed trait ProcessedOp {
-  def member: TsMember
+  def member: IzType
 }
 
 object ProcessedOp {
 
-  final case class Exported(member: TsMember) extends ProcessedOp
+  final case class Exported(member: IzType) extends ProcessedOp
 
-  final case class Imported(member: TsMember) extends ProcessedOp
+  final case class Imported(member: IzType) extends ProcessedOp
 
 }
 
@@ -39,7 +30,7 @@ case class Typespace2(
 
                        warnings: List[T2Warn],
                        imports: Set[IzTypeId],
-                       types: List[TsMember],
+                       types: List[ProcessedOp],
                      )
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) {
@@ -58,7 +49,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       case defns if defns.isEmpty =>
         // type requires no ops => builtin
         //existing.add(ops.id).discard()
-        register(ops, Right(index.builtins(ops.id)))
+        register(ops, Right(List(index.builtins(ops.id))))
 
       case single :: Nil =>
         val dindex = if (single.source == index.defn.id) {
@@ -72,19 +63,20 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           case RawTopLevelDefn.TLDBaseType(v) =>
             v match {
               case i: RawTypeDef.Interface =>
-                interpreter.makeInterface(i)
+                interpreter.makeInterface(i).asList
 
               case d: RawTypeDef.DTO =>
-                interpreter.makeDto(d)
+                interpreter.makeDto(d).asList
 
               case a: RawTypeDef.Alias =>
-                interpreter.makeAlias(a)
+                interpreter.makeAlias(a).asList
 
               case e: RawTypeDef.Enumeration =>
-                interpreter.makeEnum(e)
+                interpreter.makeEnum(e).asList
 
               case i: RawTypeDef.Identifier =>
-                interpreter.makeIdentifier(i)
+                interpreter.makeIdentifier(i).asList
+
               case a: RawTypeDef.Adt =>
                 interpreter.makeAdt(a)
             }
@@ -93,7 +85,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
             interpreter.cloneType(c.v)
 
           case RawTopLevelDefn.TLDForeignType(v) =>
-            interpreter.makeForeign(v)
+            interpreter.makeForeign(v).asList
 
           case RawTopLevelDefn.TLDDeclared(v) =>
             Left(List(SingleDeclaredType(v)))
@@ -123,50 +115,51 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         Right(())
       }
       allTypes = Ts2Builder.this.types.values.collect({ case Exported(member) => member }).toList
-      allTypes1 <- validateAll(allTypes)
+      _ <- validateAll(allTypes, postValidate)
     } yield {
       Typespace2(
         List.empty,
         Set.empty,
-        allTypes1,
+        this.types.values.toList,
       )
     }
   }
 
-  private def register(ops: Identified, product: Either[List[InterpretationFail], IzType]): Unit = {
+  private def register(ops: Identified, maybeTypes: Either[List[InterpretationFail], List[IzType]]): Unit = {
     (for {
-      p <- product
-      v <- preValidate(p)
+      tpe <- maybeTypes
+      _ <- validateAll(tpe, preValidate)
     } yield {
-      v
+      tpe
     }) match {
       case Left(value) =>
         fail(ops, value)
 
       case Right(value) =>
-        val member = TsMember.UserType(value)
-        types.put(value.id, makeMember(member))
+        value.foreach {
+          product =>
+            types.put(product.id, makeMember(product))
+        }
+
         existing.add(ops.id).discard()
     }
   }
 
-  private def validateAll(allTypes: List[TsMember]): Either[List[InterpretationFail], List[TsMember]] = {
-    val v = allTypes
-      .map {
-        case UserType(tpe) =>
-          tpe
-      }
-      .map(postValidate)
-    val bad = v.collect({ case Left(l) => l }).flatten
+  private def validateAll(allTypes: List[IzType], validator: IzType => Either[List[InterpretationFail], Unit]): Either[List[InterpretationFail], Unit] = {
+    val bad = allTypes
+      .map(validator)
+      .collect({ case Left(l) => l })
+      .flatten
+
     if (bad.nonEmpty) {
       Left(bad)
     } else {
-      Right(allTypes)
+      Right(())
     }
   }
 
 
-  private def postValidate(tpe: IzType): Either[List[InterpretationFail], IzType] = {
+  private def postValidate(tpe: IzType): Either[List[InterpretationFail], Unit] = {
     tpe match {
       case structure: IzStructure =>
         structure.fields.foreach {
@@ -174,23 +167,24 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
             import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
             f.defined.map(_.as).foreach(parent => assert(isSubtype(f.tpe, parent), s"${f.tpe} ?? $parent\n\n${f.defined.niceList()}\n\n"))
         }
-        Right(structure)
+        Right(())
       case o =>
-        Right(o)
-//      case generic: IzType.Generic =>
-//      case builtinType: IzType.BuiltinType =>
-//      case IzType.IzAlias(id, source, meta) =>
-//      case IzType.Identifier(id, fields, meta) =>
-//      case IzType.Enum(id, members, meta) =>
-//      case foreign: IzType.Foreign =>
-//      case IzType.Adt(id, members, meta) =>
+        Right(())
+      //      case generic: IzType.Generic =>
+      //      case builtinType: IzType.BuiltinType =>
+      //      case IzType.IzAlias(id, source, meta) =>
+      //      case IzType.Identifier(id, fields, meta) =>
+      //      case IzType.Enum(id, members, meta) =>
+      //      case foreign: IzType.Foreign =>
+      //      case IzType.Adt(id, members, meta) =>
     }
   }
 
-  private def preValidate(tpe: IzType): Either[List[InterpretationFail], IzType] = {
+  private def preValidate(tpe: IzType): Either[List[InterpretationFail], Unit] = {
     // TODO: verify
     // don't forget: we don't have ALL the definitions here yet
-    Right(tpe)
+    Quirks.discard(tpe)
+    Right(())
   }
 
   private def isSubtype(child: IzTypeReference, parent: IzTypeReference): Boolean = {
@@ -199,7 +193,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         case (IzTypeReference.Scalar(childId), IzTypeReference.Scalar(parentId)) =>
           // TODO: aliases!
           (types(childId).member, types(parentId).member) match {
-            case (UserType(c: IzStructure), UserType(p: IzStructure)) =>
+            case (c: IzStructure, p: IzStructure) =>
               c.allParents.contains(p.id)
             case _ =>
               false
@@ -220,8 +214,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
-  private def makeMember(member: TsMember.UserType): ProcessedOp = {
-    if (isOwn(member.tpe.id)) {
+  private def makeMember(member: IzType): ProcessedOp = {
+    if (isOwn(member.id)) {
       ProcessedOp.Exported(member)
     } else {
       ProcessedOp.Imported(member)
