@@ -21,7 +21,7 @@ object Clock {
 
     override def epoch: Long = java.time.Clock.systemUTC().millis()
 
-    override def now(accuracy: ClockAccuracy): Identity[ZonedDateTime] = {
+    override def now(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): Identity[ZonedDateTime] = {
       val current = IzTime.utcNow
       ClockAccuracy.applyAccuracy(current, accuracy)
     }
@@ -31,7 +31,7 @@ object Clock {
 
     override def epoch: Long = time.toEpochSecond
 
-    override def now(accuracy: ClockAccuracy): Identity[ZonedDateTime] = {
+    override def now(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): Identity[ZonedDateTime] = {
       ClockAccuracy.applyAccuracy(time, accuracy)
     }
   }
