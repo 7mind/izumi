@@ -11,24 +11,29 @@ trait Clock[+F[_]] {
 
   /** Should return current time (UTC timezone)
     */
-  def now: F[ZonedDateTime]
+  def now(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): F[ZonedDateTime]
 }
 
 object Clock {
-  def apply[F[_]: Clock]: Clock[F] = implicitly
+  def apply[F[_] : Clock]: Clock[F] = implicitly
 
   object Standard extends Clock[Identity] {
 
     override def epoch: Long = java.time.Clock.systemUTC().millis()
 
-    override def now: ZonedDateTime = IzTime.utcNow
+    override def now(accuracy: ClockAccuracy): Identity[ZonedDateTime] = {
+      val current = IzTime.utcNow
+      ClockAccuracy.applyAccuracy(current, accuracy)
+    }
   }
 
   class Constant(time: ZonedDateTime) extends Clock[Identity] {
 
     override def epoch: Long = time.toEpochSecond
 
-    override def now: ZonedDateTime = time
+    override def now(accuracy: ClockAccuracy): Identity[ZonedDateTime] = {
+      ClockAccuracy.applyAccuracy(time, accuracy)
+    }
   }
 
 }
