@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.fundamentals.graphs
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
-import com.github.pshirshov.izumi.idealingua.typer2.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}

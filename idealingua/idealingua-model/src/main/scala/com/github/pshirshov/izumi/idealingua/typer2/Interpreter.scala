@@ -4,10 +4,12 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
-import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Adt, AdtMemberNested, AdtMemberRef, Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, FieldSource, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta}
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.IzNamespace
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
-import com.github.pshirshov.izumi.idealingua.typer2.T2Fail.InterpretationFail
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, AdtMemberNested, AdtMemberRef, BuiltinType, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.InterpretationFail
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
 import scala.reflect.ClassTag
 
@@ -417,6 +419,6 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
 
   private def meta(meta: RawNodeMeta): NodeMeta = {
-    IzType.NodeMeta(meta.doc, Seq.empty, meta.position)
+    NodeMeta(meta.doc, Seq.empty, meta.position)
   }
 }

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.model
 
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzNamespace, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzNamespace, IzPackage}
 
 sealed trait TypePrefix
 

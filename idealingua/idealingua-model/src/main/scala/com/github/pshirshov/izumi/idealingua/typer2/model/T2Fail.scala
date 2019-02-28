@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName

@@ -3,12 +3,13 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.typer2.IzType.IzStructure
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
-import com.github.pshirshov.izumi.idealingua.typer2.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.TsMember.UserType
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Identified, UnresolvedName}
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 import scala.collection.mutable
 

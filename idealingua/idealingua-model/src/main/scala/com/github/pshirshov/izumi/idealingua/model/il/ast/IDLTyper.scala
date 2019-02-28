@@ -106,6 +106,8 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         (toIndefinite(d.id.toIndefinite), d)
       case d: ForeignType =>
         (toIndefinite(d.id), d)
+      case _: RawTypeDef.DeclaredType =>
+        ???
     }.toMap
   }
 
@@ -132,6 +134,8 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
   protected def fixType(defn: RawTypeDef): typed.TypeDef = {
     defn match {
+      case _: RawTypeDef.DeclaredType =>
+        ???
       case d: RawTypeDef.Enumeration =>
         typed.TypeDef.Enumeration(id = fixSimpleId(d.id): TypeId.EnumId, members = d.struct.members.map(fixEnumMember), meta = fixMeta(d.meta))
 
@@ -183,6 +187,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
       case RawTypeDef.ForeignType(id, _, _) =>
         throw new IDLException(s"[$domainId] TODO: foreign type isn't supported yet for $id")
+
     }
   }
 

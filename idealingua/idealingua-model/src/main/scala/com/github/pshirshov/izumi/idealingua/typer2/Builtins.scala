@@ -1,14 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId._
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId}
 
 object Builtins extends TypePlane {
 
   import IzType.BuiltinGeneric._
   import IzType.BuiltinScalar._
-
-  //def id: DomainId = DomainId(Seq.empty, "_builtins_")
 
   def resolve(typeId: IzName): Option[IzType] = {
     mapping.get(IzTypeId.BuiltinType(typeId))

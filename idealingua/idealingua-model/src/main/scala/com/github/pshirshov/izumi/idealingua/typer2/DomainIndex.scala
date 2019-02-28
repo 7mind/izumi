@@ -5,8 +5,9 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, Import}
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, TypePrefix}
 
 final class DomainIndex(val defn: DomainMeshResolved) {
   lazy val types: Seq[TypeDefn] = defn.members.collect({ case m: TypeDefn => m })
