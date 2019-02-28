@@ -5,9 +5,10 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, Import}
+import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName
 
-class DomainIndex(val defn: DomainMeshResolved) {
+final class DomainIndex(val defn: DomainMeshResolved) {
   lazy val types: Seq[TypeDefn] = defn.members.collect({ case m: TypeDefn => m })
   lazy val services: Seq[RawTopLevelDefn.TLDService] = defn.members.collect({ case m: RawTopLevelDefn.TLDService => m })
   lazy val buzzers: Seq[RawTopLevelDefn.TLDBuzzer] = defn.members.collect({ case m: RawTopLevelDefn.TLDBuzzer => m })
@@ -26,8 +27,9 @@ class DomainIndex(val defn: DomainMeshResolved) {
       v.head._2
     })
   }
+  lazy val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
 
-  val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
+  lazy val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
 
   def makeAbstract(id: TypeId): UnresolvedName = {
     val typename = id.name
@@ -70,12 +72,44 @@ class DomainIndex(val defn: DomainMeshResolved) {
     }
   }
 
+  def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId = {
+    val pkg = makePkg(unresolvedName)
+    val name = IzName(unresolvedName.name)
+    if (namespace.isEmpty) {
+      toType(pkg, name)
+    } else {
+      IzTypeId.UserType(TypePrefix.UserT(pkg, namespace), name)
+    }
+  }
+
+  private def makePkg(unresolved: UnresolvedName): IzPackage = {
+    IzPackage(unresolved.pkg.map(IzDomainPath))
+  }
+
+
+  def resolveId(id: AbstractNongeneric): IzTypeId = {
+    val unresolved = makeAbstract(id)
+    val pkg = makePkg(unresolved)
+    val name = IzName(unresolved.name)
+
+    toType(pkg, name)
+  }
+
+  private def toType(pkg: IzPackage, name: IzName) = {
+    if (pkg == builtinPackage) {
+      IzTypeId.BuiltinType(name)
+    } else {
+      IzTypeId.UserType(TypePrefix.UserTLT(pkg), name)
+    }
+  }
+
   def makeAbstract(id: IzTypeId.BuiltinType): UnresolvedName = {
     val name = id.name.name
     toBuiltinName(name)
   }
 
+
   private def toBuiltinName(name: String) = {
-    UnresolvedName(Seq("_builtins_"), name)
+    UnresolvedName(builtinPackage.path.map(_.name), name)
   }
 }

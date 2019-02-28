@@ -5,10 +5,9 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Membe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 import com.github.pshirshov.izumi.idealingua.typer2.IzType.{Adt, AdtMemberNested, AdtMemberRef, Basic, BuiltinType, DTO, Enum, EnumMember, FName, Field2, FieldSource, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure, NodeMeta}
-import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.{IzDomainPath, IzName, IzNamespace, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.IzTypeId.IzNamespace
 import com.github.pshirshov.izumi.idealingua.typer2.IzTypeReference.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.T2Fail.InterpretationFail
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName
 
 import scala.reflect.ClassTag
 
@@ -19,12 +18,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     v.id match {
       case IndefiniteGeneric(pkg, name, args) =>
         assert(args.forall(_.pkg.isEmpty))
-        val id = toId(Seq.empty, index.makeAbstract(IndefiniteId(pkg, name)))
+        val id = index.toId(Seq.empty, index.makeAbstract(IndefiniteId(pkg, name)))
         val params = args.map(a => IzTypeArgName(a.name))
         Right(ForeignGeneric(id, params, v.mapping.mapValues(ctx => Interpolation(ctx.parts, ctx.parameters.map(IzTypeArgName))), meta(v.meta)))
 
       case _ =>
-        val id = toId(Seq.empty, index.makeAbstract(v.id))
+        val id = index.toId(Seq.empty, index.makeAbstract(v.id))
         assert(v.mapping.values.forall(ctx => ctx.parameters.isEmpty && ctx.parts.size == 1))
         Right(ForeignScalar(id, v.mapping.mapValues(_.parts.head), meta(v.meta)))
     }
@@ -79,7 +78,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
   def cloneType(v: RawTypeDef.NewType): Either[List[InterpretationFail], IzType] = {
     val id = resolveId(v.id)
-    val sid = resolveId(v.source)
+    val sid = index.resolveId(v.source)
     val source = types(sid)
     val copy = source.member match {
       case t: TsMember.UserType =>
@@ -204,23 +203,19 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   private def resolveId(id: ParsedId): IzTypeId = {
-    resolveId(id.toIndefinite)
+    index.resolveId(id.toIndefinite)
   }
 
-  private def resolveId(id: AbstractNongeneric): IzTypeId = {
-    val unresolved = index.makeAbstract(id)
-    val out = IzTypeId.UserType(TypePrefix.UserTLT(makePkg(unresolved)), IzName(unresolved.name))
-    out
-  }
+
 
   private def resolve(id: AbstractIndefiniteId): IzTypeReference = {
     id match {
       case nongeneric: AbstractNongeneric =>
-        IzTypeReference.Scalar(resolveId(nongeneric))
+        IzTypeReference.Scalar(index.resolveId(nongeneric))
 
       case generic: IndefiniteGeneric =>
         // this is not good
-        val id = resolveId(IndefiniteId(generic.pkg, generic.name))
+        val id = index.resolveId(IndefiniteId(generic.pkg, generic.name))
         IzTypeReference.Generic(id, generic.args.zipWithIndex.map {
           case (a, idx) =>
             val argValue = resolve(a)
@@ -229,9 +224,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }
   }
 
-  private def makePkg(unresolved: UnresolvedName): IzPackage = {
-    IzPackage(unresolved.pkg.map(IzDomainPath))
-  }
+
 
   private def toTopId(id: TypeId): IzTypeId = {
     toId(id, Seq.empty)
@@ -241,24 +234,16 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     assert(id.path.within.isEmpty)
     val namespace = subpath
     val unresolvedName = index.makeAbstract(id)
-    toId(namespace, unresolvedName)
+    index.toId(namespace, unresolvedName)
   }
 
 
-  private def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId.UserType = {
-    val pkg = makePkg(unresolvedName)
-    if (namespace.isEmpty) {
-      IzTypeId.UserType(TypePrefix.UserTLT(pkg), IzName(unresolvedName.name))
-    } else {
-      IzTypeId.UserType(TypePrefix.UserT(pkg, namespace), IzName(unresolvedName.name))
-    }
-  }
 
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): T = {
     val parentsIds = struct.interfaces.map(toTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
-    val `+concepts` = struct.concepts.map(resolveId).map(types.apply).map(_.member)
-    val `-concepts` = struct.removedConcepts.map(resolveId).map(types.apply).map(_.member)
+    val `+concepts` = struct.concepts.map(index.resolveId).map(types.apply).map(_.member)
+    val `-concepts` = struct.removedConcepts.map(index.resolveId).map(types.apply).map(_.member)
 
     val parentFields = addLevel(parents.flatMap(structFields))
     val `+conceptFields` = addLevel(`+concepts`.flatMap(structFields))
@@ -289,7 +274,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
       f => allRemovals.contains(f.basic)
     })
     assert(allFields.groupBy(_.name).forall(_._2.size == 1))
-    val allParents = getP(parentsIds, parents)
+    val allParents = findAllParents(parentsIds, parents)
 
     (if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
       IzType.Interface(id, allFields, parentsIds, allParents, meta(structMeta), struct)
@@ -298,7 +283,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }).asInstanceOf[T]
   }
 
-  private def getP(parentsIds: List[IzTypeId], parents: List[TsMember]): Set[IzTypeId] = {
+  private def findAllParents(parentsIds: List[IzTypeId], parents: List[TsMember]): Set[IzTypeId] = {
     (parentsIds ++ parents.flatMap {
       case TsMember.UserType(tpe) =>
         tpe match {
@@ -307,7 +292,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
           case a: IzAlias =>
             a.source match {
               case IzTypeReference.Scalar(id) =>
-                getP(List(a.id), List(types(id).member))
+                findAllParents(List(a.id), List(types(id).member))
               case _: IzTypeReference.Generic =>
                 ???
             }
@@ -323,17 +308,21 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   private def merge(fields: Seq[Field2]): Seq[Field2] = {
     fields
       .groupBy(_.name)
+      .values
       .toList
       .map {
-        case (_, v :: Nil)  =>
+        case v :: Nil  =>
           v
-        case (k, v) =>
-          val sorted = v.sortBy(_.defined.map(_.distance).min)
-          // here we choose closest definition as the primary one, compatibility will be checked after we finish processing all types
-          v.tail.foldLeft(v.head) {
+        case v =>
+          val merged = v.tail.foldLeft(v.head) {
             case (acc, f) =>
-              acc.copy(tpe = sorted.head.tpe, defined = acc.defined ++ f.defined)
+              acc.copy(defined = acc.defined ++ f.defined)
           }
+
+          // here we choose closest definition as the primary one, compatibility will be checked after we finish processing all types
+          val sortedDefns = merged.defined.sortBy(defn => (defn.distance, defn.number))
+          val closestType = sortedDefns.head.as
+          merged.copy(tpe = closestType, defined = sortedDefns)
       }
   }
 
