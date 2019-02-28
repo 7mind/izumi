@@ -65,7 +65,7 @@ object IzType {
 
   case class FName(name: String)
 
-  case class FieldSource(in: IzTypeId, number: Int, distance: Int, meta: NodeMeta)
+  case class FieldSource(in: IzTypeId, as: IzTypeReference, number: Int, distance: Int, meta: NodeMeta)
   case class Field2(name: FName, tpe: IzTypeReference, defined: Seq[FieldSource]) {
     def basic: Basic = Basic(name, tpe)
   }
@@ -77,11 +77,12 @@ object IzType {
     def id: IzTypeId
     def fields: Seq[Field2]
     def parents: Seq[IzTypeId]
+    def allParents: Set[IzTypeId]
     def meta: NodeMeta
     def defn: RawStructure
   }
-  case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
-  case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
+  case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
+  case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
 
   case class Identifier(id: IzTypeId, fields: Seq[Field2], meta: NodeMeta) extends IzType
 

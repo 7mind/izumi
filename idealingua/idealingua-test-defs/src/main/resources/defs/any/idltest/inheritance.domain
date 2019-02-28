@@ -49,6 +49,7 @@ mixin InheritedCovariant {
   & WithCovariance
 
   field: CovariantA
+  field: str
 }
 
 data CovariantDTO1 {

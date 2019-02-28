@@ -149,7 +149,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
     val fields = i.fields.zipWithIndex.map {
       case (f, idx) =>
-        Field2(fname(f), toRef(f), Seq(FieldSource(id, idx, 0, meta(f.meta))))
+        val ref = toRef(f)
+        Field2(fname(f), ref, Seq(FieldSource(id, ref, idx, 0, meta(f.meta))))
     }
     Right(Identifier(id, fields, meta(i.meta)))
   }
@@ -269,7 +270,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
-        Field2(fname(f), toRef(f), Seq(FieldSource(id, idx, 0, meta(f.meta))))
+        val typeReference = toRef(f)
+        Field2(fname(f), typeReference, Seq(FieldSource(id, typeReference, idx, 0, meta(f.meta))))
     }
 
     val removedFields = struct.removedFields.map {
@@ -286,28 +288,53 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     val allFields = merge(allAddedFields.filterNot {
       f => allRemovals.contains(f.basic)
     })
+    assert(allFields.groupBy(_.name).forall(_._2.size == 1))
+    val allParents = getP(parentsIds, parents)
 
     (if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
-      IzType.Interface(id, allFields, parentsIds, meta(structMeta), struct)
+      IzType.Interface(id, allFields, parentsIds, allParents, meta(structMeta), struct)
     } else {
-      IzType.DTO(id, allFields, parentsIds, meta(structMeta), struct)
+      IzType.DTO(id, allFields, parentsIds, allParents, meta(structMeta), struct)
     }).asInstanceOf[T]
   }
 
-  private def merge(parentFields: Seq[Field2]): Seq[Field2] = {
-    parentFields
-      .groupBy(_.name)
-      .map {
-        case (_, v) if v.size == 1 =>
-          v.head
-        case (k, v) =>
+  private def getP(parentsIds: List[IzTypeId], parents: List[TsMember]): Set[IzTypeId] = {
+    (parentsIds ++ parents.flatMap {
+      case TsMember.UserType(tpe) =>
+        tpe match {
+          case structure: IzStructure =>
+            structure.allParents
+          case a: IzAlias =>
+            a.source match {
+              case IzTypeReference.Scalar(id) =>
+                getP(List(a.id), List(types(id).member))
+              case _: IzTypeReference.Generic =>
+                ???
+            }
 
+
+          case _ =>
+            println(("???", tpe))
+            ???
+        }
+    }).toSet
+  }
+
+  private def merge(fields: Seq[Field2]): Seq[Field2] = {
+    fields
+      .groupBy(_.name)
+      .toList
+      .map {
+        case (_, v :: Nil)  =>
+          v
+        case (k, v) =>
+          val sorted = v.sortBy(_.defined.map(_.distance).min)
+          // here we choose closest definition as the primary one, compatibility will be checked after we finish processing all types
           v.tail.foldLeft(v.head) {
             case (acc, f) =>
-              acc.copy(defined = acc.defined ++ f.defined)
+              acc.copy(tpe = sorted.head.tpe, defined = acc.defined ++ f.defined)
           }
       }
-      .toSeq
   }
 
   private def addLevel(parentFields: Seq[Field2]): Seq[Field2] = {
