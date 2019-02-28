@@ -4,22 +4,22 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Identified, OriginatedDefn, UnresolvedName}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, OriginatedDefn, UnresolvedName}
 
 class DependencyExtractor(index: DomainIndex) {
   val types: Seq[TypeDefn] = index.types
   val source: DomainId = index.defn.id
 
-  def groupByType(): Seq[Identified] = {
+  def groupByType(): Seq[Operation] = {
     val identified = types.map {
       case t@RawTopLevelDefn.TLDBaseType(v) =>
-        Identified(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDNewtype(v) =>
-        Identified(index.makeAbstract(v.id.toIndefinite), Set(index.makeAbstract(v.source)), Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(v.id.toIndefinite), Set(index.makeAbstract(v.source)), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDDeclared(v) =>
-        Identified(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDForeignType(v) =>
-        Identified(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
     }
 
     identified

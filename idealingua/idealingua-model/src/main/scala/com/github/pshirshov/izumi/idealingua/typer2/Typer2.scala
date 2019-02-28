@@ -46,7 +46,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def fill(groupedByType: Map[UnresolvedName, Identified], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
+  private def fill(groupedByType: Map[UnresolvedName, Operation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
 
     Try {
@@ -58,7 +58,7 @@ class Typer2(defn: DomainMeshResolved) {
           if (missingDeps.isEmpty) {
             processor.add(ops)
           } else {
-            processor.fail(ops, List(DependencyMissing(missingDeps, ops.id)))
+            processor.fail(ops, List(DependencyMissing(ops, missingDeps, ops.id)))
           }
       }
       processor.finish()
@@ -72,15 +72,15 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def combineOperations(): Either[Nothing, Seq[Identified]] = {
+  private def combineOperations(): Either[Nothing, Seq[Operation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
-    val builtinOps = Builtins.all.map(b => Identified(index.makeAbstract(b.id), Set.empty, Seq.empty))
-    val allOperations: Seq[Identified] = domainOps ++ builtinOps ++ importedOps.toSeq
+    val builtinOps = Builtins.all.map(b => Operation(index.makeAbstract(b.id), Set.empty, Seq.empty))
+    val allOperations: Seq[Operation] = domainOps ++ builtinOps ++ importedOps.toSeq
     Right(allOperations)
   }
 
-  private def groupOps(allOperations: Seq[Identified]): Either[List[ConflictingNames], Map[UnresolvedName, Identified]] = {
+  private def groupOps(allOperations: Seq[Operation]): Either[List[ConflictingNames], Map[UnresolvedName, Operation]] = {
     val groupedByType = allOperations.groupBy(_.id).mapValues {
       ops =>
         ops.tail.foldLeft(ops.head) {
@@ -120,6 +120,6 @@ object Typer2 {
 
   case class OriginatedDefn(source: DomainId, defn: TypeDefn)
 
-  case class Identified(id: UnresolvedName, depends: Set[UnresolvedName], defns: Seq[OriginatedDefn])
+  case class Operation(id: UnresolvedName, depends: Set[UnresolvedName], defns: Seq[OriginatedDefn])
 
 }

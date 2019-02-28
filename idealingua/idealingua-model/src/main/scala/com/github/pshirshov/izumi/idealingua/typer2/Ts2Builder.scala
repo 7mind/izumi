@@ -1,12 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Identified, UnresolvedName}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model._
@@ -35,7 +33,7 @@ case class Typespace2(
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) {
   private val failed = mutable.HashSet.empty[UnresolvedName]
-  private val failures = mutable.ArrayBuffer.empty[InterpretationFail]
+  private val failures = mutable.ArrayBuffer.empty[BuilderFail]
   private val existing = mutable.HashSet.empty[UnresolvedName]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
   private val thisPrefix = TypePrefix.UserTLT(IzPackage(index.defn.id.toPackage.map(IzDomainPath)))
@@ -44,7 +42,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     existing.toSet
   }
 
-  def add(ops: Identified): Unit = {
+  def add(ops: Operation): Unit = {
     ops.defns match {
       case defns if defns.isEmpty =>
         // type requires no ops => builtin
@@ -88,7 +86,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
             interpreter.makeForeign(v).asList
 
           case RawTopLevelDefn.TLDDeclared(v) =>
-            Left(List(SingleDeclaredType(v)))
+            Left(List(SingleDeclaredType(ops, v)))
         }
         register(ops, product)
 
@@ -97,7 +95,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
-  def fail(ops: Identified, failures: List[InterpretationFail]): Unit = {
+  def fail(ops: Operation, failures: List[BuilderFail]): Unit = {
     if (ops.depends.exists(failed.contains)) {
       // dependency has failed already, fine to skip
     } else {
@@ -107,7 +105,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
 
-  def finish(): Either[List[InterpretationFail], Typespace2] = {
+  def finish(): Either[List[BuilderFail], Typespace2] = {
     for {
       _ <- if (failures.nonEmpty) {
         Left(failures.toList)
@@ -115,7 +113,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         Right(())
       }
       allTypes = Ts2Builder.this.types.values.collect({ case Exported(member) => member }).toList
-      _ <- validateAll(allTypes, postValidate)
+      verifier = new TsVerifier(types.toMap)
+      _ <- verifier.validateAll(allTypes, verifier.postValidate)
     } yield {
       Typespace2(
         List.empty,
@@ -125,10 +124,11 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
-  private def register(ops: Identified, maybeTypes: Either[List[InterpretationFail], List[IzType]]): Unit = {
+  private def register(ops: Operation, maybeTypes: Either[List[BuilderFail], List[IzType]]): Unit = {
     (for {
       tpe <- maybeTypes
-      _ <- validateAll(tpe, preValidate)
+      verifier = new TsVerifier(types.toMap)
+      _ <- verifier.validateAll(tpe, verifier.preValidate)
     } yield {
       tpe
     }) match {
@@ -145,64 +145,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
-  private def validateAll(allTypes: List[IzType], validator: IzType => Either[List[InterpretationFail], Unit]): Either[List[InterpretationFail], Unit] = {
-    val bad = allTypes
-      .map(validator)
-      .collect({ case Left(l) => l })
-      .flatten
-
-    if (bad.nonEmpty) {
-      Left(bad)
-    } else {
-      Right(())
-    }
-  }
-
-
-  private def postValidate(tpe: IzType): Either[List[InterpretationFail], Unit] = {
-    tpe match {
-      case structure: IzStructure =>
-        structure.fields.foreach {
-          f =>
-            import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-            f.defined.map(_.as).foreach(parent => assert(isSubtype(f.tpe, parent), s"${f.tpe} ?? $parent\n\n${f.defined.niceList()}\n\n"))
-        }
-        Right(())
-      case o =>
-        Right(())
-      //      case generic: IzType.Generic =>
-      //      case builtinType: IzType.BuiltinType =>
-      //      case IzType.IzAlias(id, source, meta) =>
-      //      case IzType.Identifier(id, fields, meta) =>
-      //      case IzType.Enum(id, members, meta) =>
-      //      case foreign: IzType.Foreign =>
-      //      case IzType.Adt(id, members, meta) =>
-    }
-  }
-
-  private def preValidate(tpe: IzType): Either[List[InterpretationFail], Unit] = {
-    // TODO: verify
-    // don't forget: we don't have ALL the definitions here yet
-    Quirks.discard(tpe)
-    Right(())
-  }
-
-  private def isSubtype(child: IzTypeReference, parent: IzTypeReference): Boolean = {
-    (child == parent) || {
-      (child, parent) match {
-        case (IzTypeReference.Scalar(childId), IzTypeReference.Scalar(parentId)) =>
-          (types(childId).member, types(parentId).member) match {
-            case (c: IzStructure, p: IzStructure) =>
-              c.allParents.contains(p.id)
-            case _ =>
-              false
-          }
-
-        case _ =>
-          false // all generics are non-covariant
-      }
-    }
-  }
 
   private def isOwn(id: IzTypeId): Boolean = {
     id match {
@@ -221,5 +163,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 }
+
 
 

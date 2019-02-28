@@ -8,13 +8,13 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.InterpretationFail
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
 import scala.reflect.ClassTag
 
 trait Ret {
-  type Result[T] = Either[List[InterpretationFail], T]
+  type Result[T] = Either[List[BuilderFail], T]
   type TList = Result[List[IzType]]
   type TSingle = Result[IzType]
   type TSingleT[T <: IzType] = Result[T]
@@ -53,7 +53,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
 
   case class Pair(member: IzType.model.AdtMember, additional: List[IzType])
 
-  type TChain = Either[List[InterpretationFail], Chain]
+  type TChain = Either[List[BuilderFail], Chain]
 
   implicit class TSingleExt1[T <: IzType](ret: TSingleT[T]) {
     def asChain: TChain = ret.map(r => Chain(r, List.empty))
@@ -111,30 +111,30 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     val id = resolveId(v.id)
     val sid = index.resolveId(v.source)
     val source = types(sid)
-    val copy = source.member match {
+    source.member match {
       case builtinType: BuiltinType =>
         assert(v.modifiers.isEmpty)
-        IzAlias(id, IzTypeReference.Scalar(builtinType.id), meta(v.meta))
+        Right(List(IzAlias(id, IzTypeReference.Scalar(builtinType.id), meta(v.meta))))
 
       case a: IzAlias =>
         assert(v.modifiers.isEmpty)
-        a.copy(id = id)
+        Right(List(a.copy(id = id)))
 
       case d: DTO =>
         val modified = modify(d, v.modifiers)
-        make[DTO](modified, id, v.meta)
+        make[DTO](modified, id, v.meta).map(t => List(t))
 
       case d: Interface =>
         val modified = modify(d, v.modifiers)
-        make[Interface](modified, id, v.meta)
+        make[Interface](modified, id, v.meta).map(t => List(t))
 
       case i: Identifier =>
         assert(v.modifiers.isEmpty)
-        i.copy(id = id)
+        Right(List(i.copy(id = id)))
 
       case e: Enum =>
         assert(v.modifiers.isEmpty)
-        e.copy(id = id)
+        Right(List(e.copy(id = id)))
       case _: Generic =>
         ???
       case _: Foreign =>
@@ -143,7 +143,6 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
         ???
     }
 
-    Right(List(copy))
   }
 
   def makeIdentifier(i: RawTypeDef.Identifier): TSingle = {
@@ -214,17 +213,17 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
 
-  private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingleT[IzType.Interface] = {
+  private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
     val id = toId(i.id, subpath)
-    Right(make[IzType.Interface](struct, id, i.meta))
+    make[IzType.Interface](struct, id, i.meta)
   }
 
 
-  private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingleT[IzType.DTO] = {
+  private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
     val id = toId(i.id, subpath)
-    Right(make[IzType.DTO](struct, id, i.meta))
+    make[IzType.DTO](struct, id, i.meta)
   }
 
 
@@ -259,26 +258,50 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
   }
 
   private def toId(id: TypeId, subpath: Seq[IzNamespace]): IzTypeId = {
-    assert(id.path.within.isEmpty)
+    assert(id.path.within.isEmpty, s"BUG: Unexpected TypeId, path should be empty: $id")
     val namespace = subpath
     val unresolvedName = index.makeAbstract(id)
     index.toId(namespace, unresolvedName)
   }
 
+//  implicit class EitherFolderExt[L, R](result: Seq[Either[L, R]]) {
+//    def xflatten: Either[List[L], List[R]] = {
+//      val bad = result.collect({ case Left(e) => e })
+//      if (bad.isEmpty) {
+//        Right(result.collect({ case Right(r) => r }).toList)
+//      } else {
+//        Left(bad.toList)
+//      }
+//    }
+//  }
+//
+//  implicit class EitherFolderExt1[L, R](result: Seq[Either[L, Traversable[R]]]) {
+//    def xflatten1: Either[List[L], List[R]] = {
+//      val bad = result.collect({ case Left(e) => e })
+//      if (bad.isEmpty) {
+//        Right(result.collect({ case Right(r) => r }).flatten.toList)
+//      } else {
+//        Left(bad.toList)
+//      }
+//    }
+//  }
 
-  private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): T = {
+  implicit class EitherFolderExt2[L, R](result: Seq[Either[List[L], Traversable[R]]]) {
+    def xflatten2: Either[List[L], List[R]] = {
+      val bad = result.collect({ case Left(e) => e })
+      if (bad.isEmpty) {
+        Right(result.collect({ case Right(r) => r }).flatten.toList)
+      } else {
+        Left(bad.flatten.toList)
+      }
+    }
+  }
+
+  private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
     val parentsIds = struct.interfaces.map(toTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
-    val `+concepts` = struct.concepts.map(index.resolveId).map(types.apply).map(_.member)
-    val `-concepts` = struct.removedConcepts.map(index.resolveId).map(types.apply).map(_.member)
-
-    val parentFields = addLevel(parents.flatMap(structFields))
-    val `+conceptFields` = addLevel(`+concepts`.flatMap(structFields))
-    /* all the concept fields will be removed
-      in case we have `D {- Concept} extends C {+ conceptField: type} extends B { - conceptField: type } extends A { + Concept }` and
-      conceptField will be removed from D too
-     */
-    val `-conceptFields` = `-concepts`.flatMap(structFields).map(_.basic)
+    val conceptsAdded = struct.concepts.map(index.resolveId).map(types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(index.resolveId).map(types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -291,23 +314,39 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
         BasicField(fname(f), toRef(f))
     }
 
-    val allRemovals = (`-conceptFields` ++ removedFields).toSet
-    val allAddedFields = parentFields ++ `+conceptFields` ++ localFields
-    val nothingToRemove = allRemovals -- allAddedFields.map(_.basic).toSet
-    if (nothingToRemove.nonEmpty) {
-      println(s"Unexpected removals: $nothingToRemove")
-    }
-    val allFields = merge(allAddedFields.filterNot {
-      f => allRemovals.contains(f.basic)
-    })
-    assert(allFields.groupBy(_.name).forall(_._2.size == 1))
-    val allParents = findAllParents(parentsIds, parents)
+    for {
+      parentFields  <- parents.map(structFields(id)).xflatten2.map(addLevel)
+      conceptFieldsAdded  <-conceptsAdded.map(structFields(id)).xflatten2.map(addLevel)
+      /* all the concept fields will be removed
+        in case we have `D {- Concept} extends C {+ conceptField: type} extends B { - conceptField: type } extends A { + Concept }` and
+        conceptField will be removed from D too
+       */
+      conceptFieldsRemoved <- conceptsRemoved.map(structFields(id)).xflatten2.map(_.map(_.basic))
+      allRemovals = (conceptFieldsRemoved ++ removedFields).toSet
+      allAddedFields = parentFields ++ conceptFieldsAdded ++ localFields
+      nothingToRemove = allRemovals -- allAddedFields.map(_.basic).toSet
+      allFields = merge(allAddedFields.filterNot {
+        f => allRemovals.contains(f.basic)
+      })
+      conflicts = allFields.groupBy(_.name).filter(_._2.size > 1)
+      _ <- if (conflicts.nonEmpty) {
+        Left(List(ConflictingFields(id, conflicts)))
+      } else {
+        Right(())
+      }
+    } yield {
+      val allParents = findAllParents(parentsIds, parents)
 
-    (if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
-      IzType.Interface(id, allFields, parentsIds, allParents, meta(structMeta), struct)
-    } else {
-      IzType.DTO(id, allFields, parentsIds, allParents, meta(structMeta), struct)
-    }).asInstanceOf[T]
+      if (nothingToRemove.nonEmpty) {
+        println(s"Unexpected removals: $nothingToRemove")
+      }
+
+      if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
+        IzType.Interface(id, allFields, parentsIds, allParents, meta(structMeta), struct)
+      } else {
+        IzType.DTO(id, allFields, parentsIds, allParents, meta(structMeta), struct)
+      }
+    }
   }
 
   private def findAllParents(parentsIds: List[IzTypeId], parents: List[IzType]): Set[IzTypeId] = {
@@ -373,30 +412,20 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     FName(f.name.getOrElse(default))
   }
 
-  private def structFields(tpe: IzType): Seq[FullField] = {
+  private def structFields(context: IzTypeId)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]]  = {
     tpe match {
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            structFields(types.apply(id).member)
-          case _: IzTypeReference.Generic =>
-            ???
+            structFields(context)(types.apply(id).member)
+          case g: IzTypeReference.Generic =>
+            Left(List(ParentCannotBeGeneric(context, g)))
         }
 
       case structure: IzStructure =>
-        structure.fields
-      case _: Generic =>
-        ???
-      case _: BuiltinType =>
-        ???
-      case _: Identifier =>
-        ???
-      case _: Enum =>
-        ???
-      case _: Foreign =>
-        ???
-      case _: Adt =>
-        ???
+        Right(structure.fields)
+      case o =>
+        Left(List(ParentTypeExpectedToBeStructure(context, o.id)))
     }
   }
 
