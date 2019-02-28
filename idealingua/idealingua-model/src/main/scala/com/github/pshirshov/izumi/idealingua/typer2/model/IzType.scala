@@ -16,14 +16,17 @@ object IzType {
     final case class NodeMeta(doc: Option[String], annos: Seq[Nothing], pos: InputPosition)
 
     final case class FName(name: String)
-
+    final case class BasicField(name: FName, ref: IzTypeReference)
     final case class FieldSource(in: IzTypeId, as: IzTypeReference, number: Int, distance: Int, meta: NodeMeta)
-    final case class Field2(name: FName, tpe: IzTypeReference, defined: Seq[FieldSource]) {
-      def basic: Basic = Basic(name, tpe)
+    final case class FullField(name: FName, tpe: IzTypeReference, defined: Seq[FieldSource]) {
+      def basic: BasicField = BasicField(name, tpe)
     }
-    final case class Basic(name: FName, ref: IzTypeReference)
+
     final case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
 
+    sealed trait AdtMember
+    final case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
+    final case class AdtMemberNested(name: String, tpe: IzTypeReference, meta: NodeMeta) extends AdtMember
   }
   import model._
 
@@ -33,22 +36,19 @@ object IzType {
 
   sealed trait IzStructure extends IzType {
     def id: IzTypeId
-    def fields: Seq[Field2]
+    def fields: Seq[FullField]
     def parents: Seq[IzTypeId]
     def allParents: Set[IzTypeId]
     def meta: NodeMeta
     def defn: RawStructure
   }
-  final case class DTO(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
-  final case class Interface(id: IzTypeId, fields: Seq[Field2], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
+  final case class DTO(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
+  final case class Interface(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure
 
-  sealed trait AdtMember
-  final case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
-  final case class AdtMemberNested(name: String, tpe: IzTypeReference, meta: NodeMeta) extends AdtMember
   final case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta) extends IzType
 
   final case class IzAlias(id: IzTypeId, source: IzTypeReference, meta: NodeMeta) extends IzType
-  final case class Identifier(id: IzTypeId, fields: Seq[Field2], meta: NodeMeta) extends IzType
+  final case class Identifier(id: IzTypeId, fields: Seq[FullField], meta: NodeMeta) extends IzType
   final case class Enum(id: IzTypeId, members: Seq[EnumMember], meta: NodeMeta) extends IzType
 
   sealed trait Foreign extends IzType

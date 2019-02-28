@@ -191,7 +191,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     (child == parent) || {
       (child, parent) match {
         case (IzTypeReference.Scalar(childId), IzTypeReference.Scalar(parentId)) =>
-          // TODO: aliases!
           (types(childId).member, types(parentId).member) match {
             case (c: IzStructure, p: IzStructure) =>
               c.allParents.contains(p.id)
