@@ -17,7 +17,7 @@ trait Clock[+F[_]] {
 object Clock {
   def apply[F[_] : Clock]: Clock[F] = implicitly
 
-  object Standard extends Clock[Identity] {
+  class Standard extends Clock[Identity] {
 
     override def epoch: Long = java.time.Clock.systemUTC().millis()
 
@@ -31,7 +31,7 @@ object Clock {
 
     override def epoch: Long = time.toEpochSecond
 
-    override def now(accuracy: ClockAccuracy = ClockAccuracy.DEFAULT): Identity[ZonedDateTime] = {
+    override def now(accuracy: ClockAccuracy): Identity[ZonedDateTime] = {
       ClockAccuracy.applyAccuracy(time, accuracy)
     }
   }
