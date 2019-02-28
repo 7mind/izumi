@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinTy
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
 
 import scala.reflect.ClassTag
 
@@ -25,7 +25,8 @@ trait Ret {
 
 }
 
-class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
+
+class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger: WarnLogger) {
   private val index: DomainIndex = _index
 
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
@@ -264,27 +265,27 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     index.toId(namespace, unresolvedName)
   }
 
-//  implicit class EitherFolderExt[L, R](result: Seq[Either[L, R]]) {
-//    def xflatten: Either[List[L], List[R]] = {
-//      val bad = result.collect({ case Left(e) => e })
-//      if (bad.isEmpty) {
-//        Right(result.collect({ case Right(r) => r }).toList)
-//      } else {
-//        Left(bad.toList)
-//      }
-//    }
-//  }
-//
-//  implicit class EitherFolderExt1[L, R](result: Seq[Either[L, Traversable[R]]]) {
-//    def xflatten1: Either[List[L], List[R]] = {
-//      val bad = result.collect({ case Left(e) => e })
-//      if (bad.isEmpty) {
-//        Right(result.collect({ case Right(r) => r }).flatten.toList)
-//      } else {
-//        Left(bad.toList)
-//      }
-//    }
-//  }
+  //  implicit class EitherFolderExt[L, R](result: Seq[Either[L, R]]) {
+  //    def xflatten: Either[List[L], List[R]] = {
+  //      val bad = result.collect({ case Left(e) => e })
+  //      if (bad.isEmpty) {
+  //        Right(result.collect({ case Right(r) => r }).toList)
+  //      } else {
+  //        Left(bad.toList)
+  //      }
+  //    }
+  //  }
+  //
+  //  implicit class EitherFolderExt1[L, R](result: Seq[Either[L, Traversable[R]]]) {
+  //    def xflatten1: Either[List[L], List[R]] = {
+  //      val bad = result.collect({ case Left(e) => e })
+  //      if (bad.isEmpty) {
+  //        Right(result.collect({ case Right(r) => r }).flatten.toList)
+  //      } else {
+  //        Left(bad.toList)
+  //      }
+  //    }
+  //  }
 
   implicit class EitherFolderExt2[L, R](result: Seq[Either[List[L], Traversable[R]]]) {
     def xflatten2: Either[List[L], List[R]] = {
@@ -315,8 +316,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     }
 
     for {
-      parentFields  <- parents.map(structFields(id)).xflatten2.map(addLevel)
-      conceptFieldsAdded  <-conceptsAdded.map(structFields(id)).xflatten2.map(addLevel)
+      parentFields <- parents.map(structFields(id)).xflatten2.map(addLevel)
+      conceptFieldsAdded <- conceptsAdded.map(structFields(id)).xflatten2.map(addLevel)
       /* all the concept fields will be removed
         in case we have `D {- Concept} extends C {+ conceptField: type} extends B { - conceptField: type } extends A { + Concept }` and
         conceptField will be removed from D too
@@ -338,7 +339,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
       val allParents = findAllParents(parentsIds, parents)
 
       if (nothingToRemove.nonEmpty) {
-        println(s"Unexpected removals: $nothingToRemove")
+        logger.log(T2Warn.NothingToRemove(id, nothingToRemove))
       }
 
       if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
@@ -412,7 +413,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp]) {
     FName(f.name.getOrElse(default))
   }
 
-  private def structFields(context: IzTypeId)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]]  = {
+  private def structFields(context: IzTypeId)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]] = {
     tpe match {
       case a: IzAlias =>
         a.source match {

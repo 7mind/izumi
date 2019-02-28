@@ -25,7 +25,7 @@ class Typer2(defn: DomainMeshResolved) {
 
       case Right(value) =>
         val types = value.types.size
-        println(s"  ... $types members")
+        println(s"  ... $types members, ${value.warnings.size} warnings")
     }
 
   }

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, FullField}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName, FullField}
 
 sealed trait T2Fail
 
@@ -43,5 +43,5 @@ object T2Fail {
 sealed trait T2Warn
 
 object T2Warn {
-
+  final case class NothingToRemove(tpe: IzTypeId, removals: Set[BasicField]) extends T2Warn
 }

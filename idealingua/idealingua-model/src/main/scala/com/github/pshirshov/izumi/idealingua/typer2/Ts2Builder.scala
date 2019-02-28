@@ -31,12 +31,22 @@ case class Typespace2(
                        types: List[ProcessedOp],
                      )
 
-class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) {
+trait WarnLogger {
+  def log(w: T2Warn): Unit
+}
+
+class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger {
   private val failed = mutable.HashSet.empty[UnresolvedName]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
+  private val warnings = mutable.ArrayBuffer.empty[T2Warn]
   private val existing = mutable.HashSet.empty[UnresolvedName]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
   private val thisPrefix = TypePrefix.UserTLT(IzPackage(index.defn.id.toPackage.map(IzDomainPath)))
+
+
+  override def log(w: T2Warn): Unit = {
+    warnings += w
+  }
 
   def defined: Set[UnresolvedName] = {
     existing.toSet
@@ -55,7 +65,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         } else {
           importedIndexes(single.source)
         }
-        val interpreter = new Interpreter(dindex, types.toMap)
+        val interpreter = new Interpreter(dindex, types.toMap, this)
 
         val product = single.defn match {
           case RawTopLevelDefn.TLDBaseType(v) =>
@@ -117,7 +127,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       _ <- verifier.validateAll(allTypes, verifier.postValidate)
     } yield {
       Typespace2(
-        List.empty,
+        warnings.toList,
         Set.empty,
         this.types.values.toList,
       )
