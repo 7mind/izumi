@@ -33,6 +33,7 @@ case class GoLangBuildManifest(
                                 common: Common,
                                 layout: GoProjectLayout,
                                 repository: GoRepositoryOptions,
+                                enableTesting: Boolean
                               ) extends BuildManifest
 
 object GoLangBuildManifest {
@@ -41,6 +42,7 @@ object GoLangBuildManifest {
       common = BuildManifest.Common.example,
       layout = GoProjectLayout.REPOSITORY,
       repository = GoRepositoryOptions.example,
+      enableTesting = true
     )
   }
 

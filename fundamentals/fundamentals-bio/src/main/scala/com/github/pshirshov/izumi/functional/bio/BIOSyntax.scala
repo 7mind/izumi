@@ -50,6 +50,8 @@ object BIOSyntax {
     @inline def catchAll[E2, A2 >: A](h: E => R[E2, A2]): R[E2, A2] = R.redeem(r)(h, R.now)
 
     @inline def orTerminate(implicit ev: E <:< Throwable): R[Nothing, A] = catchAll(R.terminate(_))
+
+    @inline def widen[E1 >: E, A1 >: A]: R[E1, A1] = r
   }
 
   final class BIOAsyncOps[R[+ _, + _], E, A](private val r: R[E, A])(implicit private val R: BIOAsync[R]) {

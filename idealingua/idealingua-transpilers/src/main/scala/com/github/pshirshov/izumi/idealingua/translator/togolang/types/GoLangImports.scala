@@ -23,7 +23,7 @@ final case class GoLangImports(imports: List[GoLangImportRecord] = List.empty, m
     }
 
     s"""import (
-       |${combined.mkString("\n").shift(4)}
+       |${combined.distinct.mkString("\n").shift(4)}
        |)
      """.stripMargin
   }
@@ -101,12 +101,13 @@ object GoLangImports {
 
     val packages = imports.flatMap( i =>  this.withImport(i, fromPkg, forTest).map(wi => (i, Some(None), wi))).filterNot(_._3.isEmpty)
       // We might get duplicate packages due to time used for multiple primitives, etc. We need to further reduce the list
-      .groupBy(_._3.mkString(".")).map(_._2.head).toList
+      .groupBy(_._3.mkString(".")).flatMap(_._2).toList
+
 
     // For each type, which package ends with the same path, we need to add a unique number of import so it can be
-    // distinctly used in the types reference
+    // distinctly used in the types reference. Make sure that the last one is the same and that domain itself is different
     packages.zipWithIndex.map{ case (tp, index) =>
-      if (packages.exists(p => p._3.last == tp._3.last && p._1 != tp._1))
+      if (packages.exists(p => p._3.last == tp._3.last && p._1 != tp._1 && p._3.mkString(".") != tp._3.mkString(".")))
         GoLangImportRecord(tp._1, s"imp_$index", tp._3)
       else
         GoLangImportRecord(tp._1, tp._3.last, tp._3)

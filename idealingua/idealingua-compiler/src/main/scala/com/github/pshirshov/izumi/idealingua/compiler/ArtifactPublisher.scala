@@ -2,14 +2,13 @@ package com.github.pshirshov.izumi.idealingua.compiler
 
 import java.nio.file._
 import java.time.ZonedDateTime
-import java.util.Base64
 
 import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
 import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
 
-import scala.sys.process.Process
+import scala.sys.process._
 import scala.util.Try
 import scala.collection.JavaConverters._
 
@@ -73,38 +72,38 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
   private def publishTypescript(targetDir: Path, creds: TypescriptCredentials): Either[Throwable, Unit] = Try {
     log.log("Prepare to package Typescript sources")
 
+    val packagesDir = Files.list(targetDir.resolve("packages")).filter(_.toFile.isDirectory).iterator().asScala.toSeq.head
+    val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
+    val repoName = creds.npmRepo.replaceAll("http://", "").replaceAll("https://", "")
+    val scope = packagesDir.getFileName
+
+    log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
+
+    val scriptLines =
+      List(
+        Seq("echo", s"Setting NPM registry for scope $scope to $repoName using user & _password method..."),
+        Seq("npm", "config", "set", s"$scope:registry", s"${creds.npmRepo}"),
+        Seq("npm", "config", "set", s"//$repoName:email", s"${creds.npmEmail}"),
+        Seq("npm", "config", "set", s"//$repoName:always-auth", "true"),
+        Seq("npm", "config", "set", s"//$repoName:username", s"${creds.npmUser}"),
+        Seq("npm", "config", "set", s"//$repoName:_password", (Seq("echo", "-n", s"${creds.npmPassword}") #| Seq("openssl", "base64")).!!),
+      )
+
+    scriptLines.foreach(s => Process(s, targetDir.toFile).lineStream.foreach(log.log))
+
+    log.log("Publishing NPM packages")
+
     log.log("Yarn installing")
     Process(
-      "yarn install" ,
+      "yarn install",
       targetDir.toFile
     ).lineStream.foreach(log.log)
 
     log.log("Yarn building")
     Process(
-      "yarn build" ,
+      "yarn build",
       targetDir.toFile
     ).lineStream.foreach(log.log)
-
-    log.log("Publishing NPM packages")
-    val packagesDir = Files.list(targetDir.resolve("packages")).filter(_.toFile.isDirectory).iterator().asScala.toSeq.head
-    val scope = packagesDir.getFileName
-
-    val credsFile = Paths.get(System.getProperty("user.home")).resolve("~/.npmrc")
-    val auth = Base64.getEncoder.encode(creds.npmPassword.getBytes)
-    val repoName = creds.npmRepo.replaceAll("http://", "").replaceAll("https://", "")
-    log.log(s"Writing credentials in ${credsFile.toAbsolutePath.getFileName}")
-    Process(
-      s"npm config set registry ${creds.npmRepo}"
-    )
-    Files.write(Paths.get(System.getProperty("user.home")).resolve(".npmrc"), Seq(
-      s"""
-         |$scope:registry=${creds.npmRepo}
-         |//$repoName:_password=$auth
-         |//$repoName:username=${creds.npmUser}
-         |//$repoName:email=${creds.npmEmail}
-         |//$repoName:always-auth=true
-      """.stripMargin
-    ).asJava)
 
     Files.list(targetDir.resolve("dist")).filter(_.toFile.isDirectory).iterator().asScala.foreach { module =>
       val cmd = s"npm publish --force --registry ${creds.npmRepo} ${module.toAbsolutePath.toString}"
@@ -115,29 +114,32 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
   }.toEither
 
   private def publishCsharp(targetDir: Path, creds: CsharpCredentials): Either[Throwable, Unit] = Try {
+    val nuspecDir = targetDir.resolve("nuspec")
+    val nuspecFile = nuspecDir.toFile
+
     log.log("Prepare to package C# sources")
 
     log.log("Preparing credentials")
     Process(
-      s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", targetDir.toFile
+      s"nuget sources Add -Name IzumiPublishSource -Source ${creds.nugetRepo}", nuspecFile
     ).#||("true").lineStream.foreach(log.log)
 
     Process(
-      s"nuget setapikey ${creds.nugetUser}:${creds.nugetPassword} -Source IzumiPublishSource", targetDir.toFile
+      s"nuget setapikey ${creds.nugetUser}:${creds.nugetPassword} -Source IzumiPublishSource", nuspecFile
     ).lineStream.foreach(log.log)
 
     log.log("Publishing")
-    Files.list(targetDir.resolve("nuspec")).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
+    Files.list(nuspecDir).filter(_.getFileName.toString.endsWith(".nuspec")).iterator().asScala.foreach { module =>
       Try(
         Process(
-          s"nuget pack ${module.getFileName.toString}", targetDir.resolve("nuspec").toFile
+          s"nuget pack ${module.getFileName.toString}", nuspecFile
         ).lineStream.foreach(log.log)
       )
     }
 
-    IzFiles.walk(targetDir.resolve("nuspec").toFile).filter(_.getFileName.toString.endsWith(".nupkg")).foreach { pack =>
+    IzFiles.walk(nuspecFile).filter(_.getFileName.toString.endsWith(".nupkg")).foreach { pack =>
       Process(
-        s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", targetDir.resolve("nuspec").toFile
+        s"nuget push ${pack.getFileName.toString} -Source IzumiPublishSource", nuspecFile
       ).lineStream.foreach(log.log)
     }
   }.toEither
@@ -154,11 +156,15 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
       "go get github.com/gorilla/websocket", targetDir.toFile, env
     ).lineStream.foreach(log.log)
 
-    log.log("Testing")
-    Process(
-      "go test ./...", targetDir.resolve("src").toFile, env
-    ).lineStream.foreach(log.log)
-    log.log("Testing - OK")
+    if (manifest.enableTesting) {
+      log.log("Testing")
+      Process(
+        "go test ./...", targetDir.resolve("src").toFile, env
+      ).lineStream.foreach(log.log)
+      log.log("Testing - OK")
+    } else {
+      log.log("Testing is disabled. Skipping.")
+    }
 
     log.log("Publishing to github repo")
 
@@ -166,18 +172,16 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     val pubKey = targetDir.resolve("go-key.pub")
     Files.write(pubKey, Seq(creds.gitPubKey).asJava)
 
+    Process(Seq("git", "config", "--global", "--replace-all", "user.name", creds.gitUser)).lineStream.foreach(log.log)
+    Process(Seq("git", "config", "--global", "--replace-all", "user.email", creds.gitEmail)).lineStream.foreach(println)
+    Process(Seq("git", "config", "--global", "--replace-all", "core.sshCommand", s"ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no")).lineStream.foreach(println)
+
     Process(
-      s"""git config --global core.sshCommand "ssh -i ${pubKey.toAbsolutePath.toString} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" """
-    ).lineStream.foreach(log.log)
-    Process(
-      s"""git config --global user.name "${creds.gitUser}""""
-    ).lineStream.foreach(log.log)
-    Process(
-      s"""git config --global user.email "${creds.gitEmail}""""
+      "git config --global --list", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     Process(
-      s"git clone ${creds.gitRepoUrl}",targetDir.toFile
+      s"git clone ${creds.gitRepoUrl}", targetDir.toFile
     ).lineStream.foreach(log.log)
 
     Files.list(targetDir.resolve(creds.gitRepoName)).iterator().asScala
@@ -201,12 +205,18 @@ class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, 
     Process(
       "git add .", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log(s"Git commit: 'golang-api-update,version=${manifest.common.version}'")
     Process(
-      s"""git commit --no-edit -am "golang-api-update,version=${manifest.common.version}"""", targetDir.resolve(creds.gitRepoName).toFile
+      s"""git commit --no-edit -am 'golang-api-update,version=${manifest.common.version}'""", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log(s"Setting git tag: v${manifest.common.version.toString}")
     Process(
-      s"git tag -f v${manifest.common.version.toString}}", targetDir.resolve(creds.gitRepoName).toFile
+      s"git tag -f v${manifest.common.version.toString}", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
+
+    log.log("Git push")
     Process(
       "git push --all -f", targetDir.resolve(creds.gitRepoName).toFile
     ).lineStream.foreach(log.log)
