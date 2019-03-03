@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef
+import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName, FullField}
 
@@ -32,6 +33,15 @@ object T2Fail {
   final case class ParentTypeExpectedToBeStructure(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
   final case class ParentCannotBeGeneric(tpe: IzTypeId, problematic: IzTypeReference) extends BuilderFail
 
+  final case class StructureExpected(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
+
+  final case class EnumExpected(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
+  final case class EnumExpectedButGotGeneric(tpe: IzTypeId, problematic: IzTypeReference) extends BuilderFail
+
+  final case class BadArguments(context: IzTypeId, problems: Seq[AbstractIndefiniteId]) extends BuilderFail
+  final case class UnexpectedArguments(context: IzTypeId, problems: Seq[InterpContext]) extends BuilderFail
+  final case class IncompatibleCloneModifiers(context: IzTypeId, structural: Boolean = false) extends BuilderFail
+  final case class FeatureUnsupported(context: IzTypeId, explanation: String) extends BuilderFail
 
   sealed trait VerificationFail extends BuilderFail {
     def tpe: IzTypeId
