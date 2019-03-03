@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef, RawRef, TemplateDecl}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 
 
 sealed trait RawTypeDef
@@ -29,7 +29,7 @@ object RawTypeDef {
 
   final case class Adt(id: RawDeclaredTypeName, alternatives: List[Member], meta: RawNodeMeta) extends BasicTypeDecl
 
-  final case class NewType(id: RawDeclaredTypeName, source: RawNongenericRef, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
+  final case class NewType(id: RawDeclaredTypeName, source: RawTypeNameRef, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
 
   final case class DeclaredType(id: RawDeclaredTypeName, meta: RawNodeMeta) extends RawTypeDef
 

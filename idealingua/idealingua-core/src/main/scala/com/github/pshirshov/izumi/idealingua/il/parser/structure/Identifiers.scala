@@ -30,6 +30,7 @@ trait Identifiers extends Separators {
   // type definitions
   def parentStruct[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
   def parentEnum[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
+  def typeNameRef[_: P]: P[RawTypeNameRef] = typename.map(id => RawTypeNameRef(id.pkg, id.name))
 
   def typeReferenceLocal[_: P]: P[TemplateDecl] = P(inline ~ typenameShort ~ inline ~ typeArgumentsShort.? ~ inline).map {
     case (id, None) =>
@@ -37,7 +38,6 @@ trait Identifiers extends Separators {
     case (id, Some(args)) =>
       RawTemplateWithArg(id.name, args.toList)
   }
-  //def typeReferenceLocalNongeneric[_: P]: P[RawNongenericLocalRef] = ??? //P(inline ~ typename ~ inline ~ typeArguments.? ~ inline)
 
   def typeReference[_: P]: P[RawRef] = P(inline ~ typename ~ inline ~ typeArguments.? ~ inline)
     .map {

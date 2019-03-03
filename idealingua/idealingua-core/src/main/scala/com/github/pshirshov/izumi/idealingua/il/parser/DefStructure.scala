@@ -148,10 +148,11 @@ class DefStructure(context: IDLParserContext) extends Separators {
         TLDDeclared(DeclaredType(id, meta))
   }
 
-  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.declaredTypeName ~ inline ~ aggregates.enclosed(Struct.struct).?)))
+  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "from" ~/ (inline ~ ids.typeNameRef ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
-      case (c, src, (target, struct)) =>
-        NewType(target, RawNongenericRef(Seq.empty, src.name), struct.map(_.structure), c)
+      case (c, target, (src, struct)) =>
+        // TODO: !!!
+        NewType(target, src, struct.map(_.structure), c)
     }
     .map(TLDNewtype)
 

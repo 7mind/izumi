@@ -19,7 +19,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
-        val id = index.toId(Seq.empty, index.makeAbstract(RawDeclaredTypeName(name)))
+        val id = index.toId(Seq.empty, index.resolveTopLeveleName(RawDeclaredTypeName(name)))
         val badMappings = v.mapping.values.filter(ctx => ctx.parameters.nonEmpty || ctx.parts.size != 1)
 
         if (badMappings.isEmpty) {
@@ -103,7 +103,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
   def cloneType(v: RawTypeDef.NewType): TList = {
     val id = nameToTopId(v.id)
-    val sid = index.resolveId(v.source)
+    val sid = index.resolveRef(v.source)
     val source = types(sid)
 
     // TODO: we need to support more modifiers and interface removal for structures
@@ -283,11 +283,11 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   private def resolve(id: RawRef): IzTypeReference = {
     id match {
       case ref@RawNongenericRef(_, _) =>
-        IzTypeReference.Scalar(index.resolveId(ref))
+        IzTypeReference.Scalar(index.resolveRef(ref))
 
       case RawGenericRef(pkg, name, args) =>
         // TODO: this is not good
-        val id = index.resolveId(RawNongenericRef(pkg, name))
+        val id = index.resolveRef(RawNongenericRef(pkg, name))
         IzTypeReference.Generic(id, args.zipWithIndex.map {
           case (a, idx) =>
             val argValue = resolve(a)
@@ -303,7 +303,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
   private def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId = {
     val namespace = subpath
-    val unresolvedName = index.makeAbstract(id)
+    val unresolvedName = index.resolveTopLeveleName(id)
     index.toId(namespace, unresolvedName)
   }
 
@@ -315,8 +315,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
     val parentsIds = struct.interfaces.map(refToTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(index.resolveId).map(types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(index.resolveId).map(types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(index.resolveRef).map(types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(index.resolveRef).map(types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>

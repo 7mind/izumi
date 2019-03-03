@@ -14,13 +14,13 @@ class DependencyExtractor(index: DomainIndex) {
   def groupByType(): Seq[Operation] = {
     val identified = types.map {
       case t@RawTopLevelDefn.TLDBaseType(v) =>
-        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDDeclared(v) =>
-        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDNewtype(v) =>
-        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDForeignType(v) =>
-        Operation(index.makeAbstract(RawDeclaredTypeName(v.id.name)), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Operation(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), Seq(OriginatedDefn(source, t)))
     }
 
     identified

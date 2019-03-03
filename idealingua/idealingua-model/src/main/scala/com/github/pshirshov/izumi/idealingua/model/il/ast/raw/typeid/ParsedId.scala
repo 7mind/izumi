@@ -25,3 +25,4 @@ final case class RawTemplateWithArg(name: TypeName, args: List[RawTemplateNoArg]
 
 final case class RawDeclaredTypeName(name: TypeName)
 
+final case class RawTypeNameRef(pkg: Package, name: TypeName)

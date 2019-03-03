@@ -4,9 +4,9 @@ mixin M0 {
   _: str
 }
 
-clone M0 into M1
+cloned M1 from M0
 
-clone M0 into M2 {
+cloned M2 from M0 {
   _: i32
 }
 
