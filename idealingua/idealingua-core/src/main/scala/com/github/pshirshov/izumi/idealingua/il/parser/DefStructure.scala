@@ -18,7 +18,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   import context._
 
-  def field[_: P]: P[RawField] = P(metaAgg.withMeta((ids.symbol | P("_" | "").map(_ => "")) ~ inline ~ ":" ~/ inline ~ ids.idGeneric))
+  def field[_: P]: P[RawField] = P(metaAgg.withMeta(ids.fieldName ~ inline ~ ":" ~/ inline ~ ids.typeReference))
     .map {
       case (meta, (name, tpe)) if name.isEmpty =>
         defns.RawField(tpe, None, meta)
@@ -28,11 +28,11 @@ class DefStructure(context: IDLParserContext) extends Separators {
     }
 
   object Struct {
-    def plus[_: P]: P[StructOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.identifier)).map(_.toParentId).map(StructOp.Extend)
+    def plus[_: P]: P[StructOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.typename)).map(_.toParentId).map(StructOp.Extend)
 
-    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.identifier)).map(_.toMixinId).map(StructOp.Mix)
+    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.typename)).map(_.toMixinId).map(StructOp.Mix)
 
-    def minus[_: P]: P[StructOp] = P(("-" ~ "--".?) ~/ (inline ~ (field | ids.identifier))).map {
+    def minus[_: P]: P[StructOp] = P(("-" ~ "--".?) ~/ (inline ~ (field | ids.typename))).map {
       case v: RawField =>
         StructOp.RemoveField(v)
       case i: ParsedId =>
@@ -51,7 +51,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   }
 
   object SimpleStruct {
-    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (any ~ ids.identifier)).map(_.toMixinId).map(StructOp.Mix)
+    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (any ~ ids.typename)).map(_.toMixinId).map(StructOp.Mix)
 
     def plusField[_: P]: P[StructOp.AddField] = field.map(StructOp.AddField)
 
@@ -81,13 +81,13 @@ class DefStructure(context: IDLParserContext) extends Separators {
     }
 
 
-  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.identifier ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?))
+  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.typename ~ (inline ~ "as" ~/ (inline ~ ids.adtMemberName)).?))
     .map {
       case (meta, (tpe, alias)) =>
         Member.TypeRef(tpe.toIndefinite, alias, meta)
     }
 
-  def importMember[_: P]: P[ImportedId] = P(ids.symbol ~ (inline ~ "as" ~/ (inline ~ ids.symbol)).?).map {
+  def importMember[_: P]: P[ImportedId] = P(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?).map {
     case (tpe, alias) =>
       ImportedId(tpe, alias)
   }
@@ -96,14 +96,14 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map(_.toList).map(RawAdt.apply)
 
   object Enum {
-    def embed[_: P]: P[EnumOp.Extend] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.identifier)).map(_.toEnumId).map(EnumOp.Extend)
+    def embed[_: P]: P[EnumOp.Extend] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.typename)).map(_.toEnumId).map(EnumOp.Extend)
 
-    def enumMember[_: P]: P[EnumOp.AddMember] = P(metaAgg.withMeta(ids.symbol ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
+    def enumMember[_: P]: P[EnumOp.AddMember] = P(metaAgg.withMeta(ids.enumMemberName ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
       case (meta, (name, const)) =>
         EnumOp.AddMember(RawEnumMember(name, const.map(_.value), meta))
     }
 
-    def minus[_: P]: P[EnumOp.RemoveMember] = P(("-" ~ "--".?) ~/ (inline ~ ids.symbol)).map(EnumOp.RemoveMember)
+    def minus[_: P]: P[EnumOp.RemoveMember] = P(("-" ~ "--".?) ~/ (inline ~ ids.removedParentName)).map(EnumOp.RemoveMember)
 
     def anyPart[_: P]: P[EnumOp] = P(enumMember | minus | embed)
 
@@ -125,7 +125,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def foreignLinks[_: P]: P[Map[String, InterpContext]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 
-  def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.idGeneric ~ inline ~ foreignLinks)))
+  def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.typeReference ~ inline ~ foreignLinks)))
     .map {
       case (meta, (i, v)) =>
         ForeignType(i, v, meta)
@@ -137,9 +137,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
       case (c, i, v) => Identifier(i.toIdId, v.toList, c)
     }
 
-  def aliasBlock[_: P]: P[Alias] = P(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.identifier)))
+  def aliasBlock[_: P]: P[Alias] = P(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.typeReference)))
     .map {
-      case (c, i, v) => Alias(i.toAliasId, v.toIndefinite, c)
+      case (c, i, v) => Alias(i.toAliasId, v, c)
     }
 
   def declaredBlock[_: P]: P[TLDDeclared] = P(metaAgg.cstarting(kw.declared, inline))
@@ -148,7 +148,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
         TLDDeclared(DeclaredType(id.toIndefinite, meta))
   }
 
-  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.idShort ~ inline ~ aggregates.enclosed(Struct.struct).?)))
+  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.declaredTypeName ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
       case (c, src, (target, struct)) =>
         NewType(target, src.toIndefinite, struct.map(_.structure), c)

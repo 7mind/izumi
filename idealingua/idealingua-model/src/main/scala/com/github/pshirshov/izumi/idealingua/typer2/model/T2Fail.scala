@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName, FullField}
 

@@ -18,7 +18,7 @@ class DefSignature(context: IDLParserContext) {
 
   def baseSignature[_: P](keyword: => P[Unit]): P[(String, RawSimpleStructure)] = P(
     keyword ~ inline ~
-      ids.symbol ~ any ~
+      ids.methodName ~ any ~
       defStructure.inlineStruct
   )
 
@@ -28,7 +28,7 @@ class DefSignature(context: IDLParserContext) {
 
   def struct[_: P]: P[Output.Struct] = defStructure.inlineStruct.map(v => RawMethod.Output.Struct(v))
 
-  def singular[_: P]: P[Output.Singular] = ids.idGeneric.map(v => RawMethod.Output.Singular(v))
+  def singular[_: P]: P[Output.Singular] = ids.typeReference.map(v => RawMethod.Output.Singular(v))
 
   def output[_: P]: P[Output.NonAlternativeOutput] = P(adt | struct | singular | void)
 

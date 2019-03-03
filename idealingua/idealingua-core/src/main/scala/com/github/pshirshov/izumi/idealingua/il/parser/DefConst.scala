@@ -2,11 +2,12 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
+import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
-import fastparse._
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import fastparse.NoWhitespace._
+import fastparse._
 
 
 
@@ -15,10 +16,10 @@ class DefConst(context: IDLParserContext) extends Identifiers {
   import DefConst._
   import context._
 
-  def defAnno[_: P]: P[RawAnno] = P(defPositions.positioned("@" ~ idShort ~ "(" ~ inline ~ constantsNoDoc ~ inline ~ ")"))
+  def defAnno[_: P]: P[RawAnno] = P(defPositions.positioned("@" ~ annoName ~ "(" ~ inline ~ constantsNoDoc ~ inline ~ ")"))
     .map {
       case (pos, (id, value)) =>
-        defns.RawAnno(id.name, value, pos)
+        defns.RawAnno(id, value, pos)
     }
 
   def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
@@ -42,55 +43,57 @@ class DefConst(context: IDLParserContext) extends Identifiers {
   private def constantsNoDoc[_: P]: P[RawVal.CMap] = P(constNoDoc.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
     .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
 
-  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ constValue))
+  def constId[_: P]: P[ConstId] = constName.map(n => ConstId(n))
+  
+  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(constId ~ (inline ~ ":" ~ inline ~ typeReference).? ~ inline ~ "=" ~ inline ~ constValue))
     .map {
       case (pos, (name, tpe, value: Aux.ObjAux)) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+            RawConst(name, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+            RawConst(name, value.value, RawConstMeta(pos))
         }
 
       case (pos, (name, tpe, value: Aux.ListAux)) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+            RawConst(name, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+            RawConst(name, value.value, RawConstMeta(pos))
         }
 
       case (pos, (name, tpe, Aux.Just(rv))) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+            RawConst(name, RawVal.CTyped(typename, rv), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, rv, RawConstMeta(pos))
+            RawConst(name, rv, RawConstMeta(pos))
         }
 
       case (pos, (name, tpe, value: Aux.TObjAux)) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+            RawConst(name, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+            RawConst(name, value.value, RawConstMeta(pos))
         }
 
       case (pos, (name, tpe, value: Aux.TListAux)) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+            RawConst(name, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+            RawConst(name, value.value, RawConstMeta(pos))
         }
 
 
       case (pos, (name, tpe, Aux.TJust(rv))) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+            RawConst(name, RawVal.CTyped(typename, rv), RawConstMeta(pos))
           case None =>
-            RawConst(name.toConstId, rv, RawConstMeta(pos))
+            RawConst(name, rv, RawConstMeta(pos))
         }
 
     }
@@ -98,7 +101,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   private def justValue[_: P]: P[Aux] = P(literal | objdef | listdef)
 
-  private def typedValue[_: P]: P[Aux] = (idGeneric ~ inline ~ "(" ~ inline ~ justValue ~ inline ~ ")").map {
+  private def typedValue[_: P]: P[Aux] = (typeReference ~ inline ~ "(" ~ inline ~ justValue ~ inline ~ ")").map {
     case (id, agg) =>
       agg match {
         case Aux.Just(value) =>

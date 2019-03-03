@@ -87,7 +87,7 @@ object TypeId {
 
   final case class StreamsId(domain: DomainId, name: TypeName)
 
-  final case class ConstId(domain: DomainId, name: TypeName)
+  final case class ConstId(name: TypeName)
 
 }
 

@@ -20,7 +20,7 @@ trait Aggregates
 
 
   def starting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
-    kw(keyword, idShort ~ inline ~ defparser)
+    kw(keyword, declaredTypeName ~ inline ~ defparser)
   }
 
   def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {

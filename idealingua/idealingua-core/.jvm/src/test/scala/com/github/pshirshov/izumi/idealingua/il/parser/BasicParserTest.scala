@@ -173,7 +173,7 @@ class BasicParserTest
 
     "parse identifiers" in {
       assertParses(ids.domainId(_), "x.y.z")
-      assertParses(ids.identifier(_), "x.y#z")
+      assertParses(ids.typename(_), "x.y#z")
     }
 
     "parse fields" in {
