@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, OriginatedDefn, UnresolvedName}
 
 class DependencyExtractor(index: DomainIndex) {
@@ -14,18 +15,18 @@ class DependencyExtractor(index: DomainIndex) {
     val identified = types.map {
       case t@RawTopLevelDefn.TLDBaseType(v) =>
         Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
-      case t@RawTopLevelDefn.TLDNewtype(v) =>
-        Operation(index.makeAbstract(v.id.toIndefinite), Set(index.makeAbstract(v.source)), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDDeclared(v) =>
-        Operation(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+      case t@RawTopLevelDefn.TLDNewtype(v) =>
+        Operation(index.makeAbstract(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDForeignType(v) =>
-        Operation(index.makeAbstract(v.id), Set.empty, Seq(OriginatedDefn(source, t)))
+        Operation(index.makeAbstract(RawDeclaredTypeName(v.id.name)), dependsOn(v), Seq(OriginatedDefn(source, t)))
     }
 
     identified
   }
 
-  private def dependsOn(v: RawTypeDef.WithId): Set[UnresolvedName] = {
+  private def dependsOn(v: RawTypeDef): Set[UnresolvedName] = {
     v match {
       case t: RawTypeDef.Interface =>
         dependsOn(t.struct)
@@ -47,10 +48,19 @@ class DependencyExtractor(index: DomainIndex) {
           }
           .toSet
 
+      case n: RawTypeDef.NewType =>
+        Set(index.makeAbstract(n.source))
+
       case _: RawTypeDef.Enumeration =>
         Set.empty
 
       case _: RawTypeDef.Identifier =>
+        Set.empty
+
+      case _: RawTypeDef.DeclaredType =>
+        Set.empty
+
+      case _: RawTypeDef.ForeignType =>
         Set.empty
     }
   }

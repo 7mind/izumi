@@ -54,13 +54,14 @@ class ModelResolver(rules: Seq[VerificationRule]) {
 
 
   private def makeTyped(f: Either[LoadedDomain.Failure, DomainMeshResolved]): LoadedDomain = {
-    (for {
-      d <- f
-      ts <- runTyper(d)
-      result <- runVerifier(ts)
-    } yield {
-      result
-    }).fold(identity, identity)
+    LoadedDomain.XXX()
+//    (for {
+//      d <- f
+//      ts <- runTyper(d)
+//      result <- runVerifier(ts)
+//    } yield {
+//      result
+//    }).fold(identity, identity)
   }
 
 

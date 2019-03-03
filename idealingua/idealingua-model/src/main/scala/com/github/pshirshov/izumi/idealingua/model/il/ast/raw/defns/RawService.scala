@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ServiceId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 
-final case class RawService(id: ServiceId, methods: List[RawMethod], meta: RawNodeMeta)
+final case class RawService(id: RawDeclaredTypeName, methods: List[RawMethod], meta: RawNodeMeta)

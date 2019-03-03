@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -19,11 +19,11 @@ trait Aggregates
   }
 
 
-  def starting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
+  def starting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawDeclaredTypeName, T)] = {
     kw(keyword, declaredTypeName ~ inline ~ defparser)
   }
 
-  def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
+  def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawDeclaredTypeName, T)] = {
     starting(keyword, enclosed(defparser))
   }
 

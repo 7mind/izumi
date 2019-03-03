@@ -1,7 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.model.common
 
 
-sealed trait AbstractIndefiniteId {
+//sealed trait AbstractIndefiniteId {
+//
+//}
+
+sealed trait AbstractNongeneric {
   def pkg: Package
 
   def name: TypeName
@@ -9,11 +13,8 @@ sealed trait AbstractIndefiniteId {
   override def toString: TypeName = s"{${getClass.getSimpleName}}${pkg.mkString(".")}#$name"
 }
 
-sealed trait AbstractNongeneric extends AbstractIndefiniteId
-
 final case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractNongeneric
 
-final case class IndefiniteMixin(pkg: Package, name: TypeName) extends AbstractNongeneric
 
 object IndefiniteId {
   def parse(s: String): IndefiniteId = {
@@ -22,7 +23,9 @@ object IndefiniteId {
   }
 }
 
-final case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
+//final case class IndefiniteMixin(pkg: Package, name: TypeName) extends AbstractNongeneric
+
+//final case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
 
 
 sealed trait TypeId {

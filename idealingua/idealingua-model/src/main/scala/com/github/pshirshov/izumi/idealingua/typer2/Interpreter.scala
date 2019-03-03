@@ -1,9 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
@@ -19,19 +18,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
-      case IndefiniteGeneric(pkg, name, args) =>
-        val id = index.toId(Seq.empty, index.makeAbstract(IndefiniteId(pkg, name)))
-
-        val badargs = args.filter(_.pkg.nonEmpty)
-        if (badargs.isEmpty) {
-          val params = args.map(a => IzTypeArgName(a.name))
-          Right(ForeignGeneric(id, params, v.mapping.mapValues(ctx => Interpolation(ctx.parts, ctx.parameters.map(IzTypeArgName))), meta(v.meta)))
-        } else {
-          Left(List(BadArguments(id, badargs)))
-        }
-
-      case _ =>
-        val id = index.toId(Seq.empty, index.makeAbstract(v.id))
+      case RawTemplateNoArg(name) =>
+        val id = index.toId(Seq.empty, index.makeAbstract(RawDeclaredTypeName(name)))
         val badMappings = v.mapping.values.filter(ctx => ctx.parameters.nonEmpty || ctx.parts.size != 1)
 
         if (badMappings.isEmpty) {
@@ -39,6 +27,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
         } else {
           Left(List(UnexpectedArguments(id, badMappings.toSeq)))
         }
+
+      case RawTemplateWithArg(name, args) =>
+        val id = index.toId(Seq.empty, index.makeAbstract(RawNongenericRef(Seq.empty, name)))
+
+        val params = args.map(a => IzTypeArgName(a.name))
+        Right(ForeignGeneric(id, params, v.mapping.mapValues(ctx => Interpolation(ctx.parts, ctx.parameters.map(IzTypeArgName))), meta(v.meta)))
     }
   }
 
@@ -59,7 +53,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   }
 
   private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
-    val id = toId(a.id, subpath)
+    val id = nameToId(a.id, subpath)
     val members = a.alternatives.map {
       case Member.TypeRef(typeId, memberName, m) =>
         val tpe = resolve(typeId)
@@ -91,6 +85,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
           case n: RawTypeDef.Adt =>
             makeAdt(n, subpath :+ IzNamespace(n.id.name))
         }
+
         tpe match {
           case Left(_) =>
             ???
@@ -107,7 +102,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   }
 
   def cloneType(v: RawTypeDef.NewType): TList = {
-    val id = resolveId(v.id)
+    val id = nameToTopId(v.id)
     val sid = index.resolveId(v.source)
     val source = types(sid)
 
@@ -237,7 +232,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
 
   private def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
-    val id = toId(i.id, subpath)
+    val id = nameToId(i.id, subpath)
 
     val fields = i.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -249,8 +244,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
 
   private def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
-    val id = toId(e.id, subpath)
-    val parents = e.struct.parents.map(toTopId).map(types.apply).map(_.member)
+    val id = nameToId(e.id, subpath)
+    val parents = e.struct.parents.map(refToTopId).map(types.apply).map(_.member)
 
     for {
       parentMembers <- parents.map(enumMembers(id)).biFlatAggregate
@@ -268,59 +263,57 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
 
   private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
-    val id = toId(i.id, subpath)
+    val id = nameToId(i.id, subpath)
     make[IzType.Interface](struct, id, i.meta)
   }
 
 
   private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
-    val id = toId(i.id, subpath)
+    val id = nameToId(i.id, subpath)
     make[IzType.DTO](struct, id, i.meta)
   }
 
 
   private def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias] = {
-    val id = toId(a.id, subpath)
+    val id = nameToId(a.id, subpath)
     Right(IzAlias(id, resolve(a.target), meta(a.meta)))
   }
 
-  private def resolveId(id: ParsedId): IzTypeId = {
-    index.resolveId(id.toIndefinite)
-  }
-
-
-  private def resolve(id: AbstractIndefiniteId): IzTypeReference = {
+  private def resolve(id: RawRef): IzTypeReference = {
     id match {
-      case nongeneric: AbstractNongeneric =>
-        IzTypeReference.Scalar(index.resolveId(nongeneric))
+      case ref@RawNongenericRef(_, _) =>
+        IzTypeReference.Scalar(index.resolveId(ref))
 
-      case generic: IndefiniteGeneric =>
-        // this is not good
-        val id = index.resolveId(IndefiniteId(generic.pkg, generic.name))
-        IzTypeReference.Generic(id, generic.args.zipWithIndex.map {
+      case RawGenericRef(pkg, name, args) =>
+        // TODO: this is not good
+        val id = index.resolveId(RawNongenericRef(pkg, name))
+        IzTypeReference.Generic(id, args.zipWithIndex.map {
           case (a, idx) =>
             val argValue = resolve(a)
             IzTypeArg(IzTypeArgName(idx.toString), IzTypeArgValue(argValue))
         })
+
     }
   }
 
-
-  private def toTopId(id: TypeId): IzTypeId = {
-    toId(id, Seq.empty)
+  private def nameToTopId(id: RawDeclaredTypeName): IzTypeId = {
+    nameToId(id, Seq.empty)
   }
 
-  private def toId(id: TypeId, subpath: Seq[IzNamespace]): IzTypeId = {
-    assert(id.path.within.isEmpty, s"BUG: Unexpected TypeId, path should be empty: $id")
+  private def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId = {
     val namespace = subpath
     val unresolvedName = index.makeAbstract(id)
     index.toId(namespace, unresolvedName)
   }
 
+  private def refToTopId(id: RawNongenericRef): IzTypeId = {
+    val name = index.makeAbstract(id)
+    index.toId(Seq.empty, name)
+  }
 
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(toTopId)
+    val parentsIds = struct.interfaces.map(refToTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
     val conceptsAdded = struct.concepts.map(index.resolveId).map(types.apply).map(_.member)
     val conceptsRemoved = struct.removedConcepts.map(index.resolveId).map(types.apply).map(_.member)

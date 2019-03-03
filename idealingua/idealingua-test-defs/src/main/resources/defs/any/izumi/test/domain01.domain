@@ -275,3 +275,7 @@ data GenericFailure {
     + GenericFailureData
     code: GenericFailureCode
 }
+
+mixin WillBeInheritedInDomain02 {
+    field: str
+}

@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelD
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawNongenericRef
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -28,15 +28,15 @@ class DefStructure(context: IDLParserContext) extends Separators {
     }
 
   object Struct {
-    def plus[_: P]: P[StructOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.typename)).map(_.toParentId).map(StructOp.Extend)
+    def plus[_: P]: P[StructOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.parentStruct)).map(StructOp.Extend)
 
-    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.typename)).map(_.toMixinId).map(StructOp.Mix)
+    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.parentStruct)).map(StructOp.Mix)
 
-    def minus[_: P]: P[StructOp] = P(("-" ~ "--".?) ~/ (inline ~ (field | ids.typename))).map {
+    def minus[_: P]: P[StructOp] = P(("-" ~ "--".?) ~/ (inline ~ (field | ids.parentStruct))).map {
       case v: RawField =>
         StructOp.RemoveField(v)
-      case i: ParsedId =>
-        StructOp.Drop(i.toMixinId)
+      case i: RawNongenericRef =>
+        StructOp.Drop(i)
     }
 
     def plusField[_: P]: P[StructOp.AddField] = field.map(StructOp.AddField)
@@ -51,7 +51,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   }
 
   object SimpleStruct {
-    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (any ~ ids.typename)).map(_.toMixinId).map(StructOp.Mix)
+    def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (any ~ ids.parentStruct)).map(StructOp.Mix)
 
     def plusField[_: P]: P[StructOp.AddField] = field.map(StructOp.AddField)
 
@@ -81,10 +81,10 @@ class DefStructure(context: IDLParserContext) extends Separators {
     }
 
 
-  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.typename ~ (inline ~ "as" ~/ (inline ~ ids.adtMemberName)).?))
+  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.typeReference ~ (inline ~ "as" ~/ (inline ~ ids.adtMemberName)).?))
     .map {
       case (meta, (tpe, alias)) =>
-        Member.TypeRef(tpe.toIndefinite, alias, meta)
+        Member.TypeRef(tpe, alias, meta)
     }
 
   def importMember[_: P]: P[ImportedId] = P(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?).map {
@@ -96,7 +96,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map(_.toList).map(RawAdt.apply)
 
   object Enum {
-    def embed[_: P]: P[EnumOp.Extend] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.typename)).map(_.toEnumId).map(EnumOp.Extend)
+    def embed[_: P]: P[EnumOp.Extend] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.parentEnum)).map(EnumOp.Extend)
 
     def enumMember[_: P]: P[EnumOp.AddMember] = P(metaAgg.withMeta(ids.enumMemberName ~ (inline ~ "=" ~/ inline ~ defConst.constValue).?)).map {
       case (meta, (name, const)) =>
@@ -113,19 +113,19 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
 
   def mixinBlock[_: P]: P[Interface] = P(metaAgg.cblock(kw.mixin, Struct.struct)).map {
-    case (c, i, v) => v.toInterface(i.toInterfaceId, c)
+    case (c, i, v) => v.toInterface(i, c)
   }
 
   def dtoBlock[_: P]: P[DTO] = P(metaAgg.cblock(kw.data, Struct.struct))
     .map {
-      case (c, i, v) => v.toDto(i.toDataId, c)
+      case (c, i, v) => v.toDto(i, c)
     }
 
   def stringPair[_: P]: P[(String, InterpContext)] = P(Literals.Literals.Str ~ any ~ ":" ~ any ~ ids.typeInterp)
 
   def foreignLinks[_: P]: P[Map[String, InterpContext]] = P(aggregates.enclosed(stringPair.rep(min = 1, sep = sepEnum))).map(_.toMap)
 
-  def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.typeReference ~ inline ~ foreignLinks)))
+  def foreignBlock[_: P]: P[RawTopLevelDefn.TLDForeignType] = P(metaAgg.withMeta(kw(kw.foreign, ids.typeReferenceLocal ~ inline ~ foreignLinks)))
     .map {
       case (meta, (i, v)) =>
         ForeignType(i, v, meta)
@@ -134,24 +134,24 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def idBlock[_: P]: P[Identifier] = P(metaAgg.cblock(kw.id, aggregate))
     .map {
-      case (c, i, v) => Identifier(i.toIdId, v.toList, c)
+      case (c, i, v) => Identifier(i, v.toList, c)
     }
 
   def aliasBlock[_: P]: P[Alias] = P(metaAgg.cstarting(kw.alias, "=" ~/ (inline ~ ids.typeReference)))
     .map {
-      case (c, i, v) => Alias(i.toAliasId, v, c)
+      case (c, i, v) => Alias(i, v, c)
     }
 
   def declaredBlock[_: P]: P[TLDDeclared] = P(metaAgg.cstarting(kw.declared, inline))
     .map {
       case (meta, id, _) =>
-        TLDDeclared(DeclaredType(id.toIndefinite, meta))
+        TLDDeclared(DeclaredType(id, meta))
   }
 
   def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "into" ~/ (inline ~ ids.declaredTypeName ~ inline ~ aggregates.enclosed(Struct.struct).?)))
     .map {
       case (c, src, (target, struct)) =>
-        NewType(target, src.toIndefinite, struct.map(_.structure), c)
+        NewType(target, RawNongenericRef(Seq.empty, src.name), struct.map(_.structure), c)
     }
     .map(TLDNewtype)
 
@@ -162,7 +162,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adtBlock[_: P]: P[Adt] = P(metaAgg.cstarting(kw.adt, adtEnclosed | adtFreeForm))
     .map {
       case (c, i, v) =>
-        Adt(i.toAdtId, v.alternatives, c)
+        Adt(i, v.alternatives, c)
     }
 
   def enumFreeForm[_: P]: P[RawEnum] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ Enum.enum(sepEnumFreeForm))
@@ -173,6 +173,6 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def enumBlock[_: P]: P[Enumeration] = P(metaAgg.cstarting(kw.enum, enumEnclosed | enumFreeForm))
     .map {
       case (c, i, v) =>
-        Enumeration(i.toEnumId, v, c)
+        Enumeration(i, v, c)
     }
 }

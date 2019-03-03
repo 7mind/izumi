@@ -16,7 +16,7 @@ class DefService(context: IDLParserContext) {
 
   def serviceBlock[_: P]: P[RawTopLevelDefn.TLDService] = P(metaAgg.cblock(kw.service, methods))
     .map {
-      case (c, i, v) => RawService(i.toServiceId, v.toList, c)
+      case (c, i, v) => RawService(i, v.toList, c)
     }
     .map(RawTopLevelDefn.TLDService)
 

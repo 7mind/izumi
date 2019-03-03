@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.StreamsId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 
-final case class RawStreams(id: StreamsId, streams: List[RawStream], meta: RawNodeMeta)
+final case class RawStreams(id: RawDeclaredTypeName, streams: List[RawStream], meta: RawNodeMeta)

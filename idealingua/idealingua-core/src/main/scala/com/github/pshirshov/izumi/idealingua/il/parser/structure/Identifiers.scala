@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId}
-import fastparse.CharPredicates.{isDigit, isLetter}
-import fastparse._
-import NoWhitespace._
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.InterpContext
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
+import fastparse.CharPredicates.{isDigit, isLetter}
+import fastparse.NoWhitespace._
+import fastparse._
 
 trait Identifiers extends Separators {
   // entity names
@@ -14,9 +14,10 @@ trait Identifiers extends Separators {
   def fieldName[_: P]: P[String] = symbol | P("_" | "").map(_ => "")
   def importedName[_: P]: P[String] = symbol
   def enumMemberName[_: P]: P[String] = symbol
-  def removedParentName[_: P]: P[String] = symbol
   def annoName[_: P]: P[String] = symbol
   def constName[_: P]: P[String] = symbol
+
+  def removedParentName[_: P]: P[String] = symbol
 
   private def symbol[_: P]: P[String] = P((CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!)
 
@@ -27,18 +28,43 @@ trait Identifiers extends Separators {
   private def idPkg[_: P]: P[Seq[String]] = P(symbol.rep(sep = "."))
 
   // type definitions
-  def typename[_: P]: P[ParsedId] = P(typenameFull | typenameShort)
+  def parentStruct[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
+  def parentEnum[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
 
-  def typeReference[_: P]: P[AbstractIndefiniteId] = P(inline ~ typename ~ inline ~ typeArguments.rep(min = 0, max = 1) ~ inline)
-    .map(tp => tp._1.toGeneric(tp._2))
+  def typeReferenceLocal[_: P]: P[TemplateDecl] = P(inline ~ typenameShort ~ inline ~ typeArgumentsShort.? ~ inline).map {
+    case (id, None) =>
+      RawTemplateNoArg(id.name)
+    case (id, Some(args)) =>
+      RawTemplateWithArg(id.name, args.toList)
+  }
+  //def typeReferenceLocalNongeneric[_: P]: P[RawNongenericLocalRef] = ??? //P(inline ~ typename ~ inline ~ typeArguments.? ~ inline)
 
-  def declaredTypeName[_: P]: P[ParsedId] = typenameShort
+  def typeReference[_: P]: P[RawRef] = P(inline ~ typename ~ inline ~ typeArguments.? ~ inline)
+    .map {
+      case (tn, args) =>
+        args match {
+          case Some(value) =>
+            RawGenericRef(tn.pkg, tn.name, value.toList)
+
+          case None =>
+            RawNongenericRef(tn.pkg, tn.name)
+        }
+    }
+
+  def declaredTypeName[_: P]: P[RawDeclaredTypeName] = typenameShort.map(f => RawDeclaredTypeName(f.name))
+
+  private def typename[_: P]: P[ParsedId] = P(typenameFull | typenameShort)
 
   private def typenameShort[_: P]: P[ParsedId] = P(symbol).map(v => ParsedId(v))
 
   private def typenameFull[_: P]: P[ParsedId] = P(idPkg ~ "#" ~ symbol).map(v => ParsedId(v._1, v._2))
 
-  private def typeArguments[_: P]: P[Seq[AbstractIndefiniteId]] = P("[" ~ inline ~ typeReference.rep(sep = ",") ~ inline ~ "]")
+  private def typeArguments[_: P]: P[Seq[RawRef]] = P("[" ~ inline ~ typeReference.rep(sep = ",") ~ inline ~ "]")
+
+  private def typeArgumentsShort[_: P]: P[Seq[RawTemplateNoArg]] = P("[" ~ inline ~ symbol.rep(sep = ",") ~ inline ~ "]").map {
+    args =>
+      args.map(name => RawTemplateNoArg(name))
+  }
 
   // interpolators
   def interpString[_: P]: P[InterpContext] = P("t\"" ~ (staticPart ~ expr).rep ~ staticPart.? ~ "\"").map {

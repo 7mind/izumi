@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 sealed trait LoadedDomain
 
 object LoadedDomain {
+  final case class XXX() extends LoadedDomain
 
   final case class Success(path: FSPath, typespace: Typespace, warnings: Vector[IDLWarning]) extends LoadedDomain
 

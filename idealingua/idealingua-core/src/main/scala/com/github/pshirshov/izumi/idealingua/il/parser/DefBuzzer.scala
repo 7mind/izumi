@@ -15,7 +15,7 @@ class DefBuzzer(context: IDLParserContext) {
 
   def buzzerBlock[_: P]: P[RawTopLevelDefn.TLDBuzzer] = P(metaAgg.cblock(kw.buzzer, methods))
     .map {
-      case (c, i, v) => RawBuzzer(i.toBuzzerId, v.toList, c)
+      case (c, i, v) => RawBuzzer(i, v.toList, c)
     }
     .map(RawTopLevelDefn.TLDBuzzer)
 

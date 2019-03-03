@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, Import}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, TypePrefix}
@@ -32,20 +33,14 @@ final class DomainIndex(val defn: DomainMeshResolved) {
 
   lazy val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
 
-  def makeAbstract(id: TypeId): UnresolvedName = {
+  def makeAbstract(id: RawRef): UnresolvedName = {
     val typename = id.name
-    id.path.domain match {
-      case DomainId.Undefined =>
-        resolveTLName(typename)
-
-      case DomainId.Builtin =>
-        toBuiltinName(typename)
-
-      case did =>
-        UnresolvedName(did.toPackage, typename)
+    if (id.pkg.isEmpty) {
+      resolveTLName(typename)
+    } else {
+      UnresolvedName(id.pkg, typename)
 
     }
-
   }
 
   private def resolveTLName(typename: TypeName): UnresolvedName = {
@@ -64,7 +59,11 @@ final class DomainIndex(val defn: DomainMeshResolved) {
     }
   }
 
-  def makeAbstract(id: AbstractIndefiniteId): UnresolvedName = {
+  def makeAbstract(id: RawDeclaredTypeName): UnresolvedName = {
+    resolveTLName(id.name)
+  }
+
+  def makeAbstract(id: RawNongenericRef): UnresolvedName = {
     // generic args are dropped here!
     if (id.pkg.nonEmpty && id.pkg != Seq(".")) {
       UnresolvedName(id.pkg, id.name)
@@ -73,13 +72,13 @@ final class DomainIndex(val defn: DomainMeshResolved) {
     }
   }
 
-  def toId(namespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId = {
+  def toId(subNamespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId = {
     val pkg = makePkg(unresolvedName)
     val name = IzName(unresolvedName.name)
-    if (namespace.isEmpty) {
+    if (subNamespace.isEmpty) {
       toType(pkg, name)
     } else {
-      IzTypeId.UserType(TypePrefix.UserT(pkg, namespace), name)
+      IzTypeId.UserType(TypePrefix.UserT(pkg, subNamespace), name)
     }
   }
 
@@ -87,8 +86,7 @@ final class DomainIndex(val defn: DomainMeshResolved) {
     IzPackage(unresolved.pkg.map(IzDomainPath))
   }
 
-
-  def resolveId(id: AbstractNongeneric): IzTypeId = {
+  def resolveId(id: RawNongenericRef): IzTypeId = {
     val unresolved = makeAbstract(id)
     val pkg = makePkg(unresolved)
     val name = IzName(unresolved.name)

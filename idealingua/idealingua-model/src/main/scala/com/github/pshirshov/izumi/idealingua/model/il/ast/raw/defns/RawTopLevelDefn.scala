@@ -9,7 +9,7 @@ object RawTopLevelDefn {
 
   sealed trait TypeDefn extends RawTopLevelDefn
 
-  final case class TLDBaseType(v: RawTypeDef.WithId) extends TypeDefn
+  final case class TLDBaseType(v: RawTypeDef.BasicTypeDecl) extends TypeDefn
 
   final case class TLDService(v: RawService) extends RawTopLevelDefn
 
