@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
+import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName, FullField}
 
@@ -18,6 +20,7 @@ object T2Fail {
 
   final case class UnexpectedException(exception: Throwable) extends T2Fail
 
+  final case class TopLevelNameConflict(kind: String, conflicts: Map[RawDeclaredTypeName, Seq[InputPosition]]) extends T2Fail
 
   sealed trait BuilderFail extends T2Fail
   sealed trait OperationFail extends BuilderFail {
