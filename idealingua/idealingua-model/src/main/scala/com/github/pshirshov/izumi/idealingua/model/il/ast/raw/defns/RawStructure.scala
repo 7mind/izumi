@@ -16,6 +16,7 @@ final case class RawStructure(interfaces: RawInterfaces, concepts: RawStructures
 }
 
 object RawStructure {
+
   sealed trait StructOp
 
   object StructOp {
@@ -56,3 +57,7 @@ object RawStructure {
   }
 
 }
+
+
+
+

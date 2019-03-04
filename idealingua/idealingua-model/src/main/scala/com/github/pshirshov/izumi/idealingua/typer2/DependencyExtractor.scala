@@ -19,6 +19,10 @@ class DependencyExtractor(index: DomainIndex) {
         Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDNewtype(v) =>
         Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+      case t@RawTopLevelDefn.TLDTemplate(v) =>
+        Operation(index.resolveTopLeveleName(v.decl.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+      case t@RawTopLevelDefn.TLDInstance(v) =>
+        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
       case t@RawTopLevelDefn.TLDForeignType(v) =>
         Operation(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), Seq(OriginatedDefn(source, t)))
     }
@@ -62,6 +66,12 @@ class DependencyExtractor(index: DomainIndex) {
 
       case _: RawTypeDef.ForeignType =>
         Set.empty
+
+      case t: RawTypeDef.Template =>
+        dependsOn(t.decl)
+
+      case i: RawTypeDef.Instance =>
+        Set(index.makeAbstract(i.source))
     }
   }
 

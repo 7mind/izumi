@@ -184,11 +184,11 @@ class BasicParserTest
     }
 
     "parse adt members" in {
-      assertParses(defStructure.adtMember(_), "X")
-      assertParses(defStructure.adtMember(_), "X as T")
+      assertParses(defStructure.adtMemberTypeRef(_), "X")
+      assertParses(defStructure.adtMemberTypeRef(_), "X as T")
 
-      assertParses(defStructure.adtMember(_), "a.b.c#X")
-      assertParses(defStructure.adtMember(_), "a.b.c#X as T")
+      assertParses(defStructure.adtMemberTypeRef(_), "a.b.c#X")
+      assertParses(defStructure.adtMemberTypeRef(_), "a.b.c#X as T")
     }
 
     "parse adt blocks" in {

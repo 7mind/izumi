@@ -24,7 +24,9 @@ object IzType {
 
     final case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
 
-    sealed trait AdtMember
+    sealed trait AdtMember {
+      def name: String
+    }
     final case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
     final case class AdtMemberNested(name: String, tpe: IzTypeReference, meta: NodeMeta) extends AdtMember
   }

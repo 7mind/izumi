@@ -22,7 +22,7 @@ class Typer2(defn: DomainMeshResolved) {
     val r = run1()
     r match {
       case Left(value) =>
-        import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+
         println(s"  ... failed: ${value}")
 
       case Right(value) =>
@@ -59,6 +59,10 @@ class Typer2(defn: DomainMeshResolved) {
         v.id
       case RawTopLevelDefn.TLDForeignType(v) =>
         RawDeclaredTypeName(v.id.name)
+      case RawTopLevelDefn.TLDTemplate(t) =>
+        t.decl.id
+      case RawTopLevelDefn.TLDInstance(i) =>
+        i.id
     }.filter(_._2.size > 1).filterNot {
       case (_, defns) =>
         defns.count(_.isInstanceOf[TLDDeclared]) == defns.size - 1
@@ -93,6 +97,10 @@ class Typer2(defn: DomainMeshResolved) {
                   v.meta
                 case RawTopLevelDefn.TLDForeignType(v) =>
                   v.meta
+                case RawTopLevelDefn.TLDTemplate(t) =>
+                  t.meta
+                case RawTopLevelDefn.TLDInstance(i) =>
+                  i.meta
               }
             case RawTopLevelDefn.TLDService(v) =>
               v.meta

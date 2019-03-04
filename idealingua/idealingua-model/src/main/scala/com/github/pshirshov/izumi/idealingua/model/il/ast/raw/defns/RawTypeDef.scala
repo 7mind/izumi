@@ -4,7 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Membe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 
 
-sealed trait RawTypeDef
+sealed trait RawTypeDef {
+  def meta: RawNodeMeta
+
+}
 
 
 case class InterpContext(parts: Seq[String], parameters: Seq[String])
@@ -13,8 +16,6 @@ object RawTypeDef {
 
   sealed trait BasicTypeDecl extends RawTypeDef {
     def id: RawDeclaredTypeName
-
-    def meta: RawNodeMeta
   }
 
   sealed trait WithTemplating extends BasicTypeDecl
@@ -31,7 +32,7 @@ object RawTypeDef {
 
   final case class Identifier(id: RawDeclaredTypeName, fields: RawTuple, meta: RawNodeMeta) extends BasicTypeDecl
 
-  final case class NewType(id: RawDeclaredTypeName, source: RawTypeNameRef, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
+  final case class NewType(id: RawDeclaredTypeName, source: RawTypeNameRef, modifiers: Option[RawClone], meta: RawNodeMeta) extends RawTypeDef
 
   final case class DeclaredType(id: RawDeclaredTypeName, meta: RawNodeMeta) extends RawTypeDef
 

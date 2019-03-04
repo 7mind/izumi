@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.{MissingBranchesToRemove, MissingParentsToRemove}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
 
 import scala.reflect.ClassTag
@@ -52,48 +53,49 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
     def asChain: TChain = ret.map(r => Chain(r, List.empty))
   }
 
+  def mapMember(subpath: Seq[IzNamespace])(member: Member): Pair = {
+    member match {      case Member.TypeRef(typeId, memberName, m) =>
+      val tpe = resolve(typeId)
+      val name = tpe match {
+        case IzTypeReference.Scalar(mid) =>
+          memberName.getOrElse(mid.name.name)
+        case IzTypeReference.Generic(_, _) =>
+          memberName match {
+            case Some(value) =>
+              value
+            case None =>
+              ??? // name must be defined for generic members
+          }
+      }
+      Pair(AdtMemberRef(name, tpe, meta(m)), List.empty)
+
+    case Member.NestedDefn(nested) =>
+      val tpe = nested match {
+        case n: RawTypeDef.Interface =>
+          makeInterface(n, subpath).asChain
+        case n: RawTypeDef.DTO =>
+          makeDto(n, subpath).asChain
+        case n: RawTypeDef.Enumeration =>
+          makeEnum(n, subpath).asChain
+        case n: RawTypeDef.Alias =>
+          makeAlias(n, subpath).asChain
+        case n: RawTypeDef.Identifier =>
+          makeIdentifier(n, subpath).asChain
+        case n: RawTypeDef.Adt =>
+          makeAdt(n, subpath :+ IzNamespace(n.id.name))
+      }
+
+      tpe match {
+        case Left(_) =>
+          ???
+        case Right(value) =>
+          Pair(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(value.main.id), meta(nested.meta)), value.additional)
+      }}
+  }
+
   private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
     val id = nameToId(a.id, subpath)
-    val members = a.alternatives.map {
-      case Member.TypeRef(typeId, memberName, m) =>
-        val tpe = resolve(typeId)
-        val name = tpe match {
-          case IzTypeReference.Scalar(mid) =>
-            memberName.getOrElse(mid.name.name)
-          case IzTypeReference.Generic(_, _) =>
-            memberName match {
-              case Some(value) =>
-                value
-              case None =>
-                ??? // name must be defined for generic members
-            }
-        }
-        Pair(AdtMemberRef(name, tpe, meta(m)), List.empty)
-
-      case Member.NestedDefn(nested) =>
-        val tpe = nested match {
-          case n: RawTypeDef.Interface =>
-            makeInterface(n, subpath).asChain
-          case n: RawTypeDef.DTO =>
-            makeDto(n, subpath).asChain
-          case n: RawTypeDef.Enumeration =>
-            makeEnum(n, subpath).asChain
-          case n: RawTypeDef.Alias =>
-            makeAlias(n, subpath).asChain
-          case n: RawTypeDef.Identifier =>
-            makeIdentifier(n, subpath).asChain
-          case n: RawTypeDef.Adt =>
-            makeAdt(n, subpath :+ IzNamespace(n.id.name))
-        }
-
-        tpe match {
-          case Left(_) =>
-            ???
-          case Right(value) =>
-            Pair(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(value.main.id), meta(nested.meta)), value.additional)
-        }
-
-    }
+    val members = a.alternatives.map(mapMember(subpath))
 
     val adtMembers = members.map(_.member)
     val associatedTypes = members.flatMap(_.additional)
@@ -101,12 +103,13 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
     Right(Chain(Adt(id, adtMembers, meta(a.meta)), associatedTypes))
   }
 
+
   def cloneType(v: RawTypeDef.NewType): TList = {
     val id = nameToTopId(v.id)
     val sid = index.resolveRef(v.source)
     val source = types(sid)
+    val newMeta = meta(v.meta)
 
-    // TODO: we need to support more modifiers and interface removal for structures
     source.member match {
       case d: DTO =>
         for {
@@ -124,68 +127,62 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
           product
         }
 
-      case builtinType: BuiltinType =>
-        if (v.modifiers.isEmpty) {
-          Right(List(IzAlias(id, IzTypeReference.Scalar(builtinType.id), meta(v.meta))))
-        } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
-        }
-
-      case a: IzAlias =>
-        if (v.modifiers.isEmpty) {
-          Right(List(a.copy(id = id)))
-        } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
-        }
+      case a: Adt =>
+        modify(id, a.members, v.modifiers).map(newMembers => List(Adt(id, newMembers.map(_.member), newMeta)) ++ newMembers.flatMap(_.additional))
 
       case i: Identifier =>
         if (v.modifiers.isEmpty) {
           Right(List(i.copy(id = id)))
         } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
+          Left(List(CannotApplyTypeModifiers(id, i.id)))
         }
 
       case e: Enum =>
         if (v.modifiers.isEmpty) {
           Right(List(e.copy(id = id)))
         } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
+          Left(List(CannotApplyTypeModifiers(id, e.id)))
+        }
+
+      case builtinType: BuiltinType =>
+        if (v.modifiers.isEmpty) {
+          Right(List(IzAlias(id, IzTypeReference.Scalar(builtinType.id), newMeta)))
+        } else {
+          Left(List(CannotApplyTypeModifiers(id, builtinType.id)))
+        }
+
+      case a: IzAlias =>
+        if (v.modifiers.isEmpty) {
+          Right(List(a.copy(id = id)))
+        } else {
+          Left(List(CannotApplyTypeModifiers(id, a.id)))
         }
 
       case g: Generic =>
         if (v.modifiers.isEmpty) {
           g match {
             case fg: ForeignGeneric =>
-              Right(List(fg.copy(id = id, meta = meta(v.meta))))
+              Right(List(fg.copy(id = id, meta = newMeta)))
 
             case generic: IzType.BuiltinGeneric =>
               Left(List(FeatureUnsupported(id, "TODO: Builtin generic cloning is almost meaningless and not supported yet (we need to support templates first)")))
           }
         } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
+          Left(List(CannotApplyTypeModifiers(id, g.id)))
         }
 
       case f: Foreign =>
         if (v.modifiers.isEmpty) {
           f match {
             case fs: ForeignScalar =>
-              Right(List(fs.copy(id = id, meta = meta(v.meta))))
+              Right(List(fs.copy(id = id, meta = newMeta)))
 
             case fg: ForeignGeneric =>
-              Right(List(fg.copy(id = id, meta = meta(v.meta))))
+              Right(List(fg.copy(id = id, meta = newMeta)))
           }
         } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
+          Left(List(CannotApplyTypeModifiers(id, f.id)))
         }
-
-      case a: Adt =>
-        if (v.modifiers.isEmpty) {
-          // TODO: we need to support branch adding/removing for ADTs
-          Right(List(a.copy(id = id, meta = meta(v.meta))))
-        } else {
-          Left(List(IncompatibleCloneModifiers(id, v.modifiers.nonEmpty)))
-        }
-
     }
 
   }
@@ -210,24 +207,69 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
     makeAlias(a, Seq.empty)
   }
 
-  private def modify(context: IzTypeId, source: IzType, modifiers: Option[RawStructure]): Either[List[BuilderFail], RawStructure] = {
-    source match {
-      case structure: IzStructure =>
-        val struct = structure.defn
-        Right(modifiers.map(m => mergeStructs(struct, m)).getOrElse(struct))
-      case _ =>
-        Left(List(StructureExpected(context, source.id)))
+  private def modify(context: IzTypeId, source: Seq[AdtMember], modifiers: Option[RawClone]): Either[List[BuilderFail], Seq[Pair]] = {
+    modifiers match {
+      case Some(value) =>
+        modify(context, source, value)
+      case None =>
+        Right(source.map(s => Pair(s, List.empty)))
     }
   }
 
-  private def mergeStructs(struct: RawStructure, value: RawStructure): RawStructure = {
-    struct.copy(
-      interfaces = struct.interfaces ++ value.interfaces,
-      concepts = struct.concepts ++ value.concepts,
-      removedConcepts = struct.removedConcepts ++ value.removedConcepts,
-      fields = struct.fields ++ value.removedFields,
-      removedFields = struct.removedFields ++ value.removedFields,
-    )
+  private def modify(context: IzTypeId, source: Seq[AdtMember], modifiers: RawClone): Either[List[BuilderFail], Seq[Pair]] = {
+    if (modifiers.removedParents.nonEmpty || modifiers.concepts.nonEmpty || modifiers.removedConcepts.nonEmpty|| modifiers.fields.nonEmpty || modifiers.removedFields.nonEmpty || modifiers.interfaces.nonEmpty) {
+      Left(List(UnexpectedStructureCloneModifiers(context)))
+    } else {
+      val removedMembers = modifiers.removedBranches.map(_.name).toSet
+      val addedMembers = modifiers.branches.map(mapMember(Seq.empty))
+      val mSum = source.map(s => Pair(s, List.empty)) ++ addedMembers
+
+      val unexpectedRemovals = removedMembers.diff(mSum.map(_.member.name).toSet)
+      if (unexpectedRemovals.nonEmpty) {
+        logger.log(MissingBranchesToRemove(context, unexpectedRemovals))
+      }
+
+      val filtered = mSum.filterNot(m => removedMembers.contains(m.member.name))
+
+      Right(filtered)
+    }
+  }
+
+  private def modify(context: IzTypeId, source: IzStructure, modifiers: Option[RawClone]): Either[List[BuilderFail], RawStructure] = {
+    val struct = source.defn
+    modifiers match {
+      case Some(value) =>
+        mergeStructs(context, struct, value)
+      case None =>
+        Right(struct)
+    }
+  }
+
+  private def mergeStructs(context: IzTypeId, struct: RawStructure, modifiers: RawClone): Either[List[BuilderFail], RawStructure] = {
+    if (modifiers.branches.nonEmpty || modifiers.removedBranches.nonEmpty) {
+      Left(List(UnexpectedAdtCloneModifiers(context)))
+    } else {
+      val removedIfaces = modifiers.removedParents.toSet
+      val ifSum = struct.interfaces ++ modifiers.interfaces
+      val newIfaces = ifSum.filterNot(removedIfaces.contains)
+      val unexpectedRemovals = removedIfaces.diff(ifSum.toSet)
+      if (unexpectedRemovals.nonEmpty) {
+        logger.log(MissingParentsToRemove(context, unexpectedRemovals))
+      }
+
+      val newConcepts = struct.concepts ++ modifiers.concepts
+      val removedConcepts = struct.removedConcepts ++ modifiers.removedConcepts
+      val newFields = struct.fields ++ modifiers.removedFields
+      val removedFields = struct.removedFields ++ modifiers.removedFields
+
+      Right(struct.copy(
+        interfaces = newIfaces,
+        concepts = newConcepts,
+        removedConcepts = removedConcepts,
+        fields = newFields,
+        removedFields = removedFields,
+      ))
+    }
   }
 
 
@@ -353,7 +395,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
     } yield {
 
       if (nothingToRemove.nonEmpty) {
-        logger.log(T2Warn.NothingToRemove(id, nothingToRemove))
+        logger.log(T2Warn.MissingFieldsToRemove(id, nothingToRemove))
       }
 
       if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {

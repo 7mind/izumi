@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawClone.CloneOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDInstance, TLDNewtype, TLDTemplate}
@@ -50,6 +51,36 @@ class DefStructure(context: IDLParserContext) extends Separators {
     }
   }
 
+  object Clone {
+    def plus[_: P]: P[CloneOp.Extend] = P(("&" ~ "&&".?) ~/ (inline ~ ids.parentStruct)).map(CloneOp.Extend)
+
+    def minusParent[_: P]: P[CloneOp.DropParent] = P(("!" ~ "!!".?) ~/ (inline ~ ids.parentStruct)).map(CloneOp.DropParent)
+
+    def embed[_: P]: P[CloneOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (inline ~ ids.parentStruct)).map(CloneOp.Mix)
+
+    def minusConcept[_: P]: P[CloneOp] = P(("-" ~ "--".?) ~/ (inline ~ (field | ids.parentStruct))).map {
+      case v: RawField =>
+        CloneOp.RemoveField(v)
+      case i: RawNongenericRef =>
+        CloneOp.DropConcept(i)
+    }
+
+    def adtBranchPlus[_: P]: P[CloneOp.AddBranch] = P("|" ~/ (inline ~ adtAnyMember)).map(CloneOp.AddBranch)
+
+    def adtBranchMinus[_:P]: P[CloneOp.RemoveBranch] = P("\\" ~/ (inline ~ ids.declaredTypeName)).map(CloneOp.RemoveBranch)
+
+    def plusField[_: P]: P[CloneOp.AddField] = field.map(CloneOp.AddField)
+
+    def anyPart[_: P]: P[CloneOp] = P(plusField | plus | embed | minusConcept | minusParent | adtBranchPlus | adtBranchMinus)
+
+    def struct[_: P]: P[RawClone] = {
+
+      P((inline ~ anyPart ~ inline).rep(sep = sepStruct))
+        .map(RawClone.apply)
+    }
+  }
+
+
   object SimpleStruct {
     def embed[_: P]: P[StructOp.Mix] = P((("+" ~ "++".?) | "...") ~/ (any ~ ids.parentStruct)).map(StructOp.Mix)
 
@@ -74,25 +105,27 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def aggregate[_: P]: P[Seq[RawField]] = P((inline ~ field ~ inline)
     .rep(sep = sepStruct))
 
-  def nestedAdtMember[_: P]: P[Member.NestedDefn] = P(defMember.baseTypeMember)
+  def adtMemberNested[_: P]: P[Member.NestedDefn] = P(defMember.baseTypeMember)
     .map {
       m =>
         Member.NestedDefn(m.v)
     }
 
 
-  def adtMember[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.typeReference ~ (inline ~ "as" ~/ (inline ~ ids.adtMemberName)).?))
+  def adtMemberTypeRef[_: P]: P[Member.TypeRef] = P(metaAgg.withMeta(ids.typeReference ~ (inline ~ "as" ~/ (inline ~ ids.adtMemberName)).?))
     .map {
       case (meta, (tpe, alias)) =>
         Member.TypeRef(tpe, alias, meta)
     }
+
+  def adtAnyMember[_:P]: P[Member] = P(adtMemberNested | adtMemberTypeRef)
 
   def importMember[_: P]: P[ImportedId] = P(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?).map {
     case (tpe, alias) =>
       ImportedId(tpe, alias)
   }
 
-  def adt[_: P](sep: => P[Unit]): P[RawAdt] = P((nestedAdtMember | adtMember).rep(min = 1, sep = sep))
+  def adt[_: P](sep: => P[Unit]): P[RawAdt] = P(adtAnyMember.rep(min = 1, sep = sep))
     .map(_.toList).map(RawAdt.apply)
 
   object Enum {
@@ -146,15 +179,8 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (meta, id, _) =>
         TLDDeclared(DeclaredType(id, meta))
-  }
-
-  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "from" ~/ (inline ~ ids.typeNameRef ~ inline ~ aggregates.enclosed(Struct.struct).?)))
-    .map {
-      case (c, target, (src, struct)) =>
-        // TODO: !!!
-        NewType(target, src, struct.map(_.structure), c)
     }
-    .map(TLDNewtype)
+
 
   def adtFreeForm[_: P]: P[RawAdt] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ adt(sepAdtFreeForm))
 
@@ -186,4 +212,11 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (c, i, v) => TLDInstance(Instance(i, v, c))
     }
+
+  def cloneBlock[_: P]: P[TLDNewtype] = P(metaAgg.cstarting(kw.newtype, "from" ~/ (inline ~ ids.typeNameRef ~ inline ~ aggregates.enclosed(Clone.struct).?)))
+    .map {
+      case (c, target, (src, struct)) =>
+        NewType(target, src, struct, c)
+    }
+    .map(TLDNewtype)
 }
