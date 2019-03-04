@@ -27,7 +27,9 @@ class DefMember(context: IDLParserContext) extends Aggregates {
   def typeMember[_: P]: P[RawTopLevelDefn.TypeDefn] = P(
     defStructure.foreignBlock |
       defStructure.cloneBlock |
-      defStructure.declaredBlock
+      defStructure.declaredBlock |
+      defStructure.instanceBlock |
+      defStructure.templateBlock
   )
 
   def otherMember[_: P]: P[RawTopLevelDefn] = P(

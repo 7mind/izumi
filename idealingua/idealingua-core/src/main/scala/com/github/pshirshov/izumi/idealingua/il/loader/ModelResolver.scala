@@ -54,7 +54,13 @@ class ModelResolver(rules: Seq[VerificationRule]) {
 
 
   private def makeTyped(f: Either[LoadedDomain.Failure, DomainMeshResolved]): LoadedDomain = {
-    LoadedDomain.XXX()
+    f match {
+      case Left(value) =>
+        value
+      case Right(value) =>
+        LoadedDomain.XXX()
+    }
+
 //    (for {
 //      d <- f
 //      ts <- runTyper(d)

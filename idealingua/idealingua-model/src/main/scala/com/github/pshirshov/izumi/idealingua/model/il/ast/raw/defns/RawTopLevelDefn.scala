@@ -19,6 +19,10 @@ object RawTopLevelDefn {
 
   final case class TLDForeignType(v: RawTypeDef.ForeignType) extends TypeDefn
 
+  final case class TLDTemplate(v: RawTypeDef.Template) extends TypeDefn
+
+  final case class TLDInstance(v: RawTypeDef.Instance) extends TypeDefn
+
   final case class TLDService(v: RawService) extends NamedDefn
 
   final case class TLDBuzzer(v: RawBuzzer) extends NamedDefn

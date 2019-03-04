@@ -1,0 +1,9 @@
+domain idltest.tempates
+
+
+template [A, B] mixin M0 {
+  _: A
+  _: B
+}
+
+type M1 = M0[str, i08]

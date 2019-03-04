@@ -61,7 +61,7 @@ trait Identifiers extends Separators {
 
   private def typeArguments[_: P]: P[Seq[RawRef]] = P("[" ~ inline ~ typeReference.rep(sep = ",") ~ inline ~ "]")
 
-  private def typeArgumentsShort[_: P]: P[Seq[RawTemplateNoArg]] = P("[" ~ inline ~ symbol.rep(sep = ",") ~ inline ~ "]").map {
+  def typeArgumentsShort[_: P]: P[Seq[RawTemplateNoArg]] = P("[" ~ (inline ~ symbol ~ inline).rep(sep = ",") ~ "]").map {
     args =>
       args.map(name => RawTemplateNoArg(name))
   }

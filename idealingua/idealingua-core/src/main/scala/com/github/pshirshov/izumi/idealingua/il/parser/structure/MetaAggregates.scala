@@ -16,6 +16,13 @@ class MetaAggregates(context: IDLParserContext) {
     }
   }
 
+  def kwWithMeta[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, T)] = {
+    withMeta(kw(keyword, defparser)).map {
+      case (m, t) => (m, t)
+    }
+  }
+
+
   def cstarting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, RawDeclaredTypeName, T)] = {
     withMeta(typeDecl(keyword, defparser)).map {
       case (m, (i, t)) => (m, i, t)

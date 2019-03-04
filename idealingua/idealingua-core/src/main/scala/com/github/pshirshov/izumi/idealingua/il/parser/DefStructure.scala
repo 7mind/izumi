@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDNewtype}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDInstance, TLDNewtype, TLDTemplate}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
@@ -175,5 +175,15 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (c, i, v) =>
         Enumeration(i, v, c)
+    }
+
+  def templateBlock[_: P]: P[TLDTemplate] = P(metaAgg.kwWithMeta(kw.template, inline ~ ids.typeArgumentsShort ~/ (inline ~ (adtBlock | dtoBlock | mixinBlock))))
+    .map {
+      case (c, (a, v)) => TLDTemplate(Template(a.toList, v, c))
+    }
+
+  def instanceBlock[_: P]: P[TLDInstance] = P(metaAgg.cstarting(kw.instance, "=" ~/ (inline ~ ids.typeReference)))
+    .map {
+      case (c, i, v) => TLDInstance(Instance(i, v, c))
     }
 }
