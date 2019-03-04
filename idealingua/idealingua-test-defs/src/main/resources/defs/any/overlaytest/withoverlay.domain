@@ -2,9 +2,9 @@ domain overlaytest.withoverlay
 
 include "withoverlay.model"
 
-declared OverlayUserAttributes // optional declaration for clarity
+declared data OverlayUserAttributes {} // optional declaration for clarity
 
-declared OverlayEmailAttributes // optional declaration for clarity
+declared data OverlayEmailAttributes {} // optional declaration for clarity
 
 data User {
     id: uid

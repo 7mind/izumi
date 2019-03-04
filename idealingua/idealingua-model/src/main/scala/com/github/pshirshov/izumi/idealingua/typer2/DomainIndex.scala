@@ -19,6 +19,14 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
   val buzzers: Seq[RawTopLevelDefn.TLDBuzzer] = defn.members.collect({ case m: RawTopLevelDefn.TLDBuzzer => m })
   val streams: Seq[RawTopLevelDefn.TLDStreams] = defn.members.collect({ case m: RawTopLevelDefn.TLDStreams => m })
   val consts: Seq[RawTopLevelDefn.TLDConsts] = defn.members.collect({ case m: RawTopLevelDefn.TLDConsts => m })
+
+  val decls: Seq[RawTopLevelDefn.NamedDefn] = defn.members.collect({ case m: RawTopLevelDefn.TLDDeclared => m }).map(_.v)
+  val declaredTypes: Seq[TypeDefn] = decls.collect({ case m: TypeDefn => m })
+  val declaredServices: Seq[RawTopLevelDefn.TLDService] = decls.collect({ case m: RawTopLevelDefn.TLDService => m })
+  val declaredBuzzers: Seq[RawTopLevelDefn.TLDBuzzer] = decls.collect({ case m: RawTopLevelDefn.TLDBuzzer => m })
+  val declaredStreams: Seq[RawTopLevelDefn.TLDStreams] = decls.collect({ case m: RawTopLevelDefn.TLDStreams => m })
+
+
   val dependencies: DependencyExtractor = new DependencyExtractor(this)
 
   Quirks.discard(services, buzzers)

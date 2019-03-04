@@ -148,7 +148,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
   private def listElements[_: P]: P[Seq[Aux]] = P(constValue.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
 
   private def listdef[_: P]: P[Aux.ListAux] = {
-    structure.aggregates.enclosedB(listElements)
+    structure.aggregates.inBrackets(listElements)
       .map {
         v =>
           Aux.ListAux(RawVal.CList(v.map(_.value).toList))

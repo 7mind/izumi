@@ -72,7 +72,6 @@ object IzType {
     import IzNameTools._
     final case object TBool extends BuiltinScalar("bit", "bool", "boolean")
     final case object TString extends BuiltinScalar("str", "string")
-    final case object TInt extends BuiltinScalar("i32", "int", "int32")
     final case object TInt8 extends BuiltinScalar("i08", "byte", "int8")
     final case object TInt16 extends BuiltinScalar("i16", "short", "int16")
     final case object TInt32 extends BuiltinScalar("i32", "int", "int32")

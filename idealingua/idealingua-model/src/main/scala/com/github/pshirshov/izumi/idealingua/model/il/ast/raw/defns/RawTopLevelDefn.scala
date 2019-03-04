@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
+
 
 sealed trait RawTopLevelDefn
 
@@ -15,8 +17,6 @@ object RawTopLevelDefn {
 
   final case class TLDNewtype(v: RawTypeDef.NewType) extends TypeDefn
 
-  final case class TLDDeclared(v: RawTypeDef.DeclaredType) extends TypeDefn
-
   final case class TLDForeignType(v: RawTypeDef.ForeignType) extends TypeDefn
 
   final case class TLDTemplate(v: RawTypeDef.Template) extends TypeDefn
@@ -27,9 +27,10 @@ object RawTopLevelDefn {
 
   final case class TLDBuzzer(v: RawBuzzer) extends NamedDefn
 
-  // not supported by cogen yet
-  final case class TLDStreams(v: RawStreams) extends NamedDefn
-
   final case class TLDConsts(v: RawConstBlock) extends RawTopLevelDefn
 
+  final case class TLDDeclared(v: NamedDefn) extends RawTopLevelDefn
+
+  // not supported by cogen yet
+  final case class TLDStreams(v: RawStreams) extends NamedDefn
 }

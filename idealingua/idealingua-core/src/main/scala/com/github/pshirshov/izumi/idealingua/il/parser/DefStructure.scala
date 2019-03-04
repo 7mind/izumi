@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Membe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawClone.CloneOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDInstance, TLDNewtype, TLDTemplate}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDInstance, TLDNewtype, TLDTemplate}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
@@ -125,7 +125,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
       ImportedId(tpe, alias, meta)
   }
 
-  def adt[_: P](sep: => P[Unit]): P[RawAdt] = P(adtAnyMember.rep(min = 1, sep = sep))
+  def adt[_: P](sep: => P[Unit]): P[RawAdt] = P(adtAnyMember.rep(min = 0, sep = sep))
     .map(_.toList).map(RawAdt.apply)
 
   object Enum {
@@ -140,7 +140,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def anyPart[_: P]: P[EnumOp] = P(enumMember | minus | embed)
 
-    def enum[_: P](sep: => P[Unit]): P[RawEnum] = P(anyPart.rep(min = 1, sep = sep)).map(RawEnum.Aux.apply).map(_.structure)
+    def enum[_: P](sep: => P[Unit]): P[RawEnum] = P(anyPart.rep(min = 0, sep = sep)).map(RawEnum.Aux.apply).map(_.structure)
   }
 
   def imports[_: P](sep: => P[Unit]): P[Seq[ImportedId]] = P(importMember.rep(min = 1, sep = sep))
@@ -174,13 +174,6 @@ class DefStructure(context: IDLParserContext) extends Separators {
     .map {
       case (c, i, v) => Alias(i, v, c)
     }
-
-  def declaredBlock[_: P]: P[TLDDeclared] = P(metaAgg.cstarting(kw.declared, inline))
-    .map {
-      case (meta, id, _) =>
-        TLDDeclared(DeclaredType(id, meta))
-    }
-
 
   def adtFreeForm[_: P]: P[RawAdt] = P(any ~ "=" ~/ any ~ sepAdtFreeForm.? ~ any ~ adt(sepAdtFreeForm))
 

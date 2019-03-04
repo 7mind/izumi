@@ -34,14 +34,11 @@ object RawTypeDef {
 
   final case class NewType(id: RawDeclaredTypeName, source: RawTypeNameRef, modifiers: Option[RawClone], meta: RawNodeMeta) extends RawTypeDef
 
-  final case class DeclaredType(id: RawDeclaredTypeName, meta: RawNodeMeta) extends RawTypeDef
-
   final case class ForeignType(id: TemplateDecl, mapping: Map[String, InterpContext], meta: RawNodeMeta) extends RawTypeDef
 
   final case class Template(arguments: List[RawTemplateNoArg], decl: WithTemplating, meta: RawNodeMeta) extends RawTypeDef
 
   final case class Instance(id: RawDeclaredTypeName, source: RawRef, meta: RawNodeMeta) extends RawTypeDef
-
 }
 
 

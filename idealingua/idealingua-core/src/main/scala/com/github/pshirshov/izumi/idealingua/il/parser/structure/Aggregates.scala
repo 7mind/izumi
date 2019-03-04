@@ -9,12 +9,20 @@ trait Aggregates
     with Identifiers {
 
 
-
   def enclosed[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
-    P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
+    P(inCurlyBraces(defparser) | inBraces(defparser))
   }
 
-  def enclosedB[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+  def inCurlyBraces[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+    P("{" ~ any ~ defparser ~ any ~ "}")
+  }
+
+  def inBraces[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+    P("(" ~ any ~ defparser ~ any ~ ")")
+  }
+
+
+  def inBrackets[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
     P("[" ~ any ~ defparser ~ any ~ "]")
   }
 

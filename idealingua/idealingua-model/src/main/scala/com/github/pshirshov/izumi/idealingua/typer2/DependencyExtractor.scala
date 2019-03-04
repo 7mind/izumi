@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Membe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, OriginatedDefn, UnresolvedName}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Define, Operation, OriginatedDefn, UnresolvedName}
 
 class DependencyExtractor(index: DomainIndex) {
   val types: Seq[TypeDefn] = index.types
@@ -14,17 +14,15 @@ class DependencyExtractor(index: DomainIndex) {
   def groupByType(): Seq[Operation] = {
     val identified = types.map {
       case t@RawTopLevelDefn.TLDBaseType(v) =>
-        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
-      case t@RawTopLevelDefn.TLDDeclared(v) =>
-        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
       case t@RawTopLevelDefn.TLDNewtype(v) =>
-        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
       case t@RawTopLevelDefn.TLDTemplate(v) =>
-        Operation(index.resolveTopLeveleName(v.decl.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Define(index.resolveTopLeveleName(v.decl.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
       case t@RawTopLevelDefn.TLDInstance(v) =>
-        Operation(index.resolveTopLeveleName(v.id), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
       case t@RawTopLevelDefn.TLDForeignType(v) =>
-        Operation(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), Seq(OriginatedDefn(source, t)))
+        Define(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
     }
 
     identified
@@ -59,9 +57,6 @@ class DependencyExtractor(index: DomainIndex) {
         Set.empty
 
       case _: RawTypeDef.Identifier =>
-        Set.empty
-
-      case _: RawTypeDef.DeclaredType =>
         Set.empty
 
       case _: RawTypeDef.ForeignType =>

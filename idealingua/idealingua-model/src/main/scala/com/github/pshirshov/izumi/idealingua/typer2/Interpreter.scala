@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.Operation
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
@@ -18,8 +17,6 @@ import scala.reflect.ClassTag
 
 class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger: WarnLogger) {
   private val index: DomainIndex = _index
-
-  def onDeclaration(ops: Operation,v: RawTypeDef.DeclaredType): Either[List[BuilderFail], Nothing] = Left(List(SingleDeclaredType(ops, v, meta(v.meta))))
 
   def makeInstance(v: RawTypeDef.Instance): TList = ???
 

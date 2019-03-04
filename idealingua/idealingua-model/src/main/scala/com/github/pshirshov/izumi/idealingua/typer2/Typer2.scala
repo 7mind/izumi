@@ -3,11 +3,11 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.graphs
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TLDDeclared, TypeDefn}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TypeDefn}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, Typespace2}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, Typespace2}
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -32,9 +32,6 @@ class Typer2(defn: DomainMeshResolved) {
 
   }
 
-  //private lazy val importedIndexes: Map[DomainId, DomainIndex] =
-
-
   def run1(): Either[List[T2Fail], Typespace2] = {
     for {
       index <- DomainIndex.build(defn)
@@ -56,33 +53,33 @@ class Typer2(defn: DomainMeshResolved) {
   }
 
   private def preverify(index: DomainIndex): Either[List[T2Fail], Unit] = {
-    val badTypes = index.types.groupBy {
-      case RawTopLevelDefn.TLDBaseType(v) =>
-        v.id
-      case RawTopLevelDefn.TLDNewtype(v) =>
-        v.id
-      case RawTopLevelDefn.TLDDeclared(v) =>
-        v.id
-      case RawTopLevelDefn.TLDForeignType(v) =>
-        RawDeclaredTypeName(v.id.name)
-      case RawTopLevelDefn.TLDTemplate(t) =>
-        t.decl.id
-      case RawTopLevelDefn.TLDInstance(i) =>
-        i.id
-    }.filter(_._2.size > 1).filterNot {
-      case (_, defns) =>
-        defns.count(_.isInstanceOf[TLDDeclared]) == defns.size - 1
-    }
+    val badTypes = index.types
+      .groupBy {
+        case RawTopLevelDefn.TLDBaseType(v) =>
+          v.id
+        case RawTopLevelDefn.TLDNewtype(v) =>
+          v.id
+        case RawTopLevelDefn.TLDForeignType(v) =>
+          RawDeclaredTypeName(v.id.name)
+        case RawTopLevelDefn.TLDTemplate(t) =>
+          t.decl.id
+        case RawTopLevelDefn.TLDInstance(i) =>
+          i.id
+      }
+      .filter(_._2.size > 1)
+
     val badServices = index.services.groupBy(_.v.id).filter(_._2.size > 1)
     val badBuzzers = index.buzzers.groupBy(_.v.id).filter(_._2.size > 1)
     val badStreams = index.streams.groupBy(_.v.id).filter(_._2.size > 1)
 
+    val everything = (badServices.toSeq ++ badBuzzers.toSeq ++ badStreams.toSeq ++ badTypes.toSeq).groupBy(_._1).mapValues(_.map(_._2)).mapValues(_.flatten)
 
     for {
       _ <- check("service", badServices)
       _ <- check("buzzer", badBuzzers)
-      _ <- check("buzzer", badStreams)
+      _ <- check("stream", badStreams)
       _ <- check("type", badTypes)
+      _ <- check("name", everything)
     } yield {
 
     }
@@ -98,8 +95,6 @@ class Typer2(defn: DomainMeshResolved) {
                 case RawTopLevelDefn.TLDBaseType(v) =>
                   v.meta
                 case RawTopLevelDefn.TLDNewtype(v) =>
-                  v.meta
-                case TLDDeclared(v) =>
                   v.meta
                 case RawTopLevelDefn.TLDForeignType(v) =>
                   v.meta
@@ -126,24 +121,42 @@ class Typer2(defn: DomainMeshResolved) {
   private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[Operation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
-    val builtinOps = Builtins.all.map(b => Operation(index.makeAbstract(b.id), Set.empty, Seq.empty))
-    val allOperations: Seq[Operation] = domainOps ++ builtinOps ++ importedOps.toSeq
+    val builtinOps = Builtins.all.map(b => Builtin(index.makeAbstract(b.id)))
+    val allOperations = domainOps ++ builtinOps ++ importedOps.toSeq
     Right(allOperations)
   }
 
   private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[UnresolvedName, Operation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
+    val declIndex = index.declaredTypes.groupBy {
+      case RawTopLevelDefn.TLDBaseType(v) =>
+        index.resolveTopLeveleName(v.id)
+      case RawTopLevelDefn.TLDNewtype(v) =>
+        index.resolveTopLeveleName(v.id)
+      case RawTopLevelDefn.TLDForeignType(v) =>
+        index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name))
+      case RawTopLevelDefn.TLDTemplate(v) =>
+        index.resolveTopLeveleName(v.decl.id)
+      case RawTopLevelDefn.TLDInstance(v) =>
+        index.resolveTopLeveleName(v.id)
+    }
 
     Try {
       ordered.foreach {
         name =>
-          val ops = groupedByType(name)
+          val justOp = groupedByType(name)
+          val withDecls = justOp match {
+            case b: Builtin =>
+              b
+            case d: Define =>
+              d.copy(decls = declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
+          }
 
-          val missingDeps = ops.depends.diff(processor.defined)
+          val missingDeps = withDecls.depends.diff(processor.defined)
           if (missingDeps.isEmpty) {
-            processor.add(ops)
+            processor.add(withDecls)
           } else {
-            processor.fail(ops, List(DependencyMissing(ops, missingDeps, ops.id)))
+            processor.fail(withDecls, List(DependencyMissing(withDecls, missingDeps, withDecls.id)))
           }
       }
       processor.finish()
@@ -157,19 +170,21 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def groupOps(allOperations: Seq[Operation]): Either[List[ConflictingNames], Map[UnresolvedName, Operation]] = {
-    val groupedByType = allOperations.groupBy(_.id).mapValues {
-      ops =>
-        ops.tail.foldLeft(ops.head) {
-          case (acc, op) =>
-            assert(acc.id == op.id)
-            acc.copy(depends = acc.depends ++ op.depends, defns = acc.defns ++ op.defns)
-        }
-    }
+  private def groupOps(allOperations: Seq[Operation]): Either[List[NameConflict], Map[UnresolvedName, Operation]] = {
+    allOperations
+      .groupBy(_.id)
+      .map {
+        case (key, ops) =>
+          if (ops.tail.isEmpty) {
+            Right(key -> ops.head)
+          } else {
+            println(ops)
+            Left(List(NameConflict(key)))
+          }
 
-    // TODO: check conflicts in each group
-
-    Right(groupedByType)
+      }
+      .toSeq
+      .biAggregate.map(_.toMap)
   }
 
   private def orderOps(deps: Map[UnresolvedName, Set[UnresolvedName]]): Either[List[CircularDependenciesDetected], Seq[UnresolvedName]] = {
@@ -197,6 +212,16 @@ object Typer2 {
 
   case class OriginatedDefn(source: DomainId, defn: TypeDefn)
 
-  case class Operation(id: UnresolvedName, depends: Set[UnresolvedName], defns: Seq[OriginatedDefn])
+  sealed trait Operation {
+    def id: UnresolvedName
+
+    def depends: Set[UnresolvedName]
+  }
+
+  case class Builtin(id: UnresolvedName) extends Operation {
+    override def depends: Set[UnresolvedName] = Set.empty
+  }
+
+  case class Define(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
 
 }

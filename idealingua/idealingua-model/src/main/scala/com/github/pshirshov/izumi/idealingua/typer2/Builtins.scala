@@ -16,7 +16,6 @@ object Builtins extends TypePlane {
   lazy val scalars: Seq[IzType.BuiltinScalar] = Seq(
     TBool,
     TString,
-    TInt,
     TInt8,
     TInt16,
     TInt32,

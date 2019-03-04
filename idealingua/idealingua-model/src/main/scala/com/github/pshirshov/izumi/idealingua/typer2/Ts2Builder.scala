@@ -31,21 +31,19 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
   def add(ops: Operation): Unit = {
-    ops.defns match {
-      case defns if defns.isEmpty =>
-        // type requires no ops => builtin
-        //existing.add(ops.id).discard()
+    ops match {
+      case Typer2.Builtin(id) =>
         register(ops, Right(List(index.builtins(ops.id))))
 
-      case single :: Nil =>
-        val dindex = if (single.source == index.defn.id) {
+      case single: Typer2.Define if single.decls.isEmpty =>
+        val dindex = if (single.main.source == index.defn.id) {
           index
         } else {
-          importedIndexes(single.source)
+          importedIndexes(single.main.source)
         }
         val interpreter = new Interpreter(dindex, types.toMap, this)
 
-        val product = single.defn match {
+        val product = single.main.defn match {
           case RawTopLevelDefn.TLDBaseType(v) =>
             v match {
               case i: RawTypeDef.Interface =>
@@ -78,15 +76,12 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 
           case RawTopLevelDefn.TLDForeignType(v) =>
             interpreter.makeForeign(v).asList
-
-          case RawTopLevelDefn.TLDDeclared(v) =>
-            interpreter.onDeclaration(ops, v)
-
         }
         register(ops, product)
 
-      case o =>
-        println(s"Unhandled case: ${o.size} defs")
+      case mult: Typer2.Define =>
+        println(s"Unhandled case: ${mult.decls.size} defs")
+
     }
   }
 

@@ -20,7 +20,7 @@ object T2Fail {
   import model._
   final case class CircularDependenciesDetected(loops: List[Set[UnresolvedName]]) extends T2Fail
 
-  final case class ConflictingNames(conflicts: Set[UnresolvedName]) extends T2Fail
+  final case class NameConflict(problem: UnresolvedName) extends T2Fail
   final case class ConflictingImports(conflicts: Map[String, Set[Import]]) extends T2Fail
 
   final case class UnexpectedException(exception: Throwable) extends T2Fail
@@ -36,7 +36,7 @@ object T2Fail {
   sealed trait BuilderFailWithMeta extends BuilderFail
 
   final case class DependencyMissing(context: Operation, missing: Set[UnresolvedName], blocked: UnresolvedName) extends OperationFail
-  final case class SingleDeclaredType(context: Operation, issue: RawTypeDef.DeclaredType, meta: NodeMeta) extends OperationFail with WithMeta
+  //final case class SingleDeclaredType(context: Operation, issue: RawTypeDef.DeclaredType, meta: NodeMeta) extends OperationFail with WithMeta
 
   final case class ConflictingFields(tpe: IzTypeId, conflicts: Map[FName, Seq[FullField]], meta: NodeMeta) extends BuilderFailWithMeta 
 

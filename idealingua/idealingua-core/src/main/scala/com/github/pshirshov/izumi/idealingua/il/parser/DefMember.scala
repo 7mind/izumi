@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDBaseType
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDBaseType, TLDDeclared}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{Inclusion, ModelMember}
 import fastparse._
 
@@ -24,24 +24,38 @@ class DefMember(context: IDLParserContext) extends Aggregates {
   )
     .map(TLDBaseType)
 
-  def typeMember[_: P]: P[RawTopLevelDefn.TypeDefn] = P(
+  private def typeMember[_: P]: P[RawTopLevelDefn.TypeDefn] = P(
     defStructure.foreignBlock |
       defStructure.cloneBlock |
-      defStructure.declaredBlock |
       defStructure.instanceBlock |
       defStructure.templateBlock
   )
 
-  def otherMember[_: P]: P[RawTopLevelDefn] = P(
+  private def interfaceMember[_: P]: P[RawTopLevelDefn.NamedDefn] = P(
     defService.serviceBlock |
       defBuzzer.buzzerBlock |
-      defStreams.streamsBlock |
-      defConst.constBlock
+      defStreams.streamsBlock
   )
 
+  private def namedMember[_: P]: P[RawTopLevelDefn.NamedDefn] = P(
+    baseTypeMember | typeMember | interfaceMember
+  )
+
+
+  private def otherMember[_: P]: P[RawTopLevelDefn] = P(
+    defConst.constBlock |
+      declaredBlock
+  )
+
+  private def declaredBlock[_: P]: P[TLDDeclared] = P(kw(kw.declared, namedMember | inBraces(namedMember)))
+    .map {
+      member =>
+        TLDDeclared(member)
+    }
+
+
   def topLevelDefn[_: P]: P[ModelMember] = P(
-    baseTypeMember |
-      typeMember |
+    namedMember |
       otherMember
   ).map(ModelMember.MMTopLevelDefn)
 
