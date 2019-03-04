@@ -32,24 +32,30 @@ class Typer2(defn: DomainMeshResolved) {
 
   }
 
-  private lazy val index = new DomainIndex(defn)
-  private lazy val importedIndexes: Map[DomainId, DomainIndex] = defn.referenced.mapValues(v => new DomainIndex(v))
+  //private lazy val importedIndexes: Map[DomainId, DomainIndex] =
 
 
   def run1(): Either[List[T2Fail], Typespace2] = {
     for {
-      _ <- preverify()
-      allOperations <- combineOperations()
+      index <- DomainIndex.build(defn)
+      _ <- preverify(index)
+      importedIndexes <- defn.referenced.toSeq
+        .map {
+          case (k, v) => DomainIndex.build(v).map(r => k -> r)
+        }
+        .biAggregate
+        .map(_.toMap)
+      allOperations <- combineOperations(index, importedIndexes)
       groupedByType <- groupOps(allOperations)
       deps = groupedByType.mapValues(_.depends)
       ordered <- orderOps(deps)
-      typespace <- fill(groupedByType, ordered)
+      typespace <- fill(index, importedIndexes, groupedByType, ordered)
     } yield {
       typespace
     }
   }
 
-  private def preverify(): Either[List[T2Fail], Unit] = {
+  private def preverify(index: DomainIndex): Either[List[T2Fail], Unit] = {
     val badTypes = index.types.groupBy {
       case RawTopLevelDefn.TLDBaseType(v) =>
         v.id
@@ -117,7 +123,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def combineOperations(): Either[Nothing, Seq[Operation]] = {
+  private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[Operation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
     val builtinOps = Builtins.all.map(b => Operation(index.makeAbstract(b.id), Set.empty, Seq.empty))
@@ -125,7 +131,7 @@ class Typer2(defn: DomainMeshResolved) {
     Right(allOperations)
   }
 
-  private def fill(groupedByType: Map[UnresolvedName, Operation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
+  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[UnresolvedName, Operation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
 
     Try {

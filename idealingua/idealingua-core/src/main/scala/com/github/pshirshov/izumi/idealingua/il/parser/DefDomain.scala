@@ -15,14 +15,14 @@ class DefDomain(context: IDLParserContext)
 
   def domainBlock[_: P]: P[DomainId] = P(kw.domain ~/ domainId)
 
-  def importBlock[_: P]: P[Import] = kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(defStructure.imports(sep.sepStruct) ~ sepStruct.?)).?)
+  def importBlock[_: P]: P[Import] = metaAgg.withMeta(kw(kw.`import`, domainId ~ ("." ~ inline ~ enclosed(defStructure.imports(sep.sepStruct) ~ sepStruct.?)).?))
     .map {
-      case (id, names) =>
+      case (meta, (id, names)) =>
         names match {
           case Some(nn) =>
-            domains.Import(id, nn.toSet)
+            domains.Import(id, nn, meta)
           case None =>
-            Import(id, Set.empty)
+            Import(id, Seq.empty, meta)
         }
     }
 

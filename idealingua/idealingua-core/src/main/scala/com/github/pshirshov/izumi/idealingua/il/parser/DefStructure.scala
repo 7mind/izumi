@@ -120,9 +120,9 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def adtAnyMember[_:P]: P[Member] = P(adtMemberNested | adtMemberTypeRef)
 
-  def importMember[_: P]: P[ImportedId] = P(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?).map {
-    case (tpe, alias) =>
-      ImportedId(tpe, alias)
+  def importMember[_: P]: P[ImportedId] = P(metaAgg.withMeta(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?)).map {
+    case (meta, (tpe, alias)) =>
+      ImportedId(tpe, alias, meta)
   }
 
   def adt[_: P](sep: => P[Unit]): P[RawAdt] = P(adtAnyMember.rep(min = 1, sep = sep))

@@ -8,30 +8,36 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMes
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef, RawRef, RawTypeNameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.UnresolvedName
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, TypePrefix}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.ConflictingImports
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, T2Fail, TypePrefix}
 
-final class DomainIndex(val defn: DomainMeshResolved) {
-  lazy val types: Seq[TypeDefn] = defn.members.collect({ case m: TypeDefn => m })
-  lazy val services: Seq[RawTopLevelDefn.TLDService] = defn.members.collect({ case m: RawTopLevelDefn.TLDService => m })
-  lazy val buzzers: Seq[RawTopLevelDefn.TLDBuzzer] = defn.members.collect({ case m: RawTopLevelDefn.TLDBuzzer => m })
-  lazy val streams: Seq[RawTopLevelDefn.TLDStreams] = defn.members.collect({ case m: RawTopLevelDefn.TLDStreams => m })
-  lazy val consts: Seq[RawTopLevelDefn.TLDConsts] = defn.members.collect({ case m: RawTopLevelDefn.TLDConsts => m })
-  lazy val dependencies: DependencyExtractor = new DependencyExtractor(this)
+final class DomainIndex private (val defn: DomainMeshResolved) {
+  import DomainIndex._
+
+  val types: Seq[TypeDefn] = defn.members.collect({ case m: TypeDefn => m })
+  val services: Seq[RawTopLevelDefn.TLDService] = defn.members.collect({ case m: RawTopLevelDefn.TLDService => m })
+  val buzzers: Seq[RawTopLevelDefn.TLDBuzzer] = defn.members.collect({ case m: RawTopLevelDefn.TLDBuzzer => m })
+  val streams: Seq[RawTopLevelDefn.TLDStreams] = defn.members.collect({ case m: RawTopLevelDefn.TLDStreams => m })
+  val consts: Seq[RawTopLevelDefn.TLDConsts] = defn.members.collect({ case m: RawTopLevelDefn.TLDConsts => m })
+  val dependencies: DependencyExtractor = new DependencyExtractor(this)
 
   Quirks.discard(services, buzzers)
   Quirks.discard(streams, consts)
 
-  lazy val importIndex: Map[String, Import] = {
+  val importIndex: Map[String, Import] = {
     val asList = defn.imports.flatMap(i => i.identifiers.map(id => id.importedAs -> i))
-    asList.groupBy(_._1).mapValues(v => if (v.size > 1) {
-      ???
-    } else {
-      v.head._2
-    })
-  }
-  lazy val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
+    val grouped = asList.groupBy(_._1)
 
-  lazy val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
+    val bad = grouped.filter(_._2.size > 1)
+    if (bad.nonEmpty) {
+      throw Fail(List(ConflictingImports(bad.mapValues(_.map(_._2).toSet))))
+    }
+
+    grouped.mapValues(_.head._2)
+  }
+  val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
+
+  val builtins: Map[UnresolvedName, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
 
   def makeAbstract(id: RawRef): UnresolvedName = {
     makeAbstract(RawTypeNameRef(id.pkg, id.name))
@@ -116,5 +122,18 @@ final class DomainIndex(val defn: DomainMeshResolved) {
 
   private def toBuiltinName(name: String): UnresolvedName = {
     UnresolvedName(builtinPackage.path.map(_.name), name)
+  }
+}
+
+object DomainIndex {
+  case class Fail(failures: List[T2Fail]) extends RuntimeException
+  def build(defn: DomainMeshResolved): Either[List[T2Fail], DomainIndex] = {
+    try {
+      Right(new DomainIndex(defn))
+    } catch {
+      case f: Fail =>
+        Left(f.failures)
+    }
+
   }
 }
