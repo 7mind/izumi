@@ -10,15 +10,16 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.{MissingBranchesToRemove, MissingParentsToRemove}
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
 
 import scala.reflect.ClassTag
 
 
 class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger: WarnLogger) {
-  def onDeclaration(ops: Operation,v: RawTypeDef.DeclaredType): Either[List[BuilderFail], Nothing] = Left(List(SingleDeclaredType(ops, v, meta(v.meta))))
-
   private val index: DomainIndex = _index
+
+  def onDeclaration(ops: Operation,v: RawTypeDef.DeclaredType): Either[List[BuilderFail], Nothing] = Left(List(SingleDeclaredType(ops, v, meta(v.meta))))
 
   def makeInstance(v: RawTypeDef.Instance): TList = ???
 

@@ -3,37 +3,15 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.typer2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 import scala.collection.mutable
 
-
-sealed trait ProcessedOp {
-  def member: IzType
-}
-
-object ProcessedOp {
-
-  final case class Exported(member: IzType) extends ProcessedOp
-
-  final case class Imported(member: IzType) extends ProcessedOp
-
-}
-
-case class Typespace2(
-
-                       warnings: List[T2Warn],
-                       imports: Set[IzTypeId],
-                       types: List[ProcessedOp],
-                     )
-
-trait WarnLogger {
-  def log(w: T2Warn): Unit
-}
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger {
   private val failed = mutable.HashSet.empty[UnresolvedName]
