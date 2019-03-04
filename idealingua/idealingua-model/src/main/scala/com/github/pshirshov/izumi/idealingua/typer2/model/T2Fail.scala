@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName, FullField}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, FullField, NodeMeta}
 
 sealed trait T2Fail
 
@@ -44,6 +44,7 @@ object T2Fail {
   final case class UnexpectedAdtCloneModifiers(context: IzTypeId) extends BuilderFail
   final case class UnexpectedStructureCloneModifiers(context: IzTypeId) extends BuilderFail
   final case class FeatureUnsupported(context: IzTypeId, explanation: String) extends BuilderFail
+  final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFail
 
   sealed trait VerificationFail extends BuilderFail {
     def tpe: IzTypeId

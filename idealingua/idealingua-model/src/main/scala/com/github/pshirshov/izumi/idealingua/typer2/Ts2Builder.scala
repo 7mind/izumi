@@ -89,6 +89,12 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
                 interpreter.makeAdt(a)
             }
 
+          case t: RawTopLevelDefn.TLDTemplate =>
+            interpreter.makeTemplate(t.v)
+
+          case t: RawTopLevelDefn.TLDInstance =>
+            interpreter.makeInstance(t.v)
+
           case c: RawTopLevelDefn.TLDNewtype =>
             interpreter.cloneType(c.v)
 

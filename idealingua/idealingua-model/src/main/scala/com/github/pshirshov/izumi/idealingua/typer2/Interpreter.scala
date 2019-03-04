@@ -17,6 +17,10 @@ import scala.reflect.ClassTag
 class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger: WarnLogger) {
   private val index: DomainIndex = _index
 
+  def makeInstance(v: RawTypeDef.Instance): TList = ???
+
+  def makeTemplate(t: RawTypeDef.Template): TList = ???
+
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
@@ -53,54 +57,58 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
     def asChain: TChain = ret.map(r => Chain(r, List.empty))
   }
 
-  def mapMember(subpath: Seq[IzNamespace])(member: Member): Pair = {
-    member match {      case Member.TypeRef(typeId, memberName, m) =>
-      val tpe = resolve(typeId)
-      val name = tpe match {
-        case IzTypeReference.Scalar(mid) =>
-          memberName.getOrElse(mid.name.name)
-        case IzTypeReference.Generic(_, _) =>
-          memberName match {
-            case Some(value) =>
-              value
-            case None =>
-              ??? // name must be defined for generic members
+  def mapMember(context: IzTypeId, subpath: Seq[IzNamespace])(member: Member): Either[List[BuilderFail], Pair] = {
+    member match {
+      case Member.TypeRef(typeId, memberName, m) =>
+        val tpe = resolve(typeId)
+        for {
+          name <- tpe match {
+            case IzTypeReference.Scalar(mid) =>
+              Right(memberName.getOrElse(mid.name.name))
+            case IzTypeReference.Generic(_, _) =>
+              memberName match {
+                case Some(value) =>
+                  Right(value)
+                case None =>
+                  Left(List(GenericAdtBranchMustBeNamed(context, typeId, meta(m))))
+              }
           }
-      }
-      Pair(AdtMemberRef(name, tpe, meta(m)), List.empty)
+        } yield {
+          Pair(AdtMemberRef(name, tpe, meta(m)), List.empty)
+        }
 
-    case Member.NestedDefn(nested) =>
-      val tpe = nested match {
-        case n: RawTypeDef.Interface =>
-          makeInterface(n, subpath).asChain
-        case n: RawTypeDef.DTO =>
-          makeDto(n, subpath).asChain
-        case n: RawTypeDef.Enumeration =>
-          makeEnum(n, subpath).asChain
-        case n: RawTypeDef.Alias =>
-          makeAlias(n, subpath).asChain
-        case n: RawTypeDef.Identifier =>
-          makeIdentifier(n, subpath).asChain
-        case n: RawTypeDef.Adt =>
-          makeAdt(n, subpath :+ IzNamespace(n.id.name))
-      }
-
-      tpe match {
-        case Left(_) =>
-          ???
-        case Right(value) =>
-          Pair(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(value.main.id), meta(nested.meta)), value.additional)
-      }}
+      case Member.NestedDefn(nested) =>
+        for {
+          tpe <- nested match {
+            case n: RawTypeDef.Interface =>
+              makeInterface(n, subpath).asChain
+            case n: RawTypeDef.DTO =>
+              makeDto(n, subpath).asChain
+            case n: RawTypeDef.Enumeration =>
+              makeEnum(n, subpath).asChain
+            case n: RawTypeDef.Alias =>
+              makeAlias(n, subpath).asChain
+            case n: RawTypeDef.Identifier =>
+              makeIdentifier(n, subpath).asChain
+            case n: RawTypeDef.Adt =>
+              makeAdt(n, subpath :+ IzNamespace(n.id.name))
+          }
+        } yield {
+          Pair(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), meta(nested.meta)), tpe.additional)
+        }
+    }
   }
 
   private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
     val id = nameToId(a.id, subpath)
-    val members = a.alternatives.map(mapMember(subpath))
 
-    val adtMembers = members.map(_.member)
-    val associatedTypes = members.flatMap(_.additional)
-
-    Right(Chain(Adt(id, adtMembers, meta(a.meta)), associatedTypes))
+    for {
+      members <- a.alternatives.map(mapMember(id, subpath)).biAggregate
+      adtMembers = members.map(_.member)
+      associatedTypes = members.flatMap(_.additional)
+    } yield {
+      Chain(Adt(id, adtMembers, meta(a.meta)), associatedTypes)
+    }
   }
 
 
@@ -217,21 +225,22 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], logger
   }
 
   private def modify(context: IzTypeId, source: Seq[AdtMember], modifiers: RawClone): Either[List[BuilderFail], Seq[Pair]] = {
-    if (modifiers.removedParents.nonEmpty || modifiers.concepts.nonEmpty || modifiers.removedConcepts.nonEmpty|| modifiers.fields.nonEmpty || modifiers.removedFields.nonEmpty || modifiers.interfaces.nonEmpty) {
+    if (modifiers.removedParents.nonEmpty || modifiers.concepts.nonEmpty || modifiers.removedConcepts.nonEmpty || modifiers.fields.nonEmpty || modifiers.removedFields.nonEmpty || modifiers.interfaces.nonEmpty) {
       Left(List(UnexpectedStructureCloneModifiers(context)))
     } else {
       val removedMembers = modifiers.removedBranches.map(_.name).toSet
-      val addedMembers = modifiers.branches.map(mapMember(Seq.empty))
-      val mSum = source.map(s => Pair(s, List.empty)) ++ addedMembers
+      for {
+        addedMembers <- modifiers.branches.map(mapMember(context, Seq.empty)).biAggregate
+        mSum = source.map(s => Pair(s, List.empty)) ++ addedMembers
+        filtered = mSum.filterNot(m => removedMembers.contains(m.member.name))
 
-      val unexpectedRemovals = removedMembers.diff(mSum.map(_.member.name).toSet)
-      if (unexpectedRemovals.nonEmpty) {
-        logger.log(MissingBranchesToRemove(context, unexpectedRemovals))
+      } yield {
+        val unexpectedRemovals = removedMembers.diff(mSum.map(_.member.name).toSet)
+        if (unexpectedRemovals.nonEmpty) {
+          logger.log(MissingBranchesToRemove(context, unexpectedRemovals))
+        }
+        filtered
       }
-
-      val filtered = mSum.filterNot(m => removedMembers.contains(m.member.name))
-
-      Right(filtered)
     }
   }
 

@@ -13,17 +13,17 @@ protected trait Results {
     def asList: TList = ret.map(v => List(v))
   }
 
-  //  implicit class EitherFolderExt[L, R](result: Seq[Either[L, R]]) {
-  //    def aggregate: Either[List[L], List[R]] = {
-  //      val bad = result.collect({ case Left(e) => e })
-  //      if (bad.isEmpty) {
-  //        Right(result.collect({ case Right(r) => r }).toList)
-  //      } else {
-  //        Left(bad.toList)
-  //      }
-  //    }
-  //  }
-  //
+//    implicit class EitherFolderExt[L, R](result: Seq[Either[L, R]]) {
+//      def aggregate: Either[List[L], List[R]] = {
+//        val bad = result.collect({ case Left(e) => e })
+//        if (bad.isEmpty) {
+//          Right(result.collect({ case Right(r) => r }).toList)
+//        } else {
+//          Left(bad.toList)
+//        }
+//      }
+//    }
+
   //  implicit class EitherFolderExt1[L, R](result: Seq[Either[L, Traversable[R]]]) {
   //    def flatAggregate: Either[List[L], List[R]] = {
   //      val bad = result.collect({ case Left(e) => e })
@@ -34,6 +34,17 @@ protected trait Results {
   //      }
   //    }
   //  }
+
+  implicit class EitherFolderExt1[L, R](result: Seq[Either[List[L], R]]) {
+    def biAggregate: Either[List[L], List[R]] = {
+      val bad = result.collect({ case Left(e) => e })
+      if (bad.isEmpty) {
+        Right(result.collect({ case Right(r) => r }).toList)
+      } else {
+        Left(bad.flatten.toList)
+      }
+    }
+  }
 
   implicit class EitherFolderExt2[L, R](result: Seq[Either[List[L], Traversable[R]]]) {
     def biFlatAggregate: Either[List[L], List[R]] = {
