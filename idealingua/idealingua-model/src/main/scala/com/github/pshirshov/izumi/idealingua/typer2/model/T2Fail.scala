@@ -10,6 +10,9 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, F
 sealed trait T2Fail
 
 object T2Fail {
+  sealed trait WithMeta {
+    def meta: NodeMeta
+  }
 
   object model {
     final case class FieldConflict(tpe: IzTypeReference, expectedToBeParent: IzTypeReference)
@@ -25,34 +28,37 @@ object T2Fail {
   final case class TopLevelNameConflict(kind: String, conflicts: Map[RawDeclaredTypeName, Seq[InputPosition]]) extends T2Fail
 
   sealed trait BuilderFail extends T2Fail
-  sealed trait OperationFail extends BuilderFail {
+
+  sealed trait OperationFail extends T2Fail with BuilderFail {
     def context: Operation
   }
 
+  sealed trait BuilderFailWithMeta extends BuilderFail
+
   final case class DependencyMissing(context: Operation, missing: Set[UnresolvedName], blocked: UnresolvedName) extends OperationFail
-  final case class SingleDeclaredType(context: Operation, issue: RawTypeDef.DeclaredType) extends OperationFail
+  final case class SingleDeclaredType(context: Operation, issue: RawTypeDef.DeclaredType, meta: NodeMeta) extends OperationFail with WithMeta
 
-  final case class ConflictingFields(tpe: IzTypeId, conflicts: Map[FName, Seq[FullField]]) extends BuilderFail
+  final case class ConflictingFields(tpe: IzTypeId, conflicts: Map[FName, Seq[FullField]], meta: NodeMeta) extends BuilderFailWithMeta 
 
-  final case class ParentTypeExpectedToBeStructure(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
-  final case class ParentCannotBeGeneric(tpe: IzTypeId, problematic: IzTypeReference) extends BuilderFail
+  final case class ParentTypeExpectedToBeStructure(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class ParentCannotBeGeneric(tpe: IzTypeId, problematic: IzTypeReference, meta: NodeMeta) extends BuilderFailWithMeta
 
-  final case class CannotApplyTypeModifiers(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
+  final case class CannotApplyTypeModifiers(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
 
-  final case class EnumExpected(tpe: IzTypeId, problematic: IzTypeId) extends BuilderFail
-  final case class EnumExpectedButGotGeneric(tpe: IzTypeId, problematic: IzTypeReference) extends BuilderFail
+  final case class EnumExpected(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class EnumExpectedButGotGeneric(tpe: IzTypeId, problematic: IzTypeReference, meta: NodeMeta) extends BuilderFailWithMeta
 
-  final case class UnexpectedArguments(context: IzTypeId, problems: Seq[InterpContext]) extends BuilderFail
-  final case class UnexpectedAdtCloneModifiers(context: IzTypeId) extends BuilderFail
-  final case class UnexpectedStructureCloneModifiers(context: IzTypeId) extends BuilderFail
-  final case class FeatureUnsupported(context: IzTypeId, explanation: String) extends BuilderFail
-  final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFail
+  final case class UnexpectedArguments(context: IzTypeId, problems: Seq[InterpContext], meta: NodeMeta) extends BuilderFailWithMeta
+  final case class UnexpectedAdtCloneModifiers(context: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class UnexpectedStructureCloneModifiers(context: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class FeatureUnsupported(context: IzTypeId, explanation: String, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFailWithMeta
 
   sealed trait VerificationFail extends BuilderFail {
     def tpe: IzTypeId
   }
 
-  final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict]) extends VerificationFail
+  final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict], meta: NodeMeta) extends VerificationFail
 }
 
 

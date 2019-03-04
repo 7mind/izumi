@@ -57,7 +57,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp]) {
       .filterNot(_._2.isEmpty)
       .map {
         bad =>
-          ContradictiveFieldDefinition(structure.id, bad._1, bad._2)
+          ContradictiveFieldDefinition(structure.id, bad._1, bad._2, structure.meta)
       }
 
     if (badFields.isEmpty) {

@@ -102,7 +102,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
             interpreter.makeForeign(v).asList
 
           case RawTopLevelDefn.TLDDeclared(v) =>
-            Left(List(SingleDeclaredType(ops, v)))
+            interpreter.onDeclaration(ops, v)
+
         }
         register(ops, product)
 
