@@ -118,7 +118,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[Operation]] = {
+  private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[UniqueOperation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
     val builtinOps = Builtins.all.map(b => Builtin(index.makeAbstract(b.id)))
@@ -126,7 +126,7 @@ class Typer2(defn: DomainMeshResolved) {
     Right(allOperations)
   }
 
-  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[UnresolvedName, Operation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
+  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[UnresolvedName, UniqueOperation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
     val declIndex = index.declaredTypes.groupBy {
       case RawTopLevelDefn.TLDBaseType(v) =>
@@ -148,8 +148,8 @@ class Typer2(defn: DomainMeshResolved) {
           val withDecls = justOp match {
             case b: Builtin =>
               b
-            case d: Define =>
-              d.copy(decls = declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
+            case d: DefineType =>
+              DefineWithDecls(d.id, d.depends, d.main, declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
           }
 
           val missingDeps = withDecls.depends.diff(processor.defined)
@@ -170,7 +170,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def groupOps(allOperations: Seq[Operation]): Either[List[NameConflict], Map[UnresolvedName, Operation]] = {
+  private def groupOps(allOperations: Seq[UniqueOperation]): Either[List[NameConflict], Map[UnresolvedName, UniqueOperation]] = {
     allOperations
       .groupBy(_.id)
       .map {
@@ -180,7 +180,6 @@ class Typer2(defn: DomainMeshResolved) {
           } else {
             Left(List(NameConflict(key)))
           }
-
       }
       .toSeq
       .biAggregate.map(_.toMap)
@@ -217,10 +216,13 @@ object Typer2 {
     def depends: Set[UnresolvedName]
   }
 
-  case class Builtin(id: UnresolvedName) extends Operation {
+  sealed trait UniqueOperation extends Operation
+
+  case class Builtin(id: UnresolvedName) extends UniqueOperation {
     override def depends: Set[UnresolvedName] = Set.empty
   }
 
-  case class Define(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
+  case class DefineType(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn) extends UniqueOperation
+  case class DefineWithDecls(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
 
 }

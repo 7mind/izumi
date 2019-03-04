@@ -5,24 +5,24 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Membe
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Define, Operation, OriginatedDefn, UnresolvedName}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2._
 
 class DependencyExtractor(index: DomainIndex) {
   val types: Seq[TypeDefn] = index.types
   val source: DomainId = index.defn.id
 
-  def groupByType(): Seq[Operation] = {
+  def groupByType(): Seq[UniqueOperation] = {
     val identified = types.map {
       case t@RawTopLevelDefn.TLDBaseType(v) =>
-        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
+        DefineType(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t))
       case t@RawTopLevelDefn.TLDNewtype(v) =>
-        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
+        DefineType(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t))
       case t@RawTopLevelDefn.TLDTemplate(v) =>
-        Define(index.resolveTopLeveleName(v.decl.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
+        DefineType(index.resolveTopLeveleName(v.decl.id), dependsOn(v), OriginatedDefn(source, t))
       case t@RawTopLevelDefn.TLDInstance(v) =>
-        Define(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
+        DefineType(index.resolveTopLeveleName(v.id), dependsOn(v), OriginatedDefn(source, t))
       case t@RawTopLevelDefn.TLDForeignType(v) =>
-        Define(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), OriginatedDefn(source, t), Seq.empty)
+        DefineType(index.resolveTopLeveleName(RawDeclaredTypeName(v.id.name)), dependsOn(v), OriginatedDefn(source, t))
     }
 
     identified

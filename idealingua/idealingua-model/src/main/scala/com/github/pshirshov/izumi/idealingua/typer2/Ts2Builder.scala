@@ -33,9 +33,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   def add(ops: Operation): Unit = {
     ops match {
       case Typer2.Builtin(id) =>
-        register(ops, Right(List(index.builtins(ops.id))))
+        register(ops, Right(List(index.builtins(id))))
 
-      case single: Typer2.Define if single.decls.isEmpty =>
+      case single: Typer2.DefineType =>
         val dindex = if (single.main.source == index.defn.id) {
           index
         } else {
@@ -79,9 +79,21 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         }
         register(ops, product)
 
-      case mult: Typer2.Define =>
-        println(s"Unhandled case: ${mult.decls.size} defs")
+      case mult: Typer2.DefineWithDecls =>
+        merge(mult) match {
+          case Left(value) =>
+            fail(ops, value)
+          case Right(value) =>
+            add(value)
+        }
+    }
+  }
 
+  def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
+    if (mult.decls.isEmpty) {
+      Right(Typer2.DefineType(mult.id, mult.depends, mult.main))
+    } else {
+      Left(List(FeatureUnsupported(null, "TODO", null)))
     }
   }
 
