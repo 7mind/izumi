@@ -178,7 +178,6 @@ class Typer2(defn: DomainMeshResolved) {
           if (ops.tail.isEmpty) {
             Right(key -> ops.head)
           } else {
-            println(ops)
             Left(List(NameConflict(key)))
           }
 
