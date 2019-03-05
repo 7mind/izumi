@@ -78,16 +78,10 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
     resolveTLName(id.name)
   }
 
-  def resolveRef(id: RawNongenericRef): IzTypeId = {
-    resolveRef(RawTypeNameRef(id.pkg, id.name))
-  }
-
   def resolveRef(id: RawTypeNameRef): IzTypeId = {
     val unresolved = makeAbstract(id)
     val pkg = makePkg(unresolved)
-    val name = IzName(unresolved.name)
-
-    toType(pkg, name)
+    toId(Seq.empty, unresolved)
   }
 
   def toId(subNamespace: Seq[IzNamespace], unresolvedName: UnresolvedName): IzTypeId = {

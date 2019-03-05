@@ -560,12 +560,12 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
           case Some(value) =>
             value
           case None =>
-            IzTypeReference.Scalar(index.resolveRef(ref))
+            IzTypeReference.Scalar(refToTopId(ref))
         }
 
 
       case RawGenericRef(pkg, name, args, adhocName) =>
-        val id = index.resolveRef(RawNongenericRef(pkg, name))
+        val id = refToTopId(RawNongenericRef(pkg, name))
         val typeArgs = args.map {
           a =>
             val argValue = resolve(a)
@@ -586,7 +586,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
     index.toId(namespace, unresolvedName)
   }
 
-  private def refToTopId(id: RawNongenericRef): IzTypeId = {
+  private def refToTopId(id: RawRef): IzTypeId = {
     val name = index.makeAbstract(id)
     index.toId(Seq.empty, name)
   }
@@ -594,8 +594,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
     val parentsIds = struct.interfaces.map(refToTopId)
     val parents = parentsIds.map(types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(index.resolveRef).map(types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(index.resolveRef).map(types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(refToTopId).map(types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(refToTopId).map(types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
