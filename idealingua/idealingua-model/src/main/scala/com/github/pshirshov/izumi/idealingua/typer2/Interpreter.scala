@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.functional.Renderable
+import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
@@ -17,8 +18,7 @@ import scala.collection.{immutable, mutable}
 import scala.reflect.ClassTag
 
 
-
-class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs: Map[IzTypeArgName, IzTypeReference], logger: WarnLogger) {
+class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templateArgs: Map[IzTypeArgName, IzTypeReference], logger: WarnLogger) {
   private val index: DomainIndex = _index
 
   def dispatch(defn: RawTopLevelDefn.TypeDefn): TList = {
@@ -61,24 +61,23 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
   def makeInstance(v: RawTypeDef.Instance): TList = {
     val ctxInstances = mutable.HashMap[IzTypeId, ProcessedOp]()
     val out = makeInstance(v, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
-    out.foreach {
-      i =>
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        println(s"Done: ${v.id}= ${v.source}: ${i.niceList()}")
-        println()
-    }
+    //    out.foreach {
+    //      i =>
+    //        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    //        println(s"Done: ${v.id}= ${v.source}: ${i.niceList()}")
+    //        println()
+    //    }
     out
   }
 
 
   def makeInstance(v: RawTypeDef.Instance, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
-    val id = nameToTopId(v.id)
     val ref = resolve(v.source)
 
     val template = ref match {
       case IzTypeReference.Scalar(tid) =>
         types(tid)
-      case IzTypeReference.Generic(tid, _) =>
+      case IzTypeReference.Generic(tid, _, _) =>
         types(tid)
     }
 
@@ -92,7 +91,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
     val targs = ref match {
       case IzTypeReference.Scalar(_) =>
         Seq.empty
-      case IzTypeReference.Generic(_, args) =>
+      case IzTypeReference.Generic(_, args, _) =>
         args
     }
     assert(t.args.size == targs.size)
@@ -119,7 +118,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
     throw new IllegalStateException(message)
   }
 
-  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], meta: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
+  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
     def toRawNonGeneric(g: IzTypeId): RawNongenericRef = {
       g match {
         case IzTypeId.BuiltinType(name) =>
@@ -127,9 +126,9 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
         case IzTypeId.UserType(prefix, name) =>
           prefix match {
             case TypePrefix.UserTLT(location) =>
-              RawNongenericRef(location.path.map(_.name), g.name.name)
-            case TypePrefix.UserT(location, subpath) =>
-              fail(s"type $g expected to be a top level one")
+              RawNongenericRef(location.path.map(_.name), name.name)
+            case t: TypePrefix.UserT =>
+              fail(s"type $t expected to be a top level one")
           }
       }
     }
@@ -141,7 +140,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
             case ref: IzTypeReference.Scalar =>
               ref
 
-            case ref@IzTypeReference.Generic(tid, args) =>
+            case ref@IzTypeReference.Generic(tid, args, adhocName) =>
               types(tid).member match {
                 case generic: Generic =>
                   generic match {
@@ -149,7 +148,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
                       ref
 
                     case g =>
-                      val tmpName: RawDeclaredTypeName = genericName(args, g)
+                      val tmpName: RawDeclaredTypeName = genericName(args, g, adhocName, meta(m))
                       val ephemeralId: IzTypeId = nameToId(tmpName, Seq.empty)
 
                       if (!ephemerals.contains(ephemeralId)) {
@@ -159,20 +158,20 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
                               case IzTypeReference.Scalar(aid) =>
                                 aid
 
-                              case IzTypeReference.Generic(aid, aargs) =>
-                                val g1 = types(tid).member match {
+                              case IzTypeReference.Generic(aid, aargs, adhocName1) =>
+                                val g1 = types(aid).member match {
                                   case generic: Generic =>
                                     generic
                                   case o =>
-                                    fail(s"$tid must not point to generic, but we got $o")
+                                    fail(s"$aid must not point to generic, but we got $o")
                                 }
 
                                 assert(g.args.size == aargs.size)
                                 val zaargs = g.args.zip(aargs)
 
-                                instantiateArgs(ephemerals, meta)(zaargs)
+                                instantiateArgs(ephemerals, m)(zaargs)
 
-                                val tmpName1: RawDeclaredTypeName = genericName(aargs, g1)
+                                val tmpName1: RawDeclaredTypeName = genericName(aargs, g1, adhocName1, meta(m))
                                 val ephemeralId1: IzTypeId = nameToId(tmpName1, Seq.empty)
                                 ephemeralId1
 
@@ -182,8 +181,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
 
                         val rawRef = toRawNonGeneric(g.id)
                         val rawRefArgs = refArgs.map(toRawNonGeneric).toList
-                        val rawGenericRef = RawGenericRef(rawRef.pkg, rawRef.name, rawRefArgs)
-                        val i = makeInstance(RawTypeDef.Instance(tmpName, rawGenericRef, meta), ephemerals)
+                        val rawGenericRef = RawGenericRef(rawRef.pkg, rawRef.name, rawRefArgs, None)
+                        val i = makeInstance(RawTypeDef.Instance(tmpName, rawGenericRef, m), ephemerals)
 
                         i match {
                           case Left(value) =>
@@ -191,7 +190,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
                           case Right(value) =>
                             value.foreach {
                               v =>
-                                println(s"registering instance ${v.id}")
+                                //println(s"registering instance ${v.id}")
 
                                 assert(!ephemerals.contains(v.id), s"BUG in generic machinery: ephemeral ${v.id} is already registered")
                                 ephemerals.put(v.id, ProcessedOp.Exported(v))
@@ -213,10 +212,14 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
       .toMap
   }
 
-  private def genericName(args: Seq[IzTypeArg], g: Generic): RawDeclaredTypeName = {
+  private def genericName(args: Seq[IzTypeArg], g: Generic, adhocName: Option[IzName], meta: NodeMeta): RawDeclaredTypeName = {
     import Rendering._
-    val tmpName = RawDeclaredTypeName(s"${g.id.name.name}[${args.map(Renderable[IzTypeArg].render).mkString(",")}]")
-    tmpName
+
+    adhocName.map(n => RawDeclaredTypeName(n.name)).getOrElse {
+      val tmpName = s"${g.id.name.name}[${args.map(Renderable[IzTypeArg].render).mkString(",")}]"
+      logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, tmpName, meta))
+      RawDeclaredTypeName(tmpName)
+    }
   }
 
   def makeTemplate(t: RawTypeDef.Template): TList = {
@@ -272,7 +275,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
           name <- tpe match {
             case IzTypeReference.Scalar(mid) =>
               Right(memberName.getOrElse(mid.name.name))
-            case IzTypeReference.Generic(_, _) =>
+            case IzTypeReference.Generic(_, _, _) =>
               memberName match {
                 case Some(value) =>
                   Right(value)
@@ -378,6 +381,17 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
           g match {
             case fg: ForeignGeneric =>
               Right(List(fg.copy(id = id, meta = newMeta)))
+
+            case ct: CustomTemplate =>
+              val newDecl = ct.decl match {
+                case i: RawTypeDef.Interface =>
+                  i.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+                case d: RawTypeDef.DTO =>
+                  d.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+                case a: RawTypeDef.Adt =>
+                  a.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+              }
+              Right(List(ct.copy(decl = newDecl)))
 
             case _: IzType.BuiltinGeneric =>
               Left(List(FeatureUnsupported(id, "TODO: Builtin generic cloning is almost meaningless and not supported (yet?)", newMeta)))
@@ -542,7 +556,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
   private def resolve(id: RawRef): IzTypeReference = {
     id match {
       case ref@RawNongenericRef(_, _) =>
-        targs.get(IzTypeArgName(ref.name)) match {
+        templateArgs.get(IzTypeArgName(ref.name)) match {
           case Some(value) =>
             value
           case None =>
@@ -550,15 +564,14 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
         }
 
 
-      case RawGenericRef(pkg, name, args) =>
-        // TODO: this is not good
+      case RawGenericRef(pkg, name, args, adhocName) =>
         val id = index.resolveRef(RawNongenericRef(pkg, name))
         val typeArgs = args.map {
           a =>
             val argValue = resolve(a)
-            IzTypeArg(/*gargname(id, IzTypeArgName(idx.toString)),*/ IzTypeArgValue(argValue))
+            IzTypeArg(IzTypeArgValue(argValue))
         }
-        IzTypeReference.Generic(id, typeArgs)
+        IzTypeReference.Generic(id, typeArgs, adhocName.map(IzName))
 
     }
   }
@@ -684,14 +697,28 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], targs:
   }
 
   private def fname(f: RawField): FName = {
-    def default: String = resolve(f.typeId) match {
+    def default0: String = resolve(f.typeId) match {
       case IzTypeReference.Scalar(id) =>
         id.name.name
-      case IzTypeReference.Generic(id, _) =>
-        id.name.name
+      case IzTypeReference.Generic(id, _, adhocName) =>
+        adhocName.map(_.name).getOrElse(id.name.name)
     }
 
-    FName(f.name.getOrElse(default))
+    def default: TypeName = f.typeId match {
+      case ref@RawNongenericRef(_, _) =>
+        templateArgs.get(IzTypeArgName(ref.name)) match {
+          case Some(_) =>
+            ref.name
+          case None =>
+            default0
+        }
+
+      case RawGenericRef(_, _, _, adhocName) =>
+        adhocName.getOrElse(default0)
+    }
+
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    FName(f.name.getOrElse(default).uncapitalize)
   }
 
   private def structFields(context: IzTypeId, meta: NodeMeta)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]] = {

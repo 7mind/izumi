@@ -14,7 +14,7 @@ sealed trait RawRef {
   def pkg: Package
 }
 final case class RawNongenericRef(pkg: Package, name: TypeName) extends RawRef
-final case class RawGenericRef(pkg: Package, name: TypeName, args: List[RawRef]) extends RawRef
+final case class RawGenericRef(pkg: Package, name: TypeName, args: List[RawRef], adhocName: Option[TypeName]) extends RawRef
 
 sealed trait TemplateDecl {
   def name: TypeName

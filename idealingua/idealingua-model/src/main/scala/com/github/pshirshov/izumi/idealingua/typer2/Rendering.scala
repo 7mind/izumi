@@ -41,8 +41,9 @@ object Rendering {
       value match {
         case IzTypeReference.Scalar(id) =>
           s"&${Renderable[IzTypeId].render(id)}"
-        case IzTypeReference.Generic(id, args) =>
-          s"&${Renderable[IzTypeId].render(id)}[${args.map(arg => Renderable[IzTypeArg].render(arg)).mkString(",")}]"
+        case IzTypeReference.Generic(id, args, adhocName) =>
+          val n = adhocName.getOrElse(s"${Renderable[IzTypeId].render(id)}[${args.map(arg => Renderable[IzTypeArg].render(arg)).mkString(",")}]")
+          s"&$n"
       }
     }
   }

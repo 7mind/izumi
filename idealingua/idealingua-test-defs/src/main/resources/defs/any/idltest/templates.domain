@@ -10,5 +10,6 @@ template [A, B] mixin M0 {
 
 
 type M1 = M0[str, i08]
-type M2 = M0[i08, M0[str, str]]
-type M3 = M0[i08, M0[str, map[str, str]]]
+type M2 = M0[i08, M0[str, str]] // an implicit instance of M0[str, str] with crappy name will appear in typespace
+type M3 = M0[i08, M0[str, map[str, str]]] // an implicit instance of M0[str, map[str, str]] with crappy name will appear in typespace
+type M4 = M0[i08, M0[str, map[str, str]] @StrangeStructure ] // an implicit instance of M0[str, map[str, str]] will have name `StrangeStructure`

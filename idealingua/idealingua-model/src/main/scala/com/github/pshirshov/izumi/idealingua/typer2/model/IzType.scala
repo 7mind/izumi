@@ -48,7 +48,7 @@ object IzType {
     def parents: Seq[IzTypeId]
     def allParents: Set[IzTypeId]
     def meta: NodeMeta
-    def defn: RawStructure
+    def defn: RawStructure // we need it as a template for cloning
   }
   final case class DTO(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
   final case class Interface(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport

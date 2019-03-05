@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
+
 sealed trait IzTypeReference
 
 object IzTypeReference {
@@ -11,6 +13,6 @@ object IzTypeReference {
   import model._
 
   final case class Scalar(id: IzTypeId) extends IzTypeReference
-  final case class Generic(id: IzTypeId, args: Seq[IzTypeArg]) extends IzTypeReference
+  final case class Generic(id: IzTypeId, args: Seq[IzTypeArg], adhocName: Option[IzName]) extends IzTypeReference
 }
 

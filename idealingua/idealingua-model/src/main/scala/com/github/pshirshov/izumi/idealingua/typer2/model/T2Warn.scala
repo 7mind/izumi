@@ -12,4 +12,5 @@ object T2Warn {
   final case class MissingFieldsToRemove(tpe: IzTypeId, removals: Set[BasicField], meta: NodeMeta) extends WithMeta
   final case class MissingParentsToRemove(tpe: IzTypeId, removals: Set[RawNongenericRef], meta: NodeMeta) extends WithMeta
   final case class MissingBranchesToRemove(tpe: IzTypeId, removals: Set[String], meta: NodeMeta) extends WithMeta
+  final case class TemplateInstanceNameWillBeGenerated(generic: IzTypeId, generatedName: String, meta: NodeMeta) extends WithMeta
 }
