@@ -5,8 +5,8 @@ sealed trait IzTypeReference
 object IzTypeReference {
   object model {
     case class IzTypeArgName(name: String)
-    case class IzTypeArgValue(name: IzTypeReference)
-    case class IzTypeArg(name: IzTypeArgName, value: IzTypeArgValue)
+    case class IzTypeArgValue(ref: IzTypeReference)
+    case class IzTypeArg(value: IzTypeArgValue)
   }
   import model._
 

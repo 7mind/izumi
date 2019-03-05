@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
@@ -41,42 +40,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         } else {
           importedIndexes(single.main.source)
         }
-        val interpreter = new Interpreter(dindex, types.toMap, this)
-
-        val product = single.main.defn match {
-          case RawTopLevelDefn.TLDBaseType(v) =>
-            v match {
-              case i: RawTypeDef.Interface =>
-                interpreter.makeInterface(i).asList
-
-              case d: RawTypeDef.DTO =>
-                interpreter.makeDto(d).asList
-
-              case a: RawTypeDef.Alias =>
-                interpreter.makeAlias(a).asList
-
-              case e: RawTypeDef.Enumeration =>
-                interpreter.makeEnum(e).asList
-
-              case i: RawTypeDef.Identifier =>
-                interpreter.makeIdentifier(i).asList
-
-              case a: RawTypeDef.Adt =>
-                interpreter.makeAdt(a)
-            }
-
-          case t: RawTopLevelDefn.TLDTemplate =>
-            interpreter.makeTemplate(t.v)
-
-          case t: RawTopLevelDefn.TLDInstance =>
-            interpreter.makeInstance(t.v)
-
-          case c: RawTopLevelDefn.TLDNewtype =>
-            interpreter.cloneType(c.v)
-
-          case RawTopLevelDefn.TLDForeignType(v) =>
-            interpreter.makeForeign(v).asList
-        }
+        val interpreter = new Interpreter(dindex, types.toMap, Map.empty, this)
+        val product = interpreter.dispatch(single.main.defn)
         register(ops, product)
 
       case mult: Typer2.DefineWithDecls =>
@@ -88,6 +53,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         }
     }
   }
+
+
 
   def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
     if (mult.decls.isEmpty) {

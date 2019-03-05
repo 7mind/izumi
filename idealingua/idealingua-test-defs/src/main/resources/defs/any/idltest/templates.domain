@@ -4,6 +4,11 @@ domain idltest.tempates
 template [A, B] mixin M0 {
   _: A
   _: B
+  mapping: map[A, B]
 }
 
+
+
 type M1 = M0[str, i08]
+type M2 = M0[i08, M0[str, str]]
+type M3 = M0[i08, M0[str, map[str, str]]]
