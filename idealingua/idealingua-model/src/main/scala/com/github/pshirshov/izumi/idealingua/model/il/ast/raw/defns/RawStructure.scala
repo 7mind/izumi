@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{DTO, Interface}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 
 final case class RawStructure(interfaces: RawInterfaces, concepts: RawStructures, removedConcepts: RawStructures, fields: RawTuple, removedFields: RawTuple) {
   def extend(other: RawStructure): RawStructure = {
@@ -21,11 +21,11 @@ object RawStructure {
 
   object StructOp {
 
-    final case class Extend(tpe: RawNongenericRef) extends StructOp
+    final case class Extend(tpe: RawRef) extends StructOp
 
-    final case class Mix(tpe: RawNongenericRef) extends StructOp
+    final case class Mix(tpe: RawRef) extends StructOp
 
-    final case class Drop(tpe: RawNongenericRef) extends StructOp
+    final case class Drop(tpe: RawRef) extends StructOp
 
     final case class AddField(field: RawField) extends StructOp
 

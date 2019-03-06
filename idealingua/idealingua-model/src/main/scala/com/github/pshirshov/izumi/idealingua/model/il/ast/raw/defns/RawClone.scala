@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 
 final case class RawClone(
                            interfaces: RawInterfaces,
@@ -29,17 +29,17 @@ object RawClone {
 
   object CloneOp {
 
-    final case class Extend(tpe: RawNongenericRef) extends CloneOp
+    final case class Extend(tpe: RawRef) extends CloneOp
 
-    final case class Mix(tpe: RawNongenericRef) extends CloneOp
+    final case class Mix(tpe: RawRef) extends CloneOp
 
     final case class AddBranch(tpe: RawAdt.Member) extends CloneOp
 
     final case class RemoveBranch(name: RawDeclaredTypeName) extends CloneOp
 
-    final case class DropConcept(tpe: RawNongenericRef) extends CloneOp
+    final case class DropConcept(tpe: RawRef) extends CloneOp
 
-    final case class DropParent(tpe: RawNongenericRef) extends CloneOp
+    final case class DropParent(tpe: RawRef) extends CloneOp
 
     final case class AddField(field: RawField) extends CloneOp
 

@@ -34,7 +34,7 @@ trait Identifiers extends Separators {
   private def idPkg[_: P]: P[Seq[String]] = P(symbol.rep(sep = "."))
 
   // type definitions
-  def parentStruct[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
+  def parentStruct[_: P]: P[RawRef] = typeReference //typename.map(id => RawNongenericRef(id.pkg, id.name))
 
   def parentEnum[_: P]: P[RawNongenericRef] = typename.map(id => RawNongenericRef(id.pkg, id.name))
 

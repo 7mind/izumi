@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2._
 
 import scala.collection.immutable
