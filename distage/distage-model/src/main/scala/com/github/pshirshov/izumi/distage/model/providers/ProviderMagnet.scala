@@ -81,6 +81,10 @@ case class ProviderMagnet[+R](get: Provider) {
   def map[B: Tag](f: R => B): ProviderMagnet[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
   }
+
+  def zip[B](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
+
+  }
 }
 
 object ProviderMagnet {

@@ -18,13 +18,12 @@ trait WithDICallable {
   trait Callable {
     def argTypes: Seq[SafeType]
     def ret: SafeType
-
-    protected def call(args: Any*): Any
+    def fun: Seq[Any] => Any
 
     def unsafeApply(refs: TypedRef[_]*): Any = {
       val args = verifyArgs(refs)
 
-      call(args: _*)
+      fun(args)
     }
 
     private def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
@@ -55,14 +54,10 @@ trait WithDICallable {
 
   trait Provider extends Callable {
     def associations: Seq[Association.Parameter]
-    def diKeys: Seq[DIKey] = associations.map(_.wireWith)
-    def fun: Seq[Any] => Any
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
 
+    final val diKeys: Seq[DIKey] = associations.map(_.wireWith)
     override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
-
-    override protected def call(args: Any*): Any =
-      fun.apply(args: Seq[Any])
 
     override def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
@@ -70,15 +65,18 @@ trait WithDICallable {
 
   object Provider {
 
-    case class ProviderImpl[+R](associations: Seq[Association.Parameter], ret: SafeType, fun: Seq[Any] => Any) extends Provider {
-      override protected def call(args: Any*): R =
-        super.call(args: _*).asInstanceOf[R]
+    case class ProviderImpl[+R](
+                                 associations: Seq[Association.Parameter]
+                               , ret: SafeType
+                               , fun: Seq[Any] => Any
+                               ) extends Provider {
 
-      override def unsafeApply(refs: TypedRef[_]*): R =
+      override final def unsafeApply(refs: TypedRef[_]*): R =
         super.unsafeApply(refs: _*).asInstanceOf[R]
 
-      override def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
+      override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
         copy(ret = newRet, fun = xs => f.apply(fun(xs)))
+
     }
 
     object ProviderImpl {
