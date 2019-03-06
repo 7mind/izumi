@@ -54,11 +54,10 @@ object T2Fail {
   final case class FeatureUnsupported(context: IzTypeId, explanation: String, meta: NodeMeta) extends BuilderFailWithMeta
   final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFailWithMeta
 
-  sealed trait VerificationFail extends BuilderFail {
-    def tpe: IzTypeId
-  }
+  sealed trait VerificationFail extends BuilderFail
 
   final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict], meta: NodeMeta) extends VerificationFail
+  final case class MissingTypespaceMembers(missingRefs: Map[IzTypeId, Set[IzTypeId]]) extends VerificationFail
 }
 
 

@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
+import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzName, IzNamespace}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference}
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference, Rendering}
 
 trait Resolvers {
   def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId
@@ -13,7 +14,12 @@ trait Resolvers {
 
   def resolve(id: RawRef): IzTypeReference
 
+  @deprecated
   def refToTopId(id: RawRef): IzTypeId
+
+  def refToTopId2(id: IzTypeReference): IzTypeId
+
+  def genericName(ref: IzTypeReference.Generic): RawDeclaredTypeName
 }
 
 class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resolvers {
@@ -55,5 +61,25 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
     nameToId(id, Seq.empty)
   }
 
+  def genericName(ref: IzTypeReference.Generic): RawDeclaredTypeName = {
+    import Rendering._
+
+    val name = ref.adhocName
+      .map(n => n.name)
+      .getOrElse {
+        s"${ref.id.name.name}[${ref.args.map(Renderable[IzTypeArg].render).mkString(",")}]"
+
+      }
+    RawDeclaredTypeName(name)
+  }
+
+  def refToTopId2(id: IzTypeReference): IzTypeId = {
+    id match {
+      case s: IzTypeReference.Scalar =>
+        s.id
+      case g: IzTypeReference.Generic =>
+        index.toId(Seq.empty, index.resolveTopLeveleName(genericName(g)))
+    }
+  }
 
 }

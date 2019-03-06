@@ -1,34 +1,96 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.idealingua.typer2.interpreter.Resolvers
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{ContradictiveFieldDefinition, VerificationFail}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{ContradictiveFieldDefinition, MissingTypespaceMembers, VerificationFail}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
-class TsVerifier(types: Map[IzTypeId, ProcessedOp]) {
-  def validateAll(allTypes: List[IzType], validator: IzType => Either[List[VerificationFail], Unit]): Either[List[VerificationFail], Unit] = {
-    val bad = allTypes
-      .map(validator)
-      .collect({ case Left(l) => l })
-      .flatten
+class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
 
-    if (bad.nonEmpty) {
-      Left(bad)
+
+  def validateTypespace(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
+
+
+    for {
+      _ <- validateTsConsistency(allTypes)
+      _ <- validateAll(allTypes, postValidate)
+    } yield {
+
+    }
+  }
+
+  private def validateTsConsistency(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
+    val allTypeIds = allTypes.map(_.id).toSet
+    val allTopLevelRefs = allTypes.flatMap(collectTopLevelReferences).groupBy(_._1).mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
+    val missingRefs: Map[IzTypeId, Set[IzTypeId]] = allTopLevelRefs.mapValues(_.diff(allTypeIds)).filter(_._2.nonEmpty)
+    if (missingRefs.nonEmpty) {
+      Left(List(MissingTypespaceMembers(missingRefs)))
     } else {
       Right(())
     }
   }
 
-  def preValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
+  def prevalidateTypes(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
+    validateAll(allTypes, preValidate)
+  }
+
+  private def validateAll(allTypes: List[IzType], validator: IzType => Either[List[VerificationFail], Unit]): Either[List[VerificationFail], Unit] = {
+    val bad = allTypes
+      .map(validator)
+      .collect({ case Left(l) => l })
+      .flatten
+
+    for {
+      _ <- if (bad.nonEmpty) {
+        Left(bad)
+      } else {
+        Right(())
+      }
+    } yield {
+
+    }
+  }
+
+  private def collectTopLevelReferences(t: IzType): Set[(IzTypeId, IzTypeReference)] = {
+    t match {
+      case generic: IzType.Generic =>
+        Set.empty
+      case structure: IzStructure =>
+        structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet
+      case a: IzType.Adt =>
+        a.members
+          .map {
+            case ref: AdtMemberRef =>
+              a.id -> ref.ref
+            case n: AdtMemberNested =>
+              a.id -> n.tpe
+          }
+          .toSet
+      case a: IzType.IzAlias =>
+        Set(a.id -> a.source)
+      case i: IzType.Identifier =>
+        i.fields.map(f => i.id -> f.tpe).toSet
+      case _: IzType.Enum =>
+        Set.empty
+      case foreign: IzType.Foreign =>
+        Set.empty
+      case builtinType: IzType.BuiltinType =>
+        Set.empty
+    }
+  }
+
+  private def preValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
     // TODO: verify
     // don't forget: we don't have ALL the definitions here yet
     Quirks.discard(tpe)
     Right(())
   }
 
-  def postValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
+  private def postValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
     tpe match {
       case structure: IzStructure =>
         merge(List(

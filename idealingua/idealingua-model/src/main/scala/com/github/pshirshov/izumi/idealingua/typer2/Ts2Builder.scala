@@ -2,6 +2,9 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawGenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
@@ -10,7 +13,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger {
@@ -42,7 +45,12 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           importedIndexes(single.main.source)
         }
 
-    val interpreter = new InterpreterContext(dindex, this, Interpreter.Args(types.toMap, Map.empty)).interpreter
+        val interpreter = makeInterpreter(dindex).interpreter
+//        val refs = requiredTemplates(single.main.defn.defn)
+//        if (refs.nonEmpty) {
+//          println(refs)
+//        }
+
         val product = interpreter.dispatch(single.main.defn)
         register(ops, product)
 
@@ -56,6 +64,62 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
+
+  private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {
+    new InterpreterContext(dindex, this, Interpreter.Args(types.toMap, Map.empty))
+  }
+
+  ///
+  def requiredTemplates(v: RawTypeDef): Seq[RawGenericRef] = {
+    v match {
+      case t: RawTypeDef.Interface =>
+        trefs(t.struct)
+
+      case t: RawTypeDef.DTO =>
+        trefs(t.struct)
+
+      case t: RawTypeDef.Alias =>
+        collectGenericRefs(List(t.target))
+
+      case t: RawTypeDef.Adt =>
+        t.alternatives
+          .flatMap {
+            case a: Member.TypeRef =>
+              collectGenericRefs(List(a.typeId))
+            case a: Member.NestedDefn =>
+              requiredTemplates(a.nested)
+          }
+
+      case n: RawTypeDef.NewType =>
+        Seq.empty
+
+      case t: RawTypeDef.Template =>
+        requiredTemplates(t.decl)
+
+      case _: RawTypeDef.Enumeration =>
+        Seq.empty
+
+      case _: RawTypeDef.Identifier =>
+        Seq.empty
+
+      case _: RawTypeDef.ForeignType =>
+        Seq.empty
+
+      case i: RawTypeDef.Instance =>
+        Seq.empty
+    }
+  }
+
+  private def trefs(struct: RawStructure): Seq[RawGenericRef] = {
+    val allRefs = struct.interfaces ++ struct.concepts ++ struct.removedConcepts ++ struct.fields.map(_.typeId)
+    collectGenericRefs(allRefs)
+  }
+
+  private def collectGenericRefs(allRefs: List[RawRef]): immutable.Seq[RawGenericRef] = {
+    allRefs.collect({ case ref: RawGenericRef => ref })
+  }
+
+  ///
 
 
   def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
@@ -83,9 +147,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       } else {
         Right(())
       }
-      allTypes = Ts2Builder.this.types.values.collect({ case Exported(member) => member }).toList
-      verifier = new TsVerifier(types.toMap)
-      _ <- verifier.validateAll(allTypes, verifier.postValidate)
+      allTypes = Ts2Builder.this.types.values.map(_.member).toList
+      verifier = new TsVerifier(types.toMap, makeInterpreter(index).resolvers)
+      _ <- verifier.validateTypespace(allTypes)
     } yield {
       Typespace2(
         warnings.toList,
@@ -98,8 +162,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   private def register(ops: Operation, maybeTypes: Either[List[BuilderFail], List[IzType]]): Unit = {
     (for {
       tpe <- maybeTypes
-      verifier = new TsVerifier(types.toMap)
-      _ <- verifier.validateAll(tpe, verifier.preValidate)
+      verifier = new TsVerifier(types.toMap, makeInterpreter(index).resolvers)
+      _ <- verifier.prevalidateTypes(tpe)
     } yield {
       tpe
     }) match {

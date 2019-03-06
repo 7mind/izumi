@@ -21,6 +21,18 @@ class AdtSupport(
     makeAdt(a, Seq.empty).map(_.flatten)
   }
 
+  private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
+    val id = resolvers.nameToId(a.id, subpath)
+
+    for {
+      members <- a.alternatives.map(mapMember(id, subpath)).biAggregate
+      adtMembers = members.map(_.member)
+      associatedTypes = members.flatMap(_.additional)
+    } yield {
+      Chain(Adt(id, adtMembers, i2.meta(a.meta)), associatedTypes)
+    }
+  }
+
   def mapMember(context: IzTypeId, subpath: Seq[IzNamespace])(member: Member): Either[List[BuilderFail], AdtMemberProducts] = {
     member match {
       case Member.TypeRef(typeId, memberName, m) =>
@@ -58,29 +70,22 @@ class AdtSupport(
               makeAdt(n, subpath :+ IzNamespace(n.id.name))
           }
         } yield {
-          AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.additional)
+          AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.main +: tpe.additional)
         }
     }
   }
 
-  private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
-    val id = resolvers.nameToId(a.id, subpath)
 
-    for {
-      members <- a.alternatives.map(mapMember(id, subpath)).biAggregate
-      adtMembers = members.map(_.member)
-      associatedTypes = members.flatMap(_.additional)
-    } yield {
-      Chain(Adt(id, adtMembers, i2.meta(a.meta)), associatedTypes)
-    }
-  }
 
 }
 
 object AdtSupport {
 
   case class Chain(main: IzType, additional: List[IzType]) {
-    def flatten: List[IzType] = List(main) ++ additional
+    def flatten: List[IzType] = {
+
+      List(main) ++ additional
+    }
   }
 
   case class AdtMemberProducts(member: IzType.model.AdtMember, additional: List[IzType])

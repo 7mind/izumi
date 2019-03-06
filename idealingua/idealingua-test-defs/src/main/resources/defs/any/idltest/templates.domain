@@ -13,3 +13,19 @@ type M1 = M0[str, i08]
 type M2 = M0[i08, M0[str, str]] // an implicit instance of M0[str, str] with crappy name will appear in typespace
 type M3 = M0[i08, M0[str, map[str, str]]] // an implicit instance of M0[str, map[str, str]] with crappy name will appear in typespace
 type M4 = M0[i08, M0[str, map[str, str]] @StrangeStructure ] // an implicit instance of M0[str, map[str, str]] will have name `StrangeStructure`
+
+mixin M5 {
+  f: M0[i08, tsz]
+}
+
+template [A, B] mixin MX {
+    + M0[B, A]
+    f1: A
+    f2: B
+}
+
+mixin MG {
+  & MX[str, map[str, str]]
+}
+
+//type M5 = MX[str, map[str, str]]

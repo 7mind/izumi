@@ -150,10 +150,6 @@ class Typer2(defn: DomainMeshResolved) {
             case b: Builtin =>
               b
             case d: DefineType =>
-              val refs = index.dependencies.requiredTemplates(d.main.defn.defn)
-              if (refs.nonEmpty) {
-                println(refs)
-              }
               DefineWithDecls(d.id, d.depends, d.main, declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
           }
 

@@ -21,7 +21,9 @@ class TemplateSupport(
                        resolvers: Resolvers,
                        logger: WarnLogger,
                      ) {
+
   import Tools._
+
   def makeInstance(v: RawTypeDef.Instance): TList = {
     val ctxInstances = mutable.HashMap[IzTypeId, ProcessedOp]()
     val out = makeInstance(v, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
@@ -109,7 +111,7 @@ class TemplateSupport(
                       ref
 
                     case g =>
-                      val tmpName: RawDeclaredTypeName = genericName(args, g, adhocName, i2.meta(m))
+                      val tmpName: RawDeclaredTypeName = genericName(ref, g, i2.meta(m))
                       val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
                       if (!ephemerals.contains(ephemeralId)) {
@@ -119,7 +121,7 @@ class TemplateSupport(
                               case IzTypeReference.Scalar(aid) =>
                                 aid
 
-                              case IzTypeReference.Generic(aid, aargs, adhocName1) =>
+                              case ref1@IzTypeReference.Generic(aid, aargs, adhocName1) =>
                                 val g1 = context.types(aid).member match {
                                   case generic: Generic =>
                                     generic
@@ -132,7 +134,7 @@ class TemplateSupport(
 
                                 instantiateArgs(ephemerals, m)(zaargs)
 
-                                val tmpName1: RawDeclaredTypeName = genericName(aargs, g1, adhocName1, i2.meta(m))
+                                val tmpName1: RawDeclaredTypeName = genericName(ref1, g1, i2.meta(m))
                                 val ephemeralId1: IzTypeId = resolvers.nameToId(tmpName1, Seq.empty)
                                 ephemeralId1
 
@@ -173,15 +175,15 @@ class TemplateSupport(
       .toMap
   }
 
-  private def genericName(args: Seq[IzTypeArg], g: Generic, adhocName: Option[IzName], meta: NodeMeta): RawDeclaredTypeName = {
-    import Rendering._
-
-    adhocName.map(n => RawDeclaredTypeName(n.name)).getOrElse {
-      val tmpName = s"${g.id.name.name}[${args.map(Renderable[IzTypeArg].render).mkString(",")}]"
-      logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, tmpName, meta))
-      RawDeclaredTypeName(tmpName)
+  private def genericName(ref: IzTypeReference.Generic, g: Generic, meta: NodeMeta): RawDeclaredTypeName = {
+    val name = resolvers.genericName(ref)
+    if (ref.adhocName.isEmpty) {
+      logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, name.name, meta))
     }
+    name
   }
+
+
 
   def makeTemplate(t: RawTypeDef.Template): TList = {
     val id = resolvers.nameToTopId(t.decl.id)

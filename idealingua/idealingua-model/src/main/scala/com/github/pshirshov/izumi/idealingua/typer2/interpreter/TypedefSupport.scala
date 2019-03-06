@@ -106,11 +106,13 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
+
+
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(resolvers.refToTopId)
+    val parentsIds = struct.interfaces.map(resolvers.resolve).map(resolvers.refToTopId2)
     val parents = parentsIds.map(context.types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(resolvers.refToTopId2).map(context.types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(resolvers.refToTopId2).map(context.types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
