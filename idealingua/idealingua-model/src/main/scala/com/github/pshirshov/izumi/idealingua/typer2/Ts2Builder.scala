@@ -35,7 +35,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 
   def add(ops: Operation): Unit = {
     ops match {
-      case Typer2.Builtin(id) =>
+      case Typer2.DefineBuiltin(id) =>
         register(ops, Right(List(index.builtins(id))))
 
       case single: Typer2.DefineType =>

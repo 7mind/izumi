@@ -25,8 +25,33 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
 
   private def validateTsConsistency(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
     val allTypeIds = allTypes.map(_.id).toSet
-    val allTopLevelRefs = allTypes.flatMap(collectTopLevelReferences).groupBy(_._1).mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
-    val missingRefs: Map[IzTypeId, Set[IzTypeId]] = allTopLevelRefs.mapValues(_.diff(allTypeIds)).filter(_._2.nonEmpty)
+
+    val allTopLevelRefs: Map[IzTypeId, Set[IzTypeReference]] = allTypes
+      .flatMap(collectTopLevelReferences)
+      .groupBy(_._1)
+      .mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
+
+    val allTopLevelIds = allTopLevelRefs.mapValues{
+      s =>
+        s.collect {
+          case s: IzTypeReference.Scalar =>
+            s.id
+          case g@IzTypeReference.Generic(id: IzTypeId.BuiltinType, _, _) =>
+            id
+
+        }
+    }
+
+    val allBadTopLevelIds = allTopLevelRefs.mapValues{
+      s =>
+        s.collect {
+          case g@IzTypeReference.Generic(id: IzTypeId.UserType, _, _) =>
+            id
+        }
+    }.filter(_._2.nonEmpty)
+
+    assert(allBadTopLevelIds.isEmpty)
+    val missingRefs: Map[IzTypeId, Set[IzTypeId]] = allTopLevelIds.mapValues(_.diff(allTypeIds)).filter(_._2.nonEmpty)
     if (missingRefs.nonEmpty) {
       Left(List(MissingTypespaceMembers(missingRefs)))
     } else {
@@ -60,7 +85,8 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
       case generic: IzType.Generic =>
         Set.empty
       case structure: IzStructure =>
-        structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet
+        structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet ++
+          structure.fields.map(f => structure.id -> f.tpe).toSet
       case a: IzType.Adt =>
         a.members
           .map {

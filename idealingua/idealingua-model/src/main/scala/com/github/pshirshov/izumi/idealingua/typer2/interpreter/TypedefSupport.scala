@@ -106,13 +106,22 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
+  def refToTopId2(id: IzTypeReference): IzTypeReference.Scalar = {
+    resolvers.refToTopId2(id) match {
+      case s: IzTypeReference.Scalar =>
+        s
+      case g: IzTypeReference.Generic =>
+        import Tools._
+        fail("xxx")
+    }
+  }
 
 
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(resolvers.resolve).map(resolvers.refToTopId2)
+    val parentsIds = struct.interfaces.map(resolvers.resolve).map(refToTopId2).map(_.id)
     val parents = parentsIds.map(context.types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(resolvers.refToTopId2).map(context.types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(resolvers.refToTopId2).map(context.types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(refToTopId2).map(_.id).map(context.types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(refToTopId2).map(_.id).map(context.types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -122,7 +131,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
     val removedFields = struct.removedFields.map {
       f =>
-        BasicField(fname(f), toRef(f))
+        BasicField(fname(f),  toRef(f))
     }
     val tmeta = meta(structMeta)
 
@@ -210,7 +219,8 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
   private def toRef(f: RawField): IzTypeReference = {
-    resolvers.resolve(f.typeId)
+    val reference: IzTypeReference = resolvers.resolve(f.typeId)
+    resolvers.refToTopId2(reference)
   }
 
   private def fname(f: RawField): FName = {

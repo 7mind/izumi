@@ -1,12 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
-import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.WarnLogger
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, Generic}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
@@ -24,9 +22,20 @@ class TemplateSupport(
 
   import Tools._
 
+  def makeTemplate(t: RawTypeDef.Template): TList = {
+    val id = resolvers.nameToTopId(t.decl.id)
+    val badNames = t.arguments.groupBy(_.name).filter(_._2.size > 1)
+    assert(badNames.isEmpty, s"Template argument names clashed: $badNames")
+
+    val args1 = t.arguments.map(arg => IzTypeArgName(arg.name))
+    Right(List(CustomTemplate(id, args1, t.decl)))
+  }
+
   def makeInstance(v: RawTypeDef.Instance): TList = {
     val ctxInstances = mutable.HashMap[IzTypeId, ProcessedOp]()
-    val out = makeInstance(v, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
+    val ref = resolvers.resolve(v.source)
+
+    val out = makeInstance(v.id, ref, v.meta, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
     //    out.foreach {
     //      i =>
     //        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -37,10 +46,8 @@ class TemplateSupport(
   }
 
 
-  def makeInstance(v: RawTypeDef.Instance, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
-    val ref = resolvers.resolve(v.source)
-
-    val template = ref match {
+  def makeInstance(id: RawDeclaredTypeName, source: IzTypeReference, meta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
+    val template = source match {
       case IzTypeReference.Scalar(tid) =>
         context.types(tid)
       case IzTypeReference.Generic(tid, _, _) =>
@@ -51,10 +58,10 @@ class TemplateSupport(
       case ProcessedOp.Exported(member: CustomTemplate) =>
         member
       case o =>
-        fail(s"$ref must point to a template, but we got $o")
+        fail(s"$source must point to a template, but we got $o")
     }
 
-    val targs = ref match {
+    val targs = source match {
       case IzTypeReference.Scalar(_) =>
         Seq.empty
       case IzTypeReference.Generic(_, args, _) =>
@@ -63,23 +70,22 @@ class TemplateSupport(
     assert(t.args.size == targs.size)
     val argsMap = t.args.zip(targs)
 
-    val templateContext = instantiateArgs(ephemerals, v.meta)(argsMap)
+    val templateContext = instantiateArgs(ephemerals, meta)(argsMap)
 
 
     val withFixedId = t.decl match {
       case i: RawTypeDef.Interface =>
-        i.copy(id = v.id, meta = v.meta)
+        i.copy(id = id, meta = meta)
       case d: RawTypeDef.DTO =>
-        d.copy(id = v.id, meta = v.meta)
+        d.copy(id = id, meta = meta)
       case a: RawTypeDef.Adt =>
-        a.copy(id = v.id, meta = v.meta)
+        a.copy(id = id, meta = meta)
     }
 
     val isub = contextProducer.remake(context.copy(types = context.types ++ ephemerals, templateContext)).interpreter
     val instance = isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
     instance
   }
-
 
   private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
     def toRawNonGeneric(g: IzTypeId): RawNongenericRef = {
@@ -142,11 +148,12 @@ class TemplateSupport(
                         }
                           .toList
 
-                        val rawRef = toRawNonGeneric(g.id)
-                        val rawRefArgs = refArgs.map(toRawNonGeneric).toList
-                        val rawGenericRef = RawGenericRef(rawRef.pkg, rawRef.name, rawRefArgs, None)
-                        val i = makeInstance(RawTypeDef.Instance(tmpName, rawGenericRef, m), ephemerals)
+//                        val rawRef = toRawNonGeneric(g.id)
+//                        val rawRefArgs = refArgs.map(toRawNonGeneric).toList
+//                        val rawGenericRef = RawGenericRef(rawRef.pkg, rawRef.name, rawRefArgs, None)
+//                        val i = makeInstance(RawTypeDef.Instance(tmpName, rawGenericRef, m), ephemerals)
 
+                        val i = makeInstance(tmpName, ref, m, ephemerals)
                         i match {
                           case Left(value) =>
                             fail(s"ephemeral instantiation failed: $value")
@@ -181,16 +188,5 @@ class TemplateSupport(
       logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, name.name, meta))
     }
     name
-  }
-
-
-
-  def makeTemplate(t: RawTypeDef.Template): TList = {
-    val id = resolvers.nameToTopId(t.decl.id)
-    val badNames = t.arguments.groupBy(_.name).filter(_._2.size > 1)
-    assert(badNames.isEmpty, s"Template argument names clashed: $badNames")
-
-    val args1 = t.arguments.map(arg => IzTypeArgName(arg.name))
-    Right(List(CustomTemplate(id, args1, t.decl)))
   }
 }

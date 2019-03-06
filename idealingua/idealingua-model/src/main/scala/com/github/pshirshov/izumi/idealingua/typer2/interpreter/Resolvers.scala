@@ -17,7 +17,7 @@ trait Resolvers {
   @deprecated
   def refToTopId(id: RawRef): IzTypeId
 
-  def refToTopId2(id: IzTypeReference): IzTypeId
+  def refToTopId2(id: IzTypeReference): IzTypeReference
 
   def genericName(ref: IzTypeReference.Generic): RawDeclaredTypeName
 }
@@ -73,12 +73,19 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
     RawDeclaredTypeName(name)
   }
 
-  def refToTopId2(id: IzTypeReference): IzTypeId = {
+  def refToTopId2(id: IzTypeReference): IzTypeReference = {
     id match {
       case s: IzTypeReference.Scalar =>
-        s.id
+        s
       case g: IzTypeReference.Generic =>
-        index.toId(Seq.empty, index.resolveTopLeveleName(genericName(g)))
+        g.id match {
+          case IzTypeId.BuiltinType(name) =>
+            g
+          case _: IzTypeId.UserType =>
+            IzTypeReference.Scalar(index.toId(Seq.empty, index.resolveTopLeveleName(genericName(g))))
+
+        }
+
     }
   }
 

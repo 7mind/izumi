@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TypenameRef
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId}
 
@@ -13,7 +14,7 @@ object Builtins extends TypePlane {
   }
 
 
-  lazy val scalars: Seq[IzType.BuiltinScalar] = Seq(
+  private lazy val scalars: Seq[IzType.BuiltinScalar] = Seq(
     TBool,
     TString,
     TInt8,
@@ -35,16 +36,16 @@ object Builtins extends TypePlane {
     TDate,
   )
 
-  lazy val generics: Seq[IzType.BuiltinGeneric] = Seq(
+  private lazy val generics: Seq[IzType.BuiltinGeneric] = Seq(
     TList,
     TMap,
     TOption,
     TSet
   )
 
-  lazy val all: Seq[IzType.BuiltinType] = scalars ++ generics
+  private lazy val all: Seq[IzType.BuiltinType] = scalars ++ generics
 
-  private lazy val mapping: Map[IzTypeId, IzType] = all
+  lazy val mapping: Map[IzTypeId.BuiltinType, IzType.BuiltinType] = all
     .flatMap {
       d =>
         d.names.map {
@@ -53,5 +54,4 @@ object Builtins extends TypePlane {
         }
     }
     .toMap
-
 }

@@ -45,7 +45,10 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
   }
   val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
 
-  val builtins: Map[TypenameRef, IzType.BuiltinType] = Builtins.all.map(b => makeAbstract(b.id) -> b).toMap
+  val builtins: Map[TypenameRef, IzType.BuiltinType] = Builtins.mapping.map {
+    case (id, b) =>
+      makeAbstract(id) -> b
+  }
 
   def makeAbstract(id: RawRef): TypenameRef = {
     makeAbstract(RawTypeNameRef(id.pkg, id.name))
@@ -99,10 +102,9 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
       case Some(value) =>
         TypenameRef(value.id.toPackage, typename)
       case None =>
-
         builtins.get(toBuiltinName(typename)) match {
-          case Some(value) =>
-            makeAbstract(value.id)
+          case Some(v) =>
+            toBuiltinName(v.id.name.name)
           case None => // not imported and not builtin => this domain
             TypenameRef(defn.id.toPackage, typename)
         }

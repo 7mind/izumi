@@ -30,7 +30,6 @@ class Typer2(defn: DomainMeshResolved) {
         val types = value.types.size
         println(s"  ... $types members, ${value.warnings.size} warnings")
     }
-
   }
 
   def run1(): Either[List[T2Fail], Typespace2] = {
@@ -122,7 +121,7 @@ class Typer2(defn: DomainMeshResolved) {
   private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[UniqueOperation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
-    val builtinOps = Builtins.all.map(b => Builtin(index.makeAbstract(b.id)))
+    val builtinOps = Builtins.mapping.map(b => DefineBuiltin(index.makeAbstract(b._1)))
     val allOperations = domainOps ++ builtinOps ++ importedOps.toSeq
     Right(allOperations)
   }
@@ -147,13 +146,11 @@ class Typer2(defn: DomainMeshResolved) {
         name =>
           val justOp = groupedByType(name)
           val withDecls = justOp match {
-            case b: Builtin =>
+            case b: DefineBuiltin =>
               b
             case d: DefineType =>
               DefineWithDecls(d.id, d.depends, d.main, declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
           }
-
-
 
           val missingDeps = withDecls.depends.diff(processor.defined)
           if (missingDeps.isEmpty) {
@@ -221,7 +218,7 @@ object Typer2 {
 
   sealed trait UniqueOperation extends Operation
 
-  case class Builtin(id: TypenameRef) extends UniqueOperation {
+  case class DefineBuiltin(id: TypenameRef) extends UniqueOperation {
     override def depends: Set[TypenameRef] = Set.empty
   }
 
