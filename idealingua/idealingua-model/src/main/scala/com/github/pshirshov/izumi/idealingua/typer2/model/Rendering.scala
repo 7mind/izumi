@@ -1,8 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArg
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference, TypePrefix}
 
 object Rendering {
 

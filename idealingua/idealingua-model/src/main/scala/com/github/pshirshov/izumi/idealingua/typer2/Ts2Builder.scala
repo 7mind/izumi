@@ -3,13 +3,12 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
-import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{InterpreterImpl, InterpreterContext, StaticInterpreterContext}
+import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.model._
-import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.mutable
 
@@ -43,11 +42,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           importedIndexes(single.main.source)
         }
 
-    val interpreter = new InterpreterImpl(new StaticInterpreterContext {
-          override def index: DomainIndex = dindex
-
-          override def logger: WarnLogger = Ts2Builder.this
-        }, InterpreterContext(types.toMap, Map.empty))
+    val interpreter = new InterpreterContext(dindex, this, Interpreter.Args(types.toMap, Map.empty)).interpreter
         val product = interpreter.dispatch(single.main.defn)
         register(ops, product)
 

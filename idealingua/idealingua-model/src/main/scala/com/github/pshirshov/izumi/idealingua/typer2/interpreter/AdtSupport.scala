@@ -11,10 +11,8 @@ import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 
 class AdtSupport(
-                  scontext: StaticInterpreterContext,
-                  context: InterpreterContext,
-                  i2: Interpreter2,
-                  resolvers: Resolvers
+                  i2: TypedefSupport,
+                  resolvers: Resolvers,
                 ) {
 
   import AdtSupport._

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
+import com.github.pshirshov.izumi.idealingua.typer2.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzName, IzNamespace}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference}
@@ -8,16 +9,18 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeRefer
 trait Resolvers {
   def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId
 
+  def nameToTopId(id: RawDeclaredTypeName): IzTypeId
+
   def resolve(id: RawRef): IzTypeReference
 
   def refToTopId(id: RawRef): IzTypeId
 }
 
-class ResolversImpl(scontext: StaticInterpreterContext, context: InterpreterContext) extends Resolvers {
+class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resolvers {
   def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId = {
     val namespace = subpath
-    val unresolvedName = this.scontext.index.resolveTopLeveleName(id)
-    this.scontext.index.toId(namespace, unresolvedName)
+    val unresolvedName = index.resolveTopLeveleName(id)
+    index.toId(namespace, unresolvedName)
   }
 
   def resolve(id: RawRef): IzTypeReference = {
@@ -44,8 +47,13 @@ class ResolversImpl(scontext: StaticInterpreterContext, context: InterpreterCont
   }
 
   def refToTopId(id: RawRef): IzTypeId = {
-    val name = this.scontext.index.makeAbstract(id)
-    this.scontext.index.toId(Seq.empty, name)
+    val name = index.makeAbstract(id)
+    index.toId(Seq.empty, name)
   }
+
+  def nameToTopId(id: RawDeclaredTypeName): IzTypeId = {
+    nameToId(id, Seq.empty)
+  }
+
 
 }
