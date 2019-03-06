@@ -2,10 +2,10 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.graphs
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TypeDefn}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, Typespace2}
 import com.github.pshirshov.izumi.idealingua.typer2.results._
@@ -121,8 +121,17 @@ class Typer2(defn: DomainMeshResolved) {
   private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[UniqueOperation]] = {
     val domainOps = index.dependencies.groupByType()
     val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
+    val aliases = index.importIndex.filter(v => v._2.id.importedAs != v._2.id.name).mapValues {
+      v =>
+        val rname = RawDeclaredTypeName(v.id.importedAs)
+        val name = index.resolveTopLeveleName(rname)
+        val source = importedIndexes(v.domain).resolveTopLeveleName(RawDeclaredTypeName(v.id.name))
+        val sourceRef = RawNongenericRef(v.domain.toPackage, v.id.name)
+        DefineType(name, Set(source), OriginatedDefn(defn.id, RawTopLevelDefn.TLDBaseType(RawTypeDef.Alias(rname, sourceRef, v.id.meta))))
+    }
+
     val builtinOps = Builtins.mapping.map(b => DefineBuiltin(index.makeAbstract(b._1)))
-    val allOperations = domainOps ++ builtinOps ++ importedOps.toSeq
+    val allOperations = domainOps ++ builtinOps ++ aliases.values ++ importedOps.toSeq
     Right(allOperations)
   }
 
@@ -223,6 +232,7 @@ object Typer2 {
   }
 
   case class DefineType(id: TypenameRef, depends: Set[TypenameRef], main: OriginatedDefn) extends UniqueOperation
+
   case class DefineWithDecls(id: TypenameRef, depends: Set[TypenameRef], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
 
 }

@@ -14,9 +14,6 @@ trait Resolvers {
 
   def resolve(id: RawRef): IzTypeReference
 
-  @deprecated
-  def refToTopId(id: RawRef): IzTypeId
-
   def refToTopId2(id: IzTypeReference): IzTypeReference
 
   def genericName(ref: IzTypeReference.Generic): RawDeclaredTypeName
@@ -52,7 +49,7 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
     }
   }
 
-  def refToTopId(id: RawRef): IzTypeId = {
+  private def refToTopId(id: RawRef): IzTypeId = {
     val name = index.makeAbstract(id)
     index.toId(Seq.empty, name)
   }

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.interpreter.Resolvers
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{ContradictiveFieldDefinition, MissingTypespaceMembers, VerificationFail}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{ContradictiveFieldDefinition, MissingTypespaceMembers, UnresolvedGenericsInstancesLeft, VerificationFail}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
@@ -13,8 +13,6 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
 
 
   def validateTypespace(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
-
-
     for {
       _ <- validateTsConsistency(allTypes)
       _ <- validateAll(allTypes, postValidate)
@@ -31,7 +29,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
       .groupBy(_._1)
       .mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
 
-    val allTopLevelIds = allTopLevelRefs.mapValues{
+    val allTopLevelIds = allTopLevelRefs.mapValues {
       s =>
         s.collect {
           case s: IzTypeReference.Scalar =>
@@ -42,7 +40,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
         }
     }
 
-    val allBadTopLevelIds = allTopLevelRefs.mapValues{
+    val allBadTopLevelIds: Map[IzTypeId, Set[IzTypeId.UserType]] = allTopLevelRefs.mapValues {
       s =>
         s.collect {
           case g@IzTypeReference.Generic(id: IzTypeId.UserType, _, _) =>
@@ -50,12 +48,20 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
         }
     }.filter(_._2.nonEmpty)
 
-    assert(allBadTopLevelIds.isEmpty)
     val missingRefs: Map[IzTypeId, Set[IzTypeId]] = allTopLevelIds.mapValues(_.diff(allTypeIds)).filter(_._2.nonEmpty)
-    if (missingRefs.nonEmpty) {
-      Left(List(MissingTypespaceMembers(missingRefs)))
-    } else {
-      Right(())
+    for {
+      _ <- if (missingRefs.nonEmpty) {
+        Left(List(MissingTypespaceMembers(missingRefs)))
+      } else {
+        Right(())
+      }
+      _ <- if (allBadTopLevelIds.nonEmpty) {
+        Left(List(UnresolvedGenericsInstancesLeft(allBadTopLevelIds)))
+      } else {
+        Right(())
+      }
+    } yield {
+
     }
   }
 

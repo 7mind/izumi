@@ -4,12 +4,14 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, Import}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, ImportedId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef, RawRef, RawTypeNameRef}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TypenameRef
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.ConflictingImports
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, T2Fail, TypePrefix}
+
+final case class GoodImport(domain: DomainId, id: ImportedId)
 
 final class DomainIndex private (val defn: DomainMeshResolved) {
   import DomainIndex._
@@ -32,8 +34,8 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
   Quirks.discard(services, buzzers)
   Quirks.discard(streams, consts)
 
-  val importIndex: Map[String, Import] = {
-    val asList = defn.imports.flatMap(i => i.identifiers.map(id => id.importedAs -> i))
+  val importIndex: Map[String, GoodImport] = {
+    val asList = defn.imports.flatMap(i => i.identifiers.map(id => id.importedAs -> GoodImport(i.id, id)))
     val grouped = asList.groupBy(_._1)
 
     val bad = grouped.filter(_._2.size > 1)
@@ -43,6 +45,7 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
 
     grouped.mapValues(_.head._2)
   }
+
   val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
 
   val builtins: Map[TypenameRef, IzType.BuiltinType] = Builtins.mapping.map {
@@ -83,7 +86,6 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
 
   def resolveRef(id: RawTypeNameRef): IzTypeId = {
     val unresolved = makeAbstract(id)
-    val pkg = makePkg(unresolved)
     toId(Seq.empty, unresolved)
   }
 
@@ -100,7 +102,11 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
   private def resolveTLName(typename: TypeName): TypenameRef = {
     importIndex.get(typename) match {
       case Some(value) =>
-        TypenameRef(value.id.toPackage, typename)
+        if (value.id.importedAs != value.id.name) {
+          TypenameRef(defn.id.toPackage, typename)
+        } else {
+          TypenameRef(value.domain.toPackage, typename)
+        }
       case None =>
         builtins.get(toBuiltinName(typename)) match {
           case Some(v) =>

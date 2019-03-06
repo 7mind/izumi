@@ -69,7 +69,12 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
     val id = resolvers.nameToId(e.id, subpath)
-    val parents = e.struct.parents.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
+    val parents = e.struct.parents.map(resolvers.resolve).map {
+      case IzTypeReference.Scalar(rid) =>
+        rid
+      case IzTypeReference.Generic(rid, args, adhocName) =>
+        ???
+    }.map(context.types.apply).map(_.member)
     val tmeta = meta(e.meta)
 
     for {

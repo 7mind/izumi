@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, In
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
-import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp.Exported
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 import scala.collection.{immutable, mutable}
