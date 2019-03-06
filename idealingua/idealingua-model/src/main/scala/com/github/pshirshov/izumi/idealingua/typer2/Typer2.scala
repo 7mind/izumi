@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMesh
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}

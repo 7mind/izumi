@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.results
 
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.BuilderFail
 
-protected trait Results {
+protected trait ResultBase {
   type Result[T] = Either[List[BuilderFail], T]
   type TList = Result[List[IzType]]
   type TSingle = Result[IzType]

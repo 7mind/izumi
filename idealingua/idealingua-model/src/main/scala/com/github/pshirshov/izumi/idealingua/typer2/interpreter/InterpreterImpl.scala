@@ -1,25 +1,37 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
+import com.github.pshirshov.izumi.idealingua.typer2._
+import com.github.pshirshov.izumi.idealingua.typer2.interpreter.AdtSupport.AdtMemberProducts
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, CustomTemplate, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model._
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.{MissingBranchesToRemove, MissingParentsToRemove}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.{immutable, mutable}
 import scala.reflect.ClassTag
 
+trait StaticInterpreterContext {
+  def index: DomainIndex
 
-class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templateArgs: Map[IzTypeArgName, IzTypeReference], logger: WarnLogger) {
-  private val index: DomainIndex = _index
+  def logger: WarnLogger
+}
+
+
+case class InterpreterContext(types: Map[IzTypeId, ProcessedOp], templateArgs: Map[IzTypeArgName, IzTypeReference])
+
+
+class InterpreterImpl(scontext: StaticInterpreterContext, context: InterpreterContext) extends Interpreter2 {
+  private val resolvers = new ResolversImpl(scontext, context)
+  private val adts = new AdtSupport(scontext, context, this, resolvers)
 
   def dispatch(defn: RawTopLevelDefn.TypeDefn): TList = {
     defn match {
@@ -41,7 +53,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
             makeIdentifier(i).asList
 
           case a: RawTypeDef.Adt =>
-            makeAdt(a)
+            adts.makeAdt(a)
         }
 
       case t: RawTopLevelDefn.TLDTemplate =>
@@ -72,13 +84,13 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
 
 
   def makeInstance(v: RawTypeDef.Instance, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
-    val ref = resolve(v.source)
+    val ref = resolvers.resolve(v.source)
 
     val template = ref match {
       case IzTypeReference.Scalar(tid) =>
-        types(tid)
+        context.types(tid)
       case IzTypeReference.Generic(tid, _, _) =>
-        types(tid)
+        context.types(tid)
     }
 
     val t = template match {
@@ -109,7 +121,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
         a.copy(id = v.id, meta = v.meta)
     }
 
-    val isub = new Interpreter(_index, types ++ ephemerals, templateContext, logger)
+    val isub = new InterpreterImpl(scontext, context.copy(types = context.types ++ ephemerals, templateContext))
     val instance = isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
     instance
   }
@@ -141,7 +153,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
               ref
 
             case ref@IzTypeReference.Generic(tid, args, adhocName) =>
-              types(tid).member match {
+              context.types(tid).member match {
                 case generic: Generic =>
                   generic match {
                     case _: IzType.BuiltinGeneric =>
@@ -149,7 +161,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
 
                     case g =>
                       val tmpName: RawDeclaredTypeName = genericName(args, g, adhocName, meta(m))
-                      val ephemeralId: IzTypeId = nameToId(tmpName, Seq.empty)
+                      val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
                       if (!ephemerals.contains(ephemeralId)) {
                         val refArgs: immutable.Seq[IzTypeId] = args.map {
@@ -159,7 +171,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
                                 aid
 
                               case IzTypeReference.Generic(aid, aargs, adhocName1) =>
-                                val g1 = types(aid).member match {
+                                val g1 = context.types(aid).member match {
                                   case generic: Generic =>
                                     generic
                                   case o =>
@@ -172,7 +184,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
                                 instantiateArgs(ephemerals, m)(zaargs)
 
                                 val tmpName1: RawDeclaredTypeName = genericName(aargs, g1, adhocName1, meta(m))
-                                val ephemeralId1: IzTypeId = nameToId(tmpName1, Seq.empty)
+                                val ephemeralId1: IzTypeId = resolvers.nameToId(tmpName1, Seq.empty)
                                 ephemeralId1
 
                             }
@@ -217,7 +229,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
 
     adhocName.map(n => RawDeclaredTypeName(n.name)).getOrElse {
       val tmpName = s"${g.id.name.name}[${args.map(Renderable[IzTypeArg].render).mkString(",")}]"
-      logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, tmpName, meta))
+      scontext.logger.log(T2Warn.TemplateInstanceNameWillBeGenerated(g.id, tmpName, meta))
       RawDeclaredTypeName(tmpName)
     }
   }
@@ -234,7 +246,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
-        val id = index.toId(Seq.empty, index.resolveTopLeveleName(RawDeclaredTypeName(name)))
+        val id = this.scontext.index.toId(Seq.empty, this.scontext.index.resolveTopLeveleName(RawDeclaredTypeName(name)))
         val badMappings = v.mapping.values.filter(ctx => ctx.parameters.nonEmpty || ctx.parts.size != 1)
 
         if (badMappings.isEmpty) {
@@ -244,88 +256,18 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
         }
 
       case RawTemplateWithArg(name, args) =>
-        val id = index.toId(Seq.empty, index.makeAbstract(RawNongenericRef(Seq.empty, name)))
+        val id = this.scontext.index.toId(Seq.empty, this.scontext.index.makeAbstract(RawNongenericRef(Seq.empty, name)))
 
         val params = args.map(a => IzTypeArgName(a.name))
         Right(ForeignGeneric(id, params, v.mapping.mapValues(ctx => Interpolation(ctx.parts, ctx.parameters.map(IzTypeArgName))), meta(v.meta)))
     }
   }
 
-  def makeAdt(a: RawTypeDef.Adt): TList = {
-    makeAdt(a, Seq.empty).map(_.flatten)
-  }
-
-  case class Chain(main: IzType, additional: List[IzType]) {
-    def flatten: List[IzType] = List(main) ++ additional
-  }
-
-  case class Pair(member: IzType.model.AdtMember, additional: List[IzType])
-
-  type TChain = Either[List[BuilderFail], Chain]
-
-  implicit class TSingleExt1[T <: IzType](ret: TSingleT[T]) {
-    def asChain: TChain = ret.map(r => Chain(r, List.empty))
-  }
-
-  def mapMember(context: IzTypeId, subpath: Seq[IzNamespace])(member: Member): Either[List[BuilderFail], Pair] = {
-    member match {
-      case Member.TypeRef(typeId, memberName, m) =>
-        val tpe = resolve(typeId)
-        for {
-          name <- tpe match {
-            case IzTypeReference.Scalar(mid) =>
-              Right(memberName.getOrElse(mid.name.name))
-            case IzTypeReference.Generic(_, _, _) =>
-              memberName match {
-                case Some(value) =>
-                  Right(value)
-                case None =>
-                  Left(List(GenericAdtBranchMustBeNamed(context, typeId, meta(m))))
-              }
-          }
-        } yield {
-          Pair(AdtMemberRef(name, tpe, meta(m)), List.empty)
-        }
-
-      case Member.NestedDefn(nested) =>
-        for {
-          tpe <- nested match {
-            case n: RawTypeDef.Interface =>
-              makeInterface(n, subpath).asChain
-            case n: RawTypeDef.DTO =>
-              makeDto(n, subpath).asChain
-            case n: RawTypeDef.Enumeration =>
-              makeEnum(n, subpath).asChain
-            case n: RawTypeDef.Alias =>
-              makeAlias(n, subpath).asChain
-            case n: RawTypeDef.Identifier =>
-              makeIdentifier(n, subpath).asChain
-            case n: RawTypeDef.Adt =>
-              makeAdt(n, subpath :+ IzNamespace(n.id.name))
-          }
-        } yield {
-          Pair(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), meta(nested.meta)), tpe.additional)
-        }
-    }
-  }
-
-  private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
-    val id = nameToId(a.id, subpath)
-
-    for {
-      members <- a.alternatives.map(mapMember(id, subpath)).biAggregate
-      adtMembers = members.map(_.member)
-      associatedTypes = members.flatMap(_.additional)
-    } yield {
-      Chain(Adt(id, adtMembers, meta(a.meta)), associatedTypes)
-    }
-  }
-
 
   def cloneType(v: RawTypeDef.NewType): TList = {
     val id = nameToTopId(v.id)
-    val sid = index.resolveRef(v.source)
-    val source = types(sid)
+    val sid = this.scontext.index.resolveRef(v.source)
+    val source = this.context.types(sid)
     val newMeta = meta(v.meta)
 
     source.member match {
@@ -436,29 +378,29 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
     makeAlias(a, Seq.empty)
   }
 
-  private def modify(context: IzTypeId, source: Seq[AdtMember], meta: NodeMeta, modifiers: Option[RawClone]): Either[List[BuilderFail], Seq[Pair]] = {
+  private def modify(context: IzTypeId, source: Seq[AdtMember], meta: NodeMeta, modifiers: Option[RawClone]): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
     modifiers match {
       case Some(value) =>
         modify(context, source, meta, value)
       case None =>
-        Right(source.map(s => Pair(s, List.empty)))
+        Right(source.map(s => AdtMemberProducts(s, List.empty)))
     }
   }
 
-  private def modify(context: IzTypeId, source: Seq[AdtMember], cloneMeta: NodeMeta, modifiers: RawClone): Either[List[BuilderFail], Seq[Pair]] = {
+  private def modify(context: IzTypeId, source: Seq[AdtMember], cloneMeta: NodeMeta, modifiers: RawClone): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
     if (modifiers.removedParents.nonEmpty || modifiers.concepts.nonEmpty || modifiers.removedConcepts.nonEmpty || modifiers.fields.nonEmpty || modifiers.removedFields.nonEmpty || modifiers.interfaces.nonEmpty) {
       Left(List(UnexpectedStructureCloneModifiers(context, cloneMeta)))
     } else {
       val removedMembers = modifiers.removedBranches.map(_.name).toSet
       for {
-        addedMembers <- modifiers.branches.map(mapMember(context, Seq.empty)).biAggregate
-        mSum = source.map(s => Pair(s, List.empty)) ++ addedMembers
+        addedMembers <- modifiers.branches.map(adts.mapMember(context, Seq.empty)).biAggregate
+        mSum = source.map(s => AdtMemberProducts(s, List.empty)) ++ addedMembers
         filtered = mSum.filterNot(m => removedMembers.contains(m.member.name))
 
       } yield {
         val unexpectedRemovals = removedMembers.diff(mSum.map(_.member.name).toSet)
         if (unexpectedRemovals.nonEmpty) {
-          logger.log(MissingBranchesToRemove(context, unexpectedRemovals, cloneMeta))
+          scontext.logger.log(MissingBranchesToRemove(context, unexpectedRemovals, cloneMeta))
         }
         filtered
       }
@@ -484,7 +426,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
       val newIfaces = ifSum.filterNot(removedIfaces.contains)
       val unexpectedRemovals = removedIfaces.diff(ifSum.toSet)
       if (unexpectedRemovals.nonEmpty) {
-        logger.log(MissingParentsToRemove(context, unexpectedRemovals, meta))
+        scontext.logger.log(MissingParentsToRemove(context, unexpectedRemovals, meta))
       }
 
       val newConcepts = struct.concepts ++ modifiers.concepts
@@ -503,8 +445,8 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   }
 
 
-  private def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
-    val id = nameToId(i.id, subpath)
+  def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
+    val id = resolvers.nameToId(i.id, subpath)
 
     val fields = i.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -515,9 +457,9 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   }
 
 
-  private def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
-    val id = nameToId(e.id, subpath)
-    val parents = e.struct.parents.map(refToTopId).map(types.apply).map(_.member)
+  def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
+    val id = resolvers.nameToId(e.id, subpath)
+    val parents = e.struct.parents.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
     val tmeta = meta(e.meta)
 
     for {
@@ -534,68 +476,37 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   }
 
 
-  private def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
+  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
-    val id = nameToId(i.id, subpath)
+    val id = resolvers.nameToId(i.id, subpath)
     make[IzType.Interface](struct, id, i.meta)
   }
 
 
-  private def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
+  def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
     val struct = i.struct
-    val id = nameToId(i.id, subpath)
+    val id = resolvers.nameToId(i.id, subpath)
     make[IzType.DTO](struct, id, i.meta)
   }
 
 
-  private def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias] = {
-    val id = nameToId(a.id, subpath)
-    Right(IzAlias(id, resolve(a.target), meta(a.meta)))
+  def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias] = {
+    val id = resolvers.nameToId(a.id, subpath)
+    Right(IzAlias(id, resolvers.resolve(a.target), meta(a.meta)))
   }
 
-  private def resolve(id: RawRef): IzTypeReference = {
-    id match {
-      case ref@RawNongenericRef(_, _) =>
-        templateArgs.get(IzTypeArgName(ref.name)) match {
-          case Some(value) =>
-            value
-          case None =>
-            IzTypeReference.Scalar(refToTopId(ref))
-        }
-
-
-      case RawGenericRef(pkg, name, args, adhocName) =>
-        val id = refToTopId(RawNongenericRef(pkg, name))
-        val typeArgs = args.map {
-          a =>
-            val argValue = resolve(a)
-            IzTypeArg(IzTypeArgValue(argValue))
-        }
-        IzTypeReference.Generic(id, typeArgs, adhocName.map(IzName))
-
-    }
-  }
 
   private def nameToTopId(id: RawDeclaredTypeName): IzTypeId = {
-    nameToId(id, Seq.empty)
+    resolvers.nameToId(id, Seq.empty)
   }
 
-  private def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId = {
-    val namespace = subpath
-    val unresolvedName = index.resolveTopLeveleName(id)
-    index.toId(namespace, unresolvedName)
-  }
 
-  private def refToTopId(id: RawRef): IzTypeId = {
-    val name = index.makeAbstract(id)
-    index.toId(Seq.empty, name)
-  }
 
   private def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(refToTopId)
-    val parents = parentsIds.map(types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(refToTopId).map(types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(refToTopId).map(types.apply).map(_.member)
+    val parentsIds = struct.interfaces.map(resolvers.refToTopId)
+    val parents = parentsIds.map(context.types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(resolvers.refToTopId).map(context.types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -633,7 +544,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
     } yield {
 
       if (nothingToRemove.nonEmpty) {
-        logger.log(T2Warn.MissingFieldsToRemove(id, nothingToRemove, tmeta))
+        scontext.logger.log(T2Warn.MissingFieldsToRemove(id, nothingToRemove, tmeta))
       }
 
       if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
@@ -652,7 +563,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
         case a: IzAlias =>
           a.source match {
             case IzTypeReference.Scalar(id) =>
-              findAllParents(context, meta, List(a.id), List(types(id).member))
+              findAllParents(context, meta, List(a.id), List(this.context.types(id).member))
             case g: IzTypeReference.Generic =>
               Left(List(ParentCannotBeGeneric(context, g, meta)))
           }
@@ -693,11 +604,11 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
   }
 
   private def toRef(f: RawField): IzTypeReference = {
-    resolve(f.typeId)
+    resolvers.resolve(f.typeId)
   }
 
   private def fname(f: RawField): FName = {
-    def default0: String = resolve(f.typeId) match {
+    def default0: String = resolvers.resolve(f.typeId) match {
       case IzTypeReference.Scalar(id) =>
         id.name.name
       case IzTypeReference.Generic(id, _, adhocName) =>
@@ -706,7 +617,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
 
     def default: TypeName = f.typeId match {
       case ref@RawNongenericRef(_, _) =>
-        templateArgs.get(IzTypeArgName(ref.name)) match {
+        this.context.templateArgs.get(IzTypeArgName(ref.name)) match {
           case Some(_) =>
             ref.name
           case None =>
@@ -726,7 +637,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            structFields(context, meta)(types.apply(id).member)
+            structFields(context, meta)(this.context.types.apply(id).member)
           case g: IzTypeReference.Generic =>
             Left(List(ParentCannotBeGeneric(context, g, meta)))
         }
@@ -743,7 +654,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            enumMembers(context, meta)(types.apply(id).member)
+            enumMembers(context, meta)(this.context.types.apply(id).member)
           case g: IzTypeReference.Generic =>
             Left(List(EnumExpectedButGotGeneric(context, g, meta)))
         }
@@ -755,7 +666,7 @@ class Interpreter(_index: DomainIndex, types: Map[IzTypeId, ProcessedOp], templa
     }
   }
 
-  private def meta(meta: RawNodeMeta): NodeMeta = {
+  def meta(meta: RawNodeMeta): NodeMeta = {
     NodeMeta(meta.doc, Seq.empty, meta.position)
   }
 }
