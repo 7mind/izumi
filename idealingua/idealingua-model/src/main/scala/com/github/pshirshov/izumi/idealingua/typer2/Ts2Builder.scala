@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, UnresolvedName}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
@@ -14,10 +14,10 @@ import scala.collection.mutable
 
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger {
-  private val failed = mutable.HashSet.empty[UnresolvedName]
+  private val failed = mutable.HashSet.empty[TypenameRef]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
   private val warnings = mutable.ArrayBuffer.empty[T2Warn]
-  private val existing = mutable.HashSet.empty[UnresolvedName]
+  private val existing = mutable.HashSet.empty[TypenameRef]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
   private val thisPrefix = TypePrefix.UserTLT(IzPackage(index.defn.id.toPackage.map(IzDomainPath)))
 
@@ -26,7 +26,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     warnings += w
   }
 
-  def defined: Set[UnresolvedName] = {
+  def defined: Set[TypenameRef] = {
     existing.toSet
   }
 

@@ -50,13 +50,13 @@ class InterpreterImpl(
         }
 
       case t: RawTopLevelDefn.TLDTemplate =>
-        templateSupport.makeTemplate(t.v)
+        templateSupport.makeTemplate(t.defn)
 
       case t: RawTopLevelDefn.TLDInstance =>
-        templateSupport.makeInstance(t.v)
+        templateSupport.makeInstance(t.defn)
 
       case c: RawTopLevelDefn.TLDNewtype =>
-        cloneSupport.cloneType(c.v)
+        cloneSupport.cloneType(c.defn)
 
       case RawTopLevelDefn.TLDForeignType(v) =>
         typedefSupport.makeForeign(v).asList

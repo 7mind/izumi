@@ -108,7 +108,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
   def adtMemberNested[_: P]: P[Member.NestedDefn] = P(defMember.baseTypeMember)
     .map {
       m =>
-        Member.NestedDefn(m.v)
+        Member.NestedDefn(m.defn)
     }
 
 

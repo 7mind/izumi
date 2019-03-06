@@ -4,8 +4,10 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2._
+
+import scala.collection.immutable
 
 class DependencyExtractor(index: DomainIndex) {
   val types: Seq[TypeDefn] = index.types
@@ -28,13 +30,62 @@ class DependencyExtractor(index: DomainIndex) {
     identified
   }
 
-  private def dependsOn(v: RawTypeDef): Set[UnresolvedName] = {
+  def requiredTemplates(v: RawTypeDef): Seq[RawGenericRef] = {
     v match {
       case t: RawTypeDef.Interface =>
-        dependsOn(t.struct)
+        trefs(t.struct)
 
       case t: RawTypeDef.DTO =>
-        dependsOn(t.struct)
+        trefs(t.struct)
+
+      case t: RawTypeDef.Alias =>
+        collectGenericRefs(List(t.target))
+
+      case t: RawTypeDef.Adt =>
+        t.alternatives
+          .flatMap {
+            case a: Member.TypeRef =>
+              collectGenericRefs(List(a.typeId))
+            case a: Member.NestedDefn =>
+              requiredTemplates(a.nested)
+          }
+
+      case n: RawTypeDef.NewType =>
+        Seq.empty
+
+      case t: RawTypeDef.Template =>
+        requiredTemplates(t.decl)
+
+      case _: RawTypeDef.Enumeration =>
+        Seq.empty
+
+      case _: RawTypeDef.Identifier =>
+        Seq.empty
+
+      case _: RawTypeDef.ForeignType =>
+        Seq.empty
+
+      case i: RawTypeDef.Instance =>
+        Seq.empty
+    }
+  }
+
+  private def trefs(struct: RawStructure): Seq[RawGenericRef] = {
+    val allRefs = struct.interfaces ++ struct.concepts ++ struct.removedConcepts ++ struct.fields.map(_.typeId)
+      collectGenericRefs(allRefs)
+  }
+
+  private def collectGenericRefs(allRefs: List[RawRef]): immutable.Seq[RawGenericRef] = {
+    allRefs.collect({ case ref: RawGenericRef => ref })
+  }
+
+  private def dependsOn(v: RawTypeDef): Set[TypenameRef] = {
+    v match {
+      case t: RawTypeDef.Interface =>
+        refs(t.struct)
+
+      case t: RawTypeDef.DTO =>
+        refs(t.struct)
 
       case t: RawTypeDef.Alias =>
         Set(index.makeAbstract(t.target))
@@ -70,7 +121,7 @@ class DependencyExtractor(index: DomainIndex) {
     }
   }
 
-  private def dependsOn(struct: RawStructure): Set[UnresolvedName] = {
-    (struct.interfaces.map(index.makeAbstract) ++ struct.concepts.map(index.makeAbstract) ++ struct.removedConcepts.map(index.makeAbstract)).toSet
+  private def refs(struct: RawStructure): Set[TypenameRef] = {
+    (struct.interfaces ++ struct.concepts ++ struct.removedConcepts).map(index.makeAbstract).toSet
   }
 }

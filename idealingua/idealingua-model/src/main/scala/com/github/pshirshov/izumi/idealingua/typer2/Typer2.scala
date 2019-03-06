@@ -127,7 +127,7 @@ class Typer2(defn: DomainMeshResolved) {
     Right(allOperations)
   }
 
-  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[UnresolvedName, UniqueOperation], ordered: Seq[UnresolvedName]): Either[List[T2Fail], Typespace2] = {
+  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[TypenameRef, UniqueOperation], ordered: Seq[TypenameRef]): Either[List[T2Fail], Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
     val declIndex = index.declaredTypes.groupBy {
       case RawTopLevelDefn.TLDBaseType(v) =>
@@ -150,8 +150,14 @@ class Typer2(defn: DomainMeshResolved) {
             case b: Builtin =>
               b
             case d: DefineType =>
+              val refs = index.dependencies.requiredTemplates(d.main.defn.defn)
+              if (refs.nonEmpty) {
+                println(refs)
+              }
               DefineWithDecls(d.id, d.depends, d.main, declIndex.getOrElse(d.id, Seq.empty).map(OriginatedDefn(defn.id, _)))
           }
+
+
 
           val missingDeps = withDecls.depends.diff(processor.defined)
           if (missingDeps.isEmpty) {
@@ -171,7 +177,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def groupOps(allOperations: Seq[UniqueOperation]): Either[List[NameConflict], Map[UnresolvedName, UniqueOperation]] = {
+  private def groupOps(allOperations: Seq[UniqueOperation]): Either[List[NameConflict], Map[TypenameRef, UniqueOperation]] = {
     allOperations
       .groupBy(_.id)
       .map {
@@ -186,9 +192,9 @@ class Typer2(defn: DomainMeshResolved) {
       .biAggregate.map(_.toMap)
   }
 
-  private def orderOps(deps: Map[UnresolvedName, Set[UnresolvedName]]): Either[List[CircularDependenciesDetected], Seq[UnresolvedName]] = {
-    val circulars = new mutable.ArrayBuffer[Set[UnresolvedName]]()
-    val ordered = graphs.toposort.cycleBreaking(deps, Seq.empty, (circular: Set[UnresolvedName]) => {
+  private def orderOps(deps: Map[TypenameRef, Set[TypenameRef]]): Either[List[CircularDependenciesDetected], Seq[TypenameRef]] = {
+    val circulars = new mutable.ArrayBuffer[Set[TypenameRef]]()
+    val ordered = graphs.toposort.cycleBreaking(deps, Seq.empty, (circular: Set[TypenameRef]) => {
       circulars.append(circular)
       circular.head
     })
@@ -205,25 +211,25 @@ class Typer2(defn: DomainMeshResolved) {
 object Typer2 {
 
 
-  case class UnresolvedName(pkg: Seq[String], name: String) {
+  case class TypenameRef(pkg: Seq[String], name: String) {
     override def toString: String = s"<${pkg.mkString(".")}>.$name"
   }
 
   case class OriginatedDefn(source: DomainId, defn: TypeDefn)
 
   sealed trait Operation {
-    def id: UnresolvedName
+    def id: TypenameRef
 
-    def depends: Set[UnresolvedName]
+    def depends: Set[TypenameRef]
   }
 
   sealed trait UniqueOperation extends Operation
 
-  case class Builtin(id: UnresolvedName) extends UniqueOperation {
-    override def depends: Set[UnresolvedName] = Set.empty
+  case class Builtin(id: TypenameRef) extends UniqueOperation {
+    override def depends: Set[TypenameRef] = Set.empty
   }
 
-  case class DefineType(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn) extends UniqueOperation
-  case class DefineWithDecls(id: UnresolvedName, depends: Set[UnresolvedName], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
+  case class DefineType(id: TypenameRef, depends: Set[TypenameRef], main: OriginatedDefn) extends UniqueOperation
+  case class DefineWithDecls(id: TypenameRef, depends: Set[TypenameRef], main: OriginatedDefn, decls: Seq[OriginatedDefn]) extends Operation
 
 }
