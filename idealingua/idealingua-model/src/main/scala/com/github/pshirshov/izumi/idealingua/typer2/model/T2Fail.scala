@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.InterpContext
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, FullField, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 
 sealed trait T2Fail
 
@@ -59,7 +59,7 @@ object T2Fail {
 
   final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict], meta: NodeMeta) extends VerificationFail
   final case class MissingTypespaceMembers(missingRefs: Map[IzTypeId, Set[IzTypeId]]) extends VerificationFail
-  final case class UnresolvedGenericsInstancesLeft(badRefs: Map[IzTypeId, Set[IzTypeId.UserType]]) extends VerificationFail
+  final case class UnresolvedGenericsInstancesLeft(badRefs: Map[IzTypeId, Set[RefToTLTLink]]) extends VerificationFail
 }
 
 

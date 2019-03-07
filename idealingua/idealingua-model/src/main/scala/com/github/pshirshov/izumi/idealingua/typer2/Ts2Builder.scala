@@ -2,20 +2,26 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawGenericRef, RawRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.idealingua.typer2.results.TList
 
 import scala.collection.{immutable, mutable}
 
+trait RefRecorder {
+  def require(ref: RefToTLTLink): Unit
+}
 
-class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger {
+class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder {
   private val failed = mutable.HashSet.empty[TypenameRef]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
   private val warnings = mutable.ArrayBuffer.empty[T2Warn]
@@ -45,10 +51,10 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         }
 
         val interpreter = makeInterpreter(dindex).interpreter
-//        val refs = requiredTemplates(single.main.defn.defn)
-//        if (refs.nonEmpty) {
-//          println(refs)
-//        }
+        //        val refs = requiredTemplates(single.main.defn.defn)
+        //        if (refs.nonEmpty) {
+        //          println(refs)
+        //        }
 
         val product = interpreter.dispatch(single.main.defn)
         register(ops, product)
@@ -64,9 +70,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
 
-  private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {
-    new InterpreterContext(dindex, this, Interpreter.Args(types.toMap, Map.empty))
-  }
+
 
   ///
   def requiredTemplates(v: RawTypeDef): Seq[RawGenericRef] = {
@@ -146,8 +150,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       } else {
         Right(())
       }
-      allTypes = Ts2Builder.this.types.values.map(_.member).toList
-      verifier = new TsVerifier(types.toMap, makeInterpreter(index).resolvers)
+      _ <- instantiateMissingGenerics()
+      verifier = makeVerifier()
+      allTypes = freezeTypes()
       _ <- verifier.validateTypespace(allTypes)
     } yield {
       Typespace2(
@@ -158,24 +163,62 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
+  private val missingRefs = mutable.LinkedHashSet[RefToTLTLink]()
+
+  override def require(ref: RefToTLTLink): Unit = {
+    missingRefs += ref
+  }
+
+  def instantiateMissingGenerics(): Either[List[BuilderFail], List[Unit]] = {
+    val all = freezeTypes().map(_.id).toSet
+    val ret = missingRefs.filterNot(r => all.contains(r.target)).map {
+      mg =>
+        val instantiated = makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
+        registerTypes(instantiated)
+    }.toSeq
+    import results._
+    ret.biAggregate
+  }
+
+  private def freezeTypes(): List[IzType] = {
+    Ts2Builder.this.types.values.map(_.member).toList
+  }
+
+
+
+  private def makeVerifier(): TsVerifier = {
+    new TsVerifier(types.toMap, makeEvaluator())
+  }
+
+  private def makeEvaluator(): TypespaceEvalutor = {
+    new TypespaceEvalutor(makeInterpreter(index).resolvers)
+  }
+
+  private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {
+    new InterpreterContext(dindex, this, this, Interpreter.Args(types.toMap, Map.empty))
+  }
+
   private def register(ops: Operation, maybeTypes: Either[List[BuilderFail], List[IzType]]): Unit = {
-    (for {
-      tpe <- maybeTypes
-      verifier = new TsVerifier(types.toMap, makeInterpreter(index).resolvers)
-      _ <- verifier.prevalidateTypes(tpe)
-    } yield {
-      tpe
-    }) match {
+    registerTypes(maybeTypes) match {
       case Left(value) =>
         fail(ops, value)
 
-      case Right(value) =>
-        value.foreach {
-          product =>
-            types.put(product.id, makeMember(product))
-        }
-
+      case Right(_) =>
         existing.add(ops.id).discard()
+
+    }
+  }
+
+  private def registerTypes(maybeTypes: Either[List[BuilderFail], List[IzType]]): Either[List[BuilderFail], Unit] = {
+    for {
+      typesToRegister <- maybeTypes
+      verifier = makeVerifier()
+      _ <- verifier.prevalidateTypes(typesToRegister)
+    } yield {
+      typesToRegister.foreach {
+        product =>
+          types.put(product.id, makeMember(product))
+      }
     }
   }
 

@@ -1,15 +1,15 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.typer2.interpreter.Resolvers
+import com.github.pshirshov.izumi.idealingua.typer2.TypespaceEvalutor.TopLevelIdIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{ContradictiveFieldDefinition, MissingTypespaceMembers, UnresolvedGenericsInstancesLeft, VerificationFail}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
-class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
+
+class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor) {
 
 
   def validateTypespace(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
@@ -22,41 +22,17 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
   }
 
   private def validateTsConsistency(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
-    val allTypeIds = allTypes.map(_.id).toSet
+    val topLevelIdIndex: TopLevelIdIndex = tsc.topLevelIndex(allTypes)
 
-    val allTopLevelRefs: Map[IzTypeId, Set[IzTypeReference]] = allTypes
-      .flatMap(collectTopLevelReferences)
-      .groupBy(_._1)
-      .mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
-
-    val allTopLevelIds = allTopLevelRefs.mapValues {
-      s =>
-        s.collect {
-          case s: IzTypeReference.Scalar =>
-            s.id
-          case g@IzTypeReference.Generic(id: IzTypeId.BuiltinType, _, _) =>
-            id
-
-        }
-    }
-
-    val allBadTopLevelIds: Map[IzTypeId, Set[IzTypeId.UserType]] = allTopLevelRefs.mapValues {
-      s =>
-        s.collect {
-          case g@IzTypeReference.Generic(id: IzTypeId.UserType, _, _) =>
-            id
-        }
-    }.filter(_._2.nonEmpty)
-
-    val missingRefs: Map[IzTypeId, Set[IzTypeId]] = allTopLevelIds.mapValues(_.diff(allTypeIds)).filter(_._2.nonEmpty)
+    val missingRefs = topLevelIdIndex.present.mapValues(_.diff(topLevelIdIndex.allIds)).filter(_._2.nonEmpty)
     for {
       _ <- if (missingRefs.nonEmpty) {
         Left(List(MissingTypespaceMembers(missingRefs)))
       } else {
         Right(())
       }
-      _ <- if (allBadTopLevelIds.nonEmpty) {
-        Left(List(UnresolvedGenericsInstancesLeft(allBadTopLevelIds)))
+      _ <- if (topLevelIdIndex.missingGenerics.nonEmpty) {
+        Left(List(UnresolvedGenericsInstancesLeft(topLevelIdIndex.missingGenerics)))
       } else {
         Right(())
       }
@@ -64,6 +40,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
 
     }
   }
+
 
   def prevalidateTypes(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
     validateAll(allTypes, preValidate)
@@ -86,34 +63,6 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], resolvers: Resolvers) {
     }
   }
 
-  private def collectTopLevelReferences(t: IzType): Set[(IzTypeId, IzTypeReference)] = {
-    t match {
-      case generic: IzType.Generic =>
-        Set.empty
-      case structure: IzStructure =>
-        structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet ++
-          structure.fields.map(f => structure.id -> f.tpe).toSet
-      case a: IzType.Adt =>
-        a.members
-          .map {
-            case ref: AdtMemberRef =>
-              a.id -> ref.ref
-            case n: AdtMemberNested =>
-              a.id -> n.tpe
-          }
-          .toSet
-      case a: IzType.IzAlias =>
-        Set(a.id -> a.source)
-      case i: IzType.Identifier =>
-        i.fields.map(f => i.id -> f.tpe).toSet
-      case _: IzType.Enum =>
-        Set.empty
-      case foreign: IzType.Foreign =>
-        Set.empty
-      case builtinType: IzType.BuiltinType =>
-        Set.empty
-    }
-  }
 
   private def preValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
     // TODO: verify

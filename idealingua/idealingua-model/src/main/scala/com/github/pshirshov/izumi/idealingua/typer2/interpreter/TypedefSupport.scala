@@ -3,12 +3,13 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
@@ -34,7 +35,7 @@ trait TypedefSupport {
 
 }
 
-class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, logger: WarnLogger) extends TypedefSupport {
+class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, logger: WarnLogger) extends TypedefSupport {
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
@@ -111,22 +112,43 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
-  def refToTopId2(id: IzTypeReference): IzTypeReference.Scalar = {
+  def refToTopLevelRef(id: IzTypeReference): IzTypeReference = {
     resolvers.refToTopId2(id) match {
+      case s: IzTypeReference.Scalar =>
+
+        (id, s.id) match {
+          case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
+            refRecorder.require(RefToTLTLink(g, sid))
+          case _ =>
+        }
+
+        s
+      case g@IzTypeReference.Generic(t: BuiltinType, _, _) =>
+        g
+
+      case g: IzTypeReference.Generic =>
+        import Tools._
+        fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
+    }
+  }
+
+  def refToTopLevelScalarRef(id: IzTypeReference): IzTypeReference.Scalar = {
+    refToTopLevelRef(id) match {
       case s: IzTypeReference.Scalar =>
         s
       case g: IzTypeReference.Generic =>
         import Tools._
-        fail("xxx")
+
+        fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
     }
   }
 
 
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(resolvers.resolve).map(refToTopId2).map(_.id)
+    val parentsIds = struct.interfaces.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id)
     val parents = parentsIds.map(context.types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(refToTopId2).map(_.id).map(context.types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(refToTopId2).map(_.id).map(context.types.apply).map(_.member)
+    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id).map(context.types.apply).map(_.member)
+    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id).map(context.types.apply).map(_.member)
 
     val localFields = struct.fields.zipWithIndex.map {
       case (f, idx) =>
@@ -225,7 +247,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
   private def toRef(f: RawField): IzTypeReference = {
     val reference: IzTypeReference = resolvers.resolve(f.typeId)
-    resolvers.refToTopId2(reference)
+    refToTopLevelRef(reference)
   }
 
   private def fname(f: RawField): FName = {
