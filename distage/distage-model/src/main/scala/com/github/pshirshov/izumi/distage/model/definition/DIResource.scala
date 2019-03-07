@@ -6,17 +6,30 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 import scala.language.implicitConversions
 
-trait DIResource[+F[_], A] {
-  def allocate: F[A]
-  def deallocate(a: A): F[Unit]
+trait DIResource[+F[_], +A] {
+  type Resource
+  def allocate: F[Resource]
+  def deallocate(resource: Resource): F[Unit]
+  def extract(resource: Resource): A
 }
 
 object DIResource {
-  // Lambda[A => A] instead of Identity to stop Identity from showing up in Intellij tooltips
-  trait Sync[A] extends DIResource[Lambda[A => A], A]
+  implicit final class DIResourceUse[F[_], A](private val resource: DIResource[F, A]) extends AnyVal {
+    def use[G[x] >: F[x], B](use: A => G[B])(implicit F: Bracket[G, Throwable]): G[B] = {
+      F.bracket(resource.allocate)(use apply resource.extract(_))(resource.deallocate)
+    }
+  }
 
-  trait Cats[F[_], A] extends DIResource[F, (A, F[Unit])] {
-    override final def deallocate(a: (A, F[Unit])): F[Unit] = a._2
+  // Lambda[A => A] instead of Identity to stop Identity from showing up in Intellij tooltips
+  trait Sync[A] extends DIResource[Lambda[A => A], A] {
+    override final type Resource = A
+    override final def extract(resource: A): A = resource
+  }
+
+  trait Cats[F[_], A] extends DIResource[F, A] {
+    override final type Resource = (A, F[Unit])
+    override final def deallocate(resource: (A, F[Unit])): F[Unit] = resource._2
+    override final def extract(resource: (A, F[Unit])): A = resource._1
   }
 
   def apply[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
