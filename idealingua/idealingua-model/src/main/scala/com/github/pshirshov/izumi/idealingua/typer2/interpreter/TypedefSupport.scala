@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, TsProvider, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
@@ -35,7 +35,7 @@ trait TypedefSupport {
 
 }
 
-class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, logger: WarnLogger) extends TypedefSupport {
+class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, logger: WarnLogger, provider: TsProvider) extends TypedefSupport {
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
@@ -59,12 +59,17 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
     val id = resolvers.nameToId(i.id, subpath)
 
-    val fields = i.fields.zipWithIndex.map {
-      case (f, idx) =>
-        val ref = toRef(f)
-        FullField(fname(f), ref, Seq(FieldSource(id, ref, idx, 0, meta(f.meta))))
+    for {
+      fields <- i.fields.zipWithIndex.map {
+        case (f, idx) =>
+          toRef(f).map {
+            ref =>
+              FullField(fname(f), ref, Seq(FieldSource(id, ref, idx, 0, meta(f.meta))))
+          }
+      }.biAggregate
+    } yield {
+      Identifier(id, fields, meta(i.meta))
     }
-    Right(Identifier(id, fields, meta(i.meta)))
   }
 
 
@@ -75,7 +80,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         rid
       case IzTypeReference.Generic(rid, args, adhocName) =>
         ???
-    }.map(context.types.apply).map(_.member)
+    }.map(provider.freeze().apply).map(_.member)
     val tmeta = meta(e.meta)
 
     for {
@@ -112,57 +117,86 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
-  def refToTopLevelRef(id: IzTypeReference): IzTypeReference = {
+  def refToTopLevelRef(id: IzTypeReference, requiredNow: Boolean): Either[List[BuilderFail], IzTypeReference] = {
     resolvers.refToTopId2(id) match {
       case s: IzTypeReference.Scalar =>
         (id, s.id) match {
           case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
-            //println(s"original: $id")
-            refRecorder.require(RefToTLTLink(g, sid))
+            for {
+              _ <- if (requiredNow) {
+                refRecorder.requireNow(RefToTLTLink(g, sid))
+              } else {
+                Right(refRecorder.require(RefToTLTLink(g, sid)))
+              }
+            } yield {
+              s
+            }
           case _ =>
+            Right(s)
         }
 
-        s
-      case g@IzTypeReference.Generic(t: BuiltinType, _, _) =>
-        g
+
+      case g@IzTypeReference.Generic(_: BuiltinType, _, _) =>
+        Right(g)
 
       case g: IzTypeReference.Generic =>
         import Tools._
         fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
+        Left(List())
     }
   }
 
-  def refToTopLevelScalarRef(id: IzTypeReference): IzTypeReference.Scalar = {
-    refToTopLevelRef(id) match {
-      case s: IzTypeReference.Scalar =>
-        s
-      case g: IzTypeReference.Generic =>
-        import Tools._
-
-        fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
+  def refToTopLevelScalarRefNow(id: IzTypeReference): Either[List[BuilderFail], IzTypeReference.Scalar] = {
+    refToTopLevelRef(id, requiredNow = true) match {
+      case Left(value) =>
+        Left(value)
+      case Right(value) =>
+        value match {
+          case s: IzTypeReference.Scalar =>
+            Right(s)
+          case g: IzTypeReference.Generic =>
+            import Tools._
+            fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
+            Left(List())
+        }
     }
+
+
   }
 
 
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
-    val parentsIds = struct.interfaces.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id)
-    val parents = parentsIds.map(context.types.apply).map(_.member)
-    val conceptsAdded = struct.concepts.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id).map(context.types.apply).map(_.member)
-    val conceptsRemoved = struct.removedConcepts.map(resolvers.resolve).map(refToTopLevelScalarRef).map(_.id).map(context.types.apply).map(_.member)
-
-    val localFields = struct.fields.zipWithIndex.map {
-      case (f, idx) =>
-        val typeReference = toRef(f)
-        FullField(fname(f), typeReference, Seq(FieldSource(id, typeReference, idx, 0, meta(f.meta))))
-    }
-
-    val removedFields = struct.removedFields.map {
-      f =>
-        BasicField(fname(f),  toRef(f))
-    }
     val tmeta = meta(structMeta)
 
     for {
+      maybeParentsIds <- struct.interfaces.map(resolvers.resolve).map(refToTopLevelScalarRefNow).biAggregate
+      parentsIds = maybeParentsIds.map(_.id)
+      parents = parentsIds.map(provider.freeze().apply).map(_.member)
+
+      maybeConceptsAdded <- struct.concepts.map(resolvers.resolve).map(refToTopLevelScalarRefNow).biAggregate
+      conceptsAdded = maybeConceptsAdded.map(_.id).map(provider.freeze().apply).map(_.member)
+
+      maybeConceptsRemoved <- struct.removedConcepts.map(resolvers.resolve).map(refToTopLevelScalarRefNow).biAggregate
+      conceptsRemoved = maybeConceptsRemoved.map(_.id).map(provider.freeze().apply).map(_.member)
+
+      removedFields <- struct.removedFields.map {
+        f =>
+          toRef(f).map {
+            ref =>
+              BasicField(fname(f), ref)
+
+          }
+      }.biAggregate
+
+
+      localFields <- struct.fields.zipWithIndex.map {
+        case (f, idx) =>
+          toRef(f).map {
+            typeReference =>
+              FullField(fname(f), typeReference, Seq(FieldSource(id, typeReference, idx, 0, meta(f.meta))))
+          }
+      }.biAggregate
+
       parentFields <- parents.map(structFields(id, tmeta)).biFlatAggregate.map(addLevel)
       conceptFieldsAdded <- conceptsAdded.map(structFields(id, tmeta)).biFlatAggregate.map(addLevel)
       /* all the concept fields will be removed
@@ -205,7 +239,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         case a: IzAlias =>
           a.source match {
             case IzTypeReference.Scalar(id) =>
-              findAllParents(context, meta, List(a.id), List(this.context.types(id).member))
+              findAllParents(context, meta, List(a.id), List(provider.freeze()(id).member))
             case g: IzTypeReference.Generic =>
               Left(List(ParentCannotBeGeneric(context, g, meta)))
           }
@@ -245,9 +279,9 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
     }
   }
 
-  private def toRef(f: RawField): IzTypeReference = {
+  private def toRef(f: RawField): Either[List[BuilderFail], IzTypeReference] = {
     val reference: IzTypeReference = resolvers.resolve(f.typeId)
-    refToTopLevelRef(reference)
+    refToTopLevelRef(reference, requiredNow = false)
   }
 
   private def fname(f: RawField): FName = {
@@ -280,7 +314,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            structFields(context, meta)(this.context.types.apply(id).member)
+            structFields(context, meta)(provider.freeze()(id).member)
           case g: IzTypeReference.Generic =>
             Left(List(ParentCannotBeGeneric(context, g, meta)))
         }
@@ -297,7 +331,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            enumMembers(context, meta)(this.context.types.apply(id).member)
+            enumMembers(context, meta)(provider.freeze()(id).member)
           case g: IzTypeReference.Generic =>
             Left(List(EnumExpectedButGotGeneric(context, g, meta)))
         }

@@ -21,20 +21,23 @@ mixin M5 {
 }
 
 mixin M6 {
-  f: M0[i08, str] %StrangeStructure2
-  f1: M0[i08, i08] %StrangeStructure3
+  f10: M0[i08, str] %StrangeStructure2
+  f11: M0[i08, str] %StrangeStructure2
+  f12: M0[i08, str]
+
+  f21: M0[i08, i08] %StrangeStructure3
 }
 
-/*template [A, B] mixin MX {
-    + M0[B, A]
+
+template [A, B] mixin TInh1 {
+    //+ M0[B, A]
     f1: A
     f2: B
 }
 
-mixin MG {
-  & MX[str, map[str, str]]
+mixin TInh2 {
+  & TInh1[str, map[str, str]]
 }
 
-type M5 = MX[str, map[str, str]]
+type TInh3 = TInh1[str, map[str, str]]
 
-*/

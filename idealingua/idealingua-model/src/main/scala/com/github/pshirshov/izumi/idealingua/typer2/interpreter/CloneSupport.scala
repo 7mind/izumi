@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawClone, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, TsProvider, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.AdtSupport.AdtMemberProducts
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMember, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, CustomTemplate, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, IzAlias, IzStructure}
@@ -17,11 +17,12 @@ class CloneSupport(index: DomainIndex,
                    resolvers: Resolvers,
                    adts: AdtSupport,
                    logger: WarnLogger,
+                   provider: TsProvider,
                   ) {
   def cloneType(v: RawTypeDef.NewType): TList = {
     val id = resolvers.nameToTopId(v.id)
     val sid = index.resolveRef(v.source)
-    val source = this.context.types(sid)
+    val source = provider.freeze()(sid)
     val newMeta = i2.meta(v.meta)
 
     source.member match {

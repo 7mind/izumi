@@ -13,14 +13,20 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.{immutable, mutable}
 
 trait RefRecorder {
   def require(ref: RefToTLTLink): Unit
+  def requireNow(ref: RefToTLTLink): Either[List[BuilderFail], Unit]
 }
 
-class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder {
+trait TsProvider {
+  def freeze(): Map[IzTypeId, ProcessedOp]
+}
+
+class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder with TsProvider {
   private val failed = mutable.HashSet.empty[TypenameRef]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
   private val warnings = mutable.ArrayBuffer.empty[T2Warn]
@@ -28,6 +34,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
   private val thisPrefix = TypePrefix.UserTLT(IzPackage(index.defn.id.toPackage.map(IzDomainPath)))
 
+
+  override def freeze(): Map[IzTypeId, ProcessedOp] = types.toMap
 
   override def log(w: T2Warn): Unit = {
     warnings += w
@@ -119,9 +127,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     allRefs.collect({ case ref: RawGenericRef => ref })
   }
 
-  ///
-
-
   def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
     if (mult.decls.isEmpty) {
       Right(Typer2.DefineType(mult.id, mult.depends, mult.main))
@@ -147,7 +152,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       } else {
         Right(())
       }
-      _ <- instantiateMissingGenerics()
+      _ <- instantiatePostponedGenerics(missingRefs.toSet)
       verifier = makeVerifier()
       allTypes = freezeTypes()
       _ <- verifier.validateTypespace(allTypes)
@@ -163,15 +168,15 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   private val missingRefs = mutable.ArrayBuffer[RefToTLTLink]()
 
   override def require(ref: RefToTLTLink): Unit = {
-    //    println(s"Registered ref: ${ref}")
     missingRefs += ref
   }
 
-  def instantiateMissingGenerics(): Either[List[BuilderFail], Unit] = {
-    //val all = freezeTypes() //.map(_.id).toSet
-    import results._
 
-    val toCreate = missingRefs //.filterNot(r => all.get() .contains(r.target))
+  override def requireNow(ref: RefToTLTLink): Either[List[BuilderFail], Unit] = {
+    instantiatePostponedGenerics(Set(ref))
+  }
+
+  def instantiatePostponedGenerics(toCreate: Set[RefToTLTLink]): Either[List[BuilderFail], Unit] = {
     val ret = toCreate
       .map {
         mg =>
@@ -181,7 +186,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         //            println(s"Instantiated missing generic: ${i.id.name}")
         //        }
 
-      }.biFlatAggregate
+      }
+      .toList
+      .biFlatAggregate
 
     registerTypes(ret)
   }
@@ -200,7 +207,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
   private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {
-    new InterpreterContext(dindex, this, this, Interpreter.Args(types.toMap, Map.empty))
+    new InterpreterContext(dindex, this, this, this, Interpreter.Args(Map.empty))
   }
 
   private def register(ops: Operation, maybeTypes: Either[List[BuilderFail], List[IzType]]): Unit = {
@@ -229,7 +236,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           val maybeOp = types.get(id)
           maybeOp.nonEmpty && !maybeOp.exists(_.member == tpe)
       }
-      _ <- if (conflicts .nonEmpty) {
+      _ <- if (conflicts.nonEmpty) {
         Left(List(TypesAlreadyRegistered(conflicts.keySet.map(_.name))))
       } else {
         Right(())
@@ -237,6 +244,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     } yield {
     }
   }
+
   private def registerTypes(maybeTypes: Either[List[BuilderFail], List[IzType]]): Either[List[BuilderFail], Unit] = {
     for {
       typesToRegister <- maybeTypes

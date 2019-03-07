@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
-import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
@@ -13,7 +12,7 @@ trait Interpreter {
 
 object Interpreter {
 
-  case class Args(types: Map[IzTypeId, ProcessedOp], templateArgs: Map[IzTypeArgName, IzTypeReference])
+  case class Args(templateArgs: Map[IzTypeArgName, IzTypeReference])
 
 }
 

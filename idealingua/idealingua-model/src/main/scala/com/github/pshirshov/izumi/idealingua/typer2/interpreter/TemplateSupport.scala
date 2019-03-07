@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.WarnLogger
+import com.github.pshirshov.izumi.idealingua.typer2.{TsProvider, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, Generic}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
@@ -18,6 +18,7 @@ class TemplateSupport(
                        i2: TypedefSupport,
                        resolvers: Resolvers,
                        logger: WarnLogger,
+                       provider: TsProvider,
                      ) {
 
   import Tools._
@@ -49,9 +50,9 @@ class TemplateSupport(
   def makeInstance(id: RawDeclaredTypeName, source: IzTypeReference, meta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
     val template = source match {
       case IzTypeReference.Scalar(tid) =>
-        context.types(tid)
+        provider.freeze()(tid)
       case IzTypeReference.Generic(tid, _, _) =>
-        context.types(tid)
+        provider.freeze()(tid)
     }
 
     val t = template match {
@@ -82,7 +83,7 @@ class TemplateSupport(
         a.copy(id = id, meta = meta)
     }
 
-    val isub = contextProducer.remake(context.copy(types = context.types ++ ephemerals, templateContext)).interpreter
+    val isub = contextProducer.remake(ephemerals.toMap, context.copy(templateContext)).interpreter
     val instance = isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
     instance
   }
@@ -110,7 +111,7 @@ class TemplateSupport(
               ref
 
             case ref@IzTypeReference.Generic(tid, _, _) =>
-              context.types(tid).member match {
+              provider.freeze()(tid).member match {
                 case generic: Generic =>
                   generic match {
                     case _: IzType.BuiltinGeneric =>
