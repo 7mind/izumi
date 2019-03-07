@@ -41,10 +41,14 @@ class AdtSupport(
           name <- tpe match {
             case IzTypeReference.Scalar(mid) =>
               Right(memberName.getOrElse(mid.name.name))
-            case IzTypeReference.Generic(_, _, _) =>
+            case ref@IzTypeReference.Generic(_, _, _) =>
               memberName match {
                 case Some(value) =>
-                  Right(value)
+                  for { // this will trigger instantiation
+                    _ <- i2.refToTopLevelRef(ref, requiredNow = false)
+                  } yield {
+                    value
+                  }
                 case None =>
                   Left(List(GenericAdtBranchMustBeNamed(context, typeId, i2.meta(m))))
               }

@@ -33,6 +33,7 @@ trait TypedefSupport {
 
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle
 
+  def refToTopLevelRef(id: IzTypeReference, requiredNow: Boolean): Either[List[BuilderFail], IzTypeReference]
 }
 
 class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, logger: WarnLogger, provider: TsProvider) extends TypedefSupport {
@@ -84,7 +85,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         case IzTypeReference.Generic(rid, _, _) =>
           Left(List(ParentTypeExpectedToBeScalar(id, rid, tmeta)))
       }.biAggregate
-      parents =  maybeParents.map(provider.freeze().apply).map(_.member)
+      parents = maybeParents.map(provider.freeze().apply).map(_.member)
       parentMembers <- parents.map(enumMembers(id, tmeta)).biFlatAggregate
     } yield {
       val localMembers = e.struct.members.map {

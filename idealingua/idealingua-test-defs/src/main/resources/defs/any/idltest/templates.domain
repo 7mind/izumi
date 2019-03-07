@@ -61,7 +61,7 @@ type TInh3 = TInh1[str, map[str, str]]
 // adts
 
 template [A] adt Result {
-    //M0[str, str] @HuiPizda as BranchName
+    M0[i64, str] @BranchType as BranchName
     data Success {
         value: A
     }
