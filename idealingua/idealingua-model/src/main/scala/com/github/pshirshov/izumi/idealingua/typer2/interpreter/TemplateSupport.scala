@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, Generic}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, ForeignGeneric, Generic}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
@@ -48,28 +48,30 @@ class TemplateSupport(
   }
 
 
-  def makeInstance(id: RawDeclaredTypeName, source: IzTypeReference, meta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
-    val template = source match {
-      case IzTypeReference.Scalar(tid) =>
-        provider.freeze()(tid)
-      case IzTypeReference.Generic(tid, _, _) =>
-        provider.freeze()(tid)
-    }
-
-    val targs = source match {
-      case IzTypeReference.Scalar(_) =>
-        Seq.empty
-      case IzTypeReference.Generic(_, args, _) =>
-        args
-    }
-
-
+  def makeInstance(name: RawDeclaredTypeName, source: IzTypeReference, meta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
+    val tmeta = i2.meta(meta)
+    val instanceId = resolvers.nameToId(name, Seq.empty)
     for {
+      template <- source match {
+        case IzTypeReference.Scalar(tid) =>
+          provider.get(tid, instanceId, tmeta)
+        case IzTypeReference.Generic(tid, _, _) =>
+          provider.get(tid, instanceId, tmeta)
+      }
+
+      targs = source match {
+        case IzTypeReference.Scalar(_) =>
+          Seq.empty
+        case IzTypeReference.Generic(_, args, _) =>
+          args
+      }
       tdef <- template match {
         case ProcessedOp.Exported(member: CustomTemplate) =>
           Right(member)
+        case ProcessedOp.Exported(member: ForeignGeneric) =>
+          Right(member)
         case o =>
-          Left(List(TemplatedExpected(source, o.member)))
+          Left(List(TemplateExpected(source, o.member)))
       }
       _ <- if (tdef.args.size != targs.size) {
         Left(List(TemplateArgumentsCountMismatch(tdef.id, tdef.args.size, targs.size)))
@@ -82,15 +84,22 @@ class TemplateSupport(
       templateContext <- instantiateArgs(ephemerals, meta)(argsMap)
       isub = contextProducer.remake(ephemerals.toMap, context.copy(templateContext)).interpreter
 
-      withFixedId = tdef.decl match {
-        case i: RawTypeDef.Interface =>
-          i.copy(id = id, meta = meta)
-        case d: RawTypeDef.DTO =>
-          d.copy(id = id, meta = meta)
-        case a: RawTypeDef.Adt =>
-          a.copy(id = id, meta = meta)
+      instance <- tdef match {
+        case c: CustomTemplate =>
+          val withFixedId = c.decl match {
+            case i: RawTypeDef.Interface =>
+              i.copy(id = name, meta = meta)
+            case d: RawTypeDef.DTO =>
+              d.copy(id = name, meta = meta)
+            case a: RawTypeDef.Adt =>
+              a.copy(id = name, meta = meta)
+          }
+          isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
+        case _: ForeignGeneric =>
+          Right(List(IzType.IzAlias(instanceId, source, tmeta)))
+        case _ =>
+          Left(List(UnexpectedException(new IllegalStateException(s"BUG: $tdef has unexpected type but that can't be"))))
       }
-      instance <- isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
     } yield {
       instance
     }
@@ -116,29 +125,29 @@ class TemplateSupport(
                       val tmpName: RawDeclaredTypeName = genericName(ref, g, i2.meta(m))
                       val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
-                        for {
-                          _ <- if (!ephemerals.contains(ephemeralId)) {
-                            for {
-                              products <- makeInstance(tmpName, ref, m, ephemerals)
-                              _ <- products.map {
-                                i =>
-                                  ephemerals.get(i.id) match {
-                                    case Some(_) =>
-                                      Left(List(DuplicatedTypespaceMembers(Set(i.id))))
-                                    case None =>
-                                      ephemerals.put(i.id, ProcessedOp.Exported(i))
-                                      Right(())
-                                  }
-                              }.biAggregate
-                            } yield {
+                      for {
+                        _ <- if (!ephemerals.contains(ephemeralId)) {
+                          for {
+                            products <- makeInstance(tmpName, ref, m, ephemerals)
+                            _ <- products.map {
+                              i =>
+                                ephemerals.get(i.id) match {
+                                  case Some(_) =>
+                                    Left(List(DuplicatedTypespaceMembers(Set(i.id))))
+                                  case None =>
+                                    ephemerals.put(i.id, ProcessedOp.Exported(i))
+                                    Right(())
+                                }
+                            }.biAggregate
+                          } yield {
 
-                            }
-                          } else {
-                            Right(())
                           }
-                        } yield {
-                          IzTypeReference.Scalar(ephemeralId)
+                        } else {
+                          Right(())
                         }
+                      } yield {
+                        IzTypeReference.Scalar(ephemeralId)
+                      }
 
 
                   }

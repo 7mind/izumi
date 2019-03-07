@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawNodeMeta
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
@@ -23,6 +24,14 @@ trait RefRecorder {
 
 trait TsProvider {
   def freeze(): Map[IzTypeId, ProcessedOp]
+  def get(id: IzTypeId, context: IzTypeId, meta: NodeMeta): Either[List[BuilderFail], ProcessedOp] = {
+    freeze().get(id) match {
+      case Some(value) =>
+        Right(value)
+      case None =>
+        Left(List(MissingTypespaceMember(id, context, meta)))
+    }
+  }
 }
 
 class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder with TsProvider {
@@ -138,7 +147,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 
 
   private def makeVerifier(): TsVerifier = {
-    new TsVerifier(types.toMap, makeEvaluator())
+    new TsVerifier(types.toMap, makeEvaluator(), this)
   }
 
   private def makeEvaluator(): TypespaceEvalutor = {

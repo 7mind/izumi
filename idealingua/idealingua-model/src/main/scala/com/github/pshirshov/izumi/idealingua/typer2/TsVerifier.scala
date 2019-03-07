@@ -3,13 +3,15 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.typer2.TypespaceEvalutor.TopLevelIdIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FullField, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.UnusedForeignTypeParameters
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
 
-class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor) {
+class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor, logger: WarnLogger) {
 
 
   def validateTypespace(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
@@ -83,24 +85,68 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor) {
     tpe match {
       case structure: IzStructure =>
         merge(List(
-          verifyFieldContradictions(structure),
+          verifyFieldContradictions(structure.id, structure.meta, structure.fields),
         ))
 
-      case o =>
-        // TODO: member conflicts
+      case i: IzType.Identifier =>
+        merge(List(
+          verifyFieldContradictions(i.id, i.meta, i.fields),
+        ))
+
+      case e: IzType.Enum =>
+        merge(List(
+          verifyEnumMemberContradictions(e),
+        ))
+      case a: IzType.Adt =>
+        merge(List(
+          verifyAdtBranchContradictions(a),
+        ))
+      case foreign: IzType.Foreign =>
+        foreign match {
+          case _: IzType.ForeignScalar =>
+            Right(())
+          case g: IzType.ForeignGeneric =>
+            val usedParameters = g.mapping.flatMap(_._2.parameters).toSet
+            val danglingParameters = g.args.toSet.diff(usedParameters)
+            if (danglingParameters.nonEmpty) {
+              logger.log(UnusedForeignTypeParameters(g.id, danglingParameters, g.meta))
+            }
+            val undefinedParameters = usedParameters.diff(g.args.toSet)
+
+            if (undefinedParameters.isEmpty) {
+              Right(())
+
+            } else {
+              Left(List(UndefinedForeignTypeParameters(g.id, undefinedParameters, g.meta)))
+            }
+        }
+
+
+      case _ =>
         Right(())
-      //      case generic: IzType.Generic =>
-      //      case builtinType: IzType.BuiltinType =>
-      //      case IzType.IzAlias(id, source, meta) =>
-      //      case IzType.Identifier(id, fields, meta) =>
-      //      case IzType.Enum(id, members, meta) =>
-      //      case foreign: IzType.Foreign =>
-      //      case IzType.Adt(id, members, meta) =>
     }
   }
 
-  private def verifyFieldContradictions(structure: IzStructure): Either[List[VerificationFail], Unit] = {
-    val badFields = structure.fields.map {
+  private def verifyAdtBranchContradictions(a: IzType.Adt): Either[List[VerificationFail], Unit] = {
+    val badMembers = a.members.groupBy(m => m.name).filter(_._2.size > 1)
+    if (badMembers.nonEmpty) {
+      Left(List(ContradictiveAdtMembers(a.id, badMembers)))
+    } else {
+      Right(())
+    }
+  }
+
+  private def verifyEnumMemberContradictions(e: IzType.Enum): Either[List[VerificationFail], Unit] = {
+    val badMembers = e.members.groupBy(m => m.name).filter(_._2.size > 1)
+    if (badMembers.nonEmpty) {
+      Left(List(ContradictiveEnumMembers(e.id, badMembers)))
+    } else {
+      Right(())
+    }
+  }
+
+  private def verifyFieldContradictions(id: IzTypeId, meta: NodeMeta, fields: Seq[FullField]): Either[List[VerificationFail], Unit] = {
+    val badFields = fields.map {
       f =>
         f -> f.defined.map(_.as)
           .map(parent => FieldConflict(f.tpe, parent))
@@ -109,7 +155,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor) {
       .filterNot(_._2.isEmpty)
       .map {
         bad =>
-          ContradictiveFieldDefinition(structure.id, bad._1, bad._2, structure.meta)
+          ContradictiveFieldDefinition(id, bad._1, bad._2, meta)
       }
 
     if (badFields.isEmpty) {
@@ -138,14 +184,8 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor) {
   }
 
   private def merge(checks: List[Either[List[VerificationFail], Unit]]): Either[List[VerificationFail], Unit] = {
-    val issues = checks
-      .collect({ case Left(l) => l })
-      .flatten
-    if (issues.nonEmpty) {
-      Left(issues)
-    } else {
-      Right(())
-    }
+    import results._
+    checks.biAggregate.map(_ => ())
   }
 
 }

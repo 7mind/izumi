@@ -29,6 +29,15 @@ mixin M6 {
   f21: M0[i08, i08] @StrangeStructure3
 }
 
+//
+foreign JavaMapDef[KEY, VALUE] {
+  "java": t"java.util.Map<${KEY}, ${VALUE}>"
+}
+
+mixin ForeignTypeUser {
+  f: JavaMapDef[str, str] @JavaStringMap
+}
+
 // ultimate case of template inheritance
 
 template [A, B] mixin TInh0 {
