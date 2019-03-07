@@ -48,3 +48,15 @@ mixin TInh2 {
 
 type TInh3 = TInh1[str, map[str, str]]
 
+// adts
+
+template [A] adt Result {
+    data Success {
+        value: A
+    }
+    data Failure {
+        message: str
+    }
+}
+
+type LongResult = Result[i64]

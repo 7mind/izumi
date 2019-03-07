@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawNodeMeta
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 trait RefRecorder {
   def require(ref: RefToTLTLink): Unit

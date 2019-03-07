@@ -12,7 +12,6 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzT
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 class CloneSupport(index: DomainIndex,
-                   context: Interpreter.Args,
                    i2: TypedefSupport,
                    resolvers: Resolvers,
                    adts: AdtSupport,

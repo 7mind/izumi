@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, FullField, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}
 
 sealed trait T2Fail
 
@@ -47,6 +47,9 @@ object T2Fail {
   final case class ParentTypeExpectedToBeScalar(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
   final case class ParentCannotBeGeneric(tpe: IzTypeId, problematic: IzTypeReference, meta: NodeMeta) extends BuilderFailWithMeta
   final case class TopLevelScalarOrBuiltinGenericExpected(reference: IzTypeReference, result: IzTypeReference) extends BuilderFail
+  final case class TemplateArgumentClash(tpe: IzTypeId, clashed: Set[IzTypeArgName]) extends BuilderFail
+  final case class TemplatedExpected(reference: IzTypeReference, got: IzType) extends BuilderFail
+  final case class TemplateArgumentsCountMismatch(tpe: IzTypeId, expected: Int, got: Int) extends BuilderFail
 
   final case class CannotApplyTypeModifiers(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
 

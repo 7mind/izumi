@@ -12,7 +12,7 @@ class InterpreterContext(val index: DomainIndex, val logger: WarnLogger, val rec
   val resolvers: Resolvers = new ResolversImpl(args, index)
   val typedefSupport: TypedefSupport = new TypedefSupportImpl(index, resolvers, args, recorder, logger, provider)
   val adts = new AdtSupport(typedefSupport, resolvers)
-  val clones = new CloneSupport(index, args, typedefSupport, resolvers, adts, logger, provider)
+  val clones = new CloneSupport(index, typedefSupport, resolvers, adts, logger, provider)
   val templates = new TemplateSupport(this, args, typedefSupport, resolvers, logger, provider)
   val interpreter: Interpreter = new InterpreterImpl(typedefSupport, adts, templates, clones)
 
