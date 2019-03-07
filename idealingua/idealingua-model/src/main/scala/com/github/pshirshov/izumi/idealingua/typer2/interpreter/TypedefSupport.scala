@@ -75,15 +75,16 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
     val id = resolvers.nameToId(e.id, subpath)
-    val parents = e.struct.parents.map(resolvers.resolve).map {
-      case IzTypeReference.Scalar(rid) =>
-        rid
-      case IzTypeReference.Generic(rid, args, adhocName) =>
-        ???
-    }.map(provider.freeze().apply).map(_.member)
     val tmeta = meta(e.meta)
 
     for {
+      maybeParents <- e.struct.parents.map(resolvers.resolve).map {
+        case IzTypeReference.Scalar(rid) =>
+          Right(rid)
+        case IzTypeReference.Generic(rid, _, _) =>
+          Left(List(ParentTypeExpectedToBeScalar(id, rid, tmeta)))
+      }.biAggregate
+      parents =  maybeParents.map(provider.freeze().apply).map(_.member)
       parentMembers <- parents.map(enumMembers(id, tmeta)).biFlatAggregate
     } yield {
       val localMembers = e.struct.members.map {
@@ -140,9 +141,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         Right(g)
 
       case g: IzTypeReference.Generic =>
-        import Tools._
-        fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
-        Left(List())
+        Left(List(TopLevelScalarOrBuiltinGenericExpected(id, g)))
     }
   }
 
@@ -155,13 +154,9 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
           case s: IzTypeReference.Scalar =>
             Right(s)
           case g: IzTypeReference.Generic =>
-            import Tools._
-            fail(s"Reference $id expected to be resolved as top-level scalar or builtin generic, but we got $g")
-            Left(List())
+            Left(List(TopLevelScalarOrBuiltinGenericExpected(id, g)))
         }
     }
-
-
   }
 
 
