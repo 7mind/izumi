@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
-import com.github.pshirshov.izumi.idealingua.typer2.results.TList
 
 import scala.collection.{immutable, mutable}
 
@@ -70,8 +69,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
 
-
-
   ///
   def requiredTemplates(v: RawTypeDef): Seq[RawGenericRef] = {
     v match {
@@ -93,7 +90,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
               requiredTemplates(a.nested)
           }
 
-      case n: RawTypeDef.NewType =>
+      case _: RawTypeDef.NewType =>
         Seq.empty
 
       case t: RawTypeDef.Template =>
@@ -108,7 +105,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       case _: RawTypeDef.ForeignType =>
         Seq.empty
 
-      case i: RawTypeDef.Instance =>
+      case _: RawTypeDef.Instance =>
         Seq.empty
     }
   }
@@ -163,31 +160,35 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
-  private val missingRefs = mutable.LinkedHashSet[RefToTLTLink]()
+  private val missingRefs = mutable.ArrayBuffer[RefToTLTLink]()
 
   override def require(ref: RefToTLTLink): Unit = {
+    //    println(s"Registered ref: ${ref}")
     missingRefs += ref
   }
 
-  def instantiateMissingGenerics(): Either[List[BuilderFail], List[Unit]] = {
-    val all = freezeTypes().map(_.id).toSet
-    val ret = missingRefs.filterNot(r => all.contains(r.target)).map {
-      mg =>
-        val instantiated = makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
-//        instantiated.right.get.foreach {
-//          i =>
-//            println(s"Instantiated missing generic: $i")
-//        }
-        registerTypes(instantiated)
-    }.toSeq
+  def instantiateMissingGenerics(): Either[List[BuilderFail], Unit] = {
+    //val all = freezeTypes() //.map(_.id).toSet
     import results._
-    ret.biAggregate
+
+    val toCreate = missingRefs //.filterNot(r => all.get() .contains(r.target))
+    val ret = toCreate
+      .map {
+        mg =>
+          makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
+        //        instantiated.right.get.foreach {
+        //          i =>
+        //            println(s"Instantiated missing generic: ${i.id.name}")
+        //        }
+
+      }.biFlatAggregate
+
+    registerTypes(ret)
   }
 
   private def freezeTypes(): List[IzType] = {
     Ts2Builder.this.types.values.map(_.member).toList
   }
-
 
 
   private def makeVerifier(): TsVerifier = {
@@ -213,19 +214,46 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
+  private def checkSanity(maybeTypes: List[IzType]): Either[List[BuilderFail], Unit] = {
+    for {
+      typesToRegister <- Right(maybeTypes)
+      toRegister = typesToRegister.groupBy(_.id).mapValues(_.toSet)
+      badRegistrations = toRegister.filter(_._2.size > 1)
+      _ <- if (badRegistrations.nonEmpty) {
+        Left(List(TypesAlreadyRegistered(badRegistrations.keySet.map(_.name))))
+      } else {
+        Right(())
+      }
+      conflicts = toRegister.mapValues(_.head).filter {
+        case (id, tpe) =>
+          val maybeOp = types.get(id)
+          maybeOp.nonEmpty && !maybeOp.exists(_.member == tpe)
+      }
+      _ <- if (conflicts .nonEmpty) {
+        Left(List(TypesAlreadyRegistered(conflicts.keySet.map(_.name))))
+      } else {
+        Right(())
+      }
+    } yield {
+    }
+  }
   private def registerTypes(maybeTypes: Either[List[BuilderFail], List[IzType]]): Either[List[BuilderFail], Unit] = {
     for {
       typesToRegister <- maybeTypes
       verifier = makeVerifier()
       _ <- verifier.prevalidateTypes(typesToRegister)
+      _ <- checkSanity(typesToRegister)
     } yield {
       typesToRegister.foreach {
         product =>
-          types.put(product.id, makeMember(product))
+          types.put(product.id, makeMember(product)) match {
+            case Some(value) if value.member != product =>
+              throw new IllegalStateException(s"Unexpected problem: sanity check failed for product $product != $value")
+            case _ =>
+          }
       }
     }
   }
-
 
   private def isOwn(id: IzTypeId): Boolean = {
     id match {

@@ -17,10 +17,12 @@ type M4 = M0[i08, M0[str, map[str, str]] %StrangeStructure ] // an implicit inst
 
 mixin M5 {
   f: M0[i08, tsz]
+  f1: M0[i08, tsz]
 }
 
 mixin M6 {
-  f: M0[i08, tsz] %StrangeStructure2
+  f: M0[i08, str] %StrangeStructure2
+  f1: M0[i08, i08] %StrangeStructure3
 }
 
 /*template [A, B] mixin MX {

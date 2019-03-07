@@ -115,9 +115,9 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   def refToTopLevelRef(id: IzTypeReference): IzTypeReference = {
     resolvers.refToTopId2(id) match {
       case s: IzTypeReference.Scalar =>
-
         (id, s.id) match {
           case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
+            //println(s"original: $id")
             refRecorder.require(RefToTLTLink(g, sid))
           case _ =>
         }

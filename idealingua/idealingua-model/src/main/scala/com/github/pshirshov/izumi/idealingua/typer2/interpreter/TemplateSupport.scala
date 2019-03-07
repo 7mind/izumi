@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn, RawTypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.WarnLogger
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, Generic}
@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results.TList
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 class TemplateSupport(
                        contextProducer: ContextProducer,
@@ -88,19 +88,19 @@ class TemplateSupport(
   }
 
   private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
-    def toRawNonGeneric(g: IzTypeId): RawNongenericRef = {
-      g match {
-        case IzTypeId.BuiltinType(name) =>
-          RawNongenericRef(Seq.empty, name.name)
-        case IzTypeId.UserType(prefix, name) =>
-          prefix match {
-            case TypePrefix.UserTLT(location) =>
-              RawNongenericRef(location.path.map(_.name), name.name)
-            case t: TypePrefix.UserT =>
-              fail(s"type $t expected to be a top level one")
-          }
-      }
-    }
+//    def toRawNonGeneric(g: IzTypeId): RawNongenericRef = {
+//      g match {
+//        case IzTypeId.BuiltinType(name) =>
+//          RawNongenericRef(Seq.empty, name.name)
+//        case IzTypeId.UserType(prefix, name) =>
+//          prefix match {
+//            case TypePrefix.UserTLT(location) =>
+//              RawNongenericRef(location.path.map(_.name), name.name)
+//            case t: TypePrefix.UserT =>
+//              fail(s"type $t expected to be a top level one")
+//          }
+//      }
+//    }
 
     targs
       .map {
@@ -109,7 +109,7 @@ class TemplateSupport(
             case ref: IzTypeReference.Scalar =>
               ref
 
-            case ref@IzTypeReference.Generic(tid, args, adhocName) =>
+            case ref@IzTypeReference.Generic(tid, _, _) =>
               context.types(tid).member match {
                 case generic: Generic =>
                   generic match {
@@ -121,32 +121,32 @@ class TemplateSupport(
                       val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
                       if (!ephemerals.contains(ephemeralId)) {
-                        val refArgs: immutable.Seq[IzTypeId] = args.map {
-                          arg =>
-                            arg.value.ref match {
-                              case IzTypeReference.Scalar(aid) =>
-                                aid
-
-                              case ref1@IzTypeReference.Generic(aid, aargs, adhocName1) =>
-                                val g1 = context.types(aid).member match {
-                                  case generic: Generic =>
-                                    generic
-                                  case o =>
-                                    fail(s"$aid must not point to generic, but we got $o")
-                                }
-
-                                assert(g.args.size == aargs.size)
-                                val zaargs = g.args.zip(aargs)
-
-                                instantiateArgs(ephemerals, m)(zaargs)
-
-                                val tmpName1: RawDeclaredTypeName = genericName(ref1, g1, i2.meta(m))
-                                val ephemeralId1: IzTypeId = resolvers.nameToId(tmpName1, Seq.empty)
-                                ephemeralId1
-
-                            }
-                        }
-                          .toList
+//                        val refArgs: immutable.Seq[IzTypeId] = args.map {
+//                          arg =>
+//                            arg.value.ref match {
+//                              case IzTypeReference.Scalar(aid) =>
+//                                aid
+//
+//                              case ref1@IzTypeReference.Generic(aid, aargs, adhocName1) =>
+//                                val g1 = context.types(aid).member match {
+//                                  case generic: Generic =>
+//                                    generic
+//                                  case o =>
+//                                    fail(s"$aid must not point to generic, but we got $o")
+//                                }
+//
+//                                assert(g.args.size == aargs.size)
+//                                val zaargs = g.args.zip(aargs)
+//
+//                                instantiateArgs(ephemerals, m)(zaargs)
+//
+//                                val tmpName1: RawDeclaredTypeName = genericName(ref1, g1, i2.meta(m))
+//                                val ephemeralId1: IzTypeId = resolvers.nameToId(tmpName1, Seq.empty)
+//                                ephemeralId1
+//
+//                            }
+//                        }
+//                          .toList
 
 //                        val rawRef = toRawNonGeneric(g.id)
 //                        val rawRefArgs = refArgs.map(toRawNonGeneric).toList

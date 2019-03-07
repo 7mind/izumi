@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclare
 import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FName, FullField, NodeMeta}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 
 sealed trait T2Fail
@@ -36,8 +37,9 @@ object T2Fail {
 
   sealed trait BuilderFailWithMeta extends BuilderFail
 
+  final case class TypesAlreadyRegistered(tpe: Set[IzName]) extends BuilderFail
+
   final case class DependencyMissing(context: Operation, missing: Set[TypenameRef], blocked: TypenameRef) extends OperationFail
-  //final case class SingleDeclaredType(context: Operation, issue: RawTypeDef.DeclaredType, meta: NodeMeta) extends OperationFail with WithMeta
 
   final case class ConflictingFields(tpe: IzTypeId, conflicts: Map[FName, Seq[FullField]], meta: NodeMeta) extends BuilderFailWithMeta 
 
@@ -59,6 +61,7 @@ object T2Fail {
 
   final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict], meta: NodeMeta) extends VerificationFail
   final case class MissingTypespaceMembers(missingRefs: Map[IzTypeId, Set[IzTypeId]]) extends VerificationFail
+  final case class DuplicatedTypespaceMembers(missingRefs: Set[IzTypeId]) extends VerificationFail
   final case class UnresolvedGenericsInstancesLeft(badRefs: Map[IzTypeId, Set[RefToTLTLink]]) extends VerificationFail
 }
 
