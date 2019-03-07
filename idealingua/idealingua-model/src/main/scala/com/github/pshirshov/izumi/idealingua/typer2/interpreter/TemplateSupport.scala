@@ -2,14 +2,14 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.{TsProvider, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, Generic}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{TemplateArgumentClash, TemplateArgumentsCountMismatch, TemplatedExpected}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
-import com.github.pshirshov.izumi.idealingua.typer2.results.TList
+import com.github.pshirshov.izumi.idealingua.typer2.results._
+import com.github.pshirshov.izumi.idealingua.typer2.{TsProvider, WarnLogger}
 
 import scala.collection.mutable
 
@@ -79,8 +79,8 @@ class TemplateSupport(
 
       argsMap = tdef.args.zip(targs)
 
-      templateContext = instantiateArgs(ephemerals, meta)(argsMap)
-
+      templateContext <- instantiateArgs(ephemerals, meta)(argsMap)
+      isub = contextProducer.remake(ephemerals.toMap, context.copy(templateContext)).interpreter
 
       withFixedId = tdef.decl match {
         case i: RawTypeDef.Interface =>
@@ -90,63 +90,76 @@ class TemplateSupport(
         case a: RawTypeDef.Adt =>
           a.copy(id = id, meta = meta)
       }
-
-      isub = contextProducer.remake(ephemerals.toMap, context.copy(templateContext)).interpreter
       instance <- isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
     } yield {
       instance
     }
   }
 
-  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
-    import Tools._
+  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Either[List[BuilderFail], Map[IzTypeArgName, IzTypeReference]] = {
 
-    targs
+    val maybeArgValues = targs
       .map {
         case (name, arg) =>
-          val argt = arg.value.ref match {
+          val argt: Either[List[BuilderFail], IzTypeReference] = arg.value.ref match {
             case ref: IzTypeReference.Scalar =>
-              ref
+              Right(ref)
 
             case ref@IzTypeReference.Generic(tid, _, _) =>
               provider.freeze()(tid).member match {
                 case generic: Generic =>
                   generic match {
                     case _: IzType.BuiltinGeneric =>
-                      ref
+                      Right(ref)
 
                     case g =>
                       val tmpName: RawDeclaredTypeName = genericName(ref, g, i2.meta(m))
                       val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
-                      if (!ephemerals.contains(ephemeralId)) {
-                        val i = makeInstance(tmpName, ref, m, ephemerals)
-                        i match {
-                          case Left(value) =>
-                            fail(s"ephemeral instantiation failed: $value")
-                          case Right(value) =>
-                            value.foreach {
-                              v =>
-                                //println(s"registering instance ${v.id}")
-
-                                assert(!ephemerals.contains(v.id), s"BUG in generic machinery: ephemeral ${v.id} is already registered")
-                                ephemerals.put(v.id, ProcessedOp.Exported(v))
+                        for {
+                          _ <- if (!ephemerals.contains(ephemeralId)) {
+                            for {
+                              products <- makeInstance(tmpName, ref, m, ephemerals)
+                              _ <- products.map {
+                                i =>
+                                  ephemerals.get(i.id) match {
+                                    case Some(_) =>
+                                      Left(List(DuplicatedTypespaceMembers(Set(i.id))))
+                                    case None =>
+                                      ephemerals.put(i.id, ProcessedOp.Exported(i))
+                                      Right(())
+                                  }
+                              }.biAggregate
+                            } yield {
 
                             }
-
+                          } else {
+                            Right(())
+                          }
+                        } yield {
+                          IzTypeReference.Scalar(ephemeralId)
                         }
-                      }
 
-                      IzTypeReference.Scalar(ephemeralId)
+
                   }
                 case o =>
-                  fail(s"reference $ref must point to generic, but we got $o")
+                  Left(List(GenericExpected(ref, o)))
               }
           }
 
-          name -> argt
+          argt
+            .map {
+              value =>
+                name -> value
+
+            }
       }
-      .toMap
+
+    for {
+      args <- maybeArgValues.biAggregate
+    } yield {
+      args.toMap
+    }
   }
 
   private def genericName(ref: IzTypeReference.Generic, g: Generic, meta: NodeMeta): RawDeclaredTypeName = {

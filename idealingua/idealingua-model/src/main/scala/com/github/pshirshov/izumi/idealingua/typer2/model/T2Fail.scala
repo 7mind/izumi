@@ -50,6 +50,7 @@ object T2Fail {
   final case class TemplateArgumentClash(tpe: IzTypeId, clashed: Set[IzTypeArgName]) extends BuilderFail
   final case class TemplatedExpected(reference: IzTypeReference, got: IzType) extends BuilderFail
   final case class TemplateArgumentsCountMismatch(tpe: IzTypeId, expected: Int, got: Int) extends BuilderFail
+  final case class GenericExpected(reference: IzTypeReference.Generic, got: IzType) extends BuilderFail
 
   final case class CannotApplyTypeModifiers(tpe: IzTypeId, problematic: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
 

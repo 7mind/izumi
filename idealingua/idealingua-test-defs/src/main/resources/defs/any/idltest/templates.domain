@@ -12,7 +12,7 @@ template [A, B] mixin M0 {
 type M1 = M0[str, i08]
 type M2 = M0[i08, M0[str, str]] // an implicit instance of M0[str, str] with crappy name will appear in typespace
 type M3 = M0[i08, M0[str, map[str, str]]] // an implicit instance of M0[str, map[str, str]] with crappy name will appear in typespace
-type M4 = M0[i08, M0[str, map[str, str]] %StrangeStructure ] // an implicit instance of M0[str, map[str, str]] will have name `StrangeStructure`
+type M4 = M0[i08, M0[str, map[str, str]] @StrangeStructure ] // an implicit instance of M0[str, map[str, str]] will have name `StrangeStructure`
 
 
 mixin M5 {
@@ -20,12 +20,13 @@ mixin M5 {
   f1: M0[i08, tsz]
 }
 
+
 mixin M6 {
-  f10: M0[i08, str] %StrangeStructure2
-  f11: M0[i08, str] %StrangeStructure2
+  f10: M0[i08, str] @StrangeStructure2
+  f11: M0[i08, str] @StrangeStructure2
   f12: M0[i08, str]
 
-  f21: M0[i08, i08] %StrangeStructure3
+  f21: M0[i08, i08] @StrangeStructure3
 }
 
 // ultimate case of template inheritance
@@ -51,6 +52,7 @@ type TInh3 = TInh1[str, map[str, str]]
 // adts
 
 template [A] adt Result {
+    //M0[str, str] @HuiPizda as BranchName
     data Success {
         value: A
     }
