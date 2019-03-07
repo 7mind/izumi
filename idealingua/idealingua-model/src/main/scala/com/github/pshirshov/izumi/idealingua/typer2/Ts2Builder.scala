@@ -3,8 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawNodeMeta
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
@@ -58,10 +57,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         }
 
         val interpreter = makeInterpreter(dindex).interpreter
-        //        val refs = requiredTemplates(single.main.defn.defn)
-        //        if (refs.nonEmpty) {
-        //          println(refs)
-        //        }
 
         val product = interpreter.dispatch(single.main.defn)
         register(ops, product)
@@ -74,57 +69,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
             add(value)
         }
     }
-  }
-
-
-  ///
-  def requiredTemplates(v: RawTypeDef): Seq[RawGenericRef] = {
-    v match {
-      case t: RawTypeDef.Interface =>
-        trefs(t.struct)
-
-      case t: RawTypeDef.DTO =>
-        trefs(t.struct)
-
-      case t: RawTypeDef.Alias =>
-        collectGenericRefs(List(t.target))
-
-      case t: RawTypeDef.Adt =>
-        t.alternatives
-          .flatMap {
-            case a: Member.TypeRef =>
-              collectGenericRefs(List(a.typeId))
-            case a: Member.NestedDefn =>
-              requiredTemplates(a.nested)
-          }
-
-      case _: RawTypeDef.NewType =>
-        Seq.empty
-
-      case t: RawTypeDef.Template =>
-        requiredTemplates(t.decl)
-
-      case _: RawTypeDef.Enumeration =>
-        Seq.empty
-
-      case _: RawTypeDef.Identifier =>
-        Seq.empty
-
-      case _: RawTypeDef.ForeignType =>
-        Seq.empty
-
-      case _: RawTypeDef.Instance =>
-        Seq.empty
-    }
-  }
-
-  private def trefs(struct: RawStructure): Seq[RawGenericRef] = {
-    val allRefs = struct.interfaces ++ struct.concepts ++ struct.removedConcepts ++ struct.fields.map(_.typeId)
-    collectGenericRefs(allRefs)
-  }
-
-  private def collectGenericRefs(allRefs: List[RawRef]): immutable.Seq[RawGenericRef] = {
-    allRefs.collect({ case ref: RawGenericRef => ref })
   }
 
   def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
@@ -181,11 +125,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       .map {
         mg =>
           makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
-        //        instantiated.right.get.foreach {
-        //          i =>
-        //            println(s"Instantiated missing generic: ${i.id.name}")
-        //        }
-
       }
       .toList
       .biFlatAggregate

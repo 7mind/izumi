@@ -36,14 +36,7 @@ class TemplateSupport(
     val ctxInstances = mutable.HashMap[IzTypeId, ProcessedOp]()
     val ref = resolvers.resolve(v.source)
 
-    val out = makeInstance(v.id, ref, v.meta, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
-    //    out.foreach {
-    //      i =>
-    //        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    //        println(s"Done: ${v.id}= ${v.source}: ${i.niceList()}")
-    //        println()
-    //    }
-    out
+    makeInstance(v.id, ref, v.meta, ctxInstances).map(i => i ++ ctxInstances.values.map(_.member))
   }
 
 
@@ -89,20 +82,6 @@ class TemplateSupport(
   }
 
   private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Map[IzTypeArgName, IzTypeReference] = {
-//    def toRawNonGeneric(g: IzTypeId): RawNongenericRef = {
-//      g match {
-//        case IzTypeId.BuiltinType(name) =>
-//          RawNongenericRef(Seq.empty, name.name)
-//        case IzTypeId.UserType(prefix, name) =>
-//          prefix match {
-//            case TypePrefix.UserTLT(location) =>
-//              RawNongenericRef(location.path.map(_.name), name.name)
-//            case t: TypePrefix.UserT =>
-//              fail(s"type $t expected to be a top level one")
-//          }
-//      }
-//    }
-
     targs
       .map {
         case (name, arg) =>
@@ -122,38 +101,6 @@ class TemplateSupport(
                       val ephemeralId: IzTypeId = resolvers.nameToId(tmpName, Seq.empty)
 
                       if (!ephemerals.contains(ephemeralId)) {
-//                        val refArgs: immutable.Seq[IzTypeId] = args.map {
-//                          arg =>
-//                            arg.value.ref match {
-//                              case IzTypeReference.Scalar(aid) =>
-//                                aid
-//
-//                              case ref1@IzTypeReference.Generic(aid, aargs, adhocName1) =>
-//                                val g1 = context.types(aid).member match {
-//                                  case generic: Generic =>
-//                                    generic
-//                                  case o =>
-//                                    fail(s"$aid must not point to generic, but we got $o")
-//                                }
-//
-//                                assert(g.args.size == aargs.size)
-//                                val zaargs = g.args.zip(aargs)
-//
-//                                instantiateArgs(ephemerals, m)(zaargs)
-//
-//                                val tmpName1: RawDeclaredTypeName = genericName(ref1, g1, i2.meta(m))
-//                                val ephemeralId1: IzTypeId = resolvers.nameToId(tmpName1, Seq.empty)
-//                                ephemeralId1
-//
-//                            }
-//                        }
-//                          .toList
-
-//                        val rawRef = toRawNonGeneric(g.id)
-//                        val rawRefArgs = refArgs.map(toRawNonGeneric).toList
-//                        val rawGenericRef = RawGenericRef(rawRef.pkg, rawRef.name, rawRefArgs, None)
-//                        val i = makeInstance(RawTypeDef.Instance(tmpName, rawGenericRef, m), ephemerals)
-
                         val i = makeInstance(tmpName, ref, m, ephemerals)
                         i match {
                           case Left(value) =>

@@ -28,9 +28,16 @@ mixin M6 {
   f21: M0[i08, i08] %StrangeStructure3
 }
 
+// ultimate case of template inheritance
+
+template [A, B] mixin TInh0 {
+  _: A
+  _: B
+  mapping: map[A, B]
+}
 
 template [A, B] mixin TInh1 {
-    //+ M0[B, A]
+    + TInh0[B, A]
     f1: A
     f2: B
 }
