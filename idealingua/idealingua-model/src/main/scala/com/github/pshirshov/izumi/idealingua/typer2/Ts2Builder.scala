@@ -174,6 +174,10 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     val ret = missingRefs.filterNot(r => all.contains(r.target)).map {
       mg =>
         val instantiated = makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
+//        instantiated.right.get.foreach {
+//          i =>
+//            println(s"Instantiated missing generic: $i")
+//        }
         registerTypes(instantiated)
     }.toSeq
     import results._

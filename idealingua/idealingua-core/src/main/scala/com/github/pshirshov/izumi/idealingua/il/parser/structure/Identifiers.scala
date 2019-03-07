@@ -47,7 +47,7 @@ trait Identifiers extends Separators {
       RawTemplateWithArg(id.name, args.toList)
   }
 
-  def typeReference[_: P]: P[RawRef] = P(inline ~ typename ~ inline ~ typeArguments.? ~ (inline ~ "@" ~ symbol).? ~ inline)
+  def typeReference[_: P]: P[RawRef] = P(inline ~ typename ~ inline ~ typeArguments.? ~ (inline ~ "%" ~ symbol).? ~ inline)
     .map {
       case (tn, args, adhocName) =>
         args match {
