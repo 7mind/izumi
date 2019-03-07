@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedOpException}
+import com.github.pshirshov.izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, SanityCheckFailedException, UnsupportedOpException}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan._
@@ -124,11 +124,17 @@ class PlanMergingPolicyDefaultImpl
       }
     }
 
-    val sortedKeys = toposort.cycleBreaking(
+    val sortedKeys = new Toposort().cycleBreaking(
       topology.dependencies.graph
       , Seq.empty
       , break
-    )
+    ) match {
+      case Left(value) =>
+        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")
+
+      case Right(value) =>
+        value
+    }
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 

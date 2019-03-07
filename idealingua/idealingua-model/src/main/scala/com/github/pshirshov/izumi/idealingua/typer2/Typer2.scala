@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.fundamentals.graphs
+import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TypeDefn}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawTopLevelDefn, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
@@ -44,8 +44,7 @@ class Typer2(defn: DomainMeshResolved) {
         .map(_.toMap)
       allOperations <- combineOperations(index, importedIndexes)
       groupedByType <- groupOps(allOperations)
-      deps = groupedByType.mapValues(_.depends)
-      ordered <- orderOps(deps)
+      ordered <- orderOps(groupedByType)
       typespace <- fill(index, importedIndexes, groupedByType, ordered)
     } yield {
       typespace
@@ -194,18 +193,50 @@ class Typer2(defn: DomainMeshResolved) {
       .biAggregate.map(_.toMap)
   }
 
-  private def orderOps(deps: Map[TypenameRef, Set[TypenameRef]]): Either[List[CircularDependenciesDetected], Seq[TypenameRef]] = {
+  private def orderOps(groupedByType: Map[TypenameRef, UniqueOperation]): Either[List[T2Fail], Seq[TypenameRef]] = {
+
     val circulars = new mutable.ArrayBuffer[Set[TypenameRef]]()
-    val ordered = graphs.toposort.cycleBreaking(deps, Seq.empty, (circular: Set[TypenameRef]) => {
+
+    def resolver(circular: Set[TypenameRef]): TypenameRef = {
       circulars.append(circular)
       circular.head
-    })
-
-    if (circulars.nonEmpty) {
-      Left(List(CircularDependenciesDetected(circulars.toList)))
-    } else {
-      Right(ordered)
     }
+
+
+    val deps = groupedByType.mapValues(_.depends)
+
+    for {
+      ordered <- new Toposort().cycleBreaking(deps, Seq.empty, resolver)
+        .left.map {
+        f =>
+          val existing = deps.keySet
+          val problematic = f.issues.values.flatten.toSet
+          val problems = problematic.diff(existing)
+          problems
+            .map {
+
+              p =>
+                val locations = groupedByType.values.filter(_.depends.contains(p)).collect({
+                  case DefineType(id, _, main) =>
+                    id -> main.defn.defn.meta.position
+                }).groupBy(_._1).mapValues(_.map(_._2).toSeq)
+
+                MissingType(p, locations)
+
+            }
+            .toList
+      }
+
+      verified <- if (circulars.nonEmpty) {
+        Left(List(CircularDependenciesDetected(circulars.toList)))
+      } else {
+        Right(ordered)
+      }
+    } yield {
+      verified
+    }
+
+
   }
 }
 

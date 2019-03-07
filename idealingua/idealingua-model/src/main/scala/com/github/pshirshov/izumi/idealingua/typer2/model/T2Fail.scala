@@ -23,6 +23,7 @@ object T2Fail {
   final case class CircularDependenciesDetected(loops: List[Set[TypenameRef]]) extends T2Fail
 
   final case class NameConflict(problem: TypenameRef) extends T2Fail
+  final case class MissingType(problem: TypenameRef, locations: Map[TypenameRef, Seq[InputPosition]]) extends T2Fail
   final case class ConflictingImports(conflicts: Map[String, Set[GoodImport]]) extends T2Fail
 
 
