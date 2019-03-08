@@ -144,8 +144,8 @@ object CommandlineIDLCompiler {
     val itarget = target.resolve(langId)
     log.log(s"Preparing typespace for $langId")
     val toCompile = Timed {
-      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
-      new ModelResolver(rules)
+//      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
+      new ModelResolver()
         .resolve(loaded.value, runt2 = false)
         .ifWarnings {
           message =>

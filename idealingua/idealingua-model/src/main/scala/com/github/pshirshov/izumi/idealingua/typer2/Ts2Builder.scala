@@ -111,6 +111,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       _ <- verifier.validateTypespace(allTypes)
     } yield {
       Typespace2(
+        index.defn.id,
+        index.defn.imports,
         warnings.toList,
         Set.empty,
         this.types.values.toList,

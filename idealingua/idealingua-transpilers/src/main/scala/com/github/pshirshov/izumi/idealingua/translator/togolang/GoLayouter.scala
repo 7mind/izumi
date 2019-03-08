@@ -13,7 +13,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
     val modules = outputs.flatMap {
       out =>
-        out.modules.map(m => ExtendedModule.DomainModule(out.typespace.domain.id, m))
+        out.modules.map(m => ExtendedModule.DomainModule(out.typespace.domainId, m))
     }
     val rtModules = toRuntimeModules(options)
 

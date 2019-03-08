@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, kw, sep}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
+import com.github.pshirshov.izumi.idealingua.model.common.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._

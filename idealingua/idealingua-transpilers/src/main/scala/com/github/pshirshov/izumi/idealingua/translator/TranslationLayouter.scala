@@ -38,7 +38,7 @@ trait TranslationLayouter {
       g <- generated
       m <- g.modules
     } yield {
-      ExtendedModule.DomainModule(g.typespace.domain.id, m)
+      ExtendedModule.DomainModule(g.typespace.domainId, m)
     }
   }
 

@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, Pos
 
 object DuplicateDomainsRule extends GlobalVerificationRule {
   override def check(successful: Seq[LoadedDomain.Success]): IDLDiagnostics = {
-    val duplicates: Map[DomainId, Seq[FSPath]] = successful.map(s => s.typespace.domain.id -> s.path).groupBy(_._1).filter(_._2.size > 1).mapValues(_.map(_._2))
+    val duplicates: Map[DomainId, Seq[FSPath]] = successful.map(s => s.typespace.domainId -> s.path).groupBy(_._1).filter(_._2.size > 1).mapValues(_.map(_._2))
 
     if (duplicates.isEmpty) {
       IDLDiagnostics.empty

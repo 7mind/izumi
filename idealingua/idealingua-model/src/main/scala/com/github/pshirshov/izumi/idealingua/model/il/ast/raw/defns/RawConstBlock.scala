@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
+import com.github.pshirshov.izumi.idealingua.model.common.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
 final case class RawConstBlock(consts: List[RawConst])

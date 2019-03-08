@@ -3,10 +3,6 @@ package com.github.pshirshov.izumi.idealingua.translator
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 
 import scala.reflect.ClassTag
 
@@ -51,10 +47,10 @@ final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
 ) extends AbstractCompilerOptions[E, M]
 
 object CompilerOptions {
-  type TypescriptTranslatorOptions = CompilerOptions[TypeScriptTranslatorExtension, TypeScriptBuildManifest]
-  type GoTranslatorOptions = CompilerOptions[GoLangTranslatorExtension, GoLangBuildManifest]
-  type CSharpTranslatorOptions = CompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]
-  type ScalaTranslatorOptions = CompilerOptions[ScalaTranslatorExtension, ScalaBuildManifest]
+  type TypescriptTranslatorOptions = CompilerOptions[Nothing, TypeScriptBuildManifest]
+  type GoTranslatorOptions = CompilerOptions[Nothing, GoLangBuildManifest]
+  type CSharpTranslatorOptions = CompilerOptions[Nothing, CSharpBuildManifest]
+  type ScalaTranslatorOptions = CompilerOptions[Nothing, ScalaBuildManifest]
 
   def from[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
     val extensions = options.extensions.collect {

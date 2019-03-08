@@ -406,7 +406,7 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
-  .settings(libraryDependencies ++= (R.scalameta +: R.circe).map(_.cross(platformDepsCrossVersion.value)))
+  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,
