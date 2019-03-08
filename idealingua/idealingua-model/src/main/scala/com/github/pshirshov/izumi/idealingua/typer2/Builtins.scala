@@ -33,6 +33,7 @@ object Builtins extends TypePlane {
     TTsU,
     TTime,
     TDate,
+    TErr,
   )
 
   private lazy val generics: Seq[IzType.BuiltinGeneric] = Seq(

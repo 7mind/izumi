@@ -218,13 +218,13 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
           }
       }.biAggregate
 
-      parentFields <- parents.map(structFields(id, tmeta)).biFlatAggregate.map(addLevel)
-      conceptFieldsAdded <- conceptsAdded.map(structFields(id, tmeta)).biFlatAggregate.map(addLevel)
+      parentFields <- parents.map(structFields(id, tmeta, asConcept = false)).biFlatAggregate.map(addLevel)
+      conceptFieldsAdded <- conceptsAdded.map(structFields(id, tmeta, asConcept = true)).biFlatAggregate.map(addLevel)
       /* all the concept fields will be removed
         in case we have `D {- Concept} extends C {+ conceptField: type} extends B { - conceptField: type } extends A { + Concept }` and
         conceptField will be removed from D too
        */
-      conceptFieldsRemoved <- conceptsRemoved.map(structFields(id, tmeta)).biFlatAggregate.map(_.map(_.basic))
+      conceptFieldsRemoved <- conceptsRemoved.map(structFields(id, tmeta, asConcept = true)).biFlatAggregate.map(_.map(_.basic))
       allRemovals = (conceptFieldsRemoved ++ removedFields).toSet
       allAddedFields = parentFields ++ conceptFieldsAdded ++ localFields
       nothingToRemove = allRemovals -- allAddedFields.map(_.basic).toSet
@@ -264,7 +264,8 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
             case g: IzTypeReference.Generic =>
               Left(List(ParentCannotBeGeneric(context, g, meta)))
           }
-
+        case e: IzType.BuiltinScalar.TErr.type =>
+          Right(Set(e.id : IzTypeId))
         case o =>
           Left(List(ParentTypeExpectedToBeStructure(context, o.id, meta)))
       }
@@ -330,18 +331,24 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
     FName(f.name.getOrElse(default).uncapitalize)
   }
 
-  private def structFields(context: IzTypeId, meta: NodeMeta)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]] = {
+  private def structFields(context: IzTypeId, meta: NodeMeta, asConcept: Boolean)(tpe: IzType): Either[List[BuilderFail], Seq[FullField]] = {
     tpe match {
       case a: IzAlias =>
         a.source match {
           case IzTypeReference.Scalar(id) =>
-            structFields(context, meta)(provider.freeze()(id).member)
+            structFields(context, meta, asConcept)(provider.freeze()(id).member)
           case g: IzTypeReference.Generic =>
             Left(List(ParentCannotBeGeneric(context, g, meta)))
         }
 
       case structure: IzStructure =>
         Right(structure.fields)
+      case e: IzType.BuiltinScalar.TErr.type =>
+        if (!asConcept) {
+          Right(Seq.empty)
+        } else {
+          Left(List(ErrorMarkerCannotBeUsedAsConcept(context, e.id, meta)))
+        }
       case o =>
         Left(List(ParentTypeExpectedToBeStructure(context, o.id, meta)))
     }

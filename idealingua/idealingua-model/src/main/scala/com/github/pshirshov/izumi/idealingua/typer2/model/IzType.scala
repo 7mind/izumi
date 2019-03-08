@@ -97,6 +97,7 @@ object IzType {
     final case object TTsU extends BuiltinScalar("tsu", "datetimeu", "dtu")
     final case object TTime extends BuiltinScalar("time")
     final case object TDate extends BuiltinScalar("date")
+    final case object TErr extends BuiltinScalar("err", "error")
   }
 
   sealed class BuiltinGeneric(val args: Seq[IzTypeArgName], val names: IzName*) extends Generic with BuiltinType {
