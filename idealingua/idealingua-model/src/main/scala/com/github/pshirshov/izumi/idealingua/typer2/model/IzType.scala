@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawAdt, RawStructure}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.WithTemplating
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
@@ -109,6 +109,7 @@ object IzType {
     final case object TSet extends BuiltinGeneric(Seq(IzTypeArgName("T")), "set")
     final case object TOption extends BuiltinGeneric(Seq(IzTypeArgName("T")), "opt", "option")
     final case object TMap extends BuiltinGeneric(Seq(IzTypeArgName("K"), IzTypeArgName("V")), "map", "dict")
+    final case object TEither extends BuiltinGeneric(Seq(IzTypeArgName("L"), IzTypeArgName("R")), "either")
   }
 
 }

@@ -91,7 +91,7 @@ mixin AllTypes {
   enumMap : map[GoAliasEnumTest, str]
   option  : opt[AllTypes]
   selfSet : set[AllTypes]
-
+  either  : either[i08, str]
 
   optionDate: opt[tsl]
   optionTime: opt[time]

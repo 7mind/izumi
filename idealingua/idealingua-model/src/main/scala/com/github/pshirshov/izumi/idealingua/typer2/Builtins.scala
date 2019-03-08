@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TypenameRef
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId}
 
@@ -40,7 +39,8 @@ object Builtins extends TypePlane {
     TList,
     TMap,
     TOption,
-    TSet
+    TSet,
+    TEither,
   )
 
   private lazy val all: Seq[IzType.BuiltinType] = scalars ++ generics
