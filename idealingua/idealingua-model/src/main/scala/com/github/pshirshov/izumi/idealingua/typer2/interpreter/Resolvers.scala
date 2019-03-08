@@ -21,9 +21,8 @@ trait Resolvers {
 
 class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resolvers {
   def nameToId(id: RawDeclaredTypeName, subpath: Seq[IzNamespace]): IzTypeId = {
-    val namespace = subpath
     val unresolvedName = index.resolveTopLeveleName(id)
-    index.toId(namespace, unresolvedName)
+    index.toId(subpath, unresolvedName)
   }
 
   def resolve(id: RawRef): IzTypeReference = {

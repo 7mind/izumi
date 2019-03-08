@@ -17,19 +17,33 @@ import scala.reflect.ClassTag
 
 
 trait TypedefSupport {
-  def makeForeign(v: RawTypeDef.ForeignType): TSingle
-
+  //
   def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier]
+
+  def makeIdentifier(id: IzTypeId, i: RawTypeDef.Identifier): TSingleT[IzType.Identifier]
+
+  //
+  def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias]
+
+  def makeAlias(id: IzTypeId, a: RawTypeDef.Alias): TSingleT[IzType.IzAlias]
+
+  //
+  def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
+
+  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration): TSingle
+
+
+  def makeInterface(id: IzTypeId, i: RawTypeDef.Interface): TSingle
 
   def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle
 
+  //
+  def makeDto(id: IzTypeId, i: RawTypeDef.DTO): TSingle
+
   def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle
 
-  def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias]
-
-  def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
-
-  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
+  //
+  def makeForeign(v: RawTypeDef.ForeignType): TSingle
 
   def meta(meta: RawNodeMeta): NodeMeta
 
@@ -60,8 +74,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
   def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
-    val id = resolvers.nameToId(i.id, subpath)
+    makeIdentifier(resolvers.nameToId(i.id, subpath), i)
+  }
 
+  def makeIdentifier(id: IzTypeId, i: RawTypeDef.Identifier): TSingleT[IzType.Identifier] = {
     for {
       fields <- i.fields.zipWithIndex.map {
         case (f, idx) =>
@@ -77,10 +93,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
-    makeEnum(resolvers.nameToId(e.id, subpath), e, subpath)
+    makeEnum(resolvers.nameToId(e.id, subpath), e)
   }
 
-  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
+  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration): TSingle = {
     val tmeta = meta(e.meta)
 
     for {
@@ -104,22 +120,30 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
-  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
+  def makeInterface(id: IzTypeId, i: RawTypeDef.Interface): TSingle = {
     val struct = i.struct
-    val id = resolvers.nameToId(i.id, subpath)
     make[IzType.Interface](struct, id, i.meta)
   }
 
+  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
+    makeInterface(resolvers.nameToId(i.id, subpath), i)
+  }
 
-  def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
+
+  def makeDto(id: IzTypeId, i: RawTypeDef.DTO): TSingle = {
     val struct = i.struct
-    val id = resolvers.nameToId(i.id, subpath)
     make[IzType.DTO](struct, id, i.meta)
+  }
+  def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle = {
+    makeDto(resolvers.nameToId(i.id, subpath), i)
   }
 
 
   def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias] = {
-    val id = resolvers.nameToId(a.id, subpath)
+    makeAlias(resolvers.nameToId(a.id, subpath), a)
+  }
+
+  def makeAlias(id: IzTypeId, a: RawTypeDef.Alias): TSingleT[IzType.IzAlias] = {
     Right(IzAlias(id, resolvers.resolve(a.target), meta(a.meta)))
   }
 

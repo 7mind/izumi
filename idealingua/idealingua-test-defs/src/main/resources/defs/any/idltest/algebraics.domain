@@ -71,11 +71,21 @@ adt Nested {
     alias A1 = str
 }
 
-mixin AdtContract {
- shared: str
+adt Nested2 {
+    mixin M1 {
+
+    }
+
+    data D1 {
+
+    }
 }
 
-adt Nested1 with {
+mixin AdtContract {
+    shared: str
+}
+
+adt NestedC1 with {
     /*
         this  block will be added directly into nested structures and turn
         referenced members into nested structures with additional field `value`
@@ -87,11 +97,12 @@ adt Nested1 with {
     }
 
     data D1 {
-
     }
+
 }
 
-adt Nested2 with {
+
+adt NestedC2 with {
     /*
         this  block will be added directly into nested structures and turn
         referenced members into nested structures with additional field `value`
