@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawAdt, RawStructure}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.WithTemplating
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
@@ -53,7 +53,7 @@ object IzType {
   final case class DTO(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
   final case class Interface(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
 
-  final case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta) extends IzType with WithTemplateSupport
+  final case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta, contractDefn: Option[RawStructure]) extends IzType with WithTemplateSupport
 
   final case class IzAlias(id: IzTypeId, source: IzTypeReference, meta: NodeMeta) extends IzType
   final case class Identifier(id: IzTypeId, fields: Seq[FullField], meta: NodeMeta) extends IzType

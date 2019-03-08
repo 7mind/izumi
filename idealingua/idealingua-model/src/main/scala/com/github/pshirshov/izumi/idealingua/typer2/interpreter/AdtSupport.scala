@@ -1,7 +1,9 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
+import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.Adt
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
@@ -25,62 +27,185 @@ class AdtSupport(
     val id = resolvers.nameToId(a.id, subpath)
 
     for {
-      members <- a.alternatives.map(mapMember(id, subpath)).biAggregate
+      members <- a.alternatives.map(mapMember(id, subpath)(a.contract, _)).biAggregate
       adtMembers = members.map(_.member)
       associatedTypes = members.flatMap(_.additional)
     } yield {
-      Chain(Adt(id, adtMembers, i2.meta(a.meta)), associatedTypes)
+      Chain(Adt(id, adtMembers, i2.meta(a.meta), a.contract), associatedTypes)
     }
   }
 
-  def mapMember(context: IzTypeId, subpath: Seq[IzNamespace])(member: Member): Either[List[BuilderFail], AdtMemberProducts] = {
+  def mapMember(context: IzTypeId, subpath: Seq[IzNamespace])(contract: Option[RawStructure], member: Member): Either[List[BuilderFail], AdtMemberProducts] = {
+
+    contract match {
+      case Some(value) =>
+        merge(context, subpath, member, value)
+      case None =>
+        member match {
+          case refMember: Member.TypeRef =>
+            mapRefMember(context, refMember)
+
+          case nestedMember: Member.NestedDefn =>
+            mapNestedMember(subpath, nestedMember)
+        }
+    }
+  }
+
+  private def mapNestedMember(subpath: Seq[IzNamespace], nestedMember: Member.NestedDefn): Either[List[BuilderFail], AdtMemberProducts] = {
+    val nested = nestedMember.nested
+    for {
+      tpe <- nested match {
+        case n: RawTypeDef.Interface =>
+          i2.makeInterface(n, subpath).asChain
+        case n: RawTypeDef.DTO =>
+          i2.makeDto(n, subpath).asChain
+        case n: RawTypeDef.Enumeration =>
+          i2.makeEnum(n, subpath).asChain
+        case n: RawTypeDef.Alias =>
+          i2.makeAlias(n, subpath).asChain
+        case n: RawTypeDef.Identifier =>
+          i2.makeIdentifier(n, subpath).asChain
+        case n: RawTypeDef.Adt =>
+          makeAdt(n, subpath :+ IzNamespace(n.id.name))
+      }
+    } yield {
+      AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.main +: tpe.additional)
+    }
+  }
+
+  private def mapNestedMember2(subpath: Seq[IzNamespace], id: IzTypeId, nestedMember: Member.NestedDefn): Either[List[BuilderFail], AdtMemberProducts] = {
+    val nested = nestedMember.nested
+    for {
+      tpe <- nested match {
+        case n: RawTypeDef.Interface =>
+          i2.makeInterface(n, subpath).asChain
+        case n: RawTypeDef.DTO =>
+          i2.makeDto(n, subpath).asChain
+        case n: RawTypeDef.Enumeration =>
+          i2.makeEnum(n, subpath).asChain
+        case n: RawTypeDef.Alias =>
+          i2.makeAlias(n, subpath).asChain
+        case n: RawTypeDef.Identifier =>
+          i2.makeIdentifier(n, subpath).asChain
+        case n: RawTypeDef.Adt =>
+          makeAdt(n, subpath :+ IzNamespace(n.id.name))
+      }
+    } yield {
+      AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.main +: tpe.additional)
+    }
+  }
+
+
+  private def merge(context: IzTypeId, subpath: Seq[IzNamespace], member: Member, value: RawStructure): Either[List[BuilderFail], AdtMemberProducts] = {
     member match {
-      case Member.TypeRef(typeId, memberName, m) =>
-        val tpe = resolvers.resolve(typeId)
+      case ref: Member.TypeRef =>
         for {
-          name <- tpe match {
-            case IzTypeReference.Scalar(mid) =>
-              Right(memberName.getOrElse(mid.name.name))
-            case ref@IzTypeReference.Generic(_, _, _) =>
-              memberName match {
-                case Some(value) =>
-                  for { // this will trigger instantiation
-                    _ <- i2.refToTopLevelRef(ref, requiredNow = false)
-                  } yield {
-                    value
-                  }
-                case None =>
-                  Left(List(GenericAdtBranchMustBeNamed(context, typeId, i2.meta(m))))
-              }
-          }
+          name <- nameOf(context, ref)
+          nameToUse = ref.memberName.getOrElse(name)
+          nested <- asDto(value, subpath, ref.typeId, ref.meta, nameToUse)
         } yield {
-          AdtMemberProducts(AdtMemberRef(name, tpe, i2.meta(m)), List.empty)
+          nested
         }
 
-      case Member.NestedDefn(nested) =>
-        for {
-          tpe <- nested match {
-            case n: RawTypeDef.Interface =>
-              i2.makeInterface(n, subpath).asChain
-            case n: RawTypeDef.DTO =>
-              i2.makeDto(n, subpath).asChain
-            case n: RawTypeDef.Enumeration =>
-              i2.makeEnum(n, subpath).asChain
-            case n: RawTypeDef.Alias =>
-              i2.makeAlias(n, subpath).asChain
-            case n: RawTypeDef.Identifier =>
-              i2.makeIdentifier(n, subpath).asChain
-            case n: RawTypeDef.Adt =>
-              makeAdt(n, subpath :+ IzNamespace(n.id.name))
-          }
-        } yield {
-          AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.main +: tpe.additional)
+      case n: Member.NestedDefn =>
+        n.nested match {
+          case templating: RawTypeDef.WithTemplating =>
+            templating match {
+              case i: RawTypeDef.Interface =>
+                mapNestedMember(subpath, n.copy(nested = i.copy(struct = merge(i.struct, value))))
+
+              case d: RawTypeDef.DTO =>
+                mapNestedMember(subpath, n.copy(nested = d.copy(struct = merge(d.struct, value))))
+
+              case a: RawTypeDef.Adt =>
+                for {
+                  sub <- makeAdt(a, subpath)
+                  nested <- asDto2(value, subpath, sub.main.id, a.meta, "value")
+                } yield {
+                  nested
+                }
+            }
+
+          case a: RawTypeDef.Alias =>
+            for {
+              sub <- i2.makeAlias(a, subpath).asChain
+              nested <- asDto2(value, subpath, sub.main.id, a.meta, "value")
+            } yield {
+              nested
+            }
+
+          case e: RawTypeDef.Enumeration =>
+            for {
+              sub <- i2.makeEnum(e, subpath).asChain
+              nested <- asDto2(value, subpath, sub.main.id, e.meta, "value")
+            } yield {
+              nested
+            }
+
+
+          case i: RawTypeDef.Identifier =>
+            for {
+              sub <- i2.makeIdentifier(i, subpath).asChain
+              nested <- asDto2(value, subpath, sub.main.id, i.meta, "value")
+            } yield {
+              nested
+            }
         }
     }
   }
 
 
+  private def asDto2(value: RawStructure,subpath: Seq[IzNamespace], typeId: IzTypeId, meta: RawNodeMeta, nameToUse: TypeName): Either[List[BuilderFail], AdtMemberProducts] = {
+    val declaredTypeName = RawDeclaredTypeName(nameToUse)
+    val withValue = value.copy(fields = value.fields :+ RawField(typeId, Some("value"), meta))
+    val nested = Member.NestedDefn(RawTypeDef.DTO(declaredTypeName, withValue, meta))
+    mapNestedMember2(subpath, typeId, nested)
+  }
 
+  private def asDto(value: RawStructure,subpath: Seq[IzNamespace], typeId: RawRef, meta: RawNodeMeta, nameToUse: TypeName): Either[List[BuilderFail], AdtMemberProducts] = {
+    val declaredTypeName = RawDeclaredTypeName(nameToUse)
+    val withValue = value.copy(fields = value.fields :+ RawField(typeId, Some("value"), meta))
+    val nested = Member.NestedDefn(RawTypeDef.DTO(declaredTypeName, withValue, meta))
+    mapNestedMember(subpath, nested)
+  }
+
+  private def merge(structure: RawStructure, contract: RawStructure): RawStructure = {
+    structure.copy(
+      interfaces = contract.interfaces ++ structure.interfaces,
+      concepts = contract.concepts ++ structure.concepts,
+      removedConcepts = contract.removedConcepts ++ contract.removedConcepts,
+      fields = contract.fields ++ contract.fields,
+      removedFields = contract.removedFields ++ contract.removedFields,
+    )
+  }
+
+  private def mapRefMember(context: IzTypeId, refMember: Member.TypeRef): Either[List[BuilderFail], AdtMemberProducts] = {
+    val tpe = resolvers.resolve(refMember.typeId)
+    for {
+      name <- nameOf(context, refMember)
+    } yield {
+      AdtMemberProducts(AdtMemberRef(name, tpe, i2.meta(refMember.meta)), List.empty)
+    }
+  }
+
+  private def nameOf(context: IzTypeId, refMember: Member.TypeRef): Either[List[BuilderFail], TypeName] = {
+    val tpe = resolvers.resolve(refMember.typeId)
+    tpe match {
+      case IzTypeReference.Scalar(mid) =>
+        Right(refMember.memberName.getOrElse(mid.name.name))
+      case ref@IzTypeReference.Generic(_, _, _) =>
+        refMember.memberName match {
+          case Some(value) =>
+            for { // this will trigger instantiation
+              _ <- i2.refToTopLevelRef(ref, requiredNow = false)
+            } yield {
+              value
+            }
+          case None =>
+            Left(List(GenericAdtBranchMustBeNamed(context, refMember.typeId, i2.meta(refMember.meta))))
+        }
+    }
+  }
 }
 
 object AdtSupport {

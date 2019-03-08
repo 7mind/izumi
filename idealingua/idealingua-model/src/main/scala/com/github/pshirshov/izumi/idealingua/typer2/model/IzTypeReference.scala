@@ -2,7 +2,9 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 
-sealed trait IzTypeReference
+sealed trait IzTypeReference {
+  def id: IzTypeId
+}
 
 object IzTypeReference {
   object model {

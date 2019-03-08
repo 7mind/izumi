@@ -29,6 +29,8 @@ trait TypedefSupport {
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
 
+  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
+
   def meta(meta: RawNodeMeta): NodeMeta
 
   def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle
@@ -75,7 +77,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
-    val id = resolvers.nameToId(e.id, subpath)
+    makeEnum(resolvers.nameToId(e.id, subpath), e, subpath)
+  }
+
+  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
     val tmeta = meta(e.meta)
 
     for {

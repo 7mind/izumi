@@ -42,7 +42,11 @@ class CloneSupport(index: DomainIndex,
         }
 
       case a: Adt =>
-        modify(id, a.members, newMeta, v.modifiers).map(newMembers => List(Adt(id, newMembers.map(_.member), newMeta)) ++ newMembers.flatMap(_.additional))
+        for {
+          newMembers <- modify(id, a.members, a.contractDefn, newMeta, v.modifiers)
+        } yield {
+          List(Adt(id, newMembers.map(_.member), newMeta, a.contractDefn)) ++ newMembers.flatMap(_.additional)
+        }
 
       case i: Identifier =>
         if (v.modifiers.isEmpty) {
@@ -112,23 +116,23 @@ class CloneSupport(index: DomainIndex,
 
   }
 
-  private def modify(context: IzTypeId, source: Seq[AdtMember], meta: NodeMeta, modifiers: Option[RawClone]): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
+  private def modify(context: IzTypeId, source: Seq[AdtMember], contract: Option[RawStructure], meta: NodeMeta, modifiers: Option[RawClone]): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
     modifiers match {
       case Some(value) =>
-        modify(context, source, meta, value)
+        modify(context, source, contract, meta, value)
       case None =>
         Right(source.map(s => AdtMemberProducts(s, List.empty)))
     }
   }
 
 
-  private def modify(context: IzTypeId, source: Seq[AdtMember], cloneMeta: NodeMeta, modifiers: RawClone): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
+  private def modify(context: IzTypeId, source: Seq[AdtMember], contract: Option[RawStructure], cloneMeta: NodeMeta, modifiers: RawClone): Either[List[BuilderFail], Seq[AdtMemberProducts]] = {
     if (modifiers.removedParents.nonEmpty || modifiers.concepts.nonEmpty || modifiers.removedConcepts.nonEmpty || modifiers.fields.nonEmpty || modifiers.removedFields.nonEmpty || modifiers.interfaces.nonEmpty) {
       Left(List(UnexpectedStructureCloneModifiers(context, cloneMeta)))
     } else {
       val removedMembers = modifiers.removedBranches.map(_.name).toSet
       for {
-        addedMembers <- modifiers.branches.map(adts.mapMember(context, Seq.empty)).biAggregate
+        addedMembers <- modifiers.branches.map(adts.mapMember(context, Seq.empty)(contract, _)).biAggregate
         mSum = source.map(s => AdtMemberProducts(s, List.empty)) ++ addedMembers
         filtered = mSum.filterNot(m => removedMembers.contains(m.member.name))
 
