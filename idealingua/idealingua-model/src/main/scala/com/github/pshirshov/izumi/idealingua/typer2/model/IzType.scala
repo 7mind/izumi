@@ -53,7 +53,9 @@ object IzType {
   final case class DTO(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
   final case class Interface(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
 
-  final case class Adt(id: IzTypeId, members: Seq[AdtMember], meta: NodeMeta, contractDefn: Option[RawStructure]) extends IzType with WithTemplateSupport
+  final case class Adt(members: Seq[AdtMember], meta: NodeMeta, contract: Interface, contractDefn: Option[RawStructure]) extends IzType with WithTemplateSupport {
+    override def id: IzTypeId = contract.id
+  }
 
   final case class IzAlias(id: IzTypeId, source: IzTypeReference, meta: NodeMeta) extends IzType
   final case class Identifier(id: IzTypeId, fields: Seq[FullField], meta: NodeMeta) extends IzType

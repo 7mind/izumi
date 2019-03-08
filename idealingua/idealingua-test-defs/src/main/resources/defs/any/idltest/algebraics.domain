@@ -81,6 +81,7 @@ adt Nested2 {
     }
 }
 
+//
 mixin AdtContract {
     shared: str
 }
@@ -97,6 +98,12 @@ adt NestedC1 with {
     }
 
     data D1 {
+    }
+
+    adt Nested with { // contracts are added for nested ADTs
+        shared2: str
+    } {
+        mixin M1 {}
     }
 
 }

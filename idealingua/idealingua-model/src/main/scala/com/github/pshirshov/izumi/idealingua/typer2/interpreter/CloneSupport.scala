@@ -45,7 +45,7 @@ class CloneSupport(index: DomainIndex,
         for {
           newMembers <- modify(id, a.members, a.contractDefn, newMeta, v.modifiers)
         } yield {
-          List(Adt(id, newMembers.map(_.member), newMeta, a.contractDefn)) ++ newMembers.flatMap(_.additional)
+          List(Adt(newMembers.map(_.member), newMeta, a.contract.copy(id = id), a.contractDefn)) ++ newMembers.flatMap(_.additional)
         }
 
       case i: Identifier =>

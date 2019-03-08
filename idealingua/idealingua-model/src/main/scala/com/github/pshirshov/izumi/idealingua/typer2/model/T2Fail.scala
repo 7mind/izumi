@@ -64,6 +64,7 @@ object T2Fail {
   final case class UnexpectedStructureCloneModifiers(context: IzTypeId, meta: NodeMeta) extends BuilderFailWithMeta
   final case class FeatureUnsupported(context: IzTypeId, explanation: String, meta: NodeMeta) extends BuilderFailWithMeta
   final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFailWithMeta
+  final case class CannotApplyAdtBranchContract(context: IzTypeId, branch: RawDeclaredTypeName, meta: NodeMeta) extends BuilderFailWithMeta
 
   sealed trait VerificationFail extends BuilderFail
 

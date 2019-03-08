@@ -17,32 +17,21 @@ import scala.reflect.ClassTag
 
 
 trait TypedefSupport {
-  //
   def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier]
 
-  def makeIdentifier(id: IzTypeId, i: RawTypeDef.Identifier): TSingleT[IzType.Identifier]
 
-  //
   def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias]
 
-  def makeAlias(id: IzTypeId, a: RawTypeDef.Alias): TSingleT[IzType.IzAlias]
 
-  //
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle
 
-  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration): TSingle
 
+  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingleT[IzType.Interface]
 
-  def makeInterface(id: IzTypeId, i: RawTypeDef.Interface): TSingle
-
-  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle
-
-  //
-  def makeDto(id: IzTypeId, i: RawTypeDef.DTO): TSingle
 
   def makeDto(i: RawTypeDef.DTO, subpath: Seq[IzNamespace]): TSingle
 
-  //
+
   def makeForeign(v: RawTypeDef.ForeignType): TSingle
 
   def meta(meta: RawNodeMeta): NodeMeta
@@ -74,10 +63,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
   def makeIdentifier(i: RawTypeDef.Identifier, subpath: Seq[IzNamespace]): TSingleT[IzType.Identifier] = {
-    makeIdentifier(resolvers.nameToId(i.id, subpath), i)
+    makeIdentifierAs(resolvers.nameToId(i.id, subpath), i)
   }
 
-  def makeIdentifier(id: IzTypeId, i: RawTypeDef.Identifier): TSingleT[IzType.Identifier] = {
+  def makeIdentifierAs(id: IzTypeId, i: RawTypeDef.Identifier): TSingleT[IzType.Identifier] = {
     for {
       fields <- i.fields.zipWithIndex.map {
         case (f, idx) =>
@@ -93,10 +82,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
 
   def makeEnum(e: RawTypeDef.Enumeration, subpath: Seq[IzNamespace]): TSingle = {
-    makeEnum(resolvers.nameToId(e.id, subpath), e)
+    makeEnumAs(resolvers.nameToId(e.id, subpath), e)
   }
 
-  def makeEnum(id: IzTypeId, e: RawTypeDef.Enumeration): TSingle = {
+  def makeEnumAs(id: IzTypeId, e: RawTypeDef.Enumeration): TSingle = {
     val tmeta = meta(e.meta)
 
     for {
@@ -120,12 +109,12 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
-  def makeInterface(id: IzTypeId, i: RawTypeDef.Interface): TSingle = {
+  def makeInterface(id: IzTypeId, i: RawTypeDef.Interface): TSingleT[IzType.Interface] = {
     val struct = i.struct
     make[IzType.Interface](struct, id, i.meta)
   }
 
-  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingle = {
+  def makeInterface(i: RawTypeDef.Interface, subpath: Seq[IzNamespace]): TSingleT[IzType.Interface] = {
     makeInterface(resolvers.nameToId(i.id, subpath), i)
   }
 
@@ -140,10 +129,10 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
 
 
   def makeAlias(a: RawTypeDef.Alias, subpath: Seq[IzNamespace]): TSingleT[IzType.IzAlias] = {
-    makeAlias(resolvers.nameToId(a.id, subpath), a)
+    makeAliasAs(resolvers.nameToId(a.id, subpath), a)
   }
 
-  def makeAlias(id: IzTypeId, a: RawTypeDef.Alias): TSingleT[IzType.IzAlias] = {
+  def makeAliasAs(id: IzTypeId, a: RawTypeDef.Alias): TSingleT[IzType.IzAlias] = {
     Right(IzAlias(id, resolvers.resolve(a.target), meta(a.meta)))
   }
 
@@ -190,7 +179,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
 
-  def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingle = {
+  def make[T <: IzStructure : ClassTag](struct: RawStructure, id: IzTypeId, structMeta: RawNodeMeta): TSingleT[T] = {
     val tmeta = meta(structMeta)
 
     for {
@@ -249,9 +238,9 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       }
 
       if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
-        IzType.Interface(id, allFields, parentsIds, allParents, tmeta, struct)
+        IzType.Interface(id, allFields, parentsIds, allParents, tmeta, struct).asInstanceOf[T]
       } else {
-        IzType.DTO(id, allFields, parentsIds, allParents, tmeta, struct)
+        IzType.DTO(id, allFields, parentsIds, allParents, tmeta, struct).asInstanceOf[T]
       }
     }
   }
