@@ -143,6 +143,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         (id, s.id) match {
           case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
             for {
+              _ <- g.args.map(a => refToTopLevelRef(a.value.ref, requiredNow)).biAggregate
               _ <- if (requiredNow) {
                 refRecorder.requireNow(RefToTLTLink(g, sid))
               } else {
