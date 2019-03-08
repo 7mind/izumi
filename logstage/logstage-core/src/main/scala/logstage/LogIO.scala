@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.api.Log._
-import com.github.pshirshov.izumi.logstage.macros.LogFMacros._
+import com.github.pshirshov.izumi.logstage.macros.LogIOMacros._
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.experimental.macros

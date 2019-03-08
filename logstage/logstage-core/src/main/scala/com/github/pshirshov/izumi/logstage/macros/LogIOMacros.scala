@@ -6,7 +6,7 @@ import logstage.{Log, LogIO}
 
 import scala.reflect.macros.blackbox
 
-object LogFMacros {
+object LogIOMacros {
   def scTraceMacro[F[_]](c: blackbox.Context { type PrefixType = LogIO[F] })(message: c.Expr[String]): c.Expr[F[Unit]] = {
     c.universe.reify(c.prefix.splice.log(Log.Level.Trace)(logMessageMacro(c)(message).splice)(getEnclosingPosition(c).splice))
   }
