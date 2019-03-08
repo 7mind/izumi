@@ -51,24 +51,6 @@ object Binding {
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
-  final case class ResourceBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding {
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ResourceBinding[_] =>
-        key == that.key && implementation == that.implementation
-      case _ =>
-        false
-    }
-
-    override val hashCode: Int = (3, key, implementation).hashCode()
-
-    override def tags: Set[BindingTag] = _tags + BindingTag.TResource
-
-    override def withImplDef(implDef: ImplDef): ResourceBinding[K] = copy(implementation = implDef)
-    override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): ResourceBinding[T] = copy(key = key)
-    override def withTags(newTags: Set[BindingTag]): ResourceBinding[K] = copy(_tags = newTags)
-    override def addTags(moreTags: Set[BindingTag]): ResourceBinding[K] = withTags(this.tags ++ moreTags)
-  }
-
   object SingletonBinding {
     def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag] = BindingTag.untaggedTags)(implicit pos: CodePositionMaterializer): SingletonBinding[K] =
       new SingletonBinding[K](key, implementation, tags, pos.get.position)

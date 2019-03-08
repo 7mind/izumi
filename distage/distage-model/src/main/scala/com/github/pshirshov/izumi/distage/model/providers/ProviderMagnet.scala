@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.model.providers
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Tag, SafeType}
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, SafeType, Tag}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
-import scala.language.implicitConversions
 import scala.language.experimental.macros
+import scala.language.implicitConversions
 
 /**
   * A function that receives its arguments from DI object graph, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
@@ -77,13 +78,16 @@ import scala.language.experimental.macros
   *
   * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
   **/
-case class ProviderMagnet[+R](get: Provider) {
+final case class ProviderMagnet[+R](get: Provider) {
   def map[B: Tag](f: R => B): ProviderMagnet[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
   }
 
-  def zip[B](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
+  def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
+    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R]
+    rTag.discard() // scalac can't detect usage in macro
 
+    copy[(R, B)](get = get.unsafeZip(SafeType.get[(R, B)], that.get))
   }
 }
 

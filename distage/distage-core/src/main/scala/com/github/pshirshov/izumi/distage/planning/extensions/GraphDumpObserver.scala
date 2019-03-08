@@ -151,7 +151,7 @@ final class GraphDumpObserver
             op.wiring match {
               case w: RuntimeDIUniverse.Wiring.UnaryWiring =>
                 w match {
-                  case _: RuntimeDIUniverse.Wiring.UnaryWiring.ProductWiring =>
+                  case _: RuntimeDIUniverse.Wiring.UnaryWiring.ReflectiveInstantiationWiring =>
                     "make"
                   case RuntimeDIUniverse.Wiring.UnaryWiring.Function(_, _) =>
                     "lambda"
@@ -163,7 +163,7 @@ final class GraphDumpObserver
                     }
                     "ref"
                 }
-              case RuntimeDIUniverse.Wiring.FactoryMethod(_, _, _) =>
+              case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
                 "fdef"
 
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>

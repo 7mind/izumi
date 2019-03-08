@@ -11,7 +11,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u._
 
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
-
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
   def symbolToWiring(symbl: SafeType): Wiring = {
@@ -32,7 +31,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
 
-            val methodTypeWireable = unarySymbolDeps(resultType)
+            val methodTypeWireable = mkConstructorWiring(resultType)
 
             val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.requiredKeys
 
@@ -40,20 +39,15 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
               throw new UnsupportedDefinitionException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols, product: $resultType, context: $symbl", null)
             }
 
-            Wiring.FactoryMethod.WithContext(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
+            Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
         }
 
-        val materials = dependencyMethods.map {
-          method =>
-            val methodSymb = SymbolInfo.Runtime(method, symbl, wasGeneric = false)
-            val context = DependencyContext.MethodContext(symbl, methodSymb)
-            Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
-        }
+        val materials = dependencyMethods.map(methodToAssociation(symbl, _))
 
-        Wiring.FactoryMethod(symbl, mw, materials)
+        Wiring.Factory(symbl, mw, materials)
 
       case o =>
-        unarySymbolDeps(o)
+        mkConstructorWiring(o)
     }
   }
 
@@ -75,7 +69,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     argLists.map(_.map(keyProvider.associationFromParameter))
   }
 
-  private def unarySymbolDeps(symbl: SafeType): UnaryWiring.ProductWiring = symbl match {
+  private def mkConstructorWiring(symbl: SafeType): UnaryWiring.ReflectiveInstantiationWiring = symbl match {
     case ConcreteSymbol(symb) =>
       UnaryWiring.Constructor(symb, constructorParameters(symb), getPrefix(symb))
 
@@ -101,18 +95,19 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private def traitMethods(symb: SafeType): Seq[Association.AbstractMethod] = {
+  private def traitMethods(symbl: SafeType): Seq[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
-    val declaredAbstractMethods = symb.tpe.members
+    val declaredAbstractMethods = symbl.tpe.members
       .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
-      .filter(symbolIntrospector.isWireableMethod(symb, _))
+      .filter(symbolIntrospector.isWireableMethod(symbl, _))
       .map(_.asMethod)
-    declaredAbstractMethods.map {
-      method =>
-        val methodSymb = SymbolInfo.Runtime(method, symb, wasGeneric = false)
-        val context = DependencyContext.MethodContext(symb, methodSymb)
-        Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
-    }
+    declaredAbstractMethods.map(methodToAssociation(symbl, _))
+  }
+
+  private def methodToAssociation(symbl: SafeType, method: MethodSymb): Association.AbstractMethod = {
+      val methodSymb = SymbolInfo.Runtime(method, symbl, wasGeneric = false)
+      val context = DependencyContext.MethodContext(symbl, methodSymb)
+      Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
   }
 
   protected object ConcreteSymbol {
@@ -138,9 +133,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
 object ReflectionProviderDefaultImpl {
 
-  class Runtime(override val keyProvider: DependencyKeyProvider.Runtime
-                , override val symbolIntrospector: SymbolIntrospector.Runtime)
-    extends ReflectionProvider.Runtime
+  class Runtime
+  (
+    override val keyProvider: DependencyKeyProvider.Runtime
+  , override val symbolIntrospector: SymbolIntrospector.Runtime
+  ) extends ReflectionProvider.Runtime
       with ReflectionProviderDefaultImpl
 
   object Static {
@@ -148,9 +145,9 @@ object ReflectionProviderDefaultImpl {
              (keyprovider: DependencyKeyProvider.Static[macroUniverse.type]
               , symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]): ReflectionProvider.Static[macroUniverse.type] =
       new ReflectionProviderDefaultImpl {
-        override val u: macroUniverse.type = macroUniverse
-        override val keyProvider: keyprovider.type = keyprovider
-        override val symbolIntrospector: symbolintrospector.type = symbolintrospector
+        override final val u: macroUniverse.type = macroUniverse
+        override final val keyProvider: keyprovider.type = keyprovider
+        override final val symbolIntrospector: symbolintrospector.type = symbolintrospector
       }
   }
 

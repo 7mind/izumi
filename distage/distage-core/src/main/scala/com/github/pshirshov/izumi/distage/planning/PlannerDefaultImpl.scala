@@ -130,7 +130,7 @@ class PlannerDefaultImpl
       case w: AbstractSymbol =>
         Step(wiring, WiringOp.InstantiateTrait(target, w, Some(binding)))
 
-      case w: FactoryMethod =>
+      case w: Factory =>
         Step(wiring, WiringOp.InstantiateFactory(target, w, Some(binding)))
 
       case w: FactoryFunction =>
@@ -158,6 +158,7 @@ class PlannerDefaultImpl
         UnaryWiring.Instance(i.implType, i.instance)
       case r: ImplDef.ReferenceImpl =>
         UnaryWiring.Reference(r.implType, r.key, r.weak)
+      // FIXME: ???
     }
   }
 
@@ -173,6 +174,7 @@ class PlannerDefaultImpl
         RuntimeDIUniverse.DIKey.TypeKey(i.implType).named(s"provider:$goodIdx")
       case p: ImplDef.ProviderImpl =>
         RuntimeDIUniverse.DIKey.TypeKey(p.implType).named(s"instance:$goodIdx")
+      // FIXME: ???
     }
 
     tpe

@@ -37,7 +37,7 @@ object ExecutableOp {
 
     final case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.AbstractSymbol, origin: Option[Binding]) extends WiringOp
 
-    final case class InstantiateFactory(target: DIKey, wiring: FactoryMethod, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateFactory(target: DIKey, wiring: Factory, origin: Option[Binding]) extends WiringOp
 
     final case class CallProvider(target: DIKey, wiring: UnaryWiring.Function, origin: Option[Binding]) extends WiringOp
 

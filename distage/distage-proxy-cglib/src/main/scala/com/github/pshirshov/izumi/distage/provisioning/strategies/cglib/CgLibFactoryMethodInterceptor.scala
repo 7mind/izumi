@@ -16,7 +16,7 @@ import net.sf.cglib.proxy.MethodProxy
 
 protected[distage] class CgLibFactoryMethodInterceptor
 (
-  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
+  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
   , dependencyMethodIndex: TraitIndex
   , narrowedContext: ProvisioningKeyProvider
   , executor: OperationExecutor
@@ -40,7 +40,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
     }
   }
 
-  private def mkExecutor(arguments: Array[AnyRef], wiringWithContext: FactoryMethod.WithContext): JustExecutor = {
+  private def mkExecutor(arguments: Array[AnyRef], wiringWithContext: Factory.FactoryMethod): JustExecutor = {
     if (arguments.length != wiringWithContext.methodArguments.length) {
       throw new CgLibCallException(
         s"Divergence between constructor arguments count: ${arguments.toSeq} vs ${wiringWithContext.methodArguments} "

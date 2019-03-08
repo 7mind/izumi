@@ -32,7 +32,7 @@ case class TraitContext(
 
 
 case class FactoryContext(
-                           factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
+                           factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
                            , dependencyMethodIndex: TraitIndex
                            , narrowedContext: ProvisioningKeyProvider
                            , executor: OperationExecutor

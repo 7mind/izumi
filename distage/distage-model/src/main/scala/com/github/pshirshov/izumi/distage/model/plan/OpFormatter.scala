@@ -75,7 +75,7 @@ object OpFormatter {
                  |${format(proxied).shift(2)}
                  |}""".stripMargin
 
-            case ProxyOp.InitProxy(target, dependencies, proxy, origin) =>
+            case ProxyOp.InitProxy(target, dependencies, proxy@_, origin) =>
               val pos = formatBindingPosition(origin)
               s"${kf.format(target)} $pos -> init(${dependencies.map(kf.format).mkString(", ")})"
 
@@ -101,8 +101,8 @@ object OpFormatter {
         case Function(instanceType, associations) =>
           doFormat(doFormat(instanceType), associations.map(doFormat), "call", ('(', ')'), ('{', '}'))
 
-        case FactoryMethod(factoryType, wireables, dependencies) =>
-          val wirings = wireables.map {
+        case Factory(factoryType, factoryIndex, dependencies) =>
+          val wirings = factoryIndex.map {
             w =>
               s"${w.factoryMethod}: ${tf.format(w.factoryMethod.finalResultType)} ~= ${doFormat(w.wireWith)}".shift(2)
           }
@@ -115,8 +115,8 @@ object OpFormatter {
             , "factory", ('(', ')'), ('{', '}')
           )
 
-        case FactoryFunction(factoryType, wireables, dependencies) =>
-          val wirings = wireables.map {
+        case FactoryFunction(factoryType, factoryIndex, dependencies) =>
+          val wirings = factoryIndex.map {
             case (idx, w) =>
               s"${w.factoryMethod}[$idx]: ${tf.format(w.factoryMethod.finalResultType)} ~= ${doFormat(w.wireWith)}".shift(2)
           }.toSeq

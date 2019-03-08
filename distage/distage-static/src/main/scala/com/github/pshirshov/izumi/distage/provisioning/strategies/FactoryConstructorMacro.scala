@@ -31,9 +31,9 @@ object FactoryConstructorMacro {
     import macroUniverse.Wiring._
     import macroUniverse._
 
-    val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
-      // TODO: Macro call in liftable that substitutes for a different type (not just in a different universe...)
-      w: Wiring.UnaryWiring.ProductWiring =>
+    val liftableProductWiring: Liftable[Wiring.UnaryWiring.ReflectiveInstantiationWiring] = {
+      // TODO: FIXME: Macro call in liftable that substitutes for a different type (not just in a different universe...)
+      w: Wiring.UnaryWiring.ReflectiveInstantiationWiring =>
         q"""{
         val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
 
@@ -43,7 +43,7 @@ object FactoryConstructorMacro {
 
     val targetType = weakTypeOf[T]
 
-    val FactoryMethod(_, wireables, dependencies) = reflectionProvider.symbolToWiring(
+    val Factory(_, wireables, dependencies) = reflectionProvider.symbolToWiring(
       SafeType(targetType)
     )
 
@@ -62,7 +62,7 @@ object FactoryConstructorMacro {
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {
-      case (method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments), methodIndex) =>
+      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
@@ -87,7 +87,7 @@ object FactoryConstructorMacro {
 
         // TODO: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
         val methodInfo =q"""{
-          val wiring = ${liftableProductWiring(productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring])}
+          val wiring = ${liftableProductWiring(productConstructor.asInstanceOf[Wiring.UnaryWiring.ReflectiveInstantiationWiring])}
 
           $RuntimeDIUniverse.Wiring.FactoryFunction.WithContext(
             ${factoryMethod: SymbolInfo}

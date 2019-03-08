@@ -19,6 +19,7 @@ trait WithDICallable {
     def argTypes: Seq[SafeType]
     def ret: SafeType
     def fun: Seq[Any] => Any
+    def arity: Int
 
     def unsafeApply(refs: TypedRef[_]*): Any = {
       val args = verifyArgs(refs)
@@ -55,9 +56,11 @@ trait WithDICallable {
   trait Provider extends Callable {
     def associations: Seq[Association.Parameter]
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
+    def unsafeZip(newRet: SafeType, that: Provider): Provider
 
     final val diKeys: Seq[DIKey] = associations.map(_.wireWith)
     override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
+    override final val arity: Int = argTypes.size
 
     override def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
@@ -77,6 +80,16 @@ trait WithDICallable {
       override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
         copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
+      override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
+        ProviderImpl(
+          associations ++ that.associations
+          , newRet
+          , { args0 =>
+            val (args1, args2) = args0.splitAt(arity)
+            fun(args1) -> that.fun(args2)
+          }
+        )
+
     }
 
     object ProviderImpl {
@@ -85,22 +98,33 @@ trait WithDICallable {
     }
 
     trait FactoryProvider extends Provider {
-      def factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext]
+      def factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod]
     }
 
     object FactoryProvider {
-      case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.WithContext]) extends FactoryProvider {
-        override def associations: Seq[Association.Parameter] = provider.associations
-        override def ret: SafeType = provider.ret
-        override def fun: Seq[Any] => Any = provider.fun
+      case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod]) extends FactoryProvider {
+        override final def associations: Seq[Association.Parameter] = provider.associations
+        override final def ret: SafeType = provider.ret
+        override final def fun: Seq[Any] => Any = provider.fun
 
-        override def unsafeMap(newRet: SafeType, f: Any => _): FactoryProviderImpl =
+        override final def unsafeMap(newRet: SafeType, f: Any => _): FactoryProviderImpl =
           copy(provider = provider.unsafeMap(newRet, f))
+
+        override final def unsafeZip(newRet: SafeType, that: Provider): FactoryProviderImpl = {
+          that match {
+            case that: FactoryProvider =>
+              throw new FactoryProvidersCannotBeCombined(s"Impossible operation: two factory providers cannot be zipped. this=$this that=$that", this, that)
+            case _ =>
+              copy(provider = provider.unsafeZip(newRet, that))
+          }
+        }
       }
     }
 
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message, null)
+
+  class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider) extends DIException(message, null)
 
 }
