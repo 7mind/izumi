@@ -67,7 +67,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def adtBranchPlus[_: P]: P[CloneOp.AddBranch] = P("|" ~/ (inline ~ adtAnyMember)).map(CloneOp.AddBranch)
 
-    def adtBranchMinus[_:P]: P[CloneOp.RemoveBranch] = P("\\" ~/ (inline ~ ids.declaredTypeName)).map(CloneOp.RemoveBranch)
+    def adtBranchMinus[_: P]: P[CloneOp.RemoveBranch] = P("\\" ~/ (inline ~ ids.declaredTypeName)).map(CloneOp.RemoveBranch)
 
     def plusField[_: P]: P[CloneOp.AddField] = field.map(CloneOp.AddField)
 
@@ -118,7 +118,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
         Member.TypeRef(tpe, alias, meta)
     }
 
-  def adtAnyMember[_:P]: P[Member] = P(adtMemberNested | adtMemberTypeRef)
+  def adtAnyMember[_: P]: P[Member] = P(adtMemberNested | adtMemberTypeRef)
 
   def importMember[_: P]: P[ImportedId] = P(metaAgg.withMeta(ids.importedName ~ (inline ~ "as" ~/ (inline ~ ids.importedName)).?)).map {
     case (meta, (tpe, alias)) =>
@@ -179,10 +179,12 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def adtEnclosed[_: P]: P[RawAdt] = P(NoCut(aggregates.enclosed(adt(sepAdt) ~ sepAdt.?)) | aggregates.enclosed(adt(sepAdtFreeForm)))
 
-  def adtBlock[_: P]: P[Adt] = P(metaAgg.cstarting(kw.adt, adtEnclosed | adtFreeForm))
+  def adtContract[_: P]: P[RawStructure] = aggregates.enclosed(Struct.struct).map(_.structure)
+
+  def adtBlock[_: P]: P[Adt] = P(metaAgg.cstarting(kw.adt, ("with" ~ inline ~ adtContract~inline).? ~ (adtEnclosed | adtFreeForm)))
     .map {
-      case (c, i, v) =>
-        Adt(i, v.alternatives, c)
+      case (c, i, (contract, v)) =>
+        Adt(i, contract, v.alternatives, c)
     }
 
   def enumFreeForm[_: P]: P[RawEnum] = P(any ~ "=" ~/ any ~ sepEnumFreeForm.? ~ any ~ Enum.enum(sepEnumFreeForm))

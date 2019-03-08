@@ -70,3 +70,36 @@ adt Nested {
 
     alias A1 = str
 }
+
+mixin AdtContract {
+ shared: str
+}
+
+adt Nested1 with {
+    /*
+        this  block will be added directly into nested structures and turn
+        referenced members into nested structures with additional field `value`
+    */
+    + AdtContract
+    otherfield: str
+} {
+    mixin M1 {
+    }
+
+    data D1 {
+
+    }
+}
+
+adt Nested2 with {
+    /*
+        this  block will be added directly into nested structures and turn
+        referenced members into nested structures with additional field `value`
+    */
+    + AdtContract
+    otherfield: str
+} = | mixin M1 {
+      }
+    | data D1 {
+      }
+

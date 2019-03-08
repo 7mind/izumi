@@ -24,7 +24,7 @@ object RawTypeDef {
 
   final case class DTO(id: RawDeclaredTypeName, struct: RawStructure, meta: RawNodeMeta) extends WithTemplating
 
-  final case class Adt(id: RawDeclaredTypeName, alternatives: List[Member], meta: RawNodeMeta) extends WithTemplating
+  final case class Adt(id: RawDeclaredTypeName, contract: Option[RawStructure], alternatives: List[Member], meta: RawNodeMeta) extends WithTemplating
 
   final case class Enumeration(id: RawDeclaredTypeName, struct: RawEnum, meta: RawNodeMeta) extends BasicTypeDecl
 
