@@ -9,7 +9,8 @@ import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.experimental.macros
 
-trait LogIO[F[_]] extends LogCreateIO[F] {
+//trait LogIO[F[_]] extends LogCreateIO[F] {
+trait LogIO[+F[_]] extends LogCreateIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
@@ -23,7 +24,7 @@ trait LogIO[F[_]] extends LogCreateIO[F] {
 }
 
 object LogIO extends LowPriorityLogIO {
-  def apply[F[_] : LogIO]: LogIO[F] = implicitly
+  def apply[F[_]: LogIO]: LogIO[F] = implicitly
 
   def fromLogger[F[_] : SyncSafe](logger: AbstractLogger): LogIO[F] = {
     new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
@@ -39,5 +40,14 @@ object LogIO extends LowPriorityLogIO {
 }
 
 trait LowPriorityLogIO {
-  implicit def covariance[G[x] >: F[x], F[_]](implicit ev: F[Any] <:< G[Any], log: LogIO[F]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+  implicit def covariance[G[x] >: F[x], F[_]](implicit log: LogIO[F]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+
+//    implicit def covariance[G[_], F[_]](implicit ev: F[_] <:< G[_], log: LogIO[F]): LogIO[G] = log.asInstanceOf[LogIO[G]] // scrap
+//    implicit def covariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.asInstanceOf[LogIO[F[E, ?]]]
+
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+
+  //  implicit def covarianceConversion[G[x] >: F[x], F[_]](log: LogIO[F])(implicit ev: F[Any] <:< G[Any]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+  //  implicit def covarianceConversion[G[x] >: F[x], F[_]](log: LogIO[F])(implicit ev: F[Any] <:< G[Any]): LogIO[G] = log.asInstanceOf[LogIO[G]]
+  //  implicit def covarianceConversion[E1 >: E, E, F[+_, _]](log: LogIO[F[E, ?]]): LogIO[F[E1, ?]] = log.asInstanceOf[LogIO[F[E1, ?]]]
 }
