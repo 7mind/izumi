@@ -109,6 +109,15 @@ object Log {
     def firstThrowable: Option[Throwable] = {
       message.args.map(_.value).collectFirst { case t: Throwable => t }
     }
+
+    @inline def addCustomContext(ctx: CustomContext): Entry = {
+      if (ctx.values.isEmpty) {
+        this
+      } else {
+        copy(context = context.copy(customContext = context.customContext + ctx))
+      }
+    }
+
   }
 
   object Entry {

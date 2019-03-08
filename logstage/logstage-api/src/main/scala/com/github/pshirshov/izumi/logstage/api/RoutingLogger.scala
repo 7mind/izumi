@@ -15,16 +15,8 @@ trait RoutingLogger extends AbstractLogger {
 
   /** Log irrespective of minimum log level */
   @inline override final def unsafeLog(entry: Log.Entry): Unit = {
-    val entryWithCtx = addCustomCtx(entry, customContext)
+    val entryWithCtx = entry.addCustomContext(customContext)
     router.log(entryWithCtx)
-  }
-
-  @inline private[this] def addCustomCtx(entry: Log.Entry, ctx: CustomContext): Entry = {
-    if (ctx.values.isEmpty) {
-      entry
-    } else {
-      entry.copy(context = entry.context.copy(customContext = entry.context.customContext + ctx))
-    }
   }
 
 }
