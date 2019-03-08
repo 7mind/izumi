@@ -5,7 +5,10 @@ import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.api.Log.{Entry, LoggerId}
 
 trait UnsafeLogIO[+F[_]] {
+  /** Log irrespective of the log level threshold */
   def unsafeLog(entry: Entry): F[Unit]
+
+  /** Check if `loggerId` is not blacklisted and `logLevel` is above the configured threshold */
   def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean]
 }
 

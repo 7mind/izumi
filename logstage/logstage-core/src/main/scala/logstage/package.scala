@@ -28,27 +28,8 @@ package object logstage extends LogStage {
   override final val Error: api.Log.Level.Error.type = api.Log.Level.Error
   override final val Crit: api.Log.Level.Crit.type = api.Log.Level.Crit
 
-  type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
-  object LogBIO {
-    def apply[F[_, _]: LogBIO]: LogBIO[F] = implicitly
-
-    def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): LogBIO[F] = {
-      LogIO.fromLogger(logger)
-    }
-  }
-
-  type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
-  object UnsafeLogBIO {
-    def apply[F[_, _]: UnsafeLogBIO]: UnsafeLogBIO[F] = implicitly
-
-    def fromLogger[F[_, _]: SyncSafe2](logger: AbstractLogger): UnsafeLogBIO[F] = {
-      UnsafeLogIO.fromLogger(logger)
-    }
-  }
-
   type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
-  object LogCreateBIO {
-    def apply[F[_, _]: LogCreateBIO]: LogCreateBIO[F] = implicitly
-  }
+  type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
+  type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
 
 }
