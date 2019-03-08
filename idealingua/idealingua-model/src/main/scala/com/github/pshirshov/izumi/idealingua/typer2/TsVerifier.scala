@@ -100,6 +100,7 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor, logg
       case a: IzType.Adt =>
         merge(List(
           verifyAdtBranchContradictions(a),
+          verifyFieldContradictions(a.id, a.meta, a.contract.fields),
         ))
       case foreign: IzType.Foreign =>
         foreign match {

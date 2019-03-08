@@ -43,10 +43,9 @@ class TypespaceEvalutor(resolvers: Resolvers) {
       case _: IzType.Generic =>
         Set.empty
       case structure: IzStructure =>
-        structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet ++
-          structure.fields.map(f => structure.id -> f.tpe).toSet
+        refs(structure)
       case a: IzType.Adt =>
-        a.members
+        refs(a.contract) ++ a.members
           .map {
             case ref: AdtMemberRef =>
               a.id -> ref.ref
@@ -67,6 +66,10 @@ class TypespaceEvalutor(resolvers: Resolvers) {
     }
   }
 
+  private def refs(structure: IzStructure): Set[(IzTypeId, IzTypeReference)] = {
+    structure.parents.map(p => structure.id -> IzTypeReference.Scalar(p)).toSet ++
+      structure.fields.map(f => structure.id -> f.tpe).toSet
+  }
 }
 
 object TypespaceEvalutor {
