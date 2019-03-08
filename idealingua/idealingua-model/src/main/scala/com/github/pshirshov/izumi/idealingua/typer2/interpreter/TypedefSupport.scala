@@ -156,8 +156,14 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         }
 
 
-      case g@IzTypeReference.Generic(_: BuiltinType, _, _) =>
-        Right(g)
+      case g@IzTypeReference.Generic(_: BuiltinType, args, _) =>
+        for {
+          // to make sure all args are instantiated recursively
+          _ <- args.map(a => refToTopLevelRef(a.value.ref, requiredNow)).biAggregate
+        } yield {
+          g
+        }
+
 
       case g: IzTypeReference.Generic =>
         Left(List(TopLevelScalarOrBuiltinGenericExpected(id, g)))
