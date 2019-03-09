@@ -25,17 +25,16 @@ class CovariantHKTImplicitsBugTest extends WordSpec with GivenWhenThen {
     implicit val monoInstance: MonoIO[IO] = new MonoIO[IO]{}
   }
 
-  trait SomeIO[+F[_]]
-  object SomeIO {
-    implicit def fromMono[F[_]: MonoIO]: SomeIO[F] = new SomeIO[F]{}
-    implicit def fromBIO[F[+_, _]: BifunctorIO]: SomeIO[F[Nothing, ?]] = new SomeIO[F[Nothing, ?]]{}
+  trait AnyIO[+F[_]]
+  object AnyIO {
+    implicit def fromMono[F[_]: MonoIO]: AnyIO[F] = new AnyIO[F]{}
+    implicit def fromBIO[F[+_, _]: BifunctorIO]: AnyIO[F[Nothing, ?]] = new AnyIO[F[Nothing, ?]]{}
   }
 
   class SomeAlg[+F[_]]
   type SomeAlg2[F[_, _]] = SomeAlg[F[Nothing, ?]]
   object SomeAlg {
-    def mk[F[_]: SomeIO](): SomeAlg[F] = new SomeAlg[F]
+    def mk[F[_]: AnyIO](): SomeAlg[F] = new SomeAlg[F]
   }
-
 
 }
