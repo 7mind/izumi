@@ -8,7 +8,7 @@ import _root_.cats.syntax.traverse._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import distage._
 

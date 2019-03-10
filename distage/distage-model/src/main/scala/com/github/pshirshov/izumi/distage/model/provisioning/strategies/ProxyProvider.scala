@@ -9,9 +9,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor,
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-
 case class DeferredInit(dispatcher: ProxyDispatcher, proxy: AnyRef)
-
 
 sealed trait ProxyParams
 
@@ -42,7 +40,6 @@ case class FactoryContext(
 case class CycleContext(deferredKey: RuntimeDIUniverse.DIKey)
 
 case class ProxyContext(runtimeClass: Class[_], op: ExecutableOp, params: ProxyParams)
-
 
 trait ProxyProvider {
   def makeFactoryProxy(factoryContext: FactoryContext, proxyContext: ProxyContext): AnyRef

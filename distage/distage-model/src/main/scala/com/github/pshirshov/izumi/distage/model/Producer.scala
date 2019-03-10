@@ -6,7 +6,5 @@ import com.github.pshirshov.izumi.distage.model.provisioning.FailedProvision
 trait Producer {
   def produce(plan: OrderedPlan): Either[FailedProvision, Locator]
 
-  def produceUnsafe(plan: OrderedPlan): Locator = {
-    produce(plan).throwOnFailure()
-  }
+  final def produceUnsafe(plan: OrderedPlan): Locator = produce(plan).throwOnFailure()
 }

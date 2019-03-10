@@ -84,6 +84,8 @@ object DefaultBootstrapLocator {
       , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool)
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
+      , new EffectStrategyDefaultImpl
+
       , new ProvisioningFailureInterceptorDefaultImpl
       , verifier
     )
@@ -122,6 +124,7 @@ object DefaultBootstrapLocator {
     make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]

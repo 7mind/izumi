@@ -7,6 +7,7 @@ trait DIMonad[F[_]] {
   def pure[A](a: A): F[A]
   def map[A, B](fa: F[A])(f: A => B): F[B]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+  // FIXME: tailRecM?
 }
 
 object DIMonad {
@@ -17,8 +18,6 @@ object DIMonad {
     override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
     override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
   }
-
-  @noinline def xyz(i: Int): String = i.to(5).toString()
 
   implicit val diMonadIdentity: DIMonad[Identity] = new DIMonad[Identity] {
     override def pure[A](a: A): Identity[A] = a

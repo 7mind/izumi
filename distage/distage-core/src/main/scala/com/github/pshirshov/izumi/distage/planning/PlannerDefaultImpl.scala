@@ -2,12 +2,14 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
@@ -24,8 +26,8 @@ class PlannerDefaultImpl
 )
   extends Planner {
 
-  private val hook = new PlanningHookAggregate(planningHooks)
-  private val planningObserver = new PlanningObserverAggregate(planningObservers)
+  private[this] val hook = new PlanningHookAggregate(planningHooks)
+  private[this] val planningObserver = new PlanningObserverAggregate(planningObservers)
 
   override def plan(input: PlannerInput): OrderedPlan = {
     val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
@@ -86,95 +88,112 @@ class PlannerDefaultImpl
       .get
   }
 
-  private def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
+  private[this] def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
-      case c: SingletonBinding[_] =>
-        val newOps = provisioning(c)
+      case singleton: SingletonBinding[_] =>
+        val newOp = provisionSingleton(singleton)
 
         NextOps(
-          Map.empty
-          , Seq(newOps.op)
+          sets = Map.empty
+        , provisions = Seq(newOp)
         )
 
-      case s: SetElementBinding[_] =>
-        val target = s.key
-        val discriminator = setElementDiscriminatorKey(s, currentPlan)
-        val elementKey = RuntimeDIUniverse.DIKey.SetElementKey(target, discriminator)
-        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, s.implementation, s.tags, s.origin))
-        val oldSet = next.sets.getOrElse(target, CreateSet(s.key, s.key.tpe, Set.empty, Some(binding)))
+      case set: SetElementBinding[_] =>
+        val target = set.key
+
+        val discriminator = setElementDiscriminatorKey(set, currentPlan)
+        val elementKey = DIKey.SetElementKey(target, discriminator)
+        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
+        val oldSet = next.sets.getOrElse(target, CreateSet(target, target.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
-          next.sets.updated(target, newSet)
-          , next.provisions
+          sets = next.sets.updated(target, newSet)
+        , provisions = next.provisions
         )
 
-      case s: EmptySetBinding[_] =>
-        val newSet = CreateSet(s.key, s.key.tpe, Set.empty, Some(binding))
+      case set: EmptySetBinding[_] =>
+        val newSet = CreateSet(set.key, set.key.tpe, Set.empty, Some(binding))
 
         NextOps(
-          Map(s.key -> newSet)
-          , Seq.empty
+          sets = Map(set.key -> newSet)
+        , provisions = Seq.empty
         )
     }
   }
 
-  private def provisioning(binding: Binding.ImplBinding): Step = {
+  private[this] def provisionSingleton(binding: Binding.ImplBinding): WiringOp = {
     val target = binding.key
-    val wiring = hook.hookWiring(binding, bindingToWireable(binding))
+    val wiring0 = implToWiring(binding.implementation)
+    val wiring = hook.hookWiring(binding, wiring0)
 
+    wiringToWiringOp(target, binding, wiring)
+  }
+
+  private[this] def wiringToWiringOp(target: DIKey, binding: Binding, wiring: Wiring): WiringOp = {
     wiring match {
       case w: Constructor =>
-        Step(wiring, WiringOp.InstantiateClass(target, w, Some(binding)))
+        WiringOp.InstantiateClass(target, w, Some(binding))
 
       case w: AbstractSymbol =>
-        Step(wiring, WiringOp.InstantiateTrait(target, w, Some(binding)))
+        WiringOp.InstantiateTrait(target, w, Some(binding))
 
       case w: Factory =>
-        Step(wiring, WiringOp.InstantiateFactory(target, w, Some(binding)))
+        WiringOp.InstantiateFactory(target, w, Some(binding))
 
       case w: FactoryFunction =>
-        Step(wiring, WiringOp.CallFactoryProvider(target, w, Some(binding)))
+        WiringOp.CallFactoryProvider(target, w, Some(binding))
 
       case w: Function =>
-        Step(wiring, WiringOp.CallProvider(target, w, Some(binding)))
+        WiringOp.CallProvider(target, w, Some(binding))
 
       case w: Instance =>
-        Step(wiring, WiringOp.ReferenceInstance(target, w, Some(binding)))
+        WiringOp.ReferenceInstance(target, w, Some(binding))
 
       case w: Reference =>
-        Step(wiring, WiringOp.ReferenceKey(target, w, Some(binding)))
+        WiringOp.ReferenceKey(target, w, Some(binding))
+
+      case w: MonadicWiring.Effect =>
+        MonadicOp.ExecuteEffect(target, wiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
+
+      case w: MonadicWiring.Resource =>
+        MonadicOp.AllocateResource(target, wiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
     }
   }
 
-
-  private def bindingToWireable(binding: Binding.ImplBinding): RuntimeDIUniverse.Wiring = {
-    binding.implementation match {
+  private[this] def implToWiring(implementation: ImplDef): Wiring = {
+    implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
       case i: ImplDef.InstanceImpl =>
-        UnaryWiring.Instance(i.implType, i.instance)
+        SingletonWiring.Instance(i.implType, i.instance)
       case r: ImplDef.ReferenceImpl =>
-        UnaryWiring.Reference(r.implType, r.key, r.weak)
-      // FIXME: ???
+        SingletonWiring.Reference(r.implType, r.key, r.weak)
+      case e: ImplDef.EffectImpl =>
+        MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, implToWiring(e.effectImpl))
+      case r: ImplDef.ResourceImpl =>
+        MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, implToWiring(r.resourceImpl))
     }
   }
 
-  private def setElementDiscriminatorKey(b: SetElementBinding[RuntimeDIUniverse.DIKey], currentPlan: DodgyPlan): RuntimeDIUniverse.DIKey = {
+  private[this] def setElementDiscriminatorKey(b: SetElementBinding[DIKey], currentPlan: DodgyPlan): DIKey = {
     val goodIdx = currentPlan.operations.size.toString
 
     val tpe = b.implementation match {
       case i: ImplDef.TypeImpl =>
-        RuntimeDIUniverse.DIKey.TypeKey(i.implType)
+        DIKey.TypeKey(i.implType)
       case r: ImplDef.ReferenceImpl =>
         r.key
       case i: ImplDef.InstanceImpl =>
-        RuntimeDIUniverse.DIKey.TypeKey(i.implType).named(s"provider:$goodIdx")
+        DIKey.TypeKey(i.implType).named(s"instance:$goodIdx")
       case p: ImplDef.ProviderImpl =>
-        RuntimeDIUniverse.DIKey.TypeKey(p.implType).named(s"instance:$goodIdx")
-      // FIXME: ???
+        DIKey.TypeKey(p.implType).named(s"provider:$goodIdx")
+      case e: ImplDef.EffectImpl =>
+        DIKey.TypeKey(e.implType).named(s"effect:$goodIdx")
+      case r: ImplDef.ResourceImpl =>
+        DIKey.TypeKey(r.implType).named(s"resource:$goodIdx")
     }
 
     tpe

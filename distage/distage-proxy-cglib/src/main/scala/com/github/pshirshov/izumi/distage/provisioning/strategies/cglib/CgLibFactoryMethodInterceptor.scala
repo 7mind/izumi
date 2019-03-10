@@ -2,17 +2,19 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
+import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
+import com.github.pshirshov.izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
 import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
+import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CgLibFactoryMethodInterceptor.JustExecutor
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
-
 
 protected[distage] class CgLibFactoryMethodInterceptor
 (
@@ -29,12 +31,9 @@ protected[distage] class CgLibFactoryMethodInterceptor
       val wiringWithContext = factoryMethodIndex(method)
       val justExecutor = mkExecutor(objects, wiringWithContext)
 
-      val results = justExecutor.execute(
-        FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith, op.origin)
-      )
+      val executableOp = FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith, op.origin)
 
-      FactoryTools.interpret(results)
-
+      justExecutor.execute(executableOp)
     } else {
       super.intercept(o, method, objects, methodProxy)
     }
@@ -71,12 +70,17 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val extendedContext = narrowedContext.extend(providedValues)
     new JustExecutor {
-      override def execute(step: ExecutableOp): Seq[NewObjectOp] = {
-        executor.execute(extendedContext, step)
+      override def execute(step: ExecutableOp): AnyRef = {
+        FactoryTools.interpret(executor.execute(extendedContext, step))
       }
     }
   }
+}
 
+protected[distage] object CgLibFactoryMethodInterceptor {
+  sealed trait JustExecutor {
+    def execute(step: ExecutableOp): AnyRef
+  }
 }
 
 

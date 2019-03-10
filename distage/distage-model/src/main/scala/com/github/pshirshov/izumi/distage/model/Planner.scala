@@ -29,7 +29,5 @@ trait Planner {
 
   def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
 
-  final def plan(input: ModuleBase, roots: Set[DIKey] = Set.empty): OrderedPlan = {
-    plan(PlannerInput(input, roots))
-  }
+  final def plan(input: ModuleBase, roots: Set[DIKey] = Set.empty): OrderedPlan = plan(PlannerInput(input, roots))
 }

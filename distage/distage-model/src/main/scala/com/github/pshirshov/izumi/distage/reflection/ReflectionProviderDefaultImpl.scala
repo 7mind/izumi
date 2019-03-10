@@ -56,7 +56,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       case factory: Provider.FactoryProvider@unchecked =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
       case _ =>
-        Wiring.UnaryWiring.Function(function, function.associations)
+        Wiring.SingletonWiring.Function(function, function.associations)
     }
   }
 
@@ -69,12 +69,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     argLists.map(_.map(keyProvider.associationFromParameter))
   }
 
-  private def mkConstructorWiring(symbl: SafeType): UnaryWiring.ReflectiveInstantiationWiring = symbl match {
+  private def mkConstructorWiring(symbl: SafeType): SingletonWiring.ReflectiveInstantiationWiring = symbl match {
     case ConcreteSymbol(symb) =>
-      UnaryWiring.Constructor(symb, constructorParameters(symb), getPrefix(symb))
+      SingletonWiring.Constructor(symb, constructorParameters(symb), getPrefix(symb))
 
     case AbstractSymbol(symb) =>
-      UnaryWiring.AbstractSymbol(symb, traitMethods(symb), getPrefix(symb))
+      SingletonWiring.AbstractSymbol(symb, traitMethods(symb), getPrefix(symb))
 
     case FactorySymbol(_, _, _) =>
       throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", symbl)

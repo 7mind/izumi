@@ -28,7 +28,7 @@ object TraitConstructorMacro {
 
     val targetType = weakTypeOf[T]
 
-    val UnaryWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(SafeType(targetType))
+    val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(SafeType(targetType))
 
     val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(ctx, name, _, key) =>
@@ -48,9 +48,9 @@ object TraitConstructorMacro {
 
     val constructorDef = q"""
       ${if (wireArgs.nonEmpty)
-          q"def constructor(..$wireArgs): $targetType = ($instantiate).asInstanceOf[$targetType]"
+          q"def constructor(..$wireArgs): $targetType = ($instantiate): $targetType"
         else
-          q"def constructor: $targetType = ($instantiate).asInstanceOf[$targetType]"
+          q"def constructor: $targetType = ($instantiate): $targetType"
       }
       """
 

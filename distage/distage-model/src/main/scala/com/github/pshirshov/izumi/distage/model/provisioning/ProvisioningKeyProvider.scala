@@ -1,19 +1,24 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 trait ProvisioningKeyProvider {
-  /** Return the referred object if available, dereferencing by-name proxies according to the argument **/
-  def fetchKey(key: RuntimeDIUniverse.DIKey, byName: Boolean): Option[Any]
+  /** Return the object referred by `key` if available
+    *
+    * @param byName if true and the value under `key` is a by-name `Function0` proxy,
+    *               `Function0` will be executed and the result will be returned,
+    *               otherwise the by-name `Function0` itself will be returned.
+    */
+  def fetchKey(key: DIKey, byName: Boolean): Option[Any]
 
-  /** Directly access the value, without dereferencing for by-names **/
-  def fetchUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any]
+  /** Directly access the value, without de-referencing for by-names **/
+  def fetchUnsafe(key: DIKey): Option[Any]
 
-  def importKey(key: RuntimeDIUniverse.DIKey): Option[Any]
+  def importKey(key: DIKey): Option[Any]
 
-  def narrow(allRequiredKeys: Set[RuntimeDIUniverse.DIKey]): ProvisioningKeyProvider
+  def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider
 
-  def extend(values: Map[RuntimeDIUniverse.DIKey, Any]): ProvisioningKeyProvider
+  def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider
 }
 
 

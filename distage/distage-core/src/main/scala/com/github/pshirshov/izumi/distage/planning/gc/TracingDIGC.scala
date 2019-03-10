@@ -31,7 +31,7 @@ class TracingDIGC
                       o.wiring
                   }
                   .exists {
-                    case r: Wiring.UnaryWiring.Reference =>
+                    case r: Wiring.SingletonWiring.Reference =>
                       r.weak
                     case _ =>
                       false
@@ -60,7 +60,7 @@ class TracingDIGC
               (k, op.wiring)
           }
           .collect {
-            case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
+            case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>
               (k, r)
           }
 

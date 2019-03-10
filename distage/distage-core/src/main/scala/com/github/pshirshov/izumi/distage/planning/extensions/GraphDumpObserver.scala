@@ -149,25 +149,29 @@ final class GraphDumpObserver
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case w: RuntimeDIUniverse.Wiring.UnaryWiring =>
+              case w: RuntimeDIUniverse.Wiring.SingletonWiring =>
                 w match {
-                  case _: RuntimeDIUniverse.Wiring.UnaryWiring.ReflectiveInstantiationWiring =>
+                  case _: RuntimeDIUniverse.Wiring.SingletonWiring.ReflectiveInstantiationWiring =>
                     "make"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Function(_, _) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
                     "lambda"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Instance(_, _) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
                     "instance"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Reference(_, _, weak) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Reference(_, _, weak) =>
                     if (weak) {
                       attrs.put("style", "filled,dashed")
                     }
                     "ref"
                 }
               case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
-                "fdef"
-
+                "factory"
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
-                "ffun"
+                "factoryfun"
+
+              case RuntimeDIUniverse.Wiring.MonadicWiring.Resource(_, _, _) =>
+                "resource"
+              case RuntimeDIUniverse.Wiring.MonadicWiring.Effect(_, _, _) =>
+                "effect"
             }
         }
       case ExecutableOp.ImportDependency(_, _, _) =>

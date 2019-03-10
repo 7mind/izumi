@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -26,11 +27,11 @@ class ProxyStrategyDefaultImpl(
     val key = proxyKey(initProxy.target)
     context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
-        executor.execute(context, initProxy.proxy.op).head match {
-          case NewObjectOp.NewInstance(_, instance) =>
+        executor.execute(context, initProxy.proxy.op).toList match {
+          case NewObjectOp.NewInstance(_, instance) :: Nil =>
             adapter.init(instance.asInstanceOf[AnyRef])
           case r =>
-            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
+            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
         }
 
       case _ =>
@@ -134,6 +135,10 @@ class ProxyStrategyDefaultImpl(
       case op: WiringOp.CallProvider =>
         op.target.tpe
       case op: WiringOp.CallFactoryProvider =>
+        op.target.tpe
+      case op: MonadicOp.AllocateResource =>
+        op.target.tpe
+      case op: MonadicOp.ExecuteEffect =>
         op.target.tpe
       case op: WiringOp.ReferenceInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)

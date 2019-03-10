@@ -310,6 +310,39 @@ object ModuleDefDSL {
     final def using[I <: T : Tag](name: String): AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
+
+    final def fromEffect[F[_]: TagK, I <: T : Tag]: AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[F[I]])))
+
+    final def fromEffect[F[_]: TagK, I <: T : Tag](instance: F[I]): AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
+
+    final def fromEffect[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]]): AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
+
+    final def refEffect[F[_]: TagK, I <: T : Tag]: AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)))
+
+    final def refEffect[F[_]: TagK, I <: T : Tag](name: String): AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)))
+
+
+    final def fromResource[F[_]: TagK, I <: T : Tag]: AfterBind =
+      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[F[I]])))
+
+    final def fromResource[F[_]: TagK, I <: T : Tag](instance: F[I]): AfterBind =
+      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
+
+    final def fromResource[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]]): AfterBind =
+      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
+
+    final def refResource[F[_]: TagK, I <: T : Tag]: AfterBind =
+      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)))
+
+    final def refResource[F[_]: TagK, I <: T : Tag](name: String): AfterBind =
+      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)))
+
+
     protected def bind(impl: ImplDef): AfterBind
   }
 

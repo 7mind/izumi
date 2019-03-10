@@ -38,8 +38,8 @@ trait WithDIKey {
     }
 
     /**
-      *
-      * @param set Target set key. Must be of type `Set[T]`
+      * @param set Key of the parent Set. `set.tpe` must be of type `Set[T]`
+      * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
       */
     case class SetElementKey(set: DIKey, reference: DIKey) extends DIKey {
       override def tpe: SafeType = reference.tpe

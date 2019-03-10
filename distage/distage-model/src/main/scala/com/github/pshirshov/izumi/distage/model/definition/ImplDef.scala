@@ -19,7 +19,7 @@ object ImplDef {
 
   sealed trait RecursiveImplDef extends ImplDef
 
-  final case class EffectImpl(implType: SafeType, effectImpl: DirectImplDef) extends RecursiveImplDef
+  final case class EffectImpl(implType: SafeType, effectHKTypeCtor: SafeType, effectImpl: DirectImplDef) extends RecursiveImplDef
 
-  final case class ResourceImpl(implType: SafeType, resourceImpl: DirectImplDef) extends RecursiveImplDef
+  final case class ResourceImpl(implType: SafeType, effectHKTypeCtor: SafeType, resourceImpl: DirectImplDef) extends RecursiveImplDef
 }

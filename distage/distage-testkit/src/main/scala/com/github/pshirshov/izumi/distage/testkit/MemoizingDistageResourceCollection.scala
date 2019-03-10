@@ -55,7 +55,7 @@ abstract class MemoizingDistageResourceCollection
   override def transformPlanElement(op: ExecutableOp): ExecutableOp = synchronized {
     Option(instanceStore.memoizedInstances.get(op.target)) match {
       case Some(value) =>
-        ExecutableOp.WiringOp.ReferenceInstance(op.target, Wiring.UnaryWiring.Instance(op.target.tpe, value), op.origin)
+        ExecutableOp.WiringOp.ReferenceInstance(op.target, Wiring.SingletonWiring.Instance(op.target.tpe, value), op.origin)
       case None =>
         op
     }

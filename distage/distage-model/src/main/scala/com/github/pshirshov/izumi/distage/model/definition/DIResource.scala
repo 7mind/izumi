@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import cats.effect.{Bracket, Resource}
+import cats.effect.Bracket
+import cats.effect.Resource
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceUse
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity

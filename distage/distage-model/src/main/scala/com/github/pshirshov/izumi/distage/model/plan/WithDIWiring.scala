@@ -15,6 +15,8 @@ trait WithDIWiring {
   =>
 
   sealed trait Wiring {
+    def instanceType: SafeType
+
     def associations: Seq[Association]
 
     def requiredKeys: Set[DIKey] = associations.map(_.wireWith).toSet
@@ -24,16 +26,16 @@ trait WithDIWiring {
 
   object Wiring {
 
-    sealed trait UnaryWiring extends Wiring {
+    sealed trait SingletonWiring extends Wiring {
       def instanceType: SafeType
 
-      override def replaceKeys(f: Association => DIKey.BasicKey): UnaryWiring
+      override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
     }
 
 
-    object UnaryWiring {
+    object SingletonWiring {
 
-      sealed trait ReflectiveInstantiationWiring extends UnaryWiring {
+      sealed trait ReflectiveInstantiationWiring extends SingletonWiring {
         def prefix: Option[DIKey]
         override def replaceKeys(f: Association => DIKey.BasicKey): ReflectiveInstantiationWiring
 
@@ -50,25 +52,48 @@ trait WithDIWiring {
           this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
       }
 
-      case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends UnaryWiring {
+      case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
         override def instanceType: SafeType = provider.ret
 
         override final def replaceKeys(f: Association => DIKey.BasicKey): Function =
           this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
       }
 
-      case class Instance(instanceType: SafeType, instance: Any) extends UnaryWiring {
+      case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
         override def associations: Seq[Association] = Seq.empty
 
         override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
       }
 
-      case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends UnaryWiring {
+      case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {
         override def associations: Seq[Association] = Seq.empty
 
         override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
 
         override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
+      }
+    }
+
+    sealed trait MonadicWiring extends Wiring {
+      def effectDIKey: DIKey
+    }
+
+    object MonadicWiring {
+
+      case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: Wiring) extends MonadicWiring {
+        override def associations: Seq[Association] = effectWiring.associations
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
+
+        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType).named(s"effect-for-$instanceType-in-$effectHKTypeCtor")
+      }
+
+      case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: Wiring) extends MonadicWiring {
+        override def associations: Seq[Association] = effectWiring.associations
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))
+
+        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType).named(s"resource-for-$instanceType-in-$effectHKTypeCtor")
       }
     }
 
@@ -92,18 +117,20 @@ trait WithDIWiring {
           fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a)))
           , factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
         )
+
+      override final def instanceType: SafeType = factoryType
     }
 
     object Factory {
-      case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: UnaryWiring.ReflectiveInstantiationWiring, methodArguments: Seq[DIKey]) {
+      case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring.ReflectiveInstantiationWiring, methodArguments: Seq[DIKey]) {
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
     }
 
     case class FactoryFunction(
                                 provider: Provider
-                                , factoryIndex: Map[Int, FactoryFunction.FactoryMethod]
-                                , providerArguments: Seq[Association.Parameter]
+                              , factoryIndex: Map[Int, FactoryFunction.FactoryMethod]
+                              , providerArguments: Seq[Association.Parameter]
                               ) extends Wiring {
       private[this] final val factoryMethods: Seq[FactoryFunction.FactoryMethod] = factoryIndex.values.toSeq
 
@@ -120,12 +147,14 @@ trait WithDIWiring {
           providerArguments = this.providerArguments.map(a => a.withWireWith(f(a)))
           , factoryIndex = this.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
         )
+
+      override final def instanceType: SafeType = provider.ret
     }
 
     object FactoryFunction {
       // TODO: wireWith should be Wiring.UnaryWiring.Function - generate providers in-place in distage-static,
       //  instead of generating code that uses runtime reflection
-      case class FactoryMethod(factoryMethod: SymbolInfo, wireWith: Wiring.UnaryWiring, methodArguments: Seq[DIKey]) {
+      case class FactoryMethod(factoryMethod: SymbolInfo, wireWith: Wiring.SingletonWiring, methodArguments: Seq[DIKey]) {
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
     }

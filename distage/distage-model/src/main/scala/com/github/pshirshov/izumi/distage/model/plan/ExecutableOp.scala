@@ -33,30 +33,30 @@ object ExecutableOp {
 
   object WiringOp {
 
-    final case class InstantiateClass(target: DIKey, wiring: UnaryWiring.Constructor, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateClass(target: DIKey, wiring: SingletonWiring.Constructor, origin: Option[Binding]) extends WiringOp
 
-    final case class InstantiateTrait(target: DIKey, wiring: UnaryWiring.AbstractSymbol, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateTrait(target: DIKey, wiring: SingletonWiring.AbstractSymbol, origin: Option[Binding]) extends WiringOp
 
     final case class InstantiateFactory(target: DIKey, wiring: Factory, origin: Option[Binding]) extends WiringOp
 
-    final case class CallProvider(target: DIKey, wiring: UnaryWiring.Function, origin: Option[Binding]) extends WiringOp
+    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: Option[Binding]) extends WiringOp
 
     final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: Option[Binding]) extends WiringOp
 
-    final case class ReferenceInstance(target: DIKey, wiring: UnaryWiring.Instance, origin: Option[Binding]) extends WiringOp
+    final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: Option[Binding]) extends WiringOp
 
-    final case class ReferenceKey(target: DIKey, wiring: UnaryWiring.Reference, origin: Option[Binding]) extends WiringOp
+    final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: Option[Binding]) extends WiringOp
 
+    sealed trait MonadicOp extends WiringOp
+
+    object MonadicOp {
+
+      final case class ExecuteEffect(target: DIKey, op: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: Option[Binding]) extends MonadicOp
+
+      final case class AllocateResource(target: DIKey, op: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp
+    }
   }
 
-  sealed trait ControlOp extends ExecutableOp
-
-  object ControlOp {
-
-    final case class AllocateResource(target: DIKey, typeCtor: SafeType, wiring: Wiring, origin: Option[Binding]) extends WiringOp
-
-    final case class MonadicBind(target: DIKey, typeCtor: SafeType, wiring: Wiring, origin: Option[Binding]) extends WiringOp
-  }
 
   sealed trait ProxyOp extends ExecutableOp
 
@@ -75,7 +75,7 @@ object ExecutableOp {
     op match {
       case w: WiringOp =>
         w.wiring match {
-          case u: Wiring.UnaryWiring =>
+          case u: Wiring.SingletonWiring =>
             u.instanceType
           case _ =>
             w.target.tpe

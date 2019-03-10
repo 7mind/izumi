@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._

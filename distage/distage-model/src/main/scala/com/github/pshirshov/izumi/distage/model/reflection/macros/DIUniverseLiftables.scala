@@ -8,7 +8,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
+  private[this] implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
 
   implicit def liftableSafeType: Liftable[SafeType]
 

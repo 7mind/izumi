@@ -112,7 +112,7 @@ trait WithDICallable {
 
         override final def unsafeZip(newRet: SafeType, that: Provider): FactoryProviderImpl = {
           that match {
-            case that: FactoryProvider =>
+            case that: FactoryProviderImpl =>
               throw new FactoryProvidersCannotBeCombined(s"Impossible operation: two factory providers cannot be zipped. this=$this that=$that", this, that)
             case _ =>
               copy(provider = provider.unsafeZip(newRet, that))
