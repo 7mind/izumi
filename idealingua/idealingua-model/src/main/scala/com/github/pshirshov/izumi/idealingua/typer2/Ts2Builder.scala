@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawNodeMeta
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
+import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef, TyperFailure}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
@@ -98,8 +98,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
 
-  def finish(): Either[List[BuilderFail], Typespace2] = {
-    for {
+  def finish(): Either[TyperFailure, Typespace2] = {
+    (for {
       _ <- if (failures.nonEmpty) {
         Left(failures.toList)
       } else {
@@ -116,7 +116,13 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         warnings.toList,
         Set.empty,
         this.types.values.toList,
+        index.defn.origin,
       )
+    }) match {
+      case Left(f) =>
+        Left(TyperFailure(f, warnings.toList))
+      case Right(s) =>
+        Right(s)
     }
   }
 

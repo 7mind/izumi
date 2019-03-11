@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawTopLevel
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
-import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, T2Warn, Typespace2}
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.mutable
@@ -18,9 +18,10 @@ class Typer2(defn: DomainMeshResolved) {
 
   import Typer2._
 
-  def run(): Unit = {
+  def run(): Either[TyperFailure, Typespace2] = {
+    val r = doRun()
+
     println(s">>> ${defn.id}")
-    val r = run1()
     r match {
       case Left(value) =>
 
@@ -30,11 +31,14 @@ class Typer2(defn: DomainMeshResolved) {
         val types = value.types.size
         println(s"  ... $types members, ${value.warnings.size} warnings")
     }
+
+    r
   }
 
-  def run1(): Either[List[T2Fail], Typespace2] = {
+
+  private def doRun(): Either[TyperFailure, Typespace2] = {
     for {
-      index <- DomainIndex.build(defn)
+      index <- DomainIndex.build(defn).left.map(TyperFailure.apply)
       _ <- preverify(index)
       importedIndexes <- defn.referenced.toSeq
         .map {
@@ -42,6 +46,7 @@ class Typer2(defn: DomainMeshResolved) {
         }
         .biAggregate
         .map(_.toMap)
+        .left.map(TyperFailure.apply)
       allOperations <- combineOperations(index, importedIndexes)
       groupedByType <- groupOps(allOperations)
       ordered <- orderOps(groupedByType)
@@ -51,7 +56,7 @@ class Typer2(defn: DomainMeshResolved) {
     }
   }
 
-  private def preverify(index: DomainIndex): Either[List[T2Fail], Unit] = {
+  private def preverify(index: DomainIndex): Either[TyperFailure, Unit] = {
     val badTypes = index.types
       .groupBy {
         case RawTopLevelDefn.TLDBaseType(v) =>
@@ -73,7 +78,7 @@ class Typer2(defn: DomainMeshResolved) {
 
     val everything = (badServices.toSeq ++ badBuzzers.toSeq ++ badStreams.toSeq ++ badTypes.toSeq).groupBy(_._1).mapValues(_.map(_._2)).mapValues(_.flatten)
 
-    for {
+    (for {
       _ <- check("service", badServices)
       _ <- check("buzzer", badBuzzers)
       _ <- check("stream", badStreams)
@@ -81,7 +86,7 @@ class Typer2(defn: DomainMeshResolved) {
       _ <- check("name", everything)
     } yield {
 
-    }
+    }).left.map(TyperFailure.apply)
   }
 
   private def check(kind: String, c: Map[RawDeclaredTypeName, Seq[NamedDefn]]): Either[List[TopLevelNameConflict], Unit] = {
@@ -134,7 +139,7 @@ class Typer2(defn: DomainMeshResolved) {
     Right(allOperations)
   }
 
-  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[TypenameRef, UniqueOperation], ordered: Seq[TypenameRef]): Either[List[T2Fail], Typespace2] = {
+  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[TypenameRef, UniqueOperation], ordered: Seq[TypenameRef]): Either[TyperFailure, Typespace2] = {
     val processor = new Ts2Builder(index, importedIndexes)
     val declIndex = index.declaredTypes.groupBy {
       case RawTopLevelDefn.TLDBaseType(v) =>
@@ -170,15 +175,13 @@ class Typer2(defn: DomainMeshResolved) {
       processor.finish()
     } match {
       case Failure(exception) =>
-        import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-        println(exception.stackTrace)
-        Left(List(UnexpectedException(exception)))
+        Left(TyperFailure(List(UnexpectedException(exception))))
       case Success(value) =>
         value
     }
   }
 
-  private def groupOps(allOperations: Seq[UniqueOperation]): Either[List[NameConflict], Map[TypenameRef, UniqueOperation]] = {
+  private def groupOps(allOperations: Seq[UniqueOperation]): Either[TyperFailure, Map[TypenameRef, UniqueOperation]] = {
     allOperations
       .groupBy(_.id)
       .map {
@@ -191,9 +194,10 @@ class Typer2(defn: DomainMeshResolved) {
       }
       .toSeq
       .biAggregate.map(_.toMap)
+      .left.map(TyperFailure.apply)
   }
 
-  private def orderOps(groupedByType: Map[TypenameRef, UniqueOperation]): Either[List[T2Fail], Seq[TypenameRef]] = {
+  private def orderOps(groupedByType: Map[TypenameRef, UniqueOperation]): Either[TyperFailure, Seq[TypenameRef]] = {
 
     val circulars = new mutable.ArrayBuffer[Set[TypenameRef]]()
 
@@ -205,7 +209,7 @@ class Typer2(defn: DomainMeshResolved) {
 
     val deps = groupedByType.mapValues(_.depends)
 
-    for {
+    (for {
       ordered <- new Toposort().cycleBreaking(deps, Seq.empty, resolver)
         .left.map {
         f =>
@@ -234,8 +238,7 @@ class Typer2(defn: DomainMeshResolved) {
       }
     } yield {
       verified
-    }
-
+    }).left.map(TyperFailure.apply)
 
   }
 }
@@ -243,6 +246,11 @@ class Typer2(defn: DomainMeshResolved) {
 
 object Typer2 {
 
+  case class TyperFailure(errors: List[T2Fail], warnings: List[T2Warn])
+
+  object TyperFailure {
+    def apply(errors: List[T2Fail]): TyperFailure = new TyperFailure(errors, List.empty)
+  }
 
   case class TypenameRef(pkg: Seq[String], name: String) {
     override def toString: String = s"<${pkg.mkString(".")}>.$name"

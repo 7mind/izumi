@@ -146,7 +146,7 @@ object CommandlineIDLCompiler {
     val toCompile = Timed {
 //      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
       new ModelResolver()
-        .resolve(loaded.value, runt2 = false)
+        .resolve(loaded.value)
         .ifWarnings {
           message =>
             log.log(message)

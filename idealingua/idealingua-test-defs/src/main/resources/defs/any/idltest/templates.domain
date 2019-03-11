@@ -61,20 +61,6 @@ mixin TInh2 {
 type TInh3 = TInh1[str, map[str, str]]
 
 // adts
-
-template [A] adt ResultExample {
-    M0[i64, str] @BranchType as BranchName
-    data Success {
-        value: A
-    }
-    data Failure {
-        message: str
-    }
-}
-
-type LongResult = ResultExample[i64]
-
-
 template [A] adt Result with {
     requestId: uid
 } {
@@ -87,3 +73,17 @@ template [A] adt Result with {
 }
 
 type LongResult = Result[i64]
+
+
+//
+template [A] adt InsaneExample {
+    M0[i64, str] @BranchType as BranchName
+    data Success {
+        value: A
+    }
+    data Failure {
+        message: str
+    }
+}
+
+type InsaneInstance = InsaneExample[i64]
