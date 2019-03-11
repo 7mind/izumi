@@ -325,6 +325,14 @@ lazy val logstageApi = inLogStage.as.module
 lazy val logstageCore = inLogStage.as.module
   .depends(logstageApi, fundamentalsBioJvm)
 
+lazy val logstageZio = inLogStage.as.module
+  .depends(logstageCore)
+  .settings(libraryDependencies += R.zio_core)
+
+lazy val logstageCats = inLogStage.as.module
+  .depends(logstageCore)
+  .settings(libraryDependencies += R.cats_core)
+
 lazy val logstageDi = inLogStage.as.module
   .depends(
     logstageCore
@@ -458,6 +466,8 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageRenderingCirce
   , logstageConfig
   , logstageConfigDi
+  , logstageZio
+  , logstageCats
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
