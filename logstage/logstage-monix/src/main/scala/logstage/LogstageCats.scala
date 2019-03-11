@@ -12,7 +12,7 @@ object LogstageCats {
   def withDynamicContext[F[_]: Monad: SyncSafe](logger: IzLogger, dynamic: F[CustomContext]): LogIO[F] = {
 
     def withLogger[T](f: IzLogger => T) : F[T] = {
-      dynamic.flatMap(ctx => SyncSafe[F].syncSafe(logger.withCustomContext(ctx)).map(f))
+      dynamic.flatMap(ctx => SyncSafe[F].syncSafe(f(logger.withCustomContext(ctx))))
     }
 
     new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
