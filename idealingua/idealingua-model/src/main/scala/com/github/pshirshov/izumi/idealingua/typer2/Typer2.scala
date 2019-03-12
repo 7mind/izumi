@@ -171,6 +171,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       processor.finish()
     } match {
       case Failure(exception) =>
+        exception.printStackTrace()
         Left(TyperFailure(List(UnexpectedException(exception))))
       case Success(value) =>
         value

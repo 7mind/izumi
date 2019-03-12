@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.interpreter.Resolvers
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 class TypespaceEvalutor(resolvers: Resolvers) {
   import TypespaceEvalutor._
@@ -63,6 +63,27 @@ class TypespaceEvalutor(resolvers: Resolvers) {
         Set.empty
       case _: IzType.BuiltinType =>
         Set.empty
+      case s: IzType.TargetInterface =>
+        s.methods.flatMap(refs(s)).toSet
+    }
+  }
+
+  private def refs(context: IzType)(structure: IzMethod): Set[(IzTypeId, IzTypeReference)] = {
+    (structure.input match {
+      case IzInput.Singular(typeref) =>
+        Set(context.id -> typeref)
+    }) ++ (structure.output match {
+      case basic: IzOutput.Basic =>
+        refs(context, basic)
+      case IzOutput.Alternative(success, failure) =>
+        refs(context, success) ++ refs(context, failure)
+    })
+  }
+
+  private def refs(context: IzType, basic: IzOutput.Basic): Set[(IzTypeId, IzTypeReference)] = {
+    basic match {
+      case IzOutput.Singular(typeref) =>
+        Set(context.id -> typeref)
     }
   }
 

@@ -26,7 +26,7 @@ class AdtSupport(
     makeAdt(a, Seq.empty).map(_.flatten)
   }
 
-  private def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
+  def makeAdt(a: RawTypeDef.Adt, subpath: Seq[IzNamespace]): TChain = {
     val id = resolvers.nameToId(a.id, subpath)
 
     for {

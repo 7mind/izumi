@@ -84,9 +84,9 @@ class InterfaceSupport(
         }
       case Output.Algebraic(alternatives) =>
         for {
-          adt <- adtSupport.makeAdt(RawTypeDef.Adt(name, None, alternatives, mmeta))
+          adt <- adtSupport.makeAdt(RawTypeDef.Adt(name, None, alternatives, mmeta), ns)
         } yield {
-          Product(IzOutput.Singular(???), adt)
+          Product(IzOutput.Singular(IzTypeReference.Scalar(adt.main.id)), adt.flatten)
         }
       case Output.Singular(typeId) =>
         for {
