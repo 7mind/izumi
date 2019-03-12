@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.typer2.TypespaceEvalutor.TopLevelIdIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FullField, NodeMeta}
@@ -75,10 +74,19 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor, logg
 
 
   private def preValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {
-    // TODO: verify
     // don't forget: we don't have ALL the definitions here yet
-    Quirks.discard(tpe)
-    Right(())
+    tpe match {
+      case interface: IzType.TargetInterface =>
+        val issues = interface.methods.groupBy(_.name).filter(_._2.size > 1)
+        if (issues.isEmpty) {
+          Right(())
+        } else {
+          Left(List(NonUniqueMethodName(tpe.id, issues, interface.meta)))
+        }
+      case _ =>
+        Right(())
+
+    }
   }
 
   private def postValidate(tpe: IzType): Either[List[VerificationFail], Unit] = {

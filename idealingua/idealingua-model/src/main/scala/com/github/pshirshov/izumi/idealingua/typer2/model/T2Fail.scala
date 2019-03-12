@@ -78,6 +78,7 @@ object T2Fail {
   final case class ContradictiveAdtMembers(id: IzTypeId,  badMembers: Map[String, Seq[AdtMember]]) extends VerificationFail
   final case class UndefinedForeignTypeParameters(id: IzTypeId, undefinedParameters: Set[IzTypeArgName], meta: NodeMeta) extends VerificationFail
   final case class MissingTypespaceMember(id: IzTypeId, context: IzTypeId, meta: NodeMeta) extends VerificationFail
+  final case class NonUniqueMethodName(id: IzTypeId, issues: Map[String, List[IzMethod]], meta: NodeMeta) extends VerificationFail
 }
 
 

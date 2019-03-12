@@ -87,3 +87,9 @@ template [A] adt InsaneExample {
 }
 
 type InsaneInstance = InsaneExample[i64]
+
+template [A, B] service BaseCrud {
+    def get(a: A) => B
+}
+
+type IntCrud = BaseCrud[i08, i08]
