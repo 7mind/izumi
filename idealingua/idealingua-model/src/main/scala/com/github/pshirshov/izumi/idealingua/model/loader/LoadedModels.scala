@@ -44,7 +44,7 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
 
   def throwIfFailed(): LoadedModels = ifFailed(message => throw new IDLException(message))
 
-  def collectFailures: Seq[String] = {
+  private def collectFailures: Seq[String] = {
     val pf = if (diagnostics.issues.nonEmpty) {
       diagnostics.issues
     } else {
@@ -83,11 +83,11 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
       .map(_.toString)
   }
 
-  def render(fail: RefResolverIssue): String = fail.toString
+  private def render(fail: RefResolverIssue): String = fail.toString
 
   // TODO: not user friendly at all
-  def render(fail: T2Fail): String = fail.toString
-  def render(fail: T2Warn): String = fail.toString
+  private def render(fail: T2Fail): String = fail.toString
+  private def render(fail: T2Warn): String = fail.toString
 }
 
 object LoadedModels {

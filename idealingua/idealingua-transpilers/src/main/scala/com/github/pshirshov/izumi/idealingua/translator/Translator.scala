@@ -5,8 +5,8 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2
 
 case class Translated(typespace: Typespace2, modules: Seq[Module])
 
-trait Translator {
-  def translate(): Translated
+trait Translator[Options] {
+  def translate(options: Options, typespace2: Typespace2): Translated
 }
 
 

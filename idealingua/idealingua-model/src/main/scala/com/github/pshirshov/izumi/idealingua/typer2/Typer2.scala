@@ -14,7 +14,7 @@ import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 
-class Typer2(defn: DomainMeshResolved) {
+class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
 
   import Typer2._
 

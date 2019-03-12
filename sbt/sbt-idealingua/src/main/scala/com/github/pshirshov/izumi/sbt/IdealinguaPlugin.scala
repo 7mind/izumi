@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
+import com.github.pshirshov.izumi.idealingua.translator.ExtensionSpec
+import com.github.pshirshov.izumi.idealingua.typer2.TyperOptions
 //import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
 //import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
 //import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
@@ -43,10 +45,10 @@ object IdealinguaPlugin extends AutoPlugin {
     val compilationTargets = settingKey[Seq[Invokation]]("IDL targets")
     val unresolvedDomains = taskKey[UnresolvedDomains]("Loaded but not yet resolved domains")
 
-//    val idlExtensionsScala = settingKey[Seq[ScalaTranslatorExtension]]("Default list of translator extensions for scala")
-//    val idlExtensionsTypescript = settingKey[Seq[TypeScriptTranslatorExtension]]("Default list of translator extensions for typescript")
-//    val idlExtensionsGolang = settingKey[Seq[GoLangTranslatorExtension]]("Default list of translator extensions for golang")
-//    val idlExtensionsCSharp = settingKey[Seq[CSharpTranslatorExtension]]("Default list of translator extensions for csharp")
+    val idlExtensionsScala = settingKey[ExtensionSpec]("Default list of translator extensions for scala")
+    val idlExtensionsTypescript = settingKey[ExtensionSpec]("Default list of translator extensions for typescript")
+    val idlExtensionsGolang = settingKey[ExtensionSpec]("Default list of translator extensions for golang")
+    val idlExtensionsCSharp = settingKey[ExtensionSpec]("Default list of translator extensions for csharp")
 
     val idlManifestScala = settingKey[ScalaBuildManifest]("scala manifest")
     val idlManifestTypescript = settingKey[TypeScriptBuildManifest]("typescript manifest")
@@ -94,24 +96,24 @@ object IdealinguaPlugin extends AutoPlugin {
   }
 
   override lazy val projectSettings = Seq(
-//    idlExtensionsScala := ScalaTranslator.defaultExtensions,
-//    idlExtensionsTypescript := TypeScriptTranslator.defaultExtensions,
-//    idlExtensionsGolang := GoLangTranslator.defaultExtensions,
-//    idlExtensionsCSharp := CSharpTranslator.defaultExtensions,
+    idlExtensionsScala := ExtensionSpec.All,
+    idlExtensionsTypescript := ExtensionSpec.All,
+    idlExtensionsGolang := ExtensionSpec.All,
+    idlExtensionsCSharp := ExtensionSpec.All,
     idlManifestScala := ScalaBuildManifest.example.copy(layout = ScalaProjectLayout.PLAIN),
     idlManifestTypescript := TypeScriptBuildManifest.example,
     idlManifestGolang := GoLangBuildManifest.example,
     idlManifestCSharp := CSharpBuildManifest.example,
 
     compilationTargets := Seq(
-      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, Seq.empty /*idlExtensionsScala.value*/, idlManifestScala.value), Mode.CompiledArtifact)
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, Seq.empty /*idlExtensionsScala.value*/, idlManifestScala.value), Mode.SourceArtifact)
+      Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value, withBundledRuntime = true, None), Mode.CompiledArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Scala, idlExtensionsScala.value, idlManifestScala.value, withBundledRuntime = true, None), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, Seq.empty /*idlExtensionsTypescript.value*/, idlManifestTypescript.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Typescript, idlExtensionsTypescript.value, idlManifestTypescript.value, withBundledRuntime = true, None), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, Seq.empty /*idlExtensionsGolang.value*/, idlManifestGolang.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.Go, idlExtensionsGolang.value, idlManifestGolang.value, withBundledRuntime = true, None), Mode.SourceArtifact)
 
-      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, Seq.empty /*idlExtensionsCSharp.value*/, idlManifestCSharp.value), Mode.SourceArtifact)
+      , Invokation(UntypedCompilerOptions(IDLLanguage.CSharp, idlExtensionsCSharp.value, idlManifestCSharp.value, withBundledRuntime = true, None), Mode.SourceArtifact)
     ),
 
     watchSources += Watched.WatchSource(baseDirectory.value / "src/main/izumi"),
@@ -270,7 +272,7 @@ object IdealinguaPlugin extends AutoPlugin {
     if (isNew.exists({ case (src, tgt) => src.isAfter(tgt) }) || isNew.isEmpty) {
       // TODO: maybe it's unsafe to destroy the whole directory?..
 //      val rules = TypespaceCompilerBaseFacade.descriptor(invokation.options.language).rules
-      val resolved = new ModelResolver().resolve(loaded)
+      val resolved = new ModelResolver(TyperOptions()).resolve(loaded)
 
       val toCompile = resolved
         .ifWarnings(message => logger.warn(message))

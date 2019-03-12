@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
+
+import com.github.pshirshov.izumi.idealingua.typer2.TyperOptions
 //import java.lang.management.ManagementFactory
 //import java.nio.charset.StandardCharsets
 import java.nio.file._
@@ -54,7 +56,7 @@ object IDLTestTools {
 //      TypespaceCompilerBaseFacade.descriptor(IDLLanguage.parse(last)).rules
 //    }
 //    new ModelResolver(rules)
-    new ModelResolver()
+    new ModelResolver(TyperOptions())
   }
 
 
