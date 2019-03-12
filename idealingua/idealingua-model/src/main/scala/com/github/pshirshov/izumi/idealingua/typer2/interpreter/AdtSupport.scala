@@ -7,9 +7,12 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclare
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.Adt
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{BuilderFail, CannotApplyAdtBranchContract, GenericAdtBranchMustBeNamed}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{BuilderFail, CannotApplyAdtBranchContract, GenericAdtBranchMustBeNamed, InterfaceTypeCannotBeUsedInAdt}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 import com.github.pshirshov.izumi.idealingua.typer2.results._
+
+
+
 
 
 class AdtSupport(
@@ -48,12 +51,12 @@ class AdtSupport(
             mapRefMember(context, refMember)
 
           case nestedMember: Member.NestedDefn =>
-            mapNestedMember(subpath, nestedMember)
+            mapNestedMember(context, subpath, nestedMember)
         }
     }
   }
 
-  private def mapNestedMember(subpath: Seq[IzNamespace], nestedMember: Member.NestedDefn): Either[List[BuilderFail], AdtMemberProducts] = {
+  private def mapNestedMember(context: IzTypeId, subpath: Seq[IzNamespace], nestedMember: Member.NestedDefn): Either[List[BuilderFail], AdtMemberProducts] = {
     val nested = nestedMember.nested
     val namespace = subpath
 
@@ -71,6 +74,8 @@ class AdtSupport(
           i2.makeIdentifier(n, namespace).asChain
         case n: RawTypeDef.Adt =>
           makeAdt(n, namespace :+ IzNamespace(nested.id.name))
+        case n: RawTypeDef.TargetInterface =>
+          Left(List(InterfaceTypeCannotBeUsedInAdt(context, n.id, i2.meta(n.meta))))
       }
     } yield {
       AdtMemberProducts(AdtMemberNested(nested.id.name, IzTypeReference.Scalar(tpe.main.id), i2.meta(nested.meta)), tpe.main +: tpe.additional)
@@ -87,14 +92,17 @@ class AdtSupport(
           case templating: RawTypeDef.WithTemplating =>
             templating match {
               case i: RawTypeDef.Interface =>
-                mapNestedMember(subpath, n.copy(nested = i.copy(struct = merge(i.struct, value))))
+                mapNestedMember(context, subpath, n.copy(nested = i.copy(struct = merge(i.struct, value))))
 
               case d: RawTypeDef.DTO =>
-                mapNestedMember(subpath, n.copy(nested = d.copy(struct = merge(d.struct, value))))
+                mapNestedMember(context, subpath, n.copy(nested = d.copy(struct = merge(d.struct, value))))
 
               case a: RawTypeDef.Adt =>
                 val newContract = a.contract.map(c => merge(value, c)).getOrElse(value)
-                mapNestedMember(subpath, n.copy(nested = a.copy(contract = Some(newContract))))
+                mapNestedMember(context, subpath, n.copy(nested = a.copy(contract = Some(newContract))))
+
+              case n: RawTypeDef.TargetInterface =>
+                Left(List(InterfaceTypeCannotBeUsedInAdt(context, n.id, i2.meta(n.meta))))
             }
 
           case a: RawTypeDef.Alias =>
@@ -105,7 +113,7 @@ class AdtSupport(
 
           case i: RawTypeDef.Identifier =>
             for {
-              nested <- mapNestedMember(subpath, n.copy(nested = i.copy()))
+              nested <- mapNestedMember(context, subpath, n.copy(nested = i.copy()))
             } yield {
               nested
             }
@@ -117,17 +125,17 @@ class AdtSupport(
     for {
       name <- nameOf(context, ref)
       nameToUse = ref.memberName.getOrElse(name)
-      nested <- asDto(value, subpath, ref.typeId, ref.meta, nameToUse)
+      nested <- asDto(context, value, subpath, ref.typeId, ref.meta, nameToUse)
     } yield {
       nested
     }
   }
 
-  private def asDto(value: RawStructure, subpath: Seq[IzNamespace], typeId: RawRef, meta: RawNodeMeta, nameToUse: TypeName): Either[List[BuilderFail], AdtMemberProducts] = {
+  private def asDto(context: IzTypeId, value: RawStructure, subpath: Seq[IzNamespace], typeId: RawRef, meta: RawNodeMeta, nameToUse: TypeName): Either[List[BuilderFail], AdtMemberProducts] = {
     val declaredTypeName = RawDeclaredTypeName(nameToUse)
     val withValue = value.copy(fields = value.fields :+ RawField(typeId, Some("value"), meta))
     val nested = Member.NestedDefn(RawTypeDef.DTO(declaredTypeName, withValue, meta))
-    mapNestedMember(subpath, nested)
+    mapNestedMember(context, subpath, nested)
   }
 
   private def merge(structure: RawStructure, contract: RawStructure): RawStructure = {

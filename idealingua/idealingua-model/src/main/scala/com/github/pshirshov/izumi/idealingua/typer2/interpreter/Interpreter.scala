@@ -16,12 +16,12 @@ object Interpreter {
 
 }
 
-
 class InterpreterImpl(
                        typedefSupport: TypedefSupport,
                        adtSupport: AdtSupport,
                        templateSupport: TemplateSupport,
-                       cloneSupport: CloneSupport
+                       cloneSupport: CloneSupport,
+                       interfaceSupport: InterfaceSupport
                      ) extends Interpreter {
 
 
@@ -46,6 +46,12 @@ class InterpreterImpl(
 
           case a: RawTypeDef.Adt =>
             adtSupport.makeAdt(a)
+
+          case s: RawTypeDef.RawService =>
+            interfaceSupport.makeService(s)
+
+          case b: RawTypeDef.RawBuzzer =>
+            interfaceSupport.makeBuzzer(b)
         }
 
       case t: RawTopLevelDefn.TLDTemplate =>

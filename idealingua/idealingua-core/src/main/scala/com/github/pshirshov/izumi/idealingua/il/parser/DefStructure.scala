@@ -92,8 +92,11 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
     def simpleStruct[_: P]: P[RawSimpleStructure] = {
       P((any ~ anyPart ~ any).rep(sep = sepInlineStruct) ~ sepInlineStruct.?)
-        .map(RawStructure.Aux.apply)
-        .map(s => RawSimpleStructure(s.structure.concepts, s.structure.fields))
+        .map {
+          case s =>
+            val ops = RawStructure.Aux(s)
+            RawSimpleStructure(ops.structure.concepts, ops.structure.fields)
+        }
     }
 
   }
@@ -198,10 +201,6 @@ class DefStructure(context: IDLParserContext) extends Separators {
         Enumeration(i, v, c)
     }
 
-  def templateBlock[_: P]: P[TLDTemplate] = P(metaAgg.kwWithMeta(kw.template, inline ~ ids.typeArgumentsShort ~/ (inline ~ (adtBlock | dtoBlock | mixinBlock))))
-    .map {
-      case (c, (a, v)) => TLDTemplate(Template(a.toList, v, c))
-    }
 
   def instanceBlock[_: P]: P[TLDInstance] = P(metaAgg.cstarting(kw.instance, "=" ~/ (inline ~ ids.typeReference)))
     .map {

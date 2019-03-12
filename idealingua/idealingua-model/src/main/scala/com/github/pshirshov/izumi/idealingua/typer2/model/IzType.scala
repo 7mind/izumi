@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.WithTemplating
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
 
@@ -66,6 +67,14 @@ object IzType {
   final case class Interpolation(parts: Seq[String], parameters: Seq[IzTypeArgName])
   final case class ForeignGeneric(id: IzTypeId, args: Seq[IzTypeArgName], mapping: Map[String, Interpolation], meta: NodeMeta) extends Generic with Foreign
 
+  sealed trait TargetInterface extends IzType {
+    def id: IzTypeId
+    def methods: List[IzMethod]
+    def meta: NodeMeta
+  }
+  final case class Buzzer(id: IzTypeId, methods: List[IzMethod], meta: NodeMeta) extends TargetInterface
+  final case class Service(id: IzTypeId, methods: List[IzMethod], meta: NodeMeta) extends TargetInterface
+
   // builtins
   sealed trait BuiltinType extends IzType {
     def names: Seq[IzName]
@@ -114,7 +123,6 @@ object IzType {
   }
 
 }
-
 
 
 

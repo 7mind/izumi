@@ -28,12 +28,10 @@ class DefMember(context: IDLParserContext) extends Aggregates {
     defStructure.foreignBlock |
       defStructure.cloneBlock |
       defStructure.instanceBlock |
-      defStructure.templateBlock
+      defTemplate.templateBlock
   )
 
   private def interfaceMember[_: P]: P[RawTopLevelDefn.NamedDefn] = P(
-    defService.serviceBlock |
-      defBuzzer.buzzerBlock |
       defStreams.streamsBlock
   )
 

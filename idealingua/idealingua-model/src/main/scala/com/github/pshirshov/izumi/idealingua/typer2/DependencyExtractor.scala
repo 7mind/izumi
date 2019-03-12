@@ -2,8 +2,10 @@ package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawMethod.Output
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawMethod.Output.NonAlternativeOutput
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStructure, RawTopLevelDefn, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2._
 
@@ -41,14 +43,7 @@ class DependencyExtractor(index: DomainIndex) {
 
       case t: RawTypeDef.Adt =>
         // we need to extract top level references only. Nested ephemerals are not required
-        t.contract.map(refs).getOrElse(Set.empty) ++ t.alternatives
-          .flatMap {
-            case a: Member.TypeRef =>
-              Set(index.makeAbstract(a.typeId))
-            case a: Member.NestedDefn =>
-              dependsOn(a.nested)
-          }
-          .toSet
+        t.contract.map(refs).getOrElse(Set.empty) ++ refs(t.alternatives)
 
       case n: RawTypeDef.NewType =>
         Set(index.makeAbstract(n.source))
@@ -67,7 +62,56 @@ class DependencyExtractor(index: DomainIndex) {
 
       case i: RawTypeDef.Instance =>
         Set(index.makeAbstract(i.source))
+
+      case s: RawTypeDef.RawService =>
+        methodRefs(s.methods)
+
+      case b: RawTypeDef.RawBuzzer =>
+        methodRefs(b.events)
     }
+  }
+
+
+  private def methodRefs(methods: List[RawMethod]): Set[TypenameRef] = {
+    methods.flatMap {
+      case RawMethod.RPCMethod(_, signature, _) =>
+        val out = signature.output match {
+          case output: NonAlternativeOutput =>
+            refs(output)
+          case Output.Alternative(success, failure) =>
+            refs(success) ++ refs(failure)
+        }
+        refs(signature.input) ++ out
+    }
+      .toSet
+  }
+
+  private def refs(output: NonAlternativeOutput): Set[TypenameRef] = {
+    output match {
+      case Output.Struct(input) =>
+        refs(input)
+      case Output.Algebraic(alternatives) =>
+        refs(alternatives)
+      case Output.Singular(_) =>
+        Set.empty
+      case Output.Void() =>
+        Set.empty
+    }
+  }
+
+  private def refs(members: List[Member]): Set[TypenameRef] = {
+    members
+      .flatMap {
+        case a: Member.TypeRef =>
+          Set(index.makeAbstract(a.typeId))
+        case a: Member.NestedDefn =>
+          dependsOn(a.nested)
+      }
+      .toSet
+  }
+
+  private def refs(struct: RawSimpleStructure): Set[TypenameRef] = {
+    struct.concepts.map(index.makeAbstract).toSet
   }
 
   private def refs(struct: RawStructure): Set[TypenameRef] = {

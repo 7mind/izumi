@@ -14,12 +14,13 @@ class InterpreterContext(val index: DomainIndex, val logger: WarnLogger, val rec
   val adts = new AdtSupport(typedefSupport, resolvers)
   val clones = new CloneSupport(index, typedefSupport, resolvers, adts, logger, provider)
   val templates = new TemplateSupport(this, args, typedefSupport, resolvers, logger, provider)
-  val interpreter: Interpreter = new InterpreterImpl(typedefSupport, adts, templates, clones)
+  val interfaceSupport = new InterfaceSupport(typedefSupport, adts, resolvers)
+  val interpreter: Interpreter = new InterpreterImpl(typedefSupport, adts, templates, clones, interfaceSupport)
 
   def remake(ephemerals: Map[IzTypeId, ProcessedOp], newArgs: Interpreter.Args): InterpreterContext = {
     val newProvider = new TsProvider {
       override def freeze(): Map[IzTypeId, ProcessedOp] = provider.freeze() ++ ephemerals
     }
-    new InterpreterContext(index, logger, recorder, provider, newArgs)
+    new InterpreterContext(index, logger, recorder, newProvider, newArgs)
   }
 }

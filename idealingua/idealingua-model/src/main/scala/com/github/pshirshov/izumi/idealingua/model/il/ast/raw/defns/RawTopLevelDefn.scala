@@ -23,10 +23,6 @@ object RawTopLevelDefn {
 
   final case class TLDInstance(defn: RawTypeDef.Instance) extends TypeDefn
 
-  final case class TLDService(v: RawService) extends NamedDefn
-
-  final case class TLDBuzzer(v: RawBuzzer) extends NamedDefn
-
   final case class TLDConsts(v: RawConstBlock) extends RawTopLevelDefn
 
   final case class TLDDeclared(v: NamedDefn) extends RawTopLevelDefn

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclared
 import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, TsProvider, WarnLogger}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.AdtSupport.AdtMemberProducts
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMember, NodeMeta}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, CustomTemplate, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, IzAlias, IzStructure}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, CustomTemplate, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, IzAlias, IzStructure, TargetInterface}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.{MissingBranchesToRemove, MissingParentsToRemove}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
@@ -83,15 +83,19 @@ class CloneSupport(index: DomainIndex,
               Right(List(fg.copy(id = id, meta = newMeta)))
 
             case ct: CustomTemplate =>
-              val newDecl = ct.decl match {
+              val targetName = RawDeclaredTypeName(id.name.name)
+              ct.decl match {
                 case i: RawTypeDef.Interface =>
-                  i.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+                  Right(List(ct.copy(decl = i.copy(id = targetName, meta = v.meta))))
                 case d: RawTypeDef.DTO =>
-                  d.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+                  Right(List(ct.copy(decl = d.copy(id = targetName, meta = v.meta))))
                 case a: RawTypeDef.Adt =>
-                  a.copy(id = RawDeclaredTypeName(id.name.name), meta = v.meta)
+                  Right(List(ct.copy(decl = a.copy(id = targetName, meta = v.meta))))
+                case s: RawTypeDef.RawService =>
+                  Right(List(ct.copy(decl = s.copy(id = targetName, meta = v.meta))))
+                case b: RawTypeDef.RawBuzzer =>
+                  Right(List(ct.copy(decl = b.copy(id = targetName, meta = v.meta))))
               }
-              Right(List(ct.copy(decl = newDecl)))
 
             case _: IzType.BuiltinGeneric =>
               Left(List(FeatureUnsupported(id, "TODO: Builtin generic cloning is almost meaningless and not supported (yet?)", newMeta)))
@@ -111,6 +115,19 @@ class CloneSupport(index: DomainIndex,
           }
         } else {
           Left(List(CannotApplyTypeModifiers(id, f.id, newMeta)))
+        }
+
+      case i: TargetInterface =>
+        if (v.modifiers.isEmpty) {
+          i match {
+            case b: IzType.Buzzer =>
+              Right(List(b.copy(id = id, meta = newMeta)))
+
+            case s: IzType.Service =>
+              Right(List(s.copy(id = id, meta = newMeta)))
+          }
+        } else {
+          Left(List(CannotApplyTypeModifiers(id, i.id, newMeta)))
         }
     }
 

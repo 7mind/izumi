@@ -72,15 +72,15 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       }
       .filter(_._2.size > 1)
 
-    val badServices = index.services.groupBy(_.v.id).filter(_._2.size > 1)
-    val badBuzzers = index.buzzers.groupBy(_.v.id).filter(_._2.size > 1)
+//    val badServices = index.services.groupBy(_.v.id).filter(_._2.size > 1)
+//    val badBuzzers = index.buzzers.groupBy(_.v.id).filter(_._2.size > 1)
     val badStreams = index.streams.groupBy(_.v.id).filter(_._2.size > 1)
 
-    val everything = (badServices.toSeq ++ badBuzzers.toSeq ++ badStreams.toSeq ++ badTypes.toSeq).groupBy(_._1).mapValues(_.map(_._2)).mapValues(_.flatten)
+    val everything = (/*badServices.toSeq ++ badBuzzers.toSeq ++ */badStreams.toSeq ++ badTypes.toSeq).groupBy(_._1).mapValues(_.map(_._2)).mapValues(_.flatten)
 
     (for {
-      _ <- check("service", badServices)
-      _ <- check("buzzer", badBuzzers)
+//      _ <- check("service", badServices)
+//      _ <- check("buzzer", badBuzzers)
       _ <- check("stream", badStreams)
       _ <- check("type", badTypes)
       _ <- check("name", everything)
@@ -107,10 +107,6 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
                 case RawTopLevelDefn.TLDInstance(i) =>
                   i.meta
               }
-            case RawTopLevelDefn.TLDService(v) =>
-              v.meta
-            case RawTopLevelDefn.TLDBuzzer(v) =>
-              v.meta
             case RawTopLevelDefn.TLDStreams(v) =>
               v.meta
           }
