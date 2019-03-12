@@ -2,14 +2,12 @@ package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CgLibFactoryMethodInterceptor.JustExecutor
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
@@ -19,11 +17,11 @@ import net.sf.cglib.proxy.MethodProxy
 protected[distage] class CgLibFactoryMethodInterceptor
 (
   factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
-  , dependencyMethodIndex: TraitIndex
-  , narrowedContext: ProvisioningKeyProvider
-  , executor: OperationExecutor
-  , op: WiringOp.InstantiateFactory
-  , mirror: MirrorProvider
+, dependencyMethodIndex: TraitIndex
+, narrowedContext: ProvisioningKeyProvider
+, executor: WiringExecutor
+, op: WiringOp.InstantiateFactory
+, mirror: MirrorProvider
 ) extends CgLibTraitMethodInterceptor(dependencyMethodIndex, narrowedContext) {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
@@ -70,7 +68,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val extendedContext = narrowedContext.extend(providedValues)
     new JustExecutor {
-      override def execute(step: ExecutableOp): AnyRef = {
+      override def execute(step: ExecutableOp.WiringOp): AnyRef = {
         FactoryTools.interpret(executor.execute(extendedContext, step))
       }
     }
@@ -79,7 +77,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
 protected[distage] object CgLibFactoryMethodInterceptor {
   sealed trait JustExecutor {
-    def execute(step: ExecutableOp): AnyRef
+    def execute(step: ExecutableOp.WiringOp): AnyRef
   }
 }
 

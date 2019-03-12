@@ -10,11 +10,11 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.language.implicitConversions
 
-trait DIResource[+F[_], +A] {
-  type Resource
-  def allocate: F[Resource]
-  def deallocate(resource: Resource): F[Unit]
-  def extract(resource: Resource): A
+trait DIResource[+F[_], +OuterResource] {
+  type InnerResource
+  def allocate: F[InnerResource]
+  def deallocate(resource: InnerResource): F[Unit]
+  def extract(resource: InnerResource): OuterResource
 }
 
 trait DIResourceLowPrioritySyntax {
@@ -42,12 +42,12 @@ object DIResource extends DIResourceLowPrioritySyntax {
   type Sync[A] = DIResource[Lambda[A => A], A]
 
   trait Basic[F[_], A] extends DIResource[F, A] {
-    override final type Resource = A
+    override final type InnerResource = A
     override final def extract(resource: A): A = resource
   }
 
   trait Cats[F[_], A] extends DIResource[F, A] {
-    override final type Resource = (A, F[Unit])
+    override final type InnerResource = (A, F[Unit])
     override final def deallocate(resource: (A, F[Unit])): F[Unit] = resource._2
     override final def extract(resource: (A, F[Unit])): A = resource._1
   }

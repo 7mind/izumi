@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.distage.{provisioning, _}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
 
@@ -27,7 +28,9 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    bootstrapProducer.instantiate(plan, this).throwOnFailure()
+    // FIXME: nonmonadic provisioner/bootstrap
+//    bootstrapProducer.instantiate(plan, this).throwOnFailure()
+    bootstrapProducer.instantiate[Identity](plan, this).throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances

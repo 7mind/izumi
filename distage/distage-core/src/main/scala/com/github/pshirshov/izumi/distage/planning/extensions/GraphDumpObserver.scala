@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -163,17 +163,21 @@ final class GraphDumpObserver
                     }
                     "ref"
                 }
+
               case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
                 "factory"
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
                 "factoryfun"
-
-              case RuntimeDIUniverse.Wiring.MonadicWiring.Resource(_, _, _) =>
-                "resource"
-              case RuntimeDIUniverse.Wiring.MonadicWiring.Effect(_, _, _) =>
-                "effect"
             }
+        case op: ExecutableOp.MonadicOp =>
+          op match {
+            case _: MonadicOp.ExecuteEffect =>
+              "effect"
+            case _: MonadicOp.AllocateResource =>
+              "resource"
+          }
         }
+
       case ExecutableOp.ImportDependency(_, _, _) =>
         "import"
 

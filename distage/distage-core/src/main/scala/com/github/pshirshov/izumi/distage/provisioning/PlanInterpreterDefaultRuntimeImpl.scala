@@ -3,13 +3,12 @@ package com.github.pshirshov.izumi.distage.provisioning
 import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.MonadicOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -29,91 +28,89 @@ class PlanInterpreterDefaultRuntimeImpl
 , effectStrategy: EffectStrategy
 , failureHandler: ProvisioningFailureInterceptor
 , verifier: ProvisionOperationVerifier
-)
-  extends PlanInterpreter
-     with OperationExecutor {
+) extends PlanInterpreter
+     with OperationExecutor
+     with WiringExecutor {
 
-  override def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator] = {
-    val excluded = mutable.Set[DIKey]()
+  // HACK
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIMonad[F]): F[Either[FailedProvision[F], Locator]] = {
 
     val provisioningContext = ProvisionActive()
     provisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
+    val excluded = mutable.Set[DIKey]()
     val failures = new mutable.ArrayBuffer[ProvisioningFailure]
 
-    plan.steps.foreach {
-      case step if excluded.contains(step.target) =>
-      case step =>
-        val failureContext = ProvisioningFailureContext(parentContext, provisioningContext, step)
+    val mainAction: F[Unit] = F.traverse_(plan.steps) {
+      step =>
+        F.flatMap(F.maybeSuspend(excluded.contains(step.target))) {
+          case true => F.unit
+          case false =>
+            val failureContext = ProvisioningFailureContext(parentContext, provisioningContext, step)
 
-        val maybeResult = Try(execute(LocatorContext(provisioningContext.toImmutable, parentContext), step))
-          .recoverWith(failureHandler.onExecutionFailed(failureContext))
+            // FIXME: MonadError / Sync [!?]
+            val maybeResult = Try(execute[F](LocatorContext(provisioningContext.toImmutable, parentContext), step))
+              .recoverWith(failureHandler.onExecutionFailed(failureContext).andThen(_.map(F.pure)))
 
-        maybeResult match {
-          case Success(s) =>
-            s.foreach {
-              r =>
-                val maybeSuccess = Try(interpretResult(provisioningContext, r))
-                  .recoverWith(failureHandler.onBadResult(failureContext))
+            maybeResult match {
+              case Success(s0) =>
+                F.flatMap(s0) { s =>
+                  F.maybeSuspend {
+                    s.foreach {
+                      res =>
+                        val maybeSuccess = Try(interpretResult(provisioningContext, res))
+                          .recoverWith(failureHandler.onBadResult(failureContext))
 
-                maybeSuccess match {
-                  case Success(_) =>
-                  case Failure(f) =>
-                    excluded ++= plan.topology.transitiveDependees(step.target)
-                    failures += ProvisioningFailure(step, f)
+                        maybeSuccess match {
+                          case Success(_) =>
+                          case Failure(failure) =>
+                            excluded ++= plan.topology.transitiveDependees(step.target)
+                            failures += ProvisioningFailure(step, failure)
+                            ()
+                        }
+                    }
+                  }
+                }
+
+              case Failure(failure) =>
+                F.maybeSuspend {
+                  excluded ++= plan.topology.transitiveDependees(step.target)
+                  failures += ProvisioningFailure(step, failure)
+                  ()
                 }
             }
 
-          case Failure(f) =>
-            excluded ++= plan.topology.transitiveDependees(step.target)
-            failures += ProvisioningFailure(step, f)
         }
     }
 
-    if (failures.nonEmpty) {
-      Left(FailedProvision(provisioningContext.toImmutable, plan, parentContext, failures.toVector))
-    } else {
-      Right(ProvisionImmutable(provisioningContext.instances, provisioningContext.imports))
-        .map {
-          context =>
-            val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
-            locator.get[Locator.LocatorRef].ref.set(locator)
-            locator
-        }
+    F.map(mainAction) { _ =>
+      if (failures.nonEmpty) {
+        // FIXME: add deallocators ???
+        Left(FailedProvision[F](provisioningContext.toImmutable, plan, parentContext, failures.toVector, Seq(null.asInstanceOf[F[Unit]])))
+      } else {
+        val context = ProvisionImmutable(provisioningContext.instances, provisioningContext.imports)
+
+        val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
+        locator.get[Locator.LocatorRef].ref.set(locator)
+
+        Right(locator)
+      }
     }
   }
 
-  override def execute(context: ProvisioningKeyProvider, step: ExecutableOp): Seq[NewObjectOp] = {
+  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIMonad[F]): F[Seq[NewObjectOp]] = {
     step match {
       case op: ImportDependency =>
-        importStrategy.importDependency(context, op)
+        F pure importStrategy.importDependency(context, op)
 
       case op: CreateSet =>
-        setStrategy.makeSet(context, op)
+        F pure setStrategy.makeSet(context, op)
 
-      case op: WiringOp.ReferenceInstance =>
-        instanceStrategy.getInstance(context, op)
-
-      case op: WiringOp.ReferenceKey =>
-        instanceStrategy.getInstance(context, op)
-
-      case op: WiringOp.CallProvider =>
-        providerStrategy.callProvider(context, this, op)
-
-      case op: WiringOp.CallFactoryProvider =>
-        factoryProviderStrategy.callFactoryProvider(context, this, op)
-
-      case op: WiringOp.InstantiateClass =>
-        classStrategy.instantiateClass(context, op)
-
-      case op: WiringOp.InstantiateTrait =>
-        traitStrategy.makeTrait(context, op)
-
-      case op: WiringOp.InstantiateFactory =>
-        factoryStrategy.makeFactory(context, this, op)
+      case op: WiringOp =>
+        F pure execute(context, op)
 
       case op: ProxyOp.MakeProxy =>
-        proxyStrategy.makeProxy(context, op)
+        F pure proxyStrategy.makeProxy(context, op)
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)
@@ -121,9 +118,36 @@ class PlanInterpreterDefaultRuntimeImpl
       case op: MonadicOp.ExecuteEffect =>
         // FIXME:
 //        Seq()
-        effectStrategy.executeEffect[Lambda[A => A]](context, this, op)(implicitly, DIMonad.diMonadIdentity)
+        F widen effectStrategy.executeEffect[F](context, this, op)
 
-//      case op: MonadicOp.AllocateResource
+      case op: MonadicOp.AllocateResource =>
+        // FIXME: resource not implemented ???
+        ???
+    }
+  }
+
+  override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
+    step match {
+      case op: WiringOp.ReferenceInstance =>
+        instanceStrategy.getInstance(context, op)
+
+      case op: WiringOp.ReferenceKey =>
+        instanceStrategy.getInstance(context, op)
+
+      case op: WiringOp.CallProvider =>
+        providerStrategy.callProvider(context, op)
+
+      case op: WiringOp.InstantiateClass =>
+        classStrategy.instantiateClass(context, op)
+
+      case op: WiringOp.InstantiateTrait =>
+        traitStrategy.makeTrait(context, op)
+
+      case op: WiringOp.CallFactoryProvider =>
+        factoryProviderStrategy.callFactoryProvider(context, this, op)
+
+      case op: WiringOp.InstantiateFactory =>
+        factoryStrategy.makeFactory(context, this, op)
     }
   }
 

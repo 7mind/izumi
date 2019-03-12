@@ -33,9 +33,11 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition, roots = Set(DIKey.get[Int]))
-      val ctx = injector.produceUnsafe(plan)
 
-      assert(ctx.get[Int] == 12)
+      val f = injector.produce[Suspend2[Throwable, ?]](plan)
+      val res = f.unsafeRun()
+
+      assert(res.map(_.get[Int]) contains 12)
     }
 
   }
@@ -43,12 +45,18 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 }
 
 object ResourceEffectBindingsTest {
-  final case class Suspend2[+E, +A](f: () => Either[E, A]) {
+  final case class Suspend2[+E, +A](run: () => Either[E, A]) {
     def map[B](g: A => B): Suspend2[E, B] = {
-      Suspend2(() => f().map(g))
+      Suspend2(() => run().map(g))
     }
     def flatMap[E1 >: E, B](g: A => Suspend2[E1, B]): Suspend2[E1, B] = {
-      Suspend2(() => f().flatMap(g(_).f()))
+      Suspend2(() => run().flatMap(g(_).run()))
+    }
+
+    def unsafeRun(): A = run() match {
+      case Left(value: Throwable) => throw value
+      case Left(value) => throw new RuntimeException(value.toString)
+      case Right(value) => value
     }
   }
   object Suspend2 {

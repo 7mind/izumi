@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
 
@@ -12,7 +12,7 @@ class FactoryProviderStrategyDefaultImpl
 (
   loggerHook: LoggerHook
 ) extends FactoryProviderStrategy  {
-  def callFactoryProvider(context: ProvisioningKeyProvider, executor: OperationExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
+  def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
       key =>
@@ -31,7 +31,7 @@ class FactoryProviderStrategyDefaultImpl
     Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
-  private def mkExecutor(context: ProvisioningKeyProvider, executor: OperationExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], op: WiringOp.CallFactoryProvider): FactoryExecutor =
+  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], op: WiringOp.CallFactoryProvider): FactoryExecutor =
     (idx, args) => {
       loggerHook.log(s"FactoryExecutor: Start! Looking up method index $idx in $factoryIndex")
 

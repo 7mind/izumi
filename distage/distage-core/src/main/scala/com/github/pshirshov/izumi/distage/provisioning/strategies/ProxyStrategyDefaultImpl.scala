@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.MonadicOp
+import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -23,13 +24,14 @@ class ProxyStrategyDefaultImpl(
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
-  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[NewObjectOp] = {
+  def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIMonad[F]): F[Seq[NewObjectOp]] = {
     val key = proxyKey(initProxy.target)
     context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
-        executor.execute(context, initProxy.proxy.op).toList match {
+        F.flatMap(F.map(executor.execute(context, initProxy.proxy.op))(_.toList)) {
           case NewObjectOp.NewInstance(_, instance) :: Nil =>
             adapter.init(instance.asInstanceOf[AnyRef])
+            F.pure(Seq())
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
         }
@@ -37,8 +39,6 @@ class ProxyStrategyDefaultImpl(
       case _ =>
         throw new MissingProxyAdapterException(s"Cannot get adapter $key for $initProxy", key, initProxy)
     }
-
-    Seq()
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {

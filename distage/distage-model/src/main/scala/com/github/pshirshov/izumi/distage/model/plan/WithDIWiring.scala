@@ -26,7 +26,11 @@ trait WithDIWiring {
 
   object Wiring {
 
-    sealed trait SingletonWiring extends Wiring {
+    sealed trait PureWiring extends Wiring {
+      override def replaceKeys(f: Association => DIKey.BasicKey): PureWiring
+    }
+
+    sealed trait SingletonWiring extends PureWiring {
       def instanceType: SafeType
 
       override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
@@ -80,24 +84,24 @@ trait WithDIWiring {
 
     object MonadicWiring {
 
-      case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: Wiring) extends MonadicWiring {
+      case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
         override def associations: Seq[Association] = effectWiring.associations
 
         override def replaceKeys(f: Association => DIKey.BasicKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
 
-        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType).named(s"effect-for-$instanceType-in-$effectHKTypeCtor")
+        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
       }
 
-      case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: Wiring) extends MonadicWiring {
+      case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
         override def associations: Seq[Association] = effectWiring.associations
 
         override def replaceKeys(f: Association => DIKey.BasicKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))
 
-        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType).named(s"resource-for-$instanceType-in-$effectHKTypeCtor")
+        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
       }
     }
 
-    case class Factory(factoryType: SafeType, factoryMethods: Seq[Factory.FactoryMethod], fieldDependencies: Seq[Association.AbstractMethod]) extends Wiring {
+    case class Factory(factoryType: SafeType, factoryMethods: Seq[Factory.FactoryMethod], fieldDependencies: Seq[Association.AbstractMethod]) extends PureWiring {
       /**
         * this method returns product dependencies which aren't present in any signature of factory methods.
         * Though it's a kind of a heuristic that can be spoiled at the time of plan initialization
@@ -131,7 +135,7 @@ trait WithDIWiring {
                                 provider: Provider
                               , factoryIndex: Map[Int, FactoryFunction.FactoryMethod]
                               , providerArguments: Seq[Association.Parameter]
-                              ) extends Wiring {
+                              ) extends PureWiring {
       private[this] final val factoryMethods: Seq[FactoryFunction.FactoryMethod] = factoryIndex.values.toSeq
 
       override final def associations: Seq[Association] = {

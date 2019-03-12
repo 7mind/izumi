@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.MonadicOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
@@ -122,15 +122,28 @@ class PlannerDefaultImpl
     }
   }
 
-  private[this] def provisionSingleton(binding: Binding.ImplBinding): WiringOp = {
+  private[this] def provisionSingleton(binding: Binding.ImplBinding): InstantiationOp = {
     val target = binding.key
     val wiring0 = implToWiring(binding.implementation)
     val wiring = hook.hookWiring(binding, wiring0)
 
-    wiringToWiringOp(target, binding, wiring)
+    wiringToInstantiationOp(target, binding, wiring)
   }
 
-  private[this] def wiringToWiringOp(target: DIKey, binding: Binding, wiring: Wiring): WiringOp = {
+  private[this] def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): InstantiationOp = {
+    wiring match {
+      case w: PureWiring =>
+        pureWiringToWiringOp(target, binding, w)
+
+      case w: MonadicWiring.Effect =>
+        MonadicOp.ExecuteEffect(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
+
+      case w: MonadicWiring.Resource =>
+        MonadicOp.AllocateResource(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
+    }
+  }
+
+  private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: PureWiring): WiringOp = {
     wiring match {
       case w: Constructor =>
         WiringOp.InstantiateClass(target, w, Some(binding))
@@ -152,16 +165,21 @@ class PlannerDefaultImpl
 
       case w: Reference =>
         WiringOp.ReferenceKey(target, w, Some(binding))
-
-      case w: MonadicWiring.Effect =>
-        MonadicOp.ExecuteEffect(target, wiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
-
-      case w: MonadicWiring.Resource =>
-        MonadicOp.AllocateResource(target, wiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
     }
   }
 
   private[this] def implToWiring(implementation: ImplDef): Wiring = {
+    implementation match {
+      case d: ImplDef.DirectImplDef =>
+        directImplToPureWiring(d)
+      case e: ImplDef.EffectImpl =>
+        MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, directImplToPureWiring(e.effectImpl))
+      case r: ImplDef.ResourceImpl =>
+        MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, directImplToPureWiring(r.resourceImpl))
+    }
+  }
+
+  private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): PureWiring = {
     implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
@@ -171,10 +189,6 @@ class PlannerDefaultImpl
         SingletonWiring.Instance(i.implType, i.instance)
       case r: ImplDef.ReferenceImpl =>
         SingletonWiring.Reference(r.implType, r.key, r.weak)
-      case e: ImplDef.EffectImpl =>
-        MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, implToWiring(e.effectImpl))
-      case r: ImplDef.ResourceImpl =>
-        MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, implToWiring(r.resourceImpl))
     }
   }
 

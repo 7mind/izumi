@@ -26,7 +26,7 @@ class ForwardingRefResolverDefaultImpl
     val resolvedSteps = plan
       .toSemi
       .steps
-      .collect({ case i: InstantiationOp => i })
+      .collect { case i: InstantiationOp => i }
       .flatMap {
         case step if reftable.dependencies.contains(step.target) =>
           val target = step.target
@@ -102,6 +102,8 @@ class ForwardingRefResolverDefaultImpl
             Seq(target -> false)
           case w: ExecutableOp.WiringOp =>
             w.wiring.associations.map(a => a.wireWith -> isByName(a))
+          case w: ExecutableOp.MonadicOp =>
+            w.effectWiring.associations.map(a => a.wireWith -> isByName(a))
         }
       case _: ImportDependency =>
         Seq.empty

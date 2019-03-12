@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.reflection
 
+import cats.instances.function
 import com.github.pshirshov.izumi.distage.model.exceptions.{UnsupportedDefinitionException, UnsupportedWiringException}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
@@ -13,7 +14,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  def symbolToWiring(symbl: SafeType): Wiring = {
+  def symbolToWiring(symbl: SafeType): Wiring.PureWiring = {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -51,7 +52,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def providerToWiring(function: Provider): Wiring = {
+  override def providerToWiring(function: Provider): Wiring.PureWiring = {
     function match {
       case factory: Provider.FactoryProvider@unchecked =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)

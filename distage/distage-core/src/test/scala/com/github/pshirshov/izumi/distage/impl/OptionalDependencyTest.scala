@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.impl
 
 import java.io.ByteArrayInputStream
-import java.security.Identity
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
@@ -14,12 +13,13 @@ class OptionalDependencyTest extends WordSpec {
     val resource = DIResource.apply(new ByteArrayInputStream(Array())) { i => println(s"closing $i"); i.close() }
 
     def x[F[_]: DIMonad] = DIMonad[F].pure(1)
+    x[Identity]
+//    DIMonad.fromCats(null)
 
     resource.use {
       i => println(i)
     }
 
-    assertCompiles("x[Identity]")
   }
 
 }

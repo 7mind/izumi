@@ -2,18 +2,24 @@ package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
+import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait PlanInterpreter {
-  def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator]
+  // FIXME ??? allow nonmonadic
+  def instantiate[F[_]: TagK: DIMonad](plan: OrderedPlan, parentContext: Locator): F[Either[FailedProvision[F], Locator]]
 }
 
-case class FailedProvision(
-                            failed: ProvisionImmutable,
-                            plan: OrderedPlan,
-                            parentContext: Locator,
-                            failures: Seq[ProvisioningFailure]
-                          ) {
+case class FailedProvision[F[_]](
+                                  failed: ProvisionImmutable,
+                                  plan: OrderedPlan,
+                                  parentContext: Locator,
+                                  failures: Seq[ProvisioningFailure],
+                                  // FIXME: run deallocators
+                                  deallocators: Seq[F[Unit]],
+                                ) {
+  // FIXME: run deallocators
   def throwException(): Nothing = {
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
@@ -38,7 +44,7 @@ case class FailedProvision(
 }
 
 object FailedProvision {
-  implicit class FailedProvisionExt(p: Either[FailedProvision, Locator]) {
+  implicit class FailedProvisionExt[F[_]](p: Either[FailedProvision[F], Locator]) {
     def throwOnFailure(): Locator = p.fold(_.throwException(), identity)
   }
 }

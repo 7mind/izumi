@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.definition.Binding
 import com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -26,7 +27,7 @@ object ExecutableOp {
   sealed trait WiringOp extends InstantiationOp {
     def target: DIKey
 
-    def wiring: Wiring
+    def wiring: PureWiring
 
     def origin: Option[Binding]
   }
@@ -47,16 +48,22 @@ object ExecutableOp {
 
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: Option[Binding]) extends WiringOp
 
-    sealed trait MonadicOp extends WiringOp
-
-    object MonadicOp {
-
-      final case class ExecuteEffect(target: DIKey, op: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: Option[Binding]) extends MonadicOp
-
-      final case class AllocateResource(target: DIKey, op: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp
-    }
   }
 
+  sealed trait MonadicOp extends InstantiationOp {
+    def effectWiring: PureWiring
+  }
+
+  object MonadicOp {
+
+    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: Option[Binding]) extends MonadicOp {
+      override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
+    }
+
+    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp{
+      override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
+    }
+  }
 
   sealed trait ProxyOp extends ExecutableOp
 
