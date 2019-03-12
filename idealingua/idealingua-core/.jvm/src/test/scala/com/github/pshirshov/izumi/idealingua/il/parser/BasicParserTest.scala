@@ -165,10 +165,10 @@ class BasicParserTest
       assertParses(defStructure.inlineStruct(_), "(a: A, b: B, + C)")
       assertParses(defStructure.inlineStruct(_), "(a: str)")
       assertParses(defStructure.inlineStruct(_), "(+ A)")
-      assertParses(defStructure.adtOut(_), "( A \n | \n B )")
-      assertParses(defStructure.adtOut(_), "(A|B)")
-      assertParses(defStructure.adtOut(_), "(A | B)")
       assertParses(defStructure.inlineStruct(_), "(\n  firstName: str \n , \n secondName: str\n)")
+      assertParses(defSignature.adtOut(_), "( A \n | \n B )")
+      assertParses(defSignature.adtOut(_), "(A|B)")
+      assertParses(defSignature.adtOut(_), "(A | B)")
     }
 
     "parse identifiers" in {

@@ -16,7 +16,7 @@ object RawMethod {
 
     final case class Struct(input: RawSimpleStructure) extends NonAlternativeOutput
 
-    final case class Algebraic(alternatives: List[RawAdt.Member]) extends NonAlternativeOutput
+    final case class Algebraic(alternatives: List[RawAdt.Member], contract: Option[RawStructure]) extends NonAlternativeOutput
 
     final case class Singular(typeId: RawRef) extends NonAlternativeOutput
 

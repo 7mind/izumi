@@ -43,7 +43,7 @@ class DependencyExtractor(index: DomainIndex) {
 
       case t: RawTypeDef.Adt =>
         // we need to extract top level references only. Nested ephemerals are not required
-        t.contract.map(refs).getOrElse(Set.empty) ++ refs(t.alternatives)
+        refs(t.contract) ++ refs(t.alternatives)
 
       case n: RawTypeDef.NewType =>
         Set(index.makeAbstract(n.source))
@@ -72,6 +72,10 @@ class DependencyExtractor(index: DomainIndex) {
   }
 
 
+  private def refs(c: Option[RawStructure]): Set[TypenameRef] = {
+    c.map(refs).getOrElse(Set.empty)
+  }
+
   private def methodRefs(methods: List[RawMethod]): Set[TypenameRef] = {
     methods.flatMap {
       case RawMethod.RPCMethod(_, signature, _) =>
@@ -90,8 +94,8 @@ class DependencyExtractor(index: DomainIndex) {
     output match {
       case Output.Struct(input) =>
         refs(input)
-      case Output.Algebraic(alternatives) =>
-        refs(alternatives)
+      case Output.Algebraic(alternatives, contract) =>
+        refs(alternatives) ++ refs(contract)
       case Output.Singular(_) =>
         Set.empty
       case Output.Void() =>

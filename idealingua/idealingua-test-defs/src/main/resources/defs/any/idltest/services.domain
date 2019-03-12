@@ -80,7 +80,7 @@ service TestService {
     }
 
   // ADT
-  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessDataData | ErrorData )
+  def greetAlgebraicOut(firstName: str, secondName: str) => ( SuccessDataData | ErrorData ) with { ref: str }
 
   // ADT
   def greetAlgebraicMultilineSyntax(firstName: str, secondName: str) => (

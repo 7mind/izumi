@@ -82,9 +82,9 @@ class InterfaceSupport(
         } yield {
           Product(IzOutput.Singular(IzTypeReference.Scalar(dto.id)), List(dto))
         }
-      case Output.Algebraic(alternatives) =>
+      case Output.Algebraic(alternatives, contract) =>
         for {
-          adt <- adtSupport.makeAdt(RawTypeDef.Adt(name, None, alternatives, mmeta), ns)
+          adt <- adtSupport.makeAdt(RawTypeDef.Adt(name, contract, alternatives, mmeta), ns)
         } yield {
           Product(IzOutput.Singular(IzTypeReference.Scalar(adt.main.id)), adt.flatten)
         }
