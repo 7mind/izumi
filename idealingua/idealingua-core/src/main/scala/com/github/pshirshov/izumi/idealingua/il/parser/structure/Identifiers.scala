@@ -47,7 +47,7 @@ trait Identifiers extends Separators {
       RawTemplateWithArg(id.name, args.toList)
   }
 
-  def typeReference[_: P]: P[RawRef] = P(inline ~ typename ~ inline ~ typeArguments.? ~ (inline ~ "@" ~ symbol).? ~ inline)
+  def typeReference[_: P]: P[RawRef] = P(typename ~ (inline ~ typeArguments).? ~ (inline ~ "@" ~ symbol).?)
     .map {
       case (tn, args, adhocName) =>
         args match {
@@ -67,9 +67,9 @@ trait Identifiers extends Separators {
 
   private def typenameFull[_: P]: P[ParsedId] = P(idPkg ~ "#" ~ symbol).map(v => ParsedId(v._1, v._2))
 
-  private def typeArguments[_: P]: P[Seq[RawRef]] = P("[" ~ inline ~ typeReference.rep(sep = ",") ~ inline ~ "]")
+  private def typeArguments[_: P]: P[Seq[RawRef]] = P("[" ~ inline ~ typeReference.rep(sep = sepList) ~ inline ~ "]")
 
-  def typeArgumentsShort[_: P]: P[Seq[RawTemplateNoArg]] = P("[" ~ (inline ~ symbol ~ inline).rep(sep = ",") ~ "]").map {
+  def typeArgumentsShort[_: P]: P[Seq[RawTemplateNoArg]] = P("[" ~ (inline ~ symbol ~ inline).rep(sep = sepList) ~ "]").map {
     args =>
       args.map(name => RawTemplateNoArg(name))
   }
@@ -90,6 +90,8 @@ trait Identifiers extends Separators {
 
   private def justString[_: P]: P[InterpContext] = P("t\"" ~ staticPart ~ "\"")
     .map(s => InterpContext(Vector(s), Vector.empty))
+
+  private def sepList[_: P]: P[Unit] = P("," ~ inline)
 
 }
 

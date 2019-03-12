@@ -182,7 +182,7 @@ class DefStructure(context: IDLParserContext) extends Separators {
 
   def adtContract[_: P]: P[RawStructure] = aggregates.enclosed(Struct.struct).map(_.structure)
 
-  def withAdtContract[_: P]: P[Option[RawStructure]] = P(("with" ~ inline ~ adtContract ~ inline).?)
+  def withAdtContract[_: P]: P[Option[RawStructure]] = P((inline ~ "with" ~ inline ~ adtContract ~ inline).?)
 
   def adtBlock[_: P]: P[Adt] = P(metaAgg.cstarting(kw.adt, withAdtContract ~ (adtEnclosed | adtFreeForm)))
     .map {
