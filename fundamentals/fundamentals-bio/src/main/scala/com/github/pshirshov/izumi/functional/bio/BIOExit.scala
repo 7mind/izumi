@@ -9,6 +9,8 @@ object BIOExit {
     def toEither: Either[List[Throwable], E]
 
     def toEitherCompound: Either[Throwable, E]
+
+    final def toThrowable(implicit ev: E <:< Throwable): Throwable = toEitherCompound.fold(identity, ev)
   }
 
   final case class Error[+E](error: E) extends BIOExit.Failure[E] {

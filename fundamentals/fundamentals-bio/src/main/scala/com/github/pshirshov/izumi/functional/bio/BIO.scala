@@ -147,7 +147,7 @@ object BIO extends BIOSyntax {
           } else {
             unchecked
           }
-          val compound = (exceptions: @unchecked) match {
+          val compound = exceptions match {
             case e :: Nil => e
             case _ => FiberFailure(cause)
           }
