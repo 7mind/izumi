@@ -56,6 +56,8 @@ trait BIOInvariant[R[_, _]] {
 
   @inline final def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): R[E, A] = flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
 
+  @inline final def fromOption[A](effect: => Option[A]): R[Unit, A] = flatMap(sync(effect))(e => fromEither(e.toRight(())))
+
   @inline final def fromTry[A](effect: => Try[A]): R[Throwable, A] = syncThrowable(effect.get)
 }
 
