@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnexpectedProvisionResultException}
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
 import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -16,7 +17,7 @@ class EffectStrategyDefaultImpl
                                           context: ProvisioningKeyProvider,
                                           executor: OperationExecutor,
                                           op: MonadicOp.ExecuteEffect
-                                        )(implicit F: DIMonad[F]): F[Seq[NewObjectOp.NewInstance]] = {
+                                        )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewInstance]] = {
     val provisionerEffectType = SafeType.getK[F]
     val ExecuteEffect(target, actionOp, _, _) = op
     val actionEffectType = op.wiring.effectHKTypeCtor
@@ -28,7 +29,7 @@ class EffectStrategyDefaultImpl
       )
     }
 
-    F.flatMap(executor.execute(context, actionOp))(_.toList match {
+    executor.execute(context, actionOp).flatMap(_.toList match {
       case NewObjectOp.NewInstance(_, action0) :: Nil =>
         val action = action0.asInstanceOf[F[Any]]
         F.map(action)(newInstance => Seq(NewObjectOp.NewInstance(target, newInstance)))

@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.provisioning
 
 import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
 import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
@@ -26,69 +27,73 @@ class PlanInterpreterDefaultRuntimeImpl
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
 , effectStrategy: EffectStrategy
+
 , failureHandler: ProvisioningFailureInterceptor
 , verifier: ProvisionOperationVerifier
 ) extends PlanInterpreter
      with OperationExecutor
      with WiringExecutor {
 
-  // HACK
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIMonad[F]): F[Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], Locator]] = {
 
-    val provisioningContext = ProvisionActive()
-    provisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
+    val mutProvisioningContext = ProvisionActive()
+    mutProvisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
-    val excluded = mutable.Set[DIKey]()
-    val failures = new mutable.ArrayBuffer[ProvisioningFailure]
+    val mutExcluded = mutable.Set.empty[DIKey]
+    val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
+    val mutFinalizers = mutable.ArrayBuffer.empty[F[Unit]]
 
     val mainAction: F[Unit] = F.traverse_(plan.steps) {
       step =>
-        F.flatMap(F.maybeSuspend(excluded.contains(step.target))) {
-          case true => F.unit
-          case false =>
-            val failureContext = ProvisioningFailureContext(parentContext, provisioningContext, step)
+        F.maybeSuspend {
+          mutExcluded.contains(step.target)
+        }.flatMap {
+          skipped =>
+            if (skipped) {
+              F.unit
+            } else {
+              val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
 
-            // FIXME: MonadError / Sync [!?]
-            val maybeResult = Try(execute[F](LocatorContext(provisioningContext.toImmutable, parentContext), step))
-              .recoverWith(failureHandler.onExecutionFailed(failureContext).andThen(_.map(F.pure)))
+              val maybeResult = F.definitelyRecover[Try[Seq[NewObjectOp]]](
+                action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
+              , recover = exception =>
+                  F.maybeSuspend(failureHandler.onExecutionFailed(failureContext).applyOrElse(exception, Failure(_: Throwable)))
+              )
 
-            maybeResult match {
-              case Success(s0) =>
-                F.flatMap(s0) { s =>
+              maybeResult.flatMap {
+                case Success(newObjectOps) =>
                   F.maybeSuspend {
-                    s.foreach {
-                      res =>
-                        val maybeSuccess = Try(interpretResult(provisioningContext, res))
+                    newObjectOps.foreach {
+                      newObject =>
+                        val maybeSuccess = Try(interpretResult(mutProvisioningContext, newObject))
                           .recoverWith(failureHandler.onBadResult(failureContext))
 
                         maybeSuccess match {
                           case Success(_) =>
                           case Failure(failure) =>
-                            excluded ++= plan.topology.transitiveDependees(step.target)
-                            failures += ProvisioningFailure(step, failure)
+                            mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                            mutFailures += ProvisioningFailure(step, failure)
                             ()
                         }
                     }
                   }
-                }
 
-              case Failure(failure) =>
-                F.maybeSuspend {
-                  excluded ++= plan.topology.transitiveDependees(step.target)
-                  failures += ProvisioningFailure(step, failure)
-                  ()
-                }
+                case Failure(failure) =>
+                  F.maybeSuspend {
+                    mutExcluded ++= plan.topology.transitiveDependees(step.target)
+                    mutFailures += ProvisioningFailure(step, failure)
+                  }
+              }
             }
-
         }
     }
 
-    F.map(mainAction) { _ =>
-      if (failures.nonEmpty) {
+    mainAction.map { _ =>
+      if (mutFailures.nonEmpty) {
         // FIXME: add deallocators ???
-        Left(FailedProvision[F](provisioningContext.toImmutable, plan, parentContext, failures.toVector, Seq(null.asInstanceOf[F[Unit]])))
+        Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector, Seq(null.asInstanceOf[F[Unit]])))
       } else {
-        val context = ProvisionImmutable(provisioningContext.instances, provisioningContext.imports)
+        val context = ProvisionImmutable(mutProvisioningContext.instances, mutProvisioningContext.imports)
 
         val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
         locator.get[Locator.LocatorRef].ref.set(locator)
@@ -98,7 +103,7 @@ class PlanInterpreterDefaultRuntimeImpl
     }
   }
 
-  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIMonad[F]): F[Seq[NewObjectOp]] = {
+  override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     step match {
       case op: ImportDependency =>
         F pure importStrategy.importDependency(context, op)

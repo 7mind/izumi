@@ -2,13 +2,13 @@ package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait PlanInterpreter {
   // FIXME ??? allow nonmonadic
-  def instantiate[F[_]: TagK: DIMonad](plan: OrderedPlan, parentContext: Locator): F[Either[FailedProvision[F], Locator]]
+  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): F[Either[FailedProvision[F], Locator]]
 }
 
 case class FailedProvision[F[_]](

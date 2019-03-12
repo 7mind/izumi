@@ -33,7 +33,7 @@ class SetStrategyDefaultImpl
     }
 
     val fetched = op.members
-      .map(m => (m, context.fetchKey(m, byName = false)))
+      .map(m => (m, context.fetchKey(m, makeByName = false)))
 
     val newSet = fetched.flatMap {
       case (m, Some(value)) if m.tpe == op.tpe =>

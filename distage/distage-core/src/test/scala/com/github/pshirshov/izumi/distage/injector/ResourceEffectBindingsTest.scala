@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.Suspend2
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.Id
 import distage.DIKey
@@ -62,10 +62,17 @@ object ResourceEffectBindingsTest {
   object Suspend2 {
     def apply[A](a: => A)(implicit dummyImplicit: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
-    implicit def dimonadSuspend2[E]: DIMonad[Suspend2[E, ?]] = new DIMonad[Suspend2[E, ?]] {
+    implicit def dimonadSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
+      override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
+      override def definitelyRecover[A](fa: => Suspend2[E, A], recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
+        Suspend2(() => fa.run() match {
+          case Left(value) => recover(value).run()
+          case Right(value) => Right(value)
+        })
+      }
     }
   }
 }

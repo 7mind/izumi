@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.distage.model.definition.dsl
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetIdFromImplName, SetId, SetImpl}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{Id => _, _}
+import com.github.pshirshov.izumi.distage.model.definition.{Id, Id => _, _}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
@@ -38,8 +38,8 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *
   * Multibindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
-  * Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
-  * `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
+  *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
+  *     `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
   *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
   *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
@@ -52,6 +52,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *
   * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
+  * @see [[ModuleDefDSL]]
   */
 trait ModuleDefDSL
   extends AbstractBindingDefDSL[ModuleDefDSL.BindDSL, ModuleDefDSL.SetDSL] with IncludesDSL with TagsDSL {
@@ -239,7 +240,7 @@ object ModuleDefDSL {
       *   make[Unit].from(constructor(_))
       * }}}
       *
-      * Function value with annotated signature:
+      * Function value (possibly with annotated signature):
       * {{{
       *   val constructor: (Int @Id("special"), String @Id("special")) => Unit = (_, _) => ()
       *
@@ -273,8 +274,8 @@ object ModuleDefDSL {
       *     make[X].from(X.apply _) // summons special Int
       * }}}
       *
-      * Using intermediate vals` will lose annotations when converting a method into a function value,
-      * prefer using annotated method directly as method reference `(method _)`:
+      * Using intermediate vals will lose annotations when converting a method into a function value,
+      * prefer using annotated method directly as method reference (method _)`:
       *
       * {{{
       *   def constructorMethod(@Id("special") i: Int): Unit = ()
@@ -311,35 +312,72 @@ object ModuleDefDSL {
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
 
-    final def fromEffect[F[_]: TagK, I <: T : Tag]: AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[F[I]])))
+    final def fromEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I] : Tag]: AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
 
+    /**
+      * Bind to a result of executing a purely-functional effect
+      *
+      * Example:
+      * {{{
+      *   import cats.effect.concurrent.Ref
+      *   import cats.effect.IO
+      *
+      *   make[Ref[IO, Int]].named("globalMutableCounter").fromEffect(Ref[IO](0))
+      * }}}
+      */
     final def fromEffect[F[_]: TagK, I <: T : Tag](instance: F[I]): AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
     final def fromEffect[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]]): AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
 
+    /**
+      * Bind to result of executing an effect bound to a key at `F[I]`
+      *
+      * This will execute the effect again for every `refEffect` binding
+      *
+      * Example:
+      * {{{
+      *   import cats.effect.concurrent.Ref
+      *   import cats.effect.IO
+      *
+      *   make[IO[Ref[IO, Int]]].named("counterFactory").from(Ref[IO](0))
+      *
+      *   // execute the effect bound above to key `DIKey.get[IO[Ref[IO, Int]]].named("counterFactory")` to create and bind a new Ref
+      *   make[Ref[IO, Int]].named("globalCounter1").fromEffect[IO, Ref[IO, Int]]("counterFactory")
+      *
+      *   make[Ref[IO, Int]].named("globalCounter2").fromEffect[IO, Ref[IO, Int]]("counterFactory")
+      *
+      *   // globalCounter1 and globalCounter2 are two independent mutable references
+      * }}}
+      */
     final def refEffect[F[_]: TagK, I <: T : Tag]: AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)))
+      refEffect[F, I, F[I]]
 
     final def refEffect[F[_]: TagK, I <: T : Tag](name: String): AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)))
+      refEffect[F, I, F[I]](name)
+
+    final def refEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag]: AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF], weak = false)))
+
+    final def refEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](name: String): AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = false)))
 
 
-    final def fromResource[F[_]: TagK, I <: T : Tag]: AfterBind =
+    final def fromResource[F[_]: TagK, I <: DIResource[F, T] : Tag]: AfterBind =
       bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[F[I]])))
 
-    final def fromResource[F[_]: TagK, I <: T : Tag](instance: F[I]): AfterBind =
+    final def fromResource[F[_]: TagK, I <: DIResource[F, T] : Tag](instance: I): AfterBind =
       bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
-    final def fromResource[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]]): AfterBind =
+    final def fromResource[F[_]: TagK, I <: DIResource[F, T] : Tag](f: ProviderMagnet[F[I]]): AfterBind =
       bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
 
-    final def refResource[F[_]: TagK, I <: T : Tag]: AfterBind =
+    final def refResource[F[_]: TagK, I <: DIResource[F, T] : Tag]: AfterBind =
       bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)))
 
-    final def refResource[F[_]: TagK, I <: T : Tag](name: String): AfterBind =
+    final def refResource[F[_]: TagK, I <: DIResource[F, T] : Tag](name: String): AfterBind =
       bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)))
 
 

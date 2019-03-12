@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning.{FailedProvision, PlanInterpreter}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -19,7 +19,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].merge(a, b)
   }
 
-  override def produce[F[_]: TagK: DIMonad](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]] = {
+  override def produce[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]] = {
     parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext)
   }
 }

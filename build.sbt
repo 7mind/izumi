@@ -245,9 +245,12 @@ lazy val fundamentalsReflection = inFundamentals.as.module
   )
 
 lazy val distageModel = inDiStage.as.module
-  .depends(fundamentalsReflection)
+  .depends(
+    fundamentalsReflection,
+    fundamentalsBioJvm,
+  )
   .settings(
-    libraryDependencies ++= R.cats_all.map(_ % Optional)
+    libraryDependencies ++= R.cats_all.map(_ % Optional),
   )
 
 lazy val distageProxyCglib = inDiStage.as.module

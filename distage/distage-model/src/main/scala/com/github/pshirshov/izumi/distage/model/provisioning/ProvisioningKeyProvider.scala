@@ -5,11 +5,12 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 trait ProvisioningKeyProvider {
   /** Return the object referred by `key` if available
     *
-    * @param byName if true and the value under `key` is a by-name `Function0` proxy,
-    *               `Function0` will be executed and the result will be returned,
-    *               otherwise the by-name `Function0` itself will be returned.
+    * @param makeByName Wrap the result into a `Function0`,
+    *                   if already a by-name proxy, return unchanged.
+    *                   If set to `false` and the result is a by-name proxy,
+    *                   it will be executed
     */
-  def fetchKey(key: DIKey, byName: Boolean): Option[Any]
+  def fetchKey(key: DIKey, makeByName: Boolean): Option[Any]
 
   /** Directly access the value, without de-referencing for by-names **/
   def fetchUnsafe(key: DIKey): Option[Any]

@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.monadic.DIMonad
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
@@ -24,17 +25,16 @@ class ProxyStrategyDefaultImpl(
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
-  def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIMonad[F]): F[Seq[NewObjectOp]] = {
+  def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val key = proxyKey(initProxy.target)
     context.fetchUnsafe(key) match {
       case Some(adapter: ProxyDispatcher) =>
-        F.flatMap(F.map(executor.execute(context, initProxy.proxy.op))(_.toList)) {
+        executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
           case NewObjectOp.NewInstance(_, instance) :: Nil =>
-            adapter.init(instance.asInstanceOf[AnyRef])
-            F.pure(Seq())
+            F.map(F.maybeSuspend(adapter.init(instance.asInstanceOf[AnyRef])))(_ => Seq.empty)
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
-        }
+        })
 
       case _ =>
         throw new MissingProxyAdapterException(s"Cannot get adapter $key for $initProxy", key, initProxy)

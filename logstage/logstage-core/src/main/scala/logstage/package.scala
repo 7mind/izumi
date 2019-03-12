@@ -1,5 +1,3 @@
-import com.github.pshirshov.izumi.functional.bio.SyncSafe2
-import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.{api, sink}
 
 package object logstage extends LogStage {
