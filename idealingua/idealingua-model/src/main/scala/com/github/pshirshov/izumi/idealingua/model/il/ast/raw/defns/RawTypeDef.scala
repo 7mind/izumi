@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.WithTemplating
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 
 
@@ -46,6 +45,8 @@ object RawTypeDef {
   final case class RawBuzzer(id: RawDeclaredTypeName, events: List[RawMethod], meta: RawNodeMeta) extends TargetInterface
 
   final case class RawService(id: RawDeclaredTypeName, methods: List[RawMethod], meta: RawNodeMeta) extends TargetInterface
+
+  final case class RawStreams(id: RawDeclaredTypeName, streams: List[RawStream], meta: RawNodeMeta) extends TargetInterface
 
 }
 

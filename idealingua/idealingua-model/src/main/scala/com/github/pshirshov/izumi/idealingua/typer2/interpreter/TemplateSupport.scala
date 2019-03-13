@@ -97,6 +97,8 @@ class TemplateSupport(
               s.copy(id = name, meta = meta)
             case b: RawTypeDef.RawBuzzer =>
               b.copy(id = name, meta = meta)
+            case b: RawTypeDef.RawStreams =>
+              b.copy(id = name, meta = meta)
           }
           isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
         case _: ForeignGeneric =>

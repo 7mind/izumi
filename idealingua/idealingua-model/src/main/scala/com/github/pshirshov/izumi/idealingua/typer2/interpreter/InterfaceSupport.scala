@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclared
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Buzzer, Service}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.FeatureUnsupported
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 
@@ -14,6 +15,11 @@ class InterfaceSupport(
                         adtSupport: AdtSupport,
                         resolvers: Resolvers,
                       ) {
+  def makeStream(s: RawTypeDef.RawStreams): TList = {
+    val id = resolvers.nameToId(s.id, Seq.empty)
+    Left(List(FeatureUnsupported(id, "Streams are not supported yet", i2.meta(s.meta))))
+  }
+
 
   import InterfaceSupport._
 

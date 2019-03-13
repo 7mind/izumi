@@ -95,6 +95,8 @@ class CloneSupport(index: DomainIndex,
                   Right(List(ct.copy(decl = s.copy(id = targetName, meta = v.meta))))
                 case b: RawTypeDef.RawBuzzer =>
                   Right(List(ct.copy(decl = b.copy(id = targetName, meta = v.meta))))
+                case b: RawTypeDef.RawStreams =>
+                  Right(List(ct.copy(decl = b.copy(id = targetName, meta = v.meta))))
               }
 
             case _: IzType.BuiltinGeneric =>

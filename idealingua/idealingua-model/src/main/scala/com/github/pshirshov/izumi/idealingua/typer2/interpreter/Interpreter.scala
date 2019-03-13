@@ -52,6 +52,9 @@ class InterpreterImpl(
 
           case b: RawTypeDef.RawBuzzer =>
             interfaceSupport.makeBuzzer(b)
+
+          case s: RawTypeDef.RawStreams =>
+            interfaceSupport.makeStream(s)
         }
 
       case t: RawTopLevelDefn.TLDTemplate =>

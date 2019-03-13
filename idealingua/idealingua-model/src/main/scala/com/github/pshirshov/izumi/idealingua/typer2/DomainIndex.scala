@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TypeDefn
@@ -17,17 +16,13 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
   import DomainIndex._
 
   val types: Seq[TypeDefn] = defn.members.collect({ case m: TypeDefn => m })
-  val streams: Seq[RawTopLevelDefn.TLDStreams] = defn.members.collect({ case m: RawTopLevelDefn.TLDStreams => m })
+  val declaredTypes: Seq[TypeDefn] = defn.members
+    .collect({ case m: RawTopLevelDefn.TLDDeclared => m })
+    .map(_.v)
+    .collect({ case m: TypeDefn => m })
   val consts: Seq[RawTopLevelDefn.TLDConsts] = defn.members.collect({ case m: RawTopLevelDefn.TLDConsts => m })
 
-  val decls: Seq[RawTopLevelDefn.NamedDefn] = defn.members.collect({ case m: RawTopLevelDefn.TLDDeclared => m }).map(_.v)
-  val declaredTypes: Seq[TypeDefn] = decls.collect({ case m: TypeDefn => m })
-  val declaredStreams: Seq[RawTopLevelDefn.TLDStreams] = decls.collect({ case m: RawTopLevelDefn.TLDStreams => m })
-
-
   val dependencies: DependencyExtractor = new DependencyExtractor(this)
-
-  Quirks.discard(streams, consts)
 
   val importIndex: Map[String, GoodImport] = {
     val asList = defn.imports.flatMap(i => i.identifiers.map(id => id.importedAs -> GoodImport(i.id, id)))

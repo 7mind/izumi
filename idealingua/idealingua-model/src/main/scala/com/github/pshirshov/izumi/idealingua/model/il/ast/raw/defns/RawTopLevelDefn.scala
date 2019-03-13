@@ -26,7 +26,4 @@ object RawTopLevelDefn {
   final case class TLDConsts(v: RawConstBlock) extends RawTopLevelDefn
 
   final case class TLDDeclared(v: NamedDefn) extends RawTopLevelDefn
-
-  // not supported by cogen yet
-  final case class TLDStreams(v: RawStreams) extends NamedDefn
 }

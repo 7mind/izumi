@@ -22,7 +22,9 @@ class DefMember(context: IDLParserContext) extends Aggregates {
       defStructure.mixinBlock |
       defStructure.dtoBlock |
       defService.serviceBlock |
-      defBuzzer.buzzerBlock
+      defBuzzer.buzzerBlock |
+      defStreams.streamsBlock
+
   )
     .map(TLDBaseType)
 
@@ -33,12 +35,9 @@ class DefMember(context: IDLParserContext) extends Aggregates {
       defTemplate.templateBlock
   )
 
-  private def interfaceMember[_: P]: P[RawTopLevelDefn.NamedDefn] = P(
-    defStreams.streamsBlock
-  )
 
   private def namedMember[_: P]: P[RawTopLevelDefn.NamedDefn] = P(
-    baseTypeMember | typeMember | interfaceMember
+    baseTypeMember | typeMember
   )
 
 

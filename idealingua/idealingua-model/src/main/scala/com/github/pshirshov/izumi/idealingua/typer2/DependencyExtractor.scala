@@ -68,12 +68,22 @@ class DependencyExtractor(index: DomainIndex) {
 
       case b: RawTypeDef.RawBuzzer =>
         methodRefs(b.events)
+
+      case s: RawTypeDef.RawStreams =>
+        streamRefs(s.streams)
     }
   }
 
 
   private def refs(c: Option[RawStructure]): Set[TypenameRef] = {
     c.map(refs).getOrElse(Set.empty)
+  }
+
+  private def streamRefs(methods: List[RawStream]): Set[TypenameRef] = {
+    methods.flatMap {
+      case RawStream.Directed(_, _, signature, _) =>
+        refs(signature)
+    }.toSet
   }
 
   private def methodRefs(methods: List[RawMethod]): Set[TypenameRef] = {

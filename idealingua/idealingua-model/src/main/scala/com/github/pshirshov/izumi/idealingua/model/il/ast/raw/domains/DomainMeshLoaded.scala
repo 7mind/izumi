@@ -12,7 +12,6 @@ final case class DomainMeshLoaded(
                                    originalImports: Seq[Import],
                                    meta: RawNodeMeta,
                                    types: Seq[RawTypeDef],
-                                   streams: Seq[RawStreams],
                                    consts: Seq[RawConstBlock],
                                    imports: Seq[SingleImport],
                                    referenced: Map[DomainId, DomainMeshLoaded],
