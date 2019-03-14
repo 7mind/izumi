@@ -12,7 +12,7 @@ class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
   def encode(input: IRTMuxRequest): R[Throwable, Json] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
-        BIO.syncThrowable(marshaller.encodeRequest(input.body))
+        BIO(marshaller.encodeRequest(input.body))
       case None =>
         BIO.fail(new IRTMissingHandlerException(s"No codec for $input", input, None))
     }
@@ -22,7 +22,7 @@ class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
     codecs.get(method) match {
       case Some(marshaller) =>
         for {
-          decoder <- BIO.syncThrowable(marshaller.decodeResponse[R].apply(IRTJsonBody(method, input)))
+          decoder <- BIO(marshaller.decodeResponse[R].apply(IRTJsonBody(method, input)))
           body <- decoder
         } yield {
           IRTMuxResponse(body, method)

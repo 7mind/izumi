@@ -41,17 +41,17 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R
 
   @inline private[this] def invoke(context: C2, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C2], parsedBody: Json): R[Throwable, Json] = {
     for {
-      decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
+      decodeAction <- BIO(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
       safeDecoded <- decodeAction.sandbox.catchAll {
         case BIOExit.Termination(_, exceptions) =>
           BIO.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", exceptions.headOption))
         case BIOExit.Error(decodingFailure) =>
           BIO.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()}", Some(decodingFailure)))
       }
-      casted <- BIO.syncThrowable(safeDecoded.value.asInstanceOf[method.signature.Input])
-      resultAction <- BIO.syncThrowable(method.invoke(context, casted))
+      casted <- BIO(safeDecoded.value.asInstanceOf[method.signature.Input])
+      resultAction <- BIO(method.invoke(context, casted))
       safeResult <- resultAction
-      encoded <- BIO.syncThrowable(method.marshaller.encodeResponse.apply(IRTResBody(safeResult)))
+      encoded <- BIO(method.marshaller.encodeResponse.apply(IRTResBody(safeResult)))
     } yield {
       encoded
     }

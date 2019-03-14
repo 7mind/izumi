@@ -196,12 +196,12 @@ class HttpServer[C <: Http4sContext]
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
         val (newId, response) = wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
-        BIO.syncThrowable(context.updateId(newId)) *> response
+        BIO(context.updateId(newId)) *> response
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         for {
-          userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
+          userCtx <- BIO(wsContextProvider.toContext(context.id, context.initialContext, input))
           _ <- BIO.sync(logger.debug(s"${context -> null}: $id, $userCtx"))
           result <- muxer.doInvoke(data, userCtx, methodId)
           packet <- result match {

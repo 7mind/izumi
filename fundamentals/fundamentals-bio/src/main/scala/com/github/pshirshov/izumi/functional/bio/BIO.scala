@@ -46,11 +46,15 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
   @inline override def leftFlatMap[E, A, E2](r: R[E, A])(f: E => R[Nothing, E2]): R[E2, A]
 
   @inline override def flip[E, A](r: R[E, A]) : R[A, E]
+
+  @inline final def apply[A](effect: => A): R[Throwable, A] = syncThrowable(effect)
 }
 
 object BIO extends BIOSyntax {
 
-  def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
+  @inline def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
+
+  @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
 
   import scalaz.zio.{Exit, IO, Schedule}
   import scalaz.zio.duration.Duration.fromScala
@@ -156,7 +160,7 @@ object BIO extends BIOSyntax {
           } else {
             unchecked
           }
-          val compound = (exceptions: @unchecked) match {
+          val compound = exceptions match {
             case e :: Nil => e
             case _ => FiberFailure(cause)
           }
