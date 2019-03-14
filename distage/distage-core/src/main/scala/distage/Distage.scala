@@ -18,7 +18,9 @@ trait Distage {
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer
+
   type PlannerInput = model.PlannerInput
+  val PlannerInput: model.PlannerInput.type = model.PlannerInput
 
   type OrderedPlan = model.plan.OrderedPlan
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan

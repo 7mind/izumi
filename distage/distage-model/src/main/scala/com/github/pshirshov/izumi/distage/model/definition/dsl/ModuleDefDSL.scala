@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDe
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import com.github.pshirshov.izumi.distage.model.definition.{Id, Id => _, _}
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
@@ -345,9 +345,11 @@ object ModuleDefDSL {
       *   make[IO[Ref[IO, Int]]].named("counterFactory").from(Ref[IO](0))
       *
       *   // execute the effect bound above to key `DIKey.get[IO[Ref[IO, Int]]].named("counterFactory")` to create and bind a new Ref
-      *   make[Ref[IO, Int]].named("globalCounter1").fromEffect[IO, Ref[IO, Int]]("counterFactory")
+      *   make[Ref[IO, Int]].named("globalCounter1")
+      *     .refEffect[IO, Ref[IO, Int]]("counterFactory")
       *
-      *   make[Ref[IO, Int]].named("globalCounter2").fromEffect[IO, Ref[IO, Int]]("counterFactory")
+      *   make[Ref[IO, Int]].named("globalCounter2")
+      *     .refEffect[IO, Ref[IO, Int]]("counterFactory")
       *
       *   // globalCounter1 and globalCounter2 are two independent mutable references
       * }}}
@@ -385,20 +387,31 @@ object ModuleDefDSL {
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
+
+    final def add[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.TypeImpl(SafeType.get[I]))
+
+    final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
+
+    final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
+
     /**
       * Bind by reference to another bound key
       *
       * Example:
       * {{{
       *   trait T
+      *   trait T1 extends T
       *
-      *   make[T]
-      *   make[Set[T]].ref[T1]
+      *   make[T1]
+      *   many[T].ref[T1]
       * }}}
       *
-      * Here, `T` will be created only once.
-      * A class that depends on `Set[T]` will receive a set containing the same `T` instance
-      * as in a class that depends on just `T`.
+      * Here, `T1` will be created only once.
+      * A class that depends on `Set[T]` will receive a Set containing the same `T1` instance
+      * as a class that depends on just a `T1`.
       */
     final def ref[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
@@ -412,35 +425,71 @@ object ModuleDefDSL {
     final def weak[I <: T : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
 
-    final def add[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.TypeImpl(SafeType.get[I]))
 
-    final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
-
-    final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
-
-    final def refSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
-
-    final def refSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
-
-    final def weakSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
-
-    final def weakSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterAdd =
-      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
-
-    final def addSet[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+    /**
+      * Add multiple values into this set at once
+      *
+      * Example:
+      * {{{
+      *   class T
+      *
+      *   many[T].addSet(Set(new T, new T, new T))
+      * }}}
+      * */
+    final def addSet[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def addSet[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer, dummy: DummyImplicit): AfterMultiAdd =
+    final def addSet[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.ProviderImpl(f.get.ret, f.get))
 
-    protected def multiSetAdd(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterMultiAdd
+    final def refSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
 
+    final def refSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
+
+    final def weakSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = true))
+
+    final def weakSet[I <: Set[_ <: T] : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true))
+
+
+    final def addEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
+
+    final def addEffect[F[_]: TagK, I <: T : Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
+
+    final def addEffect[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]])(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
+
+    final def refEffect[F[_]: TagK, I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      refEffect[F, I, F[I]]
+
+    final def refEffect[F[_]: TagK, I <: T : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      refEffect[F, I, F[I]](name)
+
+    final def refEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF], weak = false)))
+
+    final def refEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = false)))
+
+    final def weakEffect[F[_]: TagK, I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      weakEffect[F, I, F[I]]
+
+    final def weakEffect[F[_]: TagK, I <: T : Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      weakEffect[F, I, F[I]](name)
+
+    final def weakEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF], weak = true)))
+
+    final def weakEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](name: String)(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = true)))
+
+
+    protected def multiSetAdd(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterMultiAdd
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
 

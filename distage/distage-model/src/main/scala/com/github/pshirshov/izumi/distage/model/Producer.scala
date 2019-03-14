@@ -7,8 +7,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 trait Producer {
-  def produce[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]]
+  def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]]
 
   // FIXME: nonmonadic ???
-  final def produceUnsafe(plan: OrderedPlan): Locator = produce[Identity](plan).throwOnFailure()
+  final def produce(plan: OrderedPlan): Either[FailedProvision[Identity], Locator] = produceF[Identity](plan)
+  final def produceUnsafe(plan: OrderedPlan): Locator = produce(plan).throwOnFailure()
 }

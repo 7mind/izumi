@@ -1,7 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 import com.github.pshirshov.izumi.distage.model.reflection.universe._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
 
 abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
@@ -9,6 +10,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u.u._
 
   private[this] implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
+  liftableRuntimeUniverse.discard()
 
   implicit def liftableSafeType: Liftable[SafeType]
 

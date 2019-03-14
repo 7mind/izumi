@@ -16,6 +16,9 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type Producer = model.Producer
 
+  override type PlannerInput = model.PlannerInput
+  override val PlannerInput: model.PlannerInput.type = model.PlannerInput
+
   override type OrderedPlan = model.plan.OrderedPlan
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
   override type SemiPlan = model.plan.SemiPlan

@@ -1,12 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import cats.effect.Bracket
-import cats.effect.Resource
+import cats.effect.{Bracket, Resource}
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceUse
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 import scala.language.implicitConversions
 
@@ -39,7 +35,7 @@ object DIResource extends DIResourceLowPrioritySyntax {
   }
 
   // Lambda[A => A] instead of Identity to stop Identity from showing up in Intellij tooltips
-  type Sync[A] = DIResource[Lambda[A => A], A]
+  type Sync[+A] = DIResource[Lambda[X => X], A]
 
   trait Basic[F[_], A] extends DIResource[F, A] {
     override final type InnerResource = A

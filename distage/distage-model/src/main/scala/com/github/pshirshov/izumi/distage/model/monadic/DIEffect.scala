@@ -17,20 +17,21 @@ trait DIEffect[F[_]] {
   /** A stronger version of `handleErrorWith`, the difference is that this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
   def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
 //  def definitelyAttempt(fa: )
-
+//
   final val unit: F[Unit] = pure(())
 
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
-    // FIXME: foldRight for right-associative flatMaps?
-    l.foldLeft[F[Unit]](unit) { (acc, a) =>
+    // All reasonable effect monads will be stack-safe (but not heap-safe!) on left-associative flatMaps
+    // so foldLeft is ok here. It also enables impure Identity to work correctly
+    l.foldLeft(unit) { (acc, a) =>
       flatMap(acc)(_ => f(a))
     }
   }
-  final def foldLeftM[S, A](in: Iterable[A])(zero: S)(f: (S, A) => F[S]): F[S] =
-    in.foldLeft[F[S]](pure(zero)) { (acc, a) =>
-      flatMap(acc)(f(_, a))
-    }
+//  final def foldLeftM[S, A](in: Iterable[A])(zero: S)(f: (S, A) => F[S]): F[S] =
+//    in.foldLeft[F[S]](pure(zero)) { (acc, a) =>
+//      flatMap(acc)(f(_, a))
+//    }
 }
 
 object DIEffect
@@ -43,6 +44,7 @@ object DIEffect
       @inline def map[B](f: A => B)(implicit F: DIEffect[F]): F[B] = F.map(fa)(f)
       @inline def flatMap[B](f: A => F[B])(implicit F: DIEffect[F]): F[B] = F.flatMap(fa)(f)
 
+      // does not suspend
 //      @inline def definitelyRecover[A1 >: A](recover: Throwable => F[A1])(implicit F: DIEffect[F]): F[A1] = {
 //        F.definitelyRecover(F.widen[A1](fa), )
 //      }
@@ -69,14 +71,14 @@ object DIEffect
     override def maybeSuspend[A](eff: => A): F[E, A] = F.sync(eff)
 
     override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
-      fa.sandbox.catchAll(recover apply _.toThrowable)
+      F.sync(fa).flatten.sandbox.catchAll(recover apply _.toThrowable)
     }
   }
 
 //  def x = fromCats[Chain, Monad[Chain]]
 //  def x = fromCats[Chain, Monad]
 //  def x = DIMonad[List](fromCats(J.j,catsStdInstancesForList))
-  def x = DIEffect[cats.effect.SyncIO]
+//  def x = DIEffect[cats.effect.SyncIO]
 }
 
 trait FromCats {

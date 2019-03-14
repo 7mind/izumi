@@ -31,7 +31,7 @@ class ProxyStrategyDefaultImpl(
       case Some(adapter: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
           case NewObjectOp.NewInstance(_, instance) :: Nil =>
-            F.map(F.maybeSuspend(adapter.init(instance.asInstanceOf[AnyRef])))(_ => Seq.empty)
+            F.maybeSuspend(adapter.init(instance.asInstanceOf[AnyRef])).map(_ => Seq.empty)
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
         })

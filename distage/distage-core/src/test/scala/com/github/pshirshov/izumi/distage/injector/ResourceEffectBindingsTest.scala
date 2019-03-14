@@ -1,43 +1,145 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.Suspend2
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import java.util.concurrent.atomic.AtomicReference
+
+import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.{IntSuspend, Ref, Suspend2}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import distage.Id
-import distage.DIKey
+import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import org.scalatest.WordSpec
 
 class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
+  final type Fn[+A] = Suspend2[Nothing, A]
+  final type Ft[+A] = Suspend2[Throwable, A]
+
   "Effect bindings" should {
 
-    "work in a basic case with Identity monad" in {
-      val definition = new ModuleDef {
+    "work in a basic case in Identity monad" in {
+      val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
-      }
+      }, roots = DIKey.get[Int])
 
       val injector = mkInjector()
-      val plan = injector.plan(definition, roots = Set(DIKey.get[Int]))
-      val ctx = injector.produceUnsafe(plan)
+      val plan = injector.plan(definition)
+      val context = injector.produceUnsafe(plan)
 
-      assert(ctx.get[Int] == 12)
+      assert(context.get[Int] == 12)
     }
 
-    "work in a basic case with Suspend2 monad" in {
-      val definition = new ModuleDef {
+    "work in a basic case in Suspend2 monad" in {
+      val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
-      }
+      }, roots = DIKey.get[Int])
 
       val injector = mkInjector()
-      val plan = injector.plan(definition, roots = Set(DIKey.get[Int]))
+      val plan = injector.plan(definition)
 
-      val f = injector.produce[Suspend2[Throwable, ?]](plan)
-      val res = f.unsafeRun()
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
 
-      assert(res.map(_.get[Int]) contains 12)
+      assert(context.get[Int] == 12)
+    }
+
+    "work with constructor binding" in {
+      val definition = PlannerInput(new ModuleDef {
+        make[Int].named("2").from(2)
+        make[Int].fromEffect[Suspend2[Nothing, ?], Int, IntSuspend]
+      }, roots = DIKey.get[Int])
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produceF[Suspend2[Nothing, ?]](plan).unsafeRun().throwOnFailure()
+
+      assert(context.get[Int] == 12)
+    }
+
+    "execute effects again in reference bindings" in {
+      val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
+
+      val definition = PlannerInput(new ModuleDef {
+        make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
+
+        make[Fn[Int]].from(execIncrement)
+
+        make[Int].named("1").refEffect[Fn, Int]
+        make[Int].named("2").refEffect[Fn, Int]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produceF[Suspend2[Nothing, ?]](plan).unsafeRun().throwOnFailure()
+
+      assert(context.get[Int]("1") == 1)
+      assert(context.get[Int]("2") == 2)
+      assert(context.get[Ref[Fn, Int]].get.unsafeRun() == 2)
+    }
+
+    "Support self-referencing circular effects" in {
+      import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase3._
+
+      val definition = PlannerInput(new ModuleDef {
+        make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
+        make[SelfReference].fromEffect {
+          (ref: Ref[Fn, Boolean], self: SelfReference) =>
+            ref.update(!_).flatMap(_ => Suspend2(new SelfReference(self)))
+        }
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+
+      val instance = context.get[SelfReference]
+
+      assert(instance eq instance.self)
+      assert(context.get[Ref[Fn, Boolean]].get.unsafeRun())
+    }
+
+    "support Identity effects in Suspend monad" in {
+      val definition = PlannerInput(new ModuleDef {
+        make[Int].named("2").from(2)
+        make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
+      }, roots = DIKey.get[Int])
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+
+      assert(context.get[Int] == 12)
+    }
+
+    "work with set bindings" in {
+      val definition = PlannerInput(new ModuleDef {
+        make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
+
+        setOf[Char]
+          .addEffect(Suspend2('a'))
+          .addEffect(Suspend2('b'))
+
+        make[Unit].fromEffect {
+          (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
+            ref.update(_ ++ set).void
+        }
+        make[Unit].named("1").fromEffect {
+          ref: Ref[Fn, Set[Char]] =>
+            ref.update(_ + 'z').void
+        }
+        make[Unit].named("2").fromEffect {
+          (_: Unit, _: Unit @Id("1"), ref: Ref[Fn, Set[Char]]) =>
+            ref.update(_.map(_.toUpper)).void
+        }
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+
+      assert(context.get[Set[Char]] == "ab".toSet)
+      assert(context.get[Ref[Fn, Set[Char]]].get.unsafeRun() == "ABZ".toSet)
     }
 
   }
@@ -45,13 +147,31 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 }
 
 object ResourceEffectBindingsTest {
-  final case class Suspend2[+E, +A](run: () => Either[E, A]) {
+  class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
+    def get: F[A] = DIEffect[F].maybeSuspend(r.get())
+    def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
+  }
+
+  object Ref {
+    def apply[F[_]]: Apply[F] = new Apply[F]()
+
+    final class Apply[F[_]](private val dummy: Boolean = false) extends AnyVal {
+      def apply[A](a: A)(implicit F: DIEffect[F]): F[Ref[F, A]] = {
+        DIEffect[F].maybeSuspend(new Ref[F, A](new AtomicReference(a)))
+      }
+    }
+  }
+
+  class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
+
+  case class Suspend2[+E, +A](run: () => Either[E, A]) {
     def map[B](g: A => B): Suspend2[E, B] = {
       Suspend2(() => run().map(g))
     }
     def flatMap[E1 >: E, B](g: A => Suspend2[E1, B]): Suspend2[E1, B] = {
       Suspend2(() => run().flatMap(g(_).run()))
     }
+    def void: Suspend2[E, Unit] = map(_ => ())
 
     def unsafeRun(): A = run() match {
       case Left(value: Throwable) => throw value

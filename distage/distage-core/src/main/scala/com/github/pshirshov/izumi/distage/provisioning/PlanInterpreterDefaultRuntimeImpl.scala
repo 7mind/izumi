@@ -89,17 +89,19 @@ class PlanInterpreterDefaultRuntimeImpl
     }
 
     mainAction.map { _ =>
-      if (mutFailures.nonEmpty) {
-        // FIXME: add deallocators ???
-        Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector, Seq(null.asInstanceOf[F[Unit]])))
-      } else {
-        val context = ProvisionImmutable(mutProvisioningContext.instances, mutProvisioningContext.imports)
+//      F.maybeSuspend {
+        if (mutFailures.nonEmpty) {
+          // FIXME: add deallocators ???
+          Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector, Seq(null.asInstanceOf[F[Unit]])))
+        } else {
+          val context = ProvisionImmutable(mutProvisioningContext.instances, mutProvisioningContext.imports)
 
-        val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
-        locator.get[Locator.LocatorRef].ref.set(locator)
+          val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
+          locator.get[Locator.LocatorRef].ref.set(locator)
 
-        Right(locator)
-      }
+          Right(locator)
+        }
+//      }
     }
   }
 

@@ -164,7 +164,7 @@ class CoursierFetch {
     verifyResult(resolution)
 
     val localArtifacts: Seq[Either[FileError, File]] = Gather[Task].gather(
-      resolution.artifacts.map(Cache.file[Task](_).run)
+      resolution.artifacts().map(Cache.file[Task](_).run)
     ).unsafeRun()
 
     localArtifacts.map(_.right.get)

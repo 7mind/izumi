@@ -19,7 +19,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].merge(a, b)
   }
 
-  override def produce[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]] = {
+  override def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Either[FailedProvision[F], Locator]] = {
     parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext)
   }
 }

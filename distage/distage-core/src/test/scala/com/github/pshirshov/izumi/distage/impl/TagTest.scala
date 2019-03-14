@@ -4,8 +4,9 @@ import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCa
 import com.github.pshirshov.izumi.distage.model.definition.With
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import distage.Tag
+import distage.{SafeType, Tag}
 import org.scalatest.WordSpec
 
 trait X[Y] {
@@ -26,6 +27,10 @@ class TagTest extends WordSpec with X[String] {
 
   implicit class TagSafeType(tag: Tag[_]) {
     def tpe: SafeType = SafeType(tag.tag.tpe)
+  }
+
+  implicit class TagKSafeType(tagK: HKTag[_]) {
+    def tpe: SafeType = SafeType(tagK.tag.tpe)
   }
 
   override final val tagZ = Tag[String]
@@ -54,6 +59,7 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Nothing].tpe == safe[Nothing])
       assert(Tag[Any => Nothing].tpe == safe[Any => Nothing])
       assert(Tag[Nothing => Any].tpe == safe[Nothing => Any])
+      assert(TagK[Identity].tpe == TagK[Lambda[A => A]].tpe)
 
       assert(Tag[With[Any]].tpe == safe[With[Any]])
       assert(Tag[With[Nothing]].tpe == safe[With[Nothing]])
