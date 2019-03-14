@@ -116,6 +116,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         warnings.toList,
         Set.empty,
         this.types.values.toList,
+        List.empty,
         index.defn.origin,
       )
     }) match {

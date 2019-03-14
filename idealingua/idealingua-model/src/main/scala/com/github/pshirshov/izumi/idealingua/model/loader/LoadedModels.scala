@@ -35,7 +35,7 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
   def ifFailed(handler: String => Unit): LoadedModels = {
     collectFailures match {
       case f if f.nonEmpty =>
-        handler(s"Verification failed: ${f.niceList()}")
+        handler(s"Compiler failed: ${f.niceList()}")
         this
       case _ =>
         this

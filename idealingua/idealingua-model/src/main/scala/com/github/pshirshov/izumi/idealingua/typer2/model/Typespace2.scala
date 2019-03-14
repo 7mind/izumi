@@ -11,8 +11,11 @@ case class Typespace2(
                        warnings: List[T2Warn],
                        imports: Set[IzTypeId],
                        types: List[ProcessedOp],
+                       consts: List[TypedConst],
                        origin: FSPath,
-                     )
+                     ) {
+  lazy val index: Map[IzTypeId, ProcessedOp] = types.map(t => t.member.id -> t).toMap
+}
 
 object Typespace2 {
 

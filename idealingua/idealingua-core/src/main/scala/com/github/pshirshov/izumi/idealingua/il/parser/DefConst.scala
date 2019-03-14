@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, k
 import com.github.pshirshov.izumi.idealingua.model.common.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import fastparse.NoWhitespace._
 import fastparse._
@@ -91,7 +92,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
       case (pos, (name, tpe, Aux.TJust(rv))) =>
         tpe match {
           case Some(typename) =>
-            RawConst(name, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+            RawConst(name, RawVal.CTyped(typename, rv.value), RawConstMeta(pos))
           case None =>
             RawConst(name, rv, RawConstMeta(pos))
         }
@@ -115,7 +116,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
         case Aux.TObjAux(value) =>
           Aux.TObjAux(RawVal.CTypedObject(id, value.value))
         case Aux.TJust(value) =>
-          Aux.TJust(RawVal.CTyped(id, value))
+          Aux.TJust(RawVal.CTyped(id, value.value))
 
       }
   }
@@ -163,7 +164,7 @@ object DefConst {
 
   object Aux {
 
-    final case class Just(value: RawVal) extends Aux
+    final case class Just(value: RawValScalar) extends Aux
 
     final case class ListAux(value: RawVal.CList) extends Aux
 

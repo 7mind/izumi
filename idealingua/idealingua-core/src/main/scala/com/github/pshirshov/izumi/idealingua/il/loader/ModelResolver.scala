@@ -39,7 +39,8 @@ class ModelResolver(options: TyperOptions) {
         typer.run().left.map(issues => LoadedDomain.TyperFailed(raw.origin, raw.id, issues.errors, issues.warnings))
       } match {
         case Failure(exception) =>
-          System.out.println(s"Typer2 failed on ${raw.id}:\n >> ${exception.getMessage}")
+          System.out.println(s"  ... !!! Typer2 failed on ${raw.id}:\n >> ${exception.getMessage}")
+          exception.printStackTrace()
           Left(LoadedDomain.TyperFailed(raw.origin, raw.id, List(T2Fail.UnexpectedException(exception)), List.empty))
         case Success(value) =>
           value

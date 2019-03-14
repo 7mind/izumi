@@ -3,11 +3,11 @@ package com.github.pshirshov.izumi.idealingua.typer2
 import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TypeDefn}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawTopLevelDefn, RawTypeDef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
-import com.github.pshirshov.izumi.idealingua.typer2.model.{T2Fail, T2Warn, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.mutable
@@ -51,10 +51,12 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       groupedByType <- groupOps(allOperations)
       ordered <- orderOps(groupedByType)
       typespace <- fill(index, importedIndexes, groupedByType, ordered)
+      consts <- new ConstSupport().makeConsts(typespace, index)
     } yield {
-      typespace
+      typespace.copy(consts = consts)
     }
   }
+
 
   private def preverify(index: DomainIndex): Either[TyperFailure, Unit] = {
     val badTypes = index.types
@@ -162,7 +164,10 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       processor.finish()
     } match {
       case Failure(exception) =>
+
+        // TODO: remove
         exception.printStackTrace()
+
         Left(TyperFailure(List(UnexpectedException(exception))))
       case Success(value) =>
         value
@@ -230,6 +235,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
 
   }
 }
+
 
 
 object Typer2 {

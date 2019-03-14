@@ -22,7 +22,7 @@ object RawVal {
 
   final case class CList(value: List[RawVal]) extends RawVal
 
-  final case class CTyped(typeId: RawRef, value: RawVal) extends RawVal
+  final case class CTyped(typeId: RawRef, value: RawValScalar) extends RawVal
 
   final case class CTypedList(typeId: RawRef, value: List[RawVal]) extends RawVal
 

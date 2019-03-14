@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.InterpContext
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawConstMeta}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
@@ -67,6 +67,9 @@ object T2Fail {
   final case class GenericAdtBranchMustBeNamed(context: IzTypeId, problematic: RawRef, meta: NodeMeta) extends BuilderFailWithMeta
   final case class CannotApplyAdtBranchContract(context: IzTypeId, branch: RawDeclaredTypeName, meta: NodeMeta) extends BuilderFailWithMeta
   final case class InterfaceTypeCannotBeUsedInAdt(context: IzTypeId, problematic: RawDeclaredTypeName, meta: NodeMeta) extends BuilderFailWithMeta
+
+  sealed trait ConstFail extends T2Fail
+  final case class InferenceFailed(name: String, values: Set[IzTypeReference], meta: RawConstMeta) extends ConstFail
 
   sealed trait VerificationFail extends BuilderFail
 
