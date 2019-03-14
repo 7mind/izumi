@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArg
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 
 object Rendering {
 
@@ -29,9 +29,9 @@ object Rendering {
   }
 
 
-  implicit object IzTypeArgRenderer extends Renderable[IzTypeArg] {
-    override def render(value: IzTypeArg): String = {
-      s"#${Renderable[IzTypeReference].render(value.value.ref)}"
+  implicit object IzTypeArgRenderer extends Renderable[IzTypeArgValue] {
+    override def render(value: IzTypeArgValue): String = {
+      s"#${Renderable[IzTypeReference].render(value.ref)}"
     }
   }
 
@@ -41,7 +41,7 @@ object Rendering {
         case IzTypeReference.Scalar(id) =>
           s"&${Renderable[IzTypeId].render(id)}"
         case IzTypeReference.Generic(id, args, adhocName) =>
-          val n = adhocName.getOrElse(s"${Renderable[IzTypeId].render(id)}[${args.map(arg => Renderable[IzTypeArg].render(arg)).mkString(",")}]")
+          val n = adhocName.getOrElse(s"${Renderable[IzTypeId].render(id)}[${args.map(arg => Renderable[IzTypeArgValue].render(arg)).mkString(",")}]")
           s"&$n"
       }
     }

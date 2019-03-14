@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{CustomTemplate, ForeignGeneric, Generic}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgValue, IzTypeArgName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
@@ -111,12 +111,12 @@ class TemplateSupport(
     }
   }
 
-  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArg)]): Either[List[BuilderFail], Map[IzTypeArgName, IzTypeReference]] = {
+  private def instantiateArgs(ephemerals: mutable.HashMap[IzTypeId, ProcessedOp], m: RawNodeMeta)(targs: Seq[(IzTypeArgName, IzTypeArgValue)]): Either[List[BuilderFail], Map[IzTypeArgName, IzTypeReference]] = {
 
     val maybeArgValues = targs
       .map {
         case (name, arg) =>
-          val argt: Either[List[BuilderFail], IzTypeReference] = arg.value.ref match {
+          val argt: Either[List[BuilderFail], IzTypeReference] = arg.ref match {
             case ref: IzTypeReference.Scalar =>
               Right(ref)
 

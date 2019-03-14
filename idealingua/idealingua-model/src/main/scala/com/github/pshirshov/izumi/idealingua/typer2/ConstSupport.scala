@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawConstMeta, RawVal}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawGenericRef, RawNongenericRef, RawRef}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawConst, RawConstMeta, RawVal}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawRef
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TyperFailure
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, ResolversImpl}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.FName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgValue}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.TopLevelScalarOrBuiltinGenericExpected
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
@@ -16,27 +16,16 @@ class ConstSupport() {
   import results._
 
   private val ANYTYPE = IzTypeReference.Scalar(IzType.BuiltinScalar.TAny.id)
+  private val ANYLIST = IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(IzTypeArgValue(ANYTYPE)), None)
+  private val ANYMAP = IzTypeReference.Generic(IzType.BuiltinGeneric.TMap.id, Seq(IzTypeArgValue(IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)), IzTypeArgValue(ANYTYPE)), None)
 
   def makeConsts(ts: Typespace2, index: DomainIndex): Either[TyperFailure, List[TypedConst]] = {
     val result = index.consts.flatMap(_.v.consts).map {
       c =>
-        val t = c.const match {
-          case scalar: RawVal.RawValScalar =>
-            Right(ANYTYPE)
-          case RawVal.CMap(value) =>
-            Right(ANYTYPE)
-          case RawVal.CList(value) =>
-            Right(ANYTYPE)
-          case RawVal.CTyped(typeId, _) =>
-            refToTopLevelRef(index)(typeId)
-          case RawVal.CTypedList(typeId, _) =>
-            refToTopLevelRef(index)(typeId)
-          case RawVal.CTypedObject(typeId, _) =>
-            refToTopLevelRef(index)(typeId)
-        }
+        val expectedType = toExpectedType(index, c)
 
         for {
-          tref <- t
+          tref <- expectedType
           v <- makeConst(index, ts, c.id.name, c.meta)(tref, c.const)
         } yield {
           TypedConst(c.id.name, v, c.meta)
@@ -45,6 +34,35 @@ class ConstSupport() {
       .biAggregate
     println(result)
     result.left.map(TyperFailure.apply)
+  }
+
+  private def toExpectedType(index: DomainIndex, c: RawConst) = {
+    c.const match {
+      case scalar: RawVal.RawValScalar =>
+        val t = scalar match {
+          case _: RawVal.CInt =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt32.id)
+          case _: RawVal.CLong =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt64.id)
+          case _: RawVal.CFloat =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TFloat.id)
+          case _: RawVal.CString =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)
+          case _: RawVal.CBool =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TBool.id)
+        }
+        Right(t)
+      case RawVal.CTyped(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case RawVal.CTypedList(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case RawVal.CTypedObject(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case RawVal.CMap(value) =>
+        Right(ANYMAP)
+      case RawVal.CList(value) =>
+        Right(ANYLIST)
+    }
   }
 
   private def makeConst(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(expected: IzTypeReference, const: RawVal): Either[List[T2Fail], TypedVal] = {
@@ -63,7 +81,7 @@ class ConstSupport() {
             Right(TypedVal.TCBool(value))
         }
       case RawVal.CMap(value) =>
-        if (expected == ANYTYPE) {
+        if (expected == ANYMAP || expected == ANYTYPE) {
           makeObject(index, ts, name, meta)(value)
         } else {
           for {
@@ -75,39 +93,14 @@ class ConstSupport() {
         }
 
       case RawVal.CList(value) =>
-        if (expected == ANYTYPE) {
+        if (expected == ANYLIST || expected == ANYTYPE) {
           makeList(index, ts, name, meta)(value)
         } else {
-          for {
-            listArg <- listArgToTopLevelRef(index)(expected)
-            lst <- makeTypedList(index, ts, name, meta)(listArg, value)
-            ok <- isParent(ts)(listArg, lst.ref)
-            _ <- if (ok) {
-              Right(())
-            } else {
-              println((listArg, lst.ref))
-              Left(List(???))
-            }
-          } yield {
-            lst
-          }
+          makeTypedListConst(index, ts, name, meta, expected, value)
         }
 
       case RawVal.CTypedList(_, value) =>
-        for {
-          listArg <- listArgToTopLevelRef(index)(expected)
-          lst <- makeTypedList(index, ts, name, meta)(listArg, value)
-          refarg <- listArgToTopLevelRef(index)(lst.ref)
-          ok <- isParent(ts)(listArg, refarg)
-          _ <- if (ok) {
-            Right(())
-          } else {
-            println((listArg, lst.ref))
-            Left(List(???))
-          }
-        } yield {
-          lst
-        }
+        makeTypedListConst(index, ts, name, meta, expected, value)
 
       case RawVal.CTypedObject(_, value) =>
         for {
@@ -176,7 +169,7 @@ class ConstSupport() {
       case g@IzTypeReference.Generic(_: BuiltinType, args, _) =>
         for {
           // to make sure all args are instantiated recursively
-          _ <- args.map(a => refToTopLevelRef1(index)(a.value.ref)).biAggregate
+          _ <- args.map(a => refToTopLevelRef1(index)(a.ref)).biAggregate
         } yield {
           g
         }
@@ -195,7 +188,7 @@ class ConstSupport() {
   private def listArgToTopLevelRef(index: DomainIndex)(ref: IzTypeReference): Either[List[T2Fail], IzTypeReference] = {
     ref match {
       case IzTypeReference.Generic(id, arg :: Nil, adhocName) if id == IzType.BuiltinGeneric.TList.id =>
-        refToTopLevelRef1(index)(arg.value.ref)
+        refToTopLevelRef1(index)(arg.ref)
       case o =>
         Left(List(???))
     }
@@ -249,38 +242,47 @@ class ConstSupport() {
       }
   }
 
-  private def makeTypedList(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(elref: IzTypeReference, value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
-    val defn = ts.index.get(elref.id).map(_.member) match {
-      case Some(v) =>
-        v
-      case None =>
-        ???
-    }
 
-
-    value
-      .map {
-        v =>
-          for {
-            v <- makeConst(index, ts, name, meta)(elref, v)
-            parent <- isParent(ts)(elref, v.ref)
-            _ <- if (parent) {
-              Right(())
-            } else {
-              println((elref, v.ref))
-              Left(List(???))
-            }
-          } yield {
-            v
+  private def makeTypedListConst(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta, expected: IzTypeReference, value: List[RawVal]) = {
+    for {
+      elref <- listArgToTopLevelRef(index)(expected)
+      lst <- {
+        value
+          .map {
+            v =>
+              for {
+                v <- makeConst(index, ts, name, meta)(elref, v)
+                parent <- isParent(ts)(elref, v.ref)
+                _ <- if (parent) {
+                  Right(())
+                } else {
+                  println((elref, v.ref))
+                  Left(List(???))
+                }
+              } yield {
+                v
+              }
+          }
+          .biAggregate
+          .map {
+            values =>
+              val valRef = IzTypeArgValue(elref)
+              TypedVal.TCList(values, IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(valRef), None))
           }
       }
-      .biAggregate
-      .map {
-        values =>
-          val valRef = IzTypeArg(IzTypeArgValue(elref))
-          TypedVal.TCList(values, IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(valRef), None))
+      refarg <- listArgToTopLevelRef(index)(lst.ref)
+      ok <- isParent(ts)(elref, refarg)
+      _ <- if (ok) {
+        Right(())
+      } else {
+        println((elref, lst.ref))
+        Left(List(???))
       }
+    } yield {
+      lst
+    }
   }
+
 
   private def makeObject(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(value: Map[String, RawVal]): Either[List[T2Fail], TypedVal.TCObject] = {
     value
@@ -299,8 +301,8 @@ class ConstSupport() {
           for {
             inferred <- infer(ts, name, meta)(values.values.toSeq)
           } yield {
-            val keyRef = IzTypeArg(IzTypeArgValue(IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)))
-            val valRef = IzTypeArg(IzTypeArgValue(inferred))
+            val keyRef = IzTypeArgValue(IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id))
+            val valRef = IzTypeArgValue(inferred)
             TypedVal.TCObject(values, IzTypeReference.Generic(IzType.BuiltinGeneric.TMap.id, Seq(keyRef, valRef), None))
           }
       }
@@ -318,7 +320,7 @@ class ConstSupport() {
           for {
             inferred <- infer(ts, name, meta)(values)
           } yield {
-            val valRef = IzTypeArg(IzTypeArgValue(inferred))
+            val valRef = IzTypeArgValue(inferred)
             TypedVal.TCList(values, IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(valRef), None))
           }
       }
@@ -330,7 +332,7 @@ class ConstSupport() {
       Right(allIds.head)
     } else {
       // O(N^2) and it's okay
-      val upper = allIds.find {
+      val existingUpper = allIds.find {
         parent =>
           allIds.map(child => isParent(ts)(parent, child)).toList.biAggregate match {
             case Left(value) =>
@@ -339,12 +341,12 @@ class ConstSupport() {
               value.forall(identity)
           }
       }
-      upper match {
+      existingUpper match {
         case Some(value) =>
           Right(value)
         case None =>
+          // TODO: here we should try to find "common parent"
           Right(ANYTYPE)
-        //Left(List(InferenceFailed(name, allIds, meta)))
       }
     }
   }
@@ -352,6 +354,13 @@ class ConstSupport() {
   def isParent(ts: Typespace2)(parent: IzTypeReference, child: IzTypeReference): Either[List[T2Fail], Boolean] = {
     (parent, child) match {
       case (p: IzTypeReference.Scalar, c: IzTypeReference.Scalar) =>
+        isParentX(ts)(p, c)
+      case (
+          IzTypeReference.Generic(idp, IzTypeArgValue(p: IzTypeReference.Scalar) :: Nil, _),
+          IzTypeReference.Generic(idc, IzTypeArgValue(c: IzTypeReference.Scalar) :: Nil, _)
+          ) if idc == idp && idc == IzType.BuiltinGeneric.TList.id =>
+        isParentX(ts)(p, c)
+      case (IzTypeReference.Generic(idp, IzTypeArgValue(kp: IzTypeReference.Scalar) :: IzTypeArgValue(p: IzTypeReference.Scalar) :: Nil, _), IzTypeReference.Generic(idc, IzTypeArgValue(kc: IzTypeReference.Scalar) :: IzTypeArgValue(c: IzTypeReference.Scalar) :: Nil, _)) if idc == idp && idc == IzType.BuiltinGeneric.TMap.id  && kp == kc && kp.id == IzType.BuiltinScalar.TString.id =>
         isParentX(ts)(p, c)
       case (o1, o2) =>
         Right(o1 == o2)

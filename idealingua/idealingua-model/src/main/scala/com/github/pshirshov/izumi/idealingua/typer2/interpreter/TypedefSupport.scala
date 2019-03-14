@@ -143,7 +143,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         (id, s.id) match {
           case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
             for {
-              _ <- g.args.map(a => refToTopLevelRef(a.value.ref, requiredNow)).biAggregate
+              _ <- g.args.map(a => refToTopLevelRef(a.ref, requiredNow)).biAggregate
               _ <- if (requiredNow) {
                 refRecorder.requireNow(RefToTLTLink(g, sid))
               } else {
@@ -160,7 +160,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       case g@IzTypeReference.Generic(_: BuiltinType, args, _) =>
         for {
           // to make sure all args are instantiated recursively
-          _ <- args.map(a => refToTopLevelRef(a.value.ref, requiredNow)).biAggregate
+          _ <- args.map(a => refToTopLevelRef(a.ref, requiredNow)).biAggregate
         } yield {
           g
         }

@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzName, IzNamespace}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArg, IzTypeArgName, IzTypeArgValue}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgValue, IzTypeArgName}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference, Rendering}
 
 trait Resolvers {
@@ -41,7 +41,7 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
         val typeArgs = args.map {
           a =>
             val argValue = resolve(a)
-            IzTypeArg(IzTypeArgValue(argValue))
+            IzTypeArgValue(argValue)
         }
         IzTypeReference.Generic(id, typeArgs, adhocName.map(IzName))
 
@@ -63,7 +63,7 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
     val name = ref.adhocName
       .map(n => n.name)
       .getOrElse {
-        s"${ref.id.name.name}[${ref.args.map(Renderable[IzTypeArg].render).mkString(",")}]"
+        s"${ref.id.name.name}[${ref.args.map(Renderable[IzTypeArgValue].render).mkString(",")}]"
 
       }
     RawDeclaredTypeName(name)
