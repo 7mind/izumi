@@ -24,6 +24,10 @@ object BIOSyntax {
 
     @inline def leftMap[E2](f: E => E2): R[E2, A] = R.leftMap(r)(f)
 
+    @inline def leftFlatMap[E2](f: E => R[Nothing, E2]): R[E2, A] = R.leftFlatMap(r)(f)
+
+    @inline def flip: R[A, E] = R.flip(r)
+
     @inline def bimap[E2, B](f: E => E2, g: A => B): R[E2, B] = R.bimap(r)(f, g)
 
     @inline def flatMap[E1 >: E, B](f0: A => R[E1, B]): R[E1, B] = R.flatMap[E, A, E1, B](r)(f0)

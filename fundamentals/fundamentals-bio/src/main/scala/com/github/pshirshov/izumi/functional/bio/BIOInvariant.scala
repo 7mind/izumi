@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.IO
-
 import scala.util.Try
 
 trait BIOInvariant[R[_, _]] {
@@ -60,9 +58,9 @@ trait BIOInvariant[R[_, _]] {
 
   @inline final def fromTry[A](effect: => Try[A]): R[Throwable, A] = syncThrowable(effect.get)
 
-  @inline def leftFlatMap[E, A, E2](r: IO[E, A])(f: E => IO[Nothing, E2]): IO[E2, A]
+  @inline def leftFlatMap[E, A, E2](r: R[E, A])(f: E => R[Nothing, E2]): R[E2, A]
 
-  @inline def flip[E, A](r: IO[E, A]) : IO[A, E]
+  @inline def flip[E, A](r: R[E, A]) : R[A, E]
 }
 
 object BIOInvariant {

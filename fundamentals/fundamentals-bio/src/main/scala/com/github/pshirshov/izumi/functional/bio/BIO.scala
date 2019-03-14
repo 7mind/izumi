@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import scalaz.zio._
-import scalaz.zio.duration.Duration.fromScala
+import scalaz.zio.FiberFailure
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -44,14 +43,17 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def sandbox[E, A](r: R[E, A]): R[BIOExit.Failure[E], A]
 
-  @inline override def leftFlatMap[E, A, E2](r: IO[E, A])(f: E => IO[Nothing, E2]): IO[E2, A]
+  @inline override def leftFlatMap[E, A, E2](r: R[E, A])(f: E => R[Nothing, E2]): R[E2, A]
 
-  @inline override def flip[E, A](r: IO[E, A]) : IO[A, E]
+  @inline override def flip[E, A](r: R[E, A]) : R[A, E]
 }
 
 object BIO extends BIOSyntax {
 
   def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
+
+  import scalaz.zio.{Exit, IO, Schedule}
+  import scalaz.zio.duration.Duration.fromScala
 
   implicit object BIOZio extends BIOAsync[IO] {
     @inline override def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
