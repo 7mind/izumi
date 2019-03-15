@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.model.providers
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, SafeType, Tag}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, Tag, SymbolInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
@@ -125,6 +125,20 @@ object ProviderMagnet {
           s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
       )
     )
+
+  def identity[A: Tag]: ProviderMagnet[A] = {
+    val definingClass = SafeType.get[ProviderMagnet.type]
+    val tpe = SafeType.get[A]
+    val key = DIKey.get[A]
+    val debugInfo = DependencyContext.ConstructorParameterContext(definingClass, SymbolInfo.Static("a", tpe, Nil, definingClass, isByName = false, wasGeneric = false))
+
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        associations = Seq(Association.Parameter(debugInfo, "a", tpe, key, isByName = false, wasGeneric = false))
+      , fun = (_: Seq[Any]).head.asInstanceOf[A]
+      )
+    )
+  }
 
   def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacroGenerateUnsafeWeakSafeTypes.impl[R]
 

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.monadic
 
+import com.github.pshirshov.izumi.distage.model.monadic.FromCats.IsSync
 import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -97,9 +98,12 @@ trait FromCats {
     }
   }
 
-  class IsSync[R[_[_]]]
-  object IsSync {
-    implicit val j: IsSync[cats.effect.Sync] = new IsSync
-  }
 
+}
+
+object FromCats {
+  sealed abstract class IsSync[R[_[_]]]
+  object IsSync {
+    implicit val catsEffectSync: IsSync[cats.effect.Sync] = new IsSync[cats.effect.Sync] {}
+  }
 }

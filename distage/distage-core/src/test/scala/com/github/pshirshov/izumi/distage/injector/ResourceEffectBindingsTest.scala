@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.injector
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.{IntSuspend, Ref, Suspend2}
+import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.{IntSuspend, Ref, Res, SimpleResource, Suspend2}
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
@@ -144,9 +145,57 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
   }
 
+  "Resource bindings" should {
+
+    "work in a basic case in Identity monad" in {
+      val definition = PlannerInput(new ModuleDef {
+        make[Res].fromResource[SimpleResource]// FIXME: syntax
+//        make[Res].fromResource[Identity, SimpleResource]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceUnsafe(plan)
+
+      assert(context.get[Res].initialized)
+    }
+
+    "work in a basic case in Suspend2 monad" in {
+      val definition = PlannerInput(new ModuleDef {
+        make[Int].named("2").from(2)
+        make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
+      }, roots = DIKey.get[Int])
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+
+      assert(context.get[Int] == 12)
+    }
+
+  }
+
 }
 
 object ResourceEffectBindingsTest {
+  class Res {
+    var initialized: Boolean = false
+  }
+
+  class SimpleResource extends DIResource.Simple[Res] {
+    override def allocate: Res = { val x = new Res; x.initialized = true; x }
+    override def deallocate(resource: Res): Unit = { resource.initialized = false }
+  }
+
+  class MutResource extends DIResource.Mutable[MutResource] {
+    var init: Boolean = false
+    override def allocate: Unit = { init = true }
+    override def close(): Unit = ()
+  }
+
+  class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
+
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())
     def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
@@ -161,8 +210,6 @@ object ResourceEffectBindingsTest {
       }
     }
   }
-
-  class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
 
   case class Suspend2[+E, +A](run: () => Either[E, A]) {
     def map[B](g: A => B): Suspend2[E, B] = {
