@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.{ProcessedConst, ProcessedOp}
 
 case class Typespace2(
                        domainId: DomainId,
@@ -11,7 +11,7 @@ case class Typespace2(
                        warnings: List[T2Warn],
                        imports: Set[IzTypeId],
                        types: List[ProcessedOp],
-                       consts: List[TypedConst],
+                       consts: List[ProcessedConst],
                        origin: FSPath,
                      ) {
   lazy val index: Map[IzTypeId, ProcessedOp] = types.map(t => t.member.id -> t).toMap
@@ -28,6 +28,18 @@ object Typespace2 {
     final case class Exported(member: IzType) extends ProcessedOp
 
     final case class Imported(member: IzType) extends ProcessedOp
+
+  }
+
+  sealed trait ProcessedConst {
+    def const: TypedConst
+  }
+
+  object ProcessedConst {
+
+    case class Imported(const: TypedConst) extends ProcessedConst
+
+    case class Exported(const: TypedConst) extends ProcessedConst
 
   }
 

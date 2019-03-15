@@ -53,7 +53,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       groupedByType <- groupOps(allOperations)
       ordered <- orderOps(groupedByType)
       result <- fill(index, importedIndexes, groupedByType, ordered)
-      consts <- new ConstSupport().makeConsts(result.ts, index, index.consts ++ result.consts)
+      consts <- new ConstSupport().makeConsts(result.ts, index, result.consts, importedIndexes)
     } yield {
       result.ts.copy(consts = consts)
     }
@@ -237,7 +237,6 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
 
   }
 }
-
 
 
 object Typer2 {

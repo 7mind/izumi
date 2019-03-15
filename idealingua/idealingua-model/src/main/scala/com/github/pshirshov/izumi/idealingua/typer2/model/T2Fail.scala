@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawConstMeta, RawVal}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
+import com.github.pshirshov.izumi.idealingua.typer2.ConstSupport.WIPConst
 import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
@@ -76,6 +77,9 @@ object T2Fail {
   final case class ConstMissingType(name: String, problem: IzTypeReference, meta: RawConstMeta) extends ConstFail
   final case class TopLevelStructureExpected(name: String, problem: IzTypeReference, meta: RawConstMeta) extends ConstFail
   final case class ListExpectedToHaveOneTopLevelArg(problem: IzTypeReference) extends ConstFail
+  final case class DuplicatedConstants(problems:  Map[TypedConstId, Seq[WIPConst]]) extends ConstFail
+  final case class ConstCircularDependenciesDetected(loops: List[Set[TypedConstId]]) extends T2Fail
+  final case class MissingConst(problem: TypedConstId, locations: Map[TypedConstId, Seq[InputPosition]]) extends T2Fail
 
   sealed trait VerificationFail extends BuilderFail
 

@@ -1,8 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
+import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawConst, RawConstMeta, RawVal}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawRef
+import com.github.pshirshov.izumi.idealingua.typer2.ConstSupport.WIPConst
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TyperFailure
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, ResolversImpl}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
@@ -10,7 +13,30 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.FName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedConst
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+
+import scala.collection.mutable
+
+object ConstSupport {
+
+  sealed trait WIPConst {
+    def const: RawConst
+
+    def index: DomainIndex
+
+    def id: TypedConstId
+  }
+
+  object WIPConst {
+
+    case class Imported(index: DomainIndex, id: TypedConstId, const: RawConst) extends WIPConst
+
+    case class Exported(index: DomainIndex, id: TypedConstId, const: RawConst) extends WIPConst
+
+  }
+
+}
 
 class ConstSupport() {
 
@@ -20,18 +46,102 @@ class ConstSupport() {
   private val ANYLIST = IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(IzTypeArgValue(ANYTYPE)), None)
   private val ANYMAP = IzTypeReference.Generic(IzType.BuiltinGeneric.TMap.id, Seq(IzTypeArgValue(IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)), IzTypeArgValue(ANYTYPE)), None)
 
-  def makeConsts(ts: Typespace2, index: DomainIndex, consts: Seq[TLDConsts]): Either[TyperFailure, List[TypedConst]] = {
-    val result = for {
-      block <- consts
+  private val processed = new mutable.HashMap[TypedConstId, TypedConst]()
+
+  def makeConsts(ts: Typespace2, index: DomainIndex, moreConsts: Seq[TLDConsts], importedIndexes: Map[DomainId, DomainIndex]): Either[TyperFailure, List[ProcessedConst]] = {
+    val thisConsts = for {
+      block <- index.consts ++ moreConsts
       const <- block.v.consts
     } yield {
-      val expectedType = toExpectedType(index, const)
+      WIPConst.Exported(index, TypedConstId(index.defn.id, block.v.name, const.id.name), const)
+    }
+
+    val importedConsts = for {
+      idx <- importedIndexes.values
+      block <- idx.consts
+      const <- block.v.consts
+    } yield {
+      WIPConst.Imported(idx, TypedConstId(idx.defn.id, block.v.name, const.id.name), const)
+    }
+
+
+    val circulars = new mutable.ArrayBuffer[Set[TypedConstId]]()
+
+    def resolver(circular: Set[TypedConstId]): TypedConstId = {
+      circulars.append(circular)
+      circular.head
+    }
+
+    (for {
+      allConsts <- group((importedConsts ++ thisConsts).toSeq)
+      deps = allConsts.mapValues(extractDeps)
+      sorted <- new Toposort().cycleBreaking(deps, Seq.empty, resolver)
+        .left.map {
+        f =>
+          val existing = deps.keySet
+          val problematic = f.issues.values.flatten.toSet
+          val problems = problematic.diff(existing)
+          problems
+            .map {
+              p =>
+                val locations = deps.toSeq
+                  .filter(_._2.contains(p))
+                  .map(d => d._1 -> allConsts(d._1).const.meta.position)
+                  .groupBy(_._1)
+                  .mapValues(_.map(_._2))
+
+                MissingConst(p, locations)
+            }
+            .toList
+      }
+      _ <- if (circulars.nonEmpty) {
+        Left(List(ConstCircularDependenciesDetected(circulars.toList)))
+      } else {
+        Right(())
+      }
+      ordered = sorted.map(v => allConsts(v))
+      translated <- translateConsts(ts, ordered)
+    } yield {
+      translated
+    }).left.map(TyperFailure.apply)
+  }
+
+  private def group(allConsts: Seq[WIPConst]): Either[List[T2Fail], Map[TypedConstId, WIPConst]] = {
+    val deps = allConsts.map {
+      c =>
+        c.id -> c
+    }.groupBy(_._1).mapValues(_.map(_._2))
+    val bad = deps.filter(_._2.size > 1)
+
+    if (bad.nonEmpty) {
+      Left(List(DuplicatedConstants(bad)))
+    } else {
+      Right(deps.mapValues(_.head))
+    }
+  }
+
+  private def translateConsts(ts: Typespace2, consts: Seq[WIPConst]): Either[List[T2Fail], List[ProcessedConst]] = {
+    val result = for {
+      const <- consts
+    } yield {
+      val expectedType = toExpectedType(const.index, const.const)
 
       for {
         tref <- expectedType
-        v <- makeConst(index, ts, const.id.name, const.meta)(tref, const.const)
+        v <- makeConst(const.index, ts, const.id.name, const.const.meta)(tref, const.const.const)
       } yield {
-        TypedConst(TypedConstId(index.defn.id, block.v.name, const.id.name), v, const.meta)
+        val c = TypedConst(const.id, v, const.const.meta)
+
+        assert(!processed.contains(const.id))
+        processed.put(const.id, c)
+
+        const match {
+          case _: WIPConst.Imported =>
+            ProcessedConst.Imported(c)
+          case _: WIPConst.Exported =>
+            ProcessedConst.Exported(c)
+        }
+
       }
     }
 
@@ -39,35 +149,37 @@ class ConstSupport() {
 
     result
       .biAggregate
-      .left.map(TyperFailure.apply)
   }
 
-  private def toExpectedType(index: DomainIndex, c: RawConst): Either[List[T2Fail], IzTypeReference] = {
-    c.const match {
-      case scalar: RawVal.RawValScalar =>
-        val t = scalar match {
-          case _: RawVal.CInt =>
-            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt32.id)
-          case _: RawVal.CLong =>
-            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt64.id)
-          case _: RawVal.CFloat =>
-            IzTypeReference.Scalar(IzType.BuiltinScalar.TFloat.id)
-          case _: RawVal.CString =>
-            IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)
-          case _: RawVal.CBool =>
-            IzTypeReference.Scalar(IzType.BuiltinScalar.TBool.id)
-        }
-        Right(t)
-      case RawVal.CTyped(typeId, _) =>
-        refToTopLevelRef(index)(typeId)
-      case RawVal.CTypedList(typeId, _) =>
-        refToTopLevelRef(index)(typeId)
-      case RawVal.CTypedObject(typeId, _) =>
-        refToTopLevelRef(index)(typeId)
-      case RawVal.CMap(_) =>
-        Right(ANYMAP)
-      case RawVal.CList(_) =>
-        Right(ANYLIST)
+
+  private def extractDeps(w: WIPConst): Set[TypedConstId] = {
+    extractDeps(w.index, w.id.scope)(w.const.const)
+  }
+
+  private def extractDeps(index: DomainIndex, defScope: String)(w: RawVal): Set[TypedConstId] = {
+    w match {
+      case RawVal.CRef(domain, scope, name) =>
+        val did = domain.getOrElse(index.defn.id)
+        val sid = scope.getOrElse(defScope)
+        Set(TypedConstId(did, sid, name))
+
+      case RawVal.CTypedRef(_, domain, scope, name) =>
+        val did = domain.getOrElse(index.defn.id)
+        val sid = scope.getOrElse(defScope)
+        Set(TypedConstId(did, sid, name))
+
+      case _: RawVal.RawValScalar =>
+        Set.empty
+      case RawVal.CMap(value) =>
+        value.values.flatMap(extractDeps(index, defScope)).toSet
+      case RawVal.CList(value) =>
+        value.flatMap(extractDeps(index, defScope)).toSet
+      case RawVal.CTyped(_, _) =>
+        Set.empty
+      case RawVal.CTypedList(_, value) =>
+        value.flatMap(extractDeps(index, defScope)).toSet
+      case RawVal.CTypedObject(_, value) =>
+        value.values.flatMap(extractDeps(index, defScope)).toSet
     }
   }
 
@@ -86,6 +198,12 @@ class ConstSupport() {
           case RawVal.CBool(value) =>
             Right(TypedVal.TCBool(value))
         }
+
+      case r: RawVal.CRef =>
+        ???
+      case r: RawVal.CTypedRef =>
+        ???
+
       case RawVal.CMap(value) =>
         if (expected == ANYMAP || expected == ANYTYPE) {
           makeObject(index, ts, name, meta)(value)
@@ -121,7 +239,6 @@ class ConstSupport() {
         } else {
           makeTypedListConst(index, ts, name, meta, expected, value)
         }
-
 
 
       case RawVal.CTyped(_, raw) =>
@@ -174,6 +291,39 @@ class ConstSupport() {
     }
   }
 
+  private def toExpectedType(index: DomainIndex, c: RawConst): Either[List[T2Fail], IzTypeReference] = {
+    c.const match {
+      case scalar: RawVal.RawValScalar =>
+        val t = scalar match {
+          case _: RawVal.CInt =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt32.id)
+          case _: RawVal.CLong =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TInt64.id)
+          case _: RawVal.CFloat =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TFloat.id)
+          case _: RawVal.CString =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TString.id)
+          case _: RawVal.CBool =>
+            IzTypeReference.Scalar(IzType.BuiltinScalar.TBool.id)
+        }
+        Right(t)
+      case RawVal.CTyped(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case RawVal.CTypedList(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case RawVal.CTypedObject(typeId, _) =>
+        refToTopLevelRef(index)(typeId)
+      case r: RawVal.CRef =>
+        ???
+      case r: RawVal.CTypedRef =>
+        ???
+      case RawVal.CMap(_) =>
+        Right(ANYMAP)
+      case RawVal.CList(_) =>
+        Right(ANYLIST)
+    }
+  }
+
   private def refToTopLevelRef1(index: DomainIndex)(ref: IzTypeReference): Either[List[T2Fail], IzTypeReference] = {
     ref match {
       case s: IzTypeReference.Scalar =>
@@ -216,8 +366,10 @@ class ConstSupport() {
           ts.index.get(id).map(_.member) match {
             case Some(v: IzStructure) =>
               Right(v)
-            case _ =>
+            case Some(_) =>
               Left(List(TopLevelStructureExpected(name, ref, meta)))
+            case None =>
+              Left(List(ConstMissingType(name, ref, meta)))
           }
 
         case o =>
@@ -346,23 +498,40 @@ class ConstSupport() {
       Right(allIds.head)
     } else {
       // O(N^2) and it's okay
-      val existingUpper = allIds.find {
-        parent =>
-          allIds.map(child => isParent(ts, name, meta)(parent, child)).toList.biAggregate match {
-            case Left(value) =>
-              ???
-            case Right(value) =>
-              value.forall(identity)
-          }
+
+      for {
+        // trying to find common parent across existing members
+        existingUpper <- find(allIds.toSeq) {
+          parent =>
+            allIds.map(child => isParent(ts, name, meta)(parent, child)).toList.biAggregate.map(_.forall(identity))
+        }
+      } yield {
+        existingUpper match {
+          case Some(value) =>
+            value
+          case None =>
+            // TODO: here we should try to find "common parent"
+            ANYTYPE
+        }
       }
-      existingUpper match {
-        case Some(value) =>
-          Right(value)
-        case None =>
-          // TODO: here we should try to find "common parent"
-          Right(ANYTYPE)
+
+    }
+  }
+
+  private def find[T, E](s: Seq[T])(predicate: T => Either[List[E], Boolean]): Either[List[E], Option[T]] = {
+    val i = s.iterator
+    while (i.hasNext) {
+      val a = i.next()
+      predicate(a) match {
+        case Left(value) =>
+          return Left(value)
+        case Right(value) if value =>
+          return Right(Some(a))
+
+        case Right(_) =>
       }
     }
+    Right(None)
   }
 
   def isParent(ts: Typespace2, name: String, meta: RawConstMeta)(parent: IzTypeReference, child: IzTypeReference): Either[List[T2Fail], Boolean] = {
