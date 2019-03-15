@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawRef
 
 sealed trait RawVal
@@ -7,6 +8,9 @@ sealed trait RawVal
 object RawVal {
 
   sealed trait RawValScalar extends RawVal
+
+  final case class CRef(domain: Option[DomainId], scope: Option[String], name: String) extends RawVal
+  final case class CTypedRef(typeId: RawRef, domain: Option[DomainId], scope: Option[String], name: String) extends RawVal
 
   final case class CInt(value: Int) extends RawValScalar
 

@@ -3,15 +3,15 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, TsProvider, WarnLogger}
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, T2Warn}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
+import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, TsProvider, WarnLogger}
 
 import scala.reflect.ClassTag
 
@@ -41,7 +41,9 @@ trait TypedefSupport {
   def refToTopLevelRef(id: IzTypeReference, requiredNow: Boolean): Either[List[BuilderFail], IzTypeReference]
 }
 
-class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, logger: WarnLogger, provider: TsProvider) extends TypedefSupport {
+
+
+class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Interpreter.Args, refRecorder: RefRecorder, constRecorder: ConstRecorder, logger: WarnLogger, provider: TsProvider) extends TypedefSupport {
   def makeForeign(v: RawTypeDef.ForeignType): TSingle = {
     v.id match {
       case RawTemplateNoArg(name) =>
@@ -372,7 +374,14 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
   }
 
   def meta(meta: RawNodeMeta): NodeMeta = {
-    NodeMeta(meta.doc, Seq.empty, meta.position)
+    val annoIds = meta.annos.map {
+      a =>
+        val name = s"const_${constRecorder.nextIndex()}"
+        val id = TypedConstId(index.defn.id, "_annotations_", name)
+        constRecorder.registerConst(id, a.values, a.position)
+        id
+    }
+    NodeMeta(meta.doc, annoIds, meta.position)
   }
 
 }

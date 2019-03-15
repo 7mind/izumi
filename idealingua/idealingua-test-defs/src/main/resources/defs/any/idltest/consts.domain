@@ -4,7 +4,7 @@ data TestPair(value: i32, name: str)
 
 data SomethingElse(p: TestPair)
 
-const {
+const Example {
   someInt = 1
   someString = "xxx"
   anotherString: str = """yyy"""
@@ -30,6 +30,7 @@ const {
   }
 
   list = [ 1 , 2 ]
+  list2 = [1, ::someInt]
 
   anothermap = {k="x", v=1}
   anotherstrmap = {k="x", v="y"}

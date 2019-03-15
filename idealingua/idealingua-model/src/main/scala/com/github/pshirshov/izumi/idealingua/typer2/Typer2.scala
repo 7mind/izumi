@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
 import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{NamedDefn, TypeDefn}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
@@ -15,6 +16,7 @@ import scala.util.{Failure, Success, Try}
 
 
 class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
+  Quirks.discard(options)
 
   import Typer2._
 
@@ -50,10 +52,10 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       allOperations <- combineOperations(index, importedIndexes)
       groupedByType <- groupOps(allOperations)
       ordered <- orderOps(groupedByType)
-      typespace <- fill(index, importedIndexes, groupedByType, ordered)
-      consts <- new ConstSupport().makeConsts(typespace, index)
+      result <- fill(index, importedIndexes, groupedByType, ordered)
+      consts <- new ConstSupport().makeConsts(result.ts, index, index.consts ++ result.consts)
     } yield {
-      typespace.copy(consts = consts)
+      result.ts.copy(consts = consts)
     }
   }
 
@@ -128,7 +130,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
     Right(allOperations)
   }
 
-  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[TypenameRef, UniqueOperation], ordered: Seq[TypenameRef]): Either[TyperFailure, Typespace2] = {
+  private def fill(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex], groupedByType: Map[TypenameRef, UniqueOperation], ordered: Seq[TypenameRef]): Either[TyperFailure, Ts2Builder.Output] = {
     val processor = new Ts2Builder(index, importedIndexes)
     val declIndex = index.declaredTypes.groupBy {
       case RawTopLevelDefn.TLDBaseType(v) =>

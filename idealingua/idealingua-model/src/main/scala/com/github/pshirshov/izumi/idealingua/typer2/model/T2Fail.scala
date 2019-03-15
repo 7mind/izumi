@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawConstMeta}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawConstMeta, RawVal}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
 import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
@@ -70,6 +70,12 @@ object T2Fail {
 
   sealed trait ConstFail extends T2Fail
   final case class InferenceFailed(name: String, values: Set[IzTypeReference], meta: RawConstMeta) extends ConstFail
+  final case class ConstantViolatesType(name: String, values: IzTypeReference, value: TypedVal, meta: RawConstMeta) extends ConstFail
+  final case class RawConstantViolatesType(name: String, values: IzTypeReference, value: RawVal, meta: RawConstMeta) extends ConstFail
+  final case class UndefinedField(name: String, context: IzTypeReference, field: FName, meta: RawConstMeta) extends ConstFail
+  final case class ConstMissingType(name: String, problem: IzTypeReference, meta: RawConstMeta) extends ConstFail
+  final case class TopLevelStructureExpected(name: String, problem: IzTypeReference, meta: RawConstMeta) extends ConstFail
+  final case class ListExpectedToHaveOneTopLevelArg(problem: IzTypeReference) extends ConstFail
 
   sealed trait VerificationFail extends BuilderFail
 

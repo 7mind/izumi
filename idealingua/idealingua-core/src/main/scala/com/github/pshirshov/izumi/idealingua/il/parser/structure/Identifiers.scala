@@ -23,6 +23,8 @@ trait Identifiers extends Separators {
 
   def constName[_: P]: P[String] = symbol
 
+  def constBlockName[_: P]: P[String] = symbol
+
   def removedParentName[_: P]: P[String] = symbol
 
   private def symbol[_: P]: P[String] = P((CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!)
@@ -31,7 +33,7 @@ trait Identifiers extends Separators {
   def domainId[_: P]: P[DomainId] = P(idPkg)
     .map(v => DomainId(v.init, v.last))
 
-  private def idPkg[_: P]: P[Seq[String]] = P(symbol.rep(sep = "."))
+  private def idPkg[_: P]: P[Seq[String]] = P(symbol.rep(sep = ".", min = 1))
 
   // type definitions
   def parentStruct[_: P]: P[RawRef] = typeReference //typename.map(id => RawNongenericRef(id.pkg, id.name))

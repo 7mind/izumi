@@ -1,12 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.common.{ConstId, DomainId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawNodeMeta
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef, TyperFailure}
-import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, InterpreterContext}
+import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{ConstRecorder, Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
@@ -19,11 +21,15 @@ import scala.collection.mutable
 
 trait RefRecorder {
   def require(ref: RefToTLTLink): Unit
+
   def requireNow(ref: RefToTLTLink): Either[List[BuilderFail], Unit]
 }
 
 trait TsProvider {
   def freeze(): Map[IzTypeId, ProcessedOp]
+
+  def freezeConsts(): Seq[TLDConsts]
+
   def get(id: IzTypeId, context: IzTypeId, meta: NodeMeta): Either[List[BuilderFail], ProcessedOp] = {
     freeze().get(id) match {
       case Some(value) =>
@@ -34,16 +40,28 @@ trait TsProvider {
   }
 }
 
-class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder with TsProvider {
+class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder with ConstRecorder with TsProvider {
   private val failed = mutable.HashSet.empty[TypenameRef]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
   private val warnings = mutable.ArrayBuffer.empty[T2Warn]
   private val existing = mutable.HashSet.empty[TypenameRef]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
+  private val consts = mutable.HashMap[TypedConstId, RawConst]()
   private val thisPrefix = TypePrefix.UserTLT(IzPackage(index.defn.id.toPackage.map(IzDomainPath)))
 
 
   override def freeze(): Map[IzTypeId, ProcessedOp] = types.toMap
+
+  override def freezeConsts(): Seq[TLDConsts] = {
+    consts
+      .toList
+      .groupBy(_._1.scope)
+      .map {
+        case (scope, v) =>
+          TLDConsts(RawConstBlock(scope, v.map(_._2)))
+      }
+      .toSeq
+  }
 
   override def log(w: T2Warn): Unit = {
     warnings += w
@@ -80,6 +98,17 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     }
   }
 
+
+  override def nextIndex(): Int = consts.size + 1
+
+  override def registerConst(id: TypedConstId, value: RawVal.CMap, position: InputPosition): Unit = {
+    if (consts.contains(id)) {
+      throw new IllegalStateException(s"Unexpected problem: sanity check failed for const $id")
+    }
+
+    Quirks.discard(consts.put(id, RawConst(ConstId(id.name), value, RawConstMeta(None, position))))
+  }
+
   def merge(mult: Typer2.DefineWithDecls): Either[List[BuilderFail], Typer2.DefineType] = {
     if (mult.decls.isEmpty) {
       Right(Typer2.DefineType(mult.id, mult.depends, mult.main))
@@ -98,7 +127,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
 
-  def finish(): Either[TyperFailure, Typespace2] = {
+  def finish(): Either[TyperFailure, Ts2Builder.Output] = {
     (for {
       _ <- if (failures.nonEmpty) {
         Left(failures.toList)
@@ -108,9 +137,10 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       _ <- instantiatePostponedGenerics(missingRefs.toSet)
       verifier = makeVerifier()
       allTypes = freezeTypes()
+      allConsts = freezeConsts()
       _ <- verifier.validateTypespace(allTypes)
     } yield {
-      Typespace2(
+      Ts2Builder.Output(Typespace2(
         index.defn.id,
         index.defn.imports,
         warnings.toList,
@@ -118,7 +148,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         this.types.values.toList,
         List.empty,
         index.defn.origin,
-      )
+      ), allConsts)
     }) match {
       case Left(f) =>
         Left(TyperFailure(f, warnings.toList))
@@ -164,7 +194,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 
   private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {
-    new InterpreterContext(dindex, this, this, this, Interpreter.Args(Map.empty))
+    new InterpreterContext(dindex, this, this, this, this, Interpreter.Args(Map.empty))
   }
 
   private def register(ops: Operation, maybeTypes: Either[List[BuilderFail], List[IzType]]): Unit = {
@@ -238,5 +268,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
   }
 }
 
-
-
+object Ts2Builder {
+  case class Output(ts: Typespace2, consts: Seq[TLDConsts])
+}

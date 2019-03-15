@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.WithTemplating
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgName
 
@@ -15,7 +14,7 @@ sealed trait IzType {
 
 object IzType {
   object model {
-    final case class NodeMeta(doc: Option[String], annos: Seq[Nothing], pos: InputPosition)
+    final case class NodeMeta(doc: Option[String], annos: Seq[TypedConstId], pos: InputPosition)
 
     final case class FName(name: String)
     final case class BasicField(name: FName, ref: IzTypeReference)
@@ -24,7 +23,7 @@ object IzType {
       def basic: BasicField = BasicField(name, tpe)
     }
 
-    final case class EnumMember(name: String, value: Option[Nothing], meta: NodeMeta)
+    final case class EnumMember(name: String, value: Option[TypedConstId], meta: NodeMeta)
 
     sealed trait AdtMember {
       def name: String

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Identifiers, k
 import com.github.pshirshov.izumi.idealingua.model.common.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.{CRef, RawValScalar}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import fastparse.NoWhitespace._
 import fastparse._
@@ -25,9 +25,9 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
 
-  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ enclosedConsts)
+  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ constBlockName ~ inline ~ enclosedConsts)
     .map {
-      v => TLDConsts(RawConstBlock(v.toList))
+      case (n, v) => TLDConsts(RawConstBlock(n, v.toList))
     }
 
   def constValue[_: P]: P[Aux] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
@@ -117,12 +117,17 @@ class DefConst(context: IDLParserContext) extends Identifiers {
           Aux.TObjAux(RawVal.CTypedObject(id, value.value))
         case Aux.TJust(value) =>
           Aux.TJust(RawVal.CTyped(id, value.value))
-
+        case Aux.Ref(value) =>
+          Aux.TRef(RawVal.CTypedRef(id, value.domain, value.scope, value.name))
       }
   }
 
+  private def refValue[_: P]: P[Aux] = P(domainId.? ~ "::" ~  (constBlockName ~ ".").? ~ constName).map {
+    case (domain, block, name) =>
+      Aux.Ref(CRef(domain, block, name))
+  }
 
-  private def anyValue[_: P]: P[Aux] = P(typedValue | justValue)
+  private def anyValue[_: P]: P[Aux] = P(typedValue | justValue | refValue)
 
 
   private def literal[_: P]: P[Aux.Just] = {
@@ -163,18 +168,21 @@ object DefConst {
   }
 
   object Aux {
-
-    final case class Just(value: RawValScalar) extends Aux
-
     final case class ListAux(value: RawVal.CList) extends Aux
 
     final case class ObjAux(value: RawVal.CMap) extends Aux
+
+    final case class Ref(value: RawVal.CRef) extends Aux
+
+    final case class Just(value: RawValScalar) extends Aux
 
     final case class TListAux(value: RawVal.CTypedList) extends Aux
 
     final case class TObjAux(value: RawVal.CTypedObject) extends Aux
 
     final case class TJust(value: RawVal.CTyped) extends Aux
+
+    final case class TRef(value: RawVal.CTypedRef) extends Aux
 
   }
 }

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.typer2.model
 
+import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawConstMeta
 
 sealed trait TypedVal {
@@ -35,7 +36,8 @@ object TypedVal {
   final case class TCList(value: List[TypedVal], ref: IzTypeReference) extends TypedVal
 
   final case class TCObject(value: Map[String, TypedVal], ref: IzTypeReference) extends TypedVal
-
 }
 
-case class TypedConst(name: String, value: TypedVal, meta: RawConstMeta)
+case class TypedConstId(domainId: DomainId, scope: String, name: String)
+
+case class TypedConst(id: TypedConstId, value: TypedVal, meta: RawConstMeta)

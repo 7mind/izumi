@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 import com.github.pshirshov.izumi.idealingua.model.common.ConstId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 
-final case class RawConstBlock(consts: List[RawConst])
+final case class RawConstBlock(name: String, consts: List[RawConst])
 
 final case class RawConstMeta(doc: Option[String], position: InputPosition)
 
