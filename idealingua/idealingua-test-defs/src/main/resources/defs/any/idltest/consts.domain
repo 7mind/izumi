@@ -30,7 +30,9 @@ const Example {
   }
 
   list = [ 1 , 2 ]
-  list2 = [1, ::someInt]
+
+  referenced = [42]
+  list2 = [[41], ::referenced]
 
   anothermap = {k="x", v=1}
   anotherstrmap = {k="x", v="y"}

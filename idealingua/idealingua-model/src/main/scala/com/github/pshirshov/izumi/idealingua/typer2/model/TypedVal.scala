@@ -36,6 +36,8 @@ object TypedVal {
   final case class TCList(value: List[TypedVal], ref: IzTypeReference) extends TypedVal
 
   final case class TCObject(value: Map[String, TypedVal], ref: IzTypeReference) extends TypedVal
+
+  final case class TCRef(id: TypedConstId, ref: IzTypeReference) extends TypedVal
 }
 
 case class TypedConstId(domainId: DomainId, scope: String, name: String)

@@ -128,7 +128,7 @@ class ConstSupport() {
 
       for {
         tref <- expectedType
-        v <- makeConst(const.index, ts, const.id.name, const.const.meta)(tref, const.const.const)
+        v <- makeConst(const.index, ts, const.id.scope, const.id.name, const.const.meta)(tref, const.const.const)
       } yield {
         val c = TypedConst(const.id, v, const.const.meta)
 
@@ -145,7 +145,7 @@ class ConstSupport() {
       }
     }
 
-    println(result.biAggregate)
+    //println(result.biAggregate)
 
     result
       .biAggregate
@@ -158,16 +158,10 @@ class ConstSupport() {
 
   private def extractDeps(index: DomainIndex, defScope: String)(w: RawVal): Set[TypedConstId] = {
     w match {
-      case RawVal.CRef(domain, scope, name) =>
-        val did = domain.getOrElse(index.defn.id)
-        val sid = scope.getOrElse(defScope)
-        Set(TypedConstId(did, sid, name))
-
-      case RawVal.CTypedRef(_, domain, scope, name) =>
-        val did = domain.getOrElse(index.defn.id)
-        val sid = scope.getOrElse(defScope)
-        Set(TypedConstId(did, sid, name))
-
+      case r: RawVal.CRef =>
+        Set(toId(index, defScope, r))
+      case r: RawVal.CTypedRef =>
+        Set(toId(index, defScope, r))
       case _: RawVal.RawValScalar =>
         Set.empty
       case RawVal.CMap(value) =>
@@ -183,7 +177,19 @@ class ConstSupport() {
     }
   }
 
-  private def makeConst(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(expected: IzTypeReference, const: RawVal): Either[List[T2Fail], TypedVal] = {
+  private def toId(index: DomainIndex, defScope: String, r: RawVal.CTypedRef): TypedConstId = {
+    val did = r.domain.getOrElse(index.defn.id)
+    val sid = r.scope.getOrElse(defScope)
+    TypedConstId(did, sid, r.name)
+  }
+
+  private def toId(index: DomainIndex, defScope: String, r: RawVal.CRef): TypedConstId = {
+    val did = r.domain.getOrElse(index.defn.id)
+    val sid = r.scope.getOrElse(defScope)
+    TypedConstId(did, sid, r.name)
+  }
+
+  private def makeConst(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta)(expected: IzTypeReference, const: RawVal): Either[List[T2Fail], TypedVal] = {
     const match {
       case scalar: RawVal.RawValScalar =>
         scalar match {
@@ -200,16 +206,26 @@ class ConstSupport() {
         }
 
       case r: RawVal.CRef =>
-        ???
+        val id = toId(index, scope, r)
+        val existing = processed(id)
+        Right(TypedVal.TCRef(id, existing.value.ref))
+
       case r: RawVal.CTypedRef =>
-        ???
+        val id = toId(index, scope, r)
+        val existing = processed(id)
+        for {
+          expected <- refToTopLevelRef(index)(r.typeId)
+          _ <- isParent(ts, name, meta)(expected, existing.value.ref)
+        } yield {
+          TypedVal.TCRef(id, expected)
+        }
 
       case RawVal.CMap(value) =>
         if (expected == ANYMAP || expected == ANYTYPE) {
-          makeObject(index, ts, name, meta)(value)
+          makeObject(index, ts, scope, name, meta)(value)
         } else {
           for {
-            obj <- makeTypedObject(index, ts, name, meta)(expected, value)
+            obj <- makeTypedObject(index, ts, scope, name, meta)(expected, value)
           } yield {
             obj
           }
@@ -217,10 +233,10 @@ class ConstSupport() {
 
       case RawVal.CTypedObject(_, value) =>
         if (expected == ANYMAP || expected == ANYTYPE) {
-          makeObject(index, ts, name, meta)(value)
+          makeObject(index, ts, scope, name, meta)(value)
         } else {
           for {
-            obj <- makeTypedObject(index, ts, name, meta)(expected, value)
+            obj <- makeTypedObject(index, ts, scope, name, meta)(expected, value)
           } yield {
             obj
           }
@@ -228,16 +244,16 @@ class ConstSupport() {
 
       case RawVal.CList(value) =>
         if (expected == ANYLIST || expected == ANYTYPE) {
-          makeList(index, ts, name, meta)(value)
+          makeList(index, ts, scope, name, meta)(value)
         } else {
-          makeTypedListConst(index, ts, name, meta, expected, value)
+          makeTypedListConst(index, ts, scope, name, meta, expected, value)
         }
 
       case RawVal.CTypedList(_, value) =>
         if (expected == ANYLIST || expected == ANYTYPE) {
-          makeList(index, ts, name, meta)(value)
+          makeList(index, ts, scope, name, meta)(value)
         } else {
-          makeTypedListConst(index, ts, name, meta, expected, value)
+          makeTypedListConst(index, ts, scope, name, meta, expected, value)
         }
 
 
@@ -313,10 +329,10 @@ class ConstSupport() {
         refToTopLevelRef(index)(typeId)
       case RawVal.CTypedObject(typeId, _) =>
         refToTopLevelRef(index)(typeId)
-      case r: RawVal.CRef =>
-        ???
+      case _: RawVal.CRef =>
+        Right(ANYTYPE)
       case r: RawVal.CTypedRef =>
-        ???
+        refToTopLevelRef(index)(r.typeId)
       case RawVal.CMap(_) =>
         Right(ANYMAP)
       case RawVal.CList(_) =>
@@ -359,7 +375,7 @@ class ConstSupport() {
   }
 
 
-  private def makeTypedObject(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(ref: IzTypeReference, value: Map[String, RawVal]): Either[List[T2Fail], TypedVal.TCObject] = {
+  private def makeTypedObject(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta)(ref: IzTypeReference, value: Map[String, RawVal]): Either[List[T2Fail], TypedVal.TCObject] = {
     for {
       defn <- ref match {
         case IzTypeReference.Scalar(id) =>
@@ -382,7 +398,7 @@ class ConstSupport() {
             for {
               fdef <- fields.get(FName(k)).toRight(List(UndefinedField(name, ref, FName(k), meta)))
               tref <- refToTopLevelRef1(index)(fdef.tpe)
-              fieldv <- makeConst(index, ts, name, meta)(tref, v)
+              fieldv <- makeConst(index, ts, scope, name, meta)(tref, v)
               parent <- isParent(ts, name, meta)(fdef.tpe, fieldv.ref)
               _ <- if (parent) {
                 Right(())
@@ -411,7 +427,7 @@ class ConstSupport() {
   }
 
 
-  private def makeTypedListConst(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta, expected: IzTypeReference, value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
+  private def makeTypedListConst(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta, expected: IzTypeReference, value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
     for {
       elref <- listArgToTopLevelRef(index)(expected)
       lst <- {
@@ -419,7 +435,7 @@ class ConstSupport() {
           .map {
             v =>
               for {
-                v <- makeConst(index, ts, name, meta)(elref, v)
+                v <- makeConst(index, ts, scope, name, meta)(elref, v)
                 parent <- isParent(ts, name, meta)(elref, v.ref)
                 _ <- if (parent) {
                   Right(())
@@ -450,11 +466,11 @@ class ConstSupport() {
   }
 
 
-  private def makeObject(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(value: Map[String, RawVal]): Either[List[T2Fail], TypedVal.TCObject] = {
+  private def makeObject(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta)(value: Map[String, RawVal]): Either[List[T2Fail], TypedVal.TCObject] = {
     value
       .map {
         case (k, v) =>
-          makeConst(index, ts, name, meta)(ANYTYPE, v).map {
+          makeConst(index, ts, scope, name, meta)(ANYTYPE, v).map {
             c =>
               k -> c
           }
@@ -474,11 +490,11 @@ class ConstSupport() {
       }
   }
 
-  private def makeList(index: DomainIndex, ts: Typespace2, name: String, meta: RawConstMeta)(value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
+  private def makeList(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta)(value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
     value
       .map {
         v =>
-          makeConst(index, ts, name, meta)(ANYTYPE, v)
+          makeConst(index, ts, scope, name, meta)(ANYTYPE, v)
       }
       .biAggregate
       .flatMap {
