@@ -34,7 +34,7 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   private def const[_: P]: P[RawConst] = P(metaAgg.withMeta(constNoDoc)).map {
     case (meta, constVal) =>
-      constVal.copy(meta = RawConstMeta(meta.doc, meta.position))
+      constVal.copy(meta = RawConstMeta(meta.doc.headOption, meta.position))
   }
 
   private def enclosedConsts[_: P]: P[Seq[RawConst]] = structure.aggregates.enclosed(constants)
@@ -117,6 +117,8 @@ class DefConst(context: IDLParserContext) extends Identifiers {
           Aux.TObjAux(RawVal.CTypedObject(id, value.value))
         case Aux.TJust(value) =>
           Aux.TJust(RawVal.CTyped(id, value.value))
+        case Aux.TRef(value) =>
+          Aux.TRef(RawVal.CTypedRef(id, value.domain, value.scope, value.name))
         case Aux.Ref(value) =>
           Aux.TRef(RawVal.CTypedRef(id, value.domain, value.scope, value.name))
       }

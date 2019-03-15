@@ -48,15 +48,15 @@ class TemplateSupport(
   }
 
 
-  def makeInstance(name: RawDeclaredTypeName, source: IzTypeReference, meta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
-    val tmeta = i2.meta(meta)
+  def makeInstance(name: RawDeclaredTypeName, source: IzTypeReference, instanceRawMeta: RawNodeMeta, ephemerals: mutable.HashMap[IzTypeId, ProcessedOp]): TList = {
+    val instanceMeta = i2.meta(instanceRawMeta)
     val instanceId = resolvers.nameToId(name, Seq.empty)
     for {
       template <- source match {
         case IzTypeReference.Scalar(tid) =>
-          provider.get(tid, instanceId, tmeta)
+          provider.get(tid, instanceId, instanceMeta)
         case IzTypeReference.Generic(tid, _, _) =>
-          provider.get(tid, instanceId, tmeta)
+          provider.get(tid, instanceId, instanceMeta)
       }
 
       targs = source match {
@@ -81,28 +81,29 @@ class TemplateSupport(
 
       argsMap = tdef.args.zip(targs)
 
-      templateContext <- instantiateArgs(ephemerals, meta)(argsMap)
+      templateContext <- instantiateArgs(ephemerals, instanceRawMeta)(argsMap)
       isub = contextProducer.remake(ephemerals.toMap, context.copy(templateContext)).interpreter
 
       instance <- tdef match {
         case c: CustomTemplate =>
+          val fullMeta = instanceRawMeta.copy(doc = c.decl.meta.doc ++ instanceRawMeta.doc)
           val withFixedId = c.decl match {
             case i: RawTypeDef.Interface =>
-              i.copy(id = name, meta = meta)
+              i.copy(id = name, meta = fullMeta)
             case d: RawTypeDef.DTO =>
-              d.copy(id = name, meta = meta)
+              d.copy(id = name, meta = fullMeta)
             case a: RawTypeDef.Adt =>
-              a.copy(id = name, meta = meta)
+              a.copy(id = name, meta = fullMeta)
             case s: RawTypeDef.RawService =>
-              s.copy(id = name, meta = meta)
+              s.copy(id = name, meta = fullMeta)
             case b: RawTypeDef.RawBuzzer =>
-              b.copy(id = name, meta = meta)
+              b.copy(id = name, meta = fullMeta)
             case b: RawTypeDef.RawStreams =>
-              b.copy(id = name, meta = meta)
+              b.copy(id = name, meta = fullMeta)
           }
           isub.dispatch(RawTopLevelDefn.TLDBaseType(withFixedId))
-        case _: ForeignGeneric =>
-          Right(List(IzType.IzAlias(instanceId, source, tmeta)))
+        case t: ForeignGeneric =>
+          Right(List(IzType.IzAlias(instanceId, source, instanceMeta.copy(doc = t.meta.doc ++ instanceMeta.doc))))
         case _ =>
           Left(List(UnexpectedException(new IllegalStateException(s"BUG: $tdef has unexpected type but that can't be"))))
       }

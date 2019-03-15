@@ -12,7 +12,7 @@ class MetaAggregates(context: IDLParserContext) {
   def withMeta[T](defparser: => P[T])(implicit v: P[_]): P[(RawNodeMeta, T)] = {
     P(MaybeDoc ~ context.defConst.defAnnos ~ context.defPositions.positioned(defparser)).map {
       case (doc, annos, (pos, r)) =>
-        (RawNodeMeta(doc, annos, pos), r)
+        (RawNodeMeta(doc.toSeq, annos, pos), r)
     }
   }
 

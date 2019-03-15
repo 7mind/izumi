@@ -172,7 +172,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     val ret = toCreate
       .map {
         mg =>
-          makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(None, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
+          makeInterpreter(index).templates.makeInstance(RawDeclaredTypeName(mg.target.name.name), mg.ref, RawNodeMeta(Seq.empty, Seq.empty, InputPosition.Undefined), mutable.HashMap.empty)
       }
       .toList
       .biFlatAggregate
