@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawClone, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, TsProvider, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.AdtSupport.AdtMemberProducts
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMember, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Adt, BuiltinType, CustomTemplate, DTO, Enum, Foreign, ForeignGeneric, ForeignScalar, Generic, Identifier, Interface, IzAlias, IzStructure, TargetInterface}
@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.{MissingBranchesToRemove, MissingParentsToRemove}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 import com.github.pshirshov.izumi.idealingua.typer2.results._
+import com.github.pshirshov.izumi.idealingua.typer2.{TsProvider, WarnLogger}
 
 class CloneSupport(index: DomainIndex,
                    i2: TypedefSupport,

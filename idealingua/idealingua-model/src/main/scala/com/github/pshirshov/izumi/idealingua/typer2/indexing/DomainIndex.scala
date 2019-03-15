@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
 import com.github.pshirshov.izumi.idealingua.model.common._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclare
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TypenameRef
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.ConflictingImports
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, T2Fail, TypePrefix}
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 final case class GoodImport(domain: DomainId, id: ImportedId)
 

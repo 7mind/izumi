@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.typer2
+package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.Resolvers
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMembe
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
-class TypespaceEvalutor(resolvers: Resolvers) {
-  import TypespaceEvalutor._
+class TopLevelTypeIndexer(resolvers: Resolvers) {
+  import TopLevelTypeIndexer._
   def topLevelIndex(allTypes: List[IzType]): TopLevelIdIndex = {
     val allTypeIds: Set[IzTypeId] = allTypes.map(_.id).toSet
 
@@ -93,7 +93,7 @@ class TypespaceEvalutor(resolvers: Resolvers) {
   }
 }
 
-object TypespaceEvalutor {
+object TopLevelTypeIndexer {
   case class TopLevelIdIndex(
                               allIds: Set[IzTypeId],
                               present: Map[IzTypeId, Set[IzTypeId]],

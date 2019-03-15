@@ -1,9 +1,10 @@
 package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, TsProvider, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.{RefRecorder, TsProvider, WarnLogger}
 
 trait ContextProducer {
   def remake(ephemerals: Map[IzTypeId, ProcessedOp], newArgs: Interpreter.Args): InterpreterContext

@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelD
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef, TyperFailure}
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.{DomainIndex, TopLevelTypeIndexer}
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{ConstRecorder, Interpreter, InterpreterContext}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.NodeMeta
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzPackage}
@@ -189,8 +190,8 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
     new TsVerifier(types.toMap, makeEvaluator(), this)
   }
 
-  private def makeEvaluator(): TypespaceEvalutor = {
-    new TypespaceEvalutor(makeInterpreter(index).resolvers)
+  private def makeEvaluator(): TopLevelTypeIndexer = {
+    new TopLevelTypeIndexer(makeInterpreter(index).resolvers)
   }
 
   private def makeInterpreter(dindex: DomainIndex): InterpreterContext = {

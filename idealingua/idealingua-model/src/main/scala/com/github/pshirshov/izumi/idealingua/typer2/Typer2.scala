@@ -7,6 +7,8 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelD
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
+import com.github.pshirshov.izumi.idealingua.typer2.constants.ConstSupport
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._

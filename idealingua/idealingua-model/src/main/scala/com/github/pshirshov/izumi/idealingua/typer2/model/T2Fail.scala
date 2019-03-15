@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{InterpContext, RawConstMeta, RawVal}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawRef}
-import com.github.pshirshov.izumi.idealingua.typer2.ConstSupport.WIPConst
-import com.github.pshirshov.izumi.idealingua.typer2.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.Typer2.{Operation, TypenameRef}
+import com.github.pshirshov.izumi.idealingua.typer2.constants.ConstSupport.WIPConst
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}

@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 import com.github.pshirshov.izumi.idealingua.model.common.TypeName
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, RawNodeMeta, RawStructure, RawTypeDef}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinTypeId
@@ -11,7 +12,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 import com.github.pshirshov.izumi.idealingua.typer2.results._
-import com.github.pshirshov.izumi.idealingua.typer2.{DomainIndex, RefRecorder, TsProvider, WarnLogger}
+import com.github.pshirshov.izumi.idealingua.typer2.{RefRecorder, TsProvider, WarnLogger}
 
 import scala.reflect.ClassTag
 

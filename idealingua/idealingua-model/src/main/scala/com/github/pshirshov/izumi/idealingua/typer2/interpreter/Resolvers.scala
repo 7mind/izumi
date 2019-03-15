@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.idealingua.typer2.interpreter
 
 import com.github.pshirshov.izumi.functional.Renderable
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawGenericRef, RawNongenericRef, RawRef}
-import com.github.pshirshov.izumi.idealingua.typer2.DomainIndex
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzName, IzNamespace}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgValue, IzTypeArgName}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, IzTypeArgValue}
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzTypeId, IzTypeReference, Rendering}
 
 trait Resolvers {
