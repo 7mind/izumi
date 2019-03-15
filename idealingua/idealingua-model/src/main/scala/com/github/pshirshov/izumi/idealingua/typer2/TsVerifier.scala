@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.typer2.indexing.TopLevelTypeIndexer
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.{InheritanceQueries, TopLevelTypeIndexer}
 import com.github.pshirshov.izumi.idealingua.typer2.indexing.TopLevelTypeIndexer.TopLevelIdIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FullField, NodeMeta}
@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.{Builtins, IzType, IzT
 
 
 class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TopLevelTypeIndexer, logger: WarnLogger) {
-
+  private val iq = new InheritanceQueries(types)
 
   def validateTypespace(allTypes: List[IzType]): Either[List[VerificationFail], Unit] = {
     for {
@@ -163,7 +163,12 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TopLevelTypeIndexer, lo
       f =>
         f -> f.defined.map(_.as)
           .map(parent => FieldConflict(f.tpe, parent))
-          .filterNot(c => isSubtype(c.tpe, c.expectedToBeParent))
+          .filterNot(c => iq.isParent(c.expectedToBeParent, c.tpe) match {
+            case Left(_) =>
+              throw new IllegalStateException(s"Type is unexpectedly missing: ${c.tpe}, context: $id, $meta")
+            case Right(value) =>
+              value
+          })
     }
       .filterNot(_._2.isEmpty)
       .map {
@@ -191,22 +196,6 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TopLevelTypeIndexer, lo
       Right(())
     } else {
       Left(badFields.toList)
-    }
-  }
-  private def isSubtype(child: IzTypeReference, parent: IzTypeReference): Boolean = {
-    (child == parent) || {
-      (child, parent) match {
-        case (IzTypeReference.Scalar(childId), IzTypeReference.Scalar(parentId)) =>
-          (types(childId).member, types(parentId).member) match {
-            case (c: IzStructure, p: IzStructure) =>
-              c.allParents.contains(p.id)
-            case _ =>
-              false
-          }
-
-        case _ =>
-          false // all generics are non-covariant
-      }
     }
   }
 

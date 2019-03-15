@@ -13,8 +13,12 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
   import ConstSupport._
   import results._
 
-  private val iq = new InheritanceQueries(ts)
+  private val iq = InheritanceQueries(ts)
   private val resolver = new ConstNameResolver(index)
+
+  private def isParent(name: String, meta: RawConstMeta)(parent: IzTypeReference, child: IzTypeReference): Either[List[T2Fail], Boolean] = {
+    iq.isParent(parent, child).left.map(_ => List(ConstMissingType(name, child, meta)))
+  }
 
   def makeConst(expected: IzTypeReference, const: RawVal): Either[List[T2Fail], TypedVal] = {
     const match {
@@ -42,7 +46,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
         val existing = source.get(id)
         for {
           expected <- resolver.refToTopLevelRef(r.typeId)
-          _ <- iq.isParent(name, meta)(expected, existing.value.ref)
+          _ <- isParent(name, meta)(expected, existing.value.ref)
         } yield {
           TypedVal.TCRef(id, expected)
         }
@@ -162,7 +166,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
               fdef <- fields.get(FName(k)).toRight(List(UndefinedField(name, ref, FName(k), meta)))
               tref <- resolver.refToTopLevelRef1(fdef.tpe)
               fieldv <- new ConstHandler(source, index, ts, scope, name, meta).makeConst(tref, v)
-              parent <- iq.isParent(name, meta)(fdef.tpe, fieldv.ref)
+              parent <- isParent(name, meta)(fdef.tpe, fieldv.ref)
               _ <- if (parent) {
                 Right(())
               } else {
@@ -199,7 +203,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
             v =>
               for {
                 v <- new ConstHandler(source, index, ts, scope, name, meta).makeConst(elref, v)
-                parent <- iq.isParent(name, meta)(elref, v.ref)
+                parent <- isParent(name, meta)(elref, v.ref)
                 _ <- if (parent) {
                   Right(())
                 } else {
@@ -217,7 +221,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
           }
       }
       refarg <- resolver.listArgToTopLevelRef(index)(lst.ref)
-      ok <- iq.isParent(name, meta)(elref, refarg)
+      ok <- isParent(name, meta)(elref, refarg)
       _ <- if (ok) {
         Right(())
       } else {
@@ -282,7 +286,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
         // trying to find common parent across existing members
         existingUpper <- find(allIds.toSeq) {
           parent =>
-            allIds.map(child => iq.isParent(name, meta)(parent, child)).toList.biAggregate.map(_.forall(identity))
+            allIds.map(child => isParent(name, meta)(parent, child)).toList.biAggregate.map(_.forall(identity))
         }
       } yield {
         existingUpper match {
