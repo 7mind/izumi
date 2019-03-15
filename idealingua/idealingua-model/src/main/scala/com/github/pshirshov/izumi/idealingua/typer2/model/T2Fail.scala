@@ -84,6 +84,7 @@ object T2Fail {
   sealed trait VerificationFail extends BuilderFail
 
   final case class ContradictiveFieldDefinition(tpe: IzTypeId, field: FullField, conflicts: Seq[FieldConflict], meta: NodeMeta) extends VerificationFail
+  final case class ProhibitedFieldType(tpe: IzTypeId, field: FullField, meta: NodeMeta) extends VerificationFail
   final case class MissingTypespaceMembers(missingRefs: Map[IzTypeId, Set[IzTypeId]]) extends VerificationFail
   final case class DuplicatedTypespaceMembers(missingRefs: Set[IzTypeId]) extends VerificationFail
   final case class UnresolvedGenericsInstancesLeft(badRefs: Map[IzTypeId, Set[RefToTLTLink]]) extends VerificationFail

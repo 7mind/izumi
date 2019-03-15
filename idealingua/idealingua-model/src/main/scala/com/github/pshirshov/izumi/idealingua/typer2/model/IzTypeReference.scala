@@ -10,7 +10,7 @@ object IzTypeReference {
   object model {
     case class IzTypeArgName(name: String)
     case class IzTypeArgValue(ref: IzTypeReference)
-    case class RefToTLTLink(ref: IzTypeReference.Generic, target: IzTypeId.UserType)
+    case class RefToTLTLink(ref: IzTypeReference.Generic, target: IzTypeId.UserTypeId)
   }
   import model._
 

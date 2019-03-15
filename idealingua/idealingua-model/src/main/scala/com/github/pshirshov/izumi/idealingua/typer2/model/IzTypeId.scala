@@ -14,7 +14,7 @@ object IzTypeId {
   }
   import model._
 
-  final case class BuiltinType(name: IzName) extends IzTypeId
-  final case class UserType(prefix: TypePrefix, name: IzName) extends IzTypeId
+  final case class BuiltinTypeId(name: IzName) extends IzTypeId
+  final case class UserTypeId(prefix: TypePrefix, name: IzName) extends IzTypeId
 
 }

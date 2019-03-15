@@ -99,17 +99,20 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor, logg
       case i: IzType.Identifier =>
         merge(List(
           verifyFieldContradictions(i.id, i.meta, i.fields),
+          verifyFieldTypes(i.id, i.meta, i.fields),
         ))
 
       case e: IzType.Enum =>
         merge(List(
           verifyEnumMemberContradictions(e),
         ))
+
       case a: IzType.Adt =>
         merge(List(
           verifyAdtBranchContradictions(a),
           verifyFieldContradictions(a.id, a.meta, a.contract.fields),
         ))
+
       case foreign: IzType.Foreign =>
         foreign match {
           case _: IzType.ForeignScalar =>
@@ -174,7 +177,21 @@ class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TypespaceEvalutor, logg
     }
   }
 
+  private def verifyFieldTypes(id: IzTypeId, meta: NodeMeta, fields: Seq[FullField]): Either[List[VerificationFail], Unit] = {
+    val badFields = fields.filter {
+      f =>
+        Builtins.mappingSpecials.keySet.toSet[IzTypeId].contains(f.tpe.id)
+    }.map {
+      bad =>
+        ProhibitedFieldType(id, bad, meta)
+    }
 
+    if (badFields.isEmpty) {
+      Right(())
+    } else {
+      Left(badFields.toList)
+    }
+  }
   private def isSubtype(child: IzTypeReference, parent: IzTypeReference): Boolean = {
     (child == parent) || {
       (child, parent) match {

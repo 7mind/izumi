@@ -9,11 +9,11 @@ object Builtins extends TypePlane {
   import IzType.BuiltinScalar._
 
   def resolve(typeId: IzName): Option[IzType] = {
-    mapping.get(IzTypeId.BuiltinType(typeId))
+    mappingAll.get(IzTypeId.BuiltinTypeId(typeId))
   }
 
 
-  private lazy val scalars: Seq[IzType.BuiltinScalar] = Seq(
+  lazy val scalars: Set[IzType.BuiltinScalar] = Set(
     TBool,
     TString,
     TInt8,
@@ -33,10 +33,14 @@ object Builtins extends TypePlane {
     TTsU,
     TTime,
     TDate,
-    TErr,
   )
 
-  private lazy val generics: Seq[IzType.BuiltinGeneric] = Seq(
+  lazy val specials: Set[IzType.BuiltinScalar] = Set(
+    TErr,
+    TAny,
+  )
+
+  lazy val generics: Set[IzType.BuiltinGeneric] = Set(
     TList,
     TMap,
     TOption,
@@ -44,15 +48,23 @@ object Builtins extends TypePlane {
     TEither,
   )
 
-  private lazy val all: Seq[IzType.BuiltinType] = scalars ++ generics
+  lazy val all: Set[IzType.BuiltinType] = scalars ++ generics ++ specials
 
-  lazy val mapping: Map[IzTypeId.BuiltinType, IzType.BuiltinType] = all
-    .flatMap {
-      d =>
-        d.names.map {
-          name =>
-            IzTypeId.BuiltinType(name) -> d
-        }
-    }
-    .toMap
+  lazy val mappingAll: Map[IzTypeId.BuiltinTypeId, IzType.BuiltinType] = makeMapping(all)
+  lazy val mappingSpecials: Map[IzTypeId.BuiltinTypeId, IzType.BuiltinType] = makeMapping(specials.toSet)
+  lazy val mappingGenerics: Map[IzTypeId.BuiltinTypeId, IzType.BuiltinType] = makeMapping(generics.toSet)
+  lazy val mappingScalars: Map[IzTypeId.BuiltinTypeId, IzType.BuiltinType] = makeMapping(scalars.toSet)
+
+
+  private def makeMapping(a: Set[IzType.BuiltinType]): Map[IzTypeId.BuiltinTypeId, IzType.BuiltinType] = {
+    a
+      .flatMap {
+        d =>
+          d.names.map {
+            name =>
+              IzTypeId.BuiltinTypeId(name) -> d
+          }
+      }
+      .toMap
+  }
 }

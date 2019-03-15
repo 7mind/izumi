@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawField, R
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{Enum, ForeignGeneric, ForeignScalar, Identifier, Interpolation, IzAlias, IzStructure}
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinTypeId
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzNamespace
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
@@ -150,7 +150,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
     resolvers.refToTopId2(id) match {
       case s: IzTypeReference.Scalar =>
         (id, s.id) match {
-          case (g: IzTypeReference.Generic, sid: IzTypeId.UserType) =>
+          case (g: IzTypeReference.Generic, sid: IzTypeId.UserTypeId) =>
             for {
               _ <- g.args.map(a => refToTopLevelRef(a.ref, requiredNow)).biAggregate
               _ <- if (requiredNow) {
@@ -166,7 +166,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         }
 
 
-      case g@IzTypeReference.Generic(_: BuiltinType, args, _) =>
+      case g@IzTypeReference.Generic(_: BuiltinTypeId, args, _) =>
         for {
           // to make sure all args are instantiated recursively
           _ <- args.map(a => refToTopLevelRef(a.ref, requiredNow)).biAggregate

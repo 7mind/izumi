@@ -21,7 +21,7 @@ class TypespaceEvalutor(resolvers: Resolvers) {
         s.collect {
           case s: IzTypeReference.Scalar =>
             s.id
-          case IzTypeReference.Generic(id: IzTypeId.BuiltinType, _, _) =>
+          case IzTypeReference.Generic(id: IzTypeId.BuiltinTypeId, _, _) =>
             id
         }
     }
@@ -29,7 +29,7 @@ class TypespaceEvalutor(resolvers: Resolvers) {
     val allBadTopLevelIds = allTopLevelRefs.mapValues {
       s =>
         s.collect {
-          case g@IzTypeReference.Generic(id: IzTypeId.UserType, _, _) =>
+          case g@IzTypeReference.Generic(id: IzTypeId.UserTypeId, _, _) =>
             RefToTLTLink(g, id)
         }
     }.filter(_._2.nonEmpty)

@@ -38,7 +38,7 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
 
   val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))
 
-  val builtins: Map[TypenameRef, IzType.BuiltinType] = Builtins.mapping.map {
+  val builtins: Map[TypenameRef, IzType.BuiltinType] = Builtins.mappingAll.map {
     case (id, b) =>
       makeAbstract(id) -> b
   }
@@ -65,7 +65,7 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
     }
   }
 
-  def makeAbstract(id: IzTypeId.BuiltinType): TypenameRef = {
+  def makeAbstract(id: IzTypeId.BuiltinTypeId): TypenameRef = {
     val name = id.name.name
     toBuiltinName(name)
   }
@@ -85,7 +85,7 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
     if (subNamespace.isEmpty) {
       toType(pkg, name)
     } else {
-      IzTypeId.UserType(TypePrefix.UserT(pkg, subNamespace), name)
+      IzTypeId.UserTypeId(TypePrefix.UserT(pkg, subNamespace), name)
     }
   }
 
@@ -114,9 +114,9 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
 
   private def toType(pkg: IzPackage, name: IzName): IzTypeId = {
     if (pkg == builtinPackage) {
-      IzTypeId.BuiltinType(name)
+      IzTypeId.BuiltinTypeId(name)
     } else {
-      IzTypeId.UserType(TypePrefix.UserTLT(pkg), name)
+      IzTypeId.UserTypeId(TypePrefix.UserTLT(pkg), name)
     }
   }
 

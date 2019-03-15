@@ -252,9 +252,9 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 
   private def isOwn(id: IzTypeId): Boolean = {
     id match {
-      case IzTypeId.BuiltinType(_) =>
+      case IzTypeId.BuiltinTypeId(_) =>
         false
-      case IzTypeId.UserType(prefix, _) =>
+      case IzTypeId.UserTypeId(prefix, _) =>
         prefix == thisPrefix
     }
   }

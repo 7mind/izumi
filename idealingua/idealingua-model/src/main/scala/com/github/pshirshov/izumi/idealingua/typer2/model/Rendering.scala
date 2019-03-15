@@ -8,9 +8,9 @@ object Rendering {
   implicit object IzTypeIdRenderer extends Renderable[IzTypeId] {
     override def render(value: IzTypeId): String = {
       value match {
-        case IzTypeId.BuiltinType(name) =>
+        case IzTypeId.BuiltinTypeId(name) =>
           s"::${name.name}"
-        case IzTypeId.UserType(prefix, name) =>
+        case IzTypeId.UserTypeId(prefix, name) =>
           s"${Renderable[TypePrefix].render(prefix)}/${name.name}"
 
       }

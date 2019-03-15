@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TyperFailure
 import com.github.pshirshov.izumi.idealingua.typer2.interpreter.{Interpreter, ResolversImpl}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.FName
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinType
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.BuiltinTypeId
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedConst
@@ -345,7 +345,7 @@ class ConstSupport() {
       case s: IzTypeReference.Scalar =>
         Right(s)
 
-      case g@IzTypeReference.Generic(_: BuiltinType, args, _) =>
+      case g@IzTypeReference.Generic(_: BuiltinTypeId, args, _) =>
         for {
           // to make sure all args are instantiated recursively
           _ <- args.map(a => refToTopLevelRef1(index)(a.ref)).biAggregate

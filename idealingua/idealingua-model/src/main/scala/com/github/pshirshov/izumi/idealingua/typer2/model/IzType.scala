@@ -77,11 +77,11 @@ object IzType {
   // builtins
   sealed trait BuiltinType extends IzType {
     def names: Seq[IzName]
-    def id: IzTypeId.BuiltinType
+    def id: IzTypeId.BuiltinTypeId
   }
 
   sealed class BuiltinScalar(val names: IzName*) extends BuiltinType {
-    def id: IzTypeId.BuiltinType = IzTypeId.BuiltinType(names.head)
+    def id: IzTypeId.BuiltinTypeId = IzTypeId.BuiltinTypeId(names.head)
   }
 
   object BuiltinScalar {
@@ -110,7 +110,7 @@ object IzType {
   }
 
   sealed class BuiltinGeneric(val args: Seq[IzTypeArgName], val names: IzName*) extends Generic with BuiltinType {
-    def id: IzTypeId.BuiltinType = IzTypeId.BuiltinType(names.head)
+    def id: IzTypeId.BuiltinTypeId = IzTypeId.BuiltinTypeId(names.head)
   }
 
   object BuiltinGeneric {

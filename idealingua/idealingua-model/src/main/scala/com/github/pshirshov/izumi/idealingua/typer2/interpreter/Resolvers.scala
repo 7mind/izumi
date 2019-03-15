@@ -75,9 +75,9 @@ class ResolversImpl(context: Interpreter.Args, index: DomainIndex) extends Resol
         s
       case g: IzTypeReference.Generic =>
         g.id match {
-          case IzTypeId.BuiltinType(_) =>
+          case IzTypeId.BuiltinTypeId(_) =>
             g
-          case _: IzTypeId.UserType =>
+          case _: IzTypeId.UserTypeId =>
             IzTypeReference.Scalar(index.toId(Seq.empty, index.resolveTopLeveleName(genericName(g))))
 
         }

@@ -125,7 +125,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
         DefineType(name, Set(source), OriginatedDefn(defn.id, RawTopLevelDefn.TLDBaseType(RawTypeDef.Alias(rname, sourceRef, v.id.meta))))
     }
 
-    val builtinOps = Builtins.mapping.map(b => DefineBuiltin(index.makeAbstract(b._1)))
+    val builtinOps = Builtins.mappingAll.map(b => DefineBuiltin(index.makeAbstract(b._1)))
     val allOperations = domainOps ++ builtinOps ++ aliases.values ++ importedOps.toSeq
     Right(allOperations)
   }
