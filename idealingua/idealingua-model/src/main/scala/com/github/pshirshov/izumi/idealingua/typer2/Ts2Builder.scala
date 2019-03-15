@@ -101,7 +101,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
 
   override def nextIndex(): Int = consts.size + 1
 
-  override def registerConst(id: TypedConstId, value: RawVal.CMap, position: InputPosition): Unit = {
+  override def registerConst(id: TypedConstId, value: RawVal, position: InputPosition): Unit = {
     if (consts.contains(id)) {
       throw new IllegalStateException(s"Unexpected problem: sanity check failed for const $id")
     }

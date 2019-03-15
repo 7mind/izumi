@@ -102,7 +102,14 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
     } yield {
       val localMembers = e.struct.members.map {
         m =>
-          EnumMember(m.value, None, meta(m.meta))
+          val maybeValue = m.associated.map {
+            v =>
+              val name = s"const_enum_${e.id.name}_${m.value}"
+              val id = TypedConstId(index.defn.id, "_enums_", name)
+              constRecorder.registerConst(id, v, m.meta.position)
+              id
+          }
+          EnumMember(m.value, maybeValue, meta(m.meta))
       }
       val removedFields = e.struct.removed.toSet
       val allMembers = (parentMembers ++ localMembers).filterNot(m => removedFields.contains(m.name))
