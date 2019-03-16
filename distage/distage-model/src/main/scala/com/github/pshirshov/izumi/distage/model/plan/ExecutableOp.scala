@@ -60,7 +60,7 @@ object ExecutableOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
 
-    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp{
+    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
   }

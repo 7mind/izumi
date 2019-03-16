@@ -7,9 +7,9 @@ import scala.util.Try
 
 final case class ProvisioningFailureContext(
                                              parentContext: Locator
-                                           , active: ProvisionActive
+                                           , provision: Provision[Any]
                                            , step: ExecutableOp
-                                         )
+                                           )
 
 final case class ProvisioningFailure(
                                       op: ExecutableOp
@@ -18,14 +18,10 @@ final case class ProvisioningFailure(
 
 trait ProvisioningFailureInterceptor {
   def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]]
-
   def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]]
 }
 
 class ProvisioningFailureInterceptorDefaultImpl extends ProvisioningFailureInterceptor {
-
   override def onBadResult(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Unit]] = PartialFunction.empty
-
   override def onExecutionFailed(context: ProvisioningFailureContext): PartialFunction[Throwable, Try[Seq[NewObjectOp]]] = PartialFunction.empty
-
 }

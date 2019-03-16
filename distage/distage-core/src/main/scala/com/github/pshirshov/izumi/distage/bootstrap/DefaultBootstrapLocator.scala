@@ -28,9 +28,9 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    // FIXME: nonmonadic provisioner/bootstrap
+    // FIXME: nonmonadic provisioner/bootstrap ???
 //    bootstrapProducer.instantiate(plan, this).throwOnFailure()
-    bootstrapProducer.instantiate[Identity](plan, this).throwOnFailure()
+    bootstrapProducer.instantiate[Identity](plan, this).allocate.throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances
@@ -88,6 +88,7 @@ object DefaultBootstrapLocator {
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
       , new EffectStrategyDefaultImpl
+      , new ResourceStrategyDefaultImpl
 
       , new ProvisioningFailureInterceptorDefaultImpl
       , verifier
@@ -128,6 +129,7 @@ object DefaultBootstrapLocator {
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
+    make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]

@@ -129,6 +129,8 @@ object BIO extends BIOSyntax {
       }
     }
 
+    @inline override def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
+
     @inline def toBIOExit[E, A](result: Exit[E, A]): BIOExit[E, A] = result match {
       case Exit.Success(v) =>
         Success(v)

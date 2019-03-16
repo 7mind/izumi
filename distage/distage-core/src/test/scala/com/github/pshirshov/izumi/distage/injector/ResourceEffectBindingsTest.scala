@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.{IntSuspend, Ref, Res, SimpleResource, Suspend2}
+import com.github.pshirshov.izumi.distage.injector.ResourceEffectBindingsTest.{IntSuspend, Ref, Res, SimpleResource, Suspend2, SuspendResource}
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -38,7 +38,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -52,7 +52,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceF[Suspend2[Nothing, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -72,7 +72,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceF[Suspend2[Nothing, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
 
       assert(context.get[Int]("1") == 1)
       assert(context.get[Int]("2") == 2)
@@ -92,7 +92,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
 
       val instance = context.get[SelfReference]
 
@@ -108,7 +108,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -117,7 +117,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
 
-        setOf[Char]
+        many[Char]
           .addEffect(Suspend2('a'))
           .addEffect(Suspend2('b'))
 
@@ -137,7 +137,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+      val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
 
       assert(context.get[Set[Char]] == "ab".toSet)
       assert(context.get[Ref[Fn, Set[Char]]].get.unsafeRun() == "ABZ".toSet)
@@ -150,29 +150,40 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "work in a basic case in Identity monad" in {
       val definition = PlannerInput(new ModuleDef {
         make[Res].fromResource[SimpleResource]// FIXME: syntax
-//        make[Res].fromResource[Identity, SimpleResource]
       })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
 
-      assert(context.get[Res].initialized)
+      val instance = injector.produce(plan).use {
+        context =>
+          val instance = context.get[Res]
+          assert(instance.initialized)
+          instance
+      }
+
+      assert(!instance.initialized)
     }
 
     "work in a basic case in Suspend2 monad" in {
       val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
-        make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
-      }, roots = DIKey.get[Int])
+        make[Res].fromResource[SuspendResource]
+      })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
 
-      val context = injector.produceF[Suspend2[Throwable, ?]](plan).unsafeRun().throwOnFailure()
+      val instance = injector.produceF[Suspend2[Throwable, ?]](plan).use {
+        context =>
+          val instance = context.get[Res]
+          assert(instance.initialized)
+          Suspend2(instance)
+      }.unsafeRun()
 
-      assert(context.get[Int] == 12)
+      assert(!instance.initialized)
     }
+
+    // FIXME: order test, ops accumulator
 
   }
 
@@ -186,6 +197,11 @@ object ResourceEffectBindingsTest {
   class SimpleResource extends DIResource.Simple[Res] {
     override def allocate: Res = { val x = new Res; x.initialized = true; x }
     override def deallocate(resource: Res): Unit = { resource.initialized = false }
+  }
+
+  class SuspendResource extends DIResource[Suspend2[Nothing, ?], Res] {
+    override def allocate: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
+    override def deallocate(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
   }
 
   class MutResource extends DIResource.Mutable[MutResource] {
@@ -239,6 +255,15 @@ object ResourceEffectBindingsTest {
           case Left(value) => recover(value).run()
           case Right(value) => Right(value)
         })
+      }
+
+      override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
+        acquire.flatMap {
+          a => definitelyRecover(
+            use(a).flatMap(b => release(a).map(_ => b))
+          , fail => release(a).flatMap(_ => maybeSuspend(throw fail))
+          )
+        }
       }
     }
   }

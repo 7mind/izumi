@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceUseSimple
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import org.scalatest.WordSpec

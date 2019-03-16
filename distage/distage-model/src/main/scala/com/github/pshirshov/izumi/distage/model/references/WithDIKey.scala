@@ -17,24 +17,28 @@ trait WithDIKey {
 
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
-    sealed trait BasicKey extends DIKey
+    sealed trait BasicKey extends DIKey {
+      def withTpe(tpe: SafeType): DIKey.BasicKey
+    }
 
     case class TypeKey(tpe: SafeType) extends BasicKey {
       override def toString: String = s"{type.${tpe.toString}}"
 
-      def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
+      final def named[I: IdContract](id: I): IdKey[I] = IdKey(tpe, id)
+
+      override final def withTpe(tpe: SafeType): DIKey.TypeKey = copy(tpe = tpe)
     }
 
     case class IdKey[I: IdContract](tpe: SafeType, id: I) extends BasicKey {
-      val idContract: IdContract[I] = implicitly
+      final val idContract: IdContract[I] = implicitly
 
       override def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
+
+      override final def withTpe(tpe: SafeType): DIKey.IdKey[I] = copy(tpe = tpe)
     }
 
     case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
       override def toString: String = s"{proxy.${proxied.toString}}"
-
-      override def hashCode: Int = toString.hashCode()
     }
 
     /**
@@ -44,21 +48,7 @@ trait WithDIKey {
     case class SetElementKey(set: DIKey, reference: DIKey) extends DIKey {
       override def tpe: SafeType = reference.tpe
 
-      override def toString: String = {
-        s"{set.$set/${reference.toString}}"
-
-      }
-
-      override def hashCode: Int = toString.hashCode()
-    }
-
-    implicit class WithTpe(key: DIKey.BasicKey) {
-      def withTpe(tpe: SafeType): DIKey.BasicKey = {
-        key match {
-          case k: TypeKey => k.copy(tpe = tpe)
-          case k: IdKey[_] => k.copy(tpe = tpe)(k.idContract)
-        }
-      }
+      override def toString: String = s"{set.$set/${reference.toString}}"
     }
   }
 

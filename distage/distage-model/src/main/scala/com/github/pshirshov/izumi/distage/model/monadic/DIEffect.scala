@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.monadic
 
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats.IsSync
-import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
@@ -9,7 +9,7 @@ trait DIEffect[F[_]] {
   def pure[A](a: A): F[A]
   def map[A, B](fa: F[A])(f: A => B): F[B]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
-  // FIXME: tailRecM?
+  def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B]
 
   /** A weaker version of `delay`. Does not guarantee _actual_
     * suspension of side-effects, because DIEffect[Identity] is allowed */
@@ -17,13 +17,11 @@ trait DIEffect[F[_]] {
 
   /** A stronger version of `handleErrorWith`, the difference is that this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
   def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
-//  def definitelyAttempt(fa: )
-//
-  final val unit: F[Unit] = pure(())
 
+  final val unit: F[Unit] = pure(())
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
-    // All reasonable effect monads will be stack-safe (but not heap-safe!) on left-associative flatMaps
+    // All reasonable effects will be stack-safe (not heap-safe!) on left-associative flatMaps
     // so foldLeft is ok here. It also enables impure Identity to work correctly
     l.foldLeft(unit) { (acc, a) =>
       flatMap(acc)(_ => f(a))
@@ -60,9 +58,14 @@ object DIEffect
     override def definitelyRecover[A](fa: => Identity[A], recover: Throwable => Identity[A]): Identity[A] = {
       try fa catch { case t: Throwable => recover(t) }
     }
+
+    override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
+      val a = acquire
+      try use(a) finally release(a)
+    }
   }
 
-  implicit def fromBIO[F[+_, +_], E <: Throwable](implicit F: BIO[F]): DIEffect[F[E, ?]] = new DIEffect[F[E, ?]] {
+  implicit def fromBIO[F[+_, +_], E <: Throwable](implicit F: BIOAsync[F]): DIEffect[F[E, ?]] = new DIEffect[F[E, ?]] {
     import BIO._
 
     override def pure[A](a: A): F[E, A] = F.now(a)
@@ -73,6 +76,9 @@ object DIEffect
 
     override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
       F.sync(fa).flatten.sandbox.catchAll(recover apply _.toThrowable)
+    }
+    override def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
+      F.bracket(acquire = acquire)(release = release(_).orTerminate)(use = use)
     }
   }
 
@@ -96,8 +102,10 @@ trait FromCats {
     override def definitelyRecover[A](fa: => F[A], recover: Throwable => F[A]): F[A] = {
       F.handleErrorWith(F.suspend(fa))(recover)
     }
+    override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {
+      F.bracket(acquire = acquire)(use = use)(release = release)
+    }
   }
-
 
 }
 

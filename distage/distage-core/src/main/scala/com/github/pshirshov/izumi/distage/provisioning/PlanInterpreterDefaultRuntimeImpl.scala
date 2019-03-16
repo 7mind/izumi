@@ -2,11 +2,12 @@ package com.github.pshirshov.izumi.distage.provisioning
 
 import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionMutable
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -27,6 +28,7 @@ class PlanInterpreterDefaultRuntimeImpl
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
 , effectStrategy: EffectStrategy
+, resourceStrategy: ResourceStrategy
 
 , failureHandler: ProvisioningFailureInterceptor
 , verifier: ProvisionOperationVerifier
@@ -34,14 +36,35 @@ class PlanInterpreterDefaultRuntimeImpl
      with OperationExecutor
      with WiringExecutor {
 
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], Locator]] = {
+  // FIXME: expose InnerResourceType
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] } = {
+    new DIResourceBase[F, Locator] {
+      override type InnerResource = Either[FailedProvision[F], LocatorDefaultImpl[F]]
+      override def allocate: F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+        instantiate0(plan, parentContext)
+      }
+      override def deallocate(resource: Either[FailedProvision[F], LocatorDefaultImpl[F]]): F[Unit] = {
+        val finalizers = resource match {
+          case Left(failedProvision) => failedProvision.failed.finalizers
+          case Right(locator) => locator.dependencyMap.finalizers
+        }
+        F.traverse_(finalizers) {
+          case (_, eff) => F.maybeSuspend(eff()).flatMap(identity)
+        }
+      }
 
-    val mutProvisioningContext = ProvisionActive()
+      override def extract(resource: Either[FailedProvision[F], LocatorDefaultImpl[F]]): Locator = {
+        resource.throwOnFailure() // FIXME ??? shitty extractor
+      }
+    }
+  }
+
+  def instantiate0[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+    val mutProvisioningContext = ProvisionMutable[F]()
     mutProvisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
     val mutExcluded = mutable.Set.empty[DIKey]
     val mutFailures = mutable.ArrayBuffer.empty[ProvisioningFailure]
-    val mutFinalizers = mutable.ArrayBuffer.empty[F[Unit]]
 
     val mainAction: F[Unit] = F.traverse_(plan.steps) {
       step =>
@@ -88,20 +111,20 @@ class PlanInterpreterDefaultRuntimeImpl
         }
     }
 
-    mainAction.map { _ =>
-//      F.maybeSuspend {
+    mainAction.flatMap { _ =>
+      F.maybeSuspend {
+        val context = mutProvisioningContext.toImmutable
+
         if (mutFailures.nonEmpty) {
           // FIXME: add deallocators ???
-          Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector, Seq(null.asInstanceOf[F[Unit]])))
+          Left(FailedProvision[F](context, plan, parentContext, mutFailures.toVector))
         } else {
-          val context = ProvisionImmutable(mutProvisioningContext.instances, mutProvisioningContext.imports)
-
           val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
           locator.get[Locator.LocatorRef].ref.set(locator)
 
           Right(locator)
         }
-//      }
+      }
     }
   }
 
@@ -123,13 +146,10 @@ class PlanInterpreterDefaultRuntimeImpl
         proxyStrategy.initProxy(context, this, op)
 
       case op: MonadicOp.ExecuteEffect =>
-        // FIXME:
-//        Seq()
         F widen effectStrategy.executeEffect[F](context, this, op)
 
       case op: MonadicOp.AllocateResource =>
-        // FIXME: resource not implemented ???
-        ???
+        F widen resourceStrategy.allocateResource[F](context, this, op)
     }
   }
 
@@ -158,7 +178,7 @@ class PlanInterpreterDefaultRuntimeImpl
     }
   }
 
-  private[this] def interpretResult(active: ProvisionActive, result: NewObjectOp): Unit = {
+  private[this] def interpretResult[F[_]](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
     result match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
@@ -167,6 +187,12 @@ class PlanInterpreterDefaultRuntimeImpl
       case NewObjectOp.NewInstance(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "instance")
         active.instances += (target -> instance)
+
+      case r@NewObjectOp.NewResource(target, instance, _) =>
+        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+        verifier.verify(target, active.instances.keySet, instance, "resource")
+        active.instances += (target -> instance)
+        active.finalizers prepend (target -> finalizer)
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")

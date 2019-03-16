@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final case class LocatorContext(
-                                 provision: Provision
+                                 provision: Provision[Any]
                                , locator: Locator
                                ) extends ProvisioningKeyProvider {
 

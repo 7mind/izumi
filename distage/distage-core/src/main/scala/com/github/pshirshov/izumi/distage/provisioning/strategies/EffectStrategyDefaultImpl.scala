@@ -18,9 +18,9 @@ class EffectStrategyDefaultImpl
   protected[this] val identityEffectType: RuntimeDIUniverse.SafeType = SafeType.getK[Identity]
 
   override def executeEffect[F[_]: TagK](
-                                          context: ProvisioningKeyProvider,
-                                          executor: OperationExecutor,
-                                          op: MonadicOp.ExecuteEffect
+                                          context: ProvisioningKeyProvider
+                                        , executor: OperationExecutor
+                                        , op: MonadicOp.ExecuteEffect
                                         )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewInstance]] = {
     val provisionerEffectType = SafeType.getK[F]
     val ExecuteEffect(target, actionOp, _, _) = op
@@ -38,7 +38,7 @@ class EffectStrategyDefaultImpl
       .flatMap(_.toList match {
         case NewObjectOp.NewInstance(_, action0) :: Nil if isEffect =>
           val action = action0.asInstanceOf[F[Any]]
-          F.map(action)(newInstance => Seq(NewObjectOp.NewInstance(target, newInstance)))
+          action.map(newInstance => Seq(NewObjectOp.NewInstance(target, newInstance)))
         case NewObjectOp.NewInstance(_, newInstance) :: Nil =>
           F.pure(Seq(NewObjectOp.NewInstance(target, newInstance)))
         case r =>
@@ -47,4 +47,5 @@ class EffectStrategyDefaultImpl
   }
 
 }
+
 class ThisException_ShouldBePartOfPrepSanityCheckReally_SameAsImports(m: String) extends DIException(m, null)

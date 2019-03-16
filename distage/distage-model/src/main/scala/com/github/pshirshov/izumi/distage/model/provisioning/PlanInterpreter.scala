@@ -1,25 +1,24 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait PlanInterpreter {
-  // FIXME ??? allow nonmonadic
-  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): F[Either[FailedProvision[F], Locator]]
+  // FIXME ??? allow nonmonadic [expose FailedProvision?]
+  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] }
 }
 
-case class FailedProvision[F[_]](
-                                  failed: ProvisionImmutable,
-                                  plan: OrderedPlan,
-                                  parentContext: Locator,
-                                  failures: Seq[ProvisioningFailure],
-                                  // FIXME: run deallocators
-                                  deallocators: Seq[F[Unit]],
-                                ) {
-  // FIXME: run deallocators
+final case class FailedProvision[F[_]](
+                                        failed: ProvisionImmutable[F],
+                                        plan: OrderedPlan,
+                                        parentContext: Locator,
+                                        failures: Seq[ProvisioningFailure],
+                                      ) {
   def throwException(): Nothing = {
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
@@ -44,7 +43,7 @@ case class FailedProvision[F[_]](
 }
 
 object FailedProvision {
-  implicit class FailedProvisionExt[F[_]](p: Either[FailedProvision[F], Locator]) {
+  implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
     def throwOnFailure(): Locator = p.fold(_.throwException(), identity)
   }
 }

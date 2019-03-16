@@ -18,6 +18,8 @@ trait BIOAsyncInvariant[R[ _, _]] extends BIOInvariant[R] {
   @inline def timeout[E, A](r: R[E, A])(duration: Duration): R[E, Option[A]]
 
   @inline def race[E, A](r1: R[E, A])(r2: R[E ,A]): R[E, A]
+
+  @inline def uninterruptible[E, A](r: R[E, A]): R[E, A]
 }
 
 object BIOAsyncInvariant {
