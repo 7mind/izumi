@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.monadic
 
-import com.github.pshirshov.izumi.distage.model.monadic.FromCats.IsSync
+import com.github.pshirshov.izumi.distage.model.monadic.FromCats.Sync
 import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -85,7 +85,7 @@ object DIEffect
 
 trait FromCats {
 
-  implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: IsSync[R], F0: R[F]): DIEffect[F] = new DIEffect[F] {
+  implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: Sync[R], F0: R[F]): DIEffect[F] = new DIEffect[F] {
     l.discard()
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
     override def pure[A](a: A): F[A] = F.pure(a)
@@ -105,8 +105,8 @@ trait FromCats {
 }
 
 object FromCats {
-  sealed abstract class IsSync[R[_[_]]]
-  object IsSync {
-    implicit val catsEffectSync: IsSync[cats.effect.Sync] = new IsSync[cats.effect.Sync] {}
+  sealed abstract class Sync[R[_[_]]]
+  object Sync {
+    implicit val catsEffectSync: Sync[cats.effect.Sync] = new Sync[cats.effect.Sync] {}
   }
 }
