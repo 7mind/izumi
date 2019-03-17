@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
 import cats.Applicative
+import cats.effect.Bracket
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, DIResourceUseSimple}
 import com.github.pshirshov.izumi.distage.model.definition.DIResourceLowPrioritySyntax.DIResourceUse
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
@@ -27,7 +28,7 @@ trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
   override final type InnerResource = Resource
 }
 
-import cats.effect.{Bracket, Resource}
+import cats.effect.Resource
 
 object DIResource extends DIResourceLowPrioritySyntax {
 
@@ -123,7 +124,7 @@ object DIResource extends DIResourceLowPrioritySyntax {
       }
     }
 
-    // ^ the above should work as an implicit but unfortunately doesn't, this macro does the same thing scala typer should've but manually...
+    // ^ the above should just work as an implicit but unfortunately doesn't, this macro does the same thing scala typer should've done, but manually...
     implicit def resourceTagMacro[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro resourceTagMacroImpl[R]
 
     def resourceTagMacroImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {

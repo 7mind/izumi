@@ -116,7 +116,6 @@ class PlanInterpreterDefaultRuntimeImpl
         val context = mutProvisioningContext.toImmutable
 
         if (mutFailures.nonEmpty) {
-          // FIXME: add deallocators ???
           Left(FailedProvision[F](context, plan, parentContext, mutFailures.toVector))
         } else {
           val locator = new LocatorDefaultImpl(plan, Option(parentContext), context)
@@ -189,10 +188,14 @@ class PlanInterpreterDefaultRuntimeImpl
         active.instances += (target -> instance)
 
       case r@NewObjectOp.NewResource(target, instance, _) =>
-        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
+        val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
         active.finalizers prepend (target -> finalizer)
+
+      case r@NewObjectOp.NewFinalizer(target, _) =>
+        val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
+        active.finalizers prepend target -> finalizer
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")

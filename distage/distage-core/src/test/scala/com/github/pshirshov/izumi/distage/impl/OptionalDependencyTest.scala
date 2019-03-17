@@ -15,7 +15,9 @@ class OptionalDependencyTest extends WordSpec {
 
     def x[F[_]: DIEffect] = DIEffect[F].pure(1)
     x[Identity]
-    DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
+    intercept[NoClassDefFoundError] {
+      DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
+    }
 
     resource.use {
       i => println(i)

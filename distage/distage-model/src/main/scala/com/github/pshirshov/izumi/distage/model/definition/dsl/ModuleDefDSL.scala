@@ -368,25 +368,29 @@ object ModuleDefDSL {
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = false)))
 
 
-    final def fromResource[I <: DIResourceBase[Any, T]](implicit tag: ResourceTag[I]): AfterBind = {
+    final def fromResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[I])))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
     }
 
-    final def fromResource[F[_]: TagK, I <: DIResourceBase[F, T] : Tag]: AfterBind =
-      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[F[I]])))
+    final def fromResource[R <: DIResourceBase[Any, T]](instance: R)(implicit tag: ResourceTag[R]): AfterBind = {
+      import tag._
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
+    }
 
-    final def fromResource[F[_]: TagK, I <: DIResourceBase[F, T] : Tag](instance: I): AfterBind =
-      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
+    final def fromResource[R <: DIResourceBase[Any, T]](f: ProviderMagnet[R])(implicit tag: ResourceTag[R]): AfterBind = {
+      import tag._
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], f.get)))
+    }
+    final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
+      import tag._
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
+    }
 
-    final def fromResource[F[_]: TagK, I <: DIResourceBase[F, T] : Tag](f: ProviderMagnet[F[I]]): AfterBind =
-      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
-
-    final def refResource[F[_]: TagK, I <: DIResourceBase[F, T] : Tag]: AfterBind =
-      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]], weak = false)))
-
-    final def refResource[F[_]: TagK, I <: DIResourceBase[F, T] : Tag](name: String): AfterBind =
-      bind(ImplDef.ResourceImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[F[I]], DIKey.get[F[I]].named(name), weak = false)))
+    final def refResource[R <: DIResourceBase[Any, T]](name: String)(implicit tag: ResourceTag[R]): AfterBind = {
+      import tag._
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = false)))
+    }
 
 
     protected def bind(impl: ImplDef): AfterBind

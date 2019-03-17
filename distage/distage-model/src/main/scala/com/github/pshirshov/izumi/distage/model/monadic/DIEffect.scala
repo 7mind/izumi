@@ -42,11 +42,6 @@ object DIEffect
     implicit final class DIEffectSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
       @inline def map[B](f: A => B)(implicit F: DIEffect[F]): F[B] = F.map(fa)(f)
       @inline def flatMap[B](f: A => F[B])(implicit F: DIEffect[F]): F[B] = F.flatMap(fa)(f)
-
-      // does not suspend
-//      @inline def definitelyRecover[A1 >: A](recover: Throwable => F[A1])(implicit F: DIEffect[F]): F[A1] = {
-//        F.definitelyRecover(F.widen[A1](fa), )
-//      }
     }
   }
 
@@ -78,7 +73,7 @@ object DIEffect
       F.sync(fa).flatten.sandbox.catchAll(recover apply _.toThrowable)
     }
     override def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-      F.bracket(acquire = acquire)(release = release(_).orTerminate)(use = use)
+      F.bracket(acquire = F.sync(acquire).flatten)(release = release(_).orTerminate)(use = use)
     }
   }
 
@@ -103,7 +98,7 @@ trait FromCats {
       F.handleErrorWith(F.suspend(fa))(recover)
     }
     override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {
-      F.bracket(acquire = acquire)(use = use)(release = release)
+      F.bracket(acquire = F.suspend(acquire))(use = use)(release = release)
     }
   }
 

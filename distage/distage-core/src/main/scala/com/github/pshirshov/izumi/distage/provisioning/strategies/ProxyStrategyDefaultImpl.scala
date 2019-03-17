@@ -26,23 +26,27 @@ class ProxyStrategyDefaultImpl(
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
   def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
-    val key = proxyKey(initProxy.target)
+    val target = initProxy.target
+    val key = proxyKey(target)
     context.fetchUnsafe(key) match {
-      case Some(adapter: ProxyDispatcher) =>
+      case Some(dispatcher: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
           case NewObjectOp.NewInstance(_, instance) :: Nil =>
-            F.maybeSuspend(adapter.init(instance.asInstanceOf[AnyRef])).map(_ => Seq.empty)
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq.empty)
+          case (r@NewObjectOp.NewResource(_, instance, _)) :: Nil =>
+            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
         })
-
       case _ =>
-        throw new MissingProxyAdapterException(s"Cannot get adapter $key for $initProxy", key, initProxy)
+        throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
     }
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
-
     val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {

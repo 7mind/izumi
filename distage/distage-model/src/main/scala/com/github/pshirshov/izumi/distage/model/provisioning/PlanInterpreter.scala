@@ -10,7 +10,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 trait PlanInterpreter {
   // FIXME ??? allow nonmonadic [expose FailedProvision?]
-  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] }
+  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Locator] {
+    type InnerResource <: Either[FailedProvision[F], Locator]
+  }
 }
 
 final case class FailedProvision[F[_]](
