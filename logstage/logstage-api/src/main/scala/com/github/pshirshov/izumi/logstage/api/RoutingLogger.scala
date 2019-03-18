@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, Entry}
+import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
 /** Logger that forwards entries to [[LogRouter]] */

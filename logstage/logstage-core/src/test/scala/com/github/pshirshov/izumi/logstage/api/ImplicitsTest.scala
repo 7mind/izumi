@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.functional.bio.SyncSafe2
+import cats.effect.Sync
+import com.github.pshirshov.izumi.functional.bio.{BIO, SyncSafe2}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.ImplicitsTest.Suspend2
 import logstage.{LogBIO, LogIO}
@@ -8,19 +9,35 @@ import org.scalatest.WordSpec
 
 class ImplicitsTest extends WordSpec {
 
-  "create LogIO from Sync" in {
-//    val log: LogIO[cats.effect.IO] = LogIO.fromLogger(IzLogger())
-    val log: LogIO[cats.effect.IO] = LogIO.fromLogger[cats.effect.IO](IzLogger())
+  "create LogIO from IO and Sync" in {
+    val log: LogIO[cats.effect.IO] = LogIO.fromLogger(IzLogger())
     log.discard()
+
+    def logIO[F[_]: Sync]: LogIO[F] = LogIO.fromLogger(IzLogger())
+    logIO[cats.effect.IO]
+  }
+
+  "progression test: can't create LogIO from covariant F/Sync even when annotated (FIXED in 2.13, but not in 2.12 -Xsource:2.13)" in {
+    assertTypeError("""
+    def logIOC[F[+_]: Sync]: LogIO[F] = LogIO.fromLogger[F](IzLogger())
+    logIOC[cats.effect.IO]
+      """
+    )
   }
 
   "create LogBIO from BIO" in {
     val log: LogBIO[scalaz.zio.IO] = LogBIO.fromLogger(IzLogger())
     log.discard()
+
+    def logIO[F[+_, +_]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
+    logIO[scalaz.zio.IO]
+
+    def logBIO[F[+_, +_]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
+    logBIO[scalaz.zio.IO]
   }
 
-  "LogBIO to LogIO covariance [when partially annotated]" in {
-    implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger(IzLogger())
+  "LogBIO to LogIO covariance works when partially annotated" in {
+    implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger[Suspend2](IzLogger())
 
     for {
       _ <- logIO()
@@ -31,9 +48,11 @@ class ImplicitsTest extends WordSpec {
     } yield ()
   }
 
-  "LogBIO to LogIO covariance [when not annotated]" in {
+  "progression test: LogBIO to LogIO covariance fails when not annotated" in {
     implicit val log0: LogBIO[Suspend2] = LogBIO.fromLogger(IzLogger())
+    log0.discard()
 
+    assertTypeError("""
     for {
       _ <- logIO()
       _ <- logThrowable()
@@ -41,6 +60,7 @@ class ImplicitsTest extends WordSpec {
       _ <- logThrowable()(log0)
       _ <- expectThrowable(log0.info(""))
     } yield ()
+      """)
   }
 
   def logIO[F[_]: LogIO](): F[Unit] = LogIO[F].info("abc")
@@ -50,7 +70,7 @@ class ImplicitsTest extends WordSpec {
 }
 
 object ImplicitsTest {
-  final case class Suspend2[+E, A](f: () => Either[E, A]) {
+  final case class Suspend2[+E, +A](f: () => Either[E, A]) {
     def map[B](g: A => B): Suspend2[E, B] = {
       Suspend2(() => f().map(g))
     }
