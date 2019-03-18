@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.Log.{Entry, LoggerId}
 
 import scala.language.implicitConversions
 
-trait UnsafeLogIO[+F[_]] {
+trait UnsafeLogIO[F[_]] {
   /** Log irrespective of the log level threshold */
   def unsafeLog(entry: Entry): F[Unit]
 
