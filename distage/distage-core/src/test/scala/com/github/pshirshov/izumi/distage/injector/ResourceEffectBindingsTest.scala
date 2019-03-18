@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase3.SelfReference
-import com.github.pshirshov.izumi.distage.fixtures.ResourceCases.ClassResourceCase.{SimpleResource, SuspendResource}
 import com.github.pshirshov.izumi.distage.fixtures.ResourceCases._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, Id, ModuleDef, PlannerInput}

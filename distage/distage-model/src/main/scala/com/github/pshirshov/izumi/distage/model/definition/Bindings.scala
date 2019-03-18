@@ -19,8 +19,8 @@ object Bindings {
   def instance[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     SingletonBinding(DIKey.get[T], ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-  def provider[T: Tag](f: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
-    SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(f.get.ret, f.get))
+  def provider[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
+    SingletonBinding(DIKey.get[T], ImplDef.ProviderImpl(function.get.ret, function.get))
 
   def emptySet[T: Tag](implicit pos: CodePositionMaterializer): EmptySetBinding[DIKey.TypeKey] =
     EmptySetBinding(DIKey.get[Set[T]], BindingTag.untaggedTags, pos.get.position)
@@ -31,8 +31,8 @@ object Bindings {
   def setElement[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SetElementBinding[DIKey.TypeKey] =
     SetElementBinding(DIKey.get[Set[T]], ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-  def setElementProvider[T: Tag](f: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SetElementBinding[DIKey.TypeKey] =
-    SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(f.get.ret, f.get))
+  def setElementProvider[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SetElementBinding[DIKey.TypeKey] =
+    SetElementBinding(DIKey.get[Set[T]], ImplDef.ProviderImpl(function.get.ret, function.get))
 
   def todo[K <: DIKey](key: K)(implicit pos: CodePositionMaterializer): SingletonBinding[K] = {
     val provider = ProviderMagnet.todoProvider(key)(pos).get

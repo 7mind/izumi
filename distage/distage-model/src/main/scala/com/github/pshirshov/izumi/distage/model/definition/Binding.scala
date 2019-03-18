@@ -114,8 +114,8 @@ object Binding {
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-    def withImpl[T: Tag](f: ProviderMagnet[T]): R =
-      binding.withImplDef(ImplDef.ProviderImpl(f.get.ret, f.get))
+    def withImpl[T: Tag](function: ProviderMagnet[T]): R =
+      binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
 
   implicit final class WithTags[R](private val binding: Binding {def withTags(tags: Set[BindingTag]): R}) extends AnyVal {

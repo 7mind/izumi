@@ -15,7 +15,7 @@ trait WithDISafeType {
     def unsafeGetWeak[T: WeakTag]: SafeType = SafeType(WeakTag[T].tag.tpe)
 
     implicit class SafeTypeUnsafeToTag(tpe: SafeType) {
-      def unsafeToTag[T]: Tag[T] = Tag.unsafeFromType[T](tpe.tpe)
+      def unsafeToTag[T](currentMirror: u.Mirror): Tag[T] = Tag.unsafeFromType[T](currentMirror)(tpe.tpe)
     }
   }
 

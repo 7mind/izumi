@@ -25,6 +25,14 @@ trait LogIO[+F[_]] extends LogCreateIO[F] {
 object LogIO {
   def apply[F[_]: LogIO]: LogIO[F] = implicitly
 
+  /**
+    * Please enable `-Xsource:2.13` compiler option
+    * If you're having trouble calling this method
+    * with a single parameter `F`, e.g. `cats.effect.IO`
+    *
+    * @see bug https://github.com/scala/bug/issues/11435 for details
+    *     [FIXED in 2.13 and in 2.12 with `-Xsource:2.13` flag]
+    */
   def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
     new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {

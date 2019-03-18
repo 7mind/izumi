@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
+import com.github.pshirshov.izumi.distage.model.definition.LocatorDef.BindDSLMutBase
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
@@ -288,8 +289,8 @@ object ModuleDefDSL {
       *
       * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
       */
-    final def from[I <: T : Tag](f: ProviderMagnet[I]): AfterBind =
-      bind(ImplDef.ProviderImpl(SafeType.get[I], f.get))
+    final def from[I <: T : Tag](function: ProviderMagnet[I]): AfterBind =
+      bind(ImplDef.ProviderImpl(SafeType.get[I], function.get))
 
     /**
       * Bind by reference to another bound key
@@ -330,8 +331,8 @@ object ModuleDefDSL {
     final def fromEffect[F[_]: TagK, I <: T : Tag](instance: F[I]): AfterBind =
       bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
-    final def fromEffect[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]]): AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
+    final def fromEffect[F[_]: TagK, I <: T : Tag](function: ProviderMagnet[F[I]]): AfterBind =
+      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], function.get)))
 
     /**
       * Bind to result of executing an effect bound to a key at `F[I]`
@@ -373,15 +374,21 @@ object ModuleDefDSL {
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
     }
 
-    final def fromResource[R <: DIResourceBase[Any, T]](instance: R)(implicit tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R <: DIResourceBase[Any, T]](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
     }
 
-    final def fromResource[R <: DIResourceBase[Any, T]](f: ProviderMagnet[R])(implicit tag: ResourceTag[R]): AfterBind = {
+    final def fromResource[R <: DIResourceBase[Any, T]](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], f.get)))
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
     }
+
+    final def fromResource[R0, R <: DIResourceBase[Any, T]](function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R], tag: ResourceTag[R]): AfterBind = {
+      import tag._
+      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
+    }
+
     final def refResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
       import tag._
       bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R], weak = false)))
@@ -404,8 +411,8 @@ object ModuleDefDSL {
     final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def add[I <: T : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.ProviderImpl(f.get.ret, f.get))
+    final def add[I <: T : Tag](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     /**
       * Bind by reference to another bound key
@@ -449,8 +456,8 @@ object ModuleDefDSL {
     final def addSet[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
-    final def addSet[I <: Set[_ <: T] : Tag](f: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
-      multiSetAdd(ImplDef.ProviderImpl(f.get.ret, f.get))
+    final def addSet[I <: Set[_ <: T] : Tag](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      multiSetAdd(ImplDef.ProviderImpl(function.get.ret, function.get))
 
     final def refSet[I <: Set[_ <: T] : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I], weak = false))
@@ -471,8 +478,8 @@ object ModuleDefDSL {
     final def addEffect[F[_]: TagK, I <: T : Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)))
 
-    final def addEffect[F[_]: TagK, I <: T : Tag](f: ProviderMagnet[F[I]])(implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], f.get)))
+    final def addEffect[F[_]: TagK, I <: T : Tag](function: ProviderMagnet[F[I]])(implicit pos: CodePositionMaterializer): AfterAdd =
+      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[I]], function.get)))
 
     final def refEffect[F[_]: TagK, I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       refEffect[F, I, F[I]]

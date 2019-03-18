@@ -30,17 +30,17 @@ sealed trait AbstractPlan {
     SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector), roots)
   }
 
-  final def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
-      case i if i.target.tpe == f.get.ret =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(f.get, f.get.associations), i.origin))
+      case i if i.target.tpe == function.get.ret =>
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
     }
   }
 
-  final def providerImport[T](id: String)(f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](id: String)(function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
-      case i if i.target == DIKey.IdKey(f.get.ret, id) =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(f.get, f.get.associations), i.origin))
+      case i if i.target == DIKey.IdKey(function.get.ret, id) =>
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
     }
   }
 

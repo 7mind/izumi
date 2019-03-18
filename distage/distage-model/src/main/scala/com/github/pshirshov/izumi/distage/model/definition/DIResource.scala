@@ -2,11 +2,11 @@ package com.github.pshirshov.izumi.distage.model.definition
 
 import cats.Applicative
 import cats.effect.Bracket
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, DIResourceUseSimple}
-import com.github.pshirshov.izumi.distage.model.definition.DIResourceLowPrioritySyntax.DIResourceUse
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -28,13 +28,8 @@ trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
   override final type InnerResource = Resource
 }
 
-import cats.effect.Resource
-
-object DIResource extends DIResourceLowPrioritySyntax {
-
-  type Simple[A] = DIResource[Lambda[X => X], A]
-  type SimpleBase[+A] = DIResourceBase[Lambda[X => X], A]
-  // Lambda[X => X] instead of Identity to stop Identity from showing up in Intellij tooltips
+object DIResource {
+  import cats.effect.Resource
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     new DIResource[F, A] {
@@ -43,29 +38,24 @@ object DIResource extends DIResourceLowPrioritySyntax {
     }
   }
 
-  def makeSimple[A](acquire: => A)(release: A => Unit): DIResource.Simple[A] = {
+  def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
     new DIResource.Simple[A] {
       override def allocate: A = acquire
       override def deallocate(a: A): Unit = release(a)
     }
   }
 
-  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource.Simple[A] = {
+  def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
 
-  // FIXME: pass bracket through DI
-  // FIXME: implicit defs
-  implicit def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
-    new Cats[F, A] {
-      override def allocate: F[(A, F[Unit])] = resource.allocated
-    }
-  }
+  trait Simple[A] extends DIResource[Identity, A]
 
-  implicit def providerCats[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
-    resourceProvider
-      .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
-      .map { case (resource, bracket) => fromCats(resource)(bracket) }
+  trait Mutable[+A] extends DIResourceBase[Identity, A] with AutoCloseable {
+    this: A =>
+    override final type InnerResource = Unit
+    override final def deallocate(resource: Unit): Unit = close()
+    override final def extract(resource: Unit): A = this
   }
 
   trait Cats[F[_], A] extends DIResourceBase[F, A] {
@@ -74,16 +64,31 @@ object DIResource extends DIResourceLowPrioritySyntax {
     override final def extract(resource: (A, F[Unit])): A = resource._1
   }
 
-  trait Mutable[+A] extends DIResourceBase[Lambda[X => X], A] with AutoCloseable {
-    this: A =>
-    override final type InnerResource = Unit
-    override final def deallocate(resource: Unit): Unit = close()
-    override final def extract(resource: Unit): A = this
+  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    /**
+      * Please enable `-Xsource:2.13` compiler option
+      * if you're having trouble invoking this method
+      * on `Identity` Resources. Alternatively, add
+      * an explicit type ascription to your `resource`
+      * as in:
+      *
+      * {{{
+      *   (resource: Resource[Identity, MyRes]).use { ... }
+      * }}}
+      *
+      * @see bug https://github.com/scala/bug/issues/11435 for details
+      *     [FIXED in 2.13 and in 2.12 with `-Xsource:2.13` flag]
+      */
+    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
+      F.bracket(acquire = resource.allocate)(release = resource.deallocate)(
+        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
+      )
+    }
   }
 
-  implicit final class DIResourceUseSimple[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
-      F.bracket(acquire = resource.allocate)(release = resource.deallocate)(use = use apply resource.extract(_))
+  implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
+      Resource.make[G, resource.InnerResource](resource.allocate)(resource.deallocate).map(resource.extract)
     }
   }
 
@@ -93,39 +98,65 @@ object DIResource extends DIResourceLowPrioritySyntax {
     def deallocate(resource: InnerResource): F[Unit]
     def extract(resource: InnerResource): OuterResource
 
-    final def map[B](f: OuterResource => B): DIResourceBase[F, B] = {
-      new DIResourceBase[F, B] {
-        type InnerResource = self.InnerResource
-        def allocate: F[InnerResource] = self.allocate
-        def deallocate(resource: InnerResource): F[Unit] = self.deallocate(resource)
-        def extract(resource: InnerResource): B = f(self.extract(resource))
-      }
-    }
+    final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
+//    final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
+//    final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+  }
 
-    final def flatMap[G[x] >: F[x], B](f: OuterResource => DIResourceBase[G, B])(implicit F: DIEffect[G]): DIResourceBase[G, B] = {
-      import DIEffect.syntax._
-      new DIResourceBase[G, B] {
-        override type InnerResource = InnerResource0
-        override def allocate: G[InnerResource] = {
-          for {
-            inner1 <- self.allocate: G[self.InnerResource]
-            res2 = f(self.extract(inner1))
-            inner2 <- res2.allocate
-          } yield new InnerResource0 {
-            def extract: B = res2.extract(inner2)
-            def deallocate: G[Unit] = (self.deallocate(inner1): G[Unit]).flatMap(_ => res2.deallocate(inner2))
-          }
-        }
-        override def deallocate(resource: InnerResource): G[Unit] = resource.deallocate
-        override def extract(resource: InnerResource): B = resource.extract
-
-        sealed trait InnerResource0 {
-          def extract: B
-          def deallocate: G[Unit]
-        }
-      }
+  def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
+    new Cats[F, A] {
+      override def allocate: F[(A, F[Unit])] = resource.allocated
     }
   }
+
+  implicit def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
+    providerFromCatsProvider(ProviderMagnet.pure(resource))
+  }
+
+  implicit def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+    resourceProvider
+      .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
+      .map { case (resource, bracket) => fromCats(resource)(bracket) }
+  }
+
+  private[this] final def mapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => B): DIResourceBase[F, B] = {
+    new DIResourceBase[F, B] {
+      type InnerResource = self.InnerResource
+      def allocate: F[InnerResource] = self.allocate
+      def deallocate(resource: InnerResource): F[Unit] = self.deallocate(resource)
+      def extract(resource: InnerResource): B = f(self.extract(resource))
+    }
+  }
+
+//  // FIXME: this is not safe at all, right?
+//       Can be made safe safe with .bracketCase
+//  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+//    import DIEffect.syntax._
+//    new DIResourceBase[F, B] {
+//      override type InnerResource = InnerResource0
+//      override def allocate: F[InnerResource] = {
+//        for {
+//          inner1 <- self.allocate
+//          res2 = f(self.extract(inner1))
+//          inner2 <- res2.allocate
+//        } yield new InnerResource0 {
+//          def extract: B = res2.extract(inner2)
+//          def deallocate: F[Unit] = self.deallocate(inner1).flatMap(_ => res2.deallocate(inner2))
+//        }
+//      }
+//      override def deallocate(resource: InnerResource): F[Unit] = resource.deallocate
+//      override def extract(resource: InnerResource): B = resource.extract
+//
+//      sealed trait InnerResource0 {
+//        def extract: B
+//        def deallocate: F[Unit]
+//      }
+//    }
+//  }
+//
+//  private[this] final def evalMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => F[B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+//    flatMapImpl(self)(a => DIResource.make(f(a))(_ => F.unit))
+//  }
 
   trait ResourceTag[R] {
     type F[_]
@@ -135,10 +166,10 @@ object DIResource extends DIResourceLowPrioritySyntax {
     implicit def tagA: Tag[A]
   }
 
-  object ResourceTag {
+  object ResourceTag extends ResourceTagLowPriority {
     def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
-    /*implicit*/ def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R] { type F[X] = F0[X]; type A = A0 } = {
+    implicit def resourceTag[R <: DIResourceBase[F0, A0] : Tag, F0[_] : TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
       new ResourceTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -148,36 +179,29 @@ object DIResource extends DIResourceLowPrioritySyntax {
       }
     }
 
-    // ^ the above should just work as an implicit but unfortunately doesn't, this macro does the same thing scala typer should've done, but manually...
-    implicit def resourceTagMacro[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro resourceTagMacroImpl[R]
-
-    def resourceTagMacroImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
-      import c.universe._
-
-      val full = weakTypeOf[R]
-      val base = weakTypeOf[R].baseType(symbolOf[DIResourceBase[Any, Any]])
-      val List(f, a) = base.typeArgs
-
-      c.Expr[ResourceTag[R]](q"${reify(ResourceTag)}.resourceTag[$full, $f, $a]")
+    def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
+      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!")
     }
   }
 
-}
+  trait ResourceTagLowPriority {
+    /**
+      * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
+      * a workaround for highlighting in Intellij IDEA
+      * TODO: include link to IJ bug tracker
+      */
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
 
-trait DIResourceLowPrioritySyntax {
-  implicit def ToDIResourceUse[F[_], A](resource: DIResourceBase[F, A]): DIResourceUse[F, A] = new DIResourceUse[F, A](resource)
-
-  /** Workaround for https://github.com/scala/bug/issues/11435 */
-  implicit def ToDIResourceUseSimple[A](resource: DIResourceBase[Lambda[X => X], A]): DIResourceUseSimple[Lambda[X => X], A] = {
-    new DIResourceUseSimple[Lambda[X => X], A](resource)
+////    ^ the above should just work as an implicit but unfortunately doesn't, this macro does the same thing scala typer should've done, but manually...
+//    def resourceTagMacroImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
+//      import c.universe._
+//
+//      val full = weakTypeOf[R].widen
+//      val base = weakTypeOf[R].baseType(symbolOf[DIResourceBase[Any, Any]])
+//      val List(f, a) = base.typeArgs
+//
+//      c.Expr[ResourceTag[R]](q"${reify(ResourceTag)}.resourceTag[$full, $f, $a]")
+//    }
   }
-}
 
-private[definition] object DIResourceLowPrioritySyntax {
-  final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-
-    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
-      Resource.make[G, resource.InnerResource](resource.allocate)(resource.deallocate).map(resource.extract)
-    }
-  }
 }

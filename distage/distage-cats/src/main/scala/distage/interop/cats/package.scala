@@ -25,7 +25,7 @@ package object cats
       Sync[F].delay(injector.produceUnsafe(plan))
 
     def produceIO[F[_]: Sync](definition: PlannerInput): F[Locator] =
-      Sync[F].delay(injector.produce(definition))
+      Sync[F].delay(injector.produceUnsafe(definition))
   }
 
   implicit final class SemiPlanExts(private val plan: SemiPlan) extends AnyVal {

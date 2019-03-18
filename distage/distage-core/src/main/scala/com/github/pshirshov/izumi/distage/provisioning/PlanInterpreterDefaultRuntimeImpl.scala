@@ -36,8 +36,24 @@ class PlanInterpreterDefaultRuntimeImpl
      with OperationExecutor
      with WiringExecutor {
 
-  // FIXME: expose InnerResourceType
+  // FIXME: _do not_ expose InnerResourceType; have two separate functions
   override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] } = {
+//    DIResource.make(
+//      acquire = instantiate0(plan, parentContext)
+//    )(release = {
+//      resource =>
+//        val finalizers = resource match {
+//          case Left(failedProvision) => failedProvision.failed.finalizers
+//          case Right(locator) => locator.dependencyMap.finalizers
+//        }
+//        F.traverse_(finalizers) {
+//          case (_, eff) => F.maybeSuspend(eff()).flatMap(identity)
+//        }
+//    })
+//      // FIXME: evalMap[F.fail[???]]
+//      .map {
+//      _.throwOnFailure()
+//    }
     new DIResourceBase[F, Locator] {
       override type InnerResource = Either[FailedProvision[F], LocatorDefaultImpl[F]]
       override def allocate: F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {

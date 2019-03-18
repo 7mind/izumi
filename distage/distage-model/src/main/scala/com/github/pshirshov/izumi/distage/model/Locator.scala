@@ -58,16 +58,16 @@ trait Locator {
     *
     * @see [[ProviderMagnet]]
     */
-  final def run[T](f: ProviderMagnet[T]): T = {
-    val fn = f.get
+  final def run[T](function: ProviderMagnet[T]): T = {
+    val fn = function.get
     fn.fun(fn.diKeys.map {
       key =>
         lookupInstanceOrThrow[Any](key)
     }).asInstanceOf[T]
   }
 
-  final def runOption[T](f: ProviderMagnet[T]): Option[T] = {
-    val fn = f.get
+  final def runOption[T](function: ProviderMagnet[T]): Option[T] = {
+    val fn = function.get
     val args: Option[Queue[Any]] = fn.diKeys.foldLeft(Option(Queue.empty[Any])) {
       (maybeQueue, key) =>
         maybeQueue.flatMap {

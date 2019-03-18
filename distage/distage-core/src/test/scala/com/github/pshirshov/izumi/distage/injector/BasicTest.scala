@@ -295,7 +295,7 @@ class BasicTest extends WordSpec with MkInjector {
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
 
-    val context = Injector.Standard().produce(definition)
+    val context = Injector.Standard().produceUnsafe(definition)
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
@@ -317,7 +317,7 @@ class BasicTest extends WordSpec with MkInjector {
       }
     })
 
-    val context = Injector.Standard().produce(definition)
+    val context = Injector.Standard().produceUnsafe(definition)
 
     assert(context.get[Set[Int]] == Set(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
@@ -329,7 +329,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestImpl1]
     })
 
-    val context = Injector.Standard().produce(definition)
+    val context = Injector.Standard().produceUnsafe(definition)
 
     assert(context.get[TestImpl1].justASet == Set.empty)
   }

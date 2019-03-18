@@ -1,15 +1,14 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, UnexpectedProvisionResultException}
+import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.EffectStrategy
+import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 class EffectStrategyDefaultImpl
@@ -47,5 +46,3 @@ class EffectStrategyDefaultImpl
   }
 
 }
-
-class ThisException_ShouldBePartOfPrepSanityCheckReally_SameAsImports(m: String) extends DIException(m, null)

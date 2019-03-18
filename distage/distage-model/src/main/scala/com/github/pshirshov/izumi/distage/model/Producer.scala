@@ -9,12 +9,11 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 trait Producer {
   def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] }
-  def produceUnsafeF[F[_]: TagK](plan: OrderedPlan)(implicit F: DIEffect[F]): F[Locator] = {
+
+  final def produceUnsafeF[F[_]: TagK](plan: OrderedPlan)(implicit F: DIEffect[F]): F[Locator] = {
     // FIXME: remove
     F.flatMap(produceF[F](plan).allocate)(x => F.maybeSuspend(x.throwOnFailure()))
   }
-
-  // FIXME: nonmonadic ???
   final def produce(plan: OrderedPlan): DIResourceBase[Identity, Locator] { type InnerResource <: Either[FailedProvision[Identity], Locator] } = {
     produceF[Identity](plan)
   }

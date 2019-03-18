@@ -84,7 +84,7 @@ final case class ProviderMagnet[+R](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
-    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R]
+    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R](Tag[B].tag.mirror)
     rTag.discard() // scalac can't detect usage in macro
 
     copy[(R, B)](get = get.unsafeZip(SafeType.get[(R, B)], that.get))
@@ -136,6 +136,15 @@ object ProviderMagnet {
       Provider.ProviderImpl[A](
         associations = Seq(Association.Parameter(debugInfo, "a", tpe, key, isByName = false, wasGeneric = false))
       , fun = (_: Seq[Any]).head.asInstanceOf[A]
+      )
+    )
+  }
+
+  def pure[A: Tag](a: A): ProviderMagnet[A] = {
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        associations = Seq.empty
+      , fun = (_: Seq[Any]) => a
       )
     )
   }

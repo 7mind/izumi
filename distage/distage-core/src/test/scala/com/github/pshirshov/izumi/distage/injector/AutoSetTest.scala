@@ -25,7 +25,7 @@ class AutoSetTest extends WordSpec with MkInjector {
         .add(new AssignableFromAutoSetHook[Ordered, Ordered](identity))
     })
 
-    val autoCloseableSet = injector.produce(PlannerInput(definition)).get[Set[Ordered]]
+    val autoCloseableSet = injector.produceUnsafe(PlannerInput(definition)).get[Set[Ordered]]
 
     assert(autoCloseableSet.toSeq == autoCloseableSet.toSeq.sortBy(_.order))
   }

@@ -40,6 +40,7 @@ object ResourceCases {
   }
 
   object ClassResourceCase {
+
     class Res {
       var initialized: Boolean = false
     }
