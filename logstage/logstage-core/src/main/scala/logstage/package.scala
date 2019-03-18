@@ -1,5 +1,3 @@
-import com.github.pshirshov.izumi.functional.bio.SyncSafe2
-import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.{api, sink}
 
 package object logstage extends LogStage {
@@ -31,5 +29,4 @@ package object logstage extends LogStage {
   type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
   type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
   type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
-
 }
