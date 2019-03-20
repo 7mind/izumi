@@ -56,3 +56,4 @@ class IzStringTest extends WordSpec {
 
 
 }
+

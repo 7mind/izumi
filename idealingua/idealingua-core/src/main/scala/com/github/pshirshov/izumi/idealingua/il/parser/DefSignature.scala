@@ -13,7 +13,7 @@ class DefSignature(context: IDLParserContext) {
 
   def sigSep[_: P]: P[Unit] = P("=>" | "->" | ":" | "⇒")
 
-  def errSep[_: P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬")
+  def errSep[_: P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬" | "or")
 
 
   def baseSignature[_: P](keyword: => P[Unit]): P[(String, RawSimpleStructure)] = P(
