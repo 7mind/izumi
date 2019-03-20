@@ -14,10 +14,17 @@ trait SyncSafe[F[_]] {
 object SyncSafe extends LowPrioritySyncSafeInstances0 {
   def apply[F[_]: SyncSafe]: SyncSafe[F] = implicitly
 
-  implicit def fromSync[F[_]: Sync]: SyncSafe[F] =
+  implicit def fromSync[F[_], R[_[_]]: _Sync](implicit F0: R[F]): SyncSafe[F] = {
+    val F = F0.asInstanceOf[Sync[F]]
     new SyncSafe[F] {
-      override def syncSafe[A](f: => A): F[A] = Sync[F].delay(f)
+      override def syncSafe[A](f: => A): F[A] = F.delay(f)
     }
+  }
+
+  sealed abstract class _Sync[R[_[_]]]
+  object _Sync {
+    implicit val _sync: _Sync[Sync] = new _Sync[Sync] {}
+  }
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
