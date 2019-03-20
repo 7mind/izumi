@@ -127,14 +127,13 @@ object ProviderMagnet {
     )
 
   def identity[A: Tag]: ProviderMagnet[A] = {
-    val definingClass = SafeType.get[ProviderMagnet.type]
     val tpe = SafeType.get[A]
     val key = DIKey.get[A]
-    val debugInfo = DependencyContext.ConstructorParameterContext(definingClass, SymbolInfo.Static("a", tpe, Nil, definingClass, isByName = false, wasGeneric = false))
+    val debugInfo = DependencyContext.ConstructorParameterContext(tpe, SymbolInfo.Static("x$1", tpe, Nil, tpe, isByName = false, wasGeneric = false))
 
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq(Association.Parameter(debugInfo, "a", tpe, key, isByName = false, wasGeneric = false))
+        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false))
       , fun = (_: Seq[Any]).head.asInstanceOf[A]
       )
     )

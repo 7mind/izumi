@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage
 
-import cats.effect.{IO, Resource, Sync}
+import cats.effect.{Bracket, IO, Resource, Sync}
 import com.github.pshirshov.izumi.distage.CatsResourcesTest._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats
@@ -26,25 +25,28 @@ class CatsResourcesTest extends WordSpec {
       acquire = IO { val res = new Res1; res.initialized = true; res }
     )(release = res => IO(res.initialized = false))
 
-    val definition: PlannerInput = PlannerInput(new ModuleDef {
+    val definition: ModuleDef = new ModuleDef {
       make[Res].named("instance").fromResource(resResource)
 
       make[Res].named("provider").fromResource {
         _: Res @Id("instance") =>
           resResource
       }
-    })
+    }
 
-    definition.bindings.bindings.foreach {
-      case SingletonBinding(_, implDef: ImplDef.ResourceImpl, _, _) =>
+    definition.bindings.foreach {
+      case SingletonBinding(_, implDef@ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _) =>
         assert(implDef.implType == SafeType.get[Res1])
-        assert(implDef.resourceImpl.implType == SafeType.get[DIResource.Cats[IO, Res1]])
+        assert(providerImplType == SafeType.get[DIResource.Cats[IO, Res1]])
+        assert(fn.diKeys contains DIKey.get[Bracket[IO, Throwable]])
       case _ =>
         fail()
     }
 
     val injector = Injector()
-    val plan = injector.plan(definition)
+    val plan = injector.plan(definition ++ new ModuleDef {
+      addImplicit[Bracket[IO, Throwable]]
+    })
 
     def assert1(ctx: Locator) = {
       IO {
@@ -67,11 +69,13 @@ class CatsResourcesTest extends WordSpec {
     ctxResource
       .use(assert1)
       .flatMap((assert2 _).tupled)
+      .unsafeRunSync()
 
     ctxResource
       .toCats
       .use(assert1)
       .flatMap((assert2 _).tupled)
+      .unsafeRunSync()
   }
 
 

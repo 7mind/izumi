@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
-import com.github.pshirshov.izumi.distage.model.definition.LocatorDef.BindDSLMutBase
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
