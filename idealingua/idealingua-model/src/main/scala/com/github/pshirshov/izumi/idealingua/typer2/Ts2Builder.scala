@@ -148,6 +148,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
         Set.empty,
         this.types.values.toList,
         List.empty,
+        List.empty,
         index.defn.origin,
       ), allConsts)
     }) match {

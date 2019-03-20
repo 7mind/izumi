@@ -15,5 +15,6 @@ object T2Warn {
   final case class MissingBranchesToRemove(tpe: IzTypeId, removals: Set[String], meta: NodeMeta) extends WithMeta
   final case class TemplateInstanceNameWillBeGenerated(generic: IzTypeId, generatedName: String, meta: NodeMeta) extends WithMeta
   final case class UnusedForeignTypeParameters(id: IzTypeId, undefinedParameters: Set[IzTypeArgName], meta: NodeMeta) extends WithMeta
+  final case class FailedConversion(failed: Conversion) extends T2Warn
 
 }

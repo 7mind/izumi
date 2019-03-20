@@ -12,6 +12,7 @@ case class Typespace2(
                        imports: Set[IzTypeId],
                        types: List[ProcessedOp],
                        consts: List[ProcessedConst],
+                       conversions: List[Conversion],
                        origin: FSPath,
                      ) {
   lazy val index: Map[IzTypeId, ProcessedOp] = types.map(t => t.member.id -> t).toMap
