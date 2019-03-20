@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.json.flat
 import com.github.pshirshov.izumi.functional.IzEither._
 import io.circe.Json
 
+import scala.annotation.switch
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
@@ -11,11 +12,17 @@ class JsonFlattener {
   import PathElement._
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzEscape
 
-  private val tpes = Set("null", "bool", "long", "float", "str")
+  private final val NullT = 'n'
+  private final val BoolT = 'b'
+  private final val LongT = 'l'
+  private final val FloatT = 'f'
+  private final val StringT = 's'
 
-  private val controlChars = Set('.', '[', ']')
-  private val escapeChar = '\\'
-  private val escape = new IzEscape(controlChars, escapeChar)
+  private final val tpes = Set(NullT, BoolT, LongT, FloatT, StringT)
+
+  private final val controlChars = Set('.', '[', ']')
+  private final val escapeChar = '\\'
+  private final val escape = new IzEscape(controlChars, escapeChar)
 
 
   def flatten(node: Json): Seq[(String, String)] = {
@@ -64,8 +71,8 @@ class JsonFlattener {
     val maybePaths = pairs.map {
       case (k, v) =>
         parsePath(k).map {
-          parsed =>
-            parsed -> v
+          case (path, tpe) =>
+            (path, tpe, v)
         }
     }.biAggregate
 
@@ -77,7 +84,7 @@ class JsonFlattener {
     }
   }
 
-  private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], String)] = {
+  private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {
     val idx = path.lastIndexOf(':')
     if (idx < 0) {
       Left(List())
@@ -87,9 +94,9 @@ class JsonFlattener {
       if (tpe.length < 2) {
         return Left(List(UnpackFailure.BadPathFormat(path)))
       }
-      val rtpe = tpe.substring(1)
+      val rtpe = tpe.charAt(1)
       if (!tpes.contains(rtpe)) {
-        return Left(List(UnpackFailure.UnexpectedType(rtpe, path)))
+        return Left(List(UnpackFailure.UnexpectedType(tpe.substring(1), path)))
       }
 
       val buf = new ArrayBuffer[PathElement]()
@@ -145,22 +152,22 @@ class JsonFlattener {
   }
 
 
-  private def inflateParsed(pairs: Seq[((Seq[PathElement], String), String)]): Either[List[UnpackFailure], Json] = {
-    val grouped = pairs.groupBy(_._1._1.headOption)
+  private def inflateParsed(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
+    val grouped = pairs.groupBy(_._1.headOption)
 
     grouped.get(None) match {
       case Some(value :: Nil) =>
-        return parse(value._1._2, value._2)
+        return parse(value._2, value._3)
       case Some(value) =>
         return for {
-          elements <- value.map(v => parse(v._1._2, v._2)).biAggregate
+          elements <- value.map(v => parse(v._2, v._3)).biAggregate
         } yield {
           Json.fromValues(elements)
         }
       case None =>
     }
 
-    val grouped2 = pairs.groupBy(_._1._1.head)
+    val grouped2 = pairs.groupBy(_._1.head)
 
     if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
       for {
@@ -186,31 +193,31 @@ class JsonFlattener {
     }
   }
 
-  @inline private[this] def drop(v: ((Seq[PathElement], String), String)): ((Seq[PathElement], String), String) = {
+  @inline private[this] def drop(v: (Seq[PathElement], Char, String)): (Seq[PathElement], Char, String) = {
     v match {
-      case ((path, tpe), value) =>
-        ((path.drop(1), tpe), value)
+      case (path, tpe, value) =>
+        (path.drop(1), tpe, value)
     }
   }
 
-  @inline private[this] def inflateParsedNext(pairs: Seq[((Seq[PathElement], String), String)]): Either[List[UnpackFailure], Json] = {
+  @inline private[this] def inflateParsedNext(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
     inflateParsed(pairs.map(drop))
   }
 
-  private def parse(tpe: String, value: String): Either[List[UnpackFailure], Json] = {
+  private def parse(tpe: Char, value: String): Either[List[UnpackFailure], Json] = {
     try {
       Right {
-        tpe match {
-          case "null" => Json.Null
-          case "bool" => Json.fromBoolean(value.toBoolean)
-          case "long" => Json.fromLong(value.toLong)
-          case "float" => Json.fromBigDecimal(BigDecimal.apply(value))
-          case "str" => Json.fromString(value)
+        (tpe: @switch) match {
+          case NullT => Json.Null
+          case BoolT => Json.fromBoolean(value.toBoolean)
+          case LongT => Json.fromLong(value.toLong)
+          case FloatT => Json.fromBigDecimal(BigDecimal.apply(value))
+          case StringT => Json.fromString(value)
         }
       }
     } catch {
       case NonFatal(t) =>
-        Left(List(UnpackFailure.ScalarParsingFailed(tpe, value, t)))
+        Left(List(UnpackFailure.ScalarParsingFailed(tpe.toString, value, t)))
     }
   }
 
@@ -242,7 +249,7 @@ object JsonFlattener {
 
     final case class PathIndexParsingFailed(path: String, t: Throwable) extends UnpackFailure
 
-    final case class StructuralFailure(structure: Seq[((Seq[PathElement], String), String)]) extends UnpackFailure
+    final case class StructuralFailure(structure: Seq[(Seq[PathElement], Char, String)]) extends UnpackFailure
 
   }
 }
