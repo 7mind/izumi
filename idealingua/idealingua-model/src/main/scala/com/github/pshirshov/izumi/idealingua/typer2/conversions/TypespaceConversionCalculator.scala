@@ -21,7 +21,7 @@ class TypespaceConversionCalculator(ts2: Typespace2) extends WarnLogger {
     val calc = new ConversionCalculator(this, ts2)
     val structures = ts2.types.map(_.member).collect({case s: IzStructure => s})
     val ignoredParents = Builtins.mappingSpecials.keys.toSet[IzTypeId]
-    import com.github.pshirshov.izumi.idealingua.typer2.model.TypespaceTools._
+    import com.github.pshirshov.izumi.idealingua.typer2.indexing.TypespaceTools._
 
     val upAndDown = structures.flatMap {
       s =>

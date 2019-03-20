@@ -1,6 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.typer2.model
+package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, Typespace2}
 
 object TypespaceTools {
   implicit class Queries(ts2: Typespace2) {
