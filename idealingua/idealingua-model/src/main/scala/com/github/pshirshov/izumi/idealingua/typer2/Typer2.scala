@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.{RawDeclaredTypeName, RawNongenericRef}
 import com.github.pshirshov.izumi.idealingua.typer2.constants.ConstSupport
+import com.github.pshirshov.izumi.idealingua.typer2.conversions.TypespaceConversionCalculator
 import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model._
@@ -33,7 +34,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
 
       case Right(value) =>
         val types = value.types.size
-        println(s"  ... $types members, ${value.warnings.size} warnings")
+        println(s"  ... $types members, ${value.warnings.size} warnings, ${value.consts.size} constants, ${value.conversions.size} conversions")
     }
 
     r
