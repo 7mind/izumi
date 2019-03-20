@@ -20,6 +20,9 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
   def conversion(from: IzStructure, to: IzStructure): List[Conversion] = {
     val fromFields = from.fields.map(_.basic).to[ListSet]
     val toFields = to.fields.map(_.basic).to[ListSet]
+    if (fromFields.isEmpty || toFields.isEmpty) { // parasitic cases
+      return List.empty
+    }
     val copyable = fromFields.intersect(toFields)
     val toCopy = copyable.map(f => ConstructionOp.Transfer(from.id, f, f)).toSeq
     val missing = toFields.diff(fromFields)
@@ -35,7 +38,7 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
       List.empty
     }
 
-    val result = conversion1
+    val result = conversion1 ++ conversion2
     filterValid(from, to, result)
   }
 
@@ -49,7 +52,6 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
         f -> defined
     }
 
-    val sourcesMap = sources.toMap
     val definingTypes = sources.flatMap {
       case (f, defs) =>
         defs.map {
@@ -126,7 +128,8 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
   }
 
   private def filterValid(from: IzStructure, to: IzStructure, result: List[Conversion]): List[Conversion] = {
-    val toFields = to.fields.map(_.basic).to[ListSet]
+    val toFields = to.fields.map(_.basic).toSet
+    val fromFields = from.fields.map(_.basic).toSet
     val (good, bad) = result.partition {
       c =>
         val targetFields = c match {
@@ -135,7 +138,13 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
           case Expand(_, _, ops) =>
             ops.map(_.target)
         }
-        targetFields.size == to.fields.size && targetFields.toSet == toFields.toSeq.toSet // ListSet considers order in equals :/
+        val sourceFields = c match {
+          case Copy(_, _, ops) =>
+            ops.map(_.source)
+          case Expand(_, _, _) =>
+            Seq.empty
+        }
+        targetFields.size == to.fields.size && targetFields.toSet == toFields && sourceFields.toSet.diff(fromFields).isEmpty
     }
 
     bad.foreach {
