@@ -244,6 +244,14 @@ lazy val fundamentalsReflection = inFundamentals.as.module
     )
   )
 
+lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
+  .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
+  .settings(
+    libraryDependencies ++= R.circe
+  )
+lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
+lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
+
 lazy val distageModel = inDiStage.as.module
   .depends(fundamentalsReflection)
 
@@ -494,6 +502,7 @@ lazy val fundamentalsJvm: Seq[ProjectReference] = Seq(
   fundamentalsCollectionsJvm,
   fundamentalsPlatformJvm,
   fundamentalsBioJvm,
+  fundamentalsJsonCirceJvm,
 )
 
 lazy val izsbt: Seq[ProjectReference] = Seq(
@@ -512,6 +521,7 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
   fundamentalsCollectionsJs,
   fundamentalsPlatformJs,
   fundamentalsBioJs,
+  fundamentalsJsonCirceJs,
 )
 
 lazy val allJsProjects = fundamentalsJs ++
