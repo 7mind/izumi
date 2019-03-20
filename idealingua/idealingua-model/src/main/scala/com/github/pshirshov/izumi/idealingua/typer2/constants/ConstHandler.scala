@@ -196,7 +196,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
 
   private def makeTypedListConst(index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta, expected: IzTypeReference, value: List[RawVal]): Either[List[T2Fail], TypedVal.TCList] = {
     for {
-      elref <- resolver.listArgToTopLevelRef(index)(expected)
+      elref <- resolver.listArgToTopLevelRef(expected)
       lst <- {
         value
           .map {
@@ -220,7 +220,7 @@ class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scop
               TypedVal.TCList(values, IzTypeReference.Generic(IzType.BuiltinGeneric.TList.id, Seq(valRef), None))
           }
       }
-      refarg <- resolver.listArgToTopLevelRef(index)(lst.ref)
+      refarg <- resolver.listArgToTopLevelRef(lst.ref)
       ok <- isParent(name, meta)(elref, refarg)
       _ <- if (ok) {
         Right(())

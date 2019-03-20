@@ -48,7 +48,7 @@ class ConstNameResolver(index: DomainIndex) {
     refToTopLevelRef1(tref)
   }
 
-  def listArgToTopLevelRef(index: DomainIndex)(ref: IzTypeReference): Either[List[T2Fail], IzTypeReference] = {
+  def listArgToTopLevelRef(ref: IzTypeReference): Either[List[T2Fail], IzTypeReference] = {
     ref match {
       case IzTypeReference.Generic(id, arg :: Nil, _) if id == IzType.BuiltinGeneric.TList.id =>
         refToTopLevelRef1(arg.ref)

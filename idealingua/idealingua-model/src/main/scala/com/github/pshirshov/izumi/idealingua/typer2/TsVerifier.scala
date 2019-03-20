@@ -1,14 +1,14 @@
 package com.github.pshirshov.izumi.idealingua.typer2
 
-import com.github.pshirshov.izumi.idealingua.typer2.indexing.{InheritanceQueries, TopLevelTypeIndexer}
 import com.github.pshirshov.izumi.idealingua.typer2.indexing.TopLevelTypeIndexer.TopLevelIdIndex
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.{InheritanceQueries, TopLevelTypeIndexer}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{FullField, NodeMeta}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.model.FieldConflict
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Warn.UnusedForeignTypeParameters
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
-import com.github.pshirshov.izumi.idealingua.typer2.model.{Builtins, IzType, IzTypeId, IzTypeReference}
+import com.github.pshirshov.izumi.idealingua.typer2.model.{Builtins, IzType, IzTypeId}
 
 
 class TsVerifier(types: Map[IzTypeId, ProcessedOp], tsc: TopLevelTypeIndexer, logger: WarnLogger) {
