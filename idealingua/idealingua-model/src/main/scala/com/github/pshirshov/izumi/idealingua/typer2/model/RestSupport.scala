@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec._
 // raw annotation
 final case class RestAnnotation(path: String, method: HttpMethod)
 
+// final annotation
 final case class RestSpec(method: HttpMethod, extractor: ExtractorSpec, body: BodySpec)
 
 object RestSpec {
