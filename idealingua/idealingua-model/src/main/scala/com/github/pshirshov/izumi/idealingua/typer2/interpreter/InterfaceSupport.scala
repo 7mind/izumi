@@ -49,7 +49,7 @@ class InterfaceSupport(
           output <- mapOutput(ns, meta, name, signature.output)
         } yield {
           Product(
-            IzMethod(name, input.product, output.product, i2.meta(meta)),
+            IzMethod(name, input.product, output.product, i2.meta(meta), None),
             input.types ++ output.types,
           )
         }

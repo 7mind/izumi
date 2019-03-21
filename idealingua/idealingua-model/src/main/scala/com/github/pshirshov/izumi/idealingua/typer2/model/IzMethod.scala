@@ -20,4 +20,10 @@ object IzOutput {
 
 }
 
-case class IzMethod(name: String, input: IzInput, output: IzOutput, meta: NodeMeta)
+case class IzMethod(
+                     name: String,
+                     input: IzInput,
+                     output: IzOutput,
+                     meta: NodeMeta,
+                     restSpec: Option[RestSpec], // TODO: this is bit werid. Maybe we should try to move it somewhere else?
+                   )

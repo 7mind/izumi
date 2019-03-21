@@ -41,10 +41,9 @@ trait TsProvider {
   }
 }
 
-class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger with RefRecorder with ConstRecorder with TsProvider {
+class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]) extends WarnLogger.WarnLoggerImpl with RefRecorder with ConstRecorder with TsProvider {
   private val failed = mutable.HashSet.empty[TypenameRef]
   private val failures = mutable.ArrayBuffer.empty[BuilderFail]
-  private val warnings = mutable.ArrayBuffer.empty[T2Warn]
   private val existing = mutable.HashSet.empty[TypenameRef]
   private val types = mutable.HashMap[IzTypeId, ProcessedOp]()
   private val consts = mutable.HashMap[TypedConstId, RawConst]()
@@ -62,10 +61,6 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
           TLDConsts(RawConstBlock(scope, v.map(_._2)))
       }
       .toSeq
-  }
-
-  override def log(w: T2Warn): Unit = {
-    warnings += w
   }
 
   def defined: Set[TypenameRef] = {
@@ -144,7 +139,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       Ts2Builder.Output(Typespace2(
         index.defn.id,
         index.defn.imports,
-        warnings.toList,
+        allWarnings.toList,
         Set.empty,
         this.types.values.toList,
         List.empty,
@@ -153,7 +148,7 @@ class Ts2Builder(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]
       ), allConsts)
     }) match {
       case Left(f) =>
-        Left(TyperFailure(f, warnings.toList))
+        Left(TyperFailure(f, allWarnings.toList))
       case Right(s) =>
         Right(s)
     }

@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.conversions.TypespaceConvers
 import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.idealingua.typer2.restsupport.RestSupport
 import com.github.pshirshov.izumi.idealingua.typer2.results._
 
 import scala.collection.mutable
@@ -58,12 +59,19 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       result <- fill(index, importedIndexes, groupedByType, ordered)
       consts <- new ConstSupport().makeConsts(result.ts, index, result.consts, importedIndexes)
       conversions <- new TypespaceConversionCalculator(result.ts).findAllConversions().left.map(TyperFailure.apply)
+      withRest <- new RestSupport().translateRestAnnos(result).left.map(TyperFailure.apply)
     } yield {
       assert(result.ts.consts.isEmpty)
       assert(result.ts.conversions.isEmpty)
-      result.ts.copy(consts = consts, conversions = conversions.conversions, warnings = result.ts.warnings ++ conversions.warnings)
+      result.ts.copy(
+        types = withRest.map(_._1),
+        consts = consts,
+        conversions = conversions.conversions,
+        warnings = result.ts.warnings ++ conversions.warnings ++ withRest.flatMap(_._2)
+      )
     }
   }
+
 
 
   private def preverify(index: DomainIndex): Either[TyperFailure, Unit] = {
