@@ -65,7 +65,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
     } yield {
       assert(result.ts.consts.isEmpty)
       assert(result.ts.conversions.isEmpty)
-      result.ts.copy(
+      withConversions.copy(
         types = opsWithRest._1,
         warnings = withConversions.warnings ++ opsWithRest._2
       )

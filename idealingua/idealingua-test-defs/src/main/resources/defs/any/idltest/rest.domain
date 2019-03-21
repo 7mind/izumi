@@ -2,7 +2,7 @@ domain idltest.rest
 
 
 service TestService {
-  @get(path="/get/something")
+  @get(path = "/get/something")
   def getSomething()
 }
 
