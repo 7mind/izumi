@@ -69,6 +69,8 @@ object T2Fail {
   final case class CannotApplyAdtBranchContract(context: IzTypeId, branch: RawDeclaredTypeName, meta: NodeMeta) extends BuilderFailWithMeta
   final case class InterfaceTypeCannotBeUsedInAdt(context: IzTypeId, problematic: RawDeclaredTypeName, meta: NodeMeta) extends BuilderFailWithMeta
 
+  final case class StructureExpected(reference: IzTypeId, got: IzType) extends BuilderFail
+
   sealed trait ConstFail extends T2Fail
   final case class InferenceFailed(name: String, values: Set[IzTypeReference], meta: RawConstMeta) extends ConstFail
   final case class ConstantViolatesType(name: String, values: IzTypeReference, value: TypedVal, meta: RawConstMeta) extends ConstFail

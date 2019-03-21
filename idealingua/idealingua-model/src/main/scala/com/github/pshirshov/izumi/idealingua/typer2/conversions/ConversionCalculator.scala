@@ -17,7 +17,7 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
 
   Quirks.discard(ts2)
 
-  def conversion(from: IzStructure, to: IzStructure, direction: ConversionDirection, withHeuristic: Boolean): List[Conversion] = {
+  def makeConversions(from: IzStructure, to: IzStructure, direction: ConversionDirection, withHeuristic: Boolean): List[Conversion] = {
     val fromFields = from.fields.map(_.basic).to[ListSet]
     val toFields = to.fields.map(_.basic).to[ListSet]
     if (fromFields.isEmpty || toFields.isEmpty) { // parasitic cases

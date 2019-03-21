@@ -57,7 +57,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       ordered <- orderOps(groupedByType)
       result <- fill(index, importedIndexes, groupedByType, ordered)
       consts <- new ConstSupport().makeConsts(result.ts, index, result.consts, importedIndexes)
-      conversions = new TypespaceConversionCalculator(result.ts).findAllConversions()
+      conversions <- new TypespaceConversionCalculator(result.ts).findAllConversions().left.map(TyperFailure.apply)
     } yield {
       assert(result.ts.consts.isEmpty)
       assert(result.ts.conversions.isEmpty)

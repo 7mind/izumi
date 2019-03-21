@@ -1,20 +1,21 @@
 package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.StructureExpected
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, T2Fail, Typespace2}
 
 object TypespaceTools {
   implicit class Queries(ts2: Typespace2) {
     def inheritance: InheritanceQueries = new InheritanceQueries(ts2.index)
 
-    def asStructureUnsafe(member: IzTypeId): IzStructure = {
+    def asStructure(member: IzTypeId): Either[List[T2Fail], IzStructure] = {
       ts2.index(member).member match {
         case structure: IzStructure =>
-          structure
+          Right(structure)
         case IzType.IzAlias(_, source, _) =>
-          asStructureUnsafe(source.id)
+          asStructure(source.id)
         case o =>
-          throw new IllegalStateException(s"$member is not a structure")
+          Left(List(StructureExpected(member, o)))
       }
     }
   }
