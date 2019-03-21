@@ -5,6 +5,8 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, Typ
 
 object TypespaceTools {
   implicit class Queries(ts2: Typespace2) {
+    def inheritance: InheritanceQueries = new InheritanceQueries(ts2.index)
+
     def asStructureUnsafe(member: IzTypeId): IzStructure = {
       ts2.index(member).member match {
         case structure: IzStructure =>

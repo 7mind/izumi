@@ -47,11 +47,28 @@ object IzType {
     def fields: Seq[FullField]
     def parents: Seq[IzTypeId]
     def allParents: Set[IzTypeId]
+    def allStructuralParents: Set[IzTypeId]
     def meta: NodeMeta
     def defn: RawStructure // we need it as a template for cloning
   }
-  final case class DTO(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
-  final case class Interface(id: IzTypeId, fields: Seq[FullField], parents: Seq[IzTypeId], allParents: Set[IzTypeId], meta: NodeMeta, defn: RawStructure) extends IzStructure with WithTemplateSupport
+  final case class DTO(
+                        id: IzTypeId,
+                        fields: Seq[FullField],
+                        parents: Seq[IzTypeId],
+                        allParents: Set[IzTypeId],
+                        allStructuralParents: Set[IzTypeId],
+                        meta: NodeMeta,
+                        defn: RawStructure
+                      ) extends IzStructure with WithTemplateSupport
+  final case class Interface(
+                              id: IzTypeId,
+                              fields: Seq[FullField],
+                              parents: Seq[IzTypeId],
+                              allParents: Set[IzTypeId],
+                              allStructuralParents: Set[IzTypeId],
+                              meta: NodeMeta,
+                              defn: RawStructure
+                            ) extends IzStructure with WithTemplateSupport
 
   final case class Adt(members: Seq[AdtMember], meta: NodeMeta, contract: Interface, contractDefn: Option[RawStructure]) extends IzType with WithTemplateSupport {
     override def id: IzTypeId = contract.id

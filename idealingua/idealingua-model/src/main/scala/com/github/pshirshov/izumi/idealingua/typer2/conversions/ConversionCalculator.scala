@@ -17,7 +17,7 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
 
   Quirks.discard(ts2)
 
-  def conversion(from: IzStructure, to: IzStructure): List[Conversion] = {
+  def conversion(from: IzStructure, to: IzStructure, direction: ConversionDirection, withHeuristic: Boolean): List[Conversion] = {
     val fromFields = from.fields.map(_.basic).to[ListSet]
     val toFields = to.fields.map(_.basic).to[ListSet]
     if (fromFields.isEmpty || toFields.isEmpty) { // parasitic cases
@@ -29,11 +29,11 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
 
     val directMissingCopy = missing.map(m => ConstructionOp.Emerge(m.ref, m)).toSeq
 
-    val conversion1 = List(make(from.id, to.id, toCopy ++ directMissingCopy))
+    val conversion1 = List(make(from.id, to.id, toCopy ++ directMissingCopy, ConversionKind.Reliable, direction))
 
-    val conversion2 = if (missing.nonEmpty) {
+    val conversion2 = if (missing.nonEmpty && withHeuristic) {
       val solutions = findSolutions(to, missing)
-      solutions.map(s => make(from.id, to.id, toCopy ++ s))
+      solutions.map(s => make(from.id, to.id, toCopy ++ s, ConversionKind.Heuristic, direction))
     } else {
       List.empty
     }
@@ -112,18 +112,18 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
             }
           }
       }
-      .take(5)
+      .take(3)
   }
 
 
-  private def make(from: IzTypeId, to: IzTypeId, ops: Seq[ConstructionOp]): Conversion = {
+  private def make(from: IzTypeId, to: IzTypeId, ops: Seq[ConstructionOp], kind: ConversionKind, direction: ConversionDirection): Conversion = {
     val transfers = ops.collect({ case f: ConstructionOp.Transfer => f })
     val emerges = ops.collect({ case f: ConstructionOp.Emerge => f })
 
     if (emerges.isEmpty) {
-      Copy(from, to, transfers)
+      Copy(from, to, transfers, kind, direction)
     } else {
-      Expand(from, to, ops)
+      Expand(from, to, ops, kind, direction)
     }
   }
 
@@ -133,15 +133,15 @@ class ConversionCalculator(warnLogger: WarnLogger, ts2: Typespace2) {
     val (good, bad) = result.partition {
       c =>
         val targetFields = c match {
-          case Copy(_, _, ops) =>
-            ops.map(_.target)
-          case Expand(_, _, ops) =>
-            ops.map(_.target)
+          case c: Copy =>
+            c.ops.map(_.target)
+          case e: Expand =>
+            e.ops.map(_.target)
         }
         val sourceFields = c match {
-          case Copy(_, _, ops) =>
-            ops.map(_.source)
-          case Expand(_, _, _) =>
+          case c: Copy =>
+            c.ops.map(_.source)
+          case _: Expand =>
             Seq.empty
         }
         targetFields.size == to.fields.size && targetFields.toSet == toFields && sourceFields.toSet.diff(fromFields).isEmpty

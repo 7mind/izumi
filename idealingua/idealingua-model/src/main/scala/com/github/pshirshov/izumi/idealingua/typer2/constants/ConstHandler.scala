@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.constants
 
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawConstMeta, RawVal}
 import com.github.pshirshov.izumi.idealingua.typer2._
-import com.github.pshirshov.izumi.idealingua.typer2.indexing.{DomainIndex, InheritanceQueries}
+import com.github.pshirshov.izumi.idealingua.typer2.indexing.DomainIndex
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.FName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
@@ -11,9 +11,10 @@ import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 class ConstHandler(source: ConstSource, index: DomainIndex, ts: Typespace2, scope: String, name: String, meta: RawConstMeta) {
   import ConstSupport._
+  import com.github.pshirshov.izumi.idealingua.typer2.indexing.TypespaceTools._
   import results._
 
-  private val iq = InheritanceQueries(ts)
+  private val iq = ts.inheritance
   private val resolver = new ConstNameResolver(index)
 
   private def isParent(name: String, meta: RawConstMeta)(parent: IzTypeReference, child: IzTypeReference): Either[List[T2Fail], Boolean] = {

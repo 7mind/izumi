@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
+import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, Typespace2}
@@ -20,6 +22,29 @@ class InheritanceQueries(types: Map[IzTypeId, ProcessedOp]) {
         Right(o1 == o2)
     }
   }
+
+  def allChildren(): ImmutableMultiMap[IzTypeId, IzTypeId] = {
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    types.map(_._2.member).collect({case s: IzStructure => s}).flatMap {
+      s =>
+        s.allParents.map {
+          p =>
+            p -> s.id
+        }
+    }.toMultimap
+  }
+
+  def allStructuralChildren(): ImmutableMultiMap[IzTypeId, IzTypeId] = {
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    types.map(_._2.member).collect({case s: IzStructure => s}).flatMap {
+      s =>
+        s.allStructuralParents.map {
+          p =>
+            p -> s.id
+        }
+    }.toMultimap
+  }
+
 
   private def isParentScalar(parent: IzTypeReference.Scalar, child: IzTypeReference.Scalar): Either[Unit, Boolean] = {
     child match {
@@ -43,6 +68,3 @@ class InheritanceQueries(types: Map[IzTypeId, ProcessedOp]) {
   }
 }
 
-object InheritanceQueries {
-  def apply(ts: Typespace2): InheritanceQueries = new InheritanceQueries(ts.index)
-}

@@ -248,6 +248,8 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         Right(())
       }
       allParents <- findAllParents(id, tmeta, parentsIds, parents)
+      allAddedStructures <- findAllStructuralParents(id, tmeta, parentsIds, conceptsAdded)
+      allStructuralParents = allAddedStructures -- conceptsRemoved.map(_.id).toSet
     } yield {
 
       if (nothingToRemove.nonEmpty) {
@@ -255,22 +257,30 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       }
 
       if (implicitly[ClassTag[T]].runtimeClass == implicitly[ClassTag[IzType.Interface]].runtimeClass) {
-        IzType.Interface(id, allFields, parentsIds, allParents, tmeta, struct).asInstanceOf[T]
+        IzType.Interface(id, allFields, parentsIds, allParents, allStructuralParents, tmeta, struct).asInstanceOf[T]
       } else {
-        IzType.DTO(id, allFields, parentsIds, allParents, tmeta, struct).asInstanceOf[T]
+        IzType.DTO(id, allFields, parentsIds, allParents, allStructuralParents, tmeta, struct).asInstanceOf[T]
       }
     }
   }
 
+  private def findAllStructuralParents(context: IzTypeId, meta: NodeMeta, parentsIds: List[IzTypeId], parents: List[IzType]): Either[List[BuilderFail], Set[IzTypeId]] = {
+    extractParents(context, meta, parentsIds, parents, _.allStructuralParents)
+  }
+
   private def findAllParents(context: IzTypeId, meta: NodeMeta, parentsIds: List[IzTypeId], parents: List[IzType]): Either[List[BuilderFail], Set[IzTypeId]] = {
+    extractParents(context, meta, parentsIds, parents, _.allParents)
+  }
+
+  private def extractParents(context: IzTypeId, meta: NodeMeta, parentsIds: List[IzTypeId], parents: List[IzType], extract: IzStructure => Set[IzTypeId]): Either[List[BuilderFail], Set[IzTypeId]] = {
     parents
       .map {
         case structure: IzStructure =>
-          Right(structure.allParents)
+          Right(extract(structure))
         case a: IzAlias =>
           a.source match {
             case IzTypeReference.Scalar(id) =>
-              findAllParents(context, meta, List(a.id), List(provider.freeze()(id).member))
+              extractParents(context, meta, List(a.id), List(provider.freeze()(id).member), extract)
             case g: IzTypeReference.Generic =>
               Left(List(ParentCannotBeGeneric(context, g, meta)))
           }
@@ -282,6 +292,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
       .biFlatAggregate
       .map(ids => (ids ++ parentsIds).toSet)
   }
+
 
   private def merge(fields: Seq[FullField]): Seq[FullField] = {
     fields
