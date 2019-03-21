@@ -398,7 +398,7 @@ class TypedefSupportImpl(index: DomainIndex, resolvers: Resolvers, context: Inte
         val name = s"const_${constRecorder.nextIndex()}"
         val id = TypedConstId(index.defn.id, "_annotations_", name)
         constRecorder.registerConst(id, a.values, a.position)
-        id
+        TypedAnnoRef(a.name, id)
     }
     NodeMeta(meta.doc, annoIds, meta.position)
   }

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.idealingua.typer2.indexing
 
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.StructureExpected
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, T2Fail, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.model._
 
 object TypespaceTools {
   implicit class Queries(ts2: Typespace2) {
@@ -16,6 +16,15 @@ object TypespaceTools {
           asStructure(source.id)
         case o =>
           Left(List(StructureExpected(member, o)))
+      }
+    }
+
+    def resolveConst(id: TypedConstId): Either[List[T2Fail], TypedConst] = {
+      val c = ts2.cindex(id).const
+      c.value match {
+        case TypedVal.TCRef(rid, _) =>
+          resolveConst(rid)
+        case _ => Right(c)
       }
     }
   }

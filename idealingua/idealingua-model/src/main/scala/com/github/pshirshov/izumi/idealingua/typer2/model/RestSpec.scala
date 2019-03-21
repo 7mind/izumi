@@ -18,7 +18,7 @@ object RestSpec {
 
   object QueryParameterSpec {
     final case class List(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId) extends QueryParameterSpec
-    final case class Scalar(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId) extends QueryParameterSpec
+    final case class Scalar(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId, optional: Boolean) extends QueryParameterSpec
   }
 
   sealed trait PathSegment
@@ -37,9 +37,15 @@ object RestSpec {
   }
 
   object HttpMethod {
+    final val all = List(Get, Post, Put, Delete, Patch)
+      .map {
+        m =>
+          m.name.toLowerCase -> m
+      }
+      .toMap
 
     final case object Get extends HttpMethod {
-      override def name: String = "get"
+      override def name: String = "Get"
     }
 
     final case object Post extends HttpMethod {

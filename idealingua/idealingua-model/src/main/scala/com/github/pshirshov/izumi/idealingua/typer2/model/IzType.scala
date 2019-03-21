@@ -14,7 +14,8 @@ sealed trait IzType {
 
 object IzType {
   object model {
-    final case class NodeMeta(doc: Seq[String], annos: Seq[TypedConstId], pos: InputPosition)
+    final case class TypedAnnoRef(name: String, ref: TypedConstId)
+    final case class NodeMeta(doc: Seq[String], annos: Seq[TypedAnnoRef], pos: InputPosition)
 
     final case class FName(name: String)
     final case class BasicField(name: FName, ref: IzTypeReference)

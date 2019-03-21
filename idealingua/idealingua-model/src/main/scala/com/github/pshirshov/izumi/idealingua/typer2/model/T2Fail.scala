@@ -95,6 +95,13 @@ object T2Fail {
   final case class UndefinedForeignTypeParameters(id: IzTypeId, undefinedParameters: Set[IzTypeArgName], meta: NodeMeta) extends VerificationFail
   final case class MissingTypespaceMember(id: IzTypeId, context: IzTypeId, meta: NodeMeta) extends VerificationFail
   final case class NonUniqueMethodName(id: IzTypeId, issues: Map[String, List[IzMethod]], meta: NodeMeta) extends VerificationFail
+
+  sealed trait RestFail extends T2Fail
+
+  final case class DuplicatedRestAnnos(id: IzTypeId, method: String) extends RestFail
+  final case class UnexpectedAnnotationType(id: IzTypeId, method: String, badAnno: TypedConst) extends RestFail
+  final case class UnexpectedValueType(id: IzTypeId, method: String, problem: TypedVal, name: String) extends RestFail
+  final case class MissingValue(id: IzTypeId, method: String, name: String) extends RestFail
 }
 
 

@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.idealingua.typer2.model
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.{ProcessedConst, ProcessedOp}
 
 case class Typespace2(
@@ -17,9 +16,7 @@ case class Typespace2(
                        origin: FSPath,
                      ) {
   lazy val index: Map[IzTypeId, ProcessedOp] = types.map(t => t.member.id -> t).toMap
-
-
-
+  lazy val cindex: Map[TypedConstId, ProcessedConst] = consts.map(t => t.const.id -> t).toMap
 }
 
 object Typespace2 {
