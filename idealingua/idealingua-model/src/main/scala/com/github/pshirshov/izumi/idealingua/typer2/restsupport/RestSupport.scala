@@ -2,15 +2,13 @@ package com.github.pshirshov.izumi.idealingua.typer2.restsupport
 
 import com.github.pshirshov.izumi.functional.IzEither._
 import com.github.pshirshov.izumi.idealingua.typer2.WarnLogger
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{IzStructure, TargetInterface, model}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName}
-import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.PathSegment.{OnWireOption, OnWireScalar, Parameter}
-import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.{BodySpec, ExtractorSpec, HttpMethod, PathSegment}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{IzStructure, TargetInterface}
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.PathSegment.Parameter
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec._
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{DuplicatedRestAnnos, MissingValue, UnexpectedAnnotationType, UnexpectedValueType}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
-
-import scala.util.matching.Regex
 
 class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 

@@ -11,22 +11,23 @@ final case class RestAnnotation(path: String, method: HttpMethod)
 final case class RestSpec(method: HttpMethod, extractor: ExtractorSpec, body: BodySpec)
 
 object RestSpec {
+  sealed trait OnWireType
+  final case class OnWireScalar(id: IzTypeReference.Scalar) extends OnWireType // will always be ref to builtin scalar
+  final case class OnWireOption(ref: IzTypeReference.Generic) extends OnWireType // will always be ref to opt
+
   sealed trait QueryParameterSpec {
-    def path: Seq[BasicField]
-    def onWire: IzTypeId.BuiltinTypeId
+    def onWire: OnWireType
   }
 
   object QueryParameterSpec {
-    final case class List(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId) extends QueryParameterSpec
-    final case class Scalar(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId, optional: Boolean) extends QueryParameterSpec
+    final case class List(parameter: BasicField, path: BasicField, onWire: OnWireType) extends QueryParameterSpec
+    final case class Scalar(parameter: BasicField, path: Seq[BasicField], onWire: OnWireType, optional: Boolean) extends QueryParameterSpec
   }
 
   sealed trait PathSegment
 
   object PathSegment {
-    sealed trait OnWireType
-    final case class OnWireScalar(id: IzTypeReference.Scalar) extends OnWireType // will always be ref to builtin scalar
-    final case class OnWireOption(ref: IzTypeReference.Generic) extends OnWireType // will always be ref to opt
+
 
 
     final case class Word(value: String) extends PathSegment
