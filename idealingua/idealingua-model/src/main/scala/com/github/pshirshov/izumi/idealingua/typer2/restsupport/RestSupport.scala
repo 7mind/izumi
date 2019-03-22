@@ -50,6 +50,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
       case b: IzType.Buzzer =>
         for {
           methods <- b.methods.map(process(i.id)).biAggregate
+          // TODO: check conflicts
         } yield {
           b.copy(methods = methods)
         }
@@ -58,6 +59,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
       case b: IzType.Service =>
         for {
           methods <- b.methods.map(process(i.id)).biAggregate
+          // TODO: check conflicts
         } yield {
           b.copy(methods = methods)
         }
@@ -165,15 +167,17 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 
   private def translateQueryParam(service: IzTypeId, method: IzMethod)(paramspec: String): Either[List[T2Fail], QueryParameterSpec] = {
     val spec = paramspec.substring(1, paramspec.length - 1)
-    val (s, multi) = if (spec.startsWith("*")) {
-      (spec.substring(1), true)
+    val (s, listExpected, customExpected) = if (spec.startsWith("*")) {
+      (spec.substring(1), true, false)
+    } else if (spec.startsWith("!")) {
+      (spec.substring(1), false, true)
     } else {
-      (spec, false)
+      (spec, false, false)
     }
 
     for {
-      p <- doTranslate(service, method)(s.split('.').toList, listEnabled = true)
-      out <- if (multi) {
+      p <- doTranslate(service, method)(s.split('.').toList, listEnabled = listExpected, customEnabled = customExpected)
+      out <- if (listExpected) {
         if (p.path.size > 1) {
           Left(List())
         } else {
@@ -200,7 +204,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
       p =>
         if (p.startsWith("{") && p.endsWith("}") && p.length > 2) {
           val ps = p.substring(1, p.length - 1).split('.').toList
-          doTranslate(service, method)(ps, listEnabled = false)
+          doTranslate(service, method)(ps, listEnabled = false, customEnabled = false)
         } else {
           Right(PathSegment.Word(p))
         }
@@ -225,16 +229,16 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
     }
   }
 
-  private def doTranslate(service: IzTypeId, method: IzMethod)(ppath: List[String], listEnabled: Boolean): Either[List[T2Fail], Parameter] = {
+  private def doTranslate(service: IzTypeId, method: IzMethod)(ppath: List[String], listEnabled: Boolean, customEnabled: Boolean): Either[List[T2Fail], Parameter] = {
     for {
       struct <- toStruct(service, method)
-      s <- translate(struct, List.empty, ppath, listEnabled)
+      s <- translate(struct, List.empty, ppath, listEnabled, customEnabled)
     } yield {
       s
     }
   }
 
-  def translate(struct: IzStructure, cp: List[BasicField], ppath: List[String], listEnabled: Boolean): Either[List[T2Fail], Parameter] = {
+  def translate(struct: IzStructure, cp: List[BasicField], ppath: List[String], listEnabled: Boolean, customEnabled: Boolean): Either[List[T2Fail], Parameter] = {
     val fieldName = FName(ppath.head)
     val toProcess = ppath.tail
 
@@ -255,7 +259,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
                 Left(List())
             }
 
-          case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TList.id && args.size == 1 && listEnabled =>
+          case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TList.id && args.size == 1 && (listEnabled || customEnabled) =>
             args.head.ref match {
               case IzTypeReference.Scalar(aid: IzTypeId.BuiltinTypeId) if Builtins.mappingScalars.contains(aid) =>
                 Right(Parameter(cp.head, cp, OnWireOption(ref)))
@@ -263,6 +267,16 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
               case _ =>
                 Left(List())
             }
+
+          case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TMap.id && args.size == 2 && customEnabled =>
+            (args.head.ref, args.last.ref) match {
+              case (IzTypeReference.Scalar(kid: IzTypeId.BuiltinTypeId), IzTypeReference.Scalar(vid: IzTypeId.BuiltinTypeId)) if Builtins.mappingScalars.contains(kid) && Builtins.mappingScalars.contains(vid) =>
+                Right(Parameter(cp.head, cp, OnWireOption(ref)))
+
+              case _ =>
+                Left(List())
+            }
+
 
           case _ =>
             Left(List())
@@ -272,7 +286,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
           case IzTypeReference.Scalar(id) =>
             for {
               nextStruct <- ts2.asStructure(id)
-              next <- translate(nextStruct, nextcp, toProcess, listEnabled)
+              next <- translate(nextStruct, nextcp, toProcess, listEnabled, customEnabled)
             } yield {
               next
             }
