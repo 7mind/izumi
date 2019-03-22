@@ -24,8 +24,13 @@ object RestSpec {
   sealed trait PathSegment
 
   object PathSegment {
+    sealed trait OnWireType
+    final case class OnWireScalar(id: IzTypeReference.Scalar) extends OnWireType // will always be ref to builtin scalar
+    final case class OnWireOption(ref: IzTypeReference.Generic) extends OnWireType // will always be ref to opt
+
+
     final case class Word(value: String) extends PathSegment
-    final case class Parameter(path: Seq[BasicField], onWire: IzTypeId.BuiltinTypeId) extends PathSegment
+    final case class Parameter(parameter: BasicField, path: Seq[BasicField], onWire: OnWireType) extends PathSegment
   }
 
   final case class QueryParameterName(value: String) extends AnyVal

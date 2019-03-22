@@ -28,9 +28,10 @@ object IzType {
 
     sealed trait AdtMember {
       def name: String
+      def ref: IzTypeReference
     }
     final case class AdtMemberRef(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
-    final case class AdtMemberNested(name: String, tpe: IzTypeReference, meta: NodeMeta) extends AdtMember
+    final case class AdtMemberNested(name: String, ref: IzTypeReference, meta: NodeMeta) extends AdtMember
   }
   import model._
 

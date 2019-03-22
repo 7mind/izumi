@@ -2,11 +2,15 @@ package com.github.pshirshov.izumi.idealingua.typer2.restsupport
 
 import com.github.pshirshov.izumi.functional.IzEither._
 import com.github.pshirshov.izumi.idealingua.typer2.WarnLogger
-import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.TargetInterface
-import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.HttpMethod
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{IzStructure, TargetInterface, model}
+import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicField, FName}
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.PathSegment.{OnWireOption, OnWireScalar, Parameter}
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.{BodySpec, ExtractorSpec, HttpMethod, PathSegment}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{DuplicatedRestAnnos, MissingValue, UnexpectedAnnotationType, UnexpectedValueType}
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+
+import scala.util.matching.Regex
 
 class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 
@@ -85,7 +89,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
     v.value match {
       case TypedVal.TCObject(value, _) =>
         value.get("path") match {
-          case Some(p: TypedVal.TCString) =>
+          case Some(p: TypedVal.TCString) if p.value.nonEmpty =>
             Right(RestAnnotation(p.value, httpMethod))
           case Some(p) =>
             Left(List(UnexpectedValueType(service, method.name, p, "path")))
@@ -100,5 +104,95 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 
   private def toSpec(service: IzTypeId, method: IzMethod, v: RestAnnotation): Either[List[T2Fail], RestSpec] = {
     ???
+  }
+
+  import com.github.pshirshov.izumi.functional.IzEither._
+
+  private def parse(service: IzTypeId, method: IzMethod)(v: RestAnnotation): Either[List[T2Fail], RestSpec] = {
+    val parts = v.path.split('?')
+    val path = parts.head
+
+    for {
+      pathSegments <- translatePath(service, method)(path)
+    } yield {
+      val extractorSpec = ExtractorSpec(???, pathSegments)
+      val bodySpec = BodySpec(???)
+      RestSpec(v.method, extractorSpec, bodySpec)
+    }
+  }
+
+  private def translatePath(service: IzTypeId, method: IzMethod)(path: String): Either[List[T2Fail], List[PathSegment]] = {
+    val pathParts = path.split('/').toList
+    val pathSegments = pathParts.map {
+      p =>
+        if (p.startsWith("{") && p.endsWith("}") && p.length > 2) {
+          val ps = p.substring(1, p.length - 1).split('.').toList
+          val paramName = FName(ps.head)
+          val ppath = ps.tail
+
+          for {
+            fld <- method.input match {
+              case IzInput.Singular(typeref: IzTypeReference.Scalar) =>
+                for {
+                  struct <- ts2.asStructure(typeref.id)
+                  s <- translate(struct, List.empty, ppath)
+                } yield {
+                  s
+                }
+              case o =>
+                Left(List())
+            }
+
+          } yield {
+            fld
+          }
+
+        } else {
+          Right(PathSegment.Word(p))
+        }
+    }.biAggregate
+    pathSegments
+  }
+
+  def translate(struct: IzStructure, cp: List[BasicField], ppath: List[String]): Either[List[T2Fail], Parameter] = {
+    val fieldName = FName(ppath.head)
+    val toProcess = ppath.tail
+
+    for {
+      f <- struct.fields.find(_.name == fieldName).toRight(List())
+      nextcp = cp :+ f.basic
+      next <- if (toProcess.isEmpty) {
+        nextcp.last.ref match {
+          case ref@IzTypeReference.Scalar(id: IzTypeId.BuiltinTypeId) if Builtins.mappingScalars.contains(id) =>
+            Right(Parameter(cp.head, cp, OnWireScalar(ref)))
+
+          case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TOption.id && args.size == 1 =>
+            args.head.ref match {
+              case IzTypeReference.Scalar(aid: IzTypeId.BuiltinTypeId) if Builtins.mappingScalars.contains(aid)=>
+                Right(Parameter(cp.head, cp, OnWireOption(ref)))
+
+              case _ =>
+                Left(List())
+            }
+
+          case _ =>
+            Left(List())
+        }
+      } else {
+        f.tpe match {
+          case IzTypeReference.Scalar(id) =>
+            for {
+              nextStruct <- ts2.asStructure(id)
+              next <- translate(nextStruct, nextcp, toProcess)
+            } yield {
+              next
+            }
+          case _ =>
+            Left(List())
+        }
+      }
+    } yield {
+      next
+    }
   }
 }

@@ -50,7 +50,7 @@ class TopLevelTypeIndexer(resolvers: Resolvers) {
             case ref: AdtMemberRef =>
               a.id -> ref.ref
             case n: AdtMemberNested =>
-              a.id -> n.tpe
+              a.id -> n.ref
           }
           .toSet
       case a: IzType.IzAlias =>
