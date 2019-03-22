@@ -16,6 +16,7 @@ object RestSpec {
   final case class OnWireOption(ref: IzTypeReference.Generic) extends OnWireType // will always be ref to opt
 
   sealed trait QueryParameterSpec {
+    def parameter: BasicField
     def onWire: OnWireType
   }
 

@@ -101,55 +101,137 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
   }
 
   private def toSpec(service: IzTypeId, method: IzMethod, v: RestAnnotation): Either[List[T2Fail], RestSpec] = {
-    ???
-  }
-
-  import com.github.pshirshov.izumi.functional.IzEither._
-
-  private def parse(service: IzTypeId, method: IzMethod)(v: RestAnnotation): Either[List[T2Fail], RestSpec] = {
     val parts = v.path.split('?')
     val path = parts.head
 
     for {
       pathSegments <- translatePath(service, method)(path)
+      qstr = parts.tail.mkString("?")
+      query <- if (qstr.nonEmpty) {
+        translateQuery(service, method)(qstr)
+      } else {
+        Right(Map.empty[QueryParameterName, QueryParameterSpec])
+      }
+      struct <- toStruct(service, method)
+      existing = pathSegments.collect({ case p: Parameter => p.parameter }) ++ query.values.map(_.parameter).toSet
+      missing = struct.fields.filterNot(f => existing.contains(f.basic))
+      // TODO: validate
     } yield {
-      val extractorSpec = ExtractorSpec(???, pathSegments)
-      val bodySpec = BodySpec(???)
+      val extractorSpec = ExtractorSpec(query, pathSegments)
+      val bodySpec = BodySpec(missing.map(_.basic))
       RestSpec(v.method, extractorSpec, bodySpec)
+    }
+  }
+
+  import com.github.pshirshov.izumi.functional.IzEither._
+
+  import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+
+  private def translateQuery(service: IzTypeId, method: IzMethod)(query: String): Either[List[T2Fail], Map[QueryParameterName, QueryParameterSpec]] = {
+    for {
+      parts <- query.split('&').toList.map {
+        p =>
+          val pparts = p.split('=')
+          val name = pparts.head
+          val value = pparts.tail.mkString("=")
+          if (value.startsWith("{") && value.endsWith("}") && value.length > 2) {
+            Right(QueryParameterName(name) -> value)
+          } else {
+            Left(List.empty[T2Fail])
+          }
+      }.biAggregate
+      grouped = parts.toMultimap
+      bad = grouped.filter(_._2.size > 1)
+      _ <- if (bad.nonEmpty) {
+        Left(List())
+      } else {
+        Right(())
+      }
+      justVals = grouped.mapValues(_.head)
+      mapped <- justVals.toList
+        .map {
+          case (k, v) =>
+            for {
+              param <- translateQueryParam(service, method)(v)
+            } yield {
+              k -> param
+            }
+        }
+        .biAggregate
+    } yield {
+      mapped.toMap
+    }
+  }
+
+  private def translateQueryParam(service: IzTypeId, method: IzMethod)(paramspec: String): Either[List[T2Fail], QueryParameterSpec] = {
+    val spec = paramspec.substring(1, paramspec.length - 1)
+    val (s, multi) = if (spec.startsWith("*")) {
+      (spec.substring(1), true)
+    } else {
+      (spec, false)
+    }
+
+    for {
+      p <- doTranslate(service, method)(s.split('.').toList)
+      out <- if (multi) {
+        if (p.path.size > 1) {
+          Left(List())
+        } else {
+          Right(QueryParameterSpec.List(p.parameter, p.path.head, p.onWire))
+        }
+      } else {
+        val isOpt = p.path.last.ref.id match {
+          case b: IzTypeId.BuiltinTypeId if b == IzType.BuiltinGeneric.TOption.id =>
+            true
+          case _ =>
+            false
+        }
+        Right(QueryParameterSpec.Scalar(p.parameter, p.path, p.onWire, isOpt))
+      }
+
+    } yield {
+      out
     }
   }
 
   private def translatePath(service: IzTypeId, method: IzMethod)(path: String): Either[List[T2Fail], List[PathSegment]] = {
     val pathParts = path.split('/').toList
-    val pathSegments = pathParts.map {
+    pathParts.map {
       p =>
         if (p.startsWith("{") && p.endsWith("}") && p.length > 2) {
           val ps = p.substring(1, p.length - 1).split('.').toList
-          val paramName = FName(ps.head)
-          val ppath = ps.tail
-
-          for {
-            fld <- method.input match {
-              case IzInput.Singular(typeref: IzTypeReference.Scalar) =>
-                for {
-                  struct <- ts2.asStructure(typeref.id)
-                  s <- translate(struct, List.empty, ppath)
-                } yield {
-                  s
-                }
-              case o =>
-                Left(List())
-            }
-
-          } yield {
-            fld
-          }
-
+          doTranslate(service, method)(ps)
         } else {
           Right(PathSegment.Word(p))
         }
     }.biAggregate
-    pathSegments
+  }
+
+  private def toStruct(service: IzTypeId, method: IzMethod): Either[List[T2Fail], IzStructure] = {
+    for {
+      out <- method.input match {
+        case IzInput.Singular(typeref: IzTypeReference.Scalar) =>
+          for {
+            struct <- ts2.asStructure(typeref.id)
+          } yield {
+            struct
+          }
+        case _ =>
+          Left(List())
+      }
+
+    } yield {
+      out
+    }
+  }
+
+  private def doTranslate(service: IzTypeId, method: IzMethod)(ppath: List[String]): Either[List[T2Fail], Parameter] = {
+    for {
+      struct <- toStruct(service, method)
+      s <- translate(struct, List.empty, ppath)
+    } yield {
+      s
+    }
   }
 
   def translate(struct: IzStructure, cp: List[BasicField], ppath: List[String]): Either[List[T2Fail], Parameter] = {
@@ -166,7 +248,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 
           case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TOption.id && args.size == 1 =>
             args.head.ref match {
-              case IzTypeReference.Scalar(aid: IzTypeId.BuiltinTypeId) if Builtins.mappingScalars.contains(aid)=>
+              case IzTypeReference.Scalar(aid: IzTypeId.BuiltinTypeId) if Builtins.mappingScalars.contains(aid) =>
                 Right(Parameter(cp.head, cp, OnWireOption(ref)))
 
               case _ =>
