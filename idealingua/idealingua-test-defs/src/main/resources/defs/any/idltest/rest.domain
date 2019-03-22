@@ -19,8 +19,8 @@ service TestService {
   @get(path = "/get/2/{d.f1}/{d.f2}?f3={d.f3}&f4={d.f4}")
   def get2(d: D1)
 
-//  @get(path = "/get/3?f1={*d.f1}")
-//  def get3(d: D2)
+  @get(path = "/get/3?f1={*d.f1}")
+  def get3(d: D2)
 
   @post(path = "/post/1/{d.f1}/{d.f2}?f3={d.f3}&f4={d.f4}")
   def post1(d: D1, d2: D2)
