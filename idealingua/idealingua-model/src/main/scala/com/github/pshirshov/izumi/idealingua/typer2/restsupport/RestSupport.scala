@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{BasicFie
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.{IzStructure, TargetInterface}
 import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.PathSegment.Parameter
 import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec._
-import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.{DuplicatedRestAnnos, MissingValue, UnexpectedAnnotationType, UnexpectedValueType}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
 import com.github.pshirshov.izumi.idealingua.typer2.model._
 
@@ -145,7 +145,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
       grouped = parts.toMultimap
       bad = grouped.filter(_._2.size > 1)
       _ <- if (bad.nonEmpty) {
-        Left(List())
+        Left(List(DuplicatedQueryParameters(service, method, bad)))
       } else {
         Right(())
       }
@@ -167,19 +167,20 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
 
   private def translateQueryParam(service: IzTypeId, method: IzMethod)(paramspec: String): Either[List[T2Fail], QueryParameterSpec] = {
     val spec = paramspec.substring(1, paramspec.length - 1)
-    val (s, listExpected, customExpected) = if (spec.startsWith("*")) {
-      (spec.substring(1), true, false)
-    } else if (spec.startsWith("!")) {
-      (spec.substring(1), false, true)
-    } else {
-      (spec, false, false)
+    val (s, listExpected, customExpected) = spec.charAt(0) match {
+      case '*' =>
+        (spec.substring(1), true, false)
+      case '!' =>
+        (spec.substring(1), false, true)
+      case _ =>
+        (spec, false, false)
     }
 
     for {
       p <- doTranslate(service, method)(s.split('.').toList, listEnabled = listExpected, customEnabled = customExpected)
       out <- if (listExpected) {
         if (p.path.size > 1) {
-          Left(List())
+          Left(List(UnexpectedNonScalarListElementMapping(service, method, p)))
         } else {
           Right(QueryParameterSpec.List(p.parameter, p.path.head, p.onWire))
         }
@@ -220,8 +221,6 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
           } yield {
             struct
           }
-        case _ =>
-          Left(List())
       }
 
     } yield {
@@ -232,18 +231,18 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
   private def doTranslate(service: IzTypeId, method: IzMethod)(ppath: List[String], listEnabled: Boolean, customEnabled: Boolean): Either[List[T2Fail], Parameter] = {
     for {
       struct <- toStruct(service, method)
-      s <- translate(struct, List.empty, ppath, listEnabled, customEnabled)
+      s <- translate(service, method)(struct, List.empty, ppath, listEnabled, customEnabled)
     } yield {
       s
     }
   }
 
-  def translate(struct: IzStructure, cp: List[BasicField], ppath: List[String], listEnabled: Boolean, customEnabled: Boolean): Either[List[T2Fail], Parameter] = {
+  def translate(service: IzTypeId, method: IzMethod)(struct: IzStructure, cp: List[BasicField], ppath: List[String], listEnabled: Boolean, customEnabled: Boolean): Either[List[T2Fail], Parameter] = {
     val fieldName = FName(ppath.head)
     val toProcess = ppath.tail
 
     for {
-      f <- struct.fields.find(_.name == fieldName).toRight(List())
+      f <- struct.fields.find(_.name == fieldName).toRight(List(MissingMappingField(service, method, fieldName)))
       nextcp = cp :+ f.basic
       next <- if (toProcess.isEmpty) {
         nextcp.last.ref match {
@@ -256,7 +255,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
                 Right(Parameter(cp.head, cp, OnWireOption(ref)))
 
               case _ =>
-                Left(List())
+                Left(List(UnexpectedGenericMappingArguments(service, method, f.basic)))
             }
 
           case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TList.id && args.size == 1 && (listEnabled || customEnabled) =>
@@ -265,7 +264,7 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
                 Right(Parameter(cp.head, cp, OnWireOption(ref)))
 
               case _ =>
-                Left(List())
+                Left(List(UnexpectedGenericMappingArguments(service, method, f.basic)))
             }
 
           case ref@IzTypeReference.Generic(id, args, _) if id == IzType.BuiltinGeneric.TMap.id && args.size == 2 && customEnabled =>
@@ -274,24 +273,24 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
                 Right(Parameter(cp.head, cp, OnWireOption(ref)))
 
               case _ =>
-                Left(List())
+                Left(List(UnexpectedGenericMappingArguments(service, method, f.basic)))
             }
 
 
           case _ =>
-            Left(List())
+            Left(List(UnexpectedMappingTarget(service, method, f.basic)))
         }
       } else {
         f.tpe match {
           case IzTypeReference.Scalar(id) =>
             for {
               nextStruct <- ts2.asStructure(id)
-              next <- translate(nextStruct, nextcp, toProcess, listEnabled, customEnabled)
+              next <- translate(service, method)(nextStruct, nextcp, toProcess, listEnabled, customEnabled)
             } yield {
               next
             }
           case _ =>
-            Left(List())
+            Left(List(UnexpectedNonScalarMappingSegment(service, method, f.basic)))
         }
       }
     } yield {
@@ -299,3 +298,11 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
     }
   }
 }
+
+
+
+
+
+
+
+

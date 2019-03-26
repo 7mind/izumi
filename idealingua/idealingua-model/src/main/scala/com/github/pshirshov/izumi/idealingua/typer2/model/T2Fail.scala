@@ -9,6 +9,8 @@ import com.github.pshirshov.izumi.idealingua.typer2.indexing.GoodImport
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model._
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.IzName
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.{IzTypeArgName, RefToTLTLink}
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.PathSegment.Parameter
+import com.github.pshirshov.izumi.idealingua.typer2.model.RestSpec.QueryParameterName
 
 sealed trait T2Fail
 
@@ -102,6 +104,14 @@ object T2Fail {
   final case class UnexpectedAnnotationType(id: IzTypeId, method: String, badAnno: TypedConst) extends RestFail
   final case class UnexpectedValueType(id: IzTypeId, method: String, problem: TypedVal, name: String) extends RestFail
   final case class MissingValue(id: IzTypeId, method: String, name: String) extends RestFail
+  final case class DuplicatedQueryParameters(service: IzTypeId, method: IzMethod, bad: Map[QueryParameterName, Set[String]]) extends RestFail
+  final case class UnexpectedNonScalarMappingSegment(service: IzTypeId, method: IzMethod, basic: BasicField) extends RestFail
+  final case class UnexpectedMappingTarget(service: IzTypeId, method: IzMethod, basic: BasicField) extends RestFail
+  final case class UnexpectedGenericMappingArguments(service: IzTypeId, method: IzMethod, basic: BasicField) extends RestFail
+  final case class MissingMappingField(service: IzTypeId, method: IzMethod, fieldName: FName) extends RestFail
+  final case class UnexpectedNonScalarListElementMapping(service: IzTypeId, method: IzMethod, p: Parameter) extends RestFail
+
+
 }
 
 
