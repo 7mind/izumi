@@ -1,5 +1,5 @@
 .idea
-.jps
+*.jps
 /local.sbt
 .secrets
 

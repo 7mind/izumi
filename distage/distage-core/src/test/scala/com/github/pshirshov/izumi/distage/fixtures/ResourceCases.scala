@@ -29,12 +29,12 @@ object ResourceCases {
     val queueEffect = Suspend2(mutable.Queue.empty[Ops])
 
     class XResource(queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], X] {
-      override def allocate: Suspend2[Nothing, X] = Suspend2 {
+      override def acquire: Suspend2[Nothing, X] = Suspend2 {
         queue += XStart
         new X
       }
 
-      override def deallocate(resource: X): Suspend2[Nothing, Unit] = Suspend2 {
+      override def release(resource: X): Suspend2[Nothing, Unit] = Suspend2 {
         resource.discard()
 
         queue += XStop
@@ -44,12 +44,12 @@ object ResourceCases {
     class YResource(x: X, queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], Y] {
       x.discard()
 
-      override def allocate: Suspend2[Nothing, Y] = Suspend2 {
+      override def acquire: Suspend2[Nothing, Y] = Suspend2 {
         queue += YStart
         new Y
       }
 
-      override def deallocate(resource: Y): Suspend2[Nothing, Unit] = Suspend2 {
+      override def release(resource: Y): Suspend2[Nothing, Unit] = Suspend2 {
         resource.discard()
 
         queue += YStop
@@ -59,8 +59,8 @@ object ResourceCases {
     class ZFaultyResource(y: Y) extends DIResource[Suspend2[Throwable, ?], Z] {
       y.discard()
 
-      override def allocate: Suspend2[Throwable, Z] = throw new RuntimeException()
-      override def deallocate(resource: Z): Suspend2[Throwable, Unit] = throw new RuntimeException()
+      override def acquire: Suspend2[Throwable, Z] = throw new RuntimeException()
+      override def release(resource: Z): Suspend2[Throwable, Unit] = throw new RuntimeException()
     }
   }
 
@@ -99,26 +99,26 @@ object ResourceCases {
     }
 
     class SimpleResource extends DIResource.Simple[Res] {
-      override def allocate: Res = {
+      override def acquire: Res = {
         val x = new Res; x.initialized = true; x
       }
 
-      override def deallocate(resource: Res): Unit = {
+      override def release(resource: Res): Unit = {
         resource.initialized = false
       }
     }
 
     class SuspendResource extends DIResource[Suspend2[Nothing, ?], Res] {
-      override def allocate: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
+      override def acquire: Suspend2[Nothing, Res] = Suspend2(new Res).flatMap(r => Suspend2(r.initialized = true).map(_ => r))
 
-      override def deallocate(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
+      override def release(resource: Res): Suspend2[Nothing, Unit] = Suspend2(resource.initialized = false)
     }
 
   }
 
   class MutResource extends DIResource.Mutable[MutResource] {
     var init: Boolean = false
-    override def allocate: Unit = { init = true }
+    override def acquire: Unit = { init = true }
     override def close(): Unit = ()
   }
 

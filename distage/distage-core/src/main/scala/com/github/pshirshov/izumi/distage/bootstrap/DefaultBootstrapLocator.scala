@@ -29,7 +29,7 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
 
   protected val bootstrappedContext: Locator = {
     val resource = bootstrapProducer.instantiate[Identity](plan, this)
-    resource.extract(resource.allocate).throwOnFailure()
+    resource.extract(resource.acquire).throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances

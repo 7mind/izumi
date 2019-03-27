@@ -17,7 +17,7 @@ trait Producer {
 
   final def produceUnsafeF[F[_]: TagK: DIEffect](plan: OrderedPlan): F[Locator] = {
     val resource = produceF[F](plan)
-    resource.allocate.map(resource.extract)
+    resource.acquire.map(resource.extract)
   }
   final def produceUnsafe(plan: OrderedPlan): Locator = produceUnsafeF[Identity](plan)
 }

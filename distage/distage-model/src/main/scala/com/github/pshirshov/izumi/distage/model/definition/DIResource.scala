@@ -21,8 +21,8 @@ import scala.reflect.macros.blackbox
   * }}}
   */
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
-  def allocate: F[Resource]
-  def deallocate(resource: Resource): F[Unit]
+  def acquire: F[Resource]
+  def release(resource: Resource): F[Unit]
 
   override final def extract(resource: Resource): Resource = resource
   override final type InnerResource = Resource
@@ -32,16 +32,20 @@ object DIResource {
   import cats.effect.Resource
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
+    def a = acquire
+    def r = release
     new DIResource[F, A] {
-      override def allocate: F[A] = acquire
-      override def deallocate(resource: A): F[Unit] = release(resource)
+      override def acquire: F[A] = a
+      override def release(resource: A): F[Unit] = r(resource)
     }
   }
 
   def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
+    def a = acquire
+    def r = release
     new DIResource.Simple[A] {
-      override def allocate: A = acquire
-      override def deallocate(a: A): Unit = release(a)
+      override def acquire: A = a
+      override def release(a: A): Unit = r(a)
     }
   }
 
@@ -54,13 +58,13 @@ object DIResource {
   trait Mutable[+A] extends DIResourceBase[Identity, A] with AutoCloseable {
     this: A =>
     override final type InnerResource = Unit
-    override final def deallocate(resource: Unit): Unit = close()
+    override final def release(resource: Unit): Unit = close()
     override final def extract(resource: Unit): A = this
   }
 
   trait Cats[F[_], A] extends DIResourceBase[F, A] {
     override final type InnerResource = (A, F[Unit])
-    override final def deallocate(resource: (A, F[Unit])): F[Unit] = resource._2
+    override final def release(resource: (A, F[Unit])): F[Unit] = resource._2
     override final def extract(resource: (A, F[Unit])): A = resource._1
   }
 
@@ -80,7 +84,7 @@ object DIResource {
       *     [FIXED in 2.13 and in 2.12 with `-Xsource:2.13` flag]
       */
     def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
-      F.bracket(acquire = resource.allocate)(release = resource.deallocate)(
+      F.bracket(acquire = resource.acquire)(release = resource.release)(
         use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
       )
     }
@@ -88,14 +92,14 @@ object DIResource {
 
   implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
-      Resource.make[G, resource.InnerResource](resource.allocate)(resource.deallocate).map(resource.extract)
+      Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
     }
   }
 
   trait DIResourceBase[+F[_], +OuterResource] { self =>
     type InnerResource
-    def allocate: F[InnerResource]
-    def deallocate(resource: InnerResource): F[Unit]
+    def acquire: F[InnerResource]
+    def release(resource: InnerResource): F[Unit]
     def extract(resource: InnerResource): OuterResource
 
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
@@ -105,7 +109,7 @@ object DIResource {
 
   def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
     new Cats[F, A] {
-      override def allocate: F[(A, F[Unit])] = resource.allocated
+      override def acquire: F[(A, F[Unit])] = resource.allocated
     }
   }
 
@@ -176,8 +180,8 @@ object DIResource {
   private[this] final def mapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => B): DIResourceBase[F, B] = {
     new DIResourceBase[F, B] {
       type InnerResource = self.InnerResource
-      def allocate: F[InnerResource] = self.allocate
-      def deallocate(resource: InnerResource): F[Unit] = self.deallocate(resource)
+      def acquire: F[InnerResource] = self.acquire
+      def release(resource: InnerResource): F[Unit] = self.release(resource)
       def extract(resource: InnerResource): B = f(self.extract(resource))
     }
   }
@@ -194,24 +198,24 @@ object DIResource {
 
     new DIResourceBase[F, B] {
       override type InnerResource = InnerResource0
-      override def allocate: F[InnerResource] = {
-        bracketOnError(self.allocate)(self.deallocate) {
+      override def acquire: F[InnerResource] = {
+        bracketOnError(self.acquire)(self.release) {
           inner1 =>
             val res2 = f(self.extract(inner1))
-            bracketOnError(res2.allocate)(res2.deallocate) {
+            bracketOnError(res2.acquire)(res2.release) {
               inner2 =>
                 F.pure(new InnerResource0 {
                   def extract: B = res2.extract(inner2)
                   def deallocate: F[Unit] = {
                     F.unit
-                      .guarantee(self.deallocate(inner1))
-                      .guarantee(res2.deallocate(inner2))
+                      .guarantee(self.release(inner1))
+                      .guarantee(res2.release(inner2))
                   }
                 })
             }
         }
       }
-      override def deallocate(resource: InnerResource): F[Unit] = resource.deallocate
+      override def release(resource: InnerResource): F[Unit] = resource.deallocate
       override def extract(resource: InnerResource): B = resource.extract
 
       sealed trait InnerResource0 {

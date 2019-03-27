@@ -38,15 +38,15 @@ class ResourceStrategyDefaultImpl
       .flatMap(_.toList match {
         case NewObjectOp.NewInstance(_, resource0) :: Nil if isEffect =>
           val resource = resource0.asInstanceOf[DIResourceBase[F, Any]]
-          resource.allocate.map {
+          resource.acquire.map {
             innerResource =>
-              Seq(NewObjectOp.NewResource[F](target, resource.extract(innerResource), () => resource.deallocate(innerResource)))
+              Seq(NewObjectOp.NewResource[F](target, resource.extract(innerResource), () => resource.release(innerResource)))
           }
         case NewObjectOp.NewInstance(_, resourceSimple) :: Nil =>
           val resource = resourceSimple.asInstanceOf[DIResourceBase[Identity, Any]]
-          F.maybeSuspend(resource.allocate).map {
+          F.maybeSuspend(resource.acquire).map {
             innerResource =>
-              Seq(NewObjectOp.NewResource[F](target, resource.extract(innerResource), () => F.maybeSuspend(resource.deallocate(innerResource))))
+              Seq(NewObjectOp.NewResource[F](target, resource.extract(innerResource), () => F.maybeSuspend(resource.release(innerResource))))
           }
         case r =>
           throw new UnexpectedProvisionResultException(s"Unexpected operation result for ${actionOp.target}: $r, expected a single NewInstance!", r)
