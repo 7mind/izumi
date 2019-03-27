@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawDeclaredTypeName
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -9,22 +9,30 @@ trait Aggregates
     with Identifiers {
 
 
-
   def enclosed[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
-    P(("{" ~ any ~ defparser ~ any ~ "}") | "(" ~ any ~ defparser ~ any ~ ")")
+    P(inCurlyBraces(defparser) | inBraces(defparser))
   }
 
-  def enclosedB[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+  def inCurlyBraces[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+    P("{" ~ any ~ defparser ~ any ~ "}")
+  }
+
+  def inBraces[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
+    P("(" ~ any ~ defparser ~ any ~ ")")
+  }
+
+
+  def inBrackets[T](defparser: => P[T])(implicit v: P[_]): P[T] = {
     P("[" ~ any ~ defparser ~ any ~ "]")
   }
 
 
-  def starting[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
-    kw(keyword, idShort ~ inline ~ defparser)
+  def typeDecl[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawDeclaredTypeName, T)] = {
+    kw(keyword, declaredTypeName ~ inline ~ defparser)
   }
 
-  def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(ParsedId, T)] = {
-    starting(keyword, enclosed(defparser))
+  def block[T](keyword: => P[Unit], defparser: => P[T])(implicit v: P[_]): P[(RawDeclaredTypeName, T)] = {
+    typeDecl(keyword, enclosed(defparser))
   }
 
 

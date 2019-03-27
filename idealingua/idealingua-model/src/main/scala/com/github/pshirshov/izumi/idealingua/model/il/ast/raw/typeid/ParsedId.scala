@@ -1,55 +1,28 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
+import com.github.pshirshov.izumi.idealingua.model.common._
 
-final case class ParsedId(pkg: Seq[String], name: String) {
-  private def typePath = {
-    if (pkg.isEmpty) {
-      TypePath(DomainId.Undefined, Seq.empty)
-    } else {
-      TypePath(DomainId(pkg.init, pkg.last), Seq.empty)
-
-    }
-  }
-
-  def toEnumId: EnumId = EnumId(typePath, name)
-
-  def toAliasId: AliasId = AliasId(typePath, name)
-
-  def toIdId: IdentifierId = IdentifierId(typePath, name)
-
-  def toInterfaceId: InterfaceId = InterfaceId(typePath, name)
-
-  def toParentId: InterfaceId = toInterfaceId
-
-  def toMixinId: IndefiniteMixin = IndefiniteMixin(pkg, name)
-
-  def toDataId: DTOId = DTOId(typePath, name)
-
-  def toAdtId: AdtId = AdtId(typePath, name)
-
-  def toServiceId: ServiceId = ServiceId(typePath.domain, name)
-
-  def toBuzzerId: BuzzerId = BuzzerId(typePath.domain, name)
-
-  def toStreamsId: StreamsId = StreamsId(typePath.domain, name)
-
-  def toConstId: ConstId = ConstId(typePath.domain, name)
-
-  def toIndefinite: AbstractIndefiniteId = {
-    IndefiniteId(pkg, name)
-  }
-
-  def toGeneric(params: Seq[Seq[AbstractIndefiniteId]]): AbstractIndefiniteId = {
-    if (params.nonEmpty) {
-      IndefiniteGeneric(pkg, name, params.flatten.toList)
-    } else {
-      toIndefinite
-    }
-  }
-}
+final case class ParsedId(pkg: Seq[String], name: String)
 
 object ParsedId {
   def apply(name: String): ParsedId = new ParsedId(Seq.empty, name)
 }
+
+
+sealed trait RawRef {
+  def name: TypeName
+  def pkg: Package
+}
+final case class RawNongenericRef(pkg: Package, name: TypeName) extends RawRef
+final case class RawGenericRef(pkg: Package, name: TypeName, args: List[RawRef], adhocName: Option[TypeName]) extends RawRef
+
+sealed trait TemplateDecl {
+  def name: TypeName
+}
+final case class RawTemplateNoArg(name: TypeName) extends TemplateDecl
+final case class RawTemplateWithArg(name: TypeName, args: List[RawTemplateNoArg]) extends TemplateDecl
+
+
+final case class RawDeclaredTypeName(name: TypeName)
+
+final case class RawTypeNameRef(pkg: Package, name: TypeName)

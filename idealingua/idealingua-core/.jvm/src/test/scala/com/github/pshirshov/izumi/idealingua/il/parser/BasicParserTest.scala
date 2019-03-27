@@ -165,15 +165,15 @@ class BasicParserTest
       assertParses(defStructure.inlineStruct(_), "(a: A, b: B, + C)")
       assertParses(defStructure.inlineStruct(_), "(a: str)")
       assertParses(defStructure.inlineStruct(_), "(+ A)")
-      assertParses(defStructure.adtOut(_), "( A \n | \n B )")
-      assertParses(defStructure.adtOut(_), "(A|B)")
-      assertParses(defStructure.adtOut(_), "(A | B)")
       assertParses(defStructure.inlineStruct(_), "(\n  firstName: str \n , \n secondName: str\n)")
+      assertParses(defSignature.adtOut(_), "( A \n | \n B )")
+      assertParses(defSignature.adtOut(_), "(A|B)")
+      assertParses(defSignature.adtOut(_), "(A | B)")
     }
 
     "parse identifiers" in {
       assertParses(ids.domainId(_), "x.y.z")
-      assertParses(ids.identifier(_), "x.y#z")
+      assertParses(ids.typeReference(_), "x.y#z")
     }
 
     "parse fields" in {
@@ -184,11 +184,11 @@ class BasicParserTest
     }
 
     "parse adt members" in {
-      assertParses(defStructure.adtMember(_), "X")
-      assertParses(defStructure.adtMember(_), "X as T")
+      assertParses(defStructure.adtMemberTypeRef(_), "X")
+      assertParses(defStructure.adtMemberTypeRef(_), "X as T")
 
-      assertParses(defStructure.adtMember(_), "a.b.c#X")
-      assertParses(defStructure.adtMember(_), "a.b.c#X as T")
+      assertParses(defStructure.adtMemberTypeRef(_), "a.b.c#X")
+      assertParses(defStructure.adtMemberTypeRef(_), "a.b.c#X as T")
     }
 
     "parse adt blocks" in {

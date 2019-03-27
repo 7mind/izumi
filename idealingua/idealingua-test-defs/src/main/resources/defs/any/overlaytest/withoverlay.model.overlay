@@ -3,5 +3,8 @@ data OverlayUserAttributes {
     surname: str
 }
 
-@annotated(path = "users/{id}")
-declared User
+
+declared (
+    @annotated(path = "users/{id}")
+    data User {}
+)

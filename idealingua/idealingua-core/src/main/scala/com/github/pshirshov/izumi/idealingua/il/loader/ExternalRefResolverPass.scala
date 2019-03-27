@@ -30,9 +30,9 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
       loaded = new DomainMeshResolvedMutable(
         parsed.decls.id,
         withIncludes.model.definitions,
+        parsed.decls.imports,
         domainPath,
         parsed.model.includes,
-        parsed.decls.imports,
         parsed.decls.meta,
         processed,
         parsed.decls.imports.map(_.id).toSet

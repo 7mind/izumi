@@ -29,3 +29,16 @@ adt Ast
   = TestMixin
   | TestDto
   | TestOneliners
+
+foreign JavaTime {
+  "scala": t"java.time.LocalDateTime"
+}
+
+foreign JavaMap1[KEY, VALUE] {
+  "java": t"java.util.Map<${KEY}, ${VALUE}>"
+}
+
+foreign JavaMap2[A, B, KEY, VALUE] {
+  "java": t"java.util.Map<${KEY}, ${VALUE}>"
+  "java": t"java.util.Map<${A}, ${B}>"
+}

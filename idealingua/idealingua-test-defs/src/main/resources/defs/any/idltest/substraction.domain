@@ -14,6 +14,7 @@ mixin PublicUser1 {
   + User1
   - Identified
   - pass: str
+  - missing: str
 }
 
 

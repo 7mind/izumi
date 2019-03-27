@@ -13,6 +13,7 @@ import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext,
 import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
 import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
 import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.typer2.TyperOptions
 import com.typesafe.config.ConfigFactory
 import io.circe
 import io.circe.parser.parse
@@ -144,8 +145,8 @@ object CommandlineIDLCompiler {
     val itarget = target.resolve(langId)
     log.log(s"Preparing typespace for $langId")
     val toCompile = Timed {
-      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
-      new ModelResolver(rules)
+//      val rules = TypespaceCompilerBaseFacade.descriptor(option.language).rules
+      new ModelResolver(TyperOptions())
         .resolve(loaded.value)
         .ifWarnings {
           message =>
@@ -185,10 +186,10 @@ object CommandlineIDLCompiler {
 
   private def toOption(conf: IDLCArgs, env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {
     val lang = IDLLanguage.parse(lopt.id)
-    val exts = getExt(lang, lopt.extensions)
+    val exts = ExtensionSpec.All // getExt(lang, lopt.extensions)
 
     val manifest = readManifest(conf, env, lopt, lang)
-    UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime)
+    UntypedCompilerOptions(lang, exts, manifest, lopt.withRuntime, None)
   }
 
   private def readManifest(conf: IDLCArgs, env: Map[String, String], lopt: LanguageOpts, lang: IDLLanguage): BuildManifest = {
@@ -261,11 +262,11 @@ object CommandlineIDLCompiler {
   }
 
 
-  private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
-    val descriptor = TypespaceCompilerBaseFacade.descriptor(lang)
-    val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
-    descriptor.defaultExtensions.filterNot(e => negative.contains(e.id))
-  }
+//  private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
+//    val descriptor = TypespaceCompilerBaseFacade.descriptor(lang)
+//    val negative = filter.filter(_.startsWith("-")).map(_.substring(1)).map(ExtensionId).toSet
+//    descriptor.defaultExtensions.filterNot(e => negative.contains(e.id))
+//  }
 }
 
 case class VersionOverlay(version: String, release: Boolean, snapshotQualifiers: Map[String, String])

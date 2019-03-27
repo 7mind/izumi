@@ -1,0 +1,5 @@
+data ExtendedUser {
+  name   : str
+  email  : Email
+  tags   : set[str]
+}

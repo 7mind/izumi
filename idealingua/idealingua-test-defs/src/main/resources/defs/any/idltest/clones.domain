@@ -1,12 +1,48 @@
 domain idltest.clones
 
+mixin MP {
+  _: i64
+}
+
 mixin M0 {
   _: str
 }
 
-clone M0 into M1
+cloned M1 from M0
 
-clone M0 into M2 {
+cloned M2 from M0 {
+  ! MP // remove parent
   _: i32
 }
 
+mixin M3 {
+  & M2
+}
+
+data D1 {
+  _: str
+}
+
+data D2 {
+  _: int
+}
+
+adt Adt1 {
+    D1
+    D2
+    data D3 {
+      _: bit
+    }
+}
+
+data D5 {
+  _: f32
+}
+
+cloned Adt2 from Adt1 {
+    \ D1 // remove branch
+    | D5 // add branch
+    | data D4 { // add branch
+        _: list[str]
+    }
+}

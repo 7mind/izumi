@@ -1,19 +1,19 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawNongenericRef
 
 case class RawEnumMember(value: String, associated: Option[RawVal], meta: RawNodeMeta) {
   override def toString: String = value
 }
 
-case class RawEnum(parents: List[TypeId.EnumId], members: List[RawEnumMember], removed: List[String])
+case class RawEnum(parents: List[RawNongenericRef], members: List[RawEnumMember], removed: List[String])
 
 object RawEnum {
   sealed trait EnumOp
 
   object EnumOp {
 
-    final case class Extend(tpe: TypeId.EnumId) extends EnumOp
+    final case class Extend(tpe: RawNongenericRef) extends EnumOp
 
     final case class AddMember(field: RawEnumMember) extends EnumOp
 
