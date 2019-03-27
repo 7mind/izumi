@@ -6,14 +6,14 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBind
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats
 import distage._
-import org.scalatest.WordSpec
+import org.scalatest.{GivenWhenThen, WordSpec}
 
 object CatsResourcesTest {
   class Res { var initialized = false }
   class Res1 extends Res
 }
 
-class CatsResourcesTest extends WordSpec {
+class CatsResourcesTest extends WordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: FromCats._Sync]() = ()
@@ -54,6 +54,7 @@ class CatsResourcesTest extends WordSpec {
         val i2 = ctx.get[Res]("provider")
         assert(!(i1 eq i2))
         assert(i1.initialized && i2.initialized)
+        Then("ok")
         i1 -> i2
       }
     }

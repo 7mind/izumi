@@ -99,8 +99,8 @@ object DIResource {
     def extract(resource: InnerResource): OuterResource
 
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
-//    final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
-//    final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+    final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
+    final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
   }
 
   def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
@@ -109,10 +109,64 @@ object DIResource {
     }
   }
 
+  /**
+    * Allows you to bind [[cats.effect.Resource]]-based constructors in `ModuleDef`:
+    *
+    * Example:
+    * {{{
+    *   import cats.effect._
+    *
+    *   val catsResource = Resource.liftF(IO(5))
+    *
+    *   val module = new distage.ModuleDef {
+    *
+    *     make[Int].fromResource(catsResource)
+    *
+    *     addImplicit[Bracket[IO, Throwable]]
+    *   }
+    * }}}
+    *
+    * NOTE: binding a cats Resource[F, A] will add a
+    *       dependency on `Bracket[F, Throwable]` for
+    *       your corresponding `F` type
+    */
   implicit def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
     providerFromCatsProvider(ProviderMagnet.pure(resource))
   }
 
+  /**
+    * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
+    *
+    * Example:
+    * {{{
+    *   import cats.effect._
+    *   import doobie.hikari._
+    *
+    *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
+    *
+    *   val module = new distage.ModuleDef {
+    *
+    *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
+    *
+    *     make[JdbcConfig].from {
+    *       conf: JdbcConfig @ConfPath("jdbc") => conf
+    *     }
+    *
+    *     make[HikariTransactor[IO]].fromResource {
+    *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
+    *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
+    *
+    *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
+    *     }
+    *
+    *     addImplicit[Bracket[IO, Throwable]]
+    *   }
+    * }}}
+    *
+    * NOTE: binding a cats Resource[F, A] will add a
+    *       dependency on `Bracket[F, Throwable]` for
+    *       your corresponding `F` type
+    */
   implicit def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
     resourceProvider
       .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
@@ -128,35 +182,48 @@ object DIResource {
     }
   }
 
-//  // FIXME: this is not safe at all, right?
-//       Can be made safe safe with .bracketCase
-//  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
-//    import DIEffect.syntax._
-//    new DIResourceBase[F, B] {
-//      override type InnerResource = InnerResource0
-//      override def allocate: F[InnerResource] = {
-//        for {
-//          inner1 <- self.allocate
-//          res2 = f(self.extract(inner1))
-//          inner2 <- res2.allocate
-//        } yield new InnerResource0 {
-//          def extract: B = res2.extract(inner2)
-//          def deallocate: F[Unit] = self.deallocate(inner1).flatMap(_ => res2.deallocate(inner2))
-//        }
-//      }
-//      override def deallocate(resource: InnerResource): F[Unit] = resource.deallocate
-//      override def extract(resource: InnerResource): B = resource.extract
-//
-//      sealed trait InnerResource0 {
-//        def extract: B
-//        def deallocate: F[Unit]
-//      }
-//    }
-//  }
-//
-//  private[this] final def evalMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => F[B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
-//    flatMapImpl(self)(a => DIResource.make(f(a))(_ => F.unit))
-//  }
+  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+
+    def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
+      F.bracketCase(acquire = acquire)(release = {
+        case (a, Some(_)) => releaseOnError(a)
+        case _ => F.unit
+      })(use = use)
+    }
+    import DIEffect.syntax._
+
+    new DIResourceBase[F, B] {
+      override type InnerResource = InnerResource0
+      override def allocate: F[InnerResource] = {
+        bracketOnError(self.allocate)(self.deallocate) {
+          inner1 =>
+            val res2 = f(self.extract(inner1))
+            bracketOnError(res2.allocate)(res2.deallocate) {
+              inner2 =>
+                F.pure(new InnerResource0 {
+                  def extract: B = res2.extract(inner2)
+                  def deallocate: F[Unit] = {
+                    F.unit
+                      .guarantee(self.deallocate(inner1))
+                      .guarantee(res2.deallocate(inner2))
+                  }
+                })
+            }
+        }
+      }
+      override def deallocate(resource: InnerResource): F[Unit] = resource.deallocate
+      override def extract(resource: InnerResource): B = resource.extract
+
+      sealed trait InnerResource0 {
+        def extract: B
+        def deallocate: F[Unit]
+      }
+    }
+  }
+
+  private[this] final def evalMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => F[B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+    flatMapImpl(self)(a => DIResource.make(f(a))(_ => F.unit))
+  }
 
   trait ResourceTag[R] {
     type F[_]

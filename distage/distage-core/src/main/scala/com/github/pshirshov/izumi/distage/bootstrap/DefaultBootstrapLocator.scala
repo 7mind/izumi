@@ -28,9 +28,8 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    // FIXME: nonmonadic provisioner/bootstrap ???
-//    bootstrapProducer.instantiate(plan, this).throwOnFailure()
-    bootstrapProducer.instantiate[Identity](plan, this).allocate.throwOnFailure()
+    val resource = bootstrapProducer.instantiate[Identity](plan, this)
+    resource.extract(resource.allocate).throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances

@@ -20,9 +20,11 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].merge(a, b)
   }
 
-  override def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] {
-    type InnerResource <: Either[FailedProvision[F], Locator]
-  } = {
+  override def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
+    produceDetailedF[F](plan).evalMap(_.throwOnFailure())
+  }
+
+  override def produceDetailedF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext)
   }
 }

@@ -9,10 +9,7 @@ import com.github.pshirshov.izumi.distage.model.provisioning.Provision.Provision
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait PlanInterpreter {
-  // FIXME ??? allow nonmonadic [expose FailedProvision?]
-  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Locator] {
-    type InnerResource <: Either[FailedProvision[F], Locator]
-  }
+  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
 final case class FailedProvision[F[_]](
@@ -21,7 +18,7 @@ final case class FailedProvision[F[_]](
                                         parentContext: Locator,
                                         failures: Seq[ProvisioningFailure],
                                       ) {
-  def throwException(): Nothing = {
+  def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
         val pos = OpFormatter.formatBindingPosition(op.origin)
@@ -39,14 +36,16 @@ final case class FailedProvision[F[_]](
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
-    throw new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)
-      .addAllSuppressed(failures.map(_.failure))
+    DIEffect[F].fail {
+      new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)
+        .addAllSuppressed(failures.map(_.failure))
+    }
   }
 }
 
 object FailedProvision {
   implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
-    def throwOnFailure(): Locator = p.fold(_.throwException(), identity)
+    def throwOnFailure()(implicit F: DIEffect[F]): F[Locator] = p.fold(_.throwException(), F.pure)
   }
 }
 

@@ -1,11 +1,14 @@
 package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.ResourceCases._
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import org.scalatest.WordSpec
 
 import scala.collection.immutable.Queue
+import scala.collection.mutable
+import scala.util.Try
 
 class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
@@ -143,6 +146,73 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
   }
 
+  "Resources" should {
+
+    "deallocate correctly on error in .flatMap" in {
+      import ResourceCase1._
+
+      val ops1 = mutable.Queue.empty[Ops]
+
+      Try {
+        DIResource.makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+          .flatMap { _ =>
+            throw new RuntimeException()
+          }
+          .use((_: Unit) => ())
+      }
+
+      assert(ops1 == Seq(XStart, XStop))
+
+      val ops2 = mutable.Queue.empty[Ops]
+
+      Try {
+        DIResource.make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
+          .flatMap { _ =>
+            throw new RuntimeException()
+          }
+          .use((_: Unit) => Suspend2(()))
+          .run()
+      }
+
+      assert(ops2 == Seq(XStart, XStop))
+    }
+
+    "deallocate correctly on error in nested .flatMap" in {
+      import ResourceCase1._
+
+      val ops1 = mutable.Queue.empty[Ops]
+
+      Try {
+        DIResource.makeSimple(ops1 += XStart)(_ => ops1 += XStop)
+          .flatMap { _ =>
+            DIResource.makeSimple(ops1 += YStart)(_ => ops1 += YStop)
+              .flatMap { _ =>
+                DIResource.makeSimple(throw new RuntimeException())((_: Unit) => ops1 += ZStop)
+              }
+          }
+          .use(_ => ())
+      }
+
+      assert(ops1 == Seq(XStart, YStart, YStop, XStop))
+
+      val ops2 = mutable.Queue.empty[Ops]
+
+      Try {
+        DIResource.make(Suspend2(ops2 += XStart))(_ => Suspend2(ops2 += XStop).void)
+          .flatMap { _ =>
+            DIResource.make(Suspend2(ops2 += YStart))(_ => Suspend2(ops2 += YStop).void)
+              .flatMap { _ =>
+                DIResource.make(Suspend2[Unit](throw new RuntimeException()))((_: Unit) => Suspend2(ops2 += ZStop).void)
+              }
+          }
+          .use(_ => Suspend2(()))
+          .run()
+      }
+
+      assert(ops2 == Seq(XStart, YStart, YStop, XStop))
+    }
+  }
+
   "Resource bindings" should {
 
     "work in a basic case in Identity monad" in {
@@ -214,6 +284,37 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val expectStopOps = startOps.reverse.map(_.invert)
       assert(context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
+    }
+
+    "deallocate correctly in case of exceptions" in {
+      import ResourceCase1._
+
+      val definition = PlannerInput(new ModuleDef {
+        make[mutable.Queue[Ops]].fromEffect(queueEffect)
+        make[X].fromResource[XResource]
+        make[Y].fromResource[YResource]
+        make[Z].fromResource[ZFaultyResource]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val resource = injector.produceDetailedF[Suspend2[Throwable, ?]](plan)
+        .evalMap {
+          case Left(failure) =>
+            Suspend2 {
+              val ops = failure.failed.instances(DIKey.get[mutable.Queue[Ops]]).asInstanceOf[mutable.Queue[Ops]]
+              assert(ops == Seq(XStart, YStart))
+              ops
+            }
+
+          case Right(value) =>
+            fail(s"Unexpected success! $value")
+        }
+
+      val ops = resource.use(ops => Suspend2(ops)).run().right.get
+
+      assert(ops == Seq(XStart, YStart, YStop, XStop))
     }
 
   }

@@ -6,10 +6,63 @@ import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import distage.Id
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.immutable.Queue
+import scala.collection.mutable
+import scala.util.Try
 
 object ResourceCases {
+
+  object ResourceCase1 {
+    sealed trait Ops
+    case object XStart extends Ops
+    case object XStop extends Ops
+    case object YStart extends Ops
+    case object YStop extends Ops
+    case object ZStop extends Ops
+
+    class X
+    class Y
+    class Z
+
+    val queueEffect = Suspend2(mutable.Queue.empty[Ops])
+
+    class XResource(queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], X] {
+      override def allocate: Suspend2[Nothing, X] = Suspend2 {
+        queue += XStart
+        new X
+      }
+
+      override def deallocate(resource: X): Suspend2[Nothing, Unit] = Suspend2 {
+        resource.discard()
+
+        queue += XStop
+      }.void
+    }
+
+    class YResource(x: X, queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], Y] {
+      x.discard()
+
+      override def allocate: Suspend2[Nothing, Y] = Suspend2 {
+        queue += YStart
+        new Y
+      }
+
+      override def deallocate(resource: Y): Suspend2[Nothing, Unit] = Suspend2 {
+        resource.discard()
+
+        queue += YStop
+      }.void
+    }
+
+    class ZFaultyResource(y: Y) extends DIResource[Suspend2[Throwable, ?], Z] {
+      y.discard()
+
+      override def allocate: Suspend2[Throwable, Z] = throw new RuntimeException()
+      override def deallocate(resource: Z): Suspend2[Throwable, Unit] = throw new RuntimeException()
+    }
+  }
 
   object CircularResourceCase {
 
@@ -109,20 +162,24 @@ object ResourceCases {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
+      override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
       override def definitelyRecover[A](fa: => Suspend2[E, A], recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
-        Suspend2(() => fa.run() match {
-          case Left(value) => recover(value).run()
+        Suspend2(() => Try(fa.run()).toEither.flatMap(identity) match {
+          case Left(exception) => recover(exception).run()
           case Right(value) => Right(value)
         })
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
+        bracketCase(acquire){case (a, _) => release(a)}(use)
+      }
+      override def bracketCase[A, B](acquire: => Suspend2[E, A])(release: (A, Option[Throwable]) => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
         acquire.flatMap {
           a => definitelyRecover(
-            use(a).flatMap(b => release(a).map(_ => b))
-          , fail => release(a).flatMap(_ => maybeSuspend(throw fail))
-          )
+            use(a)
+          , err => release(a, Some(err)).flatMap(_ => fail(err))
+          ).flatMap(res => release(a, None).map(_ => res))
         }
       }
     }

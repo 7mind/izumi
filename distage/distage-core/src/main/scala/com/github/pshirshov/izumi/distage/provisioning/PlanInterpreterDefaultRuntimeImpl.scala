@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.provisioning
 
 import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
@@ -37,29 +38,11 @@ class PlanInterpreterDefaultRuntimeImpl
      with WiringExecutor {
 
   // FIXME: _do not_ expose InnerResourceType; have two separate functions
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Locator] { type InnerResource <: Either[FailedProvision[F], Locator] } = {
-//    DIResource.make(
-//      acquire = instantiate0(plan, parentContext)
-//    )(release = {
-//      resource =>
-//        val finalizers = resource match {
-//          case Left(failedProvision) => failedProvision.failed.finalizers
-//          case Right(locator) => locator.dependencyMap.finalizers
-//        }
-//        F.traverse_(finalizers) {
-//          case (_, eff) => F.maybeSuspend(eff()).flatMap(identity)
-//        }
-//    })
-//      // FIXME: evalMap[F.fail[???]]
-//      .map {
-//      _.throwOnFailure()
-//    }
-    new DIResourceBase[F, Locator] {
-      override type InnerResource = Either[FailedProvision[F], LocatorDefaultImpl[F]]
-      override def allocate: F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
-        instantiate0(plan, parentContext)
-      }
-      override def deallocate(resource: Either[FailedProvision[F], LocatorDefaultImpl[F]]): F[Unit] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+    DIResource.make(
+      acquire = instantiateImpl(plan, parentContext)
+    )(release = {
+      resource =>
         val finalizers = resource match {
           case Left(failedProvision) => failedProvision.failed.finalizers
           case Right(locator) => locator.dependencyMap.finalizers
@@ -67,15 +50,10 @@ class PlanInterpreterDefaultRuntimeImpl
         F.traverse_(finalizers) {
           case (_, eff) => F.maybeSuspend(eff()).flatMap(identity)
         }
-      }
-
-      override def extract(resource: Either[FailedProvision[F], LocatorDefaultImpl[F]]): Locator = {
-        resource.throwOnFailure() // FIXME ??? shitty extractor
-      }
-    }
+    })
   }
 
-  def instantiate0[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
+  private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
     mutProvisioningContext.instances.put(DIKey.get[Locator.LocatorRef], new Locator.LocatorRef())
 
@@ -93,13 +71,16 @@ class PlanInterpreterDefaultRuntimeImpl
             } else {
               val failureContext = ProvisioningFailureContext(parentContext, mutProvisioningContext, step)
 
-              val maybeResult = F.definitelyRecover[Try[Seq[NewObjectOp]]](
-                action = execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
-              , recover = exception =>
-                  F.maybeSuspend(failureHandler.onExecutionFailed(failureContext).applyOrElse(exception, Failure(_: Throwable)))
-              )
-
-              maybeResult.flatMap {
+              F.definitelyRecover[Try[Seq[NewObjectOp]]](
+                action =
+                  execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
+              , recover =
+                  exception =>
+                    F.maybeSuspend {
+                      failureHandler.onExecutionFailed(failureContext)
+                        .applyOrElse(exception, Failure(_: Throwable))
+                    }
+              ).flatMap {
                 case Success(newObjectOps) =>
                   F.maybeSuspend {
                     newObjectOps.foreach {
@@ -112,7 +93,6 @@ class PlanInterpreterDefaultRuntimeImpl
                           case Failure(failure) =>
                             mutExcluded ++= plan.topology.transitiveDependees(step.target)
                             mutFailures += ProvisioningFailure(step, failure)
-                            ()
                         }
                     }
                   }
