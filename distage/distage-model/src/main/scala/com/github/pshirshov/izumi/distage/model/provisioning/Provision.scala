@@ -8,7 +8,6 @@ import scala.collection.{Map, Seq, mutable}
 trait Provision[+F[_]] {
   def instances: Map[DIKey, Any]
   def imports: Map[DIKey, Any]
-  // FIXME: think of a better place ???
   def finalizers: Seq[(DIKey, () => F[Unit])]
 
   def narrow(allRequiredKeys: Set[DIKey]): Provision[F]

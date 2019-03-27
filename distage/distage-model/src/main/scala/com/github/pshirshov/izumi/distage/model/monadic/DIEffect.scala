@@ -78,7 +78,6 @@ object DIEffect
     override def fail[A](t: => Throwable): Identity[A] = throw t
   }
 
-  // FIXME: Throwable ???
   implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): DIEffect[F[Throwable, ?]] = {
     type E = Throwable
     new DIEffect[F[Throwable, ?]] {
@@ -89,8 +88,7 @@ object DIEffect
 
       override def maybeSuspend[A](eff: => A): F[E, A] = {
         // FIXME: syncThrowable? ???
-        //  - hmm, usage of DIEffect in PlanInterpreter *is* exception-safe [because of .definitelyRecover]
-        //  - usages of maybeSuspend in Producer and DIResource are NOT safe
+        //  - hmm, usage of DIEffect in PlanInterpreter *is* completely exception-safe (because of .definitelyRecover)
         F.syncThrowable(eff)
       }
       override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
@@ -148,6 +146,8 @@ trait FromCats {
 }
 
 object FromCats {
+  // 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect to be an Optional dependency, but
+  // stlll provide _non-orphan_ instances if it's on classpath
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
     implicit val catsEffectSync: _Sync[cats.effect.Sync] = new _Sync[cats.effect.Sync] {}
