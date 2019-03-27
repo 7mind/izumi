@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.Typer2.TypenameRef
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeId.model.{IzDomainPath, IzName, IzNamespace, IzPackage}
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail.ConflictingImports
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 final case class GoodImport(domain: DomainId, id: ImportedId)
 
@@ -26,14 +27,14 @@ final class DomainIndex private (val defn: DomainMeshResolved) {
 
   val importIndex: Map[String, GoodImport] = {
     val asList = defn.imports.flatMap(i => i.identifiers.map(id => id.importedAs -> GoodImport(i.id, id)))
-    val grouped = asList.groupBy(_._1)
+    val grouped = asList.toMultimap
 
     val bad = grouped.filter(_._2.size > 1)
     if (bad.nonEmpty) {
-      throw Fail(List(ConflictingImports(bad.mapValues(_.map(_._2).toSet))))
+      throw Fail(List(ConflictingImports(bad.mapValues(_.toSet))))
     }
 
-    grouped.mapValues(_.head._2)
+    grouped.mapValues(_.head)
   }
 
   val builtinPackage: IzPackage = IzPackage(Seq(IzDomainPath("_builtins_")))

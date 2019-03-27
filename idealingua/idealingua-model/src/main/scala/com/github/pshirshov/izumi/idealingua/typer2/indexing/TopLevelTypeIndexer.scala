@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.model.{AdtMemberNested, AdtMemberRef}
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.RefToTLTLink
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 class TopLevelTypeIndexer(resolvers: Resolvers) {
   import TopLevelTypeIndexer._
@@ -13,8 +14,8 @@ class TopLevelTypeIndexer(resolvers: Resolvers) {
 
     val allTopLevelRefs: Map[IzTypeId, Set[IzTypeReference]] = allTypes
       .flatMap(collectTopLevelReferences)
-      .groupBy(_._1)
-      .mapValues(_.map(pair => resolvers.refToTopId2(pair._2)).toSet)
+      .toMultimap
+      .mapValues(_.map(resolvers.refToTopId2).toSet)
 
     val allTopLevelIds = allTopLevelRefs.mapValues {
       s =>

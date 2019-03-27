@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.
 import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail._
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedConst
 import com.github.pshirshov.izumi.idealingua.typer2.model._
+import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
 import scala.collection.mutable
 
@@ -38,6 +39,7 @@ object ConstSupport {
 }
 
 class ConstSupport() extends ConstSource {
+
   import ConstSupport._
   import results._
 
@@ -84,8 +86,8 @@ class ConstSupport() extends ConstSource {
                 val locations = deps.toSeq
                   .filter(_._2.contains(p))
                   .map(d => d._1 -> allConsts(d._1).const.meta.position)
-                  .groupBy(_._1)
-                  .mapValues(_.map(_._2))
+                  .toMultimap
+                  .mapValues(_.toSeq)
 
                 MissingConst(p, locations)
             }
@@ -107,7 +109,10 @@ class ConstSupport() extends ConstSource {
     val deps = allConsts.map {
       c =>
         c.id -> c
-    }.groupBy(_._1).mapValues(_.map(_._2))
+    }
+      .toMultimap
+      .mapValues(_.toSeq)
+
     val bad = deps.filter(_._2.size > 1)
 
     if (bad.nonEmpty) {
@@ -175,7 +180,6 @@ class ConstSupport() extends ConstSource {
         value.values.flatMap(extractDeps(resolver, defScope)).toSet
     }
   }
-
 
 
   private def toExpectedType(resolver: ConstNameResolver, c: RawConst): Either[List[T2Fail], IzTypeReference] = {

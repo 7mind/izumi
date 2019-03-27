@@ -81,6 +81,8 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
     parameter match {
+      case RenderedParameter(a: Json, _, _, _) =>
+        a
       case RenderedParameter(a: Double, _, _, _) =>
         Json.fromDoubleOrNull(a)
       case RenderedParameter(a: BigDecimal, _, _, _) =>
