@@ -1,0 +1,8 @@
+domain com.mycompany.example
+
+include "email.model"
+
+data User {
+  name: str
+  email: Email
+}
