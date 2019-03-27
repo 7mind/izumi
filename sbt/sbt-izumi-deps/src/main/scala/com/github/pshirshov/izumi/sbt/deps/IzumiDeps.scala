@@ -26,7 +26,7 @@ object IzumiDeps {
     val jawn = "0.14.1"
     val http4s = "0.20.0-M5" // https://github.com/http4s/http4s/issues/1797
 
-    //val scalameta = "4.1.4" // https://github.com/scalameta/scalameta/issues/1693
+    val scalameta = "4.1.4" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
@@ -84,7 +84,7 @@ object IzumiDeps {
     )
 
     // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
-    //val scalameta = "org.scalameta" %% "scalameta" % V.scalameta
+    val scalameta = "org.scalameta" %% "scalameta" % V.scalameta
 
     // TODO: It would be good to completely get rid of cglib and build our own proxy generator on top of scala-asm
     val cglib_nodep = "cglib" % "cglib-nodep" % V.cglib_nodep

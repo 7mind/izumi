@@ -495,6 +495,7 @@ lazy val idealinguaV1TestDefs = inIdealinguaV1.as.module.dependsOn(idealinguaV1R
 
 lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
+  .settings(libraryDependencies += R.scalameta)
   .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaV1Core,
@@ -552,7 +553,7 @@ lazy val sbtIzumiDeps = inSbt.as
 
 lazy val sbtIdealingua = inSbt.as
   .module
-  .depends(idealinguaCompilerDeps: _*)
+  .depends(idealinguaV1CompilerDeps: _*)
 
 lazy val sbtTests = inSbt.as
   .module
