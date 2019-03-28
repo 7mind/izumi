@@ -1,0 +1,15 @@
+domain idltest.upcasts
+
+mixin Identifiable {
+  id: uid
+}
+
+mixin ItemContent {
+  + Identifiable
+  name: str
+}
+
+data Item {
+    + ItemContent
+    price: i32
+}

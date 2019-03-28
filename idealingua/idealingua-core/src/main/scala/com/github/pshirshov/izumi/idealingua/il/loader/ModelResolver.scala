@@ -1,17 +1,16 @@
 package com.github.pshirshov.izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.idealingua.il.loader.verification.DuplicateDomainsRule
-import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
 import com.github.pshirshov.izumi.idealingua.model.loader._
 import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
-import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.VerificationException
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.{TypespaceVerifier, VerificationRule}
-import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl}
+import com.github.pshirshov.izumi.idealingua.typer2.{Typer2, TyperOptions}
+import com.github.pshirshov.izumi.idealingua.typer2.model.T2Fail
+
+import scala.util.{Failure, Success, Try}
 
 
-class ModelResolver(rules: Seq[VerificationRule]) {
+class ModelResolver(options: TyperOptions) {
 
   def resolve(domains: UnresolvedDomains): LoadedModels = {
     val globalChecks = Seq(
@@ -20,8 +19,9 @@ class ModelResolver(rules: Seq[VerificationRule]) {
     val importResolver = new ExternalRefResolver(domains)
 
     val typed = domains.domains.results
+      .sortBy(_.path.toString)
       .map(importResolver.resolveReferences)
-      .map(makeTyped)
+      .map(runTyper)
 
     val result = LoadedModels(typed, IDLDiagnostics.empty)
 
@@ -31,36 +31,22 @@ class ModelResolver(rules: Seq[VerificationRule]) {
   }
 
 
-  private def makeTyped(f: Either[LoadedDomain.Failure, DomainMeshResolved]): LoadedDomain = {
-    (for {
-      d <- f
-      ts <- runTyper(d)
-      result <- runVerifier(ts)
-    } yield {
-      result
-    }).fold(identity, identity)
-  }
-
-
-  private def runVerifier(ts: Typespace): Either[LoadedDomain.VerificationFailed, LoadedDomain.Success] = {
-    try {
-      val issues = new TypespaceVerifier(ts, rules).verify()
-      if (issues.issues.isEmpty) {
-        Right(LoadedDomain.Success(ts.domain.meta.origin, ts, issues.warnings))
-      } else {
-        Left(LoadedDomain.VerificationFailed(ts.domain.meta.origin, ts.domain.id, issues))
+  private def runTyper(maybeRaw: Either[LoadedDomain.Failure, DomainMeshResolved]): LoadedDomain = {
+    for {
+      raw <- maybeRaw
+      typer = new Typer2(options, raw)
+      typed <- Try {
+        typer.run().left.map(issues => LoadedDomain.TyperFailed(raw.origin, raw.id, issues.errors, issues.warnings))
+      } match {
+        case Failure(exception) =>
+          System.out.println(s"  ... !!! Typer2 failed on ${raw.id}:\n >> ${exception.getMessage}")
+          exception.printStackTrace()
+          Left(LoadedDomain.TyperFailed(raw.origin, raw.id, List(T2Fail.UnexpectedException(exception)), List.empty))
+        case Success(value) =>
+          value
       }
-    } catch {
-      case t: Throwable =>
-        Left(LoadedDomain.VerificationFailed(ts.domain.meta.origin, ts.domain.id, IDLDiagnostics(Vector(VerificationException(t.stackTrace)))))
-    }
-  }
-
-  private def runTyper(d: DomainMeshResolved): Either[LoadedDomain.TyperFailed, TypespaceImpl] = {
-    (for {
-      domain <- new IDLTyper(d).perform()
     } yield {
-      new TypespaceImpl(domain)
-    }).fold(issues => Left(LoadedDomain.TyperFailed(d.origin, d.id, issues)), Right.apply)
-  }
+      LoadedDomain.Success(typed)
+    }
+  }.fold(identity, identity)
 }

@@ -1,40 +1,52 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid._
 
 
-sealed trait RawTypeDef
+sealed trait RawTypeDef {
+  def meta: RawNodeMeta
+
+}
 
 
-case class InterpContext(parts: Seq[String], parameters: Seq[AbstractIndefiniteId])
+case class InterpContext(parts: Seq[String], parameters: Seq[String])
 
 object RawTypeDef {
 
-  sealed trait WithId extends RawTypeDef {
-    def id: TypeId
+  sealed trait BasicTypeDecl extends RawTypeDef {
+    def id: RawDeclaredTypeName
   }
 
+  sealed trait WithTemplating extends BasicTypeDecl
 
-  final case class Interface(id: InterfaceId, struct: RawStructure, meta: RawNodeMeta) extends WithId
+  sealed trait TargetInterface extends WithTemplating
 
-  final case class DTO(id: DTOId, struct: RawStructure, meta: RawNodeMeta) extends WithId
+  final case class Interface(id: RawDeclaredTypeName, struct: RawStructure, meta: RawNodeMeta) extends WithTemplating
 
-  final case class Enumeration(id: EnumId, struct: RawEnum, meta: RawNodeMeta) extends WithId
+  final case class DTO(id: RawDeclaredTypeName, struct: RawStructure, meta: RawNodeMeta) extends WithTemplating
 
-  final case class Alias(id: AliasId, target: AbstractIndefiniteId, meta: RawNodeMeta) extends WithId
+  final case class Adt(id: RawDeclaredTypeName, contract: Option[RawStructure], alternatives: List[Member], meta: RawNodeMeta) extends WithTemplating
 
-  final case class Identifier(id: IdentifierId, fields: RawTuple, meta: RawNodeMeta) extends WithId
+  final case class Enumeration(id: RawDeclaredTypeName, struct: RawEnum, meta: RawNodeMeta) extends BasicTypeDecl
 
-  final case class Adt(id: AdtId, alternatives: List[Member], meta: RawNodeMeta) extends WithId
+  final case class Alias(id: RawDeclaredTypeName, target: RawRef, meta: RawNodeMeta) extends BasicTypeDecl
 
-  final case class NewType(id: ParsedId, source: AbstractIndefiniteId, modifiers: Option[RawStructure], meta: RawNodeMeta) extends RawTypeDef
+  final case class Identifier(id: RawDeclaredTypeName, fields: RawTuple, meta: RawNodeMeta) extends BasicTypeDecl
 
-  final case class ForeignType(id: AbstractIndefiniteId, mapping: Map[String, InterpContext], meta: RawNodeMeta) extends RawTypeDef
+  final case class NewType(id: RawDeclaredTypeName, source: RawTypeNameRef, modifiers: Option[RawClone], meta: RawNodeMeta) extends RawTypeDef
 
-  final case class DeclaredType(id: AbstractIndefiniteId, meta: RawNodeMeta) extends RawTypeDef
+  final case class ForeignType(id: TemplateDecl, mapping: Map[String, InterpContext], meta: RawNodeMeta) extends RawTypeDef
+
+  final case class Template(arguments: List[RawTemplateNoArg], decl: WithTemplating, meta: RawNodeMeta) extends RawTypeDef
+
+  final case class Instance(id: RawDeclaredTypeName, source: RawRef, meta: RawNodeMeta) extends RawTypeDef
+
+  final case class RawBuzzer(id: RawDeclaredTypeName, events: List[RawMethod], meta: RawNodeMeta) extends TargetInterface
+
+  final case class RawService(id: RawDeclaredTypeName, methods: List[RawMethod], meta: RawNodeMeta) extends TargetInterface
+
+  final case class RawStreams(id: RawDeclaredTypeName, streams: List[RawStream], meta: RawNodeMeta) extends TargetInterface
 
 }
 

@@ -7,23 +7,23 @@ sealed trait RawTopLevelDefn
 object RawTopLevelDefn {
 
 
-  sealed trait TypeDefn extends RawTopLevelDefn
+  sealed trait NamedDefn extends RawTopLevelDefn
 
-  final case class TLDBaseType(v: RawTypeDef.WithId) extends TypeDefn
+  sealed trait TypeDefn extends NamedDefn {
+    def defn: RawTypeDef
+  }
 
-  final case class TLDService(v: RawService) extends RawTopLevelDefn
+  final case class TLDBaseType(defn: RawTypeDef.BasicTypeDecl) extends TypeDefn
 
-  final case class TLDBuzzer(v: RawBuzzer) extends RawTopLevelDefn
+  final case class TLDNewtype(defn: RawTypeDef.NewType) extends TypeDefn
 
-  // not supported by cogen yet
-  final case class TLDStreams(v: RawStreams) extends RawTopLevelDefn
+  final case class TLDForeignType(defn: RawTypeDef.ForeignType) extends TypeDefn
+
+  final case class TLDTemplate(defn: RawTypeDef.Template) extends TypeDefn
+
+  final case class TLDInstance(defn: RawTypeDef.Instance) extends TypeDefn
 
   final case class TLDConsts(v: RawConstBlock) extends RawTopLevelDefn
 
-  final case class TLDNewtype(v: RawTypeDef.NewType) extends TypeDefn
-
-  final case class TLDDeclared(v: RawTypeDef.DeclaredType) extends TypeDefn
-
-  final case class TLDForeignType(v: RawTypeDef.ForeignType) extends TypeDefn
-
+  final case class TLDDeclared(v: NamedDefn) extends RawTopLevelDefn
 }

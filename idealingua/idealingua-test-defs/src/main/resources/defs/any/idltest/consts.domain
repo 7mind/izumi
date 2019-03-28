@@ -2,14 +2,23 @@ domain idltest.consts
 
 data TestPair(value: i32, name: str)
 
-const {
+data SomethingElse(p: TestPair)
+
+const Example {
   someInt = 1
   someString = "xxx"
-  anotherString: XXX = """yyy"""
+  anotherString: str = """yyy"""
 
   nested: TestPair = {
     name = "test"
     value = 265
+  }
+
+  somethingElse: SomethingElse = {
+    p = {
+        name = "test"
+        value = 265
+    }
   }
 
   /**
@@ -22,7 +31,11 @@ const {
 
   list = [ 1 , 2 ]
 
+  referenced = [42]
+  list2 = [[41], ::referenced]
+
   anothermap = {k="x", v=1}
+  anotherstrmap = {k="x", v="y"}
 
   complexlist = [
       {

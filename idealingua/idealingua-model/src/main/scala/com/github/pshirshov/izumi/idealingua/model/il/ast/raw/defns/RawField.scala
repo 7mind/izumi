@@ -1,5 +1,5 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawRef
 
-final case class RawField(typeId: AbstractIndefiniteId, name: Option[String], meta: RawNodeMeta)
+final case class RawField(typeId: RawRef, name: Option[String], meta: RawNodeMeta)

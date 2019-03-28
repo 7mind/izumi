@@ -45,10 +45,13 @@ mixin WithCovariance {
   field: Covariant
 }
 
+alias WithCovarianceAliased = WithCovariance
+
 mixin InheritedCovariant {
-  & WithCovariance
+  & WithCovarianceAliased
 
   field: CovariantA
+  //field: str //conflict example
 }
 
 data CovariantDTO1 {

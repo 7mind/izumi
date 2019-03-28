@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.idealingua.il.parser
 
 import com.github.pshirshov.izumi.idealingua.il.parser.structure.{kw, sep}
 import com.github.pshirshov.izumi.idealingua.model.common.StreamDirection
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStream, RawStreams, RawTopLevelDefn}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStream
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.RawStreams
 import fastparse.NoWhitespace._
 import fastparse._
 
@@ -26,9 +27,8 @@ class DefStreams(context: IDLParserContext) {
   // other method kinds should be added here
   def streams[_: P]: P[Seq[RawStream]] = P(stream.rep(sep = any))
 
-  def streamsBlock[_: P]: P[RawTopLevelDefn.TLDStreams] = P(metaAgg.cblock(kw.streams, streams))
+  def streamsBlock[_: P]: P[RawStreams] = P(metaAgg.cblock(kw.streams, streams))
     .map {
-      case (c, i, v) => RawStreams(i.toStreamsId, v.toList, c)
+      case (c, i, v) => RawStreams(i, v.toList, c)
     }
-    .map(RawTopLevelDefn.TLDStreams)
 }

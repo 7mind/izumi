@@ -3,10 +3,6 @@ package com.github.pshirshov.izumi.idealingua.translator
 import com.github.pshirshov.izumi.idealingua.model.output.Module
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 
 import scala.reflect.ClassTag
 
@@ -28,10 +24,10 @@ object ProvidedRuntime {
   def empty: ProvidedRuntime = ProvidedRuntime(Seq.empty)
 }
 
-sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifest] {
+sealed trait AbstractCompilerOptions[M <: BuildManifest] {
   def language: IDLLanguage
 
-  def extensions: Seq[E]
+  def extensions: ExtensionSpec
 
   def withBundledRuntime: Boolean
 
@@ -41,44 +37,48 @@ sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifes
 }
 
 
-final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
+final case class CompilerOptions[M <: BuildManifest]
 (
   language: IDLLanguage
-  , extensions: Seq[E]
+  , extensions: ExtensionSpec
   , manifest: M
   , withBundledRuntime: Boolean = true
   , providedRuntime: Option[ProvidedRuntime] = None
-) extends AbstractCompilerOptions[E, M]
+) extends AbstractCompilerOptions[M]
 
 object CompilerOptions {
-  type TypescriptTranslatorOptions = CompilerOptions[TypeScriptTranslatorExtension, TypeScriptBuildManifest]
-  type GoTranslatorOptions = CompilerOptions[GoLangTranslatorExtension, GoLangBuildManifest]
-  type CSharpTranslatorOptions = CompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]
-  type ScalaTranslatorOptions = CompilerOptions[ScalaTranslatorExtension, ScalaBuildManifest]
+  type TypescriptTranslatorOptions = CompilerOptions[TypeScriptBuildManifest]
+  type GoTranslatorOptions = CompilerOptions[GoLangBuildManifest]
+  type CSharpTranslatorOptions = CompilerOptions[CSharpBuildManifest]
+  type ScalaTranslatorOptions = CompilerOptions[ScalaBuildManifest]
 
-  def from[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
-    val extensions = options.extensions.collect {
-      case e: E => e
-    }
-
+  def from[M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[M] = {
     val manifest = options.manifest.asInstanceOf[M]
 
-    CompilerOptions(options.language, extensions, manifest, options.withBundledRuntime, options.providedRuntime)
+    CompilerOptions(options.language, options.extensions, manifest, options.withBundledRuntime, options.providedRuntime)
+  }
+}
+
+sealed trait ExtensionSpec
+
+object ExtensionSpec {
+  case object All extends ExtensionSpec {
+    override def toString: String = "*"
   }
 }
 
 final case class UntypedCompilerOptions
 (
   language: IDLLanguage
-  , extensions: Seq[TranslatorExtension]
+  , extensions: ExtensionSpec
   , manifest: BuildManifest
-  , withBundledRuntime: Boolean = true
-  , providedRuntime: Option[ProvidedRuntime] = None
-) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
+  , withBundledRuntime: Boolean
+  , providedRuntime: Option[ProvidedRuntime]
+) extends AbstractCompilerOptions[BuildManifest] {
   override def toString: String = {
     val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rtb").getOrElse("-rtb")
     val rtfRepr = providedRuntime.map(rt => s"rtu=${rt.modules.size}").getOrElse("-rtu")
-    val extRepr = extensions.mkString("(", ", ", ")")
+    val extRepr = extensions.toString
     Seq(language, rtRepr, rtfRepr, extRepr).mkString(" ")
   }
 }

@@ -29,5 +29,4 @@ package object logstage extends LogStage {
   type LogCreateBIO[F[_, _]] = LogCreateIO[F[Nothing, ?]]
   type LogBIO[F[_, _]] = LogIO[F[Nothing, ?]]
   type UnsafeLogBIO[F[_, _]] = UnsafeLogIO[F[Nothing, ?]]
-
 }

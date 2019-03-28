@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import scalaz.zio._
-import scalaz.zio.duration.Duration.fromScala
+import scalaz.zio.FiberFailure
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -45,12 +44,18 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
   @inline override def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[BIOExit.Failure[E], A] => R[BIOExit.Failure[E2], B]): R[E2, B]
 
   @inline override def sandbox[E, A](r: R[E, A]): R[BIOExit.Failure[E], A]
-}
 
+  @inline override def leftFlatMap[E, A, E2](r: R[E, A])(f: E => R[Nothing, E2]): R[E2, A]
+
+  @inline override def flip[E, A](r: R[E, A]) : R[A, E]
+}
 
 object BIO extends BIOSyntax {
 
   def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
+
+  import scalaz.zio.{Exit, IO, Schedule}
+  import scalaz.zio.duration.Duration.fromScala
 
   implicit object BIOZio extends BIOAsync[IO] {
     @inline override def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
@@ -82,6 +87,10 @@ object BIO extends BIOSyntax {
     @inline override def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
 
     @inline override def leftMap[E, A, E2](r: IO[E, A])(f: E => E2): IO[E2, A] = r.mapError(f)
+
+    @inline override def leftFlatMap[E, A, E2](r: IO[E, A])(f: E => IO[Nothing, E2]): IO[E2, A] = r.flatMapError(f)
+
+    @inline override def flip[E, A](r: IO[E, A]): IO[A, E] = r.flip
 
     @inline override def bimap[E, A, E2, B](r: IO[E, A])(f: E => E2, g: A => B): IO[E2, B] = r.bimap(f, g)
 

@@ -1,0 +1,16 @@
+domain idltest.aliases
+
+import idltest.aliases2
+
+mixin M1 {
+  _: str
+}
+
+alias A1 = M1
+
+alias A2 = idltest.aliases2#M2
+
+data D1 {
+  & A1
+  & A2
+}
