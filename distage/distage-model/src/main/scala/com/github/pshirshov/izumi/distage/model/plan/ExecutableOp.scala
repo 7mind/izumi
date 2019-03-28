@@ -52,6 +52,7 @@ object ExecutableOp {
 
   sealed trait MonadicOp extends InstantiationOp {
     def effectWiring: PureWiring
+    def wiring: Wiring.MonadicWiring
   }
 
   object MonadicOp {

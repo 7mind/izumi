@@ -1,8 +1,12 @@
 package com.github.pshirshov.izumi.distage.injector
 
+import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
 import com.github.pshirshov.izumi.distage.fixtures.ResourceCases._
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import org.scalatest.WordSpec
 
@@ -312,6 +316,47 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       assert(set.size == 2)
       assert(set.forall(_.initialized == false))
+    }
+
+    "incompatible effects error aborts interpreter before any work is done" in {
+      import BasicCase1._
+
+      val definition = PlannerInput(new ModuleDef {
+        make[NotInContext]
+        make[TestClass]
+        make[TestDependency3]
+        make[TestDependency0].from[TestImpl0]
+        make[TestDependency1]
+        make[TestCaseClass]
+        make[LocatorDependent]
+        make[TestInstanceBinding].fromResource(new DIResource[Option, TestInstanceBinding] {
+          override def acquire: Option[TestInstanceBinding] = None
+          override def release(resource: TestInstanceBinding): Option[Unit] = { resource.discard(); None }
+        })
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val resource = injector.produceDetailedF[Suspend2[Throwable, ?]](plan)
+
+      val failure = resource.use {
+        case Left(fail) =>
+            Suspend2 {
+              val nonSyntheticInstances = fail.failed.instances.filter(_._1 != DIKey.get[LocatorRef])
+              assert(nonSyntheticInstances.isEmpty)
+              fail
+            }
+
+        case Right(value) =>
+          fail(s"Unexpected success! $value")
+      }.unsafeRun()
+
+      val exc = intercept[ProvisioningException] {
+        failure.throwException().unsafeRun()
+      }
+
+      assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/9 operations failed"))
     }
 
     "deallocate correctly in case of exceptions" in {

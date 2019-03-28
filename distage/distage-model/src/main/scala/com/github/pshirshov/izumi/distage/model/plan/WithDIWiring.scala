@@ -80,6 +80,7 @@ trait WithDIWiring {
 
     sealed trait MonadicWiring extends Wiring {
       def effectDIKey: DIKey
+      def effectHKTypeCtor: SafeType
     }
 
     object MonadicWiring {
