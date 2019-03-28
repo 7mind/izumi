@@ -82,7 +82,7 @@ object ModuleBase {
     }
 
     def overridenBy(that: ModuleBase): T = {
-      // we replace existing items in-place and appending new at the end
+      // we replace existing items in-place and append new at the end
       // set bindings should not be touched
 
       // TODO: a hack to support tag merging

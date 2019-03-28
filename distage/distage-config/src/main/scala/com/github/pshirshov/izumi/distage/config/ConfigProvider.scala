@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.config.TranslationResult.TranslationFa
 import com.github.pshirshov.izumi.distage.config.annotations._
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -58,7 +58,7 @@ class ConfigProvider
     newPlan
   }
 
-  private def resolvedConfigOp(config: AppConfig, updatedSteps: Vector[TranslationResult]): WiringOp.ReferenceInstance = {
+  private def resolvedConfigOp(config: AppConfig, updatedSteps: Vector[TranslationResult]): ExecutableOp.WiringOp.ReferenceInstance = {
     val paths = updatedSteps.collect {
       case TranslationResult.Success(_, path) => path
 
@@ -67,7 +67,7 @@ class ConfigProvider
     val target = DIKey.get[ResolvedConfig]
     ExecutableOp.WiringOp.ReferenceInstance(
       target
-      , Wiring.UnaryWiring.Instance(target.tpe, resolvedConfig), None
+      , Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig), None
     )
   }
 
@@ -88,7 +88,7 @@ class ConfigProvider
           TranslationResult.Success(
             ExecutableOp.WiringOp.ReferenceInstance(
               step.target
-              , Wiring.UnaryWiring.Instance(step.target.tpe, product), op.origin
+              , Wiring.SingletonWiring.Instance(step.target.tpe, product), op.origin
             ),
             loadedPath
           )

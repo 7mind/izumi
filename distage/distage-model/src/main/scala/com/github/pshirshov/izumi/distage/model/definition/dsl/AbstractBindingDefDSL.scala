@@ -87,10 +87,14 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
+//  final protected def setOf[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
     val setRef = registered(new SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
+
+//  @deprecated("use .setOf", "14.03.2019")
+//  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = setOf[T]
 
   /** Same as `make[T].from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {

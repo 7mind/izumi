@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 sealed trait Binding {
+
   def key: DIKey
 
   def origin: SourceFilePosition
@@ -14,23 +15,19 @@ sealed trait Binding {
   def tags: Set[BindingTag]
 
   def withTarget[K <: DIKey](key: K): Binding
-
   def withTags(tags: Set[BindingTag]): Binding
-
   def addTags(tags: Set[BindingTag]): Binding
 }
 
 object Binding {
 
   sealed trait ImplBinding extends Binding {
+
     def implementation: ImplDef
 
     def withImplDef(implDef: ImplDef): ImplBinding
-
     override def withTarget[K <: DIKey](key: K): ImplBinding
-
     override def withTags(tags: Set[BindingTag]): ImplBinding
-
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
@@ -49,11 +46,8 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSingleton
 
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
-
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SingletonBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
@@ -75,11 +69,8 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSetElement
 
     override def withImplDef(implDef: ImplDef): SetElementBinding[K] = copy(implementation = implDef)
-
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): SetElementBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding[K] = withTags(this.tags ++ moreTags)
   }
 
@@ -101,9 +92,7 @@ object Binding {
     override def tags: Set[BindingTag] = _tags + BindingTag.TSet
 
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
-
     override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(_tags = newTags)
-
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
@@ -125,8 +114,8 @@ object Binding {
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))
 
-    def withImpl[T: Tag](f: ProviderMagnet[T]): R =
-      binding.withImplDef(ImplDef.ProviderImpl(f.get.ret, f.get))
+    def withImpl[T: Tag](function: ProviderMagnet[T]): R =
+      binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
 
   implicit final class WithTags[R](private val binding: Binding {def withTags(tags: Set[BindingTag]): R}) extends AnyVal {

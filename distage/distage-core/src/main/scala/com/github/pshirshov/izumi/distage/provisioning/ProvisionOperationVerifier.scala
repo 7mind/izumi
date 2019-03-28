@@ -34,7 +34,7 @@ object ProvisionOperationVerifier {
       val unboxed = unboxingTool.unbox(target, value)
 
       target match {
-        case RuntimeDIUniverse.DIKey.ProxyElementKey(proxied, tpe) => // each proxy operation returns two assignments
+        case _: RuntimeDIUniverse.DIKey.ProxyElementKey => // each proxy operation returns two assignments
           throwIfIncompatible(RuntimeDIUniverse.DIKey.get[ProxyDispatcher], clue, unboxed)
 
         case _ =>

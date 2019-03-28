@@ -33,13 +33,13 @@ trait DistageTests {
   protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
   protected val baseRouter: LogRouter = ConfigurableLogRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
-  protected def di[T: Tag](f: T => Any): Unit = {
-    val providerMagnet: ProviderMagnet[Unit] = { x: T => f(x); () }
+  protected def di[T: Tag](function: T => Any): Unit = {
+    val providerMagnet: ProviderMagnet[Unit] = { x: T => function(x); () }
     di(providerMagnet)
   }
 
-  protected def di(f: ProviderMagnet[Any]): Unit = {
-    ctx(f.get.diKeys.toSet ++ suiteRoots) {
+  protected def di(function: ProviderMagnet[Any]): Unit = {
+    ctx(function.get.diKeys.toSet ++ suiteRoots) {
       (context, roleStarter) =>
         try {
           verifyTotalSuppression()
@@ -50,7 +50,7 @@ trait DistageTests {
           startTestResources(context, roleStarter)
           verifyTotalSuppression()
 
-          context.run(f).discard()
+          context.run(function).discard()
         } finally {
           finalizeTest(context, roleStarter)
         }

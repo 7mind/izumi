@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.AbstractIndefiniteId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.RawRef
 
 sealed trait RawMethod {
   def meta: RawNodeMeta
@@ -16,9 +16,9 @@ object RawMethod {
 
     final case class Struct(input: RawSimpleStructure) extends NonAlternativeOutput
 
-    final case class Algebraic(alternatives: List[RawAdt.Member]) extends NonAlternativeOutput
+    final case class Algebraic(alternatives: List[RawAdt.Member], contract: Option[RawStructure]) extends NonAlternativeOutput
 
-    final case class Singular(typeId: AbstractIndefiniteId) extends NonAlternativeOutput
+    final case class Singular(typeId: RawRef) extends NonAlternativeOutput
 
     final case class Void() extends NonAlternativeOutput
 

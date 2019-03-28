@@ -12,7 +12,7 @@ trait TagsDSL {
 
   final private[definition] def frozenTags: Set[BindingTag] = mutableTags.toSet
 
-  /** Add `tags` to all bindings in this module, except [[IncludesDSL#include included]] bindings */
+  /** Add `tags` to all bindings in this module, except for [[IncludesDSL#include included]] bindings */
   final protected def tag(tags: BindingTag*): Unit = discard {
     mutableTags ++= tags
   }

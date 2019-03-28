@@ -1,20 +1,24 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait PlanInterpreter {
-  def instantiate(plan: OrderedPlan, parentContext: Locator): Either[FailedProvision, Locator]
+  def instantiate[F[_]: TagK: DIEffect](plan: OrderedPlan, parentContext: Locator): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
-case class FailedProvision(
-                            failed: ProvisionImmutable,
-                            plan: OrderedPlan,
-                            parentContext: Locator,
-                            failures: Seq[ProvisioningFailure]
-                          ) {
-  def throwException(): Nothing = {
+final case class FailedProvision[F[_]](
+                                        failed: ProvisionImmutable[F],
+                                        plan: OrderedPlan,
+                                        parentContext: Locator,
+                                        failures: Seq[ProvisioningFailure],
+                                      ) {
+  def throwException[A]()(implicit F: DIEffect[F]): F[A] = {
     val repr = failures.map {
       case ProvisioningFailure(op, f) =>
         val pos = OpFormatter.formatBindingPosition(op.origin)
@@ -32,14 +36,16 @@ case class FailedProvision(
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
-    throw new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)
-      .addAllSuppressed(failures.map(_.failure))
+    DIEffect[F].fail {
+      new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)
+        .addAllSuppressed(failures.map(_.failure))
+    }
   }
 }
 
 object FailedProvision {
-  implicit class FailedProvisionExt(p: Either[FailedProvision, Locator]) {
-    def throwOnFailure(): Locator = p.fold(_.throwException(), identity)
+  implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
+    def throwOnFailure()(implicit F: DIEffect[F]): F[Locator] = p.fold(_.throwException(), F.pure)
   }
 }
 

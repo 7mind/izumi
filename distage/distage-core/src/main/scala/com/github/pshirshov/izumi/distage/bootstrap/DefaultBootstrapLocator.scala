@@ -17,6 +17,7 @@ import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.distage.{provisioning, _}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
 
@@ -27,7 +28,8 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    bootstrapProducer.instantiate(plan, this).throwOnFailure()
+    val resource = bootstrapProducer.instantiate[Identity](plan, this)
+    resource.extract(resource.acquire).throwOnFailure()
   }
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances
@@ -84,6 +86,9 @@ object DefaultBootstrapLocator {
       , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool)
       , new ImportStrategyDefaultImpl
       , new InstanceStrategyDefaultImpl
+      , new EffectStrategyDefaultImpl
+      , new ResourceStrategyDefaultImpl
+
       , new ProvisioningFailureInterceptorDefaultImpl
       , verifier
     )
@@ -122,6 +127,8 @@ object DefaultBootstrapLocator {
     make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
+    make[EffectStrategy].from[EffectStrategyDefaultImpl]
+    make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
     make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
     many[PlanningHook]

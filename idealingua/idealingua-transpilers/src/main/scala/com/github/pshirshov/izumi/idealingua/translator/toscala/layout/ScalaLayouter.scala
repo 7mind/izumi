@@ -20,7 +20,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
       case ScalaProjectLayout.SBT =>
         val projectModules = outputs.flatMap {
           out =>
-            val did = out.typespace.domain.id
+            val did = out.typespace.domainId
 
             asSbtModule(out.modules, did)
               .map(m => ExtendedModule.DomainModule(did, m))
@@ -35,7 +35,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val projects = outputs
           .map {
             out =>
-              naming.projectId(out.typespace.domain.id) -> out
+              naming.projectId(out.typespace.domainId) -> out
           }
           .toMap
 
@@ -45,7 +45,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
           .map {
             id =>
               val d = projects(id)
-              val deps = d.typespace.domain.meta.directImports.map(i => s"`${naming.projectId(i.id)}`")
+              val deps = d.typespace.directImports.map(i => s"`${naming.projectId(i.id)}`")
 
               val depends = if (deps.nonEmpty) {
                 deps.mkString("\n    .dependsOn(\n        ", ",\n        ", "\n    )")

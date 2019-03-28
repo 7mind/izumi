@@ -16,7 +16,6 @@ import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Random, Try}
 
-
 trait FileServiceUtils[T <: LogFile] {
 
   def provideSvc(path: String): FileService[T]

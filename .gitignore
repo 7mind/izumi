@@ -1,10 +1,13 @@
 .idea
+*.jps
 /local.sbt
 .secrets
 
 secrets.tar
 build/project
 .DS_Store
+.metals
+
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Scala template

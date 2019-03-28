@@ -1,0 +1,36 @@
+domain idltest.rest
+
+
+data D1 {
+  f1: str
+  f2: opt[i32]
+  f3: opt[i32]
+  f4: i64
+}
+
+data D2 {
+  f1: lst[str]
+}
+
+data D3 {
+  f1: lst[str]
+  f2: map[str, str]
+}
+
+service TestService {
+  @get(path = "/get/1")
+  def get1()
+
+  @get(path = "/get/2/{d.f1}/{d.f2}?f3={d.f3}&f4={d.f4}")
+  def get2(d: D1)
+
+  @get(path = "/get/3?f1={*d.f1}")
+  def get3(d: D2)
+
+  @post(path = "/post/1/{d.f1}/{d.f2}?f3={d.f3}&f4={d.f4}")
+  def post1(d: D1, d2: D2)
+
+  @get(path = "/get/4?f1={!d.f1}&f2={!d.f2}")
+  def get4(d: D1)
+}
+

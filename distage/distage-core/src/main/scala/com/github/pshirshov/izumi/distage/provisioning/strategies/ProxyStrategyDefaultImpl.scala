@@ -1,6 +1,9 @@
 package com.github.pshirshov.izumi.distage.provisioning.strategies
 
 import com.github.pshirshov.izumi.distage.model.exceptions._
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
@@ -22,26 +25,28 @@ class ProxyStrategyDefaultImpl(
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
-  def initProxy(context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): Seq[NewObjectOp] = {
-    val key = proxyKey(initProxy.target)
+  def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+    val target = initProxy.target
+    val key = proxyKey(target)
     context.fetchUnsafe(key) match {
-      case Some(adapter: ProxyDispatcher) =>
-        executor.execute(context, initProxy.proxy.op).head match {
-          case NewObjectOp.NewInstance(_, instance) =>
-            adapter.init(instance.asInstanceOf[AnyRef])
+      case Some(dispatcher: ProxyDispatcher) =>
+        executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
+          case NewObjectOp.NewInstance(_, instance) :: Nil =>
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq.empty)
+          case (r@NewObjectOp.NewResource(_, instance, _)) :: Nil =>
+            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
           case r =>
-            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r", Seq(r))
-        }
-
+            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
+        })
       case _ =>
-        throw new MissingProxyAdapterException(s"Cannot get adapter $key for $initProxy", key, initProxy)
+        throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
     }
-
-    Seq()
   }
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
-
     val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {
@@ -134,6 +139,10 @@ class ProxyStrategyDefaultImpl(
       case op: WiringOp.CallProvider =>
         op.target.tpe
       case op: WiringOp.CallFactoryProvider =>
+        op.target.tpe
+      case op: MonadicOp.AllocateResource =>
+        op.target.tpe
+      case op: MonadicOp.ExecuteEffect =>
         op.target.tpe
       case op: WiringOp.ReferenceInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)

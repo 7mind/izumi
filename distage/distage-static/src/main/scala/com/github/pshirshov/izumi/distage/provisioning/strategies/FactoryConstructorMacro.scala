@@ -26,24 +26,23 @@ object FactoryConstructorMacro {
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
     val tools = DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
 
-    import tools.{liftableRuntimeUniverse, liftableSymbolInfo, liftableBasicDIKey}
+    import tools.{liftableSymbolInfo, liftableBasicDIKey}
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
 
-    val liftableProductWiring: Liftable[Wiring.UnaryWiring.ProductWiring] = {
-      // TODO: Macro call in liftable that substitutes for a different type (not just in a different universe...)
-      w: Wiring.UnaryWiring.ProductWiring =>
-        q"""{
-        val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
+    def _unsafeWrong_convertReflectiveWiringToFunctionWiring(w: Wiring.SingletonWiring.ReflectiveInstantiationWiring): Tree = {
+      // TODO: FIXME: Macro call in liftable that substitutes for a different type (not just in a different DIUniverse...)
+      q"""{
+      val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
 
-        $RuntimeDIUniverse.Wiring.UnaryWiring.Function.apply(fun, fun.associations)
-        }"""
+      ${reify(RuntimeDIUniverse.Wiring.SingletonWiring.Function)}.apply(fun, fun.associations)
+      }"""
     }
 
     val targetType = weakTypeOf[T]
 
-    val FactoryMethod(_, wireables, dependencies) = reflectionProvider.symbolToWiring(
+    val Factory(_, wireables, dependencies) = reflectionProvider.symbolToWiring(
       SafeType(targetType)
     )
 
@@ -62,7 +61,7 @@ object FactoryConstructorMacro {
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {
-      case (method@FactoryMethod.WithContext(factoryMethod, productConstructor, methodArguments), methodIndex) =>
+      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
           dIKey =>
@@ -85,11 +84,11 @@ object FactoryConstructorMacro {
 
         val providedKeys = method.associationsFromContext.map(_.wireWith)
 
-        // TODO: remove asInstanceOf[ProductWiring] by generating providers for classes too, so the only wiring allowed is Function
+        // TODO: remove ReflectiveInstantiationWiring by generating providers for factory products too, so that the only wiring allowed is Function
         val methodInfo =q"""{
-          val wiring = ${liftableProductWiring(productConstructor.asInstanceOf[Wiring.UnaryWiring.ProductWiring])}
+          val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
 
-          $RuntimeDIUniverse.Wiring.FactoryFunction.WithContext(
+          ${reify(RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod)}.apply(
             ${factoryMethod: SymbolInfo}
             , wiring
             , wiring.associations.map(_.wireWith) diff ${providedKeys.toList} // work hard to ensure pointer equality of dikeys...
@@ -110,8 +109,7 @@ object FactoryConstructorMacro {
 
     val defConstructor =
       q"""
-      def constructor(..$allArgs): $targetType =
-        ($instantiate).asInstanceOf[$targetType]
+      def constructor(..$allArgs): $targetType = ($instantiate): $targetType
       """
 
     val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module

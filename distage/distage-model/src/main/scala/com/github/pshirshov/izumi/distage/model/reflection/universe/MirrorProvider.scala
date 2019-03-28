@@ -24,7 +24,7 @@ object MirrorProvider {
         assert(rtc != null)
         Some(rtc)
       } catch {
-        case t: ClassNotFoundException =>
+        case _: ClassNotFoundException =>
           None
       }
     }

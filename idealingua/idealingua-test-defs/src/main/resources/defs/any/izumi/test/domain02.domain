@@ -18,6 +18,10 @@ alias RTestEnumDirect = RTestEnum
 
 alias ImportedBasicFailure = izumi.test.domain01#BasicFailure
 
+mixin InheritedFromOtherDomain {
+    & izumi.test.domain01#WillBeInheritedInDomain02
+}
+
 mixin TestInterface1 {
   if1Field_overriden: i32
   if1Field_inherited: i32

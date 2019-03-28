@@ -98,7 +98,7 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
             } else {
               val newKey = DIKey.SetElementKey(setKey, op.target)
               val provider = ProviderMagnet(wrap).get
-              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.UnaryWiring.Function(provider, provider.associations), op.origin)
+              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.associations), op.origin)
               newMembers += newKey
               Seq(op, newOp)
             }

@@ -56,6 +56,7 @@ object BIOSyntax {
     @inline def orTerminate(implicit ev: E <:< Throwable): R[Nothing, A] = catchAll(R.terminate(_))
 
     @inline def widen[E1 >: E, A1 >: A]: R[E1, A1] = r
+    @inline def widenError[E1 >: E]: R[E1, A] = r
 
     @inline def attempt: R[Nothing, Either[E, A]] = redeemPure(Left(_), Right(_))
 

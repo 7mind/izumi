@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.idealingua.translator.totypescript.layout
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
 import com.github.pshirshov.izumi.idealingua.translator._
+import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2
 import io.circe.Json
 import io.circe.literal._
 import io.circe.syntax._
@@ -55,7 +54,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     } else {
       modules
     }
-    mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
+    mm.map(m => ExtendedModule.DomainModule(translated.typespace.domainId, m))
   }
 
 
@@ -126,19 +125,19 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   }
 
 
-  private def buildPackageModule(ts: Typespace): Module = {
-    val allDeps = ts.domain.meta.directImports
+  private def buildPackageModule(ts: Typespace2): Module = {
+    val allDeps = ts.directImports
       .map {
         i =>
           ManifestDependency(naming.toScopedId(i.id.toPackage), mfVersion)
       } :+ ManifestDependency(naming.irtDependency, mfVersion)
 
 
-    val name = naming.toScopedId(ts.domain.id.toPackage)
+    val name = naming.toScopedId(ts.domainId.toPackage)
 
     val mf = options.manifest.copy(yarn = options.manifest.yarn.copy(dependencies = options.manifest.yarn.dependencies ++ allDeps))
     val content = generatePackage(mf, Some("index"), name)
-    Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
+    Module(ModuleId(ts.domainId.toPackage, "package.json"), content.toString())
   }
 
 
@@ -150,7 +149,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   private def buildBundlePackageModules(translated: Seq[Translated]): Seq[ExtendedModule.RuntimeModule] = {
     val allDeps = translated.map {
       ts =>
-        ManifestDependency(naming.toScopedId(ts.typespace.domain.id.toPackage), mfVersion)
+        ManifestDependency(naming.toScopedId(ts.typespace.domainId.toPackage), mfVersion)
     }
 
     val mf = options.manifest.copy(yarn = options.manifest.yarn.copy(dependencies = options.manifest.yarn.dependencies ++ allDeps))
@@ -165,15 +164,16 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     renderVersion(options.manifest.common.version)
   }
 
-  private def buildIndexModule(ts: Typespace): Module = {
-    val content =
-      s"""// Auto-generated, any modifications may be overwritten in the future.
-         |// Exporting module for domain ${ts.domain.id.toPackage.mkString(".")}
-         |${ts.domain.types.filterNot(_.id.isInstanceOf[AliasId]).map(t => s"export * from './${t.id.name}';").mkString("\n")}
-         |${ts.domain.services.map(s => s"export * from './${s.id.name}';").mkString("\n")}
-         """.stripMargin
-
-    Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
+  private def buildIndexModule(ts: Typespace2): Module = {
+    ???
+//    val content =
+//      s"""// Auto-generated, any modifications may be overwritten in the future.
+//         |// Exporting module for domain ${ts.domain.id.toPackage.mkString(".")}
+//         |${ts.domain.types.filterNot(_.id.isInstanceOf[AliasId]).map(t => s"export * from './${t.id.name}';").mkString("\n")}
+//         |${ts.domain.services.map(s => s"export * from './${s.id.name}';").mkString("\n")}
+//         """.stripMargin
+//
+//    Module(ModuleId(ts.domain.id.toPackage, "index.ts"), content)
   }
 
   private def generatePackage(manifest: TypeScriptBuildManifest, main: Option[String], name: String): Json = {

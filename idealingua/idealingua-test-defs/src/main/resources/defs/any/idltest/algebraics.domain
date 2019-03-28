@@ -54,3 +54,70 @@ adt AdtWithInterface {
     AFace
     Success
 }
+
+adt Nested {
+    mixin M1 {
+
+    }
+
+    data D1 {
+
+    }
+
+    enum E1 {
+        V1
+    }
+
+    alias A1 = str
+}
+
+adt Nested2 {
+    mixin M1 {
+
+    }
+
+    data D1 {
+
+    }
+}
+
+//
+mixin AdtContract {
+    shared: str
+}
+
+adt NestedC1 with {
+    /*
+        this  block will be added directly into nested structures and turn
+        referenced members into nested structures with additional field `value`
+    */
+    + AdtContract
+    otherfield: str
+} {
+    mixin M1 {
+    }
+
+    data D1 {
+    }
+
+    adt Nested with { // contracts are added for nested ADTs
+        shared2: str
+    } {
+        mixin M1 {}
+    }
+
+}
+
+
+adt NestedC2 with {
+    /*
+        this  block will be added directly into nested structures and turn
+        referenced members into nested structures with additional field `value`
+    */
+    + AdtContract
+    otherfield: str
+} = | mixin M1 {
+      }
+    | data D1 {
+      }
+

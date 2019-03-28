@@ -51,7 +51,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       stat[TestDependency]
     }
 
-    val context = mkInjector().produce(PlannerInput(definition))
+    val context = mkInjector().produceUnsafe(PlannerInput(definition))
 
     assert(context.get[TestDependency] == TestDependency())
   }
@@ -65,7 +65,7 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       stat[TestClass]
     }
 
-    val context = mkInjector().produce(PlannerInput(definition))
+    val context = mkInjector().produceUnsafe(PlannerInput(definition))
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }

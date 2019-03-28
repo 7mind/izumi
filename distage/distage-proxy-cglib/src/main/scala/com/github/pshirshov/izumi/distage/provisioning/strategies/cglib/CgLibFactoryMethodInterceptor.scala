@@ -4,24 +4,24 @@ import java.lang.reflect.Method
 
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{JustExecutor, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
+import com.github.pshirshov.izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
+import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CgLibFactoryMethodInterceptor.JustExecutor
 import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
 import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
 
-
 protected[distage] class CgLibFactoryMethodInterceptor
 (
-  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
-  , dependencyMethodIndex: TraitIndex
-  , narrowedContext: ProvisioningKeyProvider
-  , executor: OperationExecutor
-  , op: WiringOp.InstantiateFactory
-  , mirror: MirrorProvider
+  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
+, dependencyMethodIndex: TraitIndex
+, narrowedContext: ProvisioningKeyProvider
+, executor: WiringExecutor
+, op: WiringOp.InstantiateFactory
+, mirror: MirrorProvider
 ) extends CgLibTraitMethodInterceptor(dependencyMethodIndex, narrowedContext) {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
@@ -29,18 +29,15 @@ protected[distage] class CgLibFactoryMethodInterceptor
       val wiringWithContext = factoryMethodIndex(method)
       val justExecutor = mkExecutor(objects, wiringWithContext)
 
-      val results = justExecutor.execute(
-        FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith, op.origin)
-      )
+      val executableOp = FactoryTools.mkExecutableOp(op.target, wiringWithContext.wireWith, op.origin)
 
-      FactoryTools.interpret(results)
-
+      justExecutor.execute(executableOp)
     } else {
       super.intercept(o, method, objects, methodProxy)
     }
   }
 
-  private def mkExecutor(arguments: Array[AnyRef], wiringWithContext: FactoryMethod.WithContext): JustExecutor = {
+  private def mkExecutor(arguments: Array[AnyRef], wiringWithContext: Factory.FactoryMethod): JustExecutor = {
     if (arguments.length != wiringWithContext.methodArguments.length) {
       throw new CgLibCallException(
         s"Divergence between constructor arguments count: ${arguments.toSeq} vs ${wiringWithContext.methodArguments} "
@@ -71,12 +68,17 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val extendedContext = narrowedContext.extend(providedValues)
     new JustExecutor {
-      override def execute(step: ExecutableOp): Seq[NewObjectOp] = {
-        executor.execute(extendedContext, step)
+      override def execute(step: ExecutableOp.WiringOp): AnyRef = {
+        FactoryTools.interpret(executor.execute(extendedContext, step))
       }
     }
   }
+}
 
+protected[distage] object CgLibFactoryMethodInterceptor {
+  sealed trait JustExecutor {
+    def execute(step: ExecutableOp.WiringOp): AnyRef
+  }
 }
 
 

@@ -13,14 +13,16 @@ case class IDLParserContext(
   protected[parser] val defDomain = new DefDomain(this)
   protected[parser] val defSignature = new DefSignature(this)
   protected[parser] val defStructure = new DefStructure(this)
-  protected[parser] val defService = new DefService(this)
-  protected[parser] val defBuzzer = new DefBuzzer(this)
-  protected[parser] val defStreams = new DefStreams(this)
   protected[parser] val defParsers = new DefParsers(this)
   protected[parser] val defPositions = new DefPositions(this)
   protected[parser] val defConst = new DefConst(this)
   protected[parser] val metaAgg = new MetaAggregates(this)
+  protected[parser] val defTemplate = new DefTemplate(this)
 
+
+  protected[parser] val defService = new DefService(this)
+  protected[parser] val defBuzzer = new DefBuzzer(this)
+  protected[parser] val defStreams = new DefStreams(this)
 }
 
 

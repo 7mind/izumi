@@ -14,7 +14,7 @@ class TraitStrategyDefaultImpl
   mirror: MirrorProvider,
   traitInit: TraitInitTool,
 ) extends TraitStrategy {
-  def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[NewObjectOp] = {
+  def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[NewObjectOp.NewInstance] = {
     val traitDeps = context.narrow(op.wiring.requiredKeys)
 
     val wiredMethodIndex = traitInit.traitIndex(op.wiring.instanceType, op.wiring.associations)
@@ -30,7 +30,7 @@ class TraitStrategyDefaultImpl
 }
 
 class TraitStrategyFailingImpl extends TraitStrategy {
-  override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[NewObjectOp] = {
+  override def makeTrait(context: ProvisioningKeyProvider, op: WiringOp.InstantiateTrait): Seq[NewObjectOp.NewInstance] = {
     Quirks.discard(context)
     throw new NoopProvisionerImplCalled(s"TraitStrategyFailingImpl does not support proxies, failed op: $op", this)
   }

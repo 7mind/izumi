@@ -12,9 +12,10 @@ private[loader] class DomainMeshResolvedMutable
 (
   override val id: DomainId,
   override val members: Seq[RawTopLevelDefn],
+
+  override val imports: Seq[Import],
   override val origin: FSPath,
   override val directInclusions: Seq[Inclusion],
-  override val imports: Seq[Import],
   override val meta: RawNodeMeta,
   refContext: mutable.Map[DomainId, DomainMeshResolved],
   requiredRefs: Set[DomainId],

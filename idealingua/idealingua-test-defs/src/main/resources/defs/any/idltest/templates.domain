@@ -1,0 +1,95 @@
+domain idltest.tempates
+
+
+template [A, B] mixin M0 {
+  _: A
+  _: B
+  mapping: map[A, B]
+}
+
+
+
+type M1 = M0[str, i08]
+type M2 = M0[i08, M0[str, str]] // an implicit instance of M0[str, str] with crappy name will appear in typespace
+type M3 = M0[i08, M0[str, map[str, str]]] // an implicit instance of M0[str, map[str, str]] with crappy name will appear in typespace
+type M4 = M0[i08, M0[str, map[str, str]] @StrangeStructure ] // an implicit instance of M0[str, map[str, str]] will have name `StrangeStructure`
+
+
+mixin M5 {
+  f: M0[i08, tsz]
+  f1: M0[i08, tsz]
+  f21: map[i08, M0[i64, f32]]
+  f22: JavaMapDef[i08, M0[str, f32]]
+}
+
+
+mixin M6 {
+  f10: M0[i08, str] @StrangeStructure2
+  f11: M0[i08, str] @StrangeStructure2
+  f12: M0[i08, str]
+
+  f21: M0[i08, i08] @StrangeStructure3
+}
+
+//
+foreign JavaMapDef[KEY, VALUE] {
+  "java": t"java.util.Map<${KEY}, ${VALUE}>"
+}
+
+mixin ForeignTypeUser {
+  f: JavaMapDef[str, str] @JavaStringMap
+}
+
+// ultimate case of template inheritance
+
+template [A, B] mixin TInh0 {
+  _: A
+  _: B
+  mapping: map[A, B]
+}
+
+template [A, B] mixin TInh1 {
+    + TInh0[B, A]
+    f1: A
+    f2: B
+}
+
+mixin TInh2 {
+  & TInh1[str, map[str, str]]
+}
+
+type TInh3 = TInh1[str, map[str, str]]
+
+// adts
+template [A] adt Result with {
+    requestId: uid
+} {
+    data Success {
+        value: A
+    }
+    data Failure {
+        message: str
+    }
+}
+
+type LongResult = Result[i64]
+
+
+//
+template [A] adt InsaneExample {
+    M0[i64, str] @BranchType as BranchName
+    data Success {
+        value: A
+    }
+    data Failure {
+        message: str
+    }
+}
+
+type InsaneInstance = InsaneExample[i64]
+
+template [A, B] service BaseCrud {
+    def get(a: A) => B
+}
+
+type IntCrud = BaseCrud[i08, i08]

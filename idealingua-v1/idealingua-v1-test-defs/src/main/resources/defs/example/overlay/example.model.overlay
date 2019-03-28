@@ -1,0 +1,4 @@
+data ExtendedEmail {
+  address  : str
+  verified : bit
+}

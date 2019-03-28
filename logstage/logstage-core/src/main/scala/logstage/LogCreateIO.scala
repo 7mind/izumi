@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.functional.mono.SyncSafe
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.Log.{Context, CustomContext, Entry, Message}
 
-trait LogCreateIO[+F[_]] {
+trait LogCreateIO[F[_]] {
   def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry]
   def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Context]
 }

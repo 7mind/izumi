@@ -12,9 +12,15 @@ package object distage extends Distage {
   override type TagK[T[_]] = RuntimeDIUniverse.TagK[T]
   override val TagK: RuntimeDIUniverse.TagK.type = RuntimeDIUniverse.TagK
 
+  override type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
+  override val DIResource: model.definition.DIResource.type = model.definition.DIResource
+
   override type Planner = model.Planner
   override type Locator = model.Locator
   override type Producer = model.Producer
+
+  override type PlannerInput = model.PlannerInput
+  override val PlannerInput: model.PlannerInput.type = model.PlannerInput
 
   override type OrderedPlan = model.plan.OrderedPlan
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan

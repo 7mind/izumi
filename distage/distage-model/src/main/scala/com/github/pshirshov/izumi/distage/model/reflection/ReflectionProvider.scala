@@ -5,9 +5,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse,
 trait ReflectionProvider {
   val u: DIUniverse
 
-  def symbolToWiring(symbl: u.SafeType): u.Wiring
+  def symbolToWiring(symbl: u.SafeType): u.Wiring.PureWiring
 
-  def providerToWiring(function: u.Provider): u.Wiring
+  def providerToWiring(function: u.Provider): u.Wiring.PureWiring
 
   def constructorParameters(symbl: u.SafeType): List[u.Association.Parameter]
 

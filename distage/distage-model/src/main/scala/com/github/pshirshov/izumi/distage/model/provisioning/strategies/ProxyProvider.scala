@@ -5,13 +5,11 @@ import java.lang.reflect.Method
 import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCalled
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.{OperationExecutor, ProvisioningKeyProvider}
+import com.github.pshirshov.izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
-
 case class DeferredInit(dispatcher: ProxyDispatcher, proxy: AnyRef)
-
 
 sealed trait ProxyParams
 
@@ -27,22 +25,21 @@ object ProxyParams {
 
 case class TraitContext(
                          index: TraitIndex
-                         , context: ProvisioningKeyProvider
+                       , context: ProvisioningKeyProvider
                        )
 
 
 case class FactoryContext(
-                           factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.FactoryMethod.WithContext]
-                           , dependencyMethodIndex: TraitIndex
-                           , narrowedContext: ProvisioningKeyProvider
-                           , executor: OperationExecutor
-                           , op: WiringOp.InstantiateFactory
+                           factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
+                         , dependencyMethodIndex: TraitIndex
+                         , narrowedContext: ProvisioningKeyProvider
+                         , executor: WiringExecutor
+                         , op: WiringOp.InstantiateFactory
                          )
 
 case class CycleContext(deferredKey: RuntimeDIUniverse.DIKey)
 
 case class ProxyContext(runtimeClass: Class[_], op: ExecutableOp, params: ProxyParams)
-
 
 trait ProxyProvider {
   def makeFactoryProxy(factoryContext: FactoryContext, proxyContext: ProxyContext): AnyRef
