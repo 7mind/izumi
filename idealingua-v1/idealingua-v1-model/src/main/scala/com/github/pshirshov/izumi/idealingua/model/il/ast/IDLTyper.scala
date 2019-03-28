@@ -106,6 +106,8 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         (toIndefinite(d.id.toIndefinite), d)
       case d: ForeignType =>
         (toIndefinite(d.id), d)
+      case o =>
+        throw new IllegalArgumentException(s"Unsupported typedef: $o")
     }.toMap
   }
 
@@ -183,6 +185,9 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
       case RawTypeDef.ForeignType(id, _, _) =>
         throw new IDLException(s"[$domainId] TODO: foreign type isn't supported yet for $id")
+
+      case o =>
+        throw new IllegalArgumentException(s"Unsupported typedef: $o")
     }
   }
 

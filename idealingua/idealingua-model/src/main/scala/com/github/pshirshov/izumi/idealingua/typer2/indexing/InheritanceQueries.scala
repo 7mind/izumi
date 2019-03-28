@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzType.IzStructure
 import com.github.pshirshov.izumi.idealingua.typer2.model.IzTypeReference.model.IzTypeArgValue
 import com.github.pshirshov.izumi.idealingua.typer2.model.Typespace2.ProcessedOp
-import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference, Typespace2}
+import com.github.pshirshov.izumi.idealingua.typer2.model.{IzType, IzTypeId, IzTypeReference}
 
 class InheritanceQueries(types: Map[IzTypeId, ProcessedOp]) {
   def isParent(parent: IzTypeReference, child: IzTypeReference): Either[Unit, Boolean] = {

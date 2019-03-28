@@ -216,11 +216,13 @@ class RestSupport(ts2: Typespace2) extends WarnLogger.WarnLoggerImpl {
     for {
       out <- method.input match {
         case IzInput.Singular(typeref: IzTypeReference.Scalar) =>
-          for {
+          (for {
             struct <- ts2.asStructure(typeref.id)
           } yield {
             struct
-          }
+          }).left.map(f => FailedToFindSignatureStructure(service, method) +: f)
+        case IzInput.Singular(_: IzTypeReference.Generic) =>
+          Left(List(FailedToFindSignatureStructure(service, method)))
       }
 
     } yield {

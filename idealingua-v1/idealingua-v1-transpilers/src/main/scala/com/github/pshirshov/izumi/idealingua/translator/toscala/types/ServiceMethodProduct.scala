@@ -3,10 +3,11 @@ package com.github.pshirshov.izumi.idealingua.translator.toscala.types
 
 import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Adt
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 
+import scala.collection.immutable
 import scala.meta._
 
 
@@ -286,9 +287,9 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       }
     }
 
-    private def render_SHIM(typename: String, out: DefMethod.Output) = {
+    private def render_SHIM(typename: String, out: DefMethod.Output): immutable.Seq[Defn] = {
       out match {
-        case o: DefMethod.Output.Singular =>
+        case _: DefMethod.Output.Singular =>
           List.empty
         case o =>
           renderOutput(typename, o)
@@ -300,7 +301,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
       s match {
         case o: DefMethod.Output.Singular =>
           ctx.conv.toScala(o.typeId).typeFull
-        case o => typeFull
+        case _ => typeFull
       }
     }
 //    private def render_Id_SHIM(typename: String, out: DefMethod.Output) = {

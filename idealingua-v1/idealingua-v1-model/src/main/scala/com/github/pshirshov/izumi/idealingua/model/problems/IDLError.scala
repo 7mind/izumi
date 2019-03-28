@@ -27,7 +27,6 @@ sealed trait TyperError extends IDLError
 
 object TyperError {
 
-  @deprecated("We need to improve design and get rid of this", "2018-12-06")
   final case class TyperException(message: String) extends TyperError {
     override def toString: String = s"Typer failed with exception. Message: $message"
   }
@@ -109,7 +108,6 @@ object TypespaceError {
     override def toString: String = s"Missing dependencies: ${deps.mkString(", ")}"
   }
 
-  @deprecated("We need to improve design and get rid of this", "2018-12-06")
   final case class VerificationException(message: String) extends TypespaceError {
     override def toString: String = s"Verification failed with exception. Message: $message"
   }

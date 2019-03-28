@@ -110,6 +110,7 @@ object T2Fail {
   final case class UnexpectedGenericMappingArguments(service: IzTypeId, method: IzMethod, basic: BasicField) extends RestFail
   final case class MissingMappingField(service: IzTypeId, method: IzMethod, fieldName: FName) extends RestFail
   final case class UnexpectedNonScalarListElementMapping(service: IzTypeId, method: IzMethod, p: Parameter) extends RestFail
+  final case class FailedToFindSignatureStructure(service: IzTypeId, method: IzMethod) extends RestFail
 
 
 }

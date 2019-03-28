@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.idealingua
 import java.nio.file.Paths
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerator, ModelLoaderImpl}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.idealingua.il.loader.LocalFilesystemEnumerator
 import org.scalatest.WordSpec
-
 
 class LoaderTest extends WordSpec {
 
@@ -30,7 +30,7 @@ class LoaderTest extends WordSpec {
     val resolver = IDLTestTools.makeResolver(base)
     val defs = IDLTestTools.loadDefs(loader, resolver)
 
-    assert(defs.nonEmpty)
+    assert(defs.nonEmpty).discard()
 
 //    defs.foreach {
 //      original =>

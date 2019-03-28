@@ -15,7 +15,6 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import io.circe
 import io.circe.syntax._
 import io.circe.{Json, Printer}
-import logstage.{LogBIO, LogIO}
 import org.http4s._
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.websocket.WebSocketBuilder

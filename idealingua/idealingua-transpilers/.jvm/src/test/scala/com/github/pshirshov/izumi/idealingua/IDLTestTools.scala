@@ -21,7 +21,6 @@ import com.github.pshirshov.izumi.idealingua.il.loader._
 //import scala.sys.process._
 
 import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.translator._
 
 
 @ExposedTestScope
@@ -50,7 +49,7 @@ object IDLTestTools {
   }
 
   def makeResolver(base: String): ModelResolver = {
-    val last = base.split('/').last
+//    val last = base.split('/').last
 //    val rules = if (last == "any") {
 //      TypespaceCompilerBaseFacade.descriptors.flatMap(_.rules)
 //    } else {

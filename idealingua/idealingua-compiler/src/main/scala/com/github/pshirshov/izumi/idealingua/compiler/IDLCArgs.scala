@@ -47,7 +47,7 @@ object IDLCArgs {
       .text("init directory (must be empty or non-existing)")
 
     opt[Unit]('p', "publish").optional()
-      .action((a, c) => c.copy(publish = true))
+      .action((_, c) => c.copy(publish = true))
       .text("publish compiled files to repos")
 
     opt[String]('g', "global-define").valueName("name=value")
