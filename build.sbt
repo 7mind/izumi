@@ -591,6 +591,7 @@ lazy val idealingua: Seq[ProjectReference] = Seq(
   idealinguaRuntimeRpcScalaJvm,
   idealinguaRuntimeRpcHttp4s,
   idealinguaCompiler,
+  idealinguaTestDefs,
 )
 
 lazy val idealinguaV1: Seq[ProjectReference] = Seq(
@@ -601,6 +602,7 @@ lazy val idealinguaV1: Seq[ProjectReference] = Seq(
   idealinguaV1RuntimeRpcScalaJvm,
   idealinguaV1RuntimeRpcHttp4s,
   idealinguaV1Compiler,
+  idealinguaV1TestDefs,
 )
 
 lazy val fundamentalsJvm: Seq[ProjectReference] = Seq(
@@ -649,7 +651,7 @@ lazy val allProjects = fundamentalsJvm ++
   izsbt ++
   Seq(microsite: ProjectReference)
 
-lazy val unidocExcludes = izsbt ++ allJsProjects
+lazy val unidocExcludes = izsbt ++ allJsProjects ++ idealinguaV1
 
 lazy val microsite = inDoc.as.module
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, TutPlugin)
