@@ -539,7 +539,7 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .enablePlugins(ScriptedPlugin)
   .settings(
     libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
-    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealinguaV1.compiler.CommandlineIDLCompiler")
+    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(addArtifact(artifact in(Compile, assembly), assembly))
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
