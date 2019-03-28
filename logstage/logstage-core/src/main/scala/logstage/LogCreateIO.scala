@@ -12,14 +12,6 @@ trait LogCreateIO[F[_]] {
 object LogCreateIO {
   def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
-  /**
-    * Please enable `-Xsource:2.13` compiler option
-    * If you're having trouble calling this method
-    * with a single parameter `F`, e.g. `cats.effect.IO`
-    *
-    * @see bug https://github.com/scala/bug/issues/11435 for details
-    *     [FIXED in 2.13 and in 2.12 with `-Xsource:2.13` flag]
-    */
   implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F]
 
   class LogCreateIOSyncSafeInstance[F[_]](implicit protected val F: SyncSafe[F]) extends LogCreateIO[F] {
