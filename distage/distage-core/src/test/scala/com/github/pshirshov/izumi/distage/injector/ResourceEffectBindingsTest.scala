@@ -171,7 +171,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
             throw new RuntimeException()
           }
           .use((_: Unit) => Suspend2(()))
-          .run()
+          .unsafeRun()
       }
 
       assert(ops2 == Seq(XStart, XStop))
@@ -206,7 +206,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
               }
           }
           .use(_ => Suspend2(()))
-          .run()
+          .unsafeRun()
       }
 
       assert(ops2 == Seq(XStart, YStart, YStop, XStop))
@@ -284,6 +284,34 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val expectStopOps = startOps.reverse.map(_.invert)
       assert(context.get[Ref[Fn, Queue[Ops]]].get.unsafeRun().slice(2, 4) == expectStopOps)
+    }
+
+    "work with set bindings" in {
+      import com.github.pshirshov.izumi.distage.fixtures.ResourceCases.ClassResourceCase._
+
+      val definition = PlannerInput(new ModuleDef {
+        many[Res]
+          .addResource[SimpleResource]
+          .addResource[SuspendResource]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val resource = injector.produceF[Suspend2[Throwable, ?]](plan)
+
+      val set = resource.use {
+        context =>
+          Suspend2 {
+            val set = context.get[Set[Res]]
+            assert(set.size == 2)
+            assert(set.forall(_.initialized == true))
+            set
+          }
+      }.unsafeRun()
+
+      assert(set.size == 2)
+      assert(set.forall(_.initialized == false))
     }
 
     "deallocate correctly in case of exceptions" in {

@@ -53,6 +53,13 @@ object DIResource {
     makeSimple(acquire)(_.close)
   }
 
+  /** Convert [[cats.effect.Resource]] into a [[DIResource]] */
+  def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
+    new Cats[F, A] {
+      override def acquire: F[(A, F[Unit])] = resource.allocated
+    }
+  }
+
   trait Simple[A] extends DIResource[Identity, A]
 
   trait Mutable[+A] extends DIResourceBase[Identity, A] with AutoCloseable {
@@ -91,6 +98,7 @@ object DIResource {
   }
 
   implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    /** Convert [[DIResource]] into a [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
       Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
     }
@@ -105,12 +113,6 @@ object DIResource {
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
     final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
     final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
-  }
-
-  def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
-    new Cats[F, A] {
-      override def acquire: F[(A, F[Unit])] = resource.allocated
-    }
   }
 
   /**
