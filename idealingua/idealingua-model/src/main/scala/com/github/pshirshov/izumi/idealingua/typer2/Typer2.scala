@@ -46,12 +46,7 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
     for {
       index <- DomainIndex.build(defn).left.map(TyperFailure.apply)
       _ <- preverify(index)
-      importedIndexes <- defn.referenced.toSeq
-        .map {
-          case (k, v) => DomainIndex.build(v).map(r => k -> r)
-        }
-        .biAggregate
-        .map(_.toMap)
+      importedIndexes <- makeReferencedIndexes(defn, Set.empty)
         .left.map(TyperFailure.apply)
       allOperations <- combineOperations(index, importedIndexes)
       groupedByType <- groupOps(allOperations)
@@ -59,9 +54,11 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
       result <- fill(index, importedIndexes, groupedByType, ordered)
       consts <- new ConstSupport().makeConsts(result.ts, index, result.consts, importedIndexes)
       withConsts = result.ts.copy(consts = consts, warnings = result.ts.warnings)
-      conversions <- new TypespaceConversionCalculator(withConsts).findAllConversions().left.map(TyperFailure.apply)
+      conversions <- new TypespaceConversionCalculator(withConsts).findAllConversions()
+        .left.map(TyperFailure.apply)
       withConversions = withConsts.copy(conversions = conversions.conversions, warnings = withConsts.warnings ++ conversions.warnings)
-      opsWithRest <- new RestSupport(withConversions).translateRestAnnos().left.map(TyperFailure.apply)
+      opsWithRest <- new RestSupport(withConversions).translateRestAnnos()
+        .left.map(TyperFailure.apply)
     } yield {
       assert(result.ts.consts.isEmpty)
       assert(result.ts.conversions.isEmpty)
@@ -72,6 +69,21 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
     }
   }
 
+
+  private def makeReferencedIndexes(defn: DomainMeshResolved, ignore: Set[DomainId]): Either[List[T2Fail], Map[DomainId, DomainIndex]] = {
+    defn.referenced.filterNot(d => ignore.contains(d._1)).toSeq
+      .map {
+        case (k, v) =>
+          for {
+            index <- DomainIndex.build(v).map(r => k -> r)
+            referenced <- makeReferencedIndexes(v, ignore + k)
+          } yield {
+            referenced.toSeq :+ index
+          }
+      }
+      .biAggregate
+      .map(_.flatten.toMap)
+  }
 
   private def preverify(index: DomainIndex): Either[TyperFailure, Unit] = {
     val badTypes = index.types
@@ -128,7 +140,16 @@ class Typer2(options: TyperOptions, defn: DomainMeshResolved) {
 
   private def combineOperations(index: DomainIndex, importedIndexes: Map[DomainId, DomainIndex]): Either[Nothing, Seq[UniqueOperation]] = {
     val domainOps = index.dependencies.groupByType()
-    val importedOps = importedIndexes.values.flatMap(idx => idx.dependencies.groupByType())
+
+    val importedOps = importedIndexes.values
+      .filterNot(_.defn.id == index.defn.id) // prevent current domain from being re-included in case of circular imports
+      .flatMap {
+        idx =>
+          val grouped = idx.dependencies.groupByType()
+          assert(grouped.forall(d => d.id.pkg == idx.defn.id.toPackage), s"unexpected domain members: $grouped")
+          grouped
+      }
+
     val aliases = index.importIndex.filter(v => v._2.id.importedAs != v._2.id.name).mapValues {
       v =>
         val rname = RawDeclaredTypeName(v.id.importedAs)

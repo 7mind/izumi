@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 
+import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, LoadedModels}
 import com.github.pshirshov.izumi.idealingua.typer2.TyperOptions
 //import java.lang.management.ManagementFactory
 //import java.nio.charset.StandardCharsets
@@ -59,15 +60,93 @@ object IDLTestTools {
     new ModelResolver(TyperOptions())
   }
 
+  sealed trait Expectation
+  object Expectation {
+    final case class Failure(withWarnings: Boolean) extends Expectation
+    final case class Success(withWarnings: Boolean) extends Expectation
+  }
+
+  sealed trait FailedExpectation
+  object FailedExpectation {
+    final case class FailureExpected(path: FSPath) extends FailedExpectation
+    final case class SuccessExpected(path: FSPath) extends FailedExpectation
+    final case class WarningsExpected(path: FSPath) extends FailedExpectation
+    final case class UnexpectedWarnings(path: FSPath) extends FailedExpectation
+    final case class UnexpectedFailure(f: LoadedDomain.Failure) extends FailedExpectation
+  }
+
 
   def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
-    val resolved = resolver.resolve(loaded).ifWarnings(w => System.err.println(w)).throwIfFailed()
+    val resolved = resolver.resolve(loaded) //.ifWarnings(w => System.err.println(w)).throwIfFailed()
+    verifyAllDomainsWereProcessed(context, resolved)
 
-    val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
-    val good = resolved.successful.map(_.typespace.origin).toSet
-    val failed = loadable.diff(good)
-    assert(failed.isEmpty, s"domains were not loaded: $failed")
+    val expectations: Map[FSPath, Expectation] = Map(
+      FSPath.parse("/idltest/streams.domain") -> Expectation.Failure(false),
+      FSPath.parse("/idltest/withoverlay.domain") -> Expectation.Failure(false),
+      FSPath.parse("/idltest/clones.domain") -> Expectation.Success(true),
+      FSPath.parse("/idltest/substraction.domain") -> Expectation.Success(true),
+      FSPath.parse("/idltest/syntax.domain") -> Expectation.Success(true),
+      FSPath.parse("/idltest/templates.domain") -> Expectation.Success(true),
+      FSPath.parse("/overlaytest/withoverlay.domain") -> Expectation.Failure(false),
+    )
+
+    val failedExpectations = resolved.all.map {
+      case LoadedDomain.Success(typespace) =>
+        expectations.get(typespace.origin) match {
+          case Some(value) =>
+            value match {
+              case Expectation.Failure(_) =>
+                Left(FailedExpectation.FailureExpected(typespace.origin))
+              case Expectation.Success(withWarnings) =>
+                if (typespace.warnings.isEmpty == !withWarnings) {
+                  Right(())
+                } else {
+                  Left(FailedExpectation.WarningsExpected(typespace.origin))
+                }
+            }
+          case None =>
+            if (typespace.warnings.nonEmpty) {
+              Left(FailedExpectation.UnexpectedWarnings(typespace.origin))
+            } else {
+              Right(())
+            }
+        }
+
+      case failure: LoadedDomain.Failure =>
+        failure match {
+          case f: LoadedDomain.ParsingFailed =>
+            Left(FailedExpectation.UnexpectedFailure(f))
+
+          case f: LoadedDomain.ResolutionFailed =>
+            Left(FailedExpectation.UnexpectedFailure(f))
+
+          case LoadedDomain.TyperFailed(path, _, _, warnings) =>
+
+            expectations.get(path) match {
+              case Some(value) =>
+                value match {
+                  case Expectation.Failure(withWarnings) =>
+                    if (warnings.isEmpty == !withWarnings) {
+                      Right(())
+                    } else {
+                      Left(FailedExpectation.WarningsExpected(path))
+                    }
+
+                  case Expectation.Success(_) =>
+                    Left(FailedExpectation.FailureExpected(path))
+
+                }
+              case None =>
+                Left(FailedExpectation.SuccessExpected(path))
+            }
+        }
+    }.collect({case Left(f) => f})
+
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    assert(failedExpectations.isEmpty, s"failed test expectations: ${failedExpectations.niceList()}")
+    //    val good = resolved.successful.map(_.typespace.origin).toSet
+
 
     resolved.successful
   }
@@ -269,4 +348,17 @@ object IDLTestTools {
 //    }
 //    exitCode
 //  }
+  private def verifyAllDomainsWereProcessed(context: LocalModelLoaderContext, resolved: LoadedModels) = {
+    val all = resolved.all.map {
+      case LoadedDomain.Success(typespace) =>
+        typespace.origin
+      case failure: LoadedDomain.Failure =>
+        failure.path
+    }.toSet
+    val loadable = context.enumerator.enumerate().filter(_._1.name.endsWith(context.domainExt)).keySet
+    val failed = loadable.diff(all)
+    val unknown = all.diff(loadable)
+    assert(failed.isEmpty, s"domains were not processed: $failed")
+    assert(unknown.isEmpty, s"unknown domains: $unknown")
+  }
 }
