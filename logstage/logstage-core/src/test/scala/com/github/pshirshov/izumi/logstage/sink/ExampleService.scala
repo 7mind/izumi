@@ -48,8 +48,8 @@ class ExampleService(logger: IzLogger) {
       override def syncSafe[A](unexceptionalEff: => A): () => A = () => unexceptionalEff
     }
 
-    val logF = LogIO.fromLogger(logger)
-    val suspended = logF.crit("Suspended message: clap your hands!")
+    implicit val logF: LogIO[Function0] = LogIO.fromLogger(logger)
+    val suspended = LogIO[Function0].crit("Suspended message: clap your hands!")
 
     logger.crit("This should appear before the suspended message!")
     suspended()

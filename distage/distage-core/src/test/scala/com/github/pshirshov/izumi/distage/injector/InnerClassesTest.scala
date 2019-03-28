@@ -16,7 +16,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       make[StableObjectInheritingTrait1.TestDependency]
     })
 
-    val context = mkInjector().produce(definition)
+    val context = mkInjector().produceUnsafe(definition)
 
     assert(context.get[TestDependency] == TestDependency())
     assert(context.get[StableObjectInheritingTrait1.TestDependency] == StableObjectInheritingTrait1.TestDependency())
@@ -32,7 +32,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       make[TestClass]
     })
 
-    val context = mkInjector().produce(definition)
+    val context = mkInjector().produceUnsafe(definition)
 
     assert(context.get[TestClass] == TestClass(TestDependency()))
   }
@@ -126,7 +126,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
         make[TestFactory]
       })
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produceUnsafe(definition)
 
       assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
     }
@@ -142,7 +142,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
         make[Circular2]
       })
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produceUnsafe(definition)
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular1].circular2 != context.get[Circular2])
@@ -159,7 +159,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
         make[ByNameCircular2]
       })
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produceUnsafe(definition)
 
       assert(context.get[ByNameCircular1] != null)
       assert(context.get[ByNameCircular1].circular2 != context.get[ByNameCircular2])
@@ -176,7 +176,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
         make[testProviderModule.TestFactory]
       })
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produceUnsafe(definition)
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }
@@ -193,7 +193,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
         make[testProviderModule.Circular2]
       })
 
-      val context = mkInjector().produce(definition)
+      val context = mkInjector().produceUnsafe(definition)
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }

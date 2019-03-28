@@ -79,9 +79,9 @@ trait WithTags extends UniverseGeneric { self =>
     /** Resulting [Tag] will not have the ability to migrate into a different universe
       * (which is not usually a problem, but still worth naming it 'unsafe')
       */
-    def unsafeFromType[T](tpe: Type): Tag[T] =
+    def unsafeFromType[T](currentMirror: u.Mirror)(tpe: Type): Tag[T] =
       new Tag[T] {
-        override val tag: TypeTag[T] = ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe, u.rootMirror)
+        override val tag: TypeTag[T] = ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe, currentMirror)
       }
 
     implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t)
@@ -121,7 +121,7 @@ trait WithTags extends UniverseGeneric { self =>
           m.universe.internal.refinedType(parents, struct.decls, struct.typeSymbol)
         }
       }
-      Tag(TypeTag[R](intersection.headOption.fold(rootMirror)(_.mirror), refinedTypeCreator))
+      Tag(TypeTag[R](intersection.headOption.fold(u.rootMirror)(_.mirror), refinedTypeCreator))
     }
 
     /** For construction from [[TagLambdaMacro]] */

@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.model.providers
 
 import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Tag, SafeType}
 import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, Tag, SymbolInfo}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
-import scala.language.implicitConversions
 import scala.language.experimental.macros
+import scala.language.implicitConversions
 
 /**
   * A function that receives its arguments from DI object graph, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
@@ -77,9 +78,16 @@ import scala.language.experimental.macros
   *
   * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
   **/
-case class ProviderMagnet[+R](get: Provider) {
+final case class ProviderMagnet[+R](get: Provider) {
   def map[B: Tag](f: R => B): ProviderMagnet[B] = {
-    copy[B](get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
+    copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
+  }
+
+  def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
+    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R](Tag[B].tag.mirror)
+    rTag.discard() // scalac can't detect usage in macro
+
+    copy[(R, B)](get = get.unsafeZip(SafeType.get[(R, B)], that.get))
   }
 }
 
@@ -117,6 +125,28 @@ object ProviderMagnet {
           s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
       )
     )
+
+  def identity[A: Tag]: ProviderMagnet[A] = {
+    val tpe = SafeType.get[A]
+    val key = DIKey.get[A]
+    val debugInfo = DependencyContext.ConstructorParameterContext(tpe, SymbolInfo.Static("x$1", tpe, Nil, tpe, isByName = false, wasGeneric = false))
+
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false))
+      , fun = (_: Seq[Any]).head.asInstanceOf[A]
+      )
+    )
+  }
+
+  def pure[A: Tag](a: A): ProviderMagnet[A] = {
+    new ProviderMagnet[A](
+      Provider.ProviderImpl[A](
+        associations = Seq.empty
+      , fun = (_: Seq[Any]) => a
+      )
+    )
+  }
 
   def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacroGenerateUnsafeWeakSafeTypes.impl[R]
 

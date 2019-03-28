@@ -1,10 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp._
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, Wiring}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 trait OpFormatter {
@@ -16,49 +20,62 @@ object OpFormatter {
     origin.fold("(<unknown>)")(_.origin.toString)
   }
 
-  class Impl(kf: KeyFormatter, tf: TypeFormatter) extends OpFormatter {
+  class Impl
+  (
+    keyFormatter: KeyFormatter
+  , typeFormatter: TypeFormatter
+  ) extends OpFormatter {
+
+    import typeFormatter.formatType
+    import keyFormatter.formatKey
+
     override def format(op: ExecutableOp): String = {
-      import ExecutableOp._
-      import ProxyOp._
-      import WiringOp._
       op match {
         case i: InstantiationOp =>
           i match {
             case CreateSet(target, tpe, members, origin) =>
               // f"""$target := newset[$tpe]"""
-              val repr = doFormat(tf.format(tpe), members.map(kf.format).toSeq, "newset", ('[', ']'), ('{', '}'))
+              val repr = doFormat(formatType(tpe), members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
               val pos = formatBindingPosition(origin)
-              s"${kf.format(target)} $pos := $repr"
+              s"${formatKey(target)} $pos := $repr"
+
+            case ExecuteEffect(target, proxied, wiring, origin) =>
+              val pos = formatBindingPosition(origin)
+              s"${formatKey(target)} $pos := effect[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
+
+            case AllocateResource(target, proxied, wiring, origin) =>
+              val pos = formatBindingPosition(origin)
+              s"${formatKey(target)} $pos := allocate[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
 
             case w: WiringOp =>
               w match {
                 case InstantiateClass(target, wiring, origin) =>
-                  doFormat(target, wiring, origin)
+                  formatOp(target, wiring, origin)
                 case InstantiateTrait(target, wiring, origin) =>
-                  doFormat(target, wiring, origin)
+                  formatOp(target, wiring, origin)
                 case InstantiateFactory(target, wiring, origin) =>
-                  doFormat(target, wiring, origin)
+                  formatOp(target, wiring, origin)
                 case CallProvider(target, wiring, origin) =>
-                  doFormat(target, wiring, origin)
+                  formatOp(target, wiring, origin)
                 case CallFactoryProvider(target, wiring, origin) =>
-                  doFormat(target, wiring, origin)
+                  formatOp(target, wiring, origin)
                 case ReferenceInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
                   if (wiring.instance!=null) {
-                    s"${kf.format(target)} $pos := ${wiring.instance.getClass}#${wiring.instance.hashCode()}"
+                    s"${formatKey(target)} $pos := ${wiring.instance.getClass}#${wiring.instance.hashCode()}"
                   } else {
-                    s"${kf.format(target)} $pos := null"
+                    s"${formatKey(target)} $pos := null"
                   }
 
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  s"${kf.format(target)} $pos := ${kf.format(wiring.key)}"
+                  s"${formatKey(target)} $pos := ${formatKey(wiring.key)}"
               }
           }
 
         case ImportDependency(target, references, origin) =>
           val pos = formatBindingPosition(origin)
-          s"${kf.format(target)} $pos := import $target // required for ${references.map(kf.format).mkString(" and ")}"
+          s"${formatKey(target)} $pos := import $target // required for ${references.map(formatKey).mkString(" and ")}"
 
         case p: ProxyOp =>
           p match {
@@ -71,91 +88,91 @@ object OpFormatter {
                 "proxy.cogen"
               }
 
-              s"""${kf.format(p.target)} $pos := $kind(${forwardRefs.map(s => s"${kf.format(s)}: deferred").mkString(", ")}) {
+              s"""${formatKey(p.target)} $pos := $kind(${forwardRefs.map(s => s"${formatKey(s)}: deferred").mkString(", ")}) {
                  |${format(proxied).shift(2)}
                  |}""".stripMargin
 
             case ProxyOp.InitProxy(target, dependencies, _, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${kf.format(target)} $pos -> init(${dependencies.map(kf.format).mkString(", ")})"
+              s"${formatKey(target)} $pos -> init(${dependencies.map(formatKey).mkString(", ")})"
 
           }
       }
     }
 
-    private def doFormat(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
-      val op = doFormat(deps)
+    private def formatOp(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
+      val op = formatWiring(deps)
       val pos = formatBindingPosition(origin)
-      s"${kf.format(target)} $pos := $op"
+      s"${formatKey(target)} $pos := $op"
     }
 
 
-    private def doFormat(deps: Wiring): String = {
+    private def formatWiring(deps: Wiring): String = {
       deps match {
         case Constructor(instanceType, associations, prefix) =>
-          doFormat(tf.format(instanceType.tpe), formatPrefix(prefix) ++ associations.map(doFormat), "make", ('[', ']'), ('(', ')'))
+          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "make", ('[', ']'), ('(', ')'))
 
         case AbstractSymbol(instanceType, associations, prefix) =>
-          doFormat(tf.format(instanceType.tpe), formatPrefix(prefix) ++ associations.map(doFormat), "impl", ('[', ']'), ('{', '}'))
+          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "impl", ('[', ']'), ('{', '}'))
 
-        case Function(instanceType, associations) =>
-          doFormat(doFormat(instanceType), associations.map(doFormat), "call", ('(', ')'), ('{', '}'))
+        case Function(provider, associations) =>
+          doFormat(formatFunction(provider), associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
 
-        case FactoryMethod(factoryType, wireables, dependencies) =>
-          val wirings = wireables.map {
+        case Factory(factoryType, factoryIndex, dependencies) =>
+          val wirings = factoryIndex.map {
             w =>
-              s"${w.factoryMethod}: ${tf.format(w.factoryMethod.finalResultType)} ~= ${doFormat(w.wireWith)}".shift(2)
+              s"${w.factoryMethod}: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
           }
 
-          val depsRepr = dependencies.map(doFormat)
+          val depsRepr = dependencies.map(formatDependency)
 
           doFormat(
-            tf.format(factoryType)
+            formatType(factoryType)
             , wirings ++ depsRepr
             , "factory", ('(', ')'), ('{', '}')
           )
 
-        case FactoryFunction(factoryType, wireables, dependencies) =>
-          val wirings = wireables.map {
+        case FactoryFunction(provider, factoryIndex, dependencies) =>
+          val wirings = factoryIndex.map {
             case (idx, w) =>
-              s"${w.factoryMethod}[$idx]: ${tf.format(w.factoryMethod.finalResultType)} ~= ${doFormat(w.wireWith)}".shift(2)
+              s"${w.factoryMethod}[$idx]: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
           }.toSeq
 
-          val depsRepr = dependencies.map(doFormat)
+          val depsRepr = dependencies.map(formatDependency)
 
           doFormat(
-            doFormat(factoryType)
+            formatFunction(provider)
             , wirings ++ depsRepr
             , "call factory", ('(', ')'), ('{', '}')
           )
 
-        case other =>
+        case other@(_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"
       }
     }
 
-    private def doFormat(association: RuntimeDIUniverse.Association): String = {
+    private def formatDependency(association: Association): String = {
       association match {
-        case RuntimeDIUniverse.Association.Parameter(_, name, tpe, wireWith, isByName, _) =>
+        case Association.Parameter(_, name, tpe, wireWith, isByName, _) =>
           val fname = if (isByName) {
             s"=> $name"
           } else {
             name
           }
 
-          s"""par $fname: ${tf.format(tpe)} = lookup(${kf.format(wireWith)})"""
+          s"""par $fname: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
 
-        case RuntimeDIUniverse.Association.AbstractMethod(_, name, tpe, wireWith) =>
-          s"""def $name: ${tf.format(tpe)} = lookup(${kf.format(wireWith)})"""
+        case Association.AbstractMethod(_, name, tpe, wireWith) =>
+          s"""def $name: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
       }
     }
 
-    private def doFormat(provider: RuntimeDIUniverse.Provider) = {
-      s"${provider.fun}(${provider.argTypes.map(tf.format).mkString(", ")}): ${tf.format(provider.ret)}"
+    private def formatFunction(provider: Provider): String = {
+      s"${provider.fun}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def formatPrefix(prefix: Option[RuntimeDIUniverse.DIKey]): Seq[String] = {
-      prefix.toSeq.map(p => s".prefix = lookup(${kf.format(p)})")
+    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
+      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
     }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
@@ -171,6 +188,7 @@ object OpFormatter {
 
       sb.toString()
     }
+
   }
 
 }

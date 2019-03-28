@@ -56,6 +56,15 @@ object BIOSyntax {
     @inline def orTerminate(implicit ev: E <:< Throwable): R[Nothing, A] = catchAll(R.terminate(_))
 
     @inline def widen[E1 >: E, A1 >: A]: R[E1, A1] = r
+    @inline def widenError[E1 >: E]: R[E1, A] = r
+
+    @inline def attempt: R[Nothing, Either[E, A]] = redeemPure(Left(_), Right(_))
+
+    @inline def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): R[E1, A1] = flatMap(R.fromEither(_))
+
+    @inline def fromOption[E1 >: E, A1](errorOnNone: E1)(implicit ev1: A <:< Option[A1]): R[E1, A1] = flatMap(R.fromOption(errorOnNone)(_))
+
+    @inline def fromOption[A1](implicit ev: E =:= Nothing, ev1: A <:< Option[A1]): R[Unit, A1] = R.flatMap(redeemPure(ev, identity))(R.fromOption(_))
   }
 
   final class BIOAsyncOps[R[+ _, + _], E, A](private val r: R[E, A])(implicit private val R: BIOAsync[R]) {

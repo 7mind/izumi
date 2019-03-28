@@ -14,7 +14,7 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
     context.importKey(target) match {
       case Some(v) =>
         Seq(NewObjectOp.NewImport(target, v))
-      // support FactoryStrategyMacro
+      // FIXME: TODO: support FactoryStrategyMacro [remove]
       case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
         Seq(NewObjectOp.DoNothing())
       case _ =>

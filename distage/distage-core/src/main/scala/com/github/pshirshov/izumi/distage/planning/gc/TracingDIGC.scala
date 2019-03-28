@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.planning.gc
 
 import com.github.pshirshov.izumi.distage.model.definition.Module
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, ProxyOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, ProxyOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.DIGarbageCollector
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -22,6 +22,8 @@ class TracingDIGC
         op match {
           case w: WiringOp =>
             w.wiring.requiredKeys
+          case w: MonadicOp =>
+            w.effectWiring.requiredKeys
           case c: CreateSet =>
             c.members.filterNot {
               key =>
@@ -29,9 +31,11 @@ class TracingDIGC
                   .collect {
                     case o: ExecutableOp.WiringOp =>
                       o.wiring
+                    case o: ExecutableOp.MonadicOp =>
+                      o.effectWiring
                   }
                   .exists {
-                    case r: Wiring.UnaryWiring.Reference =>
+                    case r: Wiring.SingletonWiring.Reference =>
                       r.weak
                     case _ =>
                       false
@@ -58,9 +62,11 @@ class TracingDIGC
           .collect {
             case (k, op: ExecutableOp.WiringOp) =>
               (k, op.wiring)
+            case (k, op: ExecutableOp.MonadicOp) =>
+              (k, op.effectWiring)
           }
           .collect {
-            case (k, r: Wiring.UnaryWiring.Reference) if r.weak =>
+            case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>
               (k, r)
           }
 

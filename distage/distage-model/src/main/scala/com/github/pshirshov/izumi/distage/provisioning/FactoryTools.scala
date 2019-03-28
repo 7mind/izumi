@@ -28,25 +28,25 @@ object FactoryTools {
     }
   }
 
-  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.UnaryWiring, binding: Option[Binding]): WiringOp =
+  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.SingletonWiring, binding: Option[Binding]): WiringOp =
     wiring match {
-      case w: UnaryWiring.Constructor =>
+      case w: SingletonWiring.Constructor =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.InstantiateClass(target, w, binding)
 
-      case w: UnaryWiring.AbstractSymbol =>
+      case w: SingletonWiring.AbstractSymbol =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.InstantiateTrait(target, w, binding)
 
-      case w: UnaryWiring.Function =>
+      case w: SingletonWiring.Function =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.CallProvider(target, w, binding)
 
-      case w: UnaryWiring.Instance =>
+      case w: SingletonWiring.Instance =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.ReferenceInstance(target, w, binding)
 
-      case w: UnaryWiring.Reference =>
+      case w: SingletonWiring.Reference =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
         WiringOp.ReferenceKey(target, w, binding)
     }

@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.{CallProvider, ReferenceInstance}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.functional.Renderable
 
@@ -30,17 +30,17 @@ sealed trait AbstractPlan {
     SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector), roots)
   }
 
-  final def providerImport[T](f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
-      case i if i.target.tpe == f.get.ret =>
-        Seq(CallProvider(i.target, UnaryWiring.Function(f.get, f.get.associations), i.origin))
+      case i if i.target.tpe == function.get.ret =>
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
     }
   }
 
-  final def providerImport[T](id: String)(f: ProviderMagnet[T]): SemiPlan = {
+  final def providerImport[T](id: String)(function: ProviderMagnet[T]): SemiPlan = {
     resolveImportsOp {
-      case i if i.target == DIKey.IdKey(f.get.ret, id) =>
-        Seq(CallProvider(i.target, UnaryWiring.Function(f.get, f.get.associations), i.origin))
+      case i if i.target == DIKey.IdKey(function.get.ret, id) =>
+        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
     }
   }
 

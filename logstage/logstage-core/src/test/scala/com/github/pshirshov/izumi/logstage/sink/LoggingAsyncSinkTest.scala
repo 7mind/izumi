@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.logstage.sink
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 
-
 class LoggingAsyncSinkTest extends WordSpec {
   "Log macro" should {
     "support async sinks" in {

@@ -36,6 +36,8 @@ trait BIOInvariant[R[_, _]] {
 
   @inline def bracket[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
+  @inline def bracketCase[E, A, B](acquire: R[E, A])(release: (A, BIOExit[E, B]) => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
+
   @inline def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[BIOExit.Failure[E], A] => R[BIOExit.Failure[E2], B]): R[E2, B]
 
   @inline def sandbox[E, A](r: R[E, A]): R[BIOExit.Failure[E], A]
@@ -55,6 +57,8 @@ trait BIOInvariant[R[_, _]] {
   @inline final def sequence_[E](l: Iterable[R[E, Unit]]): R[E, Unit] = void(traverse(l)(identity))
 
   @inline final def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): R[E, A] = flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
+
+  @inline final def fromOption[A](effect: => Option[A]): R[Unit, A] = flatMap(sync(effect))(e => fromEither(e.toRight(())))
 
   @inline final def fromTry[A](effect: => Try[A]): R[Throwable, A] = syncThrowable(effect.get)
 

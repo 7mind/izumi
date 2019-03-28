@@ -81,8 +81,8 @@ object TypeLevelDSL {
     def bind[T: Tag](instance: T with AnyRef with Singleton): Bindings[SingletonBinding[TypeKey[T], InstanceImpl[T, instance.type]] :: BS] =
       new Bindings[SingletonBinding[TypeKey[T], InstanceImpl[T, instance.type]] :: BS]
 
-    def provider[T: Tag](f: ProviderMagnet[T] with Singleton): Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, f.type]] :: BS] =
-      new Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, f.type ]] :: BS]
+    def provider[T: Tag](function: ProviderMagnet[T] with Singleton): Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, function.type]] :: BS] =
+      new Bindings[SingletonBinding[TypeKey[T], ProviderImpl[T, function.type ]] :: BS]
 
     // sets
     def set[T: Tag]: Bindings[EmptySetBinding[TypeKey[Set[T]]] :: BS] =
@@ -94,8 +94,8 @@ object TypeLevelDSL {
     def element[T: Tag](instance: T with AnyRef with Singleton): Bindings[SetBinding[TypeKey[Set[T]], InstanceImpl[T, instance.type]] :: BS] =
       new Bindings[SetBinding[TypeKey[Set[T]], InstanceImpl[T, instance.type]] :: BS]
 
-    def elementProvider[T: Tag](f: ProviderMagnet[T] with Singleton): Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, f.type]] :: BS] =
-      new Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, f.type]] :: BS]
+    def elementProvider[T: Tag](function: ProviderMagnet[T] with Singleton): Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, function.type]] :: BS] =
+      new Bindings[SetBinding[TypeKey[Set[T]], ProviderImpl[T, function.type]] :: BS]
 
     // TODO named bindings
 

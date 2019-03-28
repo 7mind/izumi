@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -149,27 +149,35 @@ final class GraphDumpObserver
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case w: RuntimeDIUniverse.Wiring.UnaryWiring =>
+              case w: RuntimeDIUniverse.Wiring.SingletonWiring =>
                 w match {
-                  case _: RuntimeDIUniverse.Wiring.UnaryWiring.ProductWiring =>
+                  case _: RuntimeDIUniverse.Wiring.SingletonWiring.ReflectiveInstantiationWiring =>
                     "make"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Function(_, _) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
                     "lambda"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Instance(_, _) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
                     "instance"
-                  case RuntimeDIUniverse.Wiring.UnaryWiring.Reference(_, _, weak) =>
+                  case RuntimeDIUniverse.Wiring.SingletonWiring.Reference(_, _, weak) =>
                     if (weak) {
                       attrs.put("style", "filled,dashed")
                     }
                     "ref"
                 }
-              case RuntimeDIUniverse.Wiring.FactoryMethod(_, _, _) =>
-                "fdef"
 
+              case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
+                "factory"
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
-                "ffun"
+                "factoryfun"
             }
+        case op: ExecutableOp.MonadicOp =>
+          op match {
+            case _: MonadicOp.ExecuteEffect =>
+              "effect"
+            case _: MonadicOp.AllocateResource =>
+              "resource"
+          }
         }
+
       case ExecutableOp.ImportDependency(_, _, _) =>
         "import"
 

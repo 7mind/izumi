@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 
 class IzLogger
 (
-  override protected val router: LogRouter
+  override val router: LogRouter
 , override val customContext: Log.CustomContext
 ) extends RoutingLogger {
 

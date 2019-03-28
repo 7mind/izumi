@@ -77,6 +77,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
     val versionSettings = CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) => Seq(
         "-Ypartial-unification"
+        , "-Xsource:2.13"
         , "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString
         , "-opt-warnings:_"
         , "-Ywarn-extra-implicit"
@@ -100,6 +101,9 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
         , "-Xlint:stars-align" // Pattern sequence wildcard must align with sequence component.
         , "-Xlint:type-parameter-shadow" // A local type parameter shadows a type already in scope.
         , "-Xlint:unsound-match" // Pattern match may not be typesafe.
+      )
+      case Some((2, 13)) => Seq(
+        "-Xsource:2.14"
       )
       case _ =>
         Seq()

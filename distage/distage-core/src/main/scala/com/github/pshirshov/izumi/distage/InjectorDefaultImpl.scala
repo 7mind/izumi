@@ -1,8 +1,11 @@
 package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model._
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.provisioning.{FailedProvision, PlanInterpreter}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
   override def plan(input: PlannerInput): OrderedPlan = {
@@ -17,7 +20,11 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].merge(a, b)
   }
 
-  override def produce(plan: OrderedPlan): Either[FailedProvision, Locator] = {
-    parentContext.get[PlanInterpreter].instantiate(plan, parentContext)
+  override def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
+    produceDetailedF[F](plan).evalMap(_.throwOnFailure())
+  }
+
+  override def produceDetailedF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+    parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext)
   }
 }

@@ -39,6 +39,8 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 
   @inline override def bracket[E, A, B](acquire: R[E, A])(release: A => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
 
+  @inline override def bracketCase[E, A, B](acquire: R[E, A])(release: (A, BIOExit[E, B]) => R[Nothing, Unit])(use: A => R[E, B]): R[E, B]
+
   @inline override def sandboxWith[E, A, E2, B](r: R[E, A])(f: R[BIOExit.Failure[E], A] => R[BIOExit.Failure[E2], B]): R[E2, B]
 
   @inline override def sandbox[E, A](r: R[E, A]): R[BIOExit.Failure[E], A]
@@ -58,6 +60,9 @@ object BIO extends BIOSyntax {
   implicit object BIOZio extends BIOAsync[IO] {
     @inline override def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
       IO.bracket(acquire)(v => release(v))(use)
+
+    @inline override def bracketCase[E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
+      IO.bracket0[E, A, B](acquire){case (a, exit) => release(a, toBIOExit(exit))}(use)
 
     @inline override def sleep(duration: Duration): IO[Nothing, Unit] = IO.sleep(fromScala(duration))
 
@@ -138,6 +143,12 @@ object BIO extends BIOSyntax {
       }
     }
 
+    @inline override def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
+
+    @inline override def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = {
+      IO.foreachParN(maxConcurrent.toLong)(l)(f)
+    }
+
     @inline def toBIOExit[E, A](result: Exit[E, A]): BIOExit[E, A] = result match {
       case Exit.Success(v) =>
         Success(v)
@@ -156,7 +167,7 @@ object BIO extends BIOSyntax {
           } else {
             unchecked
           }
-          val compound = (exceptions: @unchecked) match {
+          val compound = exceptions match {
             case e :: Nil => e
             case _ => FiberFailure(cause)
           }

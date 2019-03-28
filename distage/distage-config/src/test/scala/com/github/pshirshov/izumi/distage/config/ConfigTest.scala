@@ -86,7 +86,7 @@ class ConfigTest extends WordSpec {
     }
 
     "The order is not preserved in config maps due to limitations of typesafe-config" in {
-      val context = Injector(mkConfigModule("map-test.conf")).produce(TestConfigReaders.mapDefinition)
+      val context = Injector(mkConfigModule("map-test.conf")).produceUnsafe(TestConfigReaders.mapDefinition)
 
       assert(context.get[Service[MapCaseClass]].conf.mymap.toList.map(_._1) != List("service1", "service2", "service3", "service4", "service5", "service6"))
       assert(context.get[Service[MapCaseClass]].conf.mymap.keySet == Set("service1", "service2", "service3", "service4", "service5", "service6"))
@@ -120,7 +120,7 @@ class ConfigTest extends WordSpec {
 
     "resolve config tuples" in {
       val context = Injector(mkConfigModule("tuple-test.conf"))
-        .produce(TestConfigReaders.tupleDefinition)
+        .produceUnsafe(TestConfigReaders.tupleDefinition)
 
       assert(context.get[Service[TupleCaseClass]].conf == TupleCaseClass(tuple = (1, "two", false, Some(Right(List("r"))))))
     }
@@ -136,7 +136,7 @@ class ConfigTest extends WordSpec {
 
     "resolve backticks" in {
       val context = Injector.Standard(mkConfigModule("backticks-test.conf"))
-        .produce(TestConfigReaders.backticksDefinition)
+        .produceUnsafe(TestConfigReaders.backticksDefinition)
 
       assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
     }
@@ -144,11 +144,11 @@ class ConfigTest extends WordSpec {
     "resolve config sealed traits" in {
       val context1 =
         Injector.Standard(mkConfigModule("sealed-test1.conf"))
-          .produce(TestConfigReaders.sealedDefinition)
+          .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       val context2 =
         Injector.Standard(mkConfigModule("sealed-test2.conf"))
-          .produce(TestConfigReaders.sealedDefinition)
+          .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
       assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))

@@ -228,7 +228,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val context = injector.produce(definition)
+    val context = injector.produceUnsafe(definition)
 
     assert(context.get[ErasedCircular[Dependency]] != null)
     assert(context.get[PhantomDependency[Dependency]] != null)
@@ -246,7 +246,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val context = injector.produce(definition)
+    val context = injector.produceUnsafe(definition)
 
     assert(context.get[Dependency] != null)
     assert(context.get[GenericCircular[Dependency]] != null)
@@ -285,7 +285,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     })
 
     val injector = mkInjector()
-    val context = injector.produce(definition)
+    val context = injector.produceUnsafe(definition)
 
     assert(context.get[Dependency {def dep: RefinedCircular}] != null)
     assert(context.get[RefinedCircular] != null)

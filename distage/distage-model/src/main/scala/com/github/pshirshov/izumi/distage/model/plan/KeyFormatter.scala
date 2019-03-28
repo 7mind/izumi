@@ -4,26 +4,26 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait KeyFormatter {
-  def format(key: DIKey): String
+  def formatKey(key: DIKey): String
 }
 
 object KeyFormatter {
 
   object Full extends KeyFormatter {
-    override def format(key: DIKey): String = key.toString
+    override def formatKey(key: DIKey): String = key.toString
   }
 
 }
 
 trait TypeFormatter {
-  def format(key: TypeNative): String
-  def format(key: SafeType): String = format(key.tpe)
+  final def formatType(key: SafeType): String = formatType(key.tpe)
+  protected[this] def formatType(key: TypeNative): String
 }
 
 object TypeFormatter {
 
   object Full extends TypeFormatter {
-    override def format(key: RuntimeDIUniverse.TypeNative): String = key.toString
+    override protected[this] def formatType(key: RuntimeDIUniverse.TypeNative): String = key.toString
   }
 
 }

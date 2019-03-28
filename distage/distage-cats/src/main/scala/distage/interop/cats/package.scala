@@ -8,7 +8,7 @@ import _root_.cats.syntax.traverse._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.UnaryWiring.Instance
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import distage._
 
@@ -25,7 +25,7 @@ package object cats
       Sync[F].delay(injector.produceUnsafe(plan))
 
     def produceIO[F[_]: Sync](definition: PlannerInput): F[Locator] =
-      Sync[F].delay(injector.produce(definition))
+      Sync[F].delay(injector.produceUnsafe(definition))
   }
 
   implicit final class SemiPlanExts(private val plan: SemiPlan) extends AnyVal {
@@ -69,17 +69,4 @@ package object cats
         Applicative[F].pure(op)
     }
 
-  private[cats] final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
-    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
-      plan.resolveImportsF[F] {
-        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
-      }
-  }
-
-  private[cats] final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
-    def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
-      plan.resolveImportsF[F] {
-        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
-      }
-  }
 }
