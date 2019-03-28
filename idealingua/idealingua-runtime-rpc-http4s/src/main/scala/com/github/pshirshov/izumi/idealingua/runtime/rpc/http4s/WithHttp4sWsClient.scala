@@ -101,8 +101,8 @@ class ClientWsDispatcher[C <: Http4sContext]
               logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
               BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
-          maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
-          _ <- BIO.syncThrowable {
+          maybeEncoded <- BIO(maybePacket.map(r => printer.pretty(r.asJson)))
+          _ <- BIO {
             maybeEncoded match {
               case Some(response) =>
                 logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
@@ -160,7 +160,7 @@ class ClientWsDispatcher[C <: Http4sContext]
             w =>
               val pid = w.id.get // guaranteed to be present
 
-              BIO.syncThrowable {
+              BIO {
                 val out = printer.pretty(transformRequest(w).asJson)
                 logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                 requestState.request(pid, request.method)
