@@ -5,12 +5,23 @@ import com.github.pshirshov.izumi.distage.CatsResourcesTest._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.{GivenWhenThen, WordSpec}
 
 object CatsResourcesTest {
   class Res { var initialized = false }
   class Res1 extends Res
+
+  class DBConnection
+  class MessageQueueConnection
+
+  class MyApp(db: DBConnection, mq: MessageQueueConnection) {
+    db.discard()
+    mq.discard()
+
+    val run = IO(println("Hello World!"))
+  }
 }
 
 class CatsResourcesTest extends WordSpec with GivenWhenThen {
@@ -18,6 +29,22 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: FromCats._Sync]() = ()
     y()
+  }
+
+  "DIResource scaladoc example works" in {
+    val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+    val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+
+    val module = new ModuleDef {
+      make[DBConnection].fromResource(dbResource)
+      make[MessageQueueConnection].fromResource(mqResource)
+      make[MyApp]
+    }
+
+    Injector().produceF[IO](module).use {
+      objects =>
+        objects.get[MyApp].run
+    }.unsafeRunSync()
   }
 
   "DIResource API should be compatible with provider and instance bindings with cats.effect.Resource" in {

@@ -13,13 +13,102 @@ import scala.language.implicitConversions
 import scala.reflect.macros.blackbox
 
 /**
-  * Example:
+  * `DIResource` is a class that captures the effectful
+  * allocation of a resource, along with its finalizer.
+  *
+  * This can be used to wrap expensive resources.
+  *
+  * Example with [[DIResource.make]]:
+  *
   * {{{
-  *   resource.use {
-  *     abc.cba
+  *   def open(file: File): DIResource[IO, BufferedReader] =
+  *     DIResource.make(IO { new BufferedReader(new FileReader(file)) })(in => IO { in.close() })
+  * }}}
+  *
+  * Example with inheritance:
+  *
+  * {{{
+  *   final class BufferedReaderResource(file: File) extends DIResource[IO, BufferedReader] {
+  *     val acquire = IO { new BufferedReader(new FileReader(file)) }
+  *     def release(in: BufferedReader) = IO { in.close() }
   *   }
   * }}}
-  */
+  *
+  * Usage is done via [[DIResource.DIResourceUse.use use]]:
+  *
+  * {{{
+  *   open(file1).use { in1 =>
+  *     open(file2).use { in2 =>
+  *       readFiles(in1, in2)
+  *     }
+  *   }
+  * }}}
+  *
+  * DIResources can be combined into a larger resource via [[DIResourceBase.flatMap]]:
+  *
+  * {{{
+  *  val res: DIResource[IO, (BufferedReader, BufferedReader)] =
+  *    open(file1).flatMap { in1 =>
+  *     open(file2).flatMap { in2 =>
+  *       IO.pure(in1 -> in2)
+  *     }
+  *   }
+  * }}}
+  *
+  * Nested resources are released in reverse order of acquisition. Outer resources are
+  * released even if an inner use or release fails.
+  *
+  * `DIResource` can be used in non-FP context with [[DIResource.Simple]]
+  * it can also mimic Java's initialization-after-construction with [[DIResource.Mutable]]
+  *
+  * DIResource is compatible with [[cats.effect.Resource]]. Use [[DIResource.fromCats]]
+  * and [[DIResource.DIResourceCatsSyntax.toCats]] to convert back and forth.
+  *
+  * Use DIResource's to specify lifecycles of objects injected into the object graph.
+  *
+  * Example:
+  * {{{
+  *   import cats.effect.IO
+  *
+  *   class DBConnection
+  *   class MessageQueueConnection
+  *
+  *   val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+  *   val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+  *
+  *   class MyApp(db: DBConnection, mq: MessageQueueConnection) {
+  *     val run = IO(println("Hello World!"))
+  *   }
+  *
+  *   val module = new ModuleDef {
+  *     make[DBConnection].fromResource(dbResource)
+  *     make[MessageQueueConnection].fromResource(mqResource)
+  *     make[MyApp]
+  *   }
+  *
+  *   Injector().produceF[IO](module).use {
+  *     objects =>
+  *       objects.get[MyApp].run
+  *   }.unsafeRunSync()
+  * }}}
+  *
+  * Will produce the following output:
+  *
+  * {{{
+  *   Connecting to DB!
+  *   Connecting to Message Queue!
+  *   Hello World!
+  *   Disconnecting Message Queue
+  *   Disconnecting DB
+  * }}}
+  *
+  * The lifecycle of the entire object graph is itself expressed with `DIResource`,
+  * you can control it by controlling the scope in `.use` or you can opt-out and use
+  * [[DIResourceBase.acquire]] and [[DIResourceBase.release]] manually.
+  *
+  * @see ModuleDef.fromResource: [[com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
+  *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
+  **/
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
   def acquire: F[Resource]
   def release(resource: Resource): F[Unit]
@@ -53,10 +142,25 @@ object DIResource {
     makeSimple(acquire)(_.close)
   }
 
+  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
+      F.bracket(acquire = resource.acquire)(release = resource.release)(
+        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
+      )
+    }
+  }
+
   /** Convert [[cats.effect.Resource]] into a [[DIResource]] */
   def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
     new Cats[F, A] {
       override def acquire: F[(A, F[Unit])] = resource.allocated
+    }
+  }
+
+  implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    /** Convert [[DIResource]] into a [[cats.effect.Resource]] */
+    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
+      Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
     }
   }
 
@@ -73,35 +177,6 @@ object DIResource {
     override final type InnerResource = (A, F[Unit])
     override final def release(resource: (A, F[Unit])): F[Unit] = resource._2
     override final def extract(resource: (A, F[Unit])): A = resource._1
-  }
-
-  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-    /**
-      * Please enable `-Xsource:2.13` compiler option
-      * if you're having trouble invoking this method
-      * on `Identity` Resources. Alternatively, add
-      * an explicit type ascription to your `resource`
-      * as in:
-      *
-      * {{{
-      *   (resource: Resource[Identity, MyRes]).use { ... }
-      * }}}
-      *
-      * @see bug https://github.com/scala/bug/issues/11435 for details
-      *     [FIXED in 2.13 and in 2.12 with `-Xsource:2.13` flag]
-      */
-    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
-      )
-    }
-  }
-
-  implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-    /** Convert [[DIResource]] into a [[cats.effect.Resource]] */
-    def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
-      Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
-    }
   }
 
   trait DIResourceBase[+F[_], +OuterResource] { self =>

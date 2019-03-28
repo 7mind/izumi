@@ -146,8 +146,8 @@ trait FromCats {
 }
 
 object FromCats {
-  // 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect to be an Optional dependency, but
-  // stlll provide _non-orphan_ instances if it's on classpath
+  // 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
+  // _still_ provide _non-orphan_ instances if it's on classpath
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
     implicit val catsEffectSync: _Sync[cats.effect.Sync] = new _Sync[cats.effect.Sync] {}

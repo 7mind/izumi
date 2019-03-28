@@ -391,7 +391,7 @@ object ModuleDefDSL {
       *   make[Unit].from(myResource)
       * }}}
       *
-      * @see - Resource type in Cats-Effect: https://typelevel.org/cats-effect/datatypes/resource.html
+      * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[DIResource]]
       */
     final def fromResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
