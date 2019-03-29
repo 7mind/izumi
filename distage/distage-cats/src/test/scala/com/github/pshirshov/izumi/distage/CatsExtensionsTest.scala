@@ -60,7 +60,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       Then("object graph is correct")
       assert(plan3 == plan4)
 
-      val objs = injector.produceIO[IO](plan3).unsafeRunSync()
+      val objs = injector.produceUnsafeF[IO](plan3).unsafeRunSync()
 
       assert(objs.get[TestDependency1].unresolved != null)
       assert(!objs.instances.map(_.value).contains(null))

@@ -1,7 +1,7 @@
 ---
 out: index.html
 ---
-Izumi Toolkit
+Izumi Project
 =============
 
 @@@ warning { title='TODO' }

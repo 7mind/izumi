@@ -675,7 +675,6 @@ lazy val microsite = inDoc.as.module
         "latest/release"
       }
     }
-//    , scalacOptions in Tut += "-nowarn"
     , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
     , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
