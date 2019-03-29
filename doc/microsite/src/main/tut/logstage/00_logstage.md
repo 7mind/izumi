@@ -77,10 +77,8 @@ libraryDependencies += "com.github.pshirshov.izumi.r2" %% "logstage-core" % izum
 
 // LogStage machinery
 libraryDependencies ++= Seq(
-  // file sink
-  "com.github.pshirshov.izumi.r2" %% "logstage-sink-file" % izumi_version
   // json output
-  , "com.github.pshirshov.izumi.r2" %% "logstage-rendering-circe" % izumi_version
+    "com.github.pshirshov.izumi.r2" %% "logstage-rendering-circe" % izumi_version
   // router from Slf4j to LogStage
   , "com.github.pshirshov.izumi.r2" %% "logstage-adapter-slf4j" % izumi_version    
 )

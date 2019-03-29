@@ -20,11 +20,14 @@ import scala.util._
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
-  /** Configuration for [[AbstractConfigWriter]] */
+  /**
+    * Configuration for [[AbstractConfigWriter]]
+    *
+    * @param includeCommon Append shared sections from `common-reference.conf` into every written config
+    */
   case class WriteReference(
                              asJson: Boolean = false,
                              targetDir: String = "config",
-                             /** Append shared sections from `common-reference.conf` into every written config */
                              includeCommon: Boolean = true,
                              useLauncherVersion: Boolean = true,
                            )

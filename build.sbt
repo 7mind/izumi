@@ -653,11 +653,19 @@ lazy val allProjects = fundamentalsJvm ++
 
 lazy val unidocExcludes = izsbt ++ allJsProjects ++ idealinguaV1
 
-lazy val allProjectsExceptMicrosite = distage ++ logstage ++ idealingua ++ izsb
+lazy val allProjectsExceptMicrosite = distage ++ logstage ++ idealinguaV1 ++ izsbt
 
 lazy val microsite = inDoc.as.module
   .dependsOn(allProjectsExceptMicrosite.map(x => x: ClasspathDep[ProjectReference]): _*)
-  .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, TutPlugin)
+  .enablePlugins(
+    ScalaUnidocPlugin,
+    ParadoxSitePlugin,
+    SitePlugin,
+    GhpagesPlugin,
+    ParadoxMaterialThemePlugin,
+    PreprocessPlugin,
+    MdocPlugin
+  )
   .settings(
     skip in publish := true
     , DocKeys.prefix := {
@@ -667,7 +675,7 @@ lazy val microsite = inDoc.as.module
         "latest/release"
       }
     }
-    , scalacOptions in Tut += "-nowarn"
+//    , scalacOptions in Tut += "-nowarn"
     , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
     , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
     , previewFixedPort := Some(9999)
@@ -677,8 +685,10 @@ lazy val microsite = inDoc.as.module
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
-    , sourceDirectory in Paradox := tutTargetDirectory.value
-    , makeSite := makeSite.dependsOn(tut).value
+//    , mdoc := run.in(Compile).evaluated
+    , mdocIn := baseDirectory.value / "src/main/tut"
+    , sourceDirectory in Paradox := mdocOut.value
+    , makeSite := makeSite.dependsOn(mdoc.toTask(" --no-link-hygiene")).value
     , version in Paradox := version.value
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {

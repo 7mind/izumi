@@ -83,7 +83,7 @@ distage improves on others:
 
 the big innovations are:
 
-1. refiied plan
+1. reified plan
 2. strict execution
 3. singleton only semantic
 4. gc
