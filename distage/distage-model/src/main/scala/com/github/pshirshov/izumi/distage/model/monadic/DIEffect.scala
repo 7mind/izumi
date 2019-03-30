@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
+import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 trait DIEffect[F[_]] {
@@ -19,6 +20,7 @@ trait DIEffect[F[_]] {
     * suspension of side-effects, because DIEffect[Identity] is allowed */
   def maybeSuspend[A](eff: => A): F[A]
 
+
   /** A stronger version of `handleErrorWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
   def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
@@ -27,6 +29,7 @@ trait DIEffect[F[_]] {
 
   final val unit: F[Unit] = pure(())
   final def widen[A, B >: A](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
+  final def suspendF[A](effAction: => F[A]): F[A] = flatMap(maybeSuspend(effAction))(identity)
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
     // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
     // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
@@ -42,11 +45,16 @@ object DIEffect
   def apply[F[_]: DIEffect]: DIEffect[F] = implicitly
 
   object syntax {
+    implicit def suspendedSyntax[F[_], A](fa: => F[A]): DIEffectSuspendedSyntax[F, A] = new DIEffectSuspendedSyntax(() => fa)
+
     implicit final class DIEffectSyntax[F[_], A](private val fa: F[A]) extends AnyVal {
       @inline def map[B](f: A => B)(implicit F: DIEffect[F]): F[B] = F.map(fa)(f)
       @inline def flatMap[B](f: A => F[B])(implicit F: DIEffect[F]): F[B] = F.flatMap(fa)(f)
+    }
+
+    final class DIEffectSuspendedSyntax[F[_], A](private val fa: () => F[A]) extends AnyVal {
       @inline def guarantee(`finally`: => F[Unit])(implicit F: DIEffect[F]): F[A] = {
-        F.bracket(acquire = F.unit)(release = _ => `finally`)(use = _ => fa)
+        F.bracket(acquire = F.unit)(release = _ => `finally`)(use = _ => fa())
       }
     }
   }
@@ -92,15 +100,15 @@ object DIEffect
         F.syncThrowable(eff)
       }
       override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
-        maybeSuspend(fa).flatten.sandbox.catchAll(recover apply _.toThrowable)
+        suspendF(fa).sandbox.catchAll(recover apply _.toThrowable)
       }
 
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
       override def bracket[A, B](acquire: => F[E, A])(release: A => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracket(acquire = maybeSuspend(acquire).flatten)(release = release(_).orTerminate)(use = use)
+        F.bracket(acquire = suspendF(acquire))(release = release(_).orTerminate)(use = use)
       }
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
-        F.bracketCase[Throwable, A, B](acquire = maybeSuspend(acquire).flatten)(release = {
+        F.bracketCase[Throwable, A, B](acquire = suspendF(acquire))(release = {
           case (a, exit) => exit match {
             case BIOExit.Success(_) => release(a, None).orTerminate
             case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate

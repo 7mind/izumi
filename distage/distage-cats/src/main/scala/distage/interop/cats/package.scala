@@ -1,32 +1,17 @@
 package distage.interop
 
-import _root_.cats.effect.Sync
 import _root_.cats.Applicative
 import _root_.cats.instances.vector._
 import _root_.cats.syntax.functor._
 import _root_.cats.syntax.traverse._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import distage._
 
 package object cats
   extends DistageInteropCats {
-
-  implicit final class ProducerIOExts(private val producer: Producer) extends AnyVal {
-    def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =
-      Sync[F].delay(producer.produceUnsafe(plan))
-  }
-
-  implicit final class InjectorIOExts(private val injector: Injector) extends AnyVal {
-    def produceIO[F[_]: Sync](plan: OrderedPlan): F[Locator] =
-      Sync[F].delay(injector.produceUnsafe(plan))
-
-    def produceIO[F[_]: Sync](definition: PlannerInput): F[Locator] =
-      Sync[F].delay(injector.produceUnsafe(definition))
-  }
 
   implicit final class SemiPlanExts(private val plan: SemiPlan) extends AnyVal {
     def traverse[F[_]: Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =

@@ -47,8 +47,8 @@ class PlanInterpreterDefaultRuntimeImpl
           case Left(failedProvision) => failedProvision.failed.finalizers
           case Right(locator) => locator.dependencyMap.finalizers
         }
-        F.traverse_(finalizers) {
-          case (_, eff) => F.maybeSuspend(eff()).flatMap(identity)
+        finalizers.foldLeft(F.unit) {
+          case (acc, (_, eff)) => acc.guarantee(F.suspendF(eff()))
         }
     })
   }

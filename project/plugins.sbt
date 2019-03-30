@@ -25,8 +25,8 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
 // https://jonas.github.io/paradox-material-theme/
 addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.5.1")
 
-// https://github.com/tpolecat/tut
-addSbtPlugin("org.tpolecat" % "tut-plugin" % "0.6.7")
+// https://github.com/scalameta/mdoc
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.2.10" )
 
 // https://www.scala-js.org/
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")

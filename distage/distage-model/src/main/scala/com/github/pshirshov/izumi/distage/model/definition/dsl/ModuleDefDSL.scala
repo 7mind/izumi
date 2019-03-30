@@ -38,7 +38,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
   *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
-  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a Resource, specifying its creation and destruction lifecycle
+  *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a Resource specifying its creation and destruction lifecycle
   *
   * Multibindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
@@ -53,6 +53,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[com.github.pshirshov.izumi.distage.roles.RoleId]]
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
+  *
+  * Includes:
+  *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
   * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]

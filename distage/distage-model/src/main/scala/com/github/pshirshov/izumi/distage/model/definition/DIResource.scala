@@ -285,8 +285,8 @@ object DIResource {
                   def extract: B = res2.extract(inner2)
                   def deallocate: F[Unit] = {
                     F.unit
-                      .guarantee(self.release(inner1))
                       .guarantee(res2.release(inner2))
+                      .guarantee(self.release(inner1))
                   }
                 })
             }
