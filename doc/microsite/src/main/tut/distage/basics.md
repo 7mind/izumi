@@ -422,31 +422,44 @@ Global resources will be deallocated when the app or the test ends.
 
 Note that lifecycle control via `DIResource` is available in non-FP applications as well via inheritance from `DIResource.Simple` and `DIResource.Mutable`.
 
-Example with http4s Client `cats` Resource:
+Basic example with `cats` Resource:
 
 ```scala mdoc:reset
-import cats.effect._
 import distage._
-import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import cats.effect.IO
 
-import scala.concurrent.ExecutionContext
+class DBConnection
+class MessageQueueConnection
 
-object App extends IOApp {
-  val blazeClientModule = new ModuleDef {
-    make[ExecutionContext].from(ExecutionContext.global)
-    addImplicit[Bracket[IO, Throwable]]
+val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
 
-    make[Client[IO]].fromResource { ec: ExecutionContext =>
-      BlazeClientBuilder[IO](ec).resource
-  }}
-
-  def run(args: List[String]): IO[ExitCode] =
-    Injector().produceF[IO](blazeClientModule)
-    .use { // Client allocated
-      _.get[Client[IO]].expect[String]("https://google.com")
-    }.map(_ => ExitCode.Success) // Client closed
+class MyApp(db: DBConnection, mq: MessageQueueConnection) {
+  val run = IO(println("Hello World!"))
 }
+
+val module = new ModuleDef {
+  make[DBConnection].fromResource(dbResource)
+  make[MessageQueueConnection].fromResource(mqResource)
+  make[MyApp]
+}
+```
+
+```scala mdoc:invisible
+val HACK_OVERRIDE_module = new ModuleDef {
+  make[DBConnection].fromResource(dbResource)
+  make[MessageQueueConnection].fromResource(mqResource)
+  make[MyApp].from(new MyApp(_, _))
+}
+```
+
+Will produce the following output:
+
+```scala mdoc:override
+Injector().produceF[IO](HACK_OVERRIDE_module).use {
+  objects =>
+    objects.get[MyApp].run
+}.unsafeRunSync()
 ```
 
 Example with `DIResource.Simple`:
