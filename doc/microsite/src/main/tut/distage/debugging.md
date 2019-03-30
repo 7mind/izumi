@@ -33,3 +33,27 @@ sbt -Dizumi.distage.debug.macro=true compile
 ```
 
 Macros power `distage-static` module, an alternative backend that does not use JVM runtime reflection to instantiate classes and auto-traits.
+
+### GraphViz Dump
+
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
+@@@
+
+Add `GraphDumpBootstrapModule` to `Injector`'s configuration to enable printing of graphviz files with graph representation of the `Plan`.
+
+```scala
+val injector = Injector(new GraphDumpBootstrapModule())
+```
+
+Files will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv`
+
+Use command-line:
+
+```bash
+dot -Tpng target/plan-last-nogc.gv -o out.png
+```
+
+To render `GraphViz` files into a viewable PNG image. You need GraphViz installed on your system.
+
+![plan-graph](media/plan-graph.png)

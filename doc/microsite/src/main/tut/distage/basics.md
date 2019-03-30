@@ -4,24 +4,6 @@ Basics
 
 @@toc { depth=2 }
 
-// FIXME ??? TODO
-TOC:
-
-- class bindings 
-- function bindings
-- set bindings
-- effect bindings
-- resource bindings
-- implicit bindings
-- reference bindings
-
-- syntax summary
-
-- tagless final
-- zio env
-- testkit
-
-
 ### Tutorial
 
 Suppose we want to create an abstract `Greeter` component that we want to use without knowing its concrete implementation:
@@ -122,13 +104,13 @@ println(HACK_OVERRIDE_plan.render)
 
 Since `plan` is just a piece of data, we need to interpret it to create the actual object graph –
 `Injector`'s `produce` method is the default interpreter. `Injector` contains no logic of its own beyond interpreting
-instructions, its output is fully determined by the plan. This makes [debugging](debugging.md) quite easy.
+instructions, its output is fully determined by the plan. This makes @ref[debugging](debugging.md#debugging) quite easy.
 
-Given that plans are data, it's possible to [verify them at compile-time](other-features.md#compile-time-checks) or [splice equivalent Scala code](other-features.md#compile-time-instantiation)
+Given that plans are data, it's possible to @ref[verify them at compile-time](other-features.md#compile-time-checks) or [splice equivalent Scala code](other-features.md#compile-time-instantiation)
 to do the instantiation before ever running the application. When used in that way,
 `distage` is a great alternative to compile-time frameworks such as `MacWire` all the while keeping the flexibility to interpret
-at runtime when needed. This flexibility in interpretation allows adding features, such as [Plugins](other-features.md#plugins) and
-[Typesafe Config integration](config_injection.md#config-injection) by transforming plans and bindings.
+at runtime when needed. This flexibility in interpretation allows adding features, such as @ref[Plugins](other-features.md#plugins) and
+@ref[Typesafe Config integration](config_injection.md#config-injection) by transforming plans and bindings.
 
 Note: classes in `distage` are always created exactly once, even if many different classes depend on them - they're `Singletons`.
 Non-singleton semantics are not available, however you can create multiple `named` instances and disambiguate between them with `@Id` annotation:
@@ -188,7 +170,7 @@ object HttpServerModule extends ModuleDef {
 }
 ```
 
-To inject named instances or [config values](config_injection.md#config-injection), add annotations such as `@Id` and `@ConfPath` to lambda arguments' types:
+To inject named instances or @ref[config values](config_injection.md#config-injection), add annotations such as `@Id` and `@ConfPath` to lambda arguments' types:
 
 ```scala mdoc
 import distage.config._
@@ -431,38 +413,189 @@ Implicits obey the usual lexical scope in user code.
 
 You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/230
 
-### Monadic Effect Bindings
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-
-Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/331
-@@@
-
-FIXME: WRITE .fromEffect doc
-
 ### Resource Bindings & Lifecycle
 
-...
+Lifecycle is supported via Resource bindings.
+You can inject any [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) into the object graph.
+You can also inject @scaladoc[DIResource](com.github.pshirshov.izumi.distage.model.definition.DIResource) classes.
+Global resources will be deallocated when the app or the test ends.
+
+Note that lifecycle control via `DIResource` is available in non-FP applications as well via inheritance from `DIResource.Simple` and `DIResource.Mutable`.
+
+Example with http4s Client `cats` Resource:
+
+```scala mdoc:reset
+import cats.effect._
+import distage._
+import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
+
+import scala.concurrent.ExecutionContext
+
+object App extends IOApp {
+  val blazeClientModule = new ModuleDef {
+    make[ExecutionContext].from(ExecutionContext.global)
+    addImplicit[Bracket[IO, Throwable]]
+
+    make[Client[IO]].fromResource { ec: ExecutionContext =>
+      BlazeClientBuilder[IO](ec).resource
+  }}
+
+  def run(args: List[String]): IO[ExitCode] =
+    Injector().produceF[IO](blazeClientModule)
+    .use { // Client allocated
+      _.get[Client[IO]].expect[String]("https://google.com")
+    }.map(_ => ExitCode.Success) // Client closed
+}
+```
+
+Example with `DIResource.Simple`:
+
+```scala mdoc:reset
+import distage._
+
+class Init {
+  var initialized = false
+}
+
+class InitResource extends DIResource.Simple[Init] {
+  override def acquire = {
+    val init = new Init
+    init.initialized = true
+    init
+  }
+  override def release(init: Init) = {
+    init.initialized = false
+  }
+}
+
+val module = new ModuleDef {
+  make[Init].fromResource[InitResource]
+}
+```
+
+```scala mdoc:invisible
+val HACK_OVERRIDE_module = new ModuleDef {
+  make[Init].fromResource(new InitResource)
+}
+```
+
+```scala mdoc:override
+val closedInit = Injector().produce(HACK_OVERRIDE_module).use {
+  objects =>
+    val init = objects.get[Init] 
+    println(init.initialized)
+    init
+}
+println(closedInit.initialized)
+```
+
+`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap` methods available. You can convert a `DIResource` into a `cats.effect.Resource` via `.toCats` method.
+
+You need to use resource-aware `Injector.produce`/`Injector.produceF` methods to control lifecycle of the object graph.
+
+### Effect Bindings
+
+Sometimes we need to effectfully create a component or fetch some data and inject it into the object graph during startup (e.g. read a configuration file),
+but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limit the parallelism of the
+entire application based on configuration value or a `Dummy` / `test double` implementation of some external service made for testing.
+
+In these cases we can use `.fromEffect` to simply bind a value created effectfully.
+
+Example with `ZIO` `Semaphore`:
+
+```scala mdoc:reset-class
+import distage._
+import distage.config._
+import scalaz.zio._
+
+case class Content(bytes: Array[Byte])
+
+case class UploadConfig(maxParallelUploads: Long)
+
+class UploaderModule extends ModuleDef {
+  make[Semaphore].named("upload-limit").fromEffect {
+    conf: UploadConfig @ConfPath("myapp.uploads") =>
+      Semaphore.make(conf.maxParallelUploads)
+  }
+  
+  make[Uploader]
+}
+
+class Uploader(limit: Semaphore @Id("upload-limit")) {
+  def upload(content: Content): IO[Throwable, Unit] =
+    limit.withPermit(upload(content))
+}
+```
+
+Example with a `Dummy` `KVStore`:
+
+```scala mdoc
+trait KVStore[F[_, _]] {
+  def put(key: String, value: String): F[Nothing, Unit]
+  def get(key: String): F[NoSuchElementException, String]
+}
+
+object KVStore {
+  def dummy: IO[Nothing, KVStore[IO]] = for {
+    ref <- Ref.make(Map.empty[String, String])
+    kvStore = new KVStore[IO] {
+      def put(key: String, value: String): IO[Nothing, Unit] =
+        ref.update(_ + (key -> value)).void
+      
+      def get(key: String): IO[NoSuchElementException, String] = 
+        for {
+          map <- ref.get
+          maybeValue = map.get(key)
+          res <- maybeValue match {
+            case None => 
+              IO.fail(new NoSuchElementException(key))
+            case Some(value) => 
+              IO.succeed(value)
+          }
+        } yield res
+    }
+  } yield kvStore
+}
+
+val kvStoreModule = new ModuleDef {
+  make[KVStore[IO]].fromEffect(KVStore.dummy)
+}
+
+new RTS{}.unsafeRun {
+  Injector().produceF[IO[Throwable, ?]](kvStoreModule)
+    .use {
+      objects =>
+        val kv = objects.get[KVStore[IO]]
+        
+        for {
+          _ <- kv.put("apple", "pie")
+          res <- kv.get("apple")
+        } yield res
+    }
+}
+```
+
+You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
 
 ### Tagless Final Style
 
-distage works well with tagless final style. As an example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
-and make it safer and more flexible by replacing dependencies on global implementations from `import`'s with explicit modules.
+Tagless Final is one of the popular patterns for structuring purely-functional applications. If you're not familiar with tagless final you can skip this section.
 
-Tagless Final is a pattern of definition allowing us to defnie pure programs
+Brief introduction to tagless final:
 
-- preliminary https://medium.com/@calvin.l.fer/deferring-commitments-tagless-final-704d768f15cb
-- more at bwhatever article https://www.beyondthelines.net/programming/introduction-to-tagless-final/
+- [Deferring Commitments: Tagless Final](https://medium.com/@calvin.l.fer/deferring-commitments-tagless-final-704d768f15cb)
+- [Introduction to Tagless Final](https://www.beyondthelines.net/programming/introduction-to-tagless-final/)
 
-If you're not familiar with tagless final you can skip this section
+Advantages of `distage` as a driver for TF compared to implicits:
 
-these are the benefits distage brings as TF driver compared to implicits
+- easy explicit overrides
+- easy @ref[effectful instantiation](#effect-bindings) and @ref[resource management](#resource-bindings--lifecycle)
+- extremely easy & scalable [test](#testkit) context setup due to the above
+- multiple different implementations via `@Id` annotation
 
-- explicit easy overrides
-- <s>easy effectful instantiation and resource management</s>
-- multiple different implementations via Id
-- by contrast, implicit domain will be consistent
+As an example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+and make it safer and more flexible by replacing dependencies on global `import`ed implementations from with explicit modules.
 
 First, the program we want to write:
 
@@ -610,7 +743,7 @@ class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends Modu
 
 consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for more details.
 
-### TestKit
+### Testkit
 
 `distage-testkit` module provides integration with `scalatest`:
 

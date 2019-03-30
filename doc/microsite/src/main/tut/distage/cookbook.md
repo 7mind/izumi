@@ -1,3 +1,5 @@
+Cookbook
+========
 
 ### Inner Classes and Path-Dependent Types
 

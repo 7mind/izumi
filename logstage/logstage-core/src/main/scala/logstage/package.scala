@@ -13,6 +13,9 @@ package object logstage extends LogStage {
   override type ConfigurableLogRouter = api.routing.ConfigurableLogRouter
   override final val ConfigurableLogRouter: api.routing.ConfigurableLogRouter.type = api.routing.ConfigurableLogRouter
 
+  override type LogRouter = api.logger.LogRouter
+  override val LogRouter: api.logger.LogRouter.type = api.logger.LogRouter
+
   override type Log = api.Log.type
   override final val Log: api.Log.type = api.Log
 

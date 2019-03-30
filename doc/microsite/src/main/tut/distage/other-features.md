@@ -10,8 +10,8 @@ are neither direct nor transitive dependencies of the supplied roots – these b
 
 GC serves two important purposes:
 
-* It enables faster [tests](basics.md#testkit) by omitting unrequired instantiations and initialization of potentially heavy resources,
-* It enables multiple independent applications, aka "[Roles](#roles)" to be hosted within a single `.jar` file.
+* It enables faster @ref[tests](basics.md#testkit) by omitting unrequired instantiations and initialization of potentially heavy resources,
+* It enables multiple independent applications, aka "@ref[Roles](#roles)" to be hosted within a single `.jar` file.
 
 To use garbage collector, pass GC roots as an argument to `Injector.produce*` methods:
 
@@ -489,4 +489,58 @@ final class Strong(weak: Weak) {
 
 locator.get[Set[SetElem]].size == 2
 // res1: Boolean = true
+```
+
+### Cats Integration
+
+You can use `produceF` with `cats.effect.IO` with just `distage-core`.
+
+[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without any additional modules.
+
+@@@ warning { title='deprecated' }
+All cats instances & syntax will be rolled into `distage-core`. (via sbt's `Optional` dependencies, they will only be
+available if your project depends on `cats`.)
+@@@
+
+To import cats integration add `distage-cats` library:
+
+```scala
+libraryDependencies += Izumi.R.distage_cats
+```
+
+or
+
+@@@vars
+
+```scala
+libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
+```
+
+@@@
+
+If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+
+Usage:
+
+```scala
+import cats.implicits._
+import cats.effect._
+import distage._
+import distage.interop.cats._
+import com.example.{DBConnection, AppEntrypoint}
+
+object Main extends IOApp {
+  def run(args: List[String]): IO[Unit] = {
+    val myModules = module1 |+| module2 // Monoid instance for ModuleDef is available now
+    
+    for {
+      plan <- myModules.resolveImportsF[IO] { // resolveImportsF is now available
+        case i if i.target == DIKey.get[DBConnection] =>
+           DBConnection.create[IO]
+      } 
+      classes <- Injector().produceF[IO](plan) // produceF allows using `IO` with effect and resource bindings
+      _ <- classes.get[AppEntrypoint].run
+    } yield ()
+  }
+}
 ```
