@@ -36,7 +36,7 @@ So, the whole sequence to setup the project for publishing is:
     ./keys.sh
     cp doc/samples/credentials.sonatype-nexus.properties .secrets/
     nano .secrets/credentials.sonatype-nexus.properties
-    ssh-keygen -N "" -t rsa -m PEM -b 4096 -C travis-deploy-key -f travis-deploy-key && cat travis-deploy-key.pub    
+    ssh-keygen -N "" -t rsa -m PEM -b 4096 -C travis-deploy-key -f ./.secrets/travis-deploy-key && cat ./.secrets/travis-deploy-key.pub    
 
 Travis notes
 ------------
