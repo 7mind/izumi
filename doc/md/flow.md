@@ -29,30 +29,14 @@ Before you may perform a release, you need to create `.secrets` directory with t
 - OpenSSH key is required to push sbt-site back to the repo during travis build.
 
 
+`/keys.sh` generates GPG keys and corresponding `local.sbt` file
+
 So, the whole sequence to setup the project for publishing is:
-
-    mkdir -p .secrets
-
+    
+    ./keys.sh
     cp doc/samples/credentials.sonatype-nexus.properties .secrets/
-    cp doc/samples/local.sbt .secrets/
-    
-    ln -s .secrets/local.sbt local.sbt
-
-    nano .secrets/local.sbt
     nano .secrets/credentials.sonatype-nexus.properties
-    
-    ssh-keygen -t rsa -b 4096 -C "sbt-site@travis" -f .secrets/travis-deploy-key
-
-    gpg --homedir ./.secrets/gnupg.home --full-generate-key
-    gpg --homedir ./.secrets/gnupg.home --edit-key <email> addkey save
-    gpg --homedir ./.secrets/gnupg.home --list-keys
-    gpg --homedir ./.secrets/gnupg.home --export-secret-keys > .gnupg/secring.gpg
-    gpg --homedir ./.secrets/gnupg.home --export > ./.secrets/gnupg
-    gpg --homedir ./.secrets/gnupg.home --keyserver hkp://ipv4.pool.sks-keyservers.net --send-keys <keyid>
-    gpg --homedir ./.secrets/gnupg.home --keyserver hkp://ipv4.pool.sks-keyservers.net --send-keys <subkeyid>
-    
-
-
+    ssh-keygen -N "" -t rsa -m PEM -b 4096 -C travis-deploy-key -f travis-deploy-key && cat travis-deploy-key.pub    
 
 Travis notes
 ------------
