@@ -51,7 +51,7 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
     resource.use {
       i =>
         assert(open)
-        assert(i.readAllBytes().isEmpty)
+        assert(i.read() == -1)
     }
     assert(!open)
 
