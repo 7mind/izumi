@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
 EMAIL=pshirshov@gmail.com
+SSHKEYNAME=travis-deploy-key
+
 PASSPHRASE=$(uuidgen)
 SECRETS=./.secrets
 GPGHOME=$SECRETS/gnupg.home
@@ -9,6 +11,7 @@ LOCALSBT=$SECRETS/local.sbt
 GPGTMP=/tmp/gpginput
 PUBRING=$GPGTARGET/pubring.gpg
 SECRING=$GPGTARGET/secring.gpg
+SSHKEY=$SECRETS/$SSHKEYNAME
 
 echo "Passphrase: $PASSPHRASE"
 rm -rf $GPGTARGET
@@ -54,5 +57,10 @@ EOF
 ln -s $LOCALSBT .
 
 # publish
-for fpr in $(gpg --homedir $GPGHOME --list-keys --with-colons  | awk -F: '/fpr:/ {print $10}' | sort -u); do gpg --homedir $GPGHOME --send-keys --keyserver ipv4.pool.sks-keyservers.net $fpr; done
-for fpr in $(gpg --homedir $GPGHOME --list-keys --with-colons  | awk -F: '/fpr:/ {print $10}' | sort -u); do gpg --homedir $GPGHOME --send-keys --keyserver keyserver.ubuntu.com $fpr; done
+for fpr in $(gpg --homedir $GPGHOME --list-keys --with-colons  | awk -F: '/fpr:/ {print $10}' | sort -u); do
+    gpg --homedir $GPGHOME --send-keys --keyserver ipv4.pool.sks-keyservers.net $fpr
+    gpg --homedir $GPGHOME --send-keys --keyserver keyserver.ubuntu.com $fpr
+done
+
+#ssh key
+ssh-keygen -N "" -t rsa -m PEM -b 4096 -C $SSHKEYNAME -f $SSHKEY && cat $SSHKEY.pub
