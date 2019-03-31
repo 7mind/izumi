@@ -14,7 +14,7 @@ addSbtPlugin("io.get-coursier" % "sbt-shading" % coursier)
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 
 // http://www.scala-sbt.org/sbt-pgp/
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.2")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
 
 // https://github.com/sbt/sbt-git
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "1.0.0")

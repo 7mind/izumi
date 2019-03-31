@@ -473,7 +473,15 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
     libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
-  .settings(addArtifact(artifact in(Compile, assembly), assembly))
+  .settings(
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    },
+
+    addArtifact(artifact in(Compile, assembly), assembly)
+  )
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 lazy val idealinguaV1Model = inIdealinguaV1X.as.cross(platforms)
 lazy val idealinguaV1ModelJvm = idealinguaV1Model.jvm.remember
@@ -547,7 +555,14 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
     libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
-  .settings(addArtifact(artifact in(Compile, assembly), assembly))
+  .settings(
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    },
+
+    addArtifact(artifact in(Compile, assembly), assembly)
+  )
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 lazy val sbtIzumi = inSbt.as
