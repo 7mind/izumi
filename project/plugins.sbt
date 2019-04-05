@@ -29,7 +29,7 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.5.1")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.2.10" )
 
 // https://www.scala-js.org/
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.27")
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
