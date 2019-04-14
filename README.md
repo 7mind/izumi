@@ -35,6 +35,7 @@ Docs
 ----
 
 * [Documentation & Tutorials](https://izumi.7mind.io/latest/release/doc/)
+* [Scaladoc](https://izumi.7mind.io/latest/release/api/)
 
 Example projects:
 * [DIStage Example Project](https://github.com/7mind/distage-sample)
@@ -43,7 +44,6 @@ Example projects:
 Slides:
 * [ScalaUA Conference Slides](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 * [Slides from other meetups](https://github.com/7mind/slides)
-* [Scaladoc for Latest release](https://izumi.7mind.io/latest/release/api/)
 
 Key goals 
 =========
