@@ -34,11 +34,16 @@ including the following components:
 Docs
 ----
 
-* Documentation [Latest release](https://izumi.7mind.io/latest/release/doc/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/doc/)
-* [distage Sample Project](https://github.com/ratoshniuk/distage-sample)
-* [Idealingua Sample Project](https://github.com/kaishh/izumi-petstore)
-* [Slides from previous Presentations](https://github.com/7mind/slides)
-* Scaladoc [Latest release](https://izumi.7mind.io/latest/release/api/) [Latest snapshot](https://izumi.7mind.io/latest/snapshot/api/)
+* [Documentation & Tutorials](https://izumi.7mind.io/latest/release/doc/)
+
+Example projects:
+* [DIStage Example Project](https://github.com/7mind/distage-sample)
+* [Idealingua Example Project](https://github.com/kaishh/izumi-petstore)
+
+Slides:
+* [ScalaUA Conference Slides](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [Slides from other meetups](https://github.com/7mind/slides)
+* [Scaladoc for Latest release](https://izumi.7mind.io/latest/release/api/)
 
 Key goals 
 =========
