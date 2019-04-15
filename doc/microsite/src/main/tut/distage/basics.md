@@ -340,6 +340,9 @@ server.router.run(Request(uri = uri("/home")))
 ```
 
 ```scala mdoc
+class DBConnection
+class MessageQueueConnection
+
 server.router.run(Request(uri = uri("/blog/1")))
   .flatMap(_.as[String]).unsafeRunSync
 ```
@@ -424,15 +427,13 @@ Note that lifecycle control via `DIResource` is available in non-FP applications
 
 Basic example with `cats` Resource:
 
-```scala mdoc:reset
+```scala mdoc
 import distage._
-import cats.effect.IO
+import cats.effect._
 
-class DBConnection
-class MessageQueueConnection
 
-val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
 
 class MyApp(db: DBConnection, mq: MessageQueueConnection) {
   val run = IO(println("Hello World!"))
@@ -441,6 +442,7 @@ class MyApp(db: DBConnection, mq: MessageQueueConnection) {
 val module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
+  addImplicit[Bracket[IO, Throwable]]
   make[MyApp]
 }
 ```
@@ -449,6 +451,7 @@ val module = new ModuleDef {
 val HACK_OVERRIDE_module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
+  addImplicit[Bracket[IO, Throwable]]
   make[MyApp].from(new MyApp(_, _))
 }
 ```
