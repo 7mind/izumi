@@ -17,7 +17,7 @@ or in pure FP @ref[Tagless Final Style](basics.md#tagless-final-style)
 
 Further reading:
 
-- Slides: [distage: Purely Functional Staged Dependency Injection](https://www.slideshare.net/7mind/distage-purely-functional-staged-dependency-injection-bonus-faking-kind-polymorphism-in-scala-2)
+- Slides: [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 - @ref[Tutorial](basics.md#tutorial)
 - @ref[Config Injection](config_injection.md)
 - @ref[Other features](other-features.md)
