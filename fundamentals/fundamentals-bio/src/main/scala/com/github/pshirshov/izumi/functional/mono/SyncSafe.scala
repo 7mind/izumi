@@ -14,6 +14,10 @@ trait SyncSafe[F[_]] {
 object SyncSafe extends LowPrioritySyncSafeInstances0 {
   def apply[F[_]: SyncSafe]: SyncSafe[F] = implicitly
 
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    * */
   implicit def fromSync[F[_], R[_[_]]: _Sync](implicit F0: R[F]): SyncSafe[F] = {
     val F = F0.asInstanceOf[Sync[F]]
     new SyncSafe[F] {

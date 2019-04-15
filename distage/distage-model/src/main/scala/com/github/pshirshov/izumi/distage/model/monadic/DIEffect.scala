@@ -121,6 +121,10 @@ object DIEffect
 
 trait FromCats {
 
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    * */
   implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: _Sync[R], F0: R[F]): DIEffect[F] = {
     l.discard()
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
