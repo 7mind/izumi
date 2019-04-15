@@ -41,7 +41,8 @@ Example projects:
 * [Idealingua Example Project](https://github.com/kaishh/izumi-petstore)
 
 Slides:
-* [ScalaUA Conference Slides](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [ScalaUA Slides about DIStage](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [ScalaUA Slides about LogStage](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [Slides from other meetups](https://github.com/7mind/slides)
 
 Key goals 
