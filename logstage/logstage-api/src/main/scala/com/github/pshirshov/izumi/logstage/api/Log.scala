@@ -66,6 +66,18 @@ object Log {
   }
 
   object CustomContext {
+    def apply(map: Map[String, Any]): CustomContext = {
+      val logArgs = map.map {
+        case (k, v) => LogArg(Seq(k), v, hidden = false)
+      }.toList
+
+      CustomContext(logArgs)
+    }
+
+    def apply(args: (String, Any)*)(implicit dummy: DummyImplicit): CustomContext = {
+      CustomContext(Map(args: _*))
+    }
+
     val empty: CustomContext = CustomContext(Nil)
   }
 
@@ -137,5 +149,3 @@ object Log {
   }
 
 }
-
-

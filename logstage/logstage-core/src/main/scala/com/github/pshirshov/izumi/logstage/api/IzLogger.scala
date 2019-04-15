@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LogArg}
+import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
@@ -13,17 +13,17 @@ class IzLogger
 , override val customContext: Log.CustomContext
 ) extends RoutingLogger {
 
-  implicit def withCustomContext(newCustomContext: CustomContext): IzLogger = {
-    new IzLogger(router, customContext + newCustomContext)
-  }
-
-  implicit def withMapAsCustomContext(map: Map[String, Any]): IzLogger = {
-    withCustomContext(CustomContext(map.map(kv => LogArg(Seq(kv._1), kv._2, hidden = false)).toList))
-  }
-
-  def apply[V](conv: Map[String, V]): IzLogger = conv
+  def apply[V](context: Map[String, V]): IzLogger = context
 
   def apply[V](elems: (String, V)*): IzLogger = elems.toMap
+
+  implicit def withCustomContext(context: CustomContext): IzLogger = {
+    new IzLogger(router, customContext + context)
+  }
+
+  implicit def withMapAsCustomContext(context: Map[String, Any]): IzLogger = {
+    withCustomContext(CustomContext(context))
+  }
 
 }
 
