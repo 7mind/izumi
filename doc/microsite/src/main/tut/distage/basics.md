@@ -513,8 +513,8 @@ You need to use resource-aware `Injector.produce`/`Injector.produceF` methods to
 ### Effect Bindings
 
 Sometimes we need to effectfully create a component or fetch some data and inject it into the object graph during startup (e.g. read a configuration file),
-but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limit the parallelism of the
-entire application based on configuration value or a `Dummy` / `test double` implementation of some external service made for testing.
+but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limits the parallelism of an
+entire application based on configuration value or a `dummy`/`test double` implementation of some external service made for testing using simple `Ref`s.
 
 In these cases we can use `.fromEffect` to simply bind a value created effectfully.
 

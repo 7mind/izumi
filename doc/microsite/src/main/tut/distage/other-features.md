@@ -44,15 +44,15 @@ val roots = Set[DIKey](DIKey.get[A])
 
 val locator = Injector().produceUnsafe(HACK_OVERRIDE_module, roots = roots)
 
-// A is here
+// A and B are here
 locator.find[A]
-
-// B and C were not created
 locator.find[B]
+
+// C was not created
 locator.find[C]
 ```
 
-Class `C` was removed because it neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
+Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
 But, if class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` - the GC root, would depend on `B` which in turns depends on `C`.
 
 ### Auto-Traits
