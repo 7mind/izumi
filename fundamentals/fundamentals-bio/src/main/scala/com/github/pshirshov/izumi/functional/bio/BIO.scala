@@ -58,6 +58,7 @@ object BIO extends BIOSyntax {
 
   @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
 
+
   import scalaz.zio.{Exit, IO, Schedule}
   import scalaz.zio.duration.Duration.fromScala
 

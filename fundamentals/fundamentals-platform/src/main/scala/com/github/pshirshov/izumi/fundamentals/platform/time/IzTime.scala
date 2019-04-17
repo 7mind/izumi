@@ -5,6 +5,7 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.temporal.ChronoField.{HOUR_OF_DAY, MINUTE_OF_HOUR, NANO_OF_SECOND, SECOND_OF_MINUTE}
 import java.util.Date
 
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 
@@ -36,6 +37,16 @@ trait IzTime {
   def utcNowOffset: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
 
   def isoNow: String = utcNow.isoFormat
+
+  implicit class RichDuration(duration: Duration) {
+    def readable: String = {
+      val days = duration.toDays
+      val hours = duration.toHours % 24
+      val minutes = duration.toMinutes % 60
+      val seconds = duration.toSeconds % 60
+      s"${days}d, ${hours}h, ${minutes}m, ${seconds}s"
+    }
+  }
 
 
   // formatters with 3 decimal positions for nanos
