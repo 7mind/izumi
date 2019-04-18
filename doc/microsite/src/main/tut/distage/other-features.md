@@ -495,7 +495,7 @@ locator.get[Set[SetElem]].size == 2
 
 You can use `produceF` with `cats.effect.IO` with just `distage-core`.
 
-[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without any additional modules.
+@ref[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without any additional modules.
 
 @@@ warning { title='deprecated' }
 All cats instances & syntax will be rolled into `distage-core`. (via sbt's `Optional` dependencies, they will only be

@@ -106,7 +106,7 @@ Since `plan` is just a piece of data, we need to interpret it to create the actu
 `Injector`'s `produce` method is the default interpreter. `Injector` contains no logic of its own beyond interpreting
 instructions, its output is fully determined by the plan. This makes @ref[debugging](debugging.md#debugging) quite easy.
 
-Given that plans are data, it's possible to @ref[verify them at compile-time](other-features.md#compile-time-checks) or [splice equivalent Scala code](other-features.md#compile-time-instantiation)
+Given that plans are data, it's possible to @ref[verify them at compile-time](other-features.md#compile-time-checks) or @ref[splice equivalent Scala code](other-features.md#compile-time-instantiation)
 to do the instantiation before ever running the application. When used in that way,
 `distage` is a great alternative to compile-time frameworks such as `MacWire` all the while keeping the flexibility to interpret
 at runtime when needed. This flexibility in interpretation allows adding features, such as @ref[Plugins](other-features.md#plugins) and
