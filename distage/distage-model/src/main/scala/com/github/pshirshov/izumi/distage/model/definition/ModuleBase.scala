@@ -24,7 +24,7 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase { type Self <: S }
+  type Aux[S] = ModuleBase {type Self <: S}
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
     override val bindings: Set[Binding] = s
@@ -79,6 +79,11 @@ object ModuleBase {
 
     def +:(binding: Binding): T = {
       T.make(Set(binding)) ++ moduleDef
+    }
+
+    def drop(ignored: Set[DIKey]): T = {
+      val filtered = moduleDef.bindings.filterNot(b => ignored.contains(b.key))
+      T.make(filtered)
     }
 
     def overridenBy(that: ModuleBase): T = {

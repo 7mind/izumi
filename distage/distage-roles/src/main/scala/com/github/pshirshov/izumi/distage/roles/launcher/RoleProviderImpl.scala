@@ -73,13 +73,13 @@ class RoleProviderImpl(
     availableBindings.flatten.toSeq
   }
 
-  private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    tpe weak_<:< SafeType.get[RoleService]
-  }
-
   private def isEnabledRole(tpe: distage.model.reflection.universe.RuntimeDIUniverse.SafeType): Boolean = {
     val anno: Set[String] = getAnno(tpe)
     isAvailableRoleType(tpe) && (requiredRoles.contains(tpe.tpe.typeSymbol.name.decodedName.toString.toLowerCase) || anno.intersect(requiredRoles).nonEmpty)
+  }
+
+  private def isAvailableRoleType(tpe: SafeType): Boolean = {
+    tpe weak_<:< SafeType.get[RoleService]
   }
 
 

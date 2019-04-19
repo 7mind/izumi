@@ -12,7 +12,7 @@ import com.typesafe.config.Config
 
 import scala.util.{Failure, Success, Try}
 
-class SimpleLoggerConfigurator(logger: IzLogger) {
+class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
 
   import SimpleLoggerConfigurator._
 
@@ -67,7 +67,7 @@ class SimpleLoggerConfigurator(logger: IzLogger) {
 
     val logconf = maybeConf match {
       case Failure(exception) =>
-        logger.error(s"Failed to read `logger` config section, using defaults: $exception")
+        exceptionLogger.error(s"Failed to read `logger` config section, using defaults: $exception")
         SinksConfig(Map.empty, None, json = None, None)
 
       case Success(value) =>

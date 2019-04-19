@@ -137,7 +137,7 @@ trait DistageTests {
       context.find[Set[RoleService]].getOrElse(Set.empty)
       , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
       , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
-      , context.find[Set[IntegrationComponent]].getOrElse(Set.empty)
+      , context.find[Set[IntegrationCheck]].getOrElse(Set.empty)
       , componentsLifecycleManager
       , logger
     )
@@ -194,7 +194,7 @@ trait DistageTests {
   protected def makeRoleStarter(services: Set[RoleService]
                                 , closeables: Set[AutoCloseable]
                                 , executors: Set[ExecutorService]
-                                , integrations: Set[IntegrationComponent]
+                                , integrations: Set[IntegrationCheck]
                                 , componentsLifecycleManager: ComponentsLifecycleManager
                                 , logger: IzLogger
                                ): RoleStarter = {

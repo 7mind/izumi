@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.{IntegrationComponent, RoleComponent}
+import com.github.pshirshov.izumi.distage.roles.{IntegrationCheck, RoleComponent}
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -73,7 +73,7 @@ class TestComponent3(val testComponent2: TestComponent2, counter: InitCounter, l
   }
 }
 
-class TestFailingIntegrationResource extends IntegrationComponent {
+class TestFailingIntegrationResource extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck =
     ResourceCheck.ResourceUnavailable("Fail!", Some(new RuntimeException("")))
 }

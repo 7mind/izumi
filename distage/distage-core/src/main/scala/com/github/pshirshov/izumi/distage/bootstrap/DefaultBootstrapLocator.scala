@@ -101,7 +101,6 @@ object DefaultBootstrapLocator {
   final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     many[PlanningObserver]
 
-    make[LookupInterceptor].from(NullLookupInterceptor)
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]

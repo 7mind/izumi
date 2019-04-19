@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage
 
 import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.{Locator, LookupInterceptor}
+import com.github.pshirshov.izumi.distage.model.Locator
 
 trait AbstractLocator extends Locator {
   protected def unsafeLookup(key: DIKey): Option[Any]
@@ -29,26 +29,21 @@ trait AbstractLocator extends Locator {
     lookupInstanceOrThrow(DIKey.get[T].named(id))
 
   final def lookupInstanceOrThrow[T: Tag](key: DIKey): T = {
-    lookupInstance(key)
-      .getOrElse {
+    lookupInstance(key) match {
+      case Some(value) =>
+        value
+      case None =>
         throw new MissingInstanceException(s"Instance is not available in the object graph: $key", key)
-      }
+    }
   }
 
   final def lookupInstance[T: Tag](key: DIKey): Option[T] = {
-    recursiveLookup(key)
+    recursiveLookup(key, this)
       .map(_.value)
   }
 
-  protected final def recursiveLookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
-    interceptor.interceptLookup[T](key, this).orElse(
-      lookup[T](key)
-        .orElse(parent.flatMap(_.lookup(key)))
-    )
+  private final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
+    locator.lookup[T](key)
+      .orElse(locator.parent.flatMap(p => recursiveLookup(key, p)))
   }
-
-  protected final def interceptor: LookupInterceptor =
-    lookup[LookupInterceptor](DIKey.get[LookupInterceptor])
-      .map(_.value)
-      .getOrElse(NullLookupInterceptor)
 }

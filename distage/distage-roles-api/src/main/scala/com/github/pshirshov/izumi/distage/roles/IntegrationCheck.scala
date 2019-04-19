@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceChec
   * startup should stop. When used with [[com.github.pshirshov.izumi.distage.testkit.DistageSpec]],
   * if `resourcesAvailable()` method returns a [[ResourceCheck.Failure]] the test will be skipped.
   **/
-trait IntegrationComponent {
+trait IntegrationCheck {
   /** This method must never throw, on error return [[ResourceCheck.Failure]] instead **/
   def resourcesAvailable(): ResourceCheck
 }

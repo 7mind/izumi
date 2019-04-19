@@ -2,21 +2,42 @@ package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.distage.app.{AppFailureHandler, ApplicationBootstrapStrategy}
+import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig}
+import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.RoleService
+import com.github.pshirshov.izumi.distage.roles.{RoleService, RoleStarter}
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
+import com.github.pshirshov.izumi.distage.roles.role2.{RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.distage.roles.scalaopt.ScoptLauncherArgs.ParserExtenstion
 import com.github.pshirshov.izumi.distage.roles.scalaopt.test._
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
+object Run extends RoleAppMain.Default[Identity](new RoleAppLauncher[Identity] {
+
+  override protected def entrypoint(provisioned: Locator): Identity[Unit] = {
+    val starter = provisioned.get[RoleStarter]
+    starter.start()
+    println("Started!")
+    starter.join()
+  }
+}) {
+  val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
+    debug = false
+    , packagesEnabled = Seq(s"$thisPkg.test")
+    , packagesDisabled = Seq.empty
+  )
+  protected def bootstrapConfig: BootstrapConfig = BootstrapConfig(pluginConfig)
+
+  override def main(args: Array[String]): Unit = super.main(Array(":testservice"))
+}
 
 class RoleAppTest extends WordSpec {
 

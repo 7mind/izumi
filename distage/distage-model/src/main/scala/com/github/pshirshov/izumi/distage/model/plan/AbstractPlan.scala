@@ -14,7 +14,9 @@ import com.github.pshirshov.izumi.functional.Renderable
 // TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semiplan
 sealed trait AbstractPlan {
   def definition: ModuleBase
+
   def steps: Seq[ExecutableOp]
+
   def roots: Set[DIKey]
 
   /** Get all imports (unresolved dependencies).
@@ -50,7 +52,7 @@ sealed trait AbstractPlan {
     val safeSteps = steps.flatMap {
       case _: InitProxy =>
         Seq.empty
-      case i: MakeProxy=>
+      case i: MakeProxy =>
         Seq(i.op)
       case o => Seq(o)
     }
@@ -63,6 +65,15 @@ sealed trait AbstractPlan {
 
   def filter[T: Tag]: Seq[ExecutableOp] = {
     steps.filter(_.target == DIKey.get[T])
+  }
+
+  def collectChildren[T: Tag]: Seq[ExecutableOp] = {
+    val parent = SafeType.get[T]
+    steps.filter {
+      op =>
+        val maybeChild = ExecutableOp.instanceType(op)
+        maybeChild weak_<:< parent
+    }
   }
 
   def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
@@ -141,9 +152,6 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], r
 }
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey], topology: PlanTopology) extends AbstractPlan {
-
-  //def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
-
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }
@@ -172,4 +180,5 @@ object OrderedPlan {
   implicit class PlanSyntax(r: OrderedPlan) {
     def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
   }
+
 }

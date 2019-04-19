@@ -33,7 +33,6 @@ class TestPlugin extends PluginDef {
   make[TestConfigWriter]
   many[Dummy]
   make[NotCloseable].from[InheritedCloseable]
-
 }
 
 trait Conflict

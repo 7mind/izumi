@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.RoleStarter
 
+@deprecated("Migrate to new role infra", "2019-04-19")
 abstract class RoleApp extends OpinionatedDiApp {
 
   type StrategyArgs

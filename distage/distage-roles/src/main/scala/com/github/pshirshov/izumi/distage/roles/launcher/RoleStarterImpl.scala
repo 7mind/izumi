@@ -18,7 +18,7 @@ class RoleStarterImpl
   services: Set[RoleService],
   closeables: Set[AutoCloseable],
   executors: Set[ExecutorService],
-  integrations: Set[IntegrationComponent],
+  integrations: Set[IntegrationCheck],
   lifecycleManager: ComponentsLifecycleManager,
   logger: IzLogger
 ) extends RoleStarter {
@@ -78,45 +78,11 @@ class RoleStarterImpl
     }
   }
 
-
-  private def checkIntegrations(): Unit = {
-    val checks = failingIntegrations()
-    checks.fold(()) {
-      failures =>
-        throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
-    }
-  }
-
   private def startComponents(): Unit = {
     logger.info(s"Going to start ${(servicesCount - tasksCount) -> "daemons"}, ${tasksCount -> "tasks"}, ${componentsCount -> "components"}")
     lifecycleManager.startComponents()
   }
 
-  private def failingIntegrations(): Option[Seq[ResourceCheck.Failure]] = {
-    logger.info(s"Going to check availability of ${integrationsCount -> "resources"}")
-
-    val failures = integrations.toSeq.flatMap {
-      resource =>
-        logger.debug(s"Checking $resource")
-        try {
-          resource.resourcesAvailable() match {
-            case failure@ResourceCheck.ResourceUnavailable(description, Some(cause)) =>
-              logger.debug(s"Integration check failed: $resource unavailable: $description, $cause")
-              Some(failure)
-            case failure@ResourceCheck.ResourceUnavailable(description, None) =>
-              logger.debug(s"Integration check failed: $resource unavailable: $description")
-              Some(failure)
-            case ResourceCheck.Success() =>
-              None
-          }
-        } catch {
-          case NonFatal(exception) =>
-            logger.error(s"Integration check for $resource threw $exception")
-            Some(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
-        }
-    }
-    Some(failures).filter(_.nonEmpty)
-  }
 
 
   private def shutdownApp(): Unit = {
@@ -160,5 +126,42 @@ class RoleStarterImpl
       .map(c => c -> Try(c.close()))
       .partition(_._2.isSuccess)
     logger.info(s"Service shutdown: ${closed.size -> "closed"} ; ${failedToClose.size -> "failed to close"}")
+  }
+
+
+  @deprecated("RoleAppLauncher", "2019-04-19")
+  private def checkIntegrations(): Unit = {
+    val checks = failingIntegrations()
+    checks.fold(()) {
+      failures =>
+        throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
+    }
+  }
+
+  @deprecated("RoleAppLauncher", "2019-04-19")
+  private def failingIntegrations(): Option[Seq[ResourceCheck.Failure]] = {
+    logger.info(s"Going to check availability of ${integrationsCount -> "resources"}")
+
+    val failures = integrations.toSeq.flatMap {
+      resource =>
+        logger.debug(s"Checking $resource")
+        try {
+          resource.resourcesAvailable() match {
+            case failure@ResourceCheck.ResourceUnavailable(description, Some(cause)) =>
+              logger.debug(s"Integration check failed: $resource unavailable: $description, $cause")
+              Some(failure)
+            case failure@ResourceCheck.ResourceUnavailable(description, None) =>
+              logger.debug(s"Integration check failed: $resource unavailable: $description")
+              Some(failure)
+            case ResourceCheck.Success() =>
+              None
+          }
+        } catch {
+          case NonFatal(exception) =>
+            logger.error(s"Integration check for $resource threw $exception")
+            Some(ResourceCheck.ResourceUnavailable(exception.getMessage, Some(exception)))
+        }
+    }
+    Some(failures).filter(_.nonEmpty)
   }
 }

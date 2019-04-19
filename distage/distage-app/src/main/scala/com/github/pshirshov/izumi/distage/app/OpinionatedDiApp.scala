@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.app
 
+import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.plan.{CompactPlanFormatter, OrderedPlan}
@@ -11,8 +12,10 @@ import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage._
 
+@deprecated("Migrate to new role infra", "2019-04-19")
 case class DIAppStartupContext(startupContext: StartupContext)
 
+@deprecated("Migrate to new role infra", "2019-04-19")
 trait StartupContext {
   def logger: IzLogger
   def injector: Injector
@@ -20,6 +23,7 @@ trait StartupContext {
   def startup(args: Array[String]): StartupContext
 }
 
+@deprecated("Migrate to new role infra", "2019-04-19")
 abstract class OpinionatedDiApp {
   type CommandlineConfig
 
@@ -52,8 +56,8 @@ abstract class OpinionatedDiApp {
 
     val mergeStrategy: PluginMergeStrategy = strategy.mergeStrategy(pluginsBs, pluginsApp)
 
-    val mergedBs: LoadedPlugins = mergeStrategy.merge(pluginsBs)
-    val mergedApp: LoadedPlugins = mergeStrategy.merge(pluginsApp)
+    val mergedBs: MergedPlugins = mergeStrategy.merge(pluginsBs)
+    val mergedApp: MergedPlugins = mergeStrategy.merge(pluginsApp)
 
     validate(mergedBs, mergedApp)
 
@@ -83,7 +87,7 @@ abstract class OpinionatedDiApp {
 
   protected def makeStrategy(cliConfig: CommandlineConfig): ApplicationBootstrapStrategy
 
-  private def makeModule(strategy: ApplicationBootstrapStrategy)(mergedBs: LoadedPlugins, mergedApp: LoadedPlugins): Module = {
+  private def makeModule(strategy: ApplicationBootstrapStrategy)(mergedBs: MergedPlugins, mergedApp: MergedPlugins): Module = {
     strategy.appModules(mergedBs, mergedApp).merge ++ mergedApp.definition
   }
 
@@ -111,7 +115,7 @@ abstract class OpinionatedDiApp {
     Injector.Standard(bsdef)
   }
 
-  protected def validate(bootstrapAutoDef: LoadedPlugins, appDef: LoadedPlugins): Unit = {
+  protected def validate(bootstrapAutoDef: MergedPlugins, appDef: MergedPlugins): Unit = {
     val conflicts = bootstrapAutoDef.definition.keys.intersect(appDef.definition.keys)
     if (conflicts.nonEmpty) {
       throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")

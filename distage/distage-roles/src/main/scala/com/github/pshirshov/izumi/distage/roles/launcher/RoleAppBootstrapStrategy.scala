@@ -28,20 +28,11 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-sealed trait ConfigSource
 
-object ConfigSource {
 
-  final case class Resource(name: String) extends ConfigSource {
-    override def toString: String = s"resource:$name"
-  }
 
-  final case class File(file: java.io.File) extends ConfigSource {
-    override def toString: String = s"file:$file"
-  }
 
-}
-
+@deprecated("Migrate to new role infra", "2019-04-19")
 class RoleAppBootstrapStrategy(
                                 params: RoleAppBootstrapStrategyArgs
                               , override val context: BootstrapConfig
@@ -50,8 +41,8 @@ class RoleAppBootstrapStrategy(
   import params._
 
   private val logger = IzLogger(params.rootLogLevel)
-  private val mp = MirrorProvider.Impl
 
+  private val mp = MirrorProvider.Impl
   private val roleProvider: RoleProvider = new RoleProviderImpl(logger, roleSet, mp)
 
   def init(): this.type = {
@@ -122,11 +113,7 @@ class RoleAppBootstrapStrategy(
     }
   }
 
-  protected def loadDefaultConfig: Boolean = {
-    params.primaryConfig.isEmpty && params.roleConfigs.isEmpty
-  }
-
-  override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
+  override def bootstrapModules(bs: MergedPlugins, app: MergedPlugins): Seq[BootstrapModuleDef] = {
 
     logger.info(s"Loaded ${app.definition.bindings.size -> "app bindings"} and ${bs.definition.bindings.size -> "bootstrap bindings"}...")
 
@@ -151,7 +138,20 @@ class RoleAppBootstrapStrategy(
       maybeDumpGraphModule
   }
 
-  override def gcRoots(bs: LoadedPlugins, app: LoadedPlugins): Set[DIKey] = {
+  override def appModules(bs: MergedPlugins, app: MergedPlugins): Seq[Module] = {
+    bs.discard()
+    app.discard()
+
+    val baseMod = new ModuleDef {
+      make[CustomContext].from(CustomContext.empty)
+      make[IzLogger]
+      make[ComponentsLifecycleManager].from[ComponentsLifecycleManagerImpl]
+      make[RoleStarter].from[RoleStarterImpl]
+    }
+    Seq(baseMod overridenBy addOverrides)
+  }
+
+  override def gcRoots(bs: MergedPlugins, app: MergedPlugins): Set[DIKey] = {
     (bs, app).discard()
 
     val roles = roleInfo.get()
@@ -192,18 +192,7 @@ class RoleAppBootstrapStrategy(
     logger.info(s"Requested ${roles.requiredRoleBindings.map(_.name).mkString("\n - ", "\n - ", "") -> "roles"}")
   }
 
-  override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[Module] = {
-    bs.discard()
-    app.discard()
 
-    val baseMod = new ModuleDef {
-      make[CustomContext].from(CustomContext.empty)
-      make[IzLogger]
-      make[ComponentsLifecycleManager].from[ComponentsLifecycleManagerImpl]
-      make[RoleStarter].from[RoleStarterImpl]
-    }
-    Seq(baseMod overridenBy addOverrides)
-  }
 
   private[this] lazy val _router = {
     new SimpleLoggerConfigurator(logger)
@@ -232,6 +221,6 @@ object RoleAppBootstrapStrategy {
     .register[RoleService]
     .register[AutoCloseable]
     .register[RoleComponent]
-    .register[IntegrationComponent]
+    .register[IntegrationCheck]
     .register[ExecutorService]
 }

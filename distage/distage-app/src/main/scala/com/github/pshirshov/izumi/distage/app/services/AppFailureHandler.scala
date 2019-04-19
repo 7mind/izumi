@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.app
+package com.github.pshirshov.izumi.distage.app.services
 
 trait AppFailureHandler {
   def onError(t: Throwable): Unit
@@ -27,3 +27,7 @@ object AppFailureHandler {
   }
 
 }
+
+
+
+

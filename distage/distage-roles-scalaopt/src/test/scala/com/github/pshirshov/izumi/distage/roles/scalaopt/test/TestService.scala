@@ -52,12 +52,12 @@ class InitCounter {
   val closedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
   val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
   val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
-  val checkedResources: mutable.ArrayBuffer[IntegrationComponent] = mutable.ArrayBuffer()
+  val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()
 }
 
 trait Resource
 
-class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource with AutoCloseable with IntegrationComponent {
+class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
   counter.startedCloseables += this
 
   override def close(): Unit = counter.closedCloseables += this
@@ -68,7 +68,7 @@ class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource
   }
 }
 
-class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource with AutoCloseable with IntegrationComponent {
+class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
   counter.startedCloseables += this
 
   override def close(): Unit = counter.closedCloseables += this

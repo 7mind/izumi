@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles
 
+@deprecated("Migrate to DIResource", "2019-04-19")
 trait RoleComponent {
   /** Should be idempotent, i.e. calling [[start()]] twice should NOT spawn a second component, interfere with the current instance or throw exceptions */
   def start(): Unit

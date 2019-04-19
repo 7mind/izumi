@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.app
 
+import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
 import com.github.pshirshov.izumi.distage.config.ConfigModule
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.Locator
@@ -49,7 +50,7 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends Opin
         new ConfigurablePluginMergeStrategy(pluginMergeConfig)
       }
 
-      override def bootstrapModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[BootstrapModuleDef] = {
+      override def bootstrapModules(bs: MergedPlugins, app: MergedPlugins): Seq[BootstrapModuleDef] = {
         Quirks.discard(bs, app)
         Seq(
           new ConfigModule(config)
@@ -58,12 +59,12 @@ class TestAppLauncher(callback: (TestAppLauncher, Locator) => Unit) extends Opin
         )
       }
 
-      override def appModules(bs: LoadedPlugins, app: LoadedPlugins): Seq[Module] = {
+      override def appModules(bs: MergedPlugins, app: MergedPlugins): Seq[Module] = {
         Quirks.discard(bs, app)
         Seq.empty
       }
 
-      override def gcRoots(bs: LoadedPlugins, app: LoadedPlugins): Set[DIKey] = {
+      override def gcRoots(bs: MergedPlugins, app: MergedPlugins): Set[DIKey] = {
         Quirks.discard(bs, app)
         Set(
           RuntimeDIUniverse.DIKey.get[TestApp],
