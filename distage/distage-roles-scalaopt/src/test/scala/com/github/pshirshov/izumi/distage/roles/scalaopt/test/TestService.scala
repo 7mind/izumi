@@ -3,12 +3,59 @@ package com.github.pshirshov.izumi.distage.roles.scalaopt.test
 import java.util.concurrent.ExecutorService
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.roles.cli.Parameters
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.collection.mutable
+
+@RoleId(TestTask.id)
+class TestTask(logger: IzLogger) extends RoleTask2[Identity] {
+  override def start(roleParameters: Parameters, freeArgs: Vector[String]): Identity[Unit] = {
+    logger.info(s"Entrypoint invoked!: $roleParameters, $freeArgs")
+  }
+}
+
+object TestTask extends RoleDescriptor {
+  override final val id = "testtask"
+}
+
+@RoleId(TestRole2.id)
+class TestRole2[F[_] : DIEffect](logger: IzLogger) extends RoleService2[F] {
+  override def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[testrole2] started: $roleParameters, $freeArgs")
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[testrole2] exiting role...")
+      }
+  }
+}
+
+object TestRole2 extends RoleDescriptor {
+  override final val id = "testrole"
+}
+
+@RoleId(TestRole3.id)
+class TestRole3[F[_] : DIEffect](logger: IzLogger) extends RoleService2[F] {
+  override def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[testrole3] started: $roleParameters, $freeArgs")
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[testrole2] exiting role...")
+      }
+  }
+}
+
+object TestRole3 extends RoleDescriptor {
+  override final val id = "testrole3"
+}
 
 trait Dummy
 

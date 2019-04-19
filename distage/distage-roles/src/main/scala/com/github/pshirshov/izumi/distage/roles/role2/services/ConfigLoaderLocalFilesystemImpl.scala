@@ -1,8 +1,9 @@
-package com.github.pshirshov.izumi.distage.roles.role2
+package com.github.pshirshov.izumi.distage.roles.role2.services
 
 import java.io.File
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -26,7 +27,24 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
 
     val allConfigs = roleConfigFiles :+ commonConfigFile
 
-    logger.info(s"Using ${allConfigs.niceList() -> "config files"}")
+    val cfgInfo = allConfigs.map {
+      case r: ConfigSource.Resource =>
+        IzResources.getPath(r.name) match {
+          case Some(value) =>
+            s"$r (exists: ${value.path})"
+          case None =>
+            s"$r (missing)"
+        }
+
+      case f: ConfigSource.File =>
+        if (f.file.exists()) {
+          s"$f (exists: ${f.file.getCanonicalPath})"
+        } else {
+          s"$f (missing)"
+        }
+    }
+
+    logger.info(s"Using ${cfgInfo.niceList() -> "config files"}")
     logger.info(s"Using system properties")
 
     val loaded = allConfigs.map {

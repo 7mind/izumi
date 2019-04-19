@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
 import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, ConfigWriter}
 import com.github.pshirshov.izumi.distage.roles.{BackendPluginTags, RoleId, RoleService, RolesInfo}
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -33,6 +34,9 @@ class TestPlugin extends PluginDef {
   make[TestConfigWriter]
   many[Dummy]
   make[NotCloseable].from[InheritedCloseable]
+  make[TestTask]
+  make[TestRole2[Identity]]
+  make[TestRole3[Identity]]
 }
 
 trait Conflict

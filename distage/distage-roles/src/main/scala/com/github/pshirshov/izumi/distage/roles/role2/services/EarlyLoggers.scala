@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.role2
+package com.github.pshirshov.izumi.distage.roles.role2.services
 
 import com.github.pshirshov.izumi.distage.config.SimpleLoggerConfigurator
 import com.github.pshirshov.izumi.distage.config.model.AppConfig

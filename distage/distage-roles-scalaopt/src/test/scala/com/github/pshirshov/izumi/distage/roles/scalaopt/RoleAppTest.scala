@@ -2,15 +2,16 @@ package com.github.pshirshov.izumi.distage.roles.scalaopt
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig}
 import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
+import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig}
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.{RoleService, RoleStarter}
+import com.github.pshirshov.izumi.distage.roles.RoleService
+import com.github.pshirshov.izumi.distage.roles.cli.{Parameters, RoleArg}
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleArgs
-import com.github.pshirshov.izumi.distage.roles.role2.{RoleAppLauncher, RoleAppMain}
+import com.github.pshirshov.izumi.distage.roles.role2.{ApplicationShutdownStrategy, JvmExitHookLatchShutdownStrategy, RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.distage.roles.scalaopt.ScoptLauncherArgs.ParserExtenstion
 import com.github.pshirshov.izumi.distage.roles.scalaopt.test._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -20,23 +21,30 @@ import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMateriali
 import com.typesafe.config.ConfigFactory
 import org.scalatest.WordSpec
 
-object Run extends RoleAppMain.Default[Identity](new RoleAppLauncher[Identity] {
+object Launcher extends RoleAppLauncher[Identity] {
+  protected val hook: ApplicationShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
+}
 
-  override protected def entrypoint(provisioned: Locator): Identity[Unit] = {
-    val starter = provisioned.get[RoleStarter]
-    starter.start()
-    println("Started!")
-    starter.join()
-  }
-}) {
-  val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
+trait TestMain[F[_]] {
+  this: RoleAppMain[F] =>
+  private val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
     debug = false
     , packagesEnabled = Seq(s"$thisPkg.test")
     , packagesDisabled = Seq.empty
   )
-  protected def bootstrapConfig: BootstrapConfig = BootstrapConfig(pluginConfig)
 
-  override def main(args: Array[String]): Unit = super.main(Array(":testservice"))
+  protected def bootstrapConfig: BootstrapConfig = BootstrapConfig(pluginConfig)
+}
+
+object Run extends RoleAppMain.Default[Identity](Launcher) with TestMain[Identity] {
+
+  override protected def requiredRoles: Vector[RoleArg] = Vector(
+    RoleArg("testrole", Parameters.empty, Vector.empty),
+    RoleArg("testrole3", Parameters.empty, Vector.empty),
+    RoleArg("testtask", Parameters.empty, Vector.empty),
+  )
+
+  override def main(args: Array[String]): Unit = super.main(Array.empty)
 }
 
 class RoleAppTest extends WordSpec {

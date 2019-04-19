@@ -11,6 +11,6 @@ trait RoleTask {
 /**
   * Single-shot task, shouldn't block forever
   */
-trait RoleTask2 {
-  def start(roleParameters: Parameters, freeArgs: Vector[String]): Unit
+trait RoleTask2[F[_]] {
+  def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit]
 }

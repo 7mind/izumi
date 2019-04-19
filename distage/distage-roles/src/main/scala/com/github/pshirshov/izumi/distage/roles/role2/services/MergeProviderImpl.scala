@@ -1,10 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles.role2
+package com.github.pshirshov.izumi.distage.roles.role2.services
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
-import com.github.pshirshov.izumi.distage.roles.role2.PluginSource.AllLoadedPlugins
+import com.github.pshirshov.izumi.distage.roles.role2.RoleAppLauncher
+import com.github.pshirshov.izumi.distage.roles.role2.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.{BackendPluginTags, RolesInfo}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 

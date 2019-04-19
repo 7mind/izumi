@@ -6,20 +6,20 @@ import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.{model, roles}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import _root_.distage._
 
 import scala.reflect.ClassTag
 
-class RoleProviderImpl(
-                        logger: IzLogger,
-                        requiredRoles: Set[String],
-                        mirrorProvider: MirrorProvider,
-                      ) extends RoleProvider {
+class RoleProviderImpl[F[_] : TagK](
+                                     logger: IzLogger,
+                                     requiredRoles: Set[String],
+                                     mirrorProvider: MirrorProvider,
+                                   ) extends RoleProvider[F] {
 
-  def getInfo(bindings: Iterable[Binding]): roles.RolesInfo = {
+  def getInfo(bindings: Iterable[Binding]): RolesInfo = {
     val availableBindings = getRoles(bindings)
 
     val roles = availableRoleNames(availableBindings)
@@ -29,14 +29,13 @@ class RoleProviderImpl(
 
 
     RolesInfo(
-      Set(
-        RuntimeDIUniverse.DIKey.get[RoleStarter]) ++ enabledRoles.map(_.binding.key)
-      , enabledRoles
-      , roles
-      , availableBindings
-      , roles.toSet.diff(requiredRoles
+        enabledRoles.map(_.binding.key).toSet
+        , enabledRoles
+        , roles
+        , availableBindings
+        , roles.toSet.diff(requiredRoles
+        )
       )
-    )
   }
 
   private def availableRoleNames(bindings: Iterable[RoleBinding]): Seq[String] = {
@@ -59,12 +58,12 @@ class RoleProviderImpl(
             val annos = getAnno(rt)
             annos.headOption match {
               case Some(value) if annos.size == 1 =>
-                Seq(roles.RoleBinding(b, runtimeClass, rt, value, src))
+                Seq(RoleBinding(b, runtimeClass, rt, value, src))
               case Some(_) =>
-                logger.warn(s"${runtimeClass -> "role"} has multiple identifiers defined: $annos thus ignored")
+                logger.error(s"${runtimeClass -> "role"} has multiple identifiers defined: $annos thus ignored")
                 Seq.empty
               case None =>
-                logger.warn(s"${runtimeClass -> "role"} has no identifier defined thus ignored")
+                logger.error(s"${runtimeClass -> "role"} has no identifier defined thus ignored")
                 Seq.empty
             }
 
@@ -79,7 +78,7 @@ class RoleProviderImpl(
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    (tpe weak_<:< SafeType.get[RoleService]) || (tpe weak_<:< SafeType.get[RoleTask2])
+    (tpe weak_<:< SafeType.get[RoleService]) || (tpe weak_<:< SafeType.get[RoleTask2[F]]) || (tpe weak_<:< SafeType.get[RoleService2[F]])
   }
 
 
@@ -97,7 +96,7 @@ class RoleProviderImpl(
       .filter(pred)
   }
 
-  private def getAnno(tpe: model.reflection.universe.RuntimeDIUniverse.SafeType): Set[String] = {
+  private def getAnno(tpe: SafeType): Set[String] = {
     AnnotationTools.collectFirstString[RoleId](RuntimeDIUniverse.u)(tpe.tpe.typeSymbol).toSet
   }
 }

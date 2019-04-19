@@ -15,6 +15,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -43,7 +44,7 @@ class RoleAppBootstrapStrategy(
   private val logger = IzLogger(params.rootLogLevel)
 
   private val mp = MirrorProvider.Impl
-  private val roleProvider: RoleProvider = new RoleProviderImpl(logger, roleSet, mp)
+  private val roleProvider: RoleProvider[Identity] = new RoleProviderImpl(logger, roleSet, mp)
 
   def init(): this.type = {
     showDepData(logger, "Application is about to start", this.getClass)
