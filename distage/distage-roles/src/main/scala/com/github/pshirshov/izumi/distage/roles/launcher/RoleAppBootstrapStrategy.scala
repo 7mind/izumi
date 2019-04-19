@@ -157,7 +157,10 @@ class RoleAppBootstrapStrategy(
 
     val roles = roleInfo.get()
 
-    roles.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig])
+    roles.requiredComponents ++ Set(
+      RuntimeDIUniverse.DIKey.get[ResolvedConfig],
+      RuntimeDIUniverse.DIKey.get[RoleStarter],
+    )
   }
 
   override def mergeStrategy(bs: Seq[PluginBase], app: Seq[PluginBase]): PluginMergeStrategy = {
