@@ -9,11 +9,12 @@ import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
+import com.github.pshirshov.izumi.distage.roles.cli.{Parameters, RoleAppArguments, RoleArg}
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleProvider, RoleProviderImpl}
 import com.github.pshirshov.izumi.distage.roles.role2.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.role2.parser.CLIParser
-import com.github.pshirshov.izumi.distage.roles.{IntegrationCheck, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.{IntegrationCheck, RoleTask2, RolesInfo}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
@@ -57,7 +58,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def entrypoint(provisioned: Locator): F[Unit]
 
-  final def launch(parameters: CLIParser.RoleAppArguments, bootstrapConfig: BootstrapConfig, referenceLibraryInfo: Seq[Using]): Unit = {
+  final def launch(parameters: RoleAppArguments, bootstrapConfig: BootstrapConfig, referenceLibraryInfo: Seq[Using]): Unit = {
     val earlyLogger = loggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
@@ -112,7 +113,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
               Injector.inherit(integrationLocator).produceF[F](refinedRolesPlan).use {
                 rolesLocator =>
-                  lateLogger.info(s"*** Initialization finished, passing to the entrypoint ***")
+                  runTasks(lateLogger, parameters, roles, rolesLocator)
+
+                  lateLogger.info(s"Initialization finished, passing to the entrypoint")
                   entrypoint(rolesLocator)
               }
           }
@@ -120,6 +123,34 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     }
   }
 
+
+  protected def runTasks(lateLogger: IzLogger, parameters: RoleAppArguments, roles: RolesInfo, rolesLocator: Locator): Unit = {
+    val tasks = rolesLocator.get[Set[RoleTask2]]
+    lateLogger.info(s"Going to run: ${tasks.size -> "tasks"}")
+
+    val roleClassMap = roles.availableRoleBindings.map {
+      b =>
+        b.runtimeClass.asInstanceOf[AnyRef] -> b.name
+    }.toMap
+
+    val params = parameters.roles.map {
+      r =>
+        r.role -> r
+    }.toMap
+
+    tasks.foreach {
+      task =>
+        val name = roleClassMap.get(task.getClass) match {
+          case Some(value) =>
+            value
+          case None =>
+            throw new DiAppBootstrapException(s"Inconsistent state: task $task is missing from roles metadata")
+        }
+
+        val cfg = params.getOrElse(name, RoleArg(name, Parameters.empty, Vector.empty))
+        task.start(cfg.roleParameters, cfg.freeArgs)
+    }
+  }
 
   private def makeIntegrationCheck(lateLogger: IzLogger): IntegrationChecker = {
     new IntegrationCheckerImpl(lateLogger)
@@ -130,11 +161,11 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     rolesInfo.requiredComponents ++ Set(RuntimeDIUniverse.DIKey.get[ResolvedConfig])
   }
 
-  protected def makeModuleProvider(parameters: CLIParser.RoleAppArguments, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider = {
+  protected def makeModuleProvider(parameters: RoleAppArguments, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider = {
     new ModuleProviderImpl(lateLogger, parameters, config, roles)
   }
 
-  protected def loadRoles(parameters: CLIParser.RoleAppArguments, lateLogger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
+  protected def loadRoles(parameters: RoleAppArguments, lateLogger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val mp = MirrorProvider.Impl
     val roleProvider: RoleProvider = new RoleProviderImpl(lateLogger, activeRoleNames, mp)
@@ -185,7 +216,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new PluginSourceImpl(bootstrapConfig)
   }
 
-  protected def makeConfigLoader(logger: IzLogger, parameters: CLIParser.RoleAppArguments): ConfigLoader = {
+  protected def makeConfigLoader(logger: IzLogger, parameters: RoleAppArguments): ConfigLoader = {
     val maybeGlobalConfig = parameters.globalParameters.values.find(p => configParam.matches(p.name)).map(v => new File(v.value))
     val roleConfigs = parameters.roles.map {
       r =>
@@ -194,7 +225,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new ConfigLoaderLocalFilesystemImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
 
-  protected def makeMergeProvider(lateLogger: IzLogger, parameters: CLIParser.RoleAppArguments): MergeProvider = {
+  protected def makeMergeProvider(lateLogger: IzLogger, parameters: RoleAppArguments): MergeProvider = {
     new MergeProviderImpl(lateLogger, parameters)
   }
 }

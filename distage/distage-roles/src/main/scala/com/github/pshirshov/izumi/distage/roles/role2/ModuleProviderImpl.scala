@@ -8,20 +8,21 @@ import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, 
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.launcher.{ComponentsLifecycleManagerImpl, RoleStarterImpl}
-import com.github.pshirshov.izumi.distage.roles.role2.parser.CLIParser
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 
-class ModuleProviderImpl(logger: IzLogger, parameters: CLIParser.RoleAppArguments, config: AppConfig, roleInfo: RolesInfo) extends ModuleProvider {
+class ModuleProviderImpl(logger: IzLogger, parameters: RoleAppArguments, config: AppConfig, roleInfo: RolesInfo) extends ModuleProvider {
   private final val roleAutoSetModule = AutoSetModule()
     .register[RoleService]
     .register[AutoCloseable]
     .register[RoleComponent]
     .register[IntegrationCheck]
     .register[ExecutorService]
+    .register[RoleTask2]
 
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {

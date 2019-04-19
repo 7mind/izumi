@@ -55,11 +55,11 @@ class RoleProviderImpl(
           case (b, Some(rt)) =>
             val runtimeClass = mirrorProvider.mirror.runtimeClass(rt.tpe)
             val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-            val annos = getAnno(rt)
 
+            val annos = getAnno(rt)
             annos.headOption match {
               case Some(value) if annos.size == 1 =>
-                Seq(roles.RoleBinding(b, rt, value, src))
+                Seq(roles.RoleBinding(b, runtimeClass, rt, value, src))
               case Some(_) =>
                 logger.warn(s"${runtimeClass -> "role"} has multiple identifiers defined: $annos thus ignored")
                 Seq.empty
@@ -79,7 +79,7 @@ class RoleProviderImpl(
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    tpe weak_<:< SafeType.get[RoleService]
+    (tpe weak_<:< SafeType.get[RoleService]) || (tpe weak_<:< SafeType.get[RoleTask2])
   }
 
 

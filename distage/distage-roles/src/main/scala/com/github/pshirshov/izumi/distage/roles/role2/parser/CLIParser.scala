@@ -101,7 +101,6 @@ sealed trait CLIParserState {
 
 
 object CLIParserState {
-  private def emptyParameters: Parameters = Parameters(Vector.empty, Vector.empty)
 
   class Error(error: ParserError) extends CLIParserState {
     override def addRole(name: String): CLIParserState = {
@@ -136,7 +135,7 @@ object CLIParserState {
 
   class Initial() extends CLIParserState {
     override def addRole(name: String): CLIParserState = {
-      new RoleParameters(emptyParameters, Vector.empty, RoleArg(name, emptyParameters, Vector.empty))
+      new RoleParameters(Parameters.empty, Vector.empty, RoleArg(name, Parameters.empty, Vector.empty))
     }
 
     override def addFlag(rawArg: String)(flag: Flag): CLIParserState = {
@@ -158,13 +157,13 @@ object CLIParserState {
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
-      Right(RoleAppArguments(emptyParameters, Vector.empty))
+      Right(RoleAppArguments(Parameters.empty, Vector.empty))
     }
   }
 
   class GlobalParameters(p: Parameters) extends CLIParserState {
     override def addRole(name: String): CLIParserState = {
-      new RoleParameters(p, Vector.empty, RoleArg(name, emptyParameters, Vector.empty))
+      new RoleParameters(p, Vector.empty, RoleArg(name, Parameters.empty, Vector.empty))
     }
 
     override def addFlag(rawArg: String)(flag: Flag): CLIParserState = {
@@ -190,7 +189,7 @@ object CLIParserState {
 
   class RoleParameters(globalParameters: Parameters, roles: Vector[RoleArg], currentRole: RoleArg) extends CLIParserState {
     override def addRole(name: String): CLIParserState = {
-      new RoleParameters(globalParameters, roles :+ currentRole, RoleArg(name, emptyParameters, Vector.empty))
+      new RoleParameters(globalParameters, roles :+ currentRole, RoleArg(name, Parameters.empty, Vector.empty))
     }
 
     override def addFlag(rawArg: String)(flag: Flag): CLIParserState = {
@@ -218,7 +217,7 @@ object CLIParserState {
 
   class RoleArgs(globalParameters: Parameters, roles: Vector[RoleArg], currentRole: RoleArg) extends CLIParserState {
     override def addRole(name: String): CLIParserState = {
-      new RoleParameters(globalParameters, roles :+ currentRole, RoleArg(name, emptyParameters, Vector.empty))
+      new RoleParameters(globalParameters, roles :+ currentRole, RoleArg(name, Parameters.empty, Vector.empty))
     }
 
     override def addFlag(rawArg: String)(flag: Flag): CLIParserState = {
