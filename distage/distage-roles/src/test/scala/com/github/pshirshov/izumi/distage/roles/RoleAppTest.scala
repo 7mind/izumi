@@ -1,34 +1,23 @@
-package com.github.pshirshov.izumi.distage.roles.scalaopt
+package com.github.pshirshov.izumi.distage.roles
 
-import cats.effect.{LiftIO, _}
+import cats.effect._
 import com.github.pshirshov.izumi.distage.app.BootstrapConfig
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.roles.cli.{Parameters, RoleArg}
-import com.github.pshirshov.izumi.distage.roles.{ApplicationShutdownStrategy, CatsEffectIOShutdownStrategy, RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
-import distage.TagK
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class LauncherF[F[_] : TagK : DIEffect : LiftIO](ec: ExecutionContext) extends RoleAppLauncher[F] {
-  protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy[F](ec)
-
-  private val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
-    debug = false
-    , packagesEnabled = Seq(s"$thisPkg.test")
-    , packagesDisabled = Seq.empty
+object TestLauncher extends RoleAppLauncher.LauncherF[IO]() {
+  protected val bootstrapConfig: BootstrapConfig = BootstrapConfig(
+    PluginConfig(
+      debug = false
+      , packagesEnabled = Seq(s"$thisPkg.test")
+      , packagesDisabled = Seq.empty
+    )
   )
-
-  protected def bootstrapConfig: BootstrapConfig = BootstrapConfig(pluginConfig)
 }
 
-
-object Launcher extends LauncherF[IO](global)
-
-object Run extends RoleAppMain.Default[IO](Launcher) {
+object Run extends RoleAppMain.Default(TestLauncher) {
   override protected def requiredRoles: Vector[RoleArg] = Vector(
     RoleArg("testrole", Parameters.empty, Vector.empty),
     RoleArg("testrole3", Parameters.empty, Vector.empty),

@@ -10,22 +10,22 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.{Failure, Success, Try}
 
 class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[File], roles: Map[String, Option[File]]) extends ConfigLoader {
+
   import ConfigLoaderLocalFilesystemImpl._
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
   import scala.collection.JavaConverters._
 
   def buildConfig(): AppConfig = {
-    val commonConfigFile = primaryConfig
-      .fold(ConfigSource.Resource("common-reference.conf"): ConfigSource)(f => ConfigSource.File(f))
+    val commonConfigFile = toConfig("common", primaryConfig)
 
-    val roleConfigFiles = roles.map {
+    val roleConfigFiles = roles.flatMap {
       case (roleName, roleConfig) =>
-        roleConfig.fold(ConfigSource.Resource(s"$roleName-reference.conf"): ConfigSource)(f => ConfigSource.File(f))
+        toConfig(roleName, roleConfig)
     }
       .toList
 
-    val allConfigs = roleConfigFiles :+ commonConfigFile
+    val allConfigs = roleConfigFiles ++ commonConfigFile
 
     val cfgInfo = allConfigs.map {
       case r: ConfigSource.Resource =>
@@ -75,6 +75,13 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
     AppConfig(config)
   }
 
+  protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
+    Seq(
+      ConfigSource.Resource(s"$name-reference.conf"),
+      ConfigSource.Resource(s"$name-reference-test.conf"),
+    )
+  }
+
   protected def foldConfigs(roleConfigs: Seq[Config]): Config = {
     roleConfigs.foldLeft(ConfigFactory.empty()) {
       case (acc, cfg) =>
@@ -90,9 +97,16 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
     }
   }
 
+  private def toConfig(name: String, maybeConfigFile: Option[File]): Seq[ConfigSource] = {
+    maybeConfigFile.fold(defaultConfigReferences(name)) {
+      f =>
+        Seq(ConfigSource.File(f))
+    }
+  }
 }
 
 object ConfigLoaderLocalFilesystemImpl {
+
   sealed trait ConfigSource
 
   object ConfigSource {
@@ -106,4 +120,5 @@ object ConfigLoaderLocalFilesystemImpl {
     }
 
   }
+
 }

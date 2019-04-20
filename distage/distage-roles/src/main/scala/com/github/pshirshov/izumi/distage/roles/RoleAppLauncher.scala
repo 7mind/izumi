@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.roles
 
 import java.io.File
 
+import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.app.{BootstrapConfig, DiAppBootstrapException}
 import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
@@ -16,11 +17,14 @@ import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrateg
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage._
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 
 
@@ -317,4 +321,12 @@ object RoleAppLauncher {
 
   @deprecated("We should stop using tags", "2019-04-19")
   final val useDummies = CLIParser.ParameterNameDef("mode:dummies")
+
+  abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
+    override protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+  }
+
+  abstract class LauncherIdentity extends RoleAppLauncher[Identity] {
+    override protected val hook: ApplicationShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
+  }
 }
