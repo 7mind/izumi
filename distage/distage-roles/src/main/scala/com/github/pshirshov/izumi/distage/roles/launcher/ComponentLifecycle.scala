@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 
 import com.github.pshirshov.izumi.distage.roles.RoleComponent
 
+@deprecated("migrate to new api", "2019-04-20")
 sealed trait ComponentLifecycle
 
 object ComponentLifecycle {

@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule, SimpleLoggerConfigurator}
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
@@ -15,6 +15,7 @@ import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
+import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
 import com.github.pshirshov.izumi.distage.testkit
 import com.github.pshirshov.izumi.distage.testkit.DistageTests.DirtyGlobalSynchronizedObject
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.launcher
 
+@deprecated("migrate to new api", "2019-04-20")
 sealed trait StarterState
 
 object StarterState {

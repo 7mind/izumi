@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.app.{ApplicationBootstrapStrategy, BootstrapConfig, OpinionatedDiApp}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig, SimpleLoggerConfigurator}
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
@@ -15,6 +15,8 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.impl.RoleAppBootstrapStrategyArgs
+import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
+import com.github.pshirshov.izumi.distage.roles.services.{RoleProvider, RoleProviderImpl}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest

@@ -8,3 +8,14 @@ trait RoleComponent {
   /** Should be idempotent, i.e. calling [[stop()]] twice should NOT throw exceptions */
   def stop(): Unit = {}
 }
+
+
+@deprecated("Migrate to new mechanism", "2019-04-19")
+trait RoleService extends RoleComponent
+
+@deprecated("Migrate to new mechanism", "2019-04-19")
+trait RoleTask {
+  this: RoleService =>
+}
+
+

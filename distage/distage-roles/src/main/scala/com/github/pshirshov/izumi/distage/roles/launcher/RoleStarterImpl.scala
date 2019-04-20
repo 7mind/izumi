@@ -12,7 +12,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import scala.util.Try
 import scala.util.control.NonFatal
 
-
+@deprecated("migrate to new api", "2019-04-20")
 class RoleStarterImpl
 (
   services: Set[RoleService],

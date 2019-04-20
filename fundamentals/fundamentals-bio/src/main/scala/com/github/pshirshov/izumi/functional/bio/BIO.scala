@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import scalaz.zio.FiberFailure
+import scalaz.zio.{FiberFailure, Promise}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -53,7 +53,6 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 }
 
 object BIO extends BIOSyntax {
-
   @inline def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
 
   @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly

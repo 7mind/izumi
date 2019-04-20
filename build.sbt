@@ -267,10 +267,11 @@ lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
 lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
 lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
 
+//-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
   .depends(
     fundamentalsReflection,
-    fundamentalsBioJvm,
+    fundamentalsBioJvm, // all deps there are optional
   )
   .settings(
     libraryDependencies ++= R.cats_all.map(_ % Optional),
@@ -279,59 +280,31 @@ lazy val distageModel = inDiStage.as.module
 lazy val distageProxyCglib = inDiStage.as.module
   .depends(distageModel)
   .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-      , R.cglib_nodep
-    )
-  )
-
-lazy val distageConfig = inDiStage.as.module
-  .depends(
-    distageCore,
-    fundamentalsTypesafeConfig,
-    logstageRenderingCirce,
-    logstageAdapterSlf4j,
-    logstageDi,
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      R.typesafe_config
-    )
-  )
-
-lazy val distagePlugins = inDiStage.as.module
-  .depends(distageCore, distageConfig.testOnlyRef)
-  .settings(
-    libraryDependencies ++= Seq(R.fast_classpath_scanner)
-  )
-
-lazy val distageApp = inDiStage.as.module
-  .depends(distageCore, distagePlugins, distageConfig)
-
-lazy val distageRolesApi = inDiStage.as.module
-  .depends(distageCore, distagePlugins)
-
-lazy val distageRoles = inDiStage.as.module
-  .depends(distageRolesApi, distageApp)
-
-lazy val distageRolesScalaopt = inDiStage.as.module
-  .depends(distageRoles)
-  .settings(
-    libraryDependencies += R.scopt
+    libraryDependencies += R.cglib_nodep
   )
 
 lazy val distageCore = inDiStage.as.module
   .depends(fundamentalsFunctionalJvm, distageModel, distageProxyCglib)
+
+lazy val distageConfig = inDiStage.as.module
+  .depends(
+    fundamentalsTypesafeConfig,
+    distageModel,
+    distageCore.testOnlyRef,    
+  )
   .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-    )
+    libraryDependencies += R.typesafe_config
   )
 
-lazy val distageTestkit = inDiStage.as.module
-  .depends(distageCore, distagePlugins, distageConfig, distageRoles, logstageDi)
+lazy val distagePlugins = inDiStage.as.module
+  .depends(
+    distageModel,
+    distageCore.testOnlyRef,
+    distageConfig.testOnlyRef,
+    logstageApi.testOnlyRef,
+  )
   .settings(
-    libraryDependencies ++= Seq(R.scalatest, R.scalacheck, R.scalacheck_shapeless)
+    libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
 lazy val distageCats = inDiStage.as.module
@@ -340,12 +313,34 @@ lazy val distageCats = inDiStage.as.module
     libraryDependencies ++= R.cats_all
   )
 
+lazy val distageRolesApi = inDiStage.as.module
+  .depends(distageModel)
+
+lazy val distageRoles = inDiStage.as.module
+  .depends(
+    distageRolesApi,
+    distageCore,
+    distagePlugins,
+    distageConfig,
+    logstageRenderingCirce,
+    logstageAdapterSlf4j,
+    logstageDi,
+  )
+  .settings(
+    libraryDependencies ++= R.cats_all.map(_ % Optional),
+  )
+
 lazy val distageStatic = inDiStage.as.module
-  .depends(distageCore, distageApp.testOnlyRef)
+  .depends(distageCore, distageRoles.testOnlyRef)
   .settings(
     libraryDependencies += R.shapeless
   )
 
+lazy val distageTestkit = inDiStage.as.module
+  .depends(distageCore, distagePlugins, distageConfig, distageRoles, logstageDi)
+  .settings(
+    libraryDependencies ++= Seq(R.scalatest, R.scalacheck, R.scalacheck_shapeless)
+  )
 //-----------------------------------------------------------------------------
 
 lazy val logstageApi = inLogStage.as.module
@@ -474,8 +469,8 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
       art.withClassifier(Some("assembly"))
     },
 
@@ -556,8 +551,8 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
       art.withClassifier(Some("assembly"))
     },
 
@@ -593,7 +588,6 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
-  , distageRolesScalaopt
   , distageCats
   , distageStatic
   , distageTestkit
@@ -699,7 +693,7 @@ lazy val microsite = inDoc.as.module
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
-//    , mdoc := run.in(Compile).evaluated
+    //    , mdoc := run.in(Compile).evaluated
     , mdocIn := baseDirectory.value / "src/main/tut"
     , sourceDirectory in Paradox := mdocOut.value
     , makeSite := makeSite.dependsOn(mdoc.toTask(" --no-link-hygiene")).value

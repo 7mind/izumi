@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
+@deprecated("migrate to new api", "2019-04-20")
 class ComponentsLifecycleManagerImpl(
                                       components: => Set[RoleComponent]
                                       , logger: IzLogger

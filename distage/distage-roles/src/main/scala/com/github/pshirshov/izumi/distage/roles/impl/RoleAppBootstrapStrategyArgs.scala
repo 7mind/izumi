@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleBa
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.logstage.api.Log
 
+@deprecated("migrate to new api", "2019-04-20")
 final case class RoleAppBootstrapStrategyArgs(
                                                disabledTags: BindingTag.Expressions.Expr
                                                , roleSet: Set[String]

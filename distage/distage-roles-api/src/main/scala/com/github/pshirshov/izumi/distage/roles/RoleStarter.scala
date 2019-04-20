@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles
 
+@deprecated("migrate to new api", "2019-04-20")
 trait RoleStarter {
   /**
     * Calls [[com.github.pshirshov.izumi.distage.roles.RoleService.start]] on

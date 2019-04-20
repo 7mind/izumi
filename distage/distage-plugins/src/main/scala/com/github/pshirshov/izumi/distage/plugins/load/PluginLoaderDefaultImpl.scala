@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.plugins.load
 
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
 import distage.plugins.PluginConfig
