@@ -301,14 +301,17 @@ lazy val distagePlugins = inDiStage.as.module
     distageModel,
     distageCore.testOnlyRef,
     distageConfig.testOnlyRef,
-    logstageApi.testOnlyRef,
+    logstageCore.testOnlyRef,
   )
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
 lazy val distageCats = inDiStage.as.module
-  .depends(distageCore)
+  .depends(
+    distageModel,
+    distageCore.testOnlyRef,
+  )
   .settings(
     libraryDependencies ++= R.cats_all
   )

@@ -50,8 +50,10 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   import RoleAppLauncher._
 
   private val loggers = new EarlyLoggers()
+  protected def bootstrapConfig: BootstrapConfig
+  protected def referenceLibraryInfo: Seq[Using] = Vector.empty
 
-  final def launch(parameters: RoleAppArguments, bootstrapConfig: BootstrapConfig, referenceLibraryInfo: Seq[Using]): Unit = {
+  final def launch(parameters: RoleAppArguments): Unit = {
     val earlyLogger = loggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()

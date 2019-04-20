@@ -5,17 +5,17 @@ import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.{ApplicationShutdownStrategy, CatsEffectIOShutdownStrategy, RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.distage.roles.cli.{Parameters, RoleArg}
-import com.github.pshirshov.izumi.distage.roles.role2.{CatsEffectIOShutdownStrategy, RoleAppLauncher, RoleAppMain}
+import com.github.pshirshov.izumi.distage.roles.{ApplicationShutdownStrategy, CatsEffectIOShutdownStrategy, RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import distage.TagK
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait TestMain[F[_]] {
-  this: RoleAppMain[F] =>
+class LauncherF[F[_] : TagK : DIEffect : LiftIO](ec: ExecutionContext) extends RoleAppLauncher[F] {
+  protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy[F](ec)
+
   private val pluginConfig: PluginLoaderDefaultImpl.PluginConfig = PluginConfig(
     debug = false
     , packagesEnabled = Seq(s"$thisPkg.test")
@@ -25,22 +25,15 @@ trait TestMain[F[_]] {
   protected def bootstrapConfig: BootstrapConfig = BootstrapConfig(pluginConfig)
 }
 
-class LauncherF[F[_] : TagK: DIEffect : LiftIO](ec: ExecutionContext) extends RoleAppLauncher[F] {
-  protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy[F]
-}
-
 
 object Launcher extends LauncherF[IO](global)
 
-object Run extends RoleAppMain.Default[IO](Launcher) with TestMain[IO] {
-
+object Run extends RoleAppMain.Default[IO](Launcher) {
   override protected def requiredRoles: Vector[RoleArg] = Vector(
     RoleArg("testrole", Parameters.empty, Vector.empty),
     RoleArg("testrole3", Parameters.empty, Vector.empty),
     RoleArg("testtask", Parameters.empty, Vector.empty),
   )
-
-  override def main(args: Array[String]): Unit = super.main(Array.empty)
 }
 
 //class RoleAppTest extends WordSpec {

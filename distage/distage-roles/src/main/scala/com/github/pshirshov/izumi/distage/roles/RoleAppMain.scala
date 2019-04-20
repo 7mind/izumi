@@ -1,11 +1,8 @@
 package com.github.pshirshov.izumi.distage.roles
 
-import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.cli.{RoleAppArguments, RoleArg}
-import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
-import com.github.pshirshov.izumi.distage.roles.role2.parser.ParserFailureHandler
 import com.github.pshirshov.izumi.distage.roles.services.cliparser.{CLIParser, ParserFailureHandler}
 import distage.TagK
 
@@ -15,7 +12,6 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
                                                     failureHandler: AppFailureHandler,
                                                     parserFailureHandler: ParserFailureHandler,
                                                   ) {
-  protected def bootstrapConfig: BootstrapConfig
 
   def main(args: Array[String]): Unit = {
     try {
@@ -24,7 +20,7 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
           parserFailureHandler.onParserError(parserFailure)
 
         case Right(parameters) =>
-          launcher.launch(parameters.copy(roles = requiredRoles ++ parameters.roles), bootstrapConfig, referenceLibraryInfo)
+          launcher.launch(parameters.copy(roles = requiredRoles ++ parameters.roles))
       }
     } catch {
       case t: Throwable =>
@@ -36,7 +32,6 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
 
   protected def requiredRoles: Vector[RoleArg] = Vector.empty
 
-  protected def referenceLibraryInfo: Seq[Using] = Vector.empty
 }
 
 object RoleAppMain {
@@ -64,4 +59,3 @@ object RoleAppMain {
 
 }
 
-//object L extends RoleAppMain.Default[IO]()

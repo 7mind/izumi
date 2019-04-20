@@ -11,7 +11,6 @@ import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrap
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.launcher.{ComponentsLifecycleManagerImpl, RoleStarterImpl}
-import com.github.pshirshov.izumi.distage.roles.role2.RoleAppLauncher
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext

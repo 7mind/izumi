@@ -57,7 +57,7 @@ class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends ApplicationShutdown
   override def release(): Unit = {}
 }
 
-class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](implicit ec: ExecutionContext) extends ApplicationShutdownStrategy[F] {
+class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionContext) extends ApplicationShutdownStrategy[F] {
   private val shutdownPromise: Promise[Unit] = Promise[Unit]()
   private val mainLatch: CountDownLatch = new CountDownLatch(1)
 
@@ -81,6 +81,7 @@ class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](implicit ec: ExecutionContext
 
     val f = shutdownPromise.future
 
+    implicit val ec: ExecutionContext = executionContext
     f.onComplete {
       _ =>
         try {
