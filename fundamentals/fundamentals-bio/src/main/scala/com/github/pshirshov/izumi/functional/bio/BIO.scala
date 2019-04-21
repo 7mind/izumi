@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import scalaz.zio.{FiberFailure, Promise}
+import scalaz.zio.FiberFailure
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -58,8 +58,8 @@ object BIO extends BIOSyntax {
   @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
 
 
-  import scalaz.zio.{Exit, IO, Schedule}
   import scalaz.zio.duration.Duration.fromScala
+  import scalaz.zio.{Exit, IO, Schedule}
 
   implicit object BIOZio extends BIOAsync[IO] {
     @inline override def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =

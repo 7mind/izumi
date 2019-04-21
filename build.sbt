@@ -445,7 +445,11 @@ lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
+  .settings(
+    libraryDependencies ++= R.http4s_all,
+    libraryDependencies += R.asynchttpclient,
+  )
+
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 
@@ -527,7 +531,10 @@ lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
   .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaV1TestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
+  .settings(
+    libraryDependencies ++= R.http4s_all,
+    libraryDependencies += R.asynchttpclient,
+  )
 
 lazy val idealinguaV1RuntimeRpcTypescript = inIdealinguaV1.as.module
 

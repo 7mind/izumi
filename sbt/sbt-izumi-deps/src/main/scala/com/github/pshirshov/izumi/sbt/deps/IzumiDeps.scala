@@ -32,13 +32,9 @@ object IzumiDeps {
     val scalacheck = "1.14.0"
     val scalacheck_shapeless = "1.2.0-1"
 
-
-    // TODO: we need to get rid of this
-    val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
-    val jaxb_api = "2.3.0" // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
-    val jaxb_core = "2.3.0.1"
-    val jaxb_impl = "2.3.0.1"
-    val activation = "1.1.1"
+    // java, we need it bcs http4s ws client isn't ready yet
+    // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
+    val asynchttpclient = "2.8.1"
 
     val classgraph = "4.8.0" // java
     val slf4j = "1.7.25" // java
@@ -119,14 +115,7 @@ object IzumiDeps {
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
-    @deprecated("we must throw this out once http4s implements client-side websockets", "2018-12-01")
-    val java_websocket: Seq[ModuleID] = Seq(
-      "org.java-websocket" % "Java-WebSocket" % V.java_websocket
-      , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
-      , "com.sun.xml.bind" % "jaxb-core" % V.jaxb_core
-      , "com.sun.xml.bind" % "jaxb-impl" % V.jaxb_impl
-      , "javax.activation" % "activation" % V.activation
-    )
+    val asynchttpclient = "org.asynchttpclient" % "async-http-client" % V.asynchttpclient
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
@@ -146,7 +135,6 @@ object IzumiDeps {
 
     val essentials: Seq[ModuleID] = Seq(scalatest)
 
-    val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)
     val zio_core = R.zio_core % Test
