@@ -43,7 +43,7 @@ val module2 = new ModuleDef {
 
 ### Depending on Locator
 
-Classes can depend on the Locator:
+Classes can depend on the Locator (container of the built object graph):
 
 ```scala
 import distage._
@@ -65,4 +65,12 @@ val locator = Injector().produce(module)
 assert(locator.get[A].c eq locator.get[C]) 
 ```
 
-It is recommended to avoid this if possible, doing so is often a sign of broken application design.
+Locator contains metadata about the plan and bindings from which it was created:
+
+```scala
+// Plan that created this locator
+val plan: OrderedPlan = locator.plan
+
+// Bindings from which the Plan was built
+val moduleDef: ModuleBase = plan.definition
+```

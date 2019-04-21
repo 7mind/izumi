@@ -65,6 +65,8 @@ object BIOSyntax {
     @inline def fromOption[E1 >: E, A1](errorOnNone: E1)(implicit ev1: A <:< Option[A1]): R[E1, A1] = flatMap(R.fromOption(errorOnNone)(_))
 
     @inline def fromOption[A1](implicit ev: E =:= Nothing, ev1: A <:< Option[A1]): R[Unit, A1] = R.flatMap(redeemPure(ev, identity))(R.fromOption(_))
+
+    @inline def forever: R[E, Nothing] = R.forever(r)
   }
 
   final class BIOAsyncOps[R[+ _, + _], E, A](private val r: R[E, A])(implicit private val R: BIOAsync[R]) {

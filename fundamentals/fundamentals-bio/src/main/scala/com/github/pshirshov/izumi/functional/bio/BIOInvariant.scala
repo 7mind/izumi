@@ -62,9 +62,13 @@ trait BIOInvariant[R[_, _]] {
 
   @inline final def fromTry[A](effect: => Try[A]): R[Throwable, A] = syncThrowable(effect.get)
 
+  @inline def forever[E1, A1](r: R[E1, A1]): R[E1, Nothing]
+
   @inline def leftFlatMap[E, A, E2](r: R[E, A])(f: E => R[Nothing, E2]): R[E2, A]
 
-  @inline def flip[E, A](r: R[E, A]) : R[A, E]
+  @inline def flip[E, A](r: R[E, A]): R[A, E]
+
+  @inline final def apply[A](effect: => A): R[Throwable, A] = syncThrowable(effect)
 }
 
 object BIOInvariant {
