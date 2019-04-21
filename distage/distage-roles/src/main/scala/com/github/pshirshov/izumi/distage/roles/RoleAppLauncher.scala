@@ -21,6 +21,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import distage._
 
 import scala.concurrent.ExecutionContext
@@ -54,23 +55,27 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   import RoleAppLauncher._
 
   private val loggers = new EarlyLoggers()
+
   protected def bootstrapConfig: BootstrapConfig
+
   protected def referenceLibraryInfo: Seq[Using] = Vector.empty
 
   final def launch(parameters: RoleAppArguments): Unit = {
     val earlyLogger = loggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
-    val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
-    val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
+
     val plugins = makePluginLoader(bootstrapConfig).load()
 
-    val roles = loadRoles(parameters, lateLogger, plugins)
-    val mergeStrategy = makeMergeProvider(lateLogger, parameters).mergeStrategy(plugins, roles)
+    val roles = loadRoles(parameters, earlyLogger, plugins)
+
+    val mergeStrategy = makeMergeProvider(earlyLogger, parameters).mergeStrategy(plugins, roles)
     val defBs = mergeStrategy.merge(plugins.bootstrap)
     val defApp = mergeStrategy.merge(plugins.app)
     validate(defBs, defApp)
-    lateLogger.info(s"Loaded ${defApp.definition.bindings.size -> "app bindings"} and ${defBs.definition.bindings.size -> "bootstrap bindings"}...")
+    earlyLogger.info(s"Loaded ${defApp.definition.bindings.size -> "app bindings"} and ${defBs.definition.bindings.size -> "bootstrap bindings"}...")
 
+    val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
+    val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
     val moduleProvider = makeModuleProvider(parameters, config, lateLogger, roles)
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs.definition
     val appModule = moduleProvider.appModules().merge overridenBy defApp.definition
@@ -154,7 +159,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     OrderedPlan(runtimePlan.definition, Vector.empty, Set.empty, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
   }
 
-  protected def runRoles(index: Map[String, Object], lateLogger: IzLogger, parameters: RoleAppArguments): F[Unit] = {
+  protected def runRoles(index: Map[String, AbstractRoleF[F]], lateLogger: IzLogger, parameters: RoleAppArguments): F[Unit] = {
     val rolesToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {
@@ -162,7 +167,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
             Seq.empty
           case Some(value: RoleService2[F]) =>
             Seq(value -> r)
-          case _ =>
+          case Some(v) =>
+            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
+          case None =>
             throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
         }
     }
@@ -198,7 +205,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
             Seq(value -> r)
           case Some(_: RoleService2[F]) =>
             Seq.empty
-          case _ =>
+          case Some(v) =>
+            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
+          case None =>
             throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
         }
     }
@@ -211,23 +220,17 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     }
   }
 
-  private def getRoleIndex(roles: RolesInfo, rolesLocator: Locator): Map[String, AbstractRole] = {
-    val tasks = rolesLocator.get[Set[RoleTask2[F]]] ++ rolesLocator.get[Set[RoleService2[F]]]
-    val roleClassMap = roles.availableRoleBindings.map {
+  private def getRoleIndex(roles: RolesInfo, rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {
+    roles.availableRoleBindings.map {
       b =>
-        b.runtimeClass.asInstanceOf[AnyRef] -> b.name
+        val key = DIKey.TypeKey(b.tpe)
+        b.name -> (rolesLocator.index.get(key) match {
+          case Some(value: AbstractRoleF[F]) =>
+            value
+          case o =>
+            throw new DiAppBootstrapException(s"Requested $key for ${b.name}, unexpectedly got $o")
+        })
     }.toMap
-
-    val itasks = tasks.map {
-      t =>
-        roleClassMap.get(t.getClass.asInstanceOf[AnyRef]) match {
-          case Some(value) =>
-            value -> t
-          case None =>
-            throw new DiAppBootstrapException(s"Inconsistent state: task $t is missing from roles metadata")
-        }
-    }.toMap
-    itasks
   }
 
   private def makeIntegrationCheck(lateLogger: IzLogger): IntegrationChecker = {
@@ -247,26 +250,39 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new ModuleProviderImpl[F](lateLogger, parameters, config, roles)
   }
 
-  protected def loadRoles(parameters: RoleAppArguments, lateLogger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
+  protected def loadRoles(parameters: RoleAppArguments, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val mp = MirrorProvider.Impl
-    val roleProvider: RoleProvider[F] = new RoleProviderImpl(lateLogger, activeRoleNames, mp)
+    val roleProvider: RoleProvider[F] = new RoleProviderImpl(logger, activeRoleNames, mp)
     val bindings = plugins.app.flatMap(_.bindings)
     val bsBindings = plugins.app.flatMap(_.bindings)
-    lateLogger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
-    val roles: RolesInfo = roleProvider.getInfo(bindings)
+    logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
+    val roles = roleProvider.getInfo(bindings)
 
-    printRoleInfo(lateLogger, roles)
+    printRoleInfo(logger, parameters, roles)
+    val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.name).toSet)
+    if (missing.nonEmpty) {
+      logger.crit(s"Missing ${missing.niceList() -> "roles"}")
+      throw new DiAppBootstrapException(s"Unknown roles: $missing")
+    }
+
     roles
   }
 
-  protected def printRoleInfo(logger: IzLogger, roles: RolesInfo): Unit = {
+  protected def printRoleInfo(logger: IzLogger,parameters: RoleAppArguments, roles: RolesInfo): Unit = {
+    val requestedNames = roles.requiredRoleBindings.map(_.name)
+
     val availableRoleInfo = roles.availableRoleBindings.map {
       r =>
-        s"${r.name}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
+        val active = if (requestedNames.contains(r.name)) {
+          s"[+]"
+        } else {
+          s"[ ]"
+        }
+        s"$active ${r.name}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
     }.sorted
-    logger.info(s"Available ${availableRoleInfo.mkString("\n - ", "\n - ", "") -> "roles"}")
-    logger.info(s"Requested ${roles.requiredRoleBindings.map(_.name).mkString("\n - ", "\n - ", "") -> "roles"}")
+
+    logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
   }
 
 
@@ -329,4 +345,5 @@ object RoleAppLauncher {
   abstract class LauncherIdentity extends RoleAppLauncher[Identity] {
     override protected val hook: ApplicationShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
   }
+
 }

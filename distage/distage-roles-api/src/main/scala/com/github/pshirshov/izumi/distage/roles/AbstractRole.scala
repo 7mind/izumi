@@ -3,9 +3,10 @@ package com.github.pshirshov.izumi.distage.roles
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.roles.cli.Parameters
 
-sealed trait AbstractRole
 
-trait RoleService2[F[_]] extends AbstractRole {
+sealed trait AbstractRoleF[F[_]]
+
+trait RoleService2[F[_]] extends AbstractRoleF[F] {
   /**
     * Application startup wouldn't progress until this method finishes.
     * Resource initialization must be finite
@@ -18,7 +19,7 @@ trait RoleService2[F[_]] extends AbstractRole {
 /**
   * Single-shot task, shouldn't block forever
   */
-trait RoleTask2[F[_]] extends AbstractRole {
+trait RoleTask2[F[_]] extends AbstractRoleF[F] {
   /**
     * Application startup wouldn't progress until this method finishes
     */

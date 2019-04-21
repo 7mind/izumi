@@ -19,9 +19,10 @@ object TestLauncher extends RoleAppLauncher.LauncherF[IO]() {
 
 object Run extends RoleAppMain.Default(TestLauncher) {
   override protected def requiredRoles: Vector[RoleArg] = Vector(
-    RoleArg("testrole", Parameters.empty, Vector.empty),
-    RoleArg("testrole3", Parameters.empty, Vector.empty),
-    RoleArg("testtask", Parameters.empty, Vector.empty),
+    RoleArg("testrole00", Parameters.empty, Vector.empty),
+    RoleArg("testrole01", Parameters.empty, Vector.empty),
+    RoleArg("testrole02", Parameters.empty, Vector.empty),
+    RoleArg("testtask00", Parameters.empty, Vector.empty),
   )
 }
 

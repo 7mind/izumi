@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.distage.roles.launcher.{AbstractConfigWriter, 
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.distage.roles.test.Junk._
 
 
 class TestPlugin extends PluginDef {
@@ -24,12 +25,12 @@ class TestPlugin extends PluginDef {
   make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(s"0.0.0-${System.currentTimeMillis()}"))
   many[Dummy]
 
-  make[TestTask[IO]]
-  make[TestRole2[IO]]
-  make[TestRole3[IO]]
+  make[TestTask00[IO]]
+  make[TestRole00[IO]]
+  make[TestRole01[IO]]
+  make[TestRole02[IO]]
 
 
-  make[RoleService].named("testservice").from[TestService]
   make[NotCloseable].from[InheritedCloseable]
   make[TestConfigWriter]
 }

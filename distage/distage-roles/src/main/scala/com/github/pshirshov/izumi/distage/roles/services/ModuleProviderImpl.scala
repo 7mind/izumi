@@ -19,13 +19,10 @@ import distage.TagK
 
 class ModuleProviderImpl[F[_] : DIEffect : TagK](logger: IzLogger, parameters: RoleAppArguments, config: AppConfig, roleInfo: RolesInfo) extends ModuleProvider[F] {
   private final val roleAutoSetModule = AutoSetModule()
-    .register[RoleService]
     .register[AutoCloseable]
-    .register[RoleComponent]
-    .register[IntegrationCheck]
     .register[ExecutorService]
-    .register[RoleTask2[F]]
-    .register[RoleService2[F]]
+    .register[IntegrationCheck]
+    .register[AbstractRoleF[F]]
 
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {

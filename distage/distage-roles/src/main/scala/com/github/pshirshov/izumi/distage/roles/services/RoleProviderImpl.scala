@@ -27,7 +27,6 @@ class RoleProviderImpl[F[_] : TagK](
     val enabledRoles = availableBindings
       .filter(b => isEnabledRole(b.tpe))
 
-
     RolesInfo(
         enabledRoles.map(_.binding.key).toSet
         , enabledRoles
@@ -78,7 +77,7 @@ class RoleProviderImpl[F[_] : TagK](
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    (tpe weak_<:< SafeType.get[RoleService]) || (tpe weak_<:< SafeType.get[RoleTask2[F]]) || (tpe weak_<:< SafeType.get[RoleService2[F]])
+    tpe weak_<:< SafeType.get[AbstractRoleF[F]]
   }
 
 

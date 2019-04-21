@@ -25,7 +25,7 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
     }
       .toList
 
-    val allConfigs = roleConfigFiles ++ commonConfigFile
+    val allConfigs = commonConfigFile ++ roleConfigFiles
 
     val cfgInfo = allConfigs.map {
       case r: ConfigSource.Resource =>
@@ -66,7 +66,7 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
       logger.error(s"Failed to load configs: ${failures.niceList() -> "failures"}")
     }
 
-    val folded = foldConfigs(good.collect({ case (_, Success(c)) => c }))
+    val folded = foldConfigs(good.collect({ case (src, Success(c)) => src -> c }))
 
     val config = ConfigFactory.systemProperties()
       .withFallback(folded)
@@ -82,18 +82,18 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
     )
   }
 
-  protected def foldConfigs(roleConfigs: Seq[Config]): Config = {
+  protected def foldConfigs(roleConfigs: Seq[(ConfigSource, Config)]): Config = {
     roleConfigs.foldLeft(ConfigFactory.empty()) {
-      case (acc, cfg) =>
-        verifyConfigs(cfg, acc)
+      case (acc, (src, cfg)) =>
+        verifyConfigs(src, cfg, acc)
         acc.withFallback(cfg)
     }
   }
 
-  protected def verifyConfigs(cfg: Config, acc: Config): Unit = {
+  protected def verifyConfigs(src: ConfigSource, cfg: Config, acc: Config): Unit = {
     val duplicateKeys = acc.entrySet().asScala.map(_.getKey).intersect(cfg.entrySet().asScala.map(_.getKey))
     if (duplicateKeys.nonEmpty) {
-      logger.warn(s"Found duplicated keys in supplied configs: ${duplicateKeys.niceList() -> "keys" -> null}")
+      logger.warn(s"Some keys in supplied ${src -> "config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
     }
   }
 
