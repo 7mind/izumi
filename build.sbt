@@ -309,7 +309,6 @@ lazy val distagePlugins = inDiStage.as.module
 
 lazy val distageCats = inDiStage.as.module
   .depends(
-    distageModel,
     distageCore.testOnlyRef,
   )
   .settings(
