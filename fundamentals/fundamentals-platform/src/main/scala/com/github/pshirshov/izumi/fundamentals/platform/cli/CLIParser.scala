@@ -1,11 +1,43 @@
-package com.github.pshirshov.izumi.distage.roles.services.cliparser
+package com.github.pshirshov.izumi.fundamentals.platform.cli
 
-import com.github.pshirshov.izumi.distage.roles.cli._
-import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser._
+import java.io.File
+import java.nio.file.Path
+
+import com.github.pshirshov.izumi.fundamentals.platform.cli
+import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
 
 object CLIParser {
 
-  case class ParameterNameDef private (long: String, short: Option[String]) {
+  case class ArgDef(name: ArgNameDef)
+
+  implicit class ValueExt(val value: Value) extends AnyVal {
+    def asFile: File = new File(value.value)
+    def asPath: Path = asFile.toPath
+  }
+
+  implicit class MaybeValueExt(val value: Option[Value]) extends AnyVal {
+    def asFile: Option[File] = value.map(_.asFile)
+    def asPath: Option[Path] = asFile.map(_.toPath)
+  }
+
+  object ArgDef {
+    implicit class ParameterDefExt(val parameter: ArgDef) extends AnyVal {
+      def findValue(parameters: Parameters): Option[Value] = {
+        parameters.values.find(p => parameter.name.matches(p.name))
+      }
+
+      def findValues(parameters: Parameters): Vector[Value] = {
+        parameters.values.filter(p => parameter.name.matches(p.name))
+      }
+
+
+      def hasFlag(parameters: Parameters): Boolean = {
+        parameters.flags.exists(p => parameter.name.matches(p.name))
+      }
+    }
+  }
+
+  case class ArgNameDef private(long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
     def matches(name: String): Boolean = all.contains(name)
 
@@ -20,9 +52,9 @@ object CLIParser {
   }
 
 
-  object ParameterNameDef {
-    def apply(long: String, short: String): ParameterNameDef = new ParameterNameDef(long, Some(short))
-    def apply(long: String): ParameterNameDef = new ParameterNameDef(long, None)
+  object ArgNameDef {
+    def apply(long: String, short: String): ArgNameDef = new ArgNameDef(long, Some(short))
+    def apply(long: String): ArgNameDef = new ArgNameDef(long, None)
   }
 
   sealed trait ParserError
@@ -205,7 +237,7 @@ object CLIParserState {
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
-      Right(RoleAppArguments(withFlag(), Vector.empty))
+      Right(cli.RoleAppArguments(withFlag(), Vector.empty))
     }
 
     private def withFlag(): Parameters = {
@@ -274,7 +306,7 @@ object CLIParserState {
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
-      Right(RoleAppArguments(globalParameters, roles :+ currentRole))
+      Right(cli.RoleAppArguments(globalParameters, roles :+ currentRole))
     }
   }
 
@@ -308,7 +340,7 @@ object CLIParserState {
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
-      Right(RoleAppArguments(globalParameters, roles :+ withFlag()))
+      Right(cli.RoleAppArguments(globalParameters, roles :+ withFlag()))
     }
 
     private def withFlag(): RoleArg = {
@@ -348,7 +380,7 @@ object CLIParserState {
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
-      Right(RoleAppArguments(globalParameters, roles :+ currentRole))
+      Right(cli.RoleAppArguments(globalParameters, roles :+ currentRole))
     }
 
     private def extend(rawArg: String): CLIParserState = {

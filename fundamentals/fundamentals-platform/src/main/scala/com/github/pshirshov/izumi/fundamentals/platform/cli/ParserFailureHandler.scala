@@ -1,8 +1,7 @@
-package com.github.pshirshov.izumi.distage.roles.services.cliparser
+package com.github.pshirshov.izumi.fundamentals.platform.cli
 
-import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser.ParserError
-import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.ParserError
+import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 trait ParserFailureHandler {
@@ -12,9 +11,10 @@ trait ParserFailureHandler {
 object ParserFailureHandler {
 
   object TerminatingHandler extends ParserFailureHandler {
-    override def onParserError(e: CLIParser.ParserError): Unit = {
+    override def onParserError(e: CLIParser.ParserError): Nothing = {
       System.err.println(makeMessage(e))
       System.exit(1)
+      throw new IllegalStateException("System.exit() didn't work")
     }
   }
 
@@ -63,23 +63,27 @@ object ParserFailureHandler {
        |      -shortname value
        |
        |    ROLE is :role-name [OPTION...] [--] [<role-argument>...]
-       |
-       |Examples:
-       |
-       |    --log-format=json :my-role
-       |    --log-format=json :dump --role-config=myconfig.json -- --target-file=input.txt :convert -- input.txt output.jpg
-       |
-       |
-       |Common global options are:
-       |
-       |  ${RoleAppLauncher.logLevelRootParam}={trace|debug|info|warning|error|critical}
-       |  ${RoleAppLauncher.logFormatParam}={json|text}
-       |
-       |Common role options are:
-       |
-       |  -rc, --role-config=<config-name>
-       |
-       |Try '--help' or ':help' to get more information.
      """.stripMargin
 
 }
+
+/*
+
+Examples:
+
+    --log-format=json :my-role
+    --log-format=json :dump --role-config=myconfig.json -- --target-file=input.txt :convert -- input.txt output.jpg
+
+
+Common global options are:
+
+  ${RoleAppLauncher.logLevelRootParam}={trace|debug|info|warning|error|critical}
+  ${RoleAppLauncher.logFormatParam}={json|text}
+
+Common role options are:
+
+  -rc, --role-config=<config-name>
+
+Try '--help' or ':help' to get more information.
+
+ */

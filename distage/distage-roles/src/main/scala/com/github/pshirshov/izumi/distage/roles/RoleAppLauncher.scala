@@ -8,11 +8,10 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
-import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, RoleAppArguments}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -22,6 +21,7 @@ import distage._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
+import CLIParser._
 
 
 /**
@@ -157,10 +157,11 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def makeConfigLoader(logger: IzLogger, parameters: RoleAppArguments): ConfigLoader = {
-    val maybeGlobalConfig = parameters.globalParameters.values.find(p => configParam.matches(p.name)).map(v => new File(v.value))
+    val maybeGlobalConfig = configParam.findValue(parameters.globalParameters).asFile
+
     val roleConfigs = parameters.roles.map {
       r =>
-        r.role -> r.roleParameters.values.find(p => configParam.matches(p.name)).map(v => new File(v.value))
+        r.role -> configParam.findValue(r.roleParameters).map(v => new File(v.value))
     }
     new ConfigLoaderLocalFilesystemImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
@@ -171,14 +172,13 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 }
 
 object RoleAppLauncher {
-
-  final val logLevelRootParam = CLIParser.ParameterNameDef("log-level-root", "ll")
-  final val logFormatParam = CLIParser.ParameterNameDef("log-format", "logs")
-  final val configParam = CLIParser.ParameterNameDef("config", "c")
-  final val dumpContext = CLIParser.ParameterNameDef("debug-dump-graph")
+  final val logLevelRootParam = ArgDef(ArgNameDef("log-level-root", "ll"))
+  final val logFormatParam = ArgDef(ArgNameDef("log-format", "logs"))
+  final val configParam = ArgDef(ArgNameDef("config", "c"))
+  final val dumpContext = ArgDef(ArgNameDef("debug-dump-graph"))
 
   @deprecated("We should stop using tags", "2019-04-19")
-  final val useDummies = CLIParser.ParameterNameDef("mode:dummies")
+  final val useDummies = CLIParser.ArgNameDef("mode:dummies")
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
     override protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)

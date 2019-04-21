@@ -3,9 +3,9 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.{BackendPluginTags, RoleAppLauncher, RolesInfo}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 class MergeProviderImpl(logger: IzLogger, parameters: RoleAppArguments) extends MergeProvider {

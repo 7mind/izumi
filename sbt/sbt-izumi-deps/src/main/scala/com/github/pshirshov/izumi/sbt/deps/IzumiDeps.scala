@@ -39,9 +39,6 @@ object IzumiDeps {
     val slf4j = "1.7.25" // java
     val typesafe_config = "1.3.3" // java
 
-    // good to drop - scala
-    val scopt = "3.7.1" // 2.13+
-
     // good to drop - java
     val cglib_nodep = "3.2.8" // java
 
@@ -117,8 +114,6 @@ object IzumiDeps {
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
-
-    val scopt = "com.github.scopt" %% "scopt" % V.scopt
 
     val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
   }

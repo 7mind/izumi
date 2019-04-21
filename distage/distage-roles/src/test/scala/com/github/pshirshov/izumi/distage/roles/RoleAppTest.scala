@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles
 import cats.effect._
 import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.cli.{Parameters, RoleArg}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, RoleArg}
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 
 

@@ -172,16 +172,8 @@ object CommandlineIDLCompiler {
     log.log("")
   }
 
-  private def parseArgs(args: Array[String]) = {
-    val default = IDLCArgs.default
-    val conf = IDLCArgs.parser.parse(args, default) match {
-      case Some(c) =>
-        c
-      case _ =>
-        IDLCArgs.parser.showUsage()
-        throw new IllegalArgumentException("Unexpected commandline")
-    }
-    conf
+  private def parseArgs(args: Array[String]): IDLCArgs = {
+    IDLCArgs.parseUnsafe(args)
   }
 
   private def toOption(conf: IDLCArgs, env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {

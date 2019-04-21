@@ -7,13 +7,13 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, PlanTopologyImmutable}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
-import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppExecutor.AppStartupPlans
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.{DIKey, Injector, Module, OrderedPlan, PlannerInput, TagK}
 import DIEffect.syntax._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 
 class RoleAppExecutorImpl[F[_] : TagK : DIEffect](
                                        protected val hook: ApplicationShutdownStrategy[F],

@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.distage.roles
 
 import com.github.pshirshov.izumi.distage.app.services.AppFailureHandler
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles.cli.{RoleAppArguments, RoleArg}
-import com.github.pshirshov.izumi.distage.roles.services.cliparser.{CLIParser, ParserFailureHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler, RoleAppArguments, RoleArg}
 import distage.TagK
 
 

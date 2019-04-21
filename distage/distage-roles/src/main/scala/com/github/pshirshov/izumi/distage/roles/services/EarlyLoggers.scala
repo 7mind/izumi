@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
+import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 
 class EarlyLoggers() {
+
   import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher._
 
   private val defaultLogLevel = Log.Level.Info
@@ -21,18 +22,17 @@ class EarlyLoggers() {
     val rootLogLevel = getRootLogLevel(parameters)
     val logJson = getLogFormatJson(parameters)
     val router = new SimpleLoggerConfigurator(earlyLogger)
-        .makeLogRouter(
-          config.config.getConfig("logger")
-          , rootLogLevel
-          , logJson
-        )
+      .makeLogRouter(
+        config.config.getConfig("logger")
+        , rootLogLevel
+        , logJson
+      )
 
     IzLogger(router)("phase" -> "late")
   }
 
   private def getRootLogLevel(parameters: RoleAppArguments): Level = {
-    parameters.globalParameters.values
-      .find(p => logLevelRootParam.matches(p.name))
+    logLevelRootParam.findValue(parameters.globalParameters)
       .map(v => {
         Log.Level.parseSafe(v.value, defaultLogLevel)
       })
@@ -40,8 +40,7 @@ class EarlyLoggers() {
   }
 
   private def getLogFormatJson(parameters: RoleAppArguments): Boolean = {
-    parameters.globalParameters.values
-      .find(p => logFormatParam.matches(p.name))
+    logFormatParam.findValue(parameters.globalParameters)
       .map(v => {
         v.value match {
           case "json" => true

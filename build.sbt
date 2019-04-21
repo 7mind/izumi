@@ -384,8 +384,7 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
   )
 
 lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstageCore)
-  .settings(libraryDependencies ++= R.circe)
+  .depends(logstageCore, fundamentalsJsonCirceJvm)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
@@ -412,9 +411,8 @@ lazy val idealinguaCoreJs = idealinguaCore.js.remember
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
 
 lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
-  .dependsOn(fundamentalsBio)
+  .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
   .settings(
-    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
@@ -425,10 +423,10 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,
+    fundamentalsJsonCirce,
   )
 lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
   .settings(ShadingSettings)
@@ -471,7 +469,7 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
+    libraryDependencies ++= Seq(R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
@@ -497,9 +495,8 @@ lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
-  .dependsOn(fundamentalsBio)
+  .dependsOn(fundamentalsBio,     fundamentalsJsonCirce)
   .settings(
-    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
@@ -511,10 +508,10 @@ lazy val idealinguaV1TestDefs = inIdealinguaV1.as.module.dependsOn(idealinguaV1R
 lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
   .settings(libraryDependencies += R.scalameta)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaV1Core,
     idealinguaV1RuntimeRpcScala,
+    fundamentalsJsonCirce,
   )
 lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
   .settings(ShadingSettings)
@@ -556,7 +553,7 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
+    libraryDependencies ++= Seq(R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(

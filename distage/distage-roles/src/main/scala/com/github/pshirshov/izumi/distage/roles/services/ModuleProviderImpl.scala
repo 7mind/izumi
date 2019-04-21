@@ -9,8 +9,8 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.launcher.{ComponentsLifecycleManagerImpl, RoleStarterImpl}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -32,7 +32,7 @@ class ModuleProviderImpl[F[_] : DIEffect : TagK](logger: IzLogger, parameters: R
 
     val autosetModule = roleAutoSetModule
     val configModule = new ConfigModule(config)
-    val dumpContext = parameters.globalParameters.flags.exists(p => RoleAppLauncher.dumpContext.matches(p.name))
+    val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
     val maybeDumpGraphModule = if (dumpContext) {
       Seq(new GraphDumpBootstrapModule())
     } else {
