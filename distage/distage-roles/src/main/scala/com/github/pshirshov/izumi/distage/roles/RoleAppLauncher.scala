@@ -4,13 +4,9 @@ import java.io.File
 
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.app.{BootstrapConfig, DiAppBootstrapException}
-import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, PlanTopologyImmutable}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.roles.cli.RoleAppArguments
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
@@ -18,18 +14,15 @@ import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedP
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.roles.services.cliparser.CLIParser
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
-import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 
-
-case class AppStartupPlans(runtime: OrderedPlan, integration: OrderedPlan, integrationKeys: Set[DIKey], app: OrderedPlan)
 
 /**
   * Application flow:
@@ -82,169 +75,18 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     val injector = Injector.Standard(bsModule)
 
-    val appPlan = makePlans(roles, defBs, defApp, appModule, injector)
-
+    val r = makeExecutor(parameters, roles, lateLogger, injector)
+    val appPlan = r.makePlan(defBs, defApp, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
-
-    runPlan(parameters, lateLogger, roles, injector, appPlan)
+    r.runPlan(appPlan)
   }
 
-  protected def runPlan(parameters: RoleAppArguments, lateLogger: IzLogger, roles: RolesInfo, injector: Injector, appPlan: AppStartupPlans): Unit = {
 
-    injector.produce(appPlan.runtime).use {
-      runtimeLocator =>
-        val runner = runtimeLocator.get[DIEffectRunner[F]]
-
-        runner.run {
-          Injector.inherit(runtimeLocator).produceF[F](appPlan.integration).use {
-            integrationLocator =>
-              makeIntegrationCheck(lateLogger).check(appPlan.integrationKeys, integrationLocator)
-
-              Injector.inherit(integrationLocator).produceF[F](appPlan.app).use {
-                rolesLocator =>
-                  val roleIndex = getRoleIndex(roles, rolesLocator)
-
-                  for {
-                    _ <- runTasks(roleIndex, lateLogger, parameters)
-                    _ <- runRoles(roleIndex, lateLogger, parameters)
-                  } yield {
-
-                  }
-              }
-          }
-        }
-    }
-    hook.release()
-  }
-
-  protected def makePlans(roles: RolesInfo, defBs: MergedPlugins, defApp: MergedPlugins, appModule: Module, injector: Injector): AppStartupPlans = {
-    val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[DIEffectRunner[F]],
-      DIKey.get[Finalizers.ExecutorsFinalized],
-    )
-    val runtimePlan = injector.plan(appModule, runtimeGcRoots)
-
-    val appGcRoots = gcRoots(defBs, defApp, roles)
-    val rolesPlan = injector.plan(appModule, appGcRoots)
-
-    val integrationComponents = rolesPlan.collectChildren[IntegrationCheck].map(_.target).toSet
-
-    val integrationPlan = if (integrationComponents.nonEmpty) {
-      // exclude runtime
-      injector.plan(PlannerInput(appModule.drop(runtimePlan.keys), integrationComponents))
-    } else {
-      emptyPlan(runtimePlan)
-    }
-
-    val refinedRolesPlan = if (appGcRoots.nonEmpty) {
-      // exclude runtime & integrations
-      injector.plan(PlannerInput(appModule.drop(integrationPlan.keys), appGcRoots))
-    } else {
-      emptyPlan(runtimePlan)
-    }
-    //    println("====")
-    //    println(runtimePlan.render())
-    //    println("----")
-    //    println("====")
-    //    println(integrationPlan.render())
-    //    println("----")
-    //    println("====")
-    //    println(refinedRolesPlan.render())
-    //    println("----")
-
-    AppStartupPlans(runtimePlan, integrationPlan, integrationComponents, refinedRolesPlan)
-  }
-
-  private def emptyPlan(runtimePlan: OrderedPlan): OrderedPlan = {
-    OrderedPlan(runtimePlan.definition, Vector.empty, Set.empty, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
-  }
-
-  protected def runRoles(index: Map[String, AbstractRoleF[F]], lateLogger: IzLogger, parameters: RoleAppArguments): F[Unit] = {
-    val rolesToRun = parameters.roles.flatMap {
-      r =>
-        index.get(r.role) match {
-          case Some(_: RoleTask2[F]) =>
-            Seq.empty
-          case Some(value: RoleService2[F]) =>
-            Seq(value -> r)
-          case Some(v) =>
-            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
-          case None =>
-            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
-        }
-    }
-
-
-    if (rolesToRun.nonEmpty) {
-      lateLogger.info(s"Going to run: ${rolesToRun.size -> "roles"}")
-
-      val tt = rolesToRun.map {
-        case (task, cfg) =>
-          task.start(cfg.roleParameters, cfg.freeArgs)
-      }
-
-      tt.foldLeft((_: Unit) => {
-        hook.await(lateLogger)
-
-      }) {
-        case (acc, r) =>
-          _ => r.use(acc)
-      }(())
-    } else {
-      DIEffect[F].maybeSuspend(lateLogger.info("No services to run, exiting..."))
-    }
+  protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
+    new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)
   }
 
   protected val hook: ApplicationShutdownStrategy[F]
-
-  protected def runTasks(index: Map[String, Object], lateLogger: IzLogger, parameters: RoleAppArguments): F[Unit] = {
-    val tasksToRun = parameters.roles.flatMap {
-      r =>
-        index.get(r.role) match {
-          case Some(value: RoleTask2[F]) =>
-            Seq(value -> r)
-          case Some(_: RoleService2[F]) =>
-            Seq.empty
-          case Some(v) =>
-            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
-          case None =>
-            throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
-        }
-    }
-
-    lateLogger.info(s"Going to run: ${tasksToRun.size -> "tasks"}")
-
-    DIEffect[F].traverse_(tasksToRun) {
-      case (task, cfg) =>
-        task.start(cfg.roleParameters, cfg.freeArgs)
-    }
-  }
-
-  private def getRoleIndex(roles: RolesInfo, rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {
-    roles.availableRoleBindings.map {
-      b =>
-        val key = DIKey.TypeKey(b.tpe)
-        b.name -> (rolesLocator.index.get(key) match {
-          case Some(value: AbstractRoleF[F]) =>
-            value
-          case o =>
-            throw new DiAppBootstrapException(s"Requested $key for ${b.name}, unexpectedly got $o")
-        })
-    }.toMap
-  }
-
-  private def makeIntegrationCheck(lateLogger: IzLogger): IntegrationChecker = {
-    new IntegrationCheckerImpl(lateLogger)
-  }
-
-  protected def gcRoots(bs: MergedPlugins, app: MergedPlugins, rolesInfo: RolesInfo): Set[DIKey] = {
-    Quirks.discard(bs, app)
-    rolesInfo.requiredComponents ++ Set(
-      RuntimeDIUniverse.DIKey.get[ResolvedConfig],
-      RuntimeDIUniverse.DIKey.get[Set[RoleService2[F]]],
-      RuntimeDIUniverse.DIKey.get[Finalizers.CloseablesFinalized],
-    )
-  }
 
   protected def makeModuleProvider(parameters: RoleAppArguments, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
     new ModuleProviderImpl[F](lateLogger, parameters, config, roles)
@@ -259,7 +101,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
     val roles = roleProvider.getInfo(bindings)
 
-    printRoleInfo(logger, parameters, roles)
+    printRoleInfo(logger, roles)
     val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.name).toSet)
     if (missing.nonEmpty) {
       logger.crit(s"Missing ${missing.niceList() -> "roles"}")
@@ -269,7 +111,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     roles
   }
 
-  protected def printRoleInfo(logger: IzLogger,parameters: RoleAppArguments, roles: RolesInfo): Unit = {
+  protected def printRoleInfo(logger: IzLogger, roles: RolesInfo): Unit = {
     val requestedNames = roles.requiredRoleBindings.map(_.name)
 
     val availableRoleInfo = roles.availableRoleBindings.map {
