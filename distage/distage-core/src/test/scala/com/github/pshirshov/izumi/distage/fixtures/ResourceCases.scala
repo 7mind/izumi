@@ -156,7 +156,7 @@ object ResourceCases {
     }
   }
   object Suspend2 {
-    def apply[A](a: => A)(implicit dummyImplicit: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
+    def apply[A](a: => A)(implicit dummy: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
     implicit def dimonadSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)

@@ -24,4 +24,8 @@ object BIOExit {
 
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
   }
+
+  object Termination {
+    def apply(exception: Throwable): Termination = new Termination(exception, List(exception))
+  }
 }
