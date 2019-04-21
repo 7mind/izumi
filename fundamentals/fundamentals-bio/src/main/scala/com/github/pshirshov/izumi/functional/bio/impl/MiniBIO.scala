@@ -7,10 +7,26 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 
 /**
-  * A lightweight dependency-less implementation of the [[BIO]] interface
+  * A lightweight dependency-less implementation of the [[BIO]] interface,
+  * analogous in purpose with [[cats.effect.SyncIO]]
   *
   * Sync-only, not interruptible, not async.
   * For internal use. Prefer ZIO or cats-bio in production.
+  *
+  * This is safe to run in a synchronous environment,
+  * Use MiniBIO.autoRun to gain access to components polymorphic over [[BIO]]
+  * in a synchronous environment.
+  *
+  * {{{
+  *   final class MyBIOClock[F[+_, +_]: BIO]() {
+  *     val nanoTime: F[Nothing, Long] = BIO(System.nanoTime())
+  *   }
+  *
+  *   import MiniBIO.autoRun._
+  *
+  *   val time: Long = new MyBIOClock().nanoTime
+  *   println(time)
+  * }}}
   * */
 sealed trait MiniBIO[+E, +A] {
   def run(): BIOExit[E, A] = {
