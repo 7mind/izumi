@@ -30,7 +30,6 @@ object IzumiDeps {
     val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
-    val scalacheck_shapeless = "1.2.0-1"
 
     // java, we need it bcs http4s ws client isn't ready yet
     // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
@@ -56,7 +55,6 @@ object IzumiDeps {
     val scala_xml = "org.scala-lang.modules" %% "scala-xml" % V.scala_xml
 
     val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
-    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % V.scalacheck_shapeless
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
