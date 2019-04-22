@@ -1,6 +1,8 @@
 Debugging
 =========
 
+### Pretty-printing plans
+
 You can print the `plan` to get detailed info on what will happen during instantiation. The printout includes file:line info
 so your IDE can show you where the binding was defined!
 
@@ -34,26 +36,20 @@ sbt -Dizumi.distage.debug.macro=true compile
 
 Macros power `distage-static` module, an alternative backend that does not use JVM runtime reflection to instantiate classes and auto-traits.
 
-### GraphViz Dump
+### Graphviz rendering
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-Add `GraphDumpBootstrapModule` to `Injector`'s configuration to enable printing of graphviz files with graph representation of the `Plan`.
+Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable dumping of graphviz files with a graphical representation of the `Plan`.
 
 ```scala
 val injector = Injector(new GraphDumpBootstrapModule())
 ```
 
-Files will be saved to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv`
+Data will be saved dumped to `./target/plan-last-full.gv` and `./target/plan-last-nogc.gv` in current working directory. 
 
-Use command-line:
+You'll need a `GraphViz` installation to render these files into a viewable PNG images:
 
 ```bash
 dot -Tpng target/plan-last-nogc.gv -o out.png
 ```
-
-To render `GraphViz` files into a viewable PNG image. You need GraphViz installed on your system.
 
 ![plan-graph](media/plan-graph.png)

@@ -3,7 +3,7 @@ Cookbook
 
 ### Inner Classes and Path-Dependent Types
 
-To instantiate path-dependent types via constructor, their prefix type has to be present in DI object graph:
+To instantiate path-dependent types via constructor, their prefix type must be present in the object graph:
 
 ```scala mdoc:reset
 import distage._
@@ -30,7 +30,7 @@ val module1 = new ModuleDef {
 }
 ```
 
-Provider and instance bindings and also compile-time mode in `distage-static` module do not require the singleton type prefix to be present in DI object graph:
+Function and instance bindings and also compile-time mode in `distage-static` module do not require the type prefix:
 
 ```scala mdoc
 val module2 = new ModuleDef {
@@ -43,7 +43,7 @@ val module2 = new ModuleDef {
 
 ### Depending on Locator
 
-Classes can depend on the Locator (container of the built object graph):
+Classes can depend on the Locator (container of the final object graph):
 
 ```scala
 import distage._
@@ -65,7 +65,7 @@ val locator = Injector().produce(module)
 assert(locator.get[A].c eq locator.get[C]) 
 ```
 
-Locator contains metadata about the plan and bindings from which it was created:
+Locator contains metadata about the plan and the bindings from which it was ultimately created:
 
 ```scala
 // Plan that created this locator

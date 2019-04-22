@@ -44,12 +44,12 @@ val config = ConfigFactory.load()
 val injector = Injector(new ConfigModule(AppConfig(config)))
 ```
 
-Now you can automatically parse config entries into case classes and can summon them from any class:
+Now you can automatically parse config entries into case classes and summon them from any class:
 
 ```scala
 final case class Config(different: Boolean)
 
-class ConfiguredTaglessProgram[F](
+class ConfiguredTaglessProgram[F[_]](
   config: Config @ConfPath("program.config"),
   primaryProgram: TaglessProgram[F] @Id("primary"),
   differentProgram: TaglessProgram[F] @Id("different") ) {
