@@ -15,18 +15,19 @@ class ConfigurableLogRouter
   private final val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
 
   override def log(entry: Log.Entry): Unit = {
-    logConfigService
+    val sinks = logConfigService
       .config(entry)
       .sinks
-      .foreach {
-        sink =>
-          try  {
-            sink.flush(entry)
-          } catch {
-            case NonFatal(e) =>
-              fallback.log(s"Log sink $sink failed", e)
-          }
-      }
+
+    sinks.foreach {
+      sink =>
+        try {
+          sink.flush(entry)
+        } catch {
+          case NonFatal(e) =>
+            fallback.log(s"Log sink $sink failed", e)
+        }
+    }
   }
 
 

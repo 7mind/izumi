@@ -783,7 +783,7 @@ Example usage:
 
 ```scala mdoc
 import distage._
-import com.github.pshirshov.izumi.distage.testkit.DistageSpec
+import com.github.pshirshov.izumi.distage.testkit.legacy.DistageSpec
 
 class TestClass {
   def hello: String = "Hello World!"

@@ -1,7 +1,6 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.legacy
 
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.atomic.AtomicBoolean
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
@@ -13,11 +12,11 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.{Locator, PlannerInput}
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.launcher.{RoleAppBootstrapStrategy, RoleStarterImpl}
 import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
-import com.github.pshirshov.izumi.distage.testkit
-import com.github.pshirshov.izumi.distage.testkit.DistageTests.DirtyGlobalSynchronizedObject
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
+import com.github.pshirshov.izumi.distage.testkit.legacy.DistageTests.DirtyGlobalSynchronizedObject
+import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
@@ -26,20 +25,23 @@ import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModule, Injector, ModuleBase, Tag}
-import org.scalatest.exceptions.TestCanceledException
 
 import scala.util.Try
 
-trait DistageTests {
+
+trait DistageTests
+  extends IgnoreSupport
+    with SuppressionSupport {
+
   protected val resourceCollection: DistageResourceCollection = NullDistageResourceCollection
   protected val baseRouter: LogRouter = ConfigurableLogRouter(Log.Level.Info, ConsoleSink.ColoredConsoleSink)
 
-  protected def di[T: Tag](function: T => Any): Unit = {
+  protected final def di[T: Tag](function: T => Any): Unit = {
     val providerMagnet: ProviderMagnet[Unit] = { x: T => function(x); () }
     di(providerMagnet)
   }
 
-  protected def di(function: ProviderMagnet[Any]): Unit = {
+  protected final def di(function: ProviderMagnet[Any]): Unit = {
     ctx(function.get.diKeys.toSet ++ suiteRoots) {
       (context, roleStarter) =>
         try {
@@ -58,18 +60,33 @@ trait DistageTests {
     }
   }
 
-  protected def verifyTotalSuppression(): Unit = {
-    if (suppressAll.get()) {
-      ignoreThisTest("The rest of this test suite has been suppressed")
-    }
+  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
+    val context = createContextLocator(roots)
+
+    val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
+    val componentsLifecycleManager = makeLifecycleManager(
+      context.find[Set[RoleComponent]].getOrElse(Set.empty)
+      , logger
+    )
+    val roleStarter = makeRoleStarter(
+      context.find[Set[RoleService]].getOrElse(Set.empty)
+      , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
+      , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
+      , context.find[Set[IntegrationCheck]].getOrElse(Set.empty)
+      , componentsLifecycleManager
+      , logger
+    )
+
+    f(context, roleStarter)
   }
+
 
   protected def suiteRoots: Set[DIKey] = Set.empty
 
-  private val suppressAll = new AtomicBoolean(false)
 
-  protected def suppressTheRestOfTestSuite(): Unit = {
-    suppressAll.set(true)
+  /** You can override this to e.g. skip test on specific constructor failure (port unavailable, etc) **/
+  protected def provisionExceptionHandler(throwable: Throwable): Locator = {
+    throw throwable
   }
 
   /** You can override this to e.g. skip test when certain external dependencies are not available **/
@@ -78,26 +95,6 @@ trait DistageTests {
     roleStarter.discard()
   }
 
-  protected def ignoreThisTest(cause: Throwable): Nothing = {
-    ignoreThisTest(None, Some(cause))
-  }
-
-  protected def ignoreThisTest(message: String): Nothing = {
-    ignoreThisTest(Some(message), None)
-  }
-
-  protected def ignoreThisTest(message: String, cause: Throwable): Nothing = {
-    ignoreThisTest(Some(message), Some(cause))
-  }
-
-  protected def ignoreThisTest(message: Option[String] = None, cause: Option[Throwable] = None): Nothing = {
-    throw new TestCanceledException(message, cause, failedCodeStackDepth = 0)
-  }
-
-  /** You can override this to e.g. skip test on specific constructor failure (port unavailable, etc) **/
-  protected def provisionExceptionHandler(throwable: Throwable): Locator = {
-    throw throwable
-  }
 
   /** You can override this to e.g. skip test on specific initialization failure (port unavailable, etc) **/
   protected def startTestResourcesExceptionHandler(throwable: Throwable): Unit = {
@@ -124,26 +121,6 @@ trait DistageTests {
     }
     resourceCollection.processContext(context)
     context
-  }
-
-  protected def ctx(roots: Set[DIKey])(f: (Locator, RoleStarter) => Unit): Unit = {
-    val context = createContextLocator(roots)
-
-    val logger = context.find[IzLogger].getOrElse(IzLogger.NullLogger)
-    val componentsLifecycleManager = makeLifecycleManager(
-      context.find[Set[RoleComponent]].getOrElse(Set.empty)
-      , logger
-    )
-    val roleStarter = makeRoleStarter(
-      context.find[Set[RoleService]].getOrElse(Set.empty)
-      , context.find[Set[AutoCloseable]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
-      , context.find[Set[ExecutorService]].getOrElse(Set.empty).filter(!resourceCollection.isMemoized(_))
-      , context.find[Set[IntegrationCheck]].getOrElse(Set.empty)
-      , componentsLifecycleManager
-      , logger
-    )
-
-    f(context, roleStarter)
   }
 
   protected def startTestResources(context: Locator, roleStarter: RoleStarter): Unit = {
@@ -266,7 +243,7 @@ trait DistageTests {
   protected def resourceConfig(name: String): AppConfig = {
     val resource = ConfigFactory.parseResources(name)
     if (resource.isEmpty) {
-      throw new testkit.DistageTests.TestkitException(s"Can't parse config resource $name")
+      throw new DistageTests.TestkitException(s"Can't parse config resource $name")
     } else {
       AppConfig(resource.resolveWith(ConfigFactory.systemProperties()))
     }

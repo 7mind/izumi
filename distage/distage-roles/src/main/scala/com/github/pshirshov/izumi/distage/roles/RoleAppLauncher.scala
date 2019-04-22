@@ -53,6 +53,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def bootstrapConfig: BootstrapConfig
 
+  protected val hook: ApplicationShutdownStrategy[F]
+
   protected def referenceLibraryInfo: Seq[Using] = Vector.empty
 
   final def launch(parameters: RoleAppArguments): Unit = {
@@ -60,20 +62,23 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     showBanner(earlyLogger, referenceLibraryInfo)
 
     val plugins = makePluginLoader(bootstrapConfig).load()
-
     val roles = loadRoles(parameters, earlyLogger, plugins)
 
     val mergeStrategy = makeMergeProvider(earlyLogger, parameters).mergeStrategy(plugins, roles)
-    val defBs = mergeStrategy.merge(plugins.bootstrap)
-    val defApp = mergeStrategy.merge(plugins.app)
+    val defBs: MergedPlugins = mergeStrategy.merge(plugins.bootstrap)
+    val defApp: MergedPlugins = mergeStrategy.merge(plugins.app)
     validate(defBs, defApp)
-    earlyLogger.info(s"Loaded ${defApp.definition.bindings.size -> "app bindings"} and ${defBs.definition.bindings.size -> "bootstrap bindings"}...")
+
+    val loadedBsModule = defBs.definition
+    val loadedAppModule = defApp.definition
+    earlyLogger.info(s"Loaded ${loadedAppModule.bindings.size -> "app bindings"} and ${loadedBsModule.bindings.size -> "bootstrap bindings"}...")
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
+
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
-    val moduleProvider = makeModuleProvider(parameters, config, lateLogger, roles)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs.definition
-    val appModule = moduleProvider.appModules().merge overridenBy defApp.definition
+    val moduleProvider = makeModuleProvider(parameters, roles, config, lateLogger)
+    val bsModule = moduleProvider.bootstrapModules().merge overridenBy loadedBsModule
+    val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
 
     val injector = Injector.Standard(bsModule)
     val p = makePlanner(appModule, roles, injector)
@@ -102,10 +107,10 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)
   }
 
-  protected val hook: ApplicationShutdownStrategy[F]
 
-  protected def makeModuleProvider(parameters: RoleAppArguments, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
-    new ModuleProviderImpl[F](lateLogger, parameters, config, roles)
+  protected def makeModuleProvider(parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+    val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
+    new ModuleProviderImpl[F](lateLogger, config, dumpContext, roles)
   }
 
   protected def loadRoles(parameters: RoleAppArguments, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {

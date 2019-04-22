@@ -8,6 +8,7 @@ trait DIEffectRunner[F[_]] {
 }
 
 object DIEffectRunner {
+  def apply[F[_]: DIEffectRunner]: DIEffectRunner[F] = implicitly
 
   implicit object IdentityDIEffectRunner extends DIEffectRunner[Identity] {
     override def run[A](f: Identity[A]): A = f

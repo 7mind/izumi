@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.legacy
 
 import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, ModuleBase}
 import com.github.pshirshov.izumi.distage.plugins.PluginBase

@@ -9,31 +9,33 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.launcher.{ComponentsLifecycleManagerImpl, RoleStarterImpl}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.TagK
 
-class ModuleProviderImpl[F[_] : DIEffect : TagK](logger: IzLogger, parameters: RoleAppArguments, config: AppConfig, roleInfo: RolesInfo) extends ModuleProvider[F] {
-  private final val roleAutoSetModule = AutoSetModule()
-    .register[AutoCloseable]
-    .register[ExecutorService]
-    .register[IntegrationCheck]
-    .register[AbstractRoleF[F]]
-
+class ModuleProviderImpl[F[_] : TagK](
+                                       logger: IzLogger,
+                                       config: AppConfig,
+                                       addGvDump: Boolean,
+                                       roles: RolesInfo,
+                                     ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
-      make[RolesInfo].from(roleInfo)
       make[LogRouter].from(logger.router)
+      make[RolesInfo].from(roles)
     }
 
-    val autosetModule = roleAutoSetModule
+    val autosetModule = AutoSetModule()
+      .register[AutoCloseable]
+      .register[ExecutorService]
+      .register[IntegrationCheck]
+      .register[AbstractRoleF[F]]
+
     val configModule = new ConfigModule(config)
-    val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
-    val maybeDumpGraphModule = if (dumpContext) {
+
+    val maybeDumpGraphModule = if (addGvDump) {
       Seq(new GraphDumpBootstrapModule())
     } else {
       Seq.empty
@@ -53,8 +55,6 @@ class ModuleProviderImpl[F[_] : DIEffect : TagK](logger: IzLogger, parameters: R
       addImplicit[DIEffect[Identity]]
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
-      make[ComponentsLifecycleManager].from[ComponentsLifecycleManagerImpl]
-      make[RoleStarter].from[RoleStarterImpl]
       make[Finalizers.CloseablesFinalized].fromResource[Finalizers.CloseablesFinalizer]
       make[Finalizers.ExecutorsFinalized].fromResource[Finalizers.ExecutorsFinalizer]
     }

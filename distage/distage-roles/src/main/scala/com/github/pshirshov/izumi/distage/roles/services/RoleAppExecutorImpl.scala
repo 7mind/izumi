@@ -1,57 +1,48 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.app.DiAppBootstrapException
-import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, PlanTopologyImmutable}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import distage.{DIKey, Injector, Module, OrderedPlan, PlannerInput, TagK}
+import distage.{DIKey, Injector, TagK}
 
 
-class RoleAppExecutorImpl[F[_] : TagK : DIEffect](
-                                                   protected val hook: ApplicationShutdownStrategy[F],
-                                                   roles: RolesInfo,
-                                                   injector: Injector,
-                                                   lateLogger: IzLogger,
-                                                   parameters: RoleAppArguments,
-                                                 ) extends RoleAppExecutor[F] {
+class RoleAppExecutorImpl[F[_] : TagK](
+                                        protected val hook: ApplicationShutdownStrategy[F],
+                                        roles: RolesInfo,
+                                        injector: Injector,
+                                        lateLogger: IzLogger,
+                                        parameters: RoleAppArguments,
+                                      ) extends RoleAppExecutor[F] {
 
-  def runPlan(appPlan: AppStartupPlans): Unit = {
-    injector.produce(appPlan.runtime).use {
-      runtimeLocator =>
-        val runner = runtimeLocator.get[DIEffectRunner[F]]
-
-        runner.run {
-          Injector.inherit(runtimeLocator).produceF[F](appPlan.integration).use {
-            integrationLocator =>
-              makeIntegrationCheck(lateLogger).check(appPlan.integrationKeys, integrationLocator)
-
-              Injector.inherit(integrationLocator).produceF[F](appPlan.app).use {
-                rolesLocator =>
-                  val roleIndex = getRoleIndex(rolesLocator)
-
-                  for {
-                    _ <- runTasks(roleIndex)
-                    _ <- runRoles(roleIndex)
-                  } yield {
-
-                  }
-              }
-          }
-        }
+  final def runPlan(appPlan: AppStartupPlans): Unit = {
+    try {
+      makeStartupExecutor().execute(appPlan)(doRun)
+    } finally {
+      hook.release()
     }
-    hook.release()
   }
 
-  protected def runRoles(index: Map[String, AbstractRoleF[F]]): F[Unit] = {
+  protected def makeStartupExecutor(): StartupPlanExecutor = {
+    StartupPlanExecutor.default(lateLogger, injector)
+  }
+
+  protected def doRun(locator: Locator, effect: DIEffect[F]): F[Unit] = {
+    val roleIndex = getRoleIndex(locator)
+    implicit val e: DIEffect[F] = effect
+    for {
+      _ <- runTasks(roleIndex)
+      _ <- runRoles(roleIndex)
+    } yield {
+
+    }
+  }
+
+  protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit effect: DIEffect[F]): F[Unit] = {
     val rolesToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {
@@ -87,7 +78,7 @@ class RoleAppExecutorImpl[F[_] : TagK : DIEffect](
   }
 
 
-  protected def runTasks(index: Map[String, Object]): F[Unit] = {
+  protected def runTasks(index: Map[String, Object])(implicit effect: DIEffect[F]): F[Unit] = {
     val tasksToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {
@@ -108,10 +99,6 @@ class RoleAppExecutorImpl[F[_] : TagK : DIEffect](
       case (task, cfg) =>
         task.start(cfg.roleParameters, cfg.freeArgs)
     }
-  }
-
-  protected def makeIntegrationCheck(lateLogger: IzLogger): IntegrationChecker = {
-    new IntegrationCheckerImpl(lateLogger)
   }
 
   private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {

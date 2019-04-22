@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPathId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.testkit.legacy.DistagePluginSpec
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
 import com.typesafe.config.ConfigFactory

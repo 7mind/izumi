@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.testkit.TestkitMemoizationTest.Ctx
+import com.github.pshirshov.izumi.distage.testkit.legacy.{DirtyGlobalTestResourceStoreImpl, DistagePluginSpec, DistageResourceCollection, MemoizingDistageResourceCollection}
 
 object TestkitMemoizationTest {
 

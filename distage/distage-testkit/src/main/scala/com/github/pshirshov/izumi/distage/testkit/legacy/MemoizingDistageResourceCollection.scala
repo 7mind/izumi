@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.legacy
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, ExecutorService, TimeUnit}
@@ -10,8 +10,8 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentLifecycle
 import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.LifecycleException
-import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}

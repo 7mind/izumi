@@ -1,23 +1,35 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov
 import com.github.pshirshov.izumi.distage.app.DiAppBootstrapException
 import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.exceptions.DIException
 import com.github.pshirshov.izumi.distage.roles.IntegrationCheck
-import com.github.pshirshov.izumi.distage.roles.launcher.exceptions.IntegrationCheckException
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import distage.DIKey
 
 import scala.util.control.NonFatal
 
 trait IntegrationChecker {
-  def check(integrationComponents: Set[pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey], integrationLocator: Locator): Unit
+  def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]]
+
+  final def checkOrFail(integrationComponents: Set[DIKey], integrationLocator: Locator): Unit = {
+    check(integrationComponents, integrationLocator).fold(()) {
+      failures =>
+        throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
+    }
+  }
+}
+
+object IntegrationChecker {
+  class IntegrationCheckException(message: String, val failures: Seq[ResourceCheck.Failure]) extends DIException(message, null)
 }
 
 class IntegrationCheckerImpl(logger: IzLogger) extends IntegrationChecker {
-  def check(integrationComponents: Set[pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey], integrationLocator: Locator): Unit = {
-    val ics = integrationComponents.map {
+  def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]] = {
+    val integrations = integrationComponents.map {
       ick =>
         integrationLocator.lookup[IntegrationCheck](ick) match {
           case Some(ic) =>
@@ -26,16 +38,9 @@ class IntegrationCheckerImpl(logger: IzLogger) extends IntegrationChecker {
             throw new DiAppBootstrapException(s"Inconsistent locator state: integration component $ick is missing from plan")
         }
     }
-    checkIntegrations(ics)
+    failingIntegrations(integrations)
   }
 
-  private def checkIntegrations(integrations: Set[IntegrationCheck]): Unit = {
-    val checks = failingIntegrations(integrations)
-    checks.fold(()) {
-      failures =>
-        throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
-    }
-  }
 
   private def failingIntegrations(integrations: Set[IntegrationCheck]): Option[Seq[ResourceCheck.Failure]] = {
     logger.info(s"Going to check availability of ${integrations.size -> "resources"}")

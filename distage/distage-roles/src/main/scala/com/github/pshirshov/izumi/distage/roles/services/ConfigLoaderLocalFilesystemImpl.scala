@@ -9,7 +9,11 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.util.{Failure, Success, Try}
 
-class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[File], roles: Map[String, Option[File]]) extends ConfigLoader {
+class ConfigLoaderLocalFilesystemImpl(
+                                       logger: IzLogger,
+                                       primaryConfig: Option[File],
+                                       roleConfigs: Map[String, Option[File]]
+                                     ) extends ConfigLoader {
 
   import ConfigLoaderLocalFilesystemImpl._
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -19,7 +23,7 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
   def buildConfig(): AppConfig = {
     val commonConfigFile = toConfig("common", primaryConfig)
 
-    val roleConfigFiles = roles.flatMap {
+    val roleConfigFiles = roleConfigs.flatMap {
       case (roleName, roleConfig) =>
         toConfig(roleName, roleConfig)
     }
@@ -44,14 +48,13 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
         }
     }
 
-    logger.info(s"Using ${cfgInfo.niceList() -> "config files"}")
-    logger.info(s"Using system properties")
+    logger.info(s"Using system properties with fallback ${cfgInfo.niceList() -> "config files"}")
 
     val loaded = allConfigs.map {
       case s@ConfigSource.File(file) =>
         s -> Try(ConfigFactory.parseFile(file))
 
-      case s@ConfigSource.Resource(name) =>
+      case s@ConfigSource.Resource(name, _) =>
         s -> Try(ConfigFactory.parseResources(name))
     }
 
@@ -77,8 +80,8 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
 
   protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
     Seq(
-      ConfigSource.Resource(s"$name-reference.conf"),
-      ConfigSource.Resource(s"$name-reference-test.conf"),
+      ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
+      ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
     )
   }
 
@@ -93,7 +96,13 @@ class ConfigLoaderLocalFilesystemImpl(logger: IzLogger, primaryConfig: Option[Fi
   protected def verifyConfigs(src: ConfigSource, cfg: Config, acc: Config): Unit = {
     val duplicateKeys = acc.entrySet().asScala.map(_.getKey).intersect(cfg.entrySet().asScala.map(_.getKey))
     if (duplicateKeys.nonEmpty) {
-      logger.warn(s"Some keys in supplied ${src -> "config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
+      src match {
+        case ConfigSource.Resource(_, ResourceConfigKind.Development) =>
+          logger.debug(s"Some keys in supplied ${src -> "development config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
+
+        case _ =>
+          logger.warn(s"Some keys in supplied ${src -> "config"} duplicate already defined keys: ${duplicateKeys.niceList() -> "keys" -> null}")
+      }
     }
   }
 
@@ -109,9 +118,15 @@ object ConfigLoaderLocalFilesystemImpl {
 
   sealed trait ConfigSource
 
+  sealed trait ResourceConfigKind
+  object ResourceConfigKind {
+    case object Primary extends ResourceConfigKind
+    case object Development extends ResourceConfigKind
+  }
+
   object ConfigSource {
 
-    final case class Resource(name: String) extends ConfigSource {
+    final case class Resource(name: String, kind: ResourceConfigKind) extends ConfigSource {
       override def toString: String = s"resource:$name"
     }
 

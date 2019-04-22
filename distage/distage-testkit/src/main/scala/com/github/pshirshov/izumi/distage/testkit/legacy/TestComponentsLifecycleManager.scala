@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.legacy
 
 import com.github.pshirshov.izumi.distage.roles.RoleComponent
 import com.github.pshirshov.izumi.distage.roles.launcher.ComponentsLifecycleManagerImpl
