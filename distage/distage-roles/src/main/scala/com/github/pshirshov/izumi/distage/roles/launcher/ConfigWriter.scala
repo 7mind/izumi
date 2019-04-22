@@ -3,85 +3,106 @@ package com.github.pshirshov.izumi.distage.roles.launcher
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.distage.app.{DIAppStartupContext, StartupContext}
 import com.github.pshirshov.izumi.distage.config.ResolvedConfig
 import com.github.pshirshov.izumi.distage.model.definition.Id
+import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.WriteReference
+import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.{ConfigurableComponent, WriteReference}
+import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
+import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.{ArgDef, ArgNameDef}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.resources.{ArtifactVersion, IzManifest}
+import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
-import scala.reflect.ClassTag
 import scala.util._
 
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
   /**
-    * Configuration for [[AbstractConfigWriter]]
+    * Configuration for [[ConfigWriter]]
     *
     * @param includeCommon Append shared sections from `common-reference.conf` into every written config
     */
   case class WriteReference(
-                             asJson: Boolean = false,
-                             targetDir: String = "config",
-                             includeCommon: Boolean = true,
-                             useLauncherVersion: Boolean = true,
+                             asJson: Boolean,
+                             targetDir: String,
+                             includeCommon: Boolean,
+                             useLauncherVersion: Boolean,
                            )
 
+  final case class ConfigurableComponent(
+                                          componentId: String
+                                          , version: Option[ArtifactVersion]
+                                          , parent: Option[Config] = None
+                                        )
+
+
+  object P {
+    final val targetDir = ArgDef(ArgNameDef("t", "target"))
+    final val excludeCommon = ArgDef(ArgNameDef("ec", "exclude-common"))
+    final val useComponentVersion = ArgDef(ArgNameDef("vc", "version-use-component"))
+    final val overlayVersionFile = ArgDef(ArgNameDef("v", "overlay-version"))
+    final val formatTypesafe = ArgDef(ArgNameDef("f", "format"))
+  }
+
+  def parse(p: Parameters): WriteReference = {
+    val targetDir = P.targetDir.findValue(p).map(_.value).getOrElse("config")
+    val includeCommon = !P.excludeCommon.hasFlag(p)
+    val useLauncherVersion = !P.useComponentVersion.hasFlag(p)
+    val asJson = !P.formatTypesafe.findValue(p).map(_.value).contains("hocon")
+
+    WriteReference(
+      asJson,
+      targetDir,
+      includeCommon,
+      useLauncherVersion,
+    )
+  }
+
 }
 
-final case class ConfigurableComponent(
-                                        componentId: String
-                                      , version: Option[ArtifactVersion]
-                                      , parent: Option[Config] = None
-                                      )
-
-object AbstractConfigWriter {
-
-
-}
 
 @RoleId(ConfigWriter.id)
-abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
+class ConfigWriter[F[_] : DIEffect]
 (
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
-  config: WriteReference,
-  context: DIAppStartupContext,
+  context: RoleAppPlanner[F],
 )
-  extends RoleService
-    with RoleTask {
+  extends RoleTask2[F] {
 
-  override def start(): Unit = {
-    writeReferenceConfig()
+  override def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit] = {
+    Quirks.discard(freeArgs)
+    val config = ConfigWriter.parse(roleParameters)
+    DIEffect[F].maybeSuspend(writeReferenceConfig(config))
   }
 
-  private[this] def writeReferenceConfig(): Unit = {
+  private[this] def writeReferenceConfig(config: WriteReference): Unit = {
     val configPath = Paths.get(config.targetDir).toFile
     logger.info(s"Config ${configPath.getAbsolutePath -> "directory to use"}...")
 
     if (!configPath.exists())
       configPath.mkdir()
 
-    val maybeVersion = IzManifest.manifest[LAUNCHER]().map(IzManifest.read).map(_.version)
+    //val maybeVersion = IzManifest.manifest[LAUNCHER]().map(IzManifest.read).map(_.version)
     logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
 
-    val commonConfig = buildConfig(ConfigurableComponent("common", maybeVersion))
+    val commonConfig = buildConfig(config, ConfigurableComponent("common", Some(launcherVersion)))
     if (!config.includeCommon) {
-      val commonComponent = ConfigurableComponent("common", maybeVersion)
-      writeConfig(commonComponent, None, commonConfig)
+      val commonComponent = ConfigurableComponent("common", Some(launcherVersion))
+      writeConfig(config, commonComponent, None, commonConfig)
     }
 
     Quirks.discard(for {
       role <- roleInfo.availableRoleBindings
     } yield {
       val component = ConfigurableComponent(role.name, role.source.map(_.version))
-      val cfg = buildConfig(component.copy(parent = Some(commonConfig)))
+      val cfg = buildConfig(config, component.copy(parent = Some(commonConfig)))
 
       val version = if (config.useLauncherVersion) {
         Some(ArtifactVersion(launcherVersion.version))
@@ -90,17 +111,17 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
       }
       val versionedComponent = component.copy(version = version)
 
-      writeConfig(versionedComponent, None, cfg)
+      writeConfig(config, versionedComponent, None, cfg)
 
-      minimizedConfig(context.startupContext, logger)(role)
+      minimizedConfig(logger)(role)
         .foreach {
           cfg =>
-            writeConfig(versionedComponent, Some("minimized"), cfg)
+            writeConfig(config, versionedComponent, Some("minimized"), cfg)
         }
     })
   }
 
-  private[this] def buildConfig(cmp: ConfigurableComponent): Config = {
+  private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
     val referenceConfig = s"${cmp.componentId}-reference.conf"
     logger.info(s"[${cmp.componentId}] Resolving $referenceConfig... with ${config.includeCommon -> "shared sections"}")
 
@@ -125,9 +146,9 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     filtered
   }
 
-  private[this] def minimizedConfig(startupContext: StartupContext, logger: IzLogger)(role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(logger: IzLogger)(role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
-    val newPlan = startupContext.startup(Array("--root-log-level", "crit", role.name)).plan
+    val newPlan = context.makePlan(Set(role.binding.key)).app //context.startupContext.startup(Array("--root-log-level", "crit", role.name)).plan
 
     if (newPlan.steps.exists(_.target == roleDIKey)) {
       newPlan
@@ -146,7 +167,7 @@ abstract class AbstractConfigWriter[LAUNCHER: ClassTag]
     }
   }
 
-  private[this] def writeConfig(cmp: ConfigurableComponent, suffix: Option[String], typesafeConfig: Config): Try[Unit] = {
+  private[this] def writeConfig(config: WriteReference, cmp: ConfigurableComponent, suffix: Option[String], typesafeConfig: Config): Try[Unit] = {
     val fileName = outputFileName(cmp.componentId, cmp.version, config.asJson, suffix)
     val target = Paths.get(config.targetDir, fileName)
 

@@ -6,7 +6,7 @@ import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.app.{BootstrapConfig, DiAppBootstrapException}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
+import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
@@ -22,6 +22,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 import CLIParser._
+import com.github.pshirshov.izumi.distage.config.ResolvedConfig
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 
 /**
@@ -74,13 +76,27 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val appModule = moduleProvider.appModules().merge overridenBy defApp.definition
 
     val injector = Injector.Standard(bsModule)
+    val p = makePlanner(appModule, roles, injector)
+    val roots = gcRoots(roles, defBs, defApp)
+    val appPlan = p.makePlan(roots)
+    lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
     val r = makeExecutor(parameters, roles, lateLogger, injector)
-    val appPlan = r.makePlan(defBs, defApp, appModule)
-    lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
     r.runPlan(appPlan)
   }
 
+  protected def gcRoots(rolesInfo: RolesInfo, bs: MergedPlugins, app: MergedPlugins): Set[DIKey] = {
+    Quirks.discard(bs, app)
+    rolesInfo.requiredComponents ++ Set(
+      RuntimeDIUniverse.DIKey.get[ResolvedConfig],
+      RuntimeDIUniverse.DIKey.get[Set[RoleService2[F]]],
+      RuntimeDIUniverse.DIKey.get[Finalizers.CloseablesFinalized],
+    )
+  }
+
+  protected def makePlanner(module: distage.Module, roles: RolesInfo, injector: Injector): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](module, roles, injector)
+  }
 
   protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
     new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)

@@ -23,6 +23,7 @@ object Run extends RoleAppMain.Default(TestLauncher) {
     RoleArg("testrole01", Parameters.empty, Vector.empty),
     RoleArg("testrole02", Parameters.empty, Vector.empty),
     RoleArg("testtask00", Parameters.empty, Vector.empty),
+    RoleArg("configwriter", Parameters.empty, Vector.empty),
   )
 }
 
