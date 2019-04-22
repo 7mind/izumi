@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.UnaryOperator
 
 import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
@@ -12,12 +11,9 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
-
-import scala.collection.mutable
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
