@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.services
 
 import java.util.concurrent.ExecutorService
 
-import com.github.pshirshov.izumi.distage.config.ConfigModule
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
@@ -20,6 +20,7 @@ class ModuleProviderImpl[F[_] : TagK](
                                        config: AppConfig,
                                        addGvDump: Boolean,
                                        roles: RolesInfo,
+                                       configInjectionOptions: ConfigInjectionOptions,
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
@@ -33,7 +34,7 @@ class ModuleProviderImpl[F[_] : TagK](
       .register[IntegrationCheck]
       .register[AbstractRoleF[F]]
 
-    val configModule = new ConfigModule(config)
+    val configModule = new ConfigModule(config, configInjectionOptions)
 
     val maybeDumpGraphModule = if (addGvDump) {
       Seq(new GraphDumpBootstrapModule())

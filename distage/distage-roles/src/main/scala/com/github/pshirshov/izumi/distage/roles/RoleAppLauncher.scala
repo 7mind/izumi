@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 import CLIParser._
-import com.github.pshirshov.izumi.distage.config.ResolvedConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 
@@ -110,7 +110,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def makeModuleProvider(parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
-    new ModuleProviderImpl[F](lateLogger, config, dumpContext, roles)
+    new ModuleProviderImpl[F](lateLogger, config, dumpContext, roles, ConfigInjectionOptions())
   }
 
   protected def loadRoles(parameters: RoleAppArguments, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {

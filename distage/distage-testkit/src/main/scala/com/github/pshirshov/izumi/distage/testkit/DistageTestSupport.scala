@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
@@ -85,8 +86,10 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeModuleProvider(config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-    new ModuleProviderImpl[F](lateLogger, config, addGvDump = false, roles)
+    new ModuleProviderImpl[F](lateLogger, config, addGvDump = false, roles, configOptions)
   }
+
+  protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
 
   protected def makePlanner(module: distage.ModuleBase, injector: Injector): RoleAppPlanner[F] = {
     new RoleAppPlannerImpl[F](module, injector)

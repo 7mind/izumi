@@ -20,8 +20,6 @@ object Junk {
 
 
   class InitCounter {
-    val startedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
-    val closedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
     val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()
@@ -51,17 +49,9 @@ object Junk {
     }
   }
 
-  class Resource3(val roleComponent: Resource4, counter: InitCounter) extends Resource with RoleComponent {
-    override def start(): Unit = counter.startedRoleComponents += this
+  class Resource3(val roleComponent: Resource4, counter: InitCounter) extends Resource
 
-    override def stop(): Unit = counter.closedRoleComponents += this
-  }
-
-  class Resource4(val closeable: Resource5, counter: InitCounter) extends Resource with RoleComponent {
-    override def start(): Unit = counter.startedRoleComponents += this
-
-    override def stop(): Unit = counter.closedRoleComponents += this
-  }
+  class Resource4(val closeable: Resource5, counter: InitCounter) extends Resource
 
   class Resource5(val roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
     counter.startedCloseables += this
@@ -69,10 +59,6 @@ object Junk {
     override def close(): Unit = counter.closedCloseables += this
   }
 
-  class Resource6(counter: InitCounter) extends Resource with RoleComponent {
-    override def start(): Unit = counter.startedRoleComponents += this
-
-    override def stop(): Unit = counter.closedRoleComponents += this
-  }
+  class Resource6(counter: InitCounter) extends Resource
 
 }
