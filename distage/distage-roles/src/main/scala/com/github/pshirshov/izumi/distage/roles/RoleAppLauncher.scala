@@ -81,7 +81,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
 
     val injector = Injector.Standard(bsModule)
-    val p = makePlanner(appModule, roles, injector)
+    val p = makePlanner(appModule, injector)
     val roots = gcRoots(roles, defBs, defApp)
     val appPlan = p.makePlan(roots)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
@@ -99,8 +99,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     )
   }
 
-  protected def makePlanner(module: distage.Module, roles: RolesInfo, injector: Injector): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](module, roles, injector)
+  protected def makePlanner(module: distage.Module, injector: Injector): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](module, injector)
   }
 
   protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {

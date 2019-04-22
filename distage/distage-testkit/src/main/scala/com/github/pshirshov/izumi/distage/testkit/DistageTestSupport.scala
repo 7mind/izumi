@@ -13,7 +13,6 @@ import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
@@ -48,7 +47,7 @@ abstract class DistageTestSupport[F[_] : TagK]
       RuntimeDIUniverse.DIKey.get[Finalizers.CloseablesFinalized],
     )
 
-    val planner = makePlanner(refineBindings(allRoots, appModule), env.roles, injector)
+    val planner = makePlanner(refineBindings(allRoots, appModule), injector)
 
     val plan = planner.makePlan(allRoots)
 
@@ -76,19 +75,6 @@ abstract class DistageTestSupport[F[_] : TagK]
     }
   }
 
-  /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
-  protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    val paramsModule = Module.make {
-      (roots - DIKey.get[LocatorRef]).map {
-        key =>
-          SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
-      }
-    }
-
-    paramsModule overridenBy primaryModule
-  }
-
-
   protected def loadEnvironment(config: AppConfig, logger: IzLogger): TestEnvironment
 
   protected def bootstrapLogLevel: Level = IzLogger.Level.Debug
@@ -97,11 +83,22 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
 
-  // convenience helper for subclasses
-  protected def loadRoles(logger: IzLogger): RolesInfo = {
-    Quirks.discard(logger)
-    // For all normal scenarios we don't need roles to setup a test
-    RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
+  protected def makeModuleProvider(config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
+    // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
+    new ModuleProviderImpl[F](lateLogger, config, addGvDump = false, roles)
+  }
+
+  protected def makePlanner(module: distage.ModuleBase, injector: Injector): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](module, injector)
+  }
+
+  protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
+    StartupPlanExecutor.default(logger, injector)
+  }
+
+  /** You can override this to e.g. skip test when certain external dependencies are not available **/
+  protected def beforeRun(context: Locator): Unit = {
+    context.discard()
   }
 
   protected def makeConfigLoader(logger: IzLogger): ConfigLoader = {
@@ -117,20 +114,15 @@ abstract class DistageTestSupport[F[_] : TagK]
     new ConfigLoaderLocalFilesystemImpl(logger, None, moreConfigs)
   }
 
-  protected def makePlanner(module: distage.ModuleBase, roles: RolesInfo, injector: Injector): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](module, roles, injector)
-  }
+  /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
+  protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
+    val paramsModule = Module.make {
+      (roots - DIKey.get[LocatorRef]).map {
+        key =>
+          SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
+      }
+    }
 
-  protected def makeModuleProvider(config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
-    new ModuleProviderImpl[F](lateLogger, config, addGvDump = false, roles)
-  }
-
-  protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
-    StartupPlanExecutor.default(logger, injector)
-  }
-
-  /** You can override this to e.g. skip test when certain external dependencies are not available **/
-  protected def beforeRun(context: Locator): Unit = {
-    context.discard()
+    paramsModule overridenBy primaryModule
   }
 }

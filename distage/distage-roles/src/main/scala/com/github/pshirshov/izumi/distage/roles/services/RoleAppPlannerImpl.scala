@@ -9,7 +9,6 @@ import distage._
 
 class RoleAppPlannerImpl[F[_] : TagK](
                                        appModule: distage.ModuleBase,
-                                       roles: RolesInfo,
                                        injector: Injector,
                                      ) extends RoleAppPlanner[F] {
   def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {

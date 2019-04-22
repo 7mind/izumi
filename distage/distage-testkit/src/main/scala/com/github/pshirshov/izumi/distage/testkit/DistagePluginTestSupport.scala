@@ -7,7 +7,9 @@ import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
+import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
 
@@ -40,6 +42,11 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     )
   }
 
+  protected def loadRoles(logger: IzLogger): RolesInfo = {
+    Quirks.discard(logger)
+    // For all normal scenarios we don't need roles to setup a test
+    RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
+  }
   protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
