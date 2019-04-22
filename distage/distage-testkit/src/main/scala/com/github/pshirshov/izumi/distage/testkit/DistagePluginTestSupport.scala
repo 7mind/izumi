@@ -1,5 +1,8 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.UnaryOperator
+
 import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -9,6 +12,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
@@ -61,6 +65,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     // For all normal scenarios we don't need roles to setup a test
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
+
   protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
@@ -87,15 +92,19 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 }
 
 object DistagePluginTestSupport {
-  private val memoizedPlugins = mutable.HashMap[AnyRef, TestEnvironment]()
+
+  // sbt in nofork mode runs each module in it's own classloader thus these instances are unique per module per run
+  private val memoizedPlugins = new AtomicReference[TestEnvironment]()
 
   def getMemoizedEnv(classloader: ClassLoader, default: => TestEnvironment): TestEnvironment = memoizedPlugins.synchronized {
-    memoizedPlugins.get(classloader) match {
-      case Some(value) =>
-        value
-      case None =>
-        memoizedPlugins.put(classloader, default)
-        default
-    }
+    lazy val update = default
+    memoizedPlugins.updateAndGet((t: TestEnvironment) => {
+      Option(t) match {
+        case Some(value) =>
+          value
+        case None =>
+          update
+      }
+    })
   }
 }
