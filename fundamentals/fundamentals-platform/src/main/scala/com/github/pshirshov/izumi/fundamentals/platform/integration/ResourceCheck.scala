@@ -10,16 +10,22 @@ object ResourceCheck {
 
   sealed trait Failure extends ResourceCheck
 
-  final case class ResourceUnavailable(description: String, cause: Option[Throwable]) extends Failure {
+  final case class ResourceUnavailable private (description: String, cause: Option[Throwable]) extends Failure {
     override def toString: String = {
       cause match {
         case Some(t) =>
-          s"ResourceUnavailable: $description, ${t.getClass}: ${t.stackTrace}"
+          s"Unavailable resource: $description, ${t.getClass}: ${t.stackTrace}"
 
         case None =>
-          s"ResourceUnavailable: $description"
+          s"Unavailable resource: $description"
 
       }
+    }
+  }
+
+  object ResourceUnavailable {
+    def apply(description: String, cause: Option[Throwable]): ResourceUnavailable = {
+      new ResourceUnavailable(description, cause)
     }
   }
 

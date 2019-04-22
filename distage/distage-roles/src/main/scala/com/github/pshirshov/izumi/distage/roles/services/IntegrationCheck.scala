@@ -50,11 +50,11 @@ class IntegrationCheckerImpl(logger: IzLogger) extends IntegrationChecker {
         logger.debug(s"Checking $resource")
         try {
           resource.resourcesAvailable() match {
-            case failure@ResourceCheck.ResourceUnavailable(description, Some(cause)) =>
-              logger.debug(s"Integration check failed: $resource unavailable: $description, $cause")
+            case failure@ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
+              logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
               Some(failure)
-            case failure@ResourceCheck.ResourceUnavailable(description, None) =>
-              logger.debug(s"Integration check failed: $resource unavailable: $description")
+            case failure@ResourceCheck.ResourceUnavailable(reason, None) =>
+              logger.debug(s"Integration check failed, $resource unavailable: $reason")
               Some(failure)
             case ResourceCheck.Success() =>
               None

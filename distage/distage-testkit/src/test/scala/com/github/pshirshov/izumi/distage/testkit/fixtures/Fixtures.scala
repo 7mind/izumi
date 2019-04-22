@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.fixtures
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
@@ -77,7 +77,7 @@ class TestComponent3(val testComponent2: TestComponent2, counter: InitCounter, l
 
 class TestFailingIntegrationResource extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck =
-    ResourceCheck.ResourceUnavailable("Fail!", Some(new RuntimeException("")))
+    ResourceCheck.ResourceUnavailable("Resource check test", None)
 }
 
 case class TestConfig(x: Int, y: Int)
@@ -98,6 +98,7 @@ class TestPlugin extends PluginDef {
   make[TestComponent3]
   make[TestComponent2]
   make[TestComponent1]
+  make[TestFailingIntegrationResource]
   addImplicit[DIEffectRunner[IO]]
   addImplicit[DIEffect[IO]]
 }

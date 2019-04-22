@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -49,23 +50,29 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val planner = makePlanner(refineBindings(allRoots, appModule), env.roles, injector)
 
-
     val plan = planner.makePlan(allRoots)
 
-    makeExecutor(injector, logger)
-      .execute[F](plan) {
-      (locator, effect) =>
-        implicit val e: DIEffect[F] = effect
+    try {
+      makeExecutor(injector, logger)
+        .execute[F](plan) {
+        (locator, effect) =>
+          implicit val e: DIEffect[F] = effect
 
-        for {
-          _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
-          _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
-          _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
-          _ <- locator.run(function)
-        } yield {
+          for {
+            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
+            _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
+            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
+            _ <- locator.run(function)
+          } yield {
 
-        }
+          }
 
+
+      }
+    } catch {
+      case i: IntegrationCheckException =>
+        suppressTheRestOfTestSuite()
+        ignoreThisTest(Some(i.getMessage), Option(i.getCause))
     }
   }
 
