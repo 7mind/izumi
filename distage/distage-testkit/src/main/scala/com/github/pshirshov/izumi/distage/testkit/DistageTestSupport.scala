@@ -78,7 +78,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def loadEnvironment(config: AppConfig, logger: IzLogger): TestEnvironment
 
-  protected def bootstrapLogLevel: Level = IzLogger.Level.Debug
+  protected def bootstrapLogLevel: Level = IzLogger.Level.Warn
 
   protected def additionalRoots: Set[DIKey] = Set.empty
 

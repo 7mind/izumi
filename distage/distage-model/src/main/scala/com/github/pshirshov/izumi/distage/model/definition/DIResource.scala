@@ -1,11 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
+import java.util.concurrent.{ExecutorService, TimeUnit}
+
 import cats.Applicative
 import cats.effect.Bracket
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 
 import scala.language.experimental.macros
@@ -140,6 +143,21 @@ object DIResource {
 
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
+  }
+
+  private val fallback = TrivialLogger.make[DIResource.type]("izumi.distage.debug.bootstrap", forceLog = true)
+
+  def fromExecutor[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
+    makeSimple(acquire) {
+      es =>
+      if (!(es.isShutdown || es.isTerminated)) {
+        es.shutdown()
+        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+          val dropped = es.shutdownNow()
+          fallback.log(s"Executor $es didn't finish in time, ${dropped.size()} tasks were dropped")
+        }
+      }
+    }
   }
 
   implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {

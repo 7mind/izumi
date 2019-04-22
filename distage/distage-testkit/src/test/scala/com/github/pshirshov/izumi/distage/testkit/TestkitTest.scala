@@ -24,7 +24,7 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
 
           val expected = Set(classOf[TestService1], classOf[TestResource1], classOf[TestResource2], classOf[ConfigurableLogRouter])
           assert(locatorRef.get.get[Set[AutoCloseable]].map(_.getClass) == expected)
-          assert(locatorRef.get.parent.get.get[Set[AutoCloseable]].isEmpty)
+          assert(locatorRef.get.parent.get.get[Set[AutoCloseable]].map(_.getClass) == Set(classOf[ConfigurableLogRouter]))
         }
     }
 

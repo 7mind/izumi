@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.services
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
+import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -14,12 +15,18 @@ import scala.util.Try
 
 object Finalizers {
   type CloseablesFinalized = CloseablesFinalized.type
+
   object CloseablesFinalized
 
   type ExecutorsFinalized = ExecutorsFinalized.type
+
   object ExecutorsFinalized
 
-  class CloseablesFinalizer(logger: IzLogger, closeables: Set[AutoCloseable], executors: Set[ExecutorService]) extends DIResource[Identity, CloseablesFinalized] {
+  class CloseablesFinalizer(
+                             logger: IzLogger,
+                             closeables: Set[AutoCloseable],
+                             locator: LocatorRef,
+                           ) extends DIResource[Identity, CloseablesFinalized] {
     override def acquire: CloseablesFinalized = DIEffect[Identity].maybeSuspend(CloseablesFinalized)
 
     override def release(resource: CloseablesFinalized): Unit = {
@@ -28,7 +35,9 @@ object Finalizers {
     }
 
     private def closeCloseables(): Unit = {
-      val toClose = closeables
+      val parentCloseables = locator.get.parent.map(_.get[Set[AutoCloseable]]).toSeq.flatten.toSet
+
+      val toClose = closeables.diff(parentCloseables)
         .toList.reverse
 
       logger.info(s"Going to close ${toClose.size -> "count" -> null} ${toClose.map(_.getClass).niceList() -> "closeables"}")
@@ -41,7 +50,11 @@ object Finalizers {
   }
 
 
-  class ExecutorsFinalizer(logger: IzLogger, closeables: Set[AutoCloseable], executors: Set[ExecutorService]) extends DIResource[Identity, ExecutorsFinalized] {
+  class ExecutorsFinalizer(
+                            logger: IzLogger,
+                            executors: Set[ExecutorService],
+                            locator: LocatorRef,
+                          ) extends DIResource[Identity, ExecutorsFinalized] {
     override def acquire: ExecutorsFinalized = DIEffect[Identity].maybeSuspend(ExecutorsFinalized)
 
     override def release(resource: ExecutorsFinalized): Unit = {
@@ -51,7 +64,9 @@ object Finalizers {
     }
 
     private def shutdownExecutors(): Unit = {
-      val toClose = executors
+      val parentExecutors = locator.get.parent.map(_.get[Set[ExecutorService]]).toSeq.flatten.toSet
+
+      val toClose = executors.diff(parentExecutors)
         .toList.reverse
         .filterNot(es => es.isShutdown || es.isTerminated)
 

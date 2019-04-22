@@ -9,7 +9,7 @@ trait AbstractLocator extends Locator {
 
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     unsafeLookup(key)
-      .filter(_ => key.tpe.tpe.baseClasses.contains(Tag[T].tag.tpe.typeSymbol))
+      .filter(_ => key.tpe weak_<:< SafeType.get[T])
       .map {
         value =>
           TypedRef[T](value.asInstanceOf[T])
