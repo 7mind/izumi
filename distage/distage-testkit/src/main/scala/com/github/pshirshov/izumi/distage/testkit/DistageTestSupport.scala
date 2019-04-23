@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
@@ -44,9 +43,7 @@ abstract class DistageTestSupport[F[_] : TagK]
     val appModule = provider.appModules().merge overridenBy env.appModule
     val injector = Injector.Standard(bsModule)
 
-    val allRoots = function.get.diKeys.toSet ++ additionalRoots ++ Set(
-      RuntimeDIUniverse.DIKey.get[Finalizers.CloseablesFinalized],
-    )
+    val allRoots = function.get.diKeys.toSet ++ additionalRoots
 
     val planner = makePlanner(refineBindings(allRoots, appModule), injector)
 

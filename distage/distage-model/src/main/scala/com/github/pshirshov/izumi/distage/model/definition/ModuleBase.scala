@@ -53,6 +53,11 @@ object ModuleBase {
     def map(f: Binding => Binding): T = {
       ModuleMake[T].make(moduleDef.bindings.map(f))
     }
+
+    def flatMap(f: Binding => Iterable[Binding]): T = {
+      ModuleMake[T].make(moduleDef.bindings.flatMap(f))
+    }
+
   }
 
   implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {

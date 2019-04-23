@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import java.util.concurrent.ExecutorService
-
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
@@ -14,6 +13,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
 import distage.TagK
+
 
 class ModuleProviderImpl[F[_] : TagK](
                                        logger: IzLogger,
@@ -29,12 +29,14 @@ class ModuleProviderImpl[F[_] : TagK](
     }
 
     val autosetModule = AutoSetModule()
-      .register[AutoCloseable]
-      .register[ExecutorService]
-      .register[IntegrationCheck]
       .register[AbstractRoleF[F]]
 
+
     val configModule = new ConfigModule(config, configInjectionOptions)
+    val resourceRewriter = new BootstrapModuleDef {
+      make[IzLogger].from(logger)
+      many[PlanningHook].add[ResourceRewriter]
+    }
 
     val maybeDumpGraphModule = if (addGvDump) {
       Seq(new GraphDumpBootstrapModule())
@@ -46,6 +48,7 @@ class ModuleProviderImpl[F[_] : TagK](
       configModule,
       autosetModule,
       rolesModule,
+      resourceRewriter,
     ) ++
       maybeDumpGraphModule
   }
@@ -56,9 +59,8 @@ class ModuleProviderImpl[F[_] : TagK](
       addImplicit[DIEffect[Identity]]
       make[CustomContext].from(CustomContext.empty)
       make[IzLogger]
-      make[Finalizers.CloseablesFinalized].fromResource[Finalizers.CloseablesFinalizer]
-      make[Finalizers.ExecutorsFinalized].fromResource[Finalizers.ExecutorsFinalizer]
     }
+
     Seq(baseMod)
   }
 

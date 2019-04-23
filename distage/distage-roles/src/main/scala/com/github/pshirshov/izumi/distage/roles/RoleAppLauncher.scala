@@ -95,7 +95,6 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     rolesInfo.requiredComponents ++ Set(
       RuntimeDIUniverse.DIKey.get[ResolvedConfig],
       RuntimeDIUniverse.DIKey.get[Set[RoleService2[F]]],
-      RuntimeDIUniverse.DIKey.get[Finalizers.CloseablesFinalized],
     )
   }
 

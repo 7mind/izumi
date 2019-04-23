@@ -15,7 +15,6 @@ class RoleAppPlannerImpl[F[_] : TagK](
     val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
       DIKey.get[DIEffect[F]],
-      DIKey.get[Finalizers.ExecutorsFinalized],
     )
 
     val fullAppModule = appModule.overridenBy(new ModuleDef {
@@ -41,15 +40,15 @@ class RoleAppPlannerImpl[F[_] : TagK](
     } else {
       emptyPlan(runtimePlan)
     }
-    //        println("====")
-    //        println(runtimePlan.render())
-    //        println("----")
-    //        println("====")
-    //        println(integrationPlan.render())
-    //        println("----")
-    //        println("====")
-    //        println(refinedRolesPlan.render())
-    //        println("----")
+//            println("====")
+//            println(runtimePlan.render())
+//            println("----")
+//            println("====")
+//            println(integrationPlan.render())
+//            println("----")
+//            println("====")
+//            println(refinedRolesPlan.render())
+//            println("----")
 
     AppStartupPlans(runtimePlan, integrationPlan, integrationComponents, refinedRolesPlan)
   }
