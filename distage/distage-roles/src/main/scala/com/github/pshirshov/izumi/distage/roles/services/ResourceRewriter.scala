@@ -90,7 +90,7 @@ class ResourceRewriter(
             case _: ImplDef.ReferenceImpl =>
               DontChange
 
-            case ImplDef.InstanceImpl(_, instance) =>
+            case _: ImplDef.InstanceImpl =>
               if (rules.warnOnExternal) {
                 logger.warn(s"External entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"}, it will NOT be finalized!")
               }
@@ -119,7 +119,7 @@ class ResourceRewriter(
         }
       case implDef: ImplDef.RecursiveImplDef =>
         implDef match {
-          case e: ImplDef.EffectImpl =>
+          case _: ImplDef.EffectImpl =>
             if (implDef.implType weak_<:< SafeType.get[T]) {
               logger.error(s"Effect entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
             }
