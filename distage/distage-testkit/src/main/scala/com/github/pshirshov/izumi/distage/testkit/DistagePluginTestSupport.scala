@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import java.util.concurrent.atomic.AtomicReference
-
 import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -11,9 +9,12 @@ import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeS
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.distage.testkit.services.SyncCache
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
+
+import scala.collection.mutable
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
@@ -31,15 +32,15 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   final protected def loadEnvironment(config: AppConfig, logger: IzLogger): TestEnvironment = {
     if (memoizePlugins) {
-      DistagePluginTestSupport.getMemoizedEnv(getClass.getClassLoader, doLoad(logger))
+      DistagePluginTestSupport.getOrCompute(bootstrapConfig, doLoad(logger, bootstrapConfig))
     } else {
-      doLoad(logger)
+      doLoad(logger, bootstrapConfig)
     }
   }
 
-  private def doLoad(logger: IzLogger): TestEnvironment = {
+  private def doLoad(logger: IzLogger, config: BootstrapConfig): TestEnvironment = {
     val roles = loadRoles(logger)
-    val plugins = makePluginLoader(bootstrapConfig).load()
+    val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
     val defBs: MergedPlugins = mergeStrategy.merge(plugins.bootstrap)
     val defApp: MergedPlugins = mergeStrategy.merge(plugins.app)
@@ -87,20 +88,8 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
 }
 
-object DistagePluginTestSupport {
 
-  // sbt in nofork mode runs each module in it's own classloader thus these instances are unique per module per run
-  private val memoizedPlugins = new AtomicReference[TestEnvironment]()
 
-  def getMemoizedEnv(classloader: ClassLoader, default: => TestEnvironment): TestEnvironment = memoizedPlugins.synchronized {
-    lazy val update = default
-    memoizedPlugins.updateAndGet((t: TestEnvironment) => {
-      Option(t) match {
-        case Some(value) =>
-          value
-        case None =>
-          update
-      }
-    })
-  }
+object DistagePluginTestSupport extends SyncCache[BootstrapConfig, TestEnvironment] {
+  // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
 }
