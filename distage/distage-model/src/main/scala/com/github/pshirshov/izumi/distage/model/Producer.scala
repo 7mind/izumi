@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.model.provisioning.FailedProvision
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 

@@ -9,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer}
 import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionMutable
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
@@ -16,6 +17,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
+
 
 // TODO: add introspection capabilities
 class PlanInterpreterDefaultRuntimeImpl
@@ -38,7 +40,7 @@ class PlanInterpreterDefaultRuntimeImpl
      with OperationExecutor
      with WiringExecutor {
 
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: Seq[Finalizer[F]] => Seq[Finalizer[F]])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     DIResource.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
@@ -47,11 +49,12 @@ class PlanInterpreterDefaultRuntimeImpl
           case Left(failedProvision) => failedProvision.failed.finalizers
           case Right(locator) => locator.dependencyMap.finalizers
         }
-        finalizers.foldLeft(F.unit) {
-          case (acc, (_, eff)) => acc.guarantee(F.suspendF(eff()))
+        filterFinalizers(finalizers).foldLeft(F.unit) {
+          case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
         }
     })
   }
+
 
   private[this] def instantiateImpl[F[_]: TagK](plan: OrderedPlan, parentContext: Locator)(implicit F: DIEffect[F]): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]] = {
     val mutProvisioningContext = ProvisionMutable[F]()
@@ -204,11 +207,11 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend (target -> finalizer)
+        active.finalizers prepend Finalizer(target, finalizer)
 
       case r@NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend target -> finalizer
+        active.finalizers prepend Finalizer(target, finalizer)
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")

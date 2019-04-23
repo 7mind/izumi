@@ -9,13 +9,12 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.roles.{RoleAppLauncher, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level

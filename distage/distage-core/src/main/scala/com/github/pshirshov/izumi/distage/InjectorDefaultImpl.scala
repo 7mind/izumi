@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.{FailedProvision, PlanInterpreter}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FailedProvision
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
