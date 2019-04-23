@@ -782,6 +782,8 @@ If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) pl
 Example usage:
 
 ```scala mdoc
+/*
+TODO: update doc
 import distage._
 import com.github.pshirshov.izumi.distage.testkit.legacy.DistageSpec
 
@@ -803,4 +805,5 @@ class Test extends DistageSpec {
 
   }
 }
+*/
 ```

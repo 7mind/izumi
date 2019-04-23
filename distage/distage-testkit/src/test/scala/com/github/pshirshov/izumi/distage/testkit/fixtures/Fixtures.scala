@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit.fixtures
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
@@ -7,6 +9,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck, RoleComponent}
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 import scala.collection.mutable
@@ -19,7 +22,12 @@ class SelftestCounters {
 
 class TestResourceDI() extends AutoCloseable {
   override def close(): Unit = {
+    Quirks.discard(TestResourceDI.closeCount.incrementAndGet())
   }
+}
+
+object TestResourceDI {
+  final val closeCount = new AtomicInteger()
 }
 
 class TestResource1(counter: SelftestCounters, logger: IzLogger) extends AutoCloseable {

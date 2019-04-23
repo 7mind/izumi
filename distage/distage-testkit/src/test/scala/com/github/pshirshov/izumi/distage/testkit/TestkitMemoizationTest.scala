@@ -15,7 +15,7 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
   val ref = new AtomicReference[TestResource1]()
 
   "testkit" must {
-    "store memoized value" in di {
+    "support memoization (1/2)" in di {
       res: TestResource1 =>
         DIEffect[F].maybeSuspend {
           assert(ref.get() == null)
@@ -23,19 +23,24 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
         }
     }
 
-    "support memoization" in di {
+    "support memoization (2/2)" in di {
       res: TestResource1 =>
         DIEffect[F].maybeSuspend {
           assert(ref.get() eq res)
         }
     }
 
-    "not finalize resources immediately" in di {
-      res: TestResourceDI =>
+    "not finalize resources immediately (1/2)" in di {
+      _: TestResourceDI =>
         DIEffect[F].maybeSuspend {
-
+          assert(TestResourceDI.closeCount.get() == 0)
         }
     }
+
+    "not finalize resources immediately (2/2)" in {
+      assert(TestResourceDI.closeCount.get() == 0)
+    }
+
   }
 
   override protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.singleton[F] {
