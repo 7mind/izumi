@@ -165,11 +165,13 @@ object ExternalResourceProvider {
                   for {
                     _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers for ${rt.tag}..."))) {
                       case (acc, f) =>
-                        for {
-                          _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
-                          _ <- acc.guarantee(effect.suspendF(f.effect()))
-                        } yield {
+                        acc.guarantee {
+                          for {
+                            _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
+                            _ <- effect.suspendF(f.effect())
+                          } yield {
 
+                          }
                         }
                     }
                     _ <- effect.maybeSuspend(logger.log(s"Finished finalizers for ${rt.tag}!"))
