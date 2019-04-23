@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termin
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceMethods}
 import org.http4s._
+import org.http4s.server.Router
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
 import scalaz.zio.interop.Task
@@ -84,13 +85,13 @@ class Http4sTransportTest extends WordSpec {
   }
 
   def withServer(f: => Unit): Unit = {
-    val io = BlazeBuilder[rt.MonoIO]
+    import org.http4s.implicits._
+    val router = Router("/" -> ioService.service).orNotFound
+    val io = BlazeServerBuilder[rt.MonoIO]
       .bindHttp(port, host)
       .withWebSockets(true)
-      .mountService(ioService.service, "/")
+      .withHttpApp(router)
       .stream
-      // FIXME: parEvalMap/mapAsync/parJoin etc. doesn't work on ZIO https://github.com/functional-streams-for-scala/fs2/issues/1396
-//      .mapAsync(1)(_ => Task(f))
       .evalMap(_ => Task(f))
       .compile.drain
 
