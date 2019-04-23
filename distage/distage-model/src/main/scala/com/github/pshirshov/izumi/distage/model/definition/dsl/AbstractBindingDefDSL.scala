@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDe
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
@@ -198,6 +199,8 @@ object AbstractBindingDefDSL {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       // always positive: 0[32-bits of impldef hashcode][31 bit of this hashcode]
       val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
+
+      implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
 
       val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, BindingTag.untaggedTags, pos)
 

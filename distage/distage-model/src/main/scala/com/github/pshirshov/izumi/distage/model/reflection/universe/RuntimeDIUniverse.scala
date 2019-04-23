@@ -13,8 +13,6 @@ trait RuntimeDIUniverse extends DIUniverse {
   override implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]
   override implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
 
-  implicit def anyIdContract[T]: IdContract[T] = new IdContractImpl[T]
-
   override protected val typeOfDistageAnnotation: SafeType = SafeType.get[DIStageAnnotation]
 
   val identityEffectType: SafeType = SafeType.getK[Identity]

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.config.annotations
 
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait AbstractConfId
@@ -12,9 +13,19 @@ final case class AutoConfId(contextKey: DIKey, parameterName: String) extends Au
   override def toString: String = s"${contextKey.toString}:cfg-auto:$parameterName"
 }
 
+object AutoConfId {
+  implicit val idContract: IdContract[AutoConfId] = new RuntimeDIUniverse.IdContractImpl[AutoConfId]
+}
+
+
 final case class ConfId(contextKey: DIKey, parameterName: String, nameOverride: String) extends AutomaticConfId {
   override def toString: String = s"${contextKey.toString}:cfg-id:$nameOverride->$parameterName"
 }
+
+object ConfId {
+  implicit val idContract: IdContract[ConfId] = new RuntimeDIUniverse.IdContractImpl[ConfId]
+}
+
 
 final case class ConfPathId(contextKey: DIKey, parameterName: String, pathOverride: String) extends AbstractConfId {
   override def toString: String = s"${contextKey.toString}:cfg-path:$pathOverride->$parameterName"
@@ -32,4 +43,7 @@ final case class ConfPathId(contextKey: DIKey, parameterName: String, pathOverri
   }
 }
 
+object ConfPathId {
+  implicit val idContract: IdContract[ConfPathId] = new RuntimeDIUniverse.IdContractImpl[ConfPathId]
+}
 
