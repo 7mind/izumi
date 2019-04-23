@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
 import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionMutable
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
@@ -40,7 +40,7 @@ class PlanInterpreterDefaultRuntimeImpl
      with OperationExecutor
      with WiringExecutor {
 
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: Seq[Finalizer[F]] => Seq[Finalizer[F]])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizersFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     DIResource.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
@@ -49,7 +49,7 @@ class PlanInterpreterDefaultRuntimeImpl
           case Left(failedProvision) => failedProvision.failed.finalizers
           case Right(locator) => locator.dependencyMap.finalizers
         }
-        filterFinalizers(finalizers).foldLeft(F.unit) {
+        filterFinalizers.filter(finalizers).foldLeft(F.unit) {
           case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
         }
     })

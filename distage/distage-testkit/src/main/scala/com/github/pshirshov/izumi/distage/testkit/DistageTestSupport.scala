@@ -4,17 +4,20 @@ import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{ImplDef, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.roles.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
+import com.github.pshirshov.izumi.distage.testkit.services.{ExternalResourceProvider, IgnoreSupport, MemoizationContextId, SuppressionSupport}
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
@@ -34,6 +37,21 @@ abstract class DistageTestSupport[F[_] : TagK]
     di(providerMagnet)
   }
 
+  protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.Null
+
+  protected def memoizationContextId: MemoizationContextId
+
+  private lazy val erpInstance = externalResourceProvider
+
+  private def doMemoize(locator: Locator): Unit = {
+    locator.allInstances.foreach {
+      ref =>
+        externalResourceProvider.process(memoizationContextId, ref)
+
+    }
+  }
+
+
   protected final def di(function: ProviderMagnet[F[_]]): Unit = {
     val logger = makeLogger()
     val loader = makeConfigLoader(logger)
@@ -47,17 +65,25 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val allRoots = function.get.diKeys.toSet ++ additionalRoots
 
-    val planner = makePlanner(refineBindings(allRoots, appModule), injector)
+    val refinedBindings = refineBindings(allRoots, appModule)
+    val withMemoized = applyMemoization(refinedBindings)
+    val planner = makePlanner(withMemoized, injector)
 
     val plan = planner.makePlan(allRoots)
 
+    val filters = Filters[F](
+      (finalizers: Seq[PlanInterpreter.Finalizer[F]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
+      (finalizers: Seq[PlanInterpreter.Finalizer[Identity]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
+    )
+
     try {
       makeExecutor(injector, logger)
-        .execute[F](plan) {
+        .execute[F](plan, filters) {
         (locator, effect) =>
           implicit val e: DIEffect[F] = effect
 
           for {
+            _ <- DIEffect[F].maybeSuspend(doMemoize(locator))
             _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
             _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
             _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
@@ -72,6 +98,38 @@ abstract class DistageTestSupport[F[_] : TagK]
       case i: IntegrationCheckException =>
         suppressTheRestOfTestSuite()
         ignoreThisTest(Some(i.getMessage), Option(i.getCause))
+    } finally {
+      val cacheSize = erpInstance.size(memoizationContextId)
+      if (cacheSize > 0) {
+        logger.info(s"${cacheSize -> "memoized instances"} in ${memoizationContextId -> "memoization context"}")
+      }
+    }
+  }
+
+  private def applyMemoization(refinedBindings: ModuleBase): ModuleBase = {
+    refinedBindings.map {
+      b =>
+        erpInstance.getMemoized(memoizationContextId, b.key) match {
+          case Some(value) =>
+            val impltype = b match {
+              case binding: Binding.ImplBinding =>
+                binding.implementation.implType
+              case binding: Binding.SetBinding =>
+                binding match {
+                  case e: Binding.SetElementBinding[_] =>
+                    e.implementation.implType
+                  case s: Binding.EmptySetBinding[_] =>
+                    s.key.tpe
+                }
+            }
+            val impl = ImplDef.InstanceImpl(impltype, value)
+            SingletonBinding(b.key, impl, b.tags, b.origin)
+
+          case None =>
+            b
+        }
+
+
     }
   }
 

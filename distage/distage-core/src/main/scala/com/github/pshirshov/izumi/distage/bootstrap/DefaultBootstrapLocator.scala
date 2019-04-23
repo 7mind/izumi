@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
 import com.github.pshirshov.izumi.distage.model.provisioning._
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
@@ -28,7 +29,7 @@ class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends Abstract
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    val resource = bootstrapProducer.instantiate[Identity](plan, this)
+    val resource = bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
 

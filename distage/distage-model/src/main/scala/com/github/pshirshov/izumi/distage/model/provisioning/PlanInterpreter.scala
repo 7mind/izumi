@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResource
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
 import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
@@ -13,11 +13,18 @@ trait PlanInterpreter {
   def instantiate[F[_] : TagK : DIEffect](
                                            plan: OrderedPlan
                                            , parentContext: Locator
-                                           , filterFinalizers: Seq[Finalizer[F]] => Seq[Finalizer[F]] = identity[Seq[Finalizer[F]]] _
+                                           , filterFinalizers: FinalizersFilter[F]
                                          ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {
+  trait FinalizersFilter[F[_]] {
+    def filter(finalizers: Seq[Finalizer[F]]): Seq[Finalizer[F]]
+  }
+
+  object FinalizersFilter {
+    def all[F[_]]: FinalizersFilter[F] = (finalizers: Seq[Finalizer[F]]) => finalizers
+  }
 
   case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit])
 
