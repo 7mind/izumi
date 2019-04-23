@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package com.github.pshirshov.izumi.distage.roles.test.fixtures
 
-import com.github.pshirshov.izumi.distage.roles.{IntegrationCheck, RoleComponent}
+import com.github.pshirshov.izumi.distage.roles.IntegrationCheck
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 
 import scala.collection.mutable
@@ -49,16 +49,16 @@ object Junk {
     }
   }
 
-  class Resource3(val roleComponent: Resource4, counter: InitCounter) extends Resource
+  case class Resource3(roleComponent: Resource4, counter: InitCounter) extends Resource
 
-  class Resource4(val closeable: Resource5, counter: InitCounter) extends Resource
+  case class Resource4(closeable: Resource5, counter: InitCounter) extends Resource
 
-  class Resource5(val roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
+  case class Resource5(roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
     counter.startedCloseables += this
 
     override def close(): Unit = counter.closedCloseables += this
   }
 
-  class Resource6(counter: InitCounter) extends Resource
+  case class Resource6(counter: InitCounter) extends Resource
 
 }

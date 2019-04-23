@@ -25,3 +25,5 @@ trait RoleTask2[F[_]] extends AbstractRoleF[F] {
     */
   def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit]
 }
+
+

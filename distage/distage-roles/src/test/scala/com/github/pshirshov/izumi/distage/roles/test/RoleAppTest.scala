@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.roles
+package com.github.pshirshov.izumi.distage.roles.test
 
 import cats.effect._
-import com.github.pshirshov.izumi.distage.app.BootstrapConfig
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
+import com.github.pshirshov.izumi.distage.roles.{BootstrapConfig, RoleAppLauncher, RoleAppMain}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, RoleArg}
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 
@@ -11,7 +11,7 @@ object TestLauncher extends RoleAppLauncher.LauncherF[IO]() {
   protected val bootstrapConfig: BootstrapConfig = BootstrapConfig(
     PluginConfig(
       debug = false
-      , packagesEnabled = Seq(s"$thisPkg.test")
+      , packagesEnabled = Seq(s"$thisPkg.fixtures")
       , packagesDisabled = Seq.empty
     )
   )

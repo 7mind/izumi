@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.app
+package com.github.pshirshov.izumi.distage.roles
 
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
+import distage.plugins.PluginConfig
 
 case class BootstrapConfig(
                             pluginConfig: PluginConfig,

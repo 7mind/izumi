@@ -3,16 +3,19 @@ package com.github.pshirshov.izumi.distage.roles
 import java.io.File
 
 import cats.effect.LiftIO
-import com.github.pshirshov.izumi.distage.app.{BootstrapConfig, DiAppBootstrapException}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
-import com.github.pshirshov.izumi.distage.roles.launcher.RoleAppBootstrapStrategy.Using
+import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
+import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, RoleAppArguments}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -21,11 +24,6 @@ import distage._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
-import CLIParser._
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 
 /**
@@ -57,7 +55,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected val hook: ApplicationShutdownStrategy[F]
 
-  protected def referenceLibraryInfo: Seq[Using] = Vector.empty
+  protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
 
   final def launch(parameters: RoleAppArguments): Unit = {
     val earlyLogger = loggers.makeEarlyLogger(parameters)
@@ -163,8 +161,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[Using]): this.type = {
-    val withIzumi = referenceLibraries :+ Using("izumi-r2", classOf[ConfigLoader])
+  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
+    val withIzumi = referenceLibraries :+ LibraryReference("izumi-r2", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
     withIzumi.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
     this

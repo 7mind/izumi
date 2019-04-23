@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck, RoleComponent}
+import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck}
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -16,8 +16,6 @@ import scala.collection.mutable
 
 class SelftestCounters {
   val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
-  val startedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
-  val closedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
 }
 
 class TestResourceDI() extends AutoCloseable {
@@ -51,43 +49,11 @@ class TestService1(val testResource2: TestResource2, val testComponent3: TestCom
   }
 }
 
-class TestComponent1(counter: SelftestCounters, logger: IzLogger) extends RoleComponent {
-  override def start(): Unit = {
-    logger.info(s"[test] Starting $this")
-    counter.startedRoleComponents += this
-  }
+case class TestComponent1(counter: SelftestCounters, logger: IzLogger)
 
-  override def stop(): Unit = {
-    logger.info(s"[test] Closing $this")
-    counter.closedRoleComponents += this
-  }
-}
+case class TestComponent2(testComponent1: TestComponent1, counter: SelftestCounters, logger: IzLogger)
 
-class TestComponent2(val testComponent1: TestComponent1, counter: SelftestCounters, logger: IzLogger) extends RoleComponent {
-  override def start(): Unit = {
-    logger.info(s"[test] Starting $this")
-    assert(counter.startedRoleComponents.contains(testComponent1))
-    counter.startedRoleComponents += this
-  }
-
-  override def stop(): Unit = {
-    logger.info(s"[test] Closing $this")
-    counter.closedRoleComponents += this
-  }
-}
-
-class TestComponent3(val testComponent2: TestComponent2, counter: SelftestCounters, logger: IzLogger) extends RoleComponent {
-  override def start(): Unit = {
-    logger.info(s"[test] Starting $this")
-    assert(counter.startedRoleComponents.contains(testComponent2))
-    counter.startedRoleComponents += this
-  }
-
-  override def stop(): Unit = {
-    logger.info(s"[test] Closing $this")
-    counter.closedRoleComponents += this
-  }
-}
+case class TestComponent3(testComponent2: TestComponent2, counter: SelftestCounters, logger: IzLogger)
 
 class TestFailingIntegrationResource extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck =

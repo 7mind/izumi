@@ -1,6 +1,5 @@
-package com.github.pshirshov.izumi.distage.app.plugin.macros
+package com.github.pshirshov.izumi.distage.staticinjector.plugins.macrodefs
 
-import com.github.pshirshov.izumi.distage.app.ModuleRequirements
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
 import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
@@ -12,19 +11,21 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependen
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
+import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
 import com.typesafe.config.ConfigFactory
-import distage._
+import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
 import io.github.classgraph.ClassGraph
 
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.{currentMirror, universe => ru}
+import scala.reflect.runtime.currentMirror
 
 object StaticPluginCheckerMacro {
 

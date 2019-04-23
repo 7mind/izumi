@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package com.github.pshirshov.izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.ExecutorService
 
@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.test.Junk._
-import com.github.pshirshov.izumi.distage.roles.test.TestPlugin.NotCloseable
+import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
+import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
 import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger

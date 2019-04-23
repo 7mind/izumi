@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.launcher
+package com.github.pshirshov.izumi.distage.roles.internal
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.launcher.ConfigWriter.{ConfigurableComponent, WriteReference}
+import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.{ArgDef, ArgNameDef}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters

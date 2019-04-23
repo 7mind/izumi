@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.app.BootstrapConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader
+import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 
 class PluginSourceImpl(config: BootstrapConfig) extends PluginSource {

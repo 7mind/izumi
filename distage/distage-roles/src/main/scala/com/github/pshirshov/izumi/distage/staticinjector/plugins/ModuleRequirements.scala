@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.app
+package com.github.pshirshov.izumi.distage.staticinjector.plugins
 
 import com.github.pshirshov.izumi.distage.model.LoggerHook
 import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver

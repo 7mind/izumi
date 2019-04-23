@@ -15,6 +15,7 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import org.asynchttpclient.netty.ws.NettyWebSocket
 import org.asynchttpclient.ws.{WebSocket, WebSocketListener, WebSocketUpgradeHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 case class PacketInfo(method: IRTMethodId, packetId: RpcPacketId)
 
@@ -74,7 +75,7 @@ class ClientWsDispatcher[C <: Http4sContext]
           .get())
       }
     }
-    connection.get().sendTextFrame(out)
+    connection.get().sendTextFrame(out).discard()
   }
 
   override def close(): Unit = {

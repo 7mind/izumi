@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.app
+package com.github.pshirshov.izumi.distage.staticinjector.plugins
 
-import com.github.pshirshov.izumi.distage.app.plugin.macros.StaticPluginCheckerMacro
+import com.github.pshirshov.izumi.distage.staticinjector.plugins.macrodefs.StaticPluginCheckerMacro
 import distage.plugins.PluginBase
 
 import scala.language.experimental.macros

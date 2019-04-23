@@ -1,4 +1,4 @@
-package com.github.pshirshov.test.testapp
+package com.github.pshirshov.izumi.distage.roles.test.fixtures
 
 import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
@@ -44,7 +44,7 @@ class WeakSetStrong extends WeakSetTest
 
 case class WeakSetDep(s1: Set[WeakSetTest], g1: WeakSetGood)
 
-class TestPlugin extends PluginDef {
+class TestAppPlugin extends PluginDef {
   make[TestApp]
 
   make[SetEl1]

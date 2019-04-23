@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.distage.testkit.services
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import org.scalatest.exceptions.TestCanceledException
 
 private[testkit] trait IgnoreSupport {
