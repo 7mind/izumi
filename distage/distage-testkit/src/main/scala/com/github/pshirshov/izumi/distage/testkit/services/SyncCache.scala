@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit.services
 
 import scala.collection.mutable
-
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 class SyncCache[K, V] {
 
   def enumerate(): Seq[(K, V)] = sync {
@@ -15,7 +15,7 @@ class SyncCache[K, V] {
   }
 
   def put(k: K, v: V): Unit = sync {
-    cache.put(k, v)
+    cache.put(k, v).discard()
   }
 
   def get(k: K): Option[V] = sync {
@@ -30,9 +30,9 @@ class SyncCache[K, V] {
     cache.contains(k)
   }
 
-  def putIfNotExist(k: K, v: V): Unit = sync {
+  def putIfNotExist(k: K, v: => V): Unit = sync {
     if (!cache.contains(k)) {
-      cache.put(k, v)
+      cache.put(k, v).discard()
     }
   }
 

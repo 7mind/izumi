@@ -16,6 +16,7 @@ import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.Cont
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.distage.roles.services._
+import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.distage.testkit.services.{ExternalResourceProvider, IgnoreSupport, MemoizationContextId, SuppressionSupport}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -44,11 +45,16 @@ abstract class DistageTestSupport[F[_] : TagK]
   private lazy val erpInstance = externalResourceProvider
 
   private def doMemoize(locator: Locator): Unit = {
-    locator.allInstances.foreach {
-      ref =>
-        externalResourceProvider.process(memoizationContextId, ref)
-
-    }
+    val fmap = locator.finalizers[F].zipWithIndex.map {
+      case (f, idx) =>
+        f.key -> OrderedFinalizer(f, idx)
+    }.toMap
+    locator
+      .allInstances
+      .foreach {
+        ref =>
+          externalResourceProvider.process(memoizationContextId, MemoizedInstance[Any](ref, fmap.get(ref.key)))
+      }
   }
 
 
@@ -70,6 +76,11 @@ abstract class DistageTestSupport[F[_] : TagK]
     val planner = makePlanner(withMemoized, injector)
 
     val plan = planner.makePlan(allRoots)
+
+    erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
+      injector.produceF[Identity](plan.runtime),
+      implicitly[TagK[F]]
+    ))
 
     val filters = Filters[F](
       (finalizers: Seq[PlanInterpreter.Finalizer[F]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),

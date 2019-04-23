@@ -10,7 +10,9 @@ import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDe
 import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import com.github.pshirshov.izumi.distage.model.plan._
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
+import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -23,6 +25,8 @@ import scala.collection.mutable
 trait LocatorDef
   extends AbstractLocator
      with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.SetDSL] {
+
+  override protected[distage] def finalizers[F[_] : universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
   override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)

@@ -31,7 +31,7 @@ class JvmExitHookLatchShutdownStrategy extends ApplicationShutdownStrategy[Ident
   def await(logger: IzLogger): Identity[Unit] = {
     val shutdownHook = new Thread(() => {
       stop()
-    }, "termination-hook")
+    }, "termination-hook-latch")
 
     DIEffect[Identity].maybeSuspend {
       logger.info("Waiting on latch...")
@@ -73,7 +73,7 @@ class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionC
   def await(logger: IzLogger): F[Unit] = {
     val shutdownHook = new Thread(() => {
       stop()
-    }, "termination-hook")
+    }, "termination-hook-promise")
 
 
     logger.info("Waiting on latch...")

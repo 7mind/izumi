@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit.fixtures
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck, RoleComponent}
@@ -14,6 +15,11 @@ class SelftestCounters {
   val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
   val startedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
   val closedRoleComponents: mutable.ArrayBuffer[RoleComponent] = mutable.ArrayBuffer()
+}
+
+class TestResourceDI() extends AutoCloseable {
+  override def close(): Unit = {
+  }
 }
 
 class TestResource1(counter: SelftestCounters, logger: IzLogger) extends AutoCloseable {
@@ -101,4 +107,5 @@ class TestPlugin extends PluginDef {
   make[TestFailingIntegrationResource]
   addImplicit[DIEffectRunner[IO]]
   addImplicit[DIEffect[IO]]
+  make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
 }

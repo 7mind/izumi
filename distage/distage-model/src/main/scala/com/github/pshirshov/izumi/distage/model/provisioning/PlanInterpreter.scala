@@ -5,9 +5,11 @@ import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResource
 import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+
+import scala.annotation.unchecked.uncheckedVariance
 
 trait PlanInterpreter {
   def instantiate[F[_] : TagK : DIEffect](
@@ -26,7 +28,7 @@ object PlanInterpreter {
     def all[F[_]]: FinalizersFilter[F] = (finalizers: Seq[Finalizer[F]]) => finalizers
   }
 
-  case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit])
+  case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], tag: TagK[F @uncheckedVariance])
 
   final case class FailedProvision[F[_]](
                                           failed: ProvisionImmutable[F],
@@ -49,8 +51,8 @@ object PlanInterpreter {
       val ccDone = failed.instances.size
       val ccTotal = plan.steps.size
 
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
       import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
       DIEffect[F].fail {
         new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)

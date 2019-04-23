@@ -193,7 +193,7 @@ class PlanInterpreterDefaultRuntimeImpl
     }
   }
 
-  private[this] def interpretResult[F[_]](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
+  private[this] def interpretResult[F[_] : TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
     result match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
@@ -207,11 +207,11 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer(target, finalizer, implicitly[TagK[F]])
 
       case r@NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer(target, finalizer, implicitly[TagK[F]])
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")

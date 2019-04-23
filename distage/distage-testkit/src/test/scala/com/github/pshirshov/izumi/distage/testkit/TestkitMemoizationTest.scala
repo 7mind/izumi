@@ -30,10 +30,18 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
         }
     }
 
+    "not finalize resources immediately" in di {
+      res: TestResourceDI =>
+        DIEffect[F].maybeSuspend {
+
+        }
+    }
   }
 
-  override protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.singleton {
+  override protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.singleton[F] {
     case IdentifiedRef(_, _: TestResource1) =>
+      true
+    case IdentifiedRef(_, _: TestResourceDI) =>
       true
     case _ =>
       false
