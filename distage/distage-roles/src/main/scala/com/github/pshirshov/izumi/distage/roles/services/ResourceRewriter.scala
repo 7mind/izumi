@@ -8,18 +8,28 @@ import com.github.pshirshov.izumi.distage.model.definition.ImplDef.DirectImplDef
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
-class ResourceRewriter(logger: IzLogger) extends PlanningHook {
+class ResourceRewriter(
+                        logger: IzLogger,
+                        rules: RewriteRules,
+
+                      ) extends PlanningHook {
 
   import ResourceRewriter._
   import RewriteResult._
 
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
-    defn
-      .flatMap(rewrite[AutoCloseable](a => fromAutoCloseable(a)))
-      .flatMap(rewrite[ExecutorService](a => fromExecutorService(a)))
+    if (rules.applyRewrites) {
+      defn
+        .flatMap(rewrite[AutoCloseable](a => fromAutoCloseable(a)))
+        .flatMap(rewrite[ExecutorService](a => fromExecutorService(a)))
+    } else {
+      defn
+    }
   }
 
 
@@ -28,7 +38,7 @@ class ResourceRewriter(logger: IzLogger) extends PlanningHook {
       case binding: Binding.ImplBinding =>
         binding match {
           case b: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, b.key, b.implementation) match {
+            rewriteImpl(convert, b.key, b.origin, b.implementation) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
                 Seq(finish(b, newImpl))
@@ -41,7 +51,7 @@ class ResourceRewriter(logger: IzLogger) extends PlanningHook {
 
 
           case b: Binding.SetElementBinding[_] =>
-            rewriteImpl(convert, b.key, b.implementation) match {
+            rewriteImpl(convert, b.key, b.origin, b.implementation) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
                 Seq(finish(b, newImpl))
@@ -69,7 +79,7 @@ class ResourceRewriter(logger: IzLogger) extends PlanningHook {
   }
 
 
-  private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, implementation: ImplDef): RewriteResult = {
+  private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
     import RewriteResult._
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
@@ -81,8 +91,10 @@ class ResourceRewriter(logger: IzLogger) extends PlanningHook {
               DontChange
 
             case ImplDef.InstanceImpl(_, instance) =>
-              val newImpl = ImplDef.InstanceImpl(resourceType, convert(instance.asInstanceOf[T]))
-              ReplaceImpl(newImpl)
+              if (rules.warnOnExternal) {
+                logger.warn(s"External entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"}, it will NOT be finalized!")
+              }
+              DontChange
 
             case ImplDef.ProviderImpl(_, function) =>
               val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[T]))
@@ -105,8 +117,19 @@ class ResourceRewriter(logger: IzLogger) extends PlanningHook {
         } else {
           DontChange
         }
-      case _: ImplDef.RecursiveImplDef =>
-        DontChange
+      case implDef: ImplDef.RecursiveImplDef =>
+        implDef match {
+          case e: ImplDef.EffectImpl =>
+            if (implDef.implType weak_<:< SafeType.get[T]) {
+              logger.error(s"Effect entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
+            }
+            DontChange
+
+          case _: ImplDef.ResourceImpl =>
+            DontChange
+
+        }
+
     }
   }
 
@@ -152,4 +175,8 @@ object ResourceRewriter {
     override def toString: String = s"res:${contextKey.toString}"
   }
 
+  case class RewriteRules(
+                           applyRewrites: Boolean = true,
+                           warnOnExternal: Boolean = true,
+                         )
 }

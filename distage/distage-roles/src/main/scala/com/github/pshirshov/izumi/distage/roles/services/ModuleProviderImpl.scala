@@ -8,6 +8,8 @@ import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
@@ -18,9 +20,8 @@ import distage.TagK
 class ModuleProviderImpl[F[_] : TagK](
                                        logger: IzLogger,
                                        config: AppConfig,
-                                       addGvDump: Boolean,
                                        roles: RolesInfo,
-                                       configInjectionOptions: ConfigInjectionOptions,
+                                       options: ContextOptions,
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
@@ -32,25 +33,31 @@ class ModuleProviderImpl[F[_] : TagK](
       .register[AbstractRoleF[F]]
 
 
-    val configModule = new ConfigModule(config, configInjectionOptions)
+    val configModule = new ConfigModule(config, options.configInjectionOptions)
+
     val resourceRewriter = new BootstrapModuleDef {
       make[IzLogger].from(logger)
+      make[RewriteRules].from(options.rewriteRules)
       many[PlanningHook].add[ResourceRewriter]
     }
 
-    val maybeDumpGraphModule = if (addGvDump) {
-      Seq(new GraphDumpBootstrapModule())
-    } else {
-      Seq.empty
-    }
 
     Seq(
       configModule,
       autosetModule,
       rolesModule,
       resourceRewriter,
-    ) ++
-      maybeDumpGraphModule
+    ) ++ Seq(
+      condModule(options.addGvDump, new GraphDumpBootstrapModule())
+    ).flatten
+  }
+
+  private def condModule(condition: Boolean, module: => distage.BootstrapModuleDef): Seq[BootstrapModuleDef] = {
+    if (condition) {
+      Seq(module)
+    } else {
+      Seq.empty
+    }
   }
 
   def appModules(): Seq[Module] = {
@@ -67,3 +74,12 @@ class ModuleProviderImpl[F[_] : TagK](
 }
 
 
+object ModuleProviderImpl {
+
+  case class ContextOptions(
+                             addGvDump: Boolean,
+                             rewriteRules: RewriteRules,
+                             configInjectionOptions: ConfigInjectionOptions,
+                           )
+
+}

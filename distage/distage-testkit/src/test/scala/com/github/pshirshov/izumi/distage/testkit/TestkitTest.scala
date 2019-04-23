@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, Config
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl
 import com.github.pshirshov.izumi.distage.testkit.TestkitTest.NotAddedClass
 import com.github.pshirshov.izumi.distage.testkit.fixtures._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -55,11 +56,15 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
     }
   }
 
-  override protected val configOptions: ConfigInjectionOptions = ConfigInjectionOptions.make {
-    // here we may patternmatch on config value context and rewrite it
-    case (ConfigProvider.ConfigImport(_: ConfPathId, _), c: TestConfig) =>
-      c.copy(overriden = 3)
+
+  override protected def contextOptions(): ModuleProviderImpl.ContextOptions = {
+    super.contextOptions().copy(configInjectionOptions = ConfigInjectionOptions.make {
+      // here we may patternmatch on config value context and rewrite it
+      case (ConfigProvider.ConfigImport(_: ConfPathId, _), c: TestConfig) =>
+        c.copy(overriden = 3)
+    })
   }
+
 
   override protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     super.refineBindings(roots, primaryModule) overridenBy new ModuleDef {

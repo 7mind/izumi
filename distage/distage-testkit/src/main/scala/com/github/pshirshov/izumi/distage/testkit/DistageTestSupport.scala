@@ -9,10 +9,13 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.roles.RolesInfo
+import com.github.pshirshov.izumi.distage.roles.{RoleAppLauncher, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
+import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.{IgnoreSupport, SuppressionSupport}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
@@ -83,10 +86,21 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeModuleProvider(config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-    new ModuleProviderImpl[F](lateLogger, config, addGvDump = false, roles, configOptions)
+    new ModuleProviderImpl[F](
+      lateLogger,
+      config,
+      roles,
+      contextOptions(),
+    )
   }
 
-  protected def configOptions: ConfigInjectionOptions = ConfigInjectionOptions()
+  protected def contextOptions(): ContextOptions = {
+    ContextOptions(
+      addGvDump = false,
+      RewriteRules(),
+      ConfigInjectionOptions(),
+    )
+  }
 
   protected def makePlanner(module: distage.ModuleBase, injector: Injector): RoleAppPlanner[F] = {
     new RoleAppPlannerImpl[F](module, injector)
