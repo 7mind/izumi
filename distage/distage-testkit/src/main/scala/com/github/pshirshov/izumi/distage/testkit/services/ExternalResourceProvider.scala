@@ -169,16 +169,12 @@ object ExternalResourceProvider {
                           for {
                             _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
                             _ <- effect.suspendF(f.effect())
-                          } yield {
-
-                          }
+                          } yield ()
                         }
                     }
                     _ <- effect.maybeSuspend(logger.log(s"Finished finalizers for ${rt.tag}!"))
 
-                  } yield {
-
-                  }
+                  } yield ()
                 }
             }
           }
