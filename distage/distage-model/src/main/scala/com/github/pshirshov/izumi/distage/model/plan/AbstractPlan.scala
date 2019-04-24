@@ -177,10 +177,15 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
 object OrderedPlan {
   implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
 
-  implicit class PlanSyntax(r: OrderedPlan) {
-    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
+  implicit class PlanSyntax(plan: OrderedPlan) {
+    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
 
-    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, r).render()
+    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan).render()
+
+    def renderAllDeps(): String = {
+      val effectiveRoots = plan.keys.filter(k => plan.topology.dependees.direct(k).isEmpty)
+      effectiveRoots.map(root => plan.topology.dependencies.tree(root)).map(renderDeps).mkString("\n")
+    }
   }
 
 }

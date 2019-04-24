@@ -38,6 +38,7 @@ class AnimalModel extends WordSpec with MkInjector {
         println(plan.render)
         println()
         println(plan.renderDeps(plan.topology.dependencies.tree(DIKey.get[AccountsApiImpl])))
+        println(plan.renderAllDeps())
         println()
       }
       val context = injector.produceUnsafe(plan)
