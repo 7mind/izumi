@@ -3,8 +3,9 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService2, RoleTask2, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}
 import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
@@ -47,9 +48,9 @@ class RoleAppExecutorImpl[F[_] : TagK](
     val rolesToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {
-          case Some(_: RoleTask2[F]) =>
+          case Some(_: RoleTask[F]) =>
             Seq.empty
-          case Some(value: RoleService2[F]) =>
+          case Some(value: RoleService[F]) =>
             Seq(value -> r)
           case Some(v) =>
             throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
@@ -83,9 +84,9 @@ class RoleAppExecutorImpl[F[_] : TagK](
     val tasksToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {
-          case Some(value: RoleTask2[F]) =>
+          case Some(value: RoleTask[F]) =>
             Seq(value -> r)
-          case Some(_: RoleService2[F]) =>
+          case Some(_: RoleService[F]) =>
             Seq.empty
           case Some(v) =>
             throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
@@ -106,11 +107,11 @@ class RoleAppExecutorImpl[F[_] : TagK](
     roles.availableRoleBindings.map {
       b =>
         val key = DIKey.TypeKey(b.tpe)
-        b.name -> (rolesLocator.index.get(key) match {
+        b.descriptor.id -> (rolesLocator.index.get(key) match {
           case Some(value: AbstractRoleF[F]) =>
             value
           case o =>
-            throw new DiAppBootstrapException(s"Requested $key for ${b.name}, unexpectedly got $o")
+            throw new DiAppBootstrapException(s"Requested $key for ${b.descriptor.id}, unexpectedly got $o")
         })
     }.toMap
   }

@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, Resolv
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
-import com.github.pshirshov.izumi.distage.roles.model.{DiAppBootstrapException, LibraryReference, RoleService2, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.{DiAppBootstrapException, RoleService}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
@@ -96,7 +97,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     Quirks.discard(bs, app)
     rolesInfo.requiredComponents ++ Set(
       RuntimeDIUniverse.DIKey.get[ResolvedConfig],
-      RuntimeDIUniverse.DIKey.get[Set[RoleService2[F]]],
+      RuntimeDIUniverse.DIKey.get[Set[RoleService[F]]],
     )
   }
 
@@ -138,7 +139,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val roles = roleProvider.getInfo(bindings)
 
     printRoleInfo(logger, roles)
-    val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.name).toSet)
+    val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
     if (missing.nonEmpty) {
       logger.crit(s"Missing ${missing.niceList() -> "roles"}")
       throw new DiAppBootstrapException(s"Unknown roles: $missing")
@@ -148,16 +149,16 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def printRoleInfo(logger: IzLogger, roles: RolesInfo): Unit = {
-    val requestedNames = roles.requiredRoleBindings.map(_.name)
+    val requestedNames = roles.requiredRoleBindings.map(_.descriptor.id)
 
     val availableRoleInfo = roles.availableRoleBindings.map {
       r =>
-        val active = if (requestedNames.contains(r.name)) {
+        val active = if (requestedNames.contains(r.descriptor.id)) {
           s"[+]"
         } else {
           s"[ ]"
         }
-        s"$active ${r.name}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
+        s"$active ${r.descriptor.id}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
     }.sorted
 
     logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")

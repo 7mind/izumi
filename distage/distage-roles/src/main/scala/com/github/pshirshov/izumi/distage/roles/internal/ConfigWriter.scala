@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
-import com.github.pshirshov.izumi.distage.roles.model.{RoleBinding, RoleDescriptor, RoleId, RoleTask2, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.{ArgDef, ArgNameDef}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
@@ -66,7 +67,6 @@ object ConfigWriter extends RoleDescriptor {
 }
 
 
-@RoleId(ConfigWriter.id)
 class ConfigWriter[F[_] : DIEffect]
 (
   logger: IzLogger,
@@ -74,7 +74,7 @@ class ConfigWriter[F[_] : DIEffect]
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
 )
-  extends RoleTask2[F] {
+  extends RoleTask[F] {
 
   override def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit] = {
     Quirks.discard(freeArgs)
@@ -101,7 +101,7 @@ class ConfigWriter[F[_] : DIEffect]
     Quirks.discard(for {
       role <- roleInfo.availableRoleBindings
     } yield {
-      val component = ConfigurableComponent(role.name, role.source.map(_.version))
+      val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
       val cfg = buildConfig(config, component.copy(parent = Some(commonConfig)))
 
       val version = if (config.useLauncherVersion) {

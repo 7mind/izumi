@@ -68,7 +68,7 @@ class TestAppPlugin extends PluginDef {
   make[DisabledByImpl].from[DisabledImplForByImplTrait]
 
   make[Conflict].from[ConflictA]
-  make[Conflict].from[ConflictB]
+//  make[Conflict].from[ConflictB]
 }
 
 class BadPlugin extends PluginDef {

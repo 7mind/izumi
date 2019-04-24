@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
 
 sealed trait AbstractRoleF[F[_]]
 
-trait RoleService2[F[_]] extends AbstractRoleF[F] {
+trait RoleService[F[_]] extends AbstractRoleF[F] {
   /**
     * Application startup wouldn't progress until this method finishes.
     * Resource initialization must be finite
@@ -19,7 +19,7 @@ trait RoleService2[F[_]] extends AbstractRoleF[F] {
 /**
   * Single-shot task, shouldn't block forever
   */
-trait RoleTask2[F[_]] extends AbstractRoleF[F] {
+trait RoleTask[F[_]] extends AbstractRoleF[F] {
   /**
     * Application startup wouldn't progress until this method finishes
     */

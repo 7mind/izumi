@@ -8,7 +8,8 @@ import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.AbstractRoleF
+import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity

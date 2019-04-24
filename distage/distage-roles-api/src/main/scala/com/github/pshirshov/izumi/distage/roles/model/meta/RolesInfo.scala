@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.roles.model
+package com.github.pshirshov.izumi.distage.roles.model.meta
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 case class RolesInfo(
-                      requiredComponents: Set[DIKey]
+                      requiredComponents: Set[RuntimeDIUniverse.DIKey]
                       , requiredRoleBindings: Seq[RoleBinding]
                       , availableRoleNames: Seq[String]
                       , availableRoleBindings: Seq[RoleBinding]
