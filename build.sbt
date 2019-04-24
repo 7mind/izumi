@@ -216,7 +216,8 @@ lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
   .settings(
-    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value) % Optional)
+    libraryDependencies ++= R.cats_all.map(_.cross(platformDepsCrossVersion.value) % Optional),
+    libraryDependencies ++= Seq(R.zio_core).map(_.cross(platformDepsCrossVersion.value) % Optional),
   )
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
@@ -322,6 +323,8 @@ lazy val distageRoles = inDiStage.as.module
   )
   .settings(
     libraryDependencies ++= R.cats_all.map(_ % Optional),
+    libraryDependencies ++= Seq(R.zio_core).map(_ % Optional),
+
   )
 
 lazy val distageStatic = inDiStage.as.module

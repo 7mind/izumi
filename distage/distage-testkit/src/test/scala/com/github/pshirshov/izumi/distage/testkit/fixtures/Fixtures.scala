@@ -1,21 +1,16 @@
 package com.github.pshirshov.izumi.distage.testkit.fixtures
 
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
-import cats.effect.IO
+import java.util.concurrent.atomic.AtomicInteger
+
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter
-import com.github.pshirshov.izumi.functional.bio.BIORunner
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import distage.Id
-import scalaz.zio
 
 import scala.collection.mutable
 
@@ -92,39 +87,3 @@ class TestPlugin
 }
 
 
-trait CatsDIEffectModule extends ModuleDef {
-  addImplicit[DIEffectRunner[IO]]
-  addImplicit[DIEffect[IO]]
-}
-
-trait ZioDIEffectModule extends ModuleDef {
-  make[DIEffectRunner[scalaz.zio.IO[Throwable, ?]]].from[DIEffectRunner.BIOImpl[scalaz.zio.IO]]
-  addImplicit[DIEffect[scalaz.zio.IO[Throwable, ?]]]
-
-  make[ThreadPoolExecutor].named("zio.pool.cpu")
-    .fromResource {
-      logger: IzLogger =>
-        ResourceRewriter.fromExecutorService(logger, Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor])
-    }
-
-  make[ThreadPoolExecutor].named("zio.pool.io")
-    .fromResource {
-      logger: IzLogger =>
-        ResourceRewriter.fromExecutorService(logger, Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
-    }
-
-  make[BIORunner[zio.IO]].from {
-    (
-      cpuPool: ThreadPoolExecutor@Id("zio.pool.cpu"),
-      blockingPool: ThreadPoolExecutor@Id("zio.pool.io"),
-      logger: IzLogger,
-    ) =>
-      val handler = BIORunner.DefaultHandler.Custom(message => zio.IO.sync(logger.warn(s"Fiber failed: $message")))
-
-      BIORunner.createZIO(
-        cpuPool
-        , blockingPool
-        , handler
-      )
-  }
-}
