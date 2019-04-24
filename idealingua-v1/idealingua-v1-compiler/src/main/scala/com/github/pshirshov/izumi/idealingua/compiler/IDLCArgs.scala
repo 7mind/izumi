@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserDef, ParserFailureHandler}
 
 case class LanguageOpts(
                          id: String,
@@ -38,20 +38,20 @@ object IDLCArgs {
     , Map.empty
   )
 
-  object P {
-    final val initTarget = ArgDef(ArgNameDef("d", "directory"))
-    final val sourceDir = ArgDef(ArgNameDef("s", "source"))
-    final val targetDir = ArgDef(ArgNameDef("t", "target"))
-    final val overlayDir = ArgDef(ArgNameDef("o", "overlay"))
-    final val overlayVersionFile = ArgDef(ArgNameDef("v", "overlay-version"))
-    final val publish = ArgDef(ArgNameDef("p", "publish"))
-    final val define = ArgDef(ArgNameDef("d", "define"))
+  object P extends ParserDef {
+    final val initTarget = arg("d", "directory")
+    final val sourceDir = arg("s", "source")
+    final val targetDir = arg("t", "target")
+    final val overlayDir = arg("o", "overlay")
+    final val overlayVersionFile = arg("v", "overlay-version")
+    final val publish = arg("p", "publish")
+    final val define = arg("d", "define")
 
 
-    final val noRuntime = ArgDef(ArgNameDef("nrt", "disable-runtime"))
-    final val manifest = ArgDef(ArgNameDef("m", "manifest"))
-    final val credentials = ArgDef(ArgNameDef("cr", "credentials"))
-    final val extensionSpec = ArgDef(ArgNameDef("e", "extensions"))
+    final val noRuntime = arg("nrt", "disable-runtime")
+    final val manifest = arg("m", "manifest")
+    final val credentials = arg("cr", "credentials")
+    final val extensionSpec = arg("e", "extensions")
   }
 
 

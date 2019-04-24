@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.distage.roles
 
-import java.io.File
-
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
@@ -15,7 +13,7 @@ import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedP
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, RoleAppArguments}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{ParserDef, RoleAppArguments}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
@@ -120,7 +118,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def contextOptions(parameters: RoleAppArguments): ContextOptions = {
-    val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
+    val dumpContext = RoleAppLauncher.Options.dumpContext.hasFlag(parameters.globalParameters)
     ContextOptions(
       dumpContext,
       warnOnCircularDeps = true,
@@ -194,11 +192,11 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def makeConfigLoader(logger: IzLogger, parameters: RoleAppArguments): ConfigLoader = {
-    val maybeGlobalConfig = configParam.findValue(parameters.globalParameters).asFile
+    val maybeGlobalConfig = Options.configParam.findValue(parameters.globalParameters).asFile
 
     val roleConfigs = parameters.roles.map {
       r =>
-        r.role -> configParam.findValue(r.roleParameters).map(v => new File(v.value))
+        r.role -> Options.configParam.findValue(r.roleParameters).asFile
     }
     new ConfigLoaderLocalFilesystemImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
@@ -209,13 +207,17 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 }
 
 object RoleAppLauncher {
-  final val logLevelRootParam = ArgDef(ArgNameDef("log-level-root", "ll"))
-  final val logFormatParam = ArgDef(ArgNameDef("log-format", "logs"))
-  final val configParam = ArgDef(ArgNameDef("config", "c"))
-  final val dumpContext = ArgDef(ArgNameDef("debug-dump-graph"))
+  object Options extends ParserDef {
+    final val logLevelRootParam = arg("log-level-root", "ll")
+    final val logFormatParam = arg("log-format", "logs")
+    final val configParam = arg("config", "c")
+    final val dumpContext = arg("debug-dump-graph")
+    @deprecated("We should stop using tags", "2019-04-19")
+    final val useDummies = arg("mode:dummies")
+  }
 
-  @deprecated("We should stop using tags", "2019-04-19")
-  final val useDummies = CLIParser.ArgNameDef("mode:dummies")
+
+
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
     override protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)

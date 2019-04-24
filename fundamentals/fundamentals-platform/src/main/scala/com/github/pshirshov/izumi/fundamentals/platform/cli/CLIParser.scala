@@ -6,21 +6,13 @@ import java.nio.file.Path
 import com.github.pshirshov.izumi.fundamentals.platform.cli
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
 
+
 object CLIParser {
 
-  case class ArgDef(name: ArgNameDef)
-
-  implicit class ValueExt(val value: Value) extends AnyVal {
-    def asFile: File = new File(value.value)
-    def asPath: Path = asFile.toPath
-  }
-
-  implicit class MaybeValueExt(val value: Option[Value]) extends AnyVal {
-    def asFile: Option[File] = value.map(_.asFile)
-    def asPath: Option[Path] = asFile.map(_.toPath)
-  }
+  case class ArgDef private[cli](name: ArgNameDef)
 
   object ArgDef {
+
     implicit class ParameterDefExt(val parameter: ArgDef) extends AnyVal {
       def findValue(parameters: Parameters): Option[Value] = {
         parameters.values.find(p => parameter.name.matches(p.name))
@@ -30,15 +22,36 @@ object CLIParser {
         parameters.values.filter(p => parameter.name.matches(p.name))
       }
 
-
       def hasFlag(parameters: Parameters): Boolean = {
         parameters.flags.exists(p => parameter.name.matches(p.name))
       }
+
+      def hasNoFlag(parameters: Parameters): Boolean = {
+        !hasFlag(parameters)
+      }
     }
+
   }
 
-  case class ArgNameDef private(long: String, short: Option[String]) {
+  implicit class ValueExt(val value: Value) extends AnyVal {
+    def asFile: File = new File(value.value)
+
+    def asPath: Path = asFile.toPath
+
+    def asString: String = value.value
+  }
+
+  implicit class MaybeValueExt(val value: Option[Value]) extends AnyVal {
+    def asFile: Option[File] = value.map(_.asFile)
+
+    def asPath: Option[Path] = asFile.map(_.toPath)
+
+    def asString: Option[String] = value.map(_.value)
+  }
+
+  case class ArgNameDef private[cli](long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
+
     def matches(name: String): Boolean = all.contains(name)
 
     def format: String = {
@@ -52,28 +65,19 @@ object CLIParser {
   }
 
 
-  object ArgNameDef {
-    def apply(long: String, short: String): ArgNameDef = new ArgNameDef(long, Some(short))
-    def apply(long: String): ArgNameDef = new ArgNameDef(long, None)
-  }
-
   sealed trait ParserError
+
   object ParserError {
 
     final case class DanglingArgument(processed: Vector[String], arg: String) extends ParserError
+
     final case class DanglingSplitter(processed: Vector[String]) extends ParserError
+
     final case class DuplicatedRoles(bad: Set[String]) extends ParserError
 
   }
 
-//  def main(args: Array[String]): Unit = {
-//    println(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--config=xxx", "arg1", "arg2", ":role2")))
-//    println(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")))
-//    println(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")))
-//    println(new CLIParser().parse(Array("-x", "-x", "y", "-x", ":role1", "-x", "-x", "y", "-x", "--xx=yy")))
-//  }
 }
-
 
 
 import scala.collection.mutable
@@ -95,11 +99,11 @@ class CLIParser {
               val (k, v) = argv.splitAt(pos)
               state.addParameter(arg)(Value(k, v.substring(1)))
           }
+        } else if (arg == "--") {
+          state.splitter(processed.toVector)
         } else if (arg.startsWith("-")) {
           val argv = arg.substring(1)
           state.openParameter(arg)(argv)
-        } else if (arg == "--") {
-          state.splitter(processed.toVector)
         } else {
           state.addFreeArg(processed.toVector)(arg)
         }
@@ -128,11 +132,17 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 sealed trait CLIParserState {
   def addRole(name: String): CLIParserState
+
   def addFlag(rawArg: String)(flag: Flag): CLIParserState
+
   def addParameter(rawArg: String)(parameter: Value): CLIParserState
+
   def openParameter(rawArg: String)(name: String): CLIParserState
+
   def addFreeArg(processed: Vector[String])(arg: String): CLIParserState
+
   def splitter(processed: Vector[String])(): CLIParserState
+
   def freeze(): Either[ParserError, RoleAppArguments]
 }
 
@@ -211,7 +221,7 @@ object CLIParserState {
 
   class OpenGlobalParameters(p: Parameters, name: String) extends CLIParserState {
 
-    override def openParameter(rawArg: String)(name: String): CLIParserState =  {
+    override def openParameter(rawArg: String)(name: String): CLIParserState = {
       new OpenGlobalParameters(withFlag(), name)
     }
 
@@ -312,7 +322,7 @@ object CLIParserState {
 
   class OpenRoleParameters(globalParameters: Parameters, roles: Vector[RoleArg], currentRole: RoleArg, name: String) extends CLIParserState {
 
-    override def openParameter(rawArg: String)(name: String): CLIParserState =  {
+    override def openParameter(rawArg: String)(name: String): CLIParserState = {
       new OpenRoleParameters(globalParameters, roles, withFlag(), name)
     }
 

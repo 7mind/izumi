@@ -11,8 +11,7 @@ import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{Configura
 import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.{ArgDef, ArgNameDef}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -42,12 +41,14 @@ object ConfigWriter extends RoleDescriptor {
                                         )
 
 
-  object P {
-    final val targetDir = ArgDef(ArgNameDef("t", "target"))
-    final val excludeCommon = ArgDef(ArgNameDef("ec", "exclude-common"))
-    final val useComponentVersion = ArgDef(ArgNameDef("vc", "version-use-component"))
-    final val overlayVersionFile = ArgDef(ArgNameDef("v", "overlay-version"))
-    final val formatTypesafe = ArgDef(ArgNameDef("f", "format"))
+  override def parser: ParserDef = P
+
+  object P extends ParserDef {
+    final val targetDir = arg("t", "target")
+    final val excludeCommon = arg("ec", "exclude-common")
+    final val useComponentVersion = arg("vc", "version-use-component")
+    final val overlayVersionFile = arg("v", "overlay-version")
+    final val formatTypesafe = arg("f", "format")
   }
 
   def parse(p: Parameters): WriteReference = {

@@ -15,7 +15,7 @@ class MergeProviderImpl(logger: IzLogger, parameters: RoleAppArguments) extends 
     val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => BindingTag.Expressions.Has(BindingTag(v)): BindingTag.Expressions.Expr)
     //
     val disabledTags = parameters.globalParameters.flags
-      .find(f => RoleAppLauncher.useDummies.matches(f.name))
+      .find(f => RoleAppLauncher.Options.useDummies.name.matches(f.name))
       .map(_ => filterProductionTags(true))
       .getOrElse(filterProductionTags(false))
 
