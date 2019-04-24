@@ -34,7 +34,7 @@ abstract class DISyntax[F[_] : TagK] {
 
     val f: ProviderMagnet[F[Any]] = function.zip(providerMagnet).map {
       case (u, e) =>
-        e.maybeSuspend(u)
+        e.pure(u)
     }
 
     dio(f)
