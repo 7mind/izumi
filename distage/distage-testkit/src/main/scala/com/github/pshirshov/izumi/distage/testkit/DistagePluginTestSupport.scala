@@ -63,7 +63,9 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
 
-  protected def memoizationContextId: MemoizationContextId = MemoizationContextId.PerRuntimeAndTagExpr[F](disabledTags, implicitly)
+  protected def memoizationContextId: MemoizationContextId = {
+    MemoizationContextId.PerRuntimeAndTagsAndBsconfig[F](bootstrapConfig, disabledTags, distage.SafeType.getK(implicitly[TagK[F]]))
+  }
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
     Quirks.discard(lateLogger)
