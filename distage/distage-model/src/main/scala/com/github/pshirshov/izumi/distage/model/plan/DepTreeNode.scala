@@ -31,13 +31,8 @@ final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: 
   }
 }
 
-object DepNode {
-  implicit class DepNodeExt(val node: DepNode) extends AnyVal {
-    def render(): String = new DepTreeRenderer(node).render()
-  }
-}
 
-class DepTreeRenderer(node: DepNode) {
+class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
   val minimizer = new KeyMinimizer(collectKeys(node))
 
   def render(): String = render(node)
@@ -51,7 +46,7 @@ class DepTreeRenderer(node: DepNode) {
       case _: Truncated =>
         prefix + "...\n"
       case node: CircularReference =>
-        s"$prefix⥀ ${node.level}: ${minimizer.render(node.key)}\n"
+        s"$prefix⥀ ${node.level}: ${renderKey(node.key)}\n"
       case node: DepNode =>
         val sb = new mutable.StringBuilder()
         val symbol = if (node.graph.kind == DependencyKind.Depends) {
@@ -62,9 +57,9 @@ class DepTreeRenderer(node: DepNode) {
 
         if (node.level > 0) {
           sb.append(prefix)
-          sb.append(s"$symbol ${node.level}: ${minimizer.render(node.key)}")
+          sb.append(s"$symbol ${node.level}: ${renderKey(node.key)}")
         } else {
-          sb.append(s"➤ ${minimizer.render(node.key)}")
+          sb.append(s"➤ ${renderKey(node.key)}")
         }
         sb.append("\n")
 
@@ -78,6 +73,10 @@ class DepTreeRenderer(node: DepNode) {
     }
   }
 
+
+  private def renderKey(key: DIKey): String = {
+    s"${minimizer.render(key)} ${plan.index.get(key).flatMap(_.origin).map(_.origin).getOrElse("")}"
+  }
 
   private def collectKeys(node: DepTreeNode): Set[DIKey] = {
     node match {

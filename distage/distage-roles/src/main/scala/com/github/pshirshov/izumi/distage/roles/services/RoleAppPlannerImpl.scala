@@ -76,7 +76,7 @@ class RoleAppPlannerImpl[F[_] : TagK](
       allProxies.foreach {
         s =>
           val deptree = plan.topology.dependencies.tree(s.target)
-          val tree = s"\n${deptree.render()}"
+          val tree = s"\n${plan.renderDeps(deptree)}"
           logger.warn(s"Circular dependency has been resolved with proxy for ${s.target -> "key"}, $tree")
       }
     }

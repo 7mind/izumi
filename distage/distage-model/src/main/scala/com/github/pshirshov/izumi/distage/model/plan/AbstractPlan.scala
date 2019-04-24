@@ -19,6 +19,10 @@ sealed trait AbstractPlan {
 
   def roots: Set[DIKey]
 
+  lazy val index: Map[DIKey, ExecutableOp] = {
+    steps.map(s => s.target -> s).toMap
+  }
+
   /** Get all imports (unresolved dependencies).
     *
     * Note, presence of imports does not automatically mean that a plan is invalid,
@@ -108,10 +112,6 @@ object AbstractPlan {
   * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey]) extends AbstractPlan {
-  lazy val index: Map[DIKey, ExecutableOp] = {
-    steps.map(s => s.target -> s).toMap
-  }
-
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
     SemiPlan(definition, steps.map(f).toVector, roots)
   }
@@ -179,6 +179,8 @@ object OrderedPlan {
 
   implicit class PlanSyntax(r: OrderedPlan) {
     def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
+
+    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, r).render()
   }
 
 }
