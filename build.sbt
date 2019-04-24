@@ -307,14 +307,6 @@ lazy val distagePlugins = inDiStage.as.module
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
   )
 
-lazy val distageCats = inDiStage.as.module
-  .depends(
-    distageCore.testOnlyRef,
-  )
-  .settings(
-    libraryDependencies ++= R.cats_all
-  )
-
 lazy val distageRolesApi = inDiStage.as.module
   .depends(distageModel)
 
@@ -594,7 +586,6 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
-  , distageCats
   , distageStatic
   , distageTestkit
 )

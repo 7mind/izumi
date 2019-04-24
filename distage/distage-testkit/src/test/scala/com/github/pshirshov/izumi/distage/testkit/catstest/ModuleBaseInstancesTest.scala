@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.testkit.catstest
 
 import cats.implicits._
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._

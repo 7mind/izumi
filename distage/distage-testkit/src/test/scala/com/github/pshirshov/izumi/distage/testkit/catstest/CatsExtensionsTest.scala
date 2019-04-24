@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.testkit.catstest
 
 import cats.Id
 import cats.effect._

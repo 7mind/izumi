@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage
+package com.github.pshirshov.izumi.distage.testkit.catstest
 
 import cats.effect.{Bracket, IO, Resource, Sync}
-import com.github.pshirshov.izumi.distage.CatsResourcesTest._
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats
+import com.github.pshirshov.izumi.distage.testkit.catstest.CatsResourcesTest.{DBConnection, MessageQueueConnection, MyApp, Res, Res1}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.{GivenWhenThen, WordSpec}
