@@ -35,6 +35,7 @@ object CommandlineIDLCompiler {
 
     val conf = parseArgs(args)
 
+
     val results = Seq(
       initDir(conf),
       runCompilations(izumiVersion, conf),

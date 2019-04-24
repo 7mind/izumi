@@ -44,12 +44,12 @@ object IDLCArgs {
     final val targetDir = arg("target", "t", "target directory", "<path>")
     final val overlayDir = arg("overlay", "o", "overlay directory", "<path>")
     final val overlayVersionFile = arg("overlay-version", "v", "version file", "<path>")
-    final val publish = flag("publish", "p", "build and publish generated code")
     final val define = arg("define", "d", "define value", "const.name=value")
-    final val noRuntime = flag("disable-runtime", "nr", "don't include builtin runtime")
     final val manifest = arg("manifest", "m", "manifest file",  "<path>")
     final val credentials = arg("credentials", "cr", "credentials file", "<path>")
     final val extensionSpec = arg("extensions", "e", "extensions spec", "{* | -AnyvalExtension;-CirceDerivationTranslatorExtension}")
+    final val publish = flag("publish", "p", "build and publish generated code")
+    final val noRuntime = flag("disable-runtime", "nr", "don't include builtin runtime")
   }
 
 
@@ -59,6 +59,10 @@ object IDLCArgs {
         ParserFailureHandler.TerminatingHandler.onParserError(value)
       case Right(value) =>
         value
+    }
+
+    if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
+      ParserDef.formatOptions(P).foreach(println)
     }
 
     val init = parsed.roles.find(_.role == "init").flatMap {
