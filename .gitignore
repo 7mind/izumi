@@ -2,6 +2,7 @@
 *.jps
 /local.sbt
 .secrets
+/config 
 
 secrets.tar
 build/project
