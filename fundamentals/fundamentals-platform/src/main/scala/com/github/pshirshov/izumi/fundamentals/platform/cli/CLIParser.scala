@@ -312,7 +312,7 @@ object CLIParserState {
     }
 
     override def addFreeArg(processed: Vector[String])(arg: String): CLIParserState = {
-      new RoleArgs(globalParameters, roles, currentRole)
+      new RoleArgs(globalParameters, roles, currentRole.copy(freeArgs = currentRole.freeArgs :+ arg))
     }
 
     override def freeze(): Either[ParserError, RoleAppArguments] = {
