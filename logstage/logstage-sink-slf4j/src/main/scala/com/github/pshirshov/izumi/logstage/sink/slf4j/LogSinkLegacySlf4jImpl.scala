@@ -9,8 +9,6 @@ import org.slf4j
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory
 
-import scala.compat.java8.FunctionConverters._
-
 class LogSinkLegacySlf4jImpl
 (
   policy: RenderingPolicy
@@ -59,6 +57,6 @@ class LogSinkLegacySlf4jImpl
 
   private def getSlf4jLogger(e: Log.Entry): slf4j.Logger = {
     val loggerId = e.context.static.id.id
-    loggers.computeIfAbsent(loggerId, ((id: String) => slf4j.LoggerFactory.getLogger(id)).asJava)
+    loggers.computeIfAbsent(loggerId, (id: String) => slf4j.LoggerFactory.getLogger(id))
   }
 }

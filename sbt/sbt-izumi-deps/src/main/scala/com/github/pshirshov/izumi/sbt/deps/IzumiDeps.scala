@@ -11,7 +11,6 @@ object IzumiDeps {
 
     val collection_compat = "1.0.0"
 
-    val scala_java8_compat = "0.9.0" // 2.13+
     val kind_projector = "0.9.10" // 2.13+
     val scalatest = "3.2.0-SNAP9" // snap10 is broken // 2.13+
 
@@ -58,8 +57,7 @@ object IzumiDeps {
     val zio_core: ModuleID = "org.scalaz" %% "scalaz-zio" % V.zio
     val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop-cats" % V.zio
 
-    private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials: Seq[ModuleID] = Seq(scala_java8_compat, collection_compat)
+    val essentials: Seq[ModuleID] = Seq(collection_compat)
 
     val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
