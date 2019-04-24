@@ -46,7 +46,7 @@ object IDLCArgs {
     final val overlayVersionFile = arg("overlay-version", "v", "version file", "<path>")
     final val publish = flag("publish", "p", "build and publish generated code")
     final val define = arg("define", "d", "define, -d name=value")
-    final val noRuntime = flag(, "disable-runtime", "nr", "don't include builtin runtime")
+    final val noRuntime = flag( "disable-runtime", "nr", "don't include builtin runtime")
     final val manifest = arg("manifest", "m", "manifest file",  "<path>")
     final val credentials = arg("credentials", "cr", "credentials file", "<path>")
     final val extensionSpec = arg("extensions", "e", "extensions spec", "{* | -AnyvalExtension;-CirceDerivationTranslatorExtension}")
