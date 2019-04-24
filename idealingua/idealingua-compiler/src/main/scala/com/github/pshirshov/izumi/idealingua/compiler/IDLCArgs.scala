@@ -45,7 +45,7 @@ object IDLCArgs {
     final val overlayDir = arg("overlay", "o", "overlay directory", "<path>")
     final val overlayVersionFile = arg("overlay-version", "v", "version file", "<path>")
     final val publish = flag("publish", "p", "build and publish generated code")
-    final val define = arg("define", "d", "define, -d name=value")
+    final val define = arg("define", "d", "define value", "const.name=value")
     final val noRuntime = flag("disable-runtime", "nr", "don't include builtin runtime")
     final val manifest = arg("manifest", "m", "manifest file",  "<path>")
     final val credentials = arg("credentials", "cr", "credentials file", "<path>")
@@ -80,7 +80,11 @@ object IDLCArgs {
         val runtime = !P.noRuntime.hasFlag(parameters)
         val manifest = P.manifest.findValue(parameters).asFile
         val credentials = P.credentials.findValue(parameters).asFile
-        val defines = P.define.findValues(parameters).map(v => v.name -> v.value).toMap
+        val defines = P.define.findValues(parameters).map {
+          v =>
+            val parts = v.value.split('=')
+            parts.head -> parts.tail.mkString("=")
+        }.toMap
         val extensions = P.extensionSpec.findValue(parameters).map(_.value.split(',')).toList.flatten
 
         LanguageOpts(

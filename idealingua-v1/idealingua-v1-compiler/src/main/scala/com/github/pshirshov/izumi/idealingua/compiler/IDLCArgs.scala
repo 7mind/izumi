@@ -80,7 +80,11 @@ object IDLCArgs {
         val runtime = !P.noRuntime.hasFlag(parameters)
         val manifest = P.manifest.findValue(parameters).asFile
         val credentials = P.credentials.findValue(parameters).asFile
-        val defines = P.define.findValues(parameters).map(v => v.name -> v.value).toMap
+        val defines = P.define.findValues(parameters).map {
+          v =>
+            val parts = v.value.split('=')
+            parts.head -> parts.tail.mkString("=")
+        }.toMap
         val extensions = P.extensionSpec.findValue(parameters).map(_.value.split(',')).toList.flatten
 
         LanguageOpts(
