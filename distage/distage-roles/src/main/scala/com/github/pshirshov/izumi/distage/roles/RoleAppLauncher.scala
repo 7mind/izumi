@@ -109,6 +109,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
 
   protected def makeModuleProvider(options: ContextOptions, parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+    Quirks.discard(parameters)
     new ModuleProviderImpl[F](
       lateLogger,
       config,
@@ -208,12 +209,12 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
 object RoleAppLauncher {
   object Options extends ParserDef {
-    final val logLevelRootParam = arg("log-level-root", "ll")
-    final val logFormatParam = arg("log-format", "logs")
-    final val configParam = arg("config", "c")
-    final val dumpContext = arg("debug-dump-graph")
+    final val logLevelRootParam = arg("log-level-root",  "ll", "root log level, {trace|debug|info|warn|error|critical}")
+    final val logFormatParam = arg("log-format", "lf", "log format, {hocon|json}")
+    final val configParam = arg("config", "c", "path to config file")
+    final val dumpContext = arg("debug-dump-graph", "dump DI graph for debugging")
     @deprecated("We should stop using tags", "2019-04-19")
-    final val useDummies = arg("mode:dummies")
+    final val useDummies = arg("mode:dummies", "use dummy mode")
   }
 
 

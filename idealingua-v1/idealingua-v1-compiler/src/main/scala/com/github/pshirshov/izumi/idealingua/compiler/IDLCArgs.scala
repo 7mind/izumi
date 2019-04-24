@@ -39,19 +39,17 @@ object IDLCArgs {
   )
 
   object P extends ParserDef {
-    final val initTarget = arg("d", "directory")
-    final val sourceDir = arg("s", "source")
-    final val targetDir = arg("t", "target")
-    final val overlayDir = arg("o", "overlay")
-    final val overlayVersionFile = arg("v", "overlay-version")
-    final val publish = arg("p", "publish")
-    final val define = arg("d", "define")
-
-
-    final val noRuntime = arg("nrt", "disable-runtime")
-    final val manifest = arg("m", "manifest")
-    final val credentials = arg("cr", "credentials")
-    final val extensionSpec = arg("e", "extensions")
+    final val initTarget = arg("init", "i", "project in directory [path]")
+    final val sourceDir = arg("source", "s", "source directory")
+    final val targetDir = arg("target", "t", "target directory")
+    final val overlayDir = arg("overlay", "o", "overlay directory")
+    final val overlayVersionFile = arg("overlay-version", "v", "version file")
+    final val publish = arg("publish", "p", "build and publish generated code")
+    final val define = arg("define", "d", "define, -d name=value")
+    final val noRuntime = arg(, "disable-runtime", "nr", "don't include builtin runtime")
+    final val manifest = arg("manifest", "m", "manifest file")
+    final val credentials = arg("credentials", "cr", "credentials file")
+    final val extensionSpec = arg("extensions", "e", "extensions spec")
   }
 
 

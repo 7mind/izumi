@@ -19,59 +19,10 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
 import scala.util._
 
-object ConfigWriter extends RoleDescriptor {
-  override final val id = "configwriter"
-
-  /**
-    * Configuration for [[ConfigWriter]]
-    *
-    * @param includeCommon Append shared sections from `common-reference.conf` into every written config
-    */
-  case class WriteReference(
-                             asJson: Boolean,
-                             targetDir: String,
-                             includeCommon: Boolean,
-                             useLauncherVersion: Boolean,
-                           )
-
-  final case class ConfigurableComponent(
-                                          componentId: String
-                                          , version: Option[ArtifactVersion]
-                                          , parent: Option[Config] = None
-                                        )
-
-
-  override def parser: ParserDef = P
-
-  object P extends ParserDef {
-    final val targetDir = arg("t", "target")
-    final val excludeCommon = arg("ec", "exclude-common")
-    final val useComponentVersion = arg("vc", "version-use-component")
-    final val overlayVersionFile = arg("v", "overlay-version")
-    final val formatTypesafe = arg("f", "format")
-  }
-
-  def parse(p: Parameters): WriteReference = {
-    val targetDir = P.targetDir.findValue(p).map(_.value).getOrElse("config")
-    val includeCommon = !P.excludeCommon.hasFlag(p)
-    val useLauncherVersion = !P.useComponentVersion.hasFlag(p)
-    val asJson = !P.formatTypesafe.findValue(p).map(_.value).contains("hocon")
-
-    WriteReference(
-      asJson,
-      targetDir,
-      includeCommon,
-      useLauncherVersion,
-    )
-  }
-
-}
-
-
 class ConfigWriter[F[_] : DIEffect]
 (
   logger: IzLogger,
-  launcherVersion: ArtifactVersion @Id("launcher-version"),
+  launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
 )
@@ -207,4 +158,52 @@ class ConfigWriter[F[_] : DIEffect]
   }
 
   private[this] final val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
+}
+
+
+object ConfigWriter extends RoleDescriptor {
+  override final val id = "configwriter"
+
+  /**
+    * Configuration for [[ConfigWriter]]
+    *
+    * @param includeCommon Append shared sections from `common-reference.conf` into every written config
+    */
+  case class WriteReference(
+                             asJson: Boolean,
+                             targetDir: String,
+                             includeCommon: Boolean,
+                             useLauncherVersion: Boolean,
+                           )
+
+  final case class ConfigurableComponent(
+                                          componentId: String
+                                          , version: Option[ArtifactVersion]
+                                          , parent: Option[Config] = None
+                                        )
+
+
+  override def parser: ParserDef = P
+
+  object P extends ParserDef {
+    final val targetDir = arg("target", "t", "target directory")
+    final val excludeCommon = arg("exclude-common", "ec", "do not include shared sections")
+    final val useComponentVersion = arg("version-use-component", "vc", "use component version instead of launcher version")
+    final val formatTypesafe = arg("format", "f", "output format, {json*|hocon}")
+  }
+
+  def parse(p: Parameters): WriteReference = {
+    val targetDir = P.targetDir.findValue(p).map(_.value).getOrElse("config")
+    val includeCommon = !P.excludeCommon.hasFlag(p)
+    val useLauncherVersion = !P.useComponentVersion.hasFlag(p)
+    val asJson = !P.formatTypesafe.findValue(p).map(_.value).contains("hocon")
+
+    WriteReference(
+      asJson,
+      targetDir,
+      includeCommon,
+      useLauncherVersion,
+    )
+  }
+
 }

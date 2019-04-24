@@ -50,7 +50,7 @@ object ParserFailureHandler {
     }
   }
 
-  private final val example =
+  final val example =
     s"""General commandline format:
        |
        |  [OPTION...] [ROLE...]
@@ -63,27 +63,15 @@ object ParserFailureHandler {
        |      -shortname value
        |
        |    ROLE is :role-name [OPTION...] [--] [<role-argument>...]
+       |
+       |Example:
+       |
+       |  -with-flag --option=value :my-role
+       |  -with-flag --option=value :my-role --role-config=myconfig.json :other-role
+       |  -with-flag --option=value :first-role --role-config=myconfig.json -- --role-option=value role args here \\
+       |    :convert -- input.txt output.jpg
+       |
+       |Try ':help' to get application specific help
      """.stripMargin
 
 }
-
-/*
-
-Examples:
-
-    --log-format=json :my-role
-    --log-format=json :dump --role-config=myconfig.json -- --target-file=input.txt :convert -- input.txt output.jpg
-
-
-Common global options are:
-
-  ${RoleAppLauncher.logLevelRootParam}={trace|debug|info|warning|error|critical}
-  ${RoleAppLauncher.logFormatParam}={json|text}
-
-Common role options are:
-
-  -rc, --role-config=<config-name>
-
-Try '--help' or ':help' to get more information.
-
- */

@@ -10,20 +10,27 @@ trait ParserDef {
 
   def all: Map[String, ArgDef] = _all.toMap
 
-  def arg(name: String, short: String): ArgDef = {
-    arg(name, Some(short))
+  def arg(name: String, short: String, doc: String): ArgDef = {
+    arg(name, Some(short), doc)
   }
 
-  def arg(name: String, short: Option[String] = None): ArgDef = {
+  def arg(name: String, doc: String): ArgDef = {
+    arg(name, None, doc)
+  }
+
+
+  private def arg(name: String, short: Option[String], doc: String): ArgDef = {
     if (_all.contains(name)) {
       throw new IllegalArgumentException(s"Parameter $name/$short is already registered!")
     }
-    val argDef = ArgDef(ArgNameDef(name, short))
+    val argDef = ArgDef(ArgNameDef(name, short), doc)
     _all.put(name, argDef).discard()
     argDef
   }
 }
 
 object ParserDef {
+
   object Empty extends ParserDef
+
 }

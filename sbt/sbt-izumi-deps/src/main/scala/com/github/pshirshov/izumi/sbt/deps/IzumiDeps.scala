@@ -11,7 +11,7 @@ object IzumiDeps {
 
     val collection_compat = "1.0.0"
 
-    val kind_projector = "0.9.10" // 2.13+
+    val kind_projector = "0.10.0" // 2.13+
     val scalatest = "3.2.0-SNAP9" // snap10 is broken // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
@@ -59,7 +59,7 @@ object IzumiDeps {
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
 
-    val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
+    val kind_projector = "org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
     val fast_classpath_scanner = "io.github.classgraph" % "classgraph" % V.classgraph
 
