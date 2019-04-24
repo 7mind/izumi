@@ -4,21 +4,14 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 import scala.collection.mutable
 
-trait DepTreeNode {
+sealed trait DepTreeNode {
   def level: Int
 
-  protected def prefix: String = " " * 2 * level
 }
 
-final case class Truncated(level: Int) extends DepTreeNode {
-  override def toString: String = prefix + "...\n"
-}
+final case class Truncated(level: Int) extends DepTreeNode
 
-final case class CircularReference(key: DIKey, level: Int) extends DepTreeNode {
-  override def toString: String = {
-    prefix + s"⥀ $level: " + key + "\n"
-  }
-}
+final case class CircularReference(key: DIKey, level: Int) extends DepTreeNode
 
 final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: Option[Int], exclusions: Set[DIKey]) extends DepTreeNode {
   def children: Set[DepTreeNode] = {
@@ -36,31 +29,65 @@ final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: 
       }
     }
   }
+}
 
-  /**
-    * Unsafe to call on big graphs
-    */
-  override def toString: String = {
-    val sb = new mutable.StringBuilder()
-    val symbol = if (graph.kind == DependencyKind.Depends) {
-      "⮑"
-    } else {
-      "↖"
-    }
-
-    if (level > 0) {
-      sb.append(prefix)
-      sb.append(s"$symbol $level: $key")
-    } else {
-      sb.append(s"➤ $key")
-    }
-    sb.append("\n")
-
-    children.foreach {
-      c =>
-        sb.append(c.toString)
-    }
-
-    sb.toString()
+object DepNode {
+  implicit class DepNodeExt(val node: DepNode) extends AnyVal {
+    def render(): String = new DepTreeRenderer(node).render()
   }
+}
+
+class DepTreeRenderer(node: DepNode) {
+  val minimizer = new KeyMinimizer(collectKeys(node))
+
+  def render(): String = render(node)
+  /**
+    * May be unsafe to call on big graphs
+    */
+  private def render(node: DepTreeNode): String = {
+    val prefix = " " * 2 * node.level
+
+    node match {
+      case _: Truncated =>
+        prefix + "...\n"
+      case node: CircularReference =>
+        s"$prefix⥀ ${node.level}: ${minimizer.render(node.key)}\n"
+      case node: DepNode =>
+        val sb = new mutable.StringBuilder()
+        val symbol = if (node.graph.kind == DependencyKind.Depends) {
+          "⮑"
+        } else {
+          "↖"
+        }
+
+        if (node.level > 0) {
+          sb.append(prefix)
+          sb.append(s"$symbol ${node.level}: ${minimizer.render(node.key)}")
+        } else {
+          sb.append(s"➤ ${minimizer.render(node.key)}")
+        }
+        sb.append("\n")
+
+        node.children.foreach {
+          c =>
+            sb.append(render(c))
+        }
+
+        sb.toString()
+
+    }
+  }
+
+
+  private def collectKeys(node: DepTreeNode): Set[DIKey] = {
+    node match {
+      case _: Truncated =>
+        Set.empty
+      case r: CircularReference =>
+        Set(r.key)
+      case n: DepNode =>
+        Set(n.key) ++ n.children.flatMap(collectKeys)
+    }
+  }
+
 }

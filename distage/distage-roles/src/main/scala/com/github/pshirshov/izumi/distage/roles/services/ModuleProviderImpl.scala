@@ -79,6 +79,7 @@ object ModuleProviderImpl {
 
   case class ContextOptions(
                              addGvDump: Boolean,
+                             warnOnCircularDeps: Boolean,
                              rewriteRules: RewriteRules,
                              configInjectionOptions: ConfigInjectionOptions,
                            )

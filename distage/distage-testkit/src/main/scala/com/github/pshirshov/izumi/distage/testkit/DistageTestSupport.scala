@@ -55,7 +55,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     val loader = makeConfigLoader(logger)
     val config = loader.buildConfig()
     val env = loadEnvironment(config, logger)
-    val provider = makeModuleProvider(config, logger, env.roles)
+    val options = contextOptions()
+    val provider = makeModuleProvider(options, config, logger, env.roles)
 
     val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
     val appModule = provider.appModules().merge overridenBy env.appModule
@@ -65,7 +66,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(withMemoized, injector)
+    val planner = makePlanner(options, withMemoized, injector, logger)
 
     val plan = planner.makePlan(allRoots)
 
@@ -144,26 +145,27 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
 
-  protected def makeModuleProvider(config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
     new ModuleProviderImpl[F](
       lateLogger,
       config,
       roles,
-      contextOptions(),
+      options,
     )
   }
 
   protected def contextOptions(): ContextOptions = {
     ContextOptions(
       addGvDump = false,
+      warnOnCircularDeps = true,
       RewriteRules(),
       ConfigInjectionOptions(),
     )
   }
 
-  protected def makePlanner(module: distage.ModuleBase, injector: Injector): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](module, injector)
+  protected def makePlanner(options: ContextOptions, module: distage.ModuleBase, injector: Injector, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, module, injector, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {

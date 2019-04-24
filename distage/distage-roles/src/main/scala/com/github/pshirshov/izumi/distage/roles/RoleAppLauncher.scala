@@ -77,12 +77,13 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
 
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
-    val moduleProvider = makeModuleProvider(parameters, roles, config, lateLogger)
+    val options = contextOptions(parameters)
+    val moduleProvider = makeModuleProvider(options, parameters, roles, config, lateLogger)
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy loadedBsModule
     val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
 
     val injector = Injector.Standard(bsModule)
-    val p = makePlanner(appModule, injector)
+    val p = makePlanner(options, appModule, lateLogger, injector)
     val roots = gcRoots(roles, defBs, defApp)
     val appPlan = p.makePlan(roots)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
@@ -99,8 +100,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     )
   }
 
-  protected def makePlanner(module: distage.Module, injector: Injector): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](module, injector)
+  protected def makePlanner(options: ContextOptions, module: distage.Module, lateLogger: IzLogger, injector: Injector): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, module, injector, lateLogger)
   }
 
   protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
@@ -108,12 +109,12 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  protected def makeModuleProvider(parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     new ModuleProviderImpl[F](
       lateLogger,
       config,
       roles,
-      contextOptions(parameters)
+      options
     )
   }
 
@@ -121,6 +122,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val dumpContext = RoleAppLauncher.dumpContext.hasFlag(parameters.globalParameters)
     ContextOptions(
       dumpContext,
+      warnOnCircularDeps = true,
       RewriteRules(),
       ConfigInjectionOptions(),
     )
