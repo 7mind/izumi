@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.distage.roles.DIEffectRunner
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage._

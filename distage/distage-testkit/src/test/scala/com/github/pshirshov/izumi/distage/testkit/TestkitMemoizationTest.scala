@@ -11,28 +11,28 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
 
-abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
+abstract class TestkitMemoizationTest[F[_] : TagK] extends TestkitSelftest[F] {
   val ref = new AtomicReference[TestResource1]()
 
   "testkit" must {
     "support memoization (1/2)" in dio {
-      res: TestResource1 =>
-        DIEffect[F].maybeSuspend {
+      (res: TestResource1, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(ref.get() == null)
           ref.set(res)
         }
     }
 
     "support memoization (2/2)" in dio {
-      res: TestResource1 =>
-        DIEffect[F].maybeSuspend {
+      (res: TestResource1, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(ref.get() eq res)
         }
     }
 
     "not finalize resources immediately (1/2)" in dio {
-      _: TestResourceDI =>
-        DIEffect[F].maybeSuspend {
+      (_: TestResourceDI, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(TestResourceDI.closeCount.get() == 0)
         }
     }
@@ -53,6 +53,8 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
   }
 }
 
-class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
+private class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
 
-class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
+private class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
+
+private class TestkitMemoizationTestZio extends TestkitMemoizationTest[scalaz.zio.IO[Throwable, ?]]

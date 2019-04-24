@@ -3,14 +3,13 @@ package com.github.pshirshov.izumi.distage.testkit
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.distage.testkit.fixtures.{TestService1, TestkitSelftest}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
-abstract class TestkitIgnoredTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
+abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
 
   "testkit" must {
@@ -34,6 +33,8 @@ abstract class TestkitIgnoredTest[F[_] : TagK : DIEffect] extends TestkitSelftes
 }
 
 
-class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
+private class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
 
-class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
+private class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
+
+private class TestkitIgnoredTestZio extends TestkitIgnoredTest[scalaz.zio.IO[Throwable, ?]]

@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.functional.bio
 import java.util
 import java.util.concurrent._
 
+import scalaz.zio.Exit.Cause
 import scalaz.zio._
 import scalaz.zio.internal.{Env, Executor, NamedThreadFactory, Scheduler}
 import scalaz.zio.internal.impls.Env
@@ -44,11 +45,29 @@ object BIORunner {
     val env: Env
   ) extends BIORunner[IO] {
     override def unsafeRun[E, A](io: IO[E, A]): A = {
-      env.unsafeRun(io)
+      unsafeRunSyncAsEither(io) match {
+        case BIOExit.Success(value) =>
+          value
+
+        case value: BIOExit.Failure[_] =>
+          value match {
+            case e: BIOExit.Error[_] =>
+              e.error match {
+                case t: Throwable =>
+                  throw t
+                case o =>
+                  throw FiberFailure(Cause.fail(o))
+              }
+            case e: BIOExit.Termination =>
+              throw e.compoundException
+          }
+      }
     }
+
     override def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
       env.unsafeRunAsync[E, A](io, exitResult => callback(BIO.BIOZio.toBIOExit(exitResult)))
     }
+
     override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): BIOExit[E, A] = {
       val result = env.unsafeRunSync(io)
       BIO.BIOZio.toBIOExit(result)

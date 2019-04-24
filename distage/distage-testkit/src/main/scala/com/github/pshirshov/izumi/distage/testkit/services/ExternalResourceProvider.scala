@@ -3,10 +3,9 @@ package com.github.pshirshov.izumi.distage.testkit.services
 import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, LocatorDef}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.roles.DIEffectRunner
 import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity

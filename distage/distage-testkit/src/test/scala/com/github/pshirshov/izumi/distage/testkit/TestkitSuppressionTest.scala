@@ -5,14 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import com.github.pshirshov.izumi.distage.testkit.fixtures.{TestService1, TestkitSelftest}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, TagK}
 
 
-abstract class TestkitSuppressionTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
+abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
   private val cc = new AtomicInteger(0)
 
@@ -43,6 +42,8 @@ abstract class TestkitSuppressionTest[F[_] : TagK : DIEffect] extends TestkitSel
   }
 }
 
-class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
+private class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
 
-class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
+private class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
+
+private class TestkitSuppressionTestZio extends TestkitSuppressionTest[scalaz.zio.IO[Throwable, ?]]

@@ -13,19 +13,19 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, ModuleBase, TagK}
 
 
-abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
+abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
   "testkit" must {
     "load plugins" in dio {
-      (service: TestService1, locatorRef: LocatorRef) =>
-        DIEffect[F].maybeSuspend {
+      (service: TestService1, locatorRef: LocatorRef, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(locatorRef.get.instances.exists(_.value == service))
           assert(!locatorRef.get.instances.exists(_.value.isInstanceOf[TestService2]))
         }
     }
 
     "create classes in `di` arguments even if they that aren't in makeBindings" in dio {
-      notAdded: NotAddedClass =>
-        DIEffect[F].maybeSuspend {
+      (notAdded: NotAddedClass, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(notAdded == NotAddedClass())
         }
     }
@@ -34,8 +34,8 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
       var ref: LocatorRef = null
 
       dio {
-        (_: TestService1, locatorRef: LocatorRef) =>
-          DIEffect[F].maybeSuspend {
+        (_: TestService1, locatorRef: LocatorRef, eff: DIEffect[F]) =>
+          eff.maybeSuspend {
             ref = locatorRef
           }
       }
@@ -45,8 +45,8 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
     }
 
     "load config" in dio {
-      service: TestService2 =>
-        DIEffect[F].maybeSuspend {
+      (service: TestService2, eff: DIEffect[F]) =>
+        eff.maybeSuspend {
           assert(service.cfg1.provided == 111)
           assert(service.cfg1.overriden == 222)
 
@@ -78,12 +78,15 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
   }
 }
 
-class TestkitTestIO extends TestkitTest[IO]
+private class TestkitTestIO extends TestkitTest[IO]
 
-class TestkitTestIdentity extends TestkitTest[Identity]
+private class TestkitTestIdentity extends TestkitTest[Identity]
+
+private class TestkitTestZio extends TestkitTest[scalaz.zio.IO[Throwable, ?]]
 
 object TestkitTest {
 
   case class NotAddedClass()
+
 
 }

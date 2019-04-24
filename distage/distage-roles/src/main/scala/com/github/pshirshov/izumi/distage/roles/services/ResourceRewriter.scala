@@ -26,8 +26,8 @@ class ResourceRewriter(
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
     if (rules.applyRewrites) {
       defn
-        .flatMap(rewrite[AutoCloseable](a => fromAutoCloseable(a)))
-        .flatMap(rewrite[ExecutorService](a => fromExecutorService(a)))
+        .flatMap(rewrite[AutoCloseable](a => fromAutoCloseable(logger, a)))
+        .flatMap(rewrite[ExecutorService](a => fromExecutorService(logger, a)))
     } else {
       defn
     }
@@ -135,27 +135,9 @@ class ResourceRewriter(
   }
 
 
-  private def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
-    makeSimple(acquire) {
-      ac =>
-        logger.info(s"Closing $ac...")
-        ac.close()
-    }
-  }
 
-  private def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
-    makeSimple(acquire) {
-      es =>
-        if (!(es.isShutdown || es.isTerminated)) {
-          logger.info(s"Stopping $es...")
-          es.shutdown()
-          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-            val dropped = es.shutdownNow()
-            logger.warn(s"Executor $es didn't finish in time, ${dropped.size()} tasks were dropped")
-          }
-        }
-    }
-  }
+
+
 }
 
 object ResourceRewriter {
@@ -185,4 +167,27 @@ object ResourceRewriter {
                            applyRewrites: Boolean = true,
                            warnOnExternal: Boolean = true,
                          )
+
+
+  def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
+    makeSimple(acquire) {
+      ac =>
+        logger.info(s"Closing $ac...")
+        ac.close()
+    }
+  }
+
+  def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
+    makeSimple(acquire) {
+      es =>
+        if (!(es.isShutdown || es.isTerminated)) {
+          logger.info(s"Stopping $es...")
+          es.shutdown()
+          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+            val dropped = es.shutdownNow()
+            logger.warn(s"Executor $es didn't finish in time, ${dropped.size()} tasks were dropped")
+          }
+        }
+    }
+  }
 }

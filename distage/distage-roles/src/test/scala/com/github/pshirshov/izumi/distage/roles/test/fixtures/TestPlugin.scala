@@ -3,9 +3,8 @@ package com.github.pshirshov.izumi.distage.roles.test.fixtures
 import java.util.concurrent.{ExecutorService, Executors}
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
+import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter
 import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
