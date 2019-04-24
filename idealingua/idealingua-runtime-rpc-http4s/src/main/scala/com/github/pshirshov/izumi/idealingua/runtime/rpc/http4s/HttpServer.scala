@@ -46,7 +46,7 @@ class HttpServer[C <: Http4sContext]
           case Status.Successful(resp) =>
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: success, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
             resp
-          case resp if resp.attributes.get(org.http4s.server.websocket.websocketKey[MonoIO]).isDefined =>
+          case resp if resp.attributes.lookup(org.http4s.server.websocket.websocketKey[MonoIO]).isDefined =>
             logger.debug(s"${req.method.name -> "method"} ${req.pathInfo -> "path"}: websocket request")
             resp
           case resp =>

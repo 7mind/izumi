@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles
+package com.github.pshirshov.izumi.distage.roles.model
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 

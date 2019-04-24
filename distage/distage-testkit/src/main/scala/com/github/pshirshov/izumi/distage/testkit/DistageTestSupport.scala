@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.roles.RolesInfo
+import com.github.pshirshov.izumi.distage.roles.model.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles
+package com.github.pshirshov.izumi.distage.roles.model
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
@@ -25,5 +25,3 @@ trait RoleTask2[F[_]] extends AbstractRoleF[F] {
     */
   def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit]
 }
-
-

@@ -10,7 +10,7 @@ trait Comments
 
   def MultilineComment[_: P]: P0 = P((!"/**" ~ "/*" ~ CommentChunk.rep ~ "*/") | "/**/").rep(1)
 
-  def ShortComment[_: P]: P[Unit] = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', min = 0) ~ NLC))
+  def ShortComment[_: P]: P[Unit] = P("//" ~ (CharsWhile(c => c != '\n' && c != '\r', 0) ~ NLC))
 
   protected[structure] def DocComment[_: P]: P[String] = {
     P(!"/**/" ~ "/*" ~ (!"*/" ~ "*" ~ DocChunk).rep(1, sep = NLC ~ sep.wss) ~ NLC ~ sep.wss ~ "*/").map {

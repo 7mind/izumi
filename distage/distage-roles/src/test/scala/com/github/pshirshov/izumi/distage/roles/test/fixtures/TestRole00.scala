@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles._
+import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleId, RoleService2, RoleTask2}
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
 import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters

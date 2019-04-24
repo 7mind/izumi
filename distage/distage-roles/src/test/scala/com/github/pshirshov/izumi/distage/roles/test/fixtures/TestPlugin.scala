@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter
+import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 

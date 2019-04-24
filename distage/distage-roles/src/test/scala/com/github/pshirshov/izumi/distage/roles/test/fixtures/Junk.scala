@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.test.fixtures
 
-import com.github.pshirshov.izumi.distage.roles.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 
 import scala.collection.mutable

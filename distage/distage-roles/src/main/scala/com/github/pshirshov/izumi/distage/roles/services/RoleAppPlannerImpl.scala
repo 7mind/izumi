@@ -3,8 +3,9 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, PlanTopologyImmutable}
+import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck}
+import com.github.pshirshov.izumi.distage.roles.DIEffectRunner
 import distage._
 
 class RoleAppPlannerImpl[F[_] : TagK](

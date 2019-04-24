@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, Resolv
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
+import com.github.pshirshov.izumi.distage.roles.model.{DiAppBootstrapException, LibraryReference, RoleService2, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules

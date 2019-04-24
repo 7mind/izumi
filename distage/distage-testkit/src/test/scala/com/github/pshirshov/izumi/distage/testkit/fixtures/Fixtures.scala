@@ -7,7 +7,8 @@ import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.{DIEffectRunner, IntegrationCheck}
+import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.DIEffectRunner
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger

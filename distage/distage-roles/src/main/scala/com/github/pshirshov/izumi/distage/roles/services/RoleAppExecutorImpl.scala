@@ -3,7 +3,8 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.roles.{DiAppBootstrapException, _}
+import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService2, RoleTask2, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments

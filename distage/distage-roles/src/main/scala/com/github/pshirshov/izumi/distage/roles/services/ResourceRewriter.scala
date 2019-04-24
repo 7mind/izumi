@@ -7,6 +7,7 @@ import com.github.pshirshov.izumi.distage.model.definition.DIResource.makeSimple
 import com.github.pshirshov.izumi.distage.model.definition.ImplDef.DirectImplDef
 import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -173,6 +174,11 @@ object ResourceRewriter {
 
   final case class ResId(contextKey: DIKey) {
     override def toString: String = s"res:${contextKey.toString}"
+  }
+
+  object ResId {
+    implicit val idContract: IdContract[ResId] = new RuntimeDIUniverse.IdContractImpl[ResId]
+
   }
 
   case class RewriteRules(

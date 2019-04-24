@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles
+package com.github.pshirshov.izumi.distage.config.model
 
 sealed trait ConfigSource
 
