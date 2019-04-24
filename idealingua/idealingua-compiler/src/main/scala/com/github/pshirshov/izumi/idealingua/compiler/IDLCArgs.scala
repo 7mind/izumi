@@ -39,17 +39,17 @@ object IDLCArgs {
   )
 
   object P extends ParserDef {
-    final val initTarget = arg("init", "i", "project in directory [path]")
-    final val sourceDir = arg("source", "s", "source directory")
-    final val targetDir = arg("target", "t", "target directory")
-    final val overlayDir = arg("overlay", "o", "overlay directory")
-    final val overlayVersionFile = arg("overlay-version", "v", "version file")
-    final val publish = arg("publish", "p", "build and publish generated code")
+    final val initTarget = arg("init", "i", "project in directory", "<path>")
+    final val sourceDir = arg("source", "s", "source directory", "<path>")
+    final val targetDir = arg("target", "t", "target directory", "<path>")
+    final val overlayDir = arg("overlay", "o", "overlay directory", "<path>")
+    final val overlayVersionFile = arg("overlay-version", "v", "version file", "<path>")
+    final val publish = flag("publish", "p", "build and publish generated code")
     final val define = arg("define", "d", "define, -d name=value")
-    final val noRuntime = arg(, "disable-runtime", "nr", "don't include builtin runtime")
-    final val manifest = arg("manifest", "m", "manifest file")
-    final val credentials = arg("credentials", "cr", "credentials file")
-    final val extensionSpec = arg("extensions", "e", "extensions spec")
+    final val noRuntime = flag(, "disable-runtime", "nr", "don't include builtin runtime")
+    final val manifest = arg("manifest", "m", "manifest file",  "<path>")
+    final val credentials = arg("credentials", "cr", "credentials file", "<path>")
+    final val extensionSpec = arg("extensions", "e", "extensions spec", "{* | -AnyvalExtension;-CirceDerivationTranslatorExtension}")
   }
 
 

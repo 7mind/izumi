@@ -14,6 +14,11 @@ class CliParserTest extends WordSpec {
       assert(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")) == Right(v2))
       assert(new CLIParser().parse(Array("--help", "--x=y", "--logs=json", ":role1", "--", "--config=xxx", "arg1", "arg2", "--yyy=zzz", ":role2")) == Right(v3))
       assert(new CLIParser().parse(Array("-x", "-x", "y", "-x", ":role1", "-x", "-x", "y", "-x", "--xx=yy")) == Right(v4))
+
+      assert(new CLIParser().parse(Array("-x")).exists(_.globalParameters.flags.head.name == "x"))
+      assert(new CLIParser().parse(Array("-x", "value")).exists(_.globalParameters.values.head == Value("x", "value")))
+      assert(new CLIParser().parse(Array("--x", "value")).isLeft)
+      assert(new CLIParser().parse(Array("--x=value")).exists(_.globalParameters.values.head == Value("x", "value")))
     }
   }
 

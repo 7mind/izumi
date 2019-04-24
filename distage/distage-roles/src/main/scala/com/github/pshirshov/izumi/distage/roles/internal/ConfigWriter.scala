@@ -164,6 +164,9 @@ class ConfigWriter[F[_] : DIEffect]
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
+
+  override def doc: Option[String] = Some("Dump reference configs for all the roles")
+
   /**
     * Configuration for [[ConfigWriter]]
     *
@@ -186,10 +189,10 @@ object ConfigWriter extends RoleDescriptor {
   override def parser: ParserDef = P
 
   object P extends ParserDef {
-    final val targetDir = arg("target", "t", "target directory")
-    final val excludeCommon = arg("exclude-common", "ec", "do not include shared sections")
-    final val useComponentVersion = arg("version-use-component", "vc", "use component version instead of launcher version")
-    final val formatTypesafe = arg("format", "f", "output format, {json*|hocon}")
+    final val targetDir = arg("target", "t", "target directory", "<path>")
+    final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
+    final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")
+    final val formatTypesafe = arg("format", "f", "output format, json is default", "{json|hocon}")
   }
 
   def parse(p: Parameters): WriteReference = {

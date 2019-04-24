@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -22,7 +22,6 @@ class TestTask00[F[_] : DIEffect](logger: IzLogger) extends RoleTask[F] {
 
 object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
-  override def parser: ParserDef = ParserDef.Empty
 }
 
 
@@ -52,7 +51,6 @@ class TestRole00[F[_] : DIEffect](
 object TestRole00 extends RoleDescriptor {
   override final val id = "testrole00"
 
-  override def parser: ParserDef = ParserDef.Empty
 }
 
 class TestRole01[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
@@ -68,7 +66,6 @@ class TestRole01[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
 
 object TestRole01 extends RoleDescriptor {
   override final val id = "testrole01"
-  override def parser: ParserDef = ParserDef.Empty
 }
 
 class TestRole02[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
@@ -84,6 +81,5 @@ class TestRole02[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
 
 object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
-  override def parser: ParserDef = ParserDef.Empty
 }
 

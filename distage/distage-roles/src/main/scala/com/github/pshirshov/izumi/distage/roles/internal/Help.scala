@@ -24,16 +24,16 @@ class Help[F[_] : DIEffect]
     val roleHelp = roleInfo
       .availableRoleBindings
       .map(formatRoleHelp)
-      .mkString("\n")
+      .mkString("\n\n")
 
-    val mainHelp = formatOptions(RoleAppLauncher.Options)
+    val mainHelp = formatOptions(RoleAppLauncher.Options).map(_.shift(2))
 
     val fullHelp =
       s"""${ParserFailureHandler.example}
          |
          |Global options:
          |
-         |${mainHelp.shift(2)}
+         |${mainHelp.getOrElse("?")}
          |
          |Available roles:
          |
@@ -44,34 +44,60 @@ class Help[F[_] : DIEffect]
   }
 
   private[this] def formatRoleHelp(rb: RoleBinding): String = {
-    val sub = formatOptions(rb.descriptor.parser)
-    s":${rb.descriptor.id}\n" + (if (sub.nonEmpty) {
-      "\n" + sub.shift(2)
+    val sub = Seq(rb.descriptor.doc.toSeq, formatOptions(rb.descriptor.parser).toSeq).flatten.mkString("\n\n")
+
+    val id = s":${rb.descriptor.id}"
+
+    if (sub.nonEmpty) {
+      Seq(id, sub.shift(2)).mkString("\n\n")
     } else {
-      ""
-    })
-  }
-
-  private[this] def formatOptions(parser: ParserDef): String = {
-    parser.all.values.map(formatArg).mkString("\n\n")
-  }
-
-  private[this] def formatArg(arg: CLIParser.ArgDef): String = {
-    arg.name.short match {
-      case Some(value) =>
-        s"-$value, ${formatInfo(arg)}"
-      case None =>
-        formatInfo(arg)
+      id
     }
   }
 
-  private[this] def formatInfo(arg: CLIParser.ArgDef): String = {
-    s"--${arg.name.long}\n    ${arg.doc}"
+  private[this] def formatOptions(parser: ParserDef): Option[String] = {
+    if (parser.all.nonEmpty) {
+      Some(parser.all.values.map(formatArg).mkString("\n\n"))
+    } else {
+      None
+    }
+  }
+
+  private[this] def formatArg(arg: CLIParser.ArgDef): String = {
+    val usage = (arg.name.short.map(_ => formatInfo(short = true, arg)).toSeq ++ Seq(formatInfo(short = false, arg))).mkString(", ")
+
+    s"$usage\n    ${arg.doc}"
+  }
+
+  private[this] def formatInfo(short: Boolean, arg: CLIParser.ArgDef): String = {
+    val name = if (short) {
+      arg.name.short.get
+    } else {
+      arg.name.long
+    }
+
+    val prefix = if (!short && arg.valueDoc.isDefined) {
+      "--"
+    } else {
+      "-"
+    }
+
+    arg.valueDoc match {
+      case Some(value) =>
+        if (short) {
+          s"$prefix$name $value"
+        } else {
+          s"$prefix$name=$value"
+        }
+      case None =>
+        s"$prefix$name"
+    }
+
   }
 }
 
 object Help extends RoleDescriptor {
   override final val id = "help"
 
-  override def parser: ParserDef = ParserDef.Empty
+  override def doc: Option[String] = Some("show commandline help")
 }

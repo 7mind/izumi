@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
 
 object CLIParser {
 
-  case class ArgDef private[cli](name: ArgNameDef, doc: String)
+  case class ArgDef private[cli](name: ArgNameDef, doc: String, valueDoc: Option[String])
 
   object ArgDef {
 
