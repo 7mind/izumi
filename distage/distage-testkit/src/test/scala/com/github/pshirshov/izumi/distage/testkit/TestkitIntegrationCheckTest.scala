@@ -8,7 +8,7 @@ import distage.TagK
 
 abstract class TestkitIntegrationCheckTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
   "testkit" must {
-    "skip test if external resource check failed" in di {
+    "skip test if external resource check failed" in dio {
       _: TestFailingIntegrationResource =>
         fail("This test must be ignored")
     }

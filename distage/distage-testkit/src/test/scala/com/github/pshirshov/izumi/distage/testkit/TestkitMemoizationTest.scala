@@ -15,7 +15,7 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
   val ref = new AtomicReference[TestResource1]()
 
   "testkit" must {
-    "support memoization (1/2)" in di {
+    "support memoization (1/2)" in dio {
       res: TestResource1 =>
         DIEffect[F].maybeSuspend {
           assert(ref.get() == null)
@@ -23,14 +23,14 @@ abstract class TestkitMemoizationTest[F[_] : TagK : DIEffect] extends TestkitSel
         }
     }
 
-    "support memoization (2/2)" in di {
+    "support memoization (2/2)" in dio {
       res: TestResource1 =>
         DIEffect[F].maybeSuspend {
           assert(ref.get() eq res)
         }
     }
 
-    "not finalize resources immediately (1/2)" in di {
+    "not finalize resources immediately (1/2)" in dio {
       _: TestResourceDI =>
         DIEffect[F].maybeSuspend {
           assert(TestResourceDI.closeCount.get() == 0)

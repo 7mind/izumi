@@ -17,12 +17,12 @@ abstract class TestkitSuppressionTest[F[_] : TagK : DIEffect] extends TestkitSel
   private val cc = new AtomicInteger(0)
 
   "testkit" must {
-    "support suite-level suppression" in di {
+    "support suite-level suppression" in dio {
       _: LocatorRef =>
         fail("This test must be ignored")
     }
 
-    "support test suppression" in di {
+    "support test suppression" in dio {
       _: LocatorRef =>
         fail("This test must be ignored as well")
     }

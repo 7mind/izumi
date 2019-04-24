@@ -15,7 +15,7 @@ import distage.{DIKey, ModuleBase, TagK}
 
 abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
   "testkit" must {
-    "load plugins" in di {
+    "load plugins" in dio {
       (service: TestService1, locatorRef: LocatorRef) =>
         DIEffect[F].maybeSuspend {
           assert(locatorRef.get.instances.exists(_.value == service))
@@ -23,7 +23,7 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
         }
     }
 
-    "create classes in `di` arguments even if they that aren't in makeBindings" in di {
+    "create classes in `di` arguments even if they that aren't in makeBindings" in dio {
       notAdded: NotAddedClass =>
         DIEffect[F].maybeSuspend {
           assert(notAdded == NotAddedClass())
@@ -33,7 +33,7 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
     "start and close resources and role components in correct order" in {
       var ref: LocatorRef = null
 
-      di {
+      dio {
         (_: TestService1, locatorRef: LocatorRef) =>
           DIEffect[F].maybeSuspend {
             ref = locatorRef
@@ -44,7 +44,7 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
       assert(ctx.get[SelftestCounters].closedCloseables == Seq(ctx.get[TestService1], ctx.get[TestResource2], ctx.get[TestResource1]))
     }
 
-    "load config" in di {
+    "load config" in dio {
       service: TestService2 =>
         DIEffect[F].maybeSuspend {
           assert(service.cfg1.provided == 111)
@@ -53,6 +53,11 @@ abstract class TestkitTest[F[_] : TagK : DIEffect] extends TestkitSelftest[F] {
           assert(service.cfg.provided == 1)
           assert(service.cfg.overriden == 3)
         }
+    }
+
+    "support non-io interface" in di {
+      service: TestService1 =>
+        assert(service != null)
     }
   }
 

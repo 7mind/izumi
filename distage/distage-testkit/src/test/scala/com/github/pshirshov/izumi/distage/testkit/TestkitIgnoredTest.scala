@@ -14,7 +14,7 @@ abstract class TestkitIgnoredTest[F[_] : TagK : DIEffect] extends TestkitSelftes
   override protected def pluginPackages: Seq[String] = thisPackage
 
   "testkit" must {
-    "support test suppression" in di {
+    "support test suppression" in dio {
       _: LocatorRef =>
         fail("This test must be ignored")
     }

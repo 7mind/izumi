@@ -17,32 +17,25 @@ import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.Rewrit
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
-import com.github.pshirshov.izumi.distage.testkit.services.{ExternalResourceProvider, IgnoreSupport, MemoizationContextId, SuppressionSupport}
+import com.github.pshirshov.izumi.distage.testkit.services._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import distage.config.AppConfig
-import distage.{DIKey, Injector, ModuleBase, Tag}
+import distage.{DIKey, Injector, ModuleBase}
+
 
 
 abstract class DistageTestSupport[F[_] : TagK]
-  extends IgnoreSupport
+  extends DISyntax[F]
+    with IgnoreSupport
     with SuppressionSupport {
-
-  protected final def di[T: Tag](function: T => F[_]): Unit = {
-    val providerMagnet: ProviderMagnet[F[_]] = {
-      x: T =>
-        function(x)
-    }
-    di(providerMagnet)
-  }
+  private lazy val erpInstance = externalResourceProvider
 
   protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.Null
 
   protected def memoizationContextId: MemoizationContextId
-
-  private lazy val erpInstance = externalResourceProvider
 
   private def doMemoize(locator: Locator): Unit = {
     val fmap = locator.finalizers[F].zipWithIndex.map {
@@ -57,8 +50,7 @@ abstract class DistageTestSupport[F[_] : TagK]
       }
   }
 
-
-  protected final def di(function: ProviderMagnet[F[_]]): Unit = {
+  protected final def dio(function: ProviderMagnet[F[_]]): Unit = {
     val logger = makeLogger()
     val loader = makeConfigLoader(logger)
     val config = loader.buildConfig()
