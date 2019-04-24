@@ -436,7 +436,7 @@ When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 Note: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector), they are assembled *after* garbage collection is done,
 as such they can't contain garbage by construction.
 
-#### Weak Sets
+### Weak Sets
 
 [Set bindings](#set-bindings--multibindings) can contain *weak* references. References designated as weak will
 be retained by [Garbage Collector](#using-garbage-collector) _only_ if there are other references to them except the
