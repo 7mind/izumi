@@ -25,7 +25,7 @@ function versionate {
   bopen
   if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
     echo "Setting version suffix to $TRAVIS_BRANCH"
-    csbt "addVersionSuffix $TRAVIS_BRANCH"
+    csbt "\"addVersionSuffix $TRAVIS_BRANCH\""
   else
     echo "No version suffix required"
   fi
