@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.Log.LogArg
 final case class RenderedParameter(
                                     arg: LogArg,
                                     repr: String,
-                                    visibleName: String
+                                    normalizedName: String
                                   ) {
   def value: Any = arg.value
 }

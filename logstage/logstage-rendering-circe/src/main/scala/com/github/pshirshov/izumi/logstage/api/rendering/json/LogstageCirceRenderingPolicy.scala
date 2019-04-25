@@ -20,7 +20,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     val result = mutable.ArrayBuffer[(String, Json)]()
 
     val formatted = Format.formatMessage(entry, withColors = false)
-    val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.visibleName, repr)
+    val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.normalizedName, repr)
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }

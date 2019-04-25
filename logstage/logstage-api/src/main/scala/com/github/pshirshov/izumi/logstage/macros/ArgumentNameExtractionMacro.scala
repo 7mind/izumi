@@ -4,10 +4,37 @@ import com.github.pshirshov.izumi.logstage.api.Log.LogArg
 
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
 
 object ArgumentNameExtractionMacro {
+
+  import ExtractedName._
+
+  val example: String =
+    s"""1) Simple variable:
+       |   logger.info(s"My message: $$argument")
+       |2) Chain:
+       |   logger.info(s"My message: $${call.method} $${access.value}")
+       |3) Named expression:
+       |   logger.info(s"My message: $${Some.expression -> "argname"}")
+       |4) Invisible name expression:
+       |   logger.info(s"My message: $${Some.expression -> "argname" -> null}")
+       |5) De-camelcased name:
+       |   logger.info($${camelCaseName-> ' '})
+       |""".stripMargin
+
+
   protected[macros] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
+
+    val applyDebug = false
+
+    def debug(arg: c.universe.Tree, s: => String): Unit = {
+      if (applyDebug) {
+        c.warning(arg.pos, s)
+      }
+    }
 
     object Arrow {
       def unapply(arg: c.universe.Tree): Option[TypeApply] = {
@@ -35,13 +62,16 @@ object ArgumentNameExtractionMacro {
       }
     }
 
+
     object ArrowArg {
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
+      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], ExtractedName)] = {
         arg match {
+          case ArrowPair(expr, Literal(Constant(char: Char))) => // ${value -> ' '}
+            Some((c.Expr(expr), NChar(char)))
           case ArrowPair(expr, Literal(Constant(name: String))) => // ${value -> "name"}
-            Some((c.Expr(expr), name))
+            Some((c.Expr(expr), NString(name)))
           case ArrowPair(expr@NameSeq(names), Literal(Constant(null))) => // ${value -> null}
-            Some((c.Expr(expr), names.last))
+            Some((c.Expr(expr), NString(names.last)))
           case _ =>
             None
         }
@@ -49,7 +79,7 @@ object ArgumentNameExtractionMacro {
     }
 
     object HiddenArrowArg {
-      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], String)] = {
+      def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], ExtractedName)] = {
         arg match {
           case ArrowPair(expr, Literal(Constant(null))) => // ${value -> "name" -> null}
             ArrowArg.unapply(expr)
@@ -65,13 +95,6 @@ object ArgumentNameExtractionMacro {
         extract(arg, Seq.empty)
       }
 
-      val debug = false
-
-      def debug(arg: c.universe.Tree, s: => String): Unit = {
-        if (debug) {
-          c.warning(arg.pos, s)
-        }
-      }
 
       @tailrec
       private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
@@ -118,14 +141,36 @@ object ArgumentNameExtractionMacro {
             reifiedExtracted(c)(param, seq)
 
           case ArrowArg(expr, name) => // ${x -> "name"}
-            reifiedExtracted(c)(expr, Seq(name))
+            name match {
+              case NChar(ch) if ch == ' ' =>
+                expr.tree match {
+                  case NameSeq(seq) =>
+                    reifiedExtracted(c)(expr, seq.map(_.camelToUnderscores.replace('_', ' ')))
+                  case _ =>
+                    reifiedExtracted(c)(expr, Seq(ch.toString))
+                }
+              case NChar(ch) =>
+                c.abort(param.tree.pos,
+                  s"""Unsupported mapping: $ch
+                     |
+                     |You have the following ways to assign a name:
+                     |$example
+                     |""".stripMargin)
+
+              case NString(s) =>
+                reifiedExtracted(c)(expr, Seq(s))
+            }
 
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
-            reifiedExtractedHidden(c)(expr, name)
+            reifiedExtractedHidden(c)(expr, name.str)
 
           case t@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
             c.warning(t.pos,
-              s"""Constant expression as a logger argument: $v, this makes no sense.""".stripMargin)
+              s"""Constant expression as a logger argument: $v, this makes no sense.
+                 |
+                 |But Logstage expects you to use string interpolations instead, such as:
+                 |$example
+                 |""".stripMargin)
 
             reifiedPrefixed(c)(param, "UNNAMED")
 
@@ -134,13 +179,10 @@ object ArgumentNameExtractionMacro {
               s"""Expression as a logger argument: $v
                  |
                  |But Logstage expects you to use string interpolations instead, such as:
-                 |1) Simple variable: logger.log(s"My message: $$argument")
-                 |2) Chain: logger.log(s"My message: $${call.method} $${access.value}")
-                 |3) Named expression: logger.log(s"My message: $${Some.expression -> "argname"}")
-                 |4) Hidden arg expression: logger.log(s"My message: $${Some.expression -> "argname" -> null}")
+                 |$example
                  |
                  |Tree: ${c.universe.showRaw(v)}
-               """.stripMargin)
+                 |""".stripMargin)
             reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
         }
     }
@@ -149,6 +191,7 @@ object ArgumentNameExtractionMacro {
       q"List(..$expressions)"
     }
   }
+
 
   private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
     reifiedPrefixedValue(c)(param, param, prefix)

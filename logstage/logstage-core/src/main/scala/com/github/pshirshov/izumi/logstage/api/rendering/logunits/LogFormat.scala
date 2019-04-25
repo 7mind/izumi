@@ -76,16 +76,26 @@ object LogFormat {
 
           acc += uncoloredRepr
 
-          val count = occurences.getOrElseUpdate(uncoloredRepr.arg.name, 0)
-          occurences.put(uncoloredRepr.arg.name, count + 1)
-          val (visibleName, templateName) = if (count == 0) {
-            (uncoloredRepr.visibleName, uncoloredRepr.arg.name)
+          val rawOriginalName = uncoloredRepr.arg.name
+          val rawNormalizedName = uncoloredRepr.normalizedName
+
+          val count = occurences.getOrElseUpdate(rawOriginalName, 0)
+          occurences.put(rawOriginalName, count + 1)
+
+          val (normalizedName, originalName) = if (count == 0) {
+            (rawNormalizedName, rawOriginalName)
           } else {
-            (s"${uncoloredRepr.visibleName}.$count", s"${uncoloredRepr.arg.name}.$count")
+            (s"$rawNormalizedName.$count", s"$rawOriginalName.$count")
+          }
+
+          val visibleName = if (withColors) {
+            originalName
+          } else {
+            normalizedName
           }
 
           templateBuilder.append("${")
-          templateBuilder.append(templateName)
+          templateBuilder.append(normalizedName)
           templateBuilder.append('}')
           templateBuilder.append(handle(part))
 
