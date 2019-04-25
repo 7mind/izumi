@@ -32,7 +32,7 @@ object RT {
       "org.http4s" -> Log.Level.Warn
       , "org.http4s.server.blaze" -> Log.Level.Error
       , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
-      , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Trace
+      , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Crit
     ))
 
     val out = IzLogger(router)
