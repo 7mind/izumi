@@ -6,7 +6,7 @@ export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
 export HOMEDIR="$( cd ~ ; pwd -P )"
 
 if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
-  openssl aes-256-cbc -K $encrypted_8eadf24ba628_key -iv $encrypted_8eadf24ba628_iv -in secrets.tar.enc -out secrets.tar -d
+  openssl aes-256-cbc -K $encrypted_0429e73c206c_key -iv $encrypted_0429e73c206c_iv -in secrets.tar.enc -out secrets.tar -d
   tar xvf secrets.tar
   ln -s .secrets/local.sbt local.sbt
 fi
