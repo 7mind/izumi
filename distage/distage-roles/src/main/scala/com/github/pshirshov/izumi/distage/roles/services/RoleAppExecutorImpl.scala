@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
-import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.{DIKey, Injector, TagK}
 
@@ -18,7 +18,7 @@ class RoleAppExecutorImpl[F[_] : TagK](
                                         roles: RolesInfo,
                                         injector: Injector,
                                         lateLogger: IzLogger,
-                                        parameters: RoleAppArguments,
+                                        parameters: RawAppArgs,
                                       ) extends RoleAppExecutor[F] {
 
   final def runPlan(appPlan: AppStartupPlans): Unit = {

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.model
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
-import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 
 
 sealed trait AbstractRoleF[F[_]]
@@ -13,7 +13,7 @@ trait RoleService[F[_]] extends AbstractRoleF[F] {
     * You may run a separate thread, a fiber, etc during resource initialization
     * All the shutdown logic has to be implemented in resource finalizer
     */
-  def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit]
+  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit]
 }
 
 /**
@@ -23,5 +23,5 @@ trait RoleTask[F[_]] extends AbstractRoleF[F] {
   /**
     * Application startup wouldn't progress until this method finishes
     */
-  def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit]
+  def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit]
 }

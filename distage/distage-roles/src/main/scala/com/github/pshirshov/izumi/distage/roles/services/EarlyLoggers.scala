@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
-import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 
@@ -13,12 +13,12 @@ class EarlyLoggers() {
   private val defaultLogLevel = Log.Level.Info
   private val defaultLogFormatJson = false
 
-  def makeEarlyLogger(parameters: RoleAppArguments): IzLogger = {
+  def makeEarlyLogger(parameters: RawAppArgs): IzLogger = {
     val rootLogLevel = getRootLogLevel(parameters)
     IzLogger(rootLogLevel)("phase" -> "early")
   }
 
-  def makeLateLogger(parameters: RoleAppArguments, earlyLogger: IzLogger, config: AppConfig): IzLogger = {
+  def makeLateLogger(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig): IzLogger = {
     val rootLogLevel = getRootLogLevel(parameters)
     val logJson = getLogFormatJson(parameters)
     val router = new SimpleLoggerConfigurator(earlyLogger)
@@ -31,7 +31,7 @@ class EarlyLoggers() {
     IzLogger(router)("phase" -> "late")
   }
 
-  private def getRootLogLevel(parameters: RoleAppArguments): Level = {
+  private def getRootLogLevel(parameters: RawAppArgs): Level = {
     Options.logLevelRootParam.findValue(parameters.globalParameters)
       .map(v => {
         Log.Level.parseSafe(v.value, defaultLogLevel)
@@ -39,7 +39,7 @@ class EarlyLoggers() {
       .getOrElse(defaultLogLevel)
   }
 
-  private def getLogFormatJson(parameters: RoleAppArguments): Boolean = {
+  private def getLogFormatJson(parameters: RawAppArgs): Boolean = {
     Options.logFormatParam.findValue(parameters.globalParameters)
       .map(v => {
         v.value match {

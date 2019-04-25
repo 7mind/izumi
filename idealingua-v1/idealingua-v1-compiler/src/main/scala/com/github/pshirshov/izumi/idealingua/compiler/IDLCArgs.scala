@@ -3,9 +3,10 @@ package com.github.pshirshov.izumi.idealingua.compiler
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.{ParserRoleDescriptor, ParserSchema}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, ParserSchema}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ParserRoleDescriptor
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
 case class LanguageOpts(
                          id: String,
@@ -140,7 +141,7 @@ object IDLCArgs {
     )
   }
 
-  private def parseDefs(parameters: Parameters) = {
+  private def parseDefs(parameters: RawEntrypointParams) = {
     LP.define.findValues(parameters).map {
       v =>
         val parts = v.value.split('=')

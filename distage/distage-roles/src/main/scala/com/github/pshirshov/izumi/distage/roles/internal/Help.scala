@@ -4,11 +4,12 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.{ParserRoleDescriptor, ParserSchema}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef, ParserFailureHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserFailureHandler
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ParserRoleDescriptor
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, ParserSchema}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-
 
 class Help[F[_] : DIEffect]
 (
@@ -16,7 +17,7 @@ class Help[F[_] : DIEffect]
 )
   extends RoleTask[F] {
 
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit] = {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
     Quirks.discard(roleParameters, freeArgs)
     DIEffect[F].maybeSuspend(showHelp())
   }

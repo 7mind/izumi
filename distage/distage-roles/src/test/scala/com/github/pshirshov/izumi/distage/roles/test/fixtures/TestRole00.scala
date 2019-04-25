@@ -8,12 +8,12 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
-import com.github.pshirshov.izumi.fundamentals.platform.cli.Parameters
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
 class TestTask00[F[_] : DIEffect](logger: IzLogger) extends RoleTask[F] {
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit] = {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
     DIEffect[F].maybeSuspend {
       logger.info(s"[TestTask00] Entrypoint invoked!: $roleParameters, $freeArgs")
     }
@@ -36,7 +36,7 @@ class TestRole00[F[_] : DIEffect](
                                  ) extends RoleService[F]  {
   notCloseable.discard()
 
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies")
   }) {
     _ =>
@@ -54,7 +54,7 @@ object TestRole00 extends RoleDescriptor {
 }
 
 class TestRole01[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole01] started: $roleParameters, $freeArgs")
   }) {
     _ =>
@@ -69,7 +69,7 @@ object TestRole01 extends RoleDescriptor {
 }
 
 class TestRole02[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
     logger.info(s"[TestRole02] started: $roleParameters, $freeArgs")
   }) {
     _ =>

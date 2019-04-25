@@ -1,9 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli
+package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.{ArgDef, ArgNameDef}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 trait ParserDef {
   private val _all = mutable.LinkedHashMap[String, ArgDef]()
@@ -36,13 +35,15 @@ trait ParserDef {
   }
 }
 
+
+
+
 object ParserDef {
   object Empty extends ParserDef
 
 
   case class ParserRoleDescriptor(id: String, parser: ParserDef, doc: Option[String])
 
-  case class ParserSchema(descriptors: Seq[ParserRoleDescriptor])
 
   /** TODOs:
     * - default parameters
@@ -75,13 +76,13 @@ object ParserDef {
     }
   }
 
-  private[this] def formatArg(arg: CLIParser.ArgDef): String = {
+  private[this] def formatArg(arg: ArgDef): String = {
     val usage = (arg.name.short.map(_ => formatInfo(short = true, arg)).toSeq ++ Seq(formatInfo(short = false, arg))).mkString(", ")
 
     s"$usage\n    ${arg.doc}"
   }
 
-  private[this] def formatInfo(short: Boolean, arg: CLIParser.ArgDef): String = {
+  private[this] def formatInfo(short: Boolean, arg: ArgDef): String = {
     val name = if (short) {
       arg.name.short.get
     } else {

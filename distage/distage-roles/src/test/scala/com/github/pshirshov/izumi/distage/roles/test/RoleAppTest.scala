@@ -7,7 +7,7 @@ import cats.effect._
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, RoleArg}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer._
 import org.scalatest.WordSpec
@@ -31,13 +31,13 @@ object TestLauncher extends TestLauncherBase {
 
 
 object ExampleEntrypoint extends RoleAppMain.Default(TestLauncher) {
-  override protected def requiredRoles: Vector[RoleArg] = Vector(
-    RoleArg("testrole00", Parameters.empty, Vector.empty),
-    RoleArg("testrole01", Parameters.empty, Vector.empty),
-    RoleArg("testrole02", Parameters.empty, Vector.empty),
-    RoleArg("testtask00", Parameters.empty, Vector.empty),
-    RoleArg("configwriter", Parameters.empty, Vector.empty),
-    RoleArg("help", Parameters.empty, Vector.empty),
+  override protected def requiredRoles: Vector[RawRoleParams] = Vector(
+    RawRoleParams("testrole00", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams("testrole01", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams("testrole02", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams("testtask00", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams("configwriter", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams("help", RawEntrypointParams.empty, Vector.empty),
   )
 }
 

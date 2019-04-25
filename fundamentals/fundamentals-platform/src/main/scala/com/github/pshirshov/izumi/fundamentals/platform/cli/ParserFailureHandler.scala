@@ -30,7 +30,7 @@ object ParserFailureHandler {
     }
   }
 
-  private def makeMessage(e: ParserError): String = {
+  private[this] def makeMessage(e: ParserError): String = {
     e match {
       case d: DanglingArgument =>
         s"""Improperly positioned argument '${d.arg}' after valid commandline '${d.processed.mkString(" ")}'

@@ -13,8 +13,8 @@ import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.Cont
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{ParserDef, RoleAppArguments}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
@@ -58,7 +58,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
 
-  final def launch(parameters: RoleAppArguments): Unit = {
+  final def launch(parameters: RawAppArgs): Unit = {
     val earlyLogger = loggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
 
@@ -105,12 +105,12 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new RoleAppPlannerImpl[F](options, bsModule, module, lateLogger)
   }
 
-  protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
+  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
     new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)
   }
 
 
-  protected def makeModuleProvider(options: ContextOptions, parameters: RoleAppArguments, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     Quirks.discard(parameters)
     new ModuleProviderImpl[F](
       lateLogger,
@@ -120,7 +120,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     )
   }
 
-  protected def contextOptions(parameters: RoleAppArguments): ContextOptions = {
+  protected def contextOptions(parameters: RawAppArgs): ContextOptions = {
     val dumpContext = RoleAppLauncher.Options.dumpContext.hasFlag(parameters.globalParameters)
     ContextOptions(
       dumpContext,
@@ -130,7 +130,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     )
   }
 
-  protected def loadRoles(parameters: RoleAppArguments, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
+  protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val mp = MirrorProvider.Impl
     val roleProvider: RoleProvider[F] = new RoleProviderImpl(logger, activeRoleNames, mp)
@@ -194,7 +194,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new PluginSourceImpl(bootstrapConfig)
   }
 
-  protected def makeConfigLoader(logger: IzLogger, parameters: RoleAppArguments): ConfigLoader = {
+  protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
     val maybeGlobalConfig = Options.configParam.findValue(parameters.globalParameters).asFile
 
     val roleConfigs =  parameters.roles.map {
@@ -204,7 +204,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new ConfigLoaderLocalFilesystemImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
 
-  protected def makeMergeProvider(lateLogger: IzLogger, parameters: RoleAppArguments): MergeProvider = {
+  protected def makeMergeProvider(lateLogger: IzLogger, parameters: RawAppArgs): MergeProvider = {
     new MergeProviderImpl(lateLogger, parameters)
   }
 }

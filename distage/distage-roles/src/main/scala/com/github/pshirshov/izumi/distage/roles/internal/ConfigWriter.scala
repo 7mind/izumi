@@ -13,7 +13,8 @@ import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesIn
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -33,7 +34,7 @@ class ConfigWriter[F[_] : DIEffect]
 )
   extends RoleTask[F] {
 
-  override def start(roleParameters: Parameters, freeArgs: Vector[String]): F[Unit] = {
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
     Quirks.discard(freeArgs)
     val config = ConfigWriter.parse(roleParameters)
     DIEffect[F].maybeSuspend(writeReferenceConfig(config))
@@ -201,7 +202,7 @@ object ConfigWriter extends RoleDescriptor {
     final val formatTypesafe = arg("format", "f", "output format, json is default", "{json|hocon}")
   }
 
-  def parse(p: Parameters): WriteReference = {
+  def parse(p: RawEntrypointParams): WriteReference = {
     val targetDir = P.targetDir.findValue(p).map(_.value).getOrElse("config")
     val includeCommon = !P.excludeCommon.hasFlag(p)
     val useLauncherVersion = !P.useComponentVersion.hasFlag(p)

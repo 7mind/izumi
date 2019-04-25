@@ -2,7 +2,8 @@ package com.github.pshirshov.izumi.distage.roles
 
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.services.AppFailureHandler
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler, RoleAppArguments, RoleArg}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import distage.TagK
 
 
@@ -27,9 +28,9 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
     }
   }
 
-  protected def parse(args: Array[String]): Either[CLIParser.ParserError, RoleAppArguments] = new CLIParser().parse(args)
+  protected def parse(args: Array[String]): Either[CLIParser.ParserError, RawAppArgs] = new CLIParser().parse(args)
 
-  protected def requiredRoles: Vector[RoleArg] = Vector.empty
+  protected def requiredRoles: Vector[RawRoleParams] = Vector.empty
 
 }
 

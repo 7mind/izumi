@@ -7,10 +7,10 @@ import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.fundamentals.platform.cli.RoleAppArguments
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
-class MergeProviderImpl(logger: IzLogger, parameters: RoleAppArguments) extends MergeProvider {
+class MergeProviderImpl(logger: IzLogger, parameters: RawAppArgs) extends MergeProvider {
   def mergeStrategy(plugins: AllLoadedPlugins, roles: RolesInfo): PluginMergeStrategy = {
     val unrequiredRoleTags = roles.unrequiredRoleNames.map(v => BindingTag.Expressions.Has(BindingTag(v)): BindingTag.Expressions.Expr)
     //
