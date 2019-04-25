@@ -74,6 +74,10 @@ function publish {
     return 0
   fi
 
+  if [[ ! ("$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$) ]] ; then
+    return 0
+  fi
+
   echo "PUBLISH..."
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
