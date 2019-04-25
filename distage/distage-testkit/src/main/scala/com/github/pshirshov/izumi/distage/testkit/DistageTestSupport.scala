@@ -65,7 +65,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, withMemoized, logger)
+    val planner = makePlanner(options, bsModule, withMemoized, logger)
 
     val plan = planner.makePlan(allRoots, bootstrapOverride, appOverride)
 
@@ -109,7 +109,7 @@ abstract class DistageTestSupport[F[_] : TagK]
     }
   }
 
-  protected def bootstrapOverride: BootstrapModule = Module.empty
+  protected def bootstrapOverride: BootstrapModule = BootstrapModule.empty
 
   protected def appOverride: ModuleBase = Module.empty
 
@@ -167,8 +167,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
   }
 
-  protected def makePlanner(options: ContextOptions, module: distage.ModuleBase, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, BootstrapModule.empty, module, logger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule,module: distage.ModuleBase, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, module, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
