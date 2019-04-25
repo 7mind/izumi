@@ -17,6 +17,8 @@ import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserD
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
 import scala.util._
@@ -68,7 +70,7 @@ class ConfigWriter[F[_] : DIEffect]
 
       writeConfig(options, versionedComponent, None, cfg)
 
-      minimizedConfig(logger, cfg)(role)
+      minimizedConfig(cfg, role)
         .foreach {
           cfg =>
             writeConfig(options, versionedComponent, Some("minimized"), cfg)
@@ -101,9 +103,9 @@ class ConfigWriter[F[_] : DIEffect]
     filtered
   }
 
-  private[this] def minimizedConfig(logger: IzLogger, config: Config)(role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
-    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions)
+    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions) overridenBy new LogstageModule(LogRouter.nullRouter, false)
     val newPlan = context.makePlan(Set(role.binding.key), cfg, distage.Module.empty).app
 
     if (newPlan.steps.exists(_.target == roleDIKey)) {
