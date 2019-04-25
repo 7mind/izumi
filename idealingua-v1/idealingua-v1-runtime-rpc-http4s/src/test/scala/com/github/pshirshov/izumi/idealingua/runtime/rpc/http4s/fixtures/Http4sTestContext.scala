@@ -83,7 +83,7 @@ object Http4sTestContext {
 
         case Some(_) =>
           toId(initial, id, packet) match {
-            case id @ Some(_) =>
+            case id@Some(_) =>
               // here we may set internal state
               id -> BIO.now(packet.ref.map {
                 ref =>
@@ -108,9 +108,11 @@ object Http4sTestContext {
     AuthMiddleware(authUser),
     wsContextProvider,
     storage,
-    Seq(WsSessionListener.empty[String])
-    , RT.logger
-    , RT.printer
+    Seq(
+      WsSessionListener.empty[String]
+    ),
+    RT.logger,
+    RT.printer,
   )
 
   final def clientDispatcher(): ClientDispatcher[rt.type] with TestHttpDispatcher =
