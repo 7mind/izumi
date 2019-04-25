@@ -54,15 +54,13 @@ class RoleAppTest extends WordSpec with WithProperties {
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
         TestEntrypoint.main(Array("-ll", "critical", ":configwriter", "-t", prefix))
       }
-      val cfg1= cfg("configwriter", version)
+
+      val cfg1 = cfg("configwriter", version)
       val cfg2 = cfg("configwriter-minimized", version)
 
       assert(cfg1.exists())
       assert(cfg2.exists())
       assert(cfg1.length() > cfg2.length())
-
-
-
     }
   }
 
