@@ -14,8 +14,6 @@ import org.scalatest.WordSpec
 
 
 class TestLauncherBase extends RoleAppLauncher.LauncherF[IO]() {
-
-
   protected val bootstrapConfig: BootstrapConfig = BootstrapConfig(
     PluginConfig(
       debug = false
