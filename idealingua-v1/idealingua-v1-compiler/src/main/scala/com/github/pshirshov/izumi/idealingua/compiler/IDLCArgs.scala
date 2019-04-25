@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
 
 case class LanguageOpts(
@@ -38,7 +39,6 @@ object IDLCArgs {
     , Map.empty
   )
 
-
   object P extends ParserDef {
     final val sourceDir = arg("source", "s", "source directory", "<path>")
     final val targetDir = arg("target", "t", "target directory", "<path>")
@@ -58,6 +58,7 @@ object IDLCArgs {
     final val define = arg("define", "d", "define value", "const.name=value")
   }
 
+  object IP extends ParserDef {}
 
   def parseUnsafe(args: Array[String]): IDLCArgs = {
     val parsed = new CLIParser().parse(args) match {
@@ -67,28 +68,25 @@ object IDLCArgs {
         value
     }
 
+    val roleHelp = ParserDef.formatRoles(Seq(
+      ParserRoleDescriptor("init", LP, Some("setup project template")),
+      ParserRoleDescriptor("scala", LP, Some("scala target")),
+      ParserRoleDescriptor("go", LP, Some("go target")),
+      ParserRoleDescriptor("csharp", LP, Some("C#/Unity target")),
+      ParserRoleDescriptor("typescript", LP, Some("Typescript target")),
+    ))
+
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
       for {
         gh <- ParserDef.formatOptions(P)
-        h <- ParserDef.formatOptions(LP)
       } yield {
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
         val fullHelp =
-          s"""Define target languages as
-             |  :scala
-             |  :go
-             |  :csharp
-             |  :typescript
-             |
-             |You may create example project with
-             |
-             |  :init <path-to-project-dir>
-             |
-             |Global options:
+          s"""Global options:
              |${gh.shift(2)}
              |
-             |Each language supports the following options:
-             |${h.shift(2)}
+             |Supported commands:
+             |${roleHelp.shift(2)}
            """.stripMargin
         println(fullHelp)
 
@@ -109,7 +107,9 @@ object IDLCArgs {
     val publish = P.publish.hasFlag(parameters)
     val defines = parseDefs(parameters)
 
-    val languages = parsed.roles.filterNot(_.role == "init").map {
+    val internalRoles = Seq("init", "help")
+
+    val languages = parsed.roles.filterNot(r => internalRoles.contains(r.role)).map {
       role =>
         val parameters = role.roleParameters
         val runtime = !LP.noRuntime.hasFlag(parameters)
@@ -140,94 +140,6 @@ object IDLCArgs {
     )
   }
 
-
-  //  val parser: OptionParser[IDLCArgs] = new scopt.OptionParser[IDLCArgs]("idlc") {
-  //    head("idlc")
-  //    help("help")
-  //
-  //    opt[File]('i', "init").optional().valueName("<dir>")
-  //      .action((a, c) => c.copy(init = Some(a.toPath)))
-  //      .text("init directory (must be empty or non-existing)")
-  //
-  //    opt[Unit]('p', "publish").optional()
-  //      .action((_, c) => c.copy(publish = true))
-  //      .text("publish compiled files to repos")
-  //
-  //    opt[String]('g', "global-define").valueName("name=value")
-  //      .text("Define global manifest override")
-  //      .optional()
-  //      .unbounded()
-  //      .action {
-  //        (a, c) =>
-  //          val (k, v) = a.splitFirst('=')
-  //          c.copy(overrides = c.overrides.updated(k, v))
-  //      }
-  //
-  //    opt[File]('v', "version-overlay").optional().valueName("<version.json>")
-  //      .action((a, c) => c.copy(versionOverlay = Some(a.toPath)))
-  //      .text("path to version overlay file (version.json)")
-  //
-  //    opt[File]('s', "source").optional().valueName("<dir>")
-  //      .action((a, c) => c.copy(source = a.toPath))
-  //      .text("source directory (default: `./source`)")
-  //
-  //    opt[File]('o', "overlay").optional().valueName("<dir>")
-  //      .action((a, c) => c.copy(overlay = a.toPath))
-  //      .text("overlay model (default: `./overlay`)")
-  //
-  //    opt[File]('t', "target").optional().valueName("<dir>")
-  //      .action((a, c) => c.copy(target = a.toPath))
-  //      .text("target directory (default: `./target`)")
-  //
-  //    arg[String]("**language-id**")
-  //      .text("{scala|typescript|go|csharp} (may repeat, like `scala -mf + typescript -mf + -nrt go`")
-  //      .action {
-  //        (a, c) =>
-  //          c.copy(languages = c.languages :+ LanguageOpts(a, withRuntime = true, None, None, List.empty, Map.empty))
-  //      }
-  //      .optional()
-  //      .unbounded()
-  //      .children(
-  //        opt[File]("credentials").abbr("cr")
-  //          .optional()
-  //          .text("Language-specific credentials file")
-  //          .action {
-  //            (a, c) =>
-  //              c.copy(languages = c.languages.init :+ c.languages.last.copy(credentials = Some(a)))
-  //          },
-  //        opt[File]("manifest").abbr("m")
-  //          .optional()
-  //          .text("Language-specific compiler manifest. Use `@` for builtin stub, `+` for default path (./manifests/<language>.json)")
-  //          .action {
-  //            (a, c) =>
-  //              c.copy(languages = c.languages.init :+ c.languages.last.copy(manifest = Some(a)))
-  //          },
-  //        opt[Unit]("no-runtime").abbr("nrt")
-  //          .optional()
-  //          .text("Don't include buitin runtime into compiler output")
-  //          .action {
-  //            (_, c) =>
-  //              c.copy(languages = c.languages.init :+ c.languages.last.copy(withRuntime = false))
-  //          },
-  //        opt[String]('d', "define").valueName("name=value")
-  //          .text("Define manifest override")
-  //          .optional()
-  //          .unbounded()
-  //          .action {
-  //            (a, c) =>
-  //              val (k, v) = a.splitFirst('=')
-  //              c.copy(languages = c.languages.init :+ c.languages.last.copy(overrides = c.languages.last.overrides.updated(k, v)))
-  //          },
-  //        opt[String]("extensions").abbr("e").valueName("spec")
-  //          .optional()
-  //          .text("extensions spec, like -AnyvalExtension;-CirceDerivationTranslatorExtension or *")
-  //          .action {
-  //            (a, c) =>
-  //              c.copy(languages = c.languages.init :+ c.languages.last.copy(extensions = a.split(',').toList))
-  //          },
-  //      )
-  //  }
-
   private def parseDefs(parameters: Parameters) = {
     LP.define.findValues(parameters).map {
       v =>
@@ -235,4 +147,5 @@ object IDLCArgs {
         parts.head -> parts.tail.mkString("=")
     }.toMap
   }
+
 }

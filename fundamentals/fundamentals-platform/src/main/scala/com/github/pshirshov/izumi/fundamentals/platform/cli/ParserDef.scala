@@ -37,8 +37,27 @@ trait ParserDef {
 }
 
 object ParserDef {
-
   object Empty extends ParserDef
+
+
+  case class ParserRoleDescriptor(id: String, parser: ParserDef, doc: Option[String])
+
+  def formatRoles(descriptors: Seq[ParserRoleDescriptor]): String = descriptors.map(formatRoleHelp)
+    .mkString("\n\n")
+
+
+  private[this] def formatRoleHelp(rb: ParserRoleDescriptor): String = {
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    val sub = Seq(rb.doc.toSeq, ParserDef.formatOptions(rb.parser).toSeq).flatten.mkString("\n\n")
+
+    val id = s":${rb.id}"
+
+    if (sub.nonEmpty) {
+      Seq(id, sub.shift(2)).mkString("\n\n")
+    } else {
+      id
+    }
+  }
 
   def formatOptions(parser: ParserDef): Option[String] = {
     if (parser._all.nonEmpty) {

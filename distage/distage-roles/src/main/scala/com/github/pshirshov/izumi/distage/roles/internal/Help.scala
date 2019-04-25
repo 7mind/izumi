@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -21,10 +22,11 @@ class Help[F[_] : DIEffect]
   }
 
   private[this] def showHelp(): Unit = {
-    val roleHelp = roleInfo
+    val descriptors = roleInfo
       .availableRoleBindings
-      .map(formatRoleHelp)
-      .mkString("\n\n")
+      .map(rb => ParserRoleDescriptor(rb.descriptor.id, rb.descriptor.parser, rb.descriptor.doc))
+
+    val roleHelp = ParserDef.formatRoles(descriptors)
 
     val mainHelp = ParserDef.formatOptions(RoleAppLauncher.Options).map(_.shift(2))
 
@@ -41,18 +43,6 @@ class Help[F[_] : DIEffect]
        """.stripMargin
 
     println(fullHelp)
-  }
-
-  private[this] def formatRoleHelp(rb: RoleBinding): String = {
-    val sub = Seq(rb.descriptor.doc.toSeq, ParserDef.formatOptions(rb.descriptor.parser).toSeq).flatten.mkString("\n\n")
-
-    val id = s":${rb.descriptor.id}"
-
-    if (sub.nonEmpty) {
-      Seq(id, sub.shift(2)).mkString("\n\n")
-    } else {
-      id
-    }
   }
 
 }

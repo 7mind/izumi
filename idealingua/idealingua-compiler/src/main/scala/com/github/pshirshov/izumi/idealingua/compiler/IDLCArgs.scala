@@ -4,8 +4,8 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
-import com.github.pshirshov.izumi.idealingua.compiler.IDLCArgs.parseDefs
 
 case class LanguageOpts(
                          id: String,
@@ -58,6 +58,8 @@ object IDLCArgs {
     final val define = arg("define", "d", "define value", "const.name=value")
   }
 
+  object IP extends ParserDef {}
+
   def parseUnsafe(args: Array[String]): IDLCArgs = {
     val parsed = new CLIParser().parse(args) match {
       case Left(value) =>
@@ -66,28 +68,25 @@ object IDLCArgs {
         value
     }
 
+    val roleHelp = ParserDef.formatRoles(Seq(
+      ParserRoleDescriptor("init", LP, Some("setup project template")),
+      ParserRoleDescriptor("scala", LP, Some("scala target")),
+      ParserRoleDescriptor("go", LP, Some("go target")),
+      ParserRoleDescriptor("csharp", LP, Some("C#/Unity target")),
+      ParserRoleDescriptor("typescript", LP, Some("Typescript target")),
+    ))
+
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
       for {
         gh <- ParserDef.formatOptions(P)
-        h <- ParserDef.formatOptions(LP)
       } yield {
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
         val fullHelp =
-          s"""Define target languages as
-             |  :scala
-             |  :go
-             |  :csharp
-             |  :typescript
-             |
-             |You may create example project with
-             |
-             |  :init <path-to-project-dir>
-             |
-             |Global options:
+          s"""Global options:
              |${gh.shift(2)}
              |
-             |Each language supports the following options:
-             |${h.shift(2)}
+             |Supported commands:
+             |${roleHelp.shift(2)}
            """.stripMargin
         println(fullHelp)
 
@@ -108,7 +107,9 @@ object IDLCArgs {
     val publish = P.publish.hasFlag(parameters)
     val defines = parseDefs(parameters)
 
-    val languages = parsed.roles.filterNot(_.role == "init").map {
+    val internalRoles = Seq("init", "help")
+
+    val languages = parsed.roles.filterNot(r => internalRoles.contains(r.role)).map {
       role =>
         val parameters = role.roleParameters
         val runtime = !LP.noRuntime.hasFlag(parameters)

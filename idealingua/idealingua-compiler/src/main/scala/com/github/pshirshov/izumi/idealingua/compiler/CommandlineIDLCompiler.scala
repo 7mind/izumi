@@ -43,7 +43,7 @@ object CommandlineIDLCompiler {
     )
 
     if (!results.contains(true)) {
-      log.log("There was nothing to do. Try to run with `--help`")
+      log.log("There was nothing to do. Try to run with `:help`")
     }
   }
 
