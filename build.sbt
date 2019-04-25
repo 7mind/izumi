@@ -347,15 +347,11 @@ lazy val logstageCore = inLogStage.as.module
   .depends(logstageApi, fundamentalsBioJvm)
   .settings(
     libraryDependencies ++= T.zio_core +: T.cats_all
+  , libraryDependencies ++= Seq(
+      R.zio_core % Optional
+    , R.cats_core % Optional
+    )
   )
-
-lazy val logstageZio = inLogStage.as.module
-  .depends(logstageCore)
-  .settings(libraryDependencies += R.zio_core)
-
-lazy val logstageCats = inLogStage.as.module
-  .depends(logstageCore)
-  .settings(libraryDependencies += R.cats_core)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(

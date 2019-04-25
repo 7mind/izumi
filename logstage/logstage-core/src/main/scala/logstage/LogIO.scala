@@ -14,6 +14,13 @@ trait LogIO[F[_]] extends LogCreateIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
+  def withCustomContext(context: CustomContext): LogIO[F]
+
+  final def withCustomContext(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
+  final def withCustomContext(context: Map[String, Any]): LogIO[F] = withCustomContext(CustomContext(context))
+  final def apply(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
+  final def apply(context: Map[String, Any]): LogIO[F] = withCustomContext(context)
+
   /** Aliases for [[log]] that look better in Intellij */
   final def trace(message: String): F[Unit] = macro scTraceMacro[F]
   final def debug(message: String): F[Unit] = macro scDebugMacro[F]
@@ -35,6 +42,10 @@ object LogIO {
       override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit] = {
         F.syncSafe(logger.log(logLevel)(messageThunk))
       }
+
+      override def withCustomContext(context: CustomContext): LogIO[F] = {
+        fromLogger[F](logger.withCustomContext(context))
+      }
     }
   }
 
@@ -49,10 +60,4 @@ object LogIO {
     */
   implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.asInstanceOf[LogIO[F[E, ?]]]
   implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = { val _ = ev; log.asInstanceOf[LogIO[G]] }
-
-  //  implicit def covariance[G[x] >: F[x], F[_]](implicit log: LogIO[F]): LogIO[G] = log.asInstanceOf[LogIO[G]]
-  //  implicit def covariance[G[_], F[_]](implicit log: LogIO[F], ev: F[_] <:< G[_]): LogIO[G] = log.asInstanceOf[LogIO[G]] //
-  //  implicit def covarianceConversion[G[x] >: F[x], F[_]](log: LogIO[F])(implicit ev: F[Any] <:< G[Any]): LogIO[G] = log.asInstanceOf[LogIO[G]]
-  //  implicit def covarianceConversion[G[x] >: F[x], F[_]](log: LogIO[F])(implicit ev: F[Any] <:< G[Any]): LogIO[G] = log.asInstanceOf[LogIO[G]]
-  //  implicit def covarianceConversion[E1 >: E, E, F[+_, _]](log: LogIO[F[E, ?]]): LogIO[F[E1, ?]] = log.asInstanceOf[LogIO[F[E1, ?]]]
 }

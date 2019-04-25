@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.Log.LoggerId
+import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LoggerId}
 import com.github.pshirshov.izumi.logstage.macros.LoggerMacroMethods._
 
 import scala.language.experimental.macros
@@ -47,4 +47,5 @@ trait AbstractLogger {
   /** Check if `loggerId` is not blacklisted and `logLevel` is above the configured threshold */
   def acceptable(loggerId: LoggerId, logLevel: Log.Level): Boolean
 
+  def withCustomContext(context: CustomContext): AbstractLogger
 }

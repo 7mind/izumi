@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.bio
+//package com.github.pshirshov.izumi.fundamentals.bio
 
 // Commented because cats-effect-laws-1.2.0 depends on scalatest-3.0.5 while we use 3.2.0-SNAP9
 // Can't run these tests as part of normal build due to dependency convergence

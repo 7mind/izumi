@@ -31,9 +31,14 @@ val justAnArg = "example"
 val justAList = List[Any](10, "green", "bottles")
 
 logger.trace(s"Argument: $justAnArg, another arg: $justAList")
+
+// custom name, not based on `val` name
 logger.info(s"Named expression: ${Random.nextInt() -> "random number"}")
+
+// print result without a name
 logger.warn(s"Invisible argument: ${Random.nextInt() -> "random number" -> null}")
 
+// add following fields to all messages printed by a new logger value
 val ctxLogger = logger("userId" -> "user@google.com", "company" -> "acme")
 val delta = Random.nextInt(1000)
 
@@ -146,7 +151,7 @@ log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
 I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
 ```
 
-`logstage-zio` module adds an alternative `LogBIO` that logs the current fiber ID in addition to usual logging of thread ID:
+`LogstageZIO.withFiberId` provides an `LogBIO` instance that always logs the current fiber ID in addition to usual logging of thread ID:
 
 Example: 
 
@@ -172,21 +177,24 @@ rts.unsafeRun {
 I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
 ```
 
-To add use:
+`LogIO`/`LogBIO` algebras can be extended with custom context, same as `IzLogger`:
 
 ```scala
-libraryDependencies += Izumi.R.logstage_zio
+import cats.effect.IO
+import cats.implicits._
+import logstage._
+import io.circe.syntax._
+
+def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
+  val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.pretty(Printer.spaces2))
+
+  IO(???).handleErrorWith {
+    case error =>
+      ctxLog.error(s"Failed to import entity: $error.").void
+      // message includes `ID` and `entityAsJSON` fields
+  }
+}
 ```
-
-or
-
-@@@vars
-```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "logstage-zio" % izumi_version
-```
-@@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 
 @@@ index

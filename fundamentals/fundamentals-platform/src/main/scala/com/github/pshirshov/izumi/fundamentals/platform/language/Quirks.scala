@@ -2,6 +2,10 @@ package com.github.pshirshov.izumi.fundamentals.platform.language
 
 import scala.language.implicitConversions
 
+/**
+  * Syntax for explicitly discarding values to satisfy -Ywarn-value-discard,
+  * and for clarity of course!
+  **/
 object Quirks {
 
   @inline def discard(trash: Any*): Unit = {

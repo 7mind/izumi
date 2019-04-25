@@ -125,7 +125,7 @@ object Http4sTestContext {
       }
 
       override protected def transformRequest(request: Request[MonoIO]): Request[MonoIO] = {
-        request.withHeaders(Headers(creds.get(): _*))
+        request.withHeaders(Headers.of(creds.get(): _*))
       }
     }
 

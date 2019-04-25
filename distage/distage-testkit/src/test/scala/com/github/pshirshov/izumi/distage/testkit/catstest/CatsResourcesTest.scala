@@ -31,9 +31,9 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
     y()
   }
 
-  "DIResource scaladoc example works" in {
-    val dbResource = DIResource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-    val mqResource = DIResource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+  "cats Resource scaladoc example works" in {
+    val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
+    val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
 
     val module = new ModuleDef {
       make[DBConnection].fromResource(dbResource)
