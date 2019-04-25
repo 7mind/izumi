@@ -2,16 +2,21 @@ package com.github.pshirshov.izumi.logstage.api.rendering.json
 
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
 import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
+import io.circe.literal._
 import io.circe.parser._
 import org.scalatest.WordSpec
 
 class LogstageCirceRenderingTest extends WordSpec {
 
-  val debug = true
+  val debug = false
 
   "Log macro" should {
     "support console sink with json output policy" in {
       val (logger, sink) = setupJsonLogger(debug)
+      val jsonc = json"""{"customctx": 1}"""
+      val jsonv = json"""{"custommessage": 2}"""
+      logger("ctx" -> "something", "jctx" -> jsonc).debug(s"Example message $jsonv")
+
       new ExampleService(logger).start()
 
       val renderedMessages = sink.fetchRendered()

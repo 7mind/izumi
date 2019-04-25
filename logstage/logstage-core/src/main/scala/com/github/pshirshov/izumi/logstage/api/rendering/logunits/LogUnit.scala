@@ -147,7 +147,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      LogFormat.formatMessage(entry, withColors).message
+      LogFormat.Default.formatMessage(entry, withColors).message
     }
 
     override def undefined(entry: Log.Entry): Boolean = false
@@ -163,7 +163,7 @@ object LogUnit {
       val builder = new StringBuilder()
 
       if (values.nonEmpty) {
-        val customContextString = values.map(v => LogFormat.formatKv(withColors)(v.name, v.value)).mkString(", ")
+        val customContextString = values.map(v => LogFormat.Default.formatKv(withColors)(v.name, v.value)).mkString(", ")
         builder.append(s"{$customContextString}")
       }
 

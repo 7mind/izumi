@@ -12,19 +12,21 @@ import scala.collection.mutable
 import scala.runtime.RichInt
 
 class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
+  import LogstageCirceRenderingPolicy._
+
   override def render(entry: Log.Entry): String = {
     import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
 
     val result = mutable.ArrayBuffer[(String, Json)]()
 
-    val formatted = LogFormat.formatMessage(entry, withColors = false)
+    val formatted = Format.formatMessage(entry, withColors = false)
     val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.visibleName, repr)
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }
 
     val ctx = parametersToJson[LogArg](entry.context.customContext.values, _.name, v => {
-      val p = LogFormat.formatArg(v, withColors = false)
+      val p = Format.formatArg(v, withColors = false)
       repr(p)
     })
 
@@ -127,4 +129,16 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   }
 
   private val mapListElement = mapScalar orElse mapToString
+}
+
+object LogstageCirceRenderingPolicy {
+  object Format extends LogFormat.LogFormatImpl {
+    override protected def toString(argValue: Any): String = {
+      argValue match {
+        case j: Json =>
+          j.noSpaces
+        case o => o.toString
+      }
+    }
+  }
 }
