@@ -36,7 +36,7 @@ class BasicLoggingTest extends WordSpec {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
       val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false), LogArg(Seq("[a2]"), 2, hiddenName = false))))
-      assert(rendered.endsWith("begin [a1]=1 end; [a2]=2"))
+      assert(rendered.endsWith("begin [a_1]=1 end {{ [a_2]=2 }}"))
     }
   }
 

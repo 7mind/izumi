@@ -8,6 +8,7 @@ import com.typesafe.config.{ConfigObject, ConfigValue, ConfigValueType}
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
+@deprecated("Old logger config is inconvenient", "2018-11-05")
 class LoggerPathConfigCodec(sinks: Map[String, LogSink]) extends ConfigReader[LoggerPathConfig] {
   override def apply(configValue: ConfigValue): Try[LoggerPathConfig] = {
     configValue.valueType() match {

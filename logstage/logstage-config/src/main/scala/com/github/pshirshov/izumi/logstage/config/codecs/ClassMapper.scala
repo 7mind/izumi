@@ -7,6 +7,7 @@ import com.typesafe.config.Config
 import scala.reflect.runtime.universe
 import scala.util.Try
 
+@deprecated("Old logger config is inconvenient", "2018-11-05")
 private[logstage] abstract class ClassMapper[+T: universe.TypeTag] {
 
   type Params

@@ -8,6 +8,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigObject, ConfigValue}
 import scala.reflect.runtime.universe
 import scala.util.Try
 
+@deprecated("Old logger config is inconvenient", "2018-11-05")
 class RenderingPolicyCodec(policyMappers: Set[RenderingPolicyMapper[RenderingPolicy]]) extends ConfigReader[RenderingPolicy] {
   private val mappersMem : Map[String, Config => Try[RenderingPolicy]]= {
      policyMappers.map(m => (m.path.toString, m.instantiate _)).toMap
