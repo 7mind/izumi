@@ -2,14 +2,9 @@ package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
 import java.time.{Instant, ZoneId}
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.Log.LogArg
-import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderedMessage, RenderedParameter}
-
-import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+import com.github.pshirshov.izumi.logstage.api.rendering.ConsoleColors
 
 case class Margin(minimized: Option[Int], elipsed: Boolean, size: Option[Int])
 
@@ -152,7 +147,7 @@ object LogUnit {
     )
 
     override def renderUnit(entry: Log.Entry, withColors: Boolean, margin: Option[Margin] = None): String = {
-      formatMessage(entry, withColors).message
+      LogFormat.formatMessage(entry, withColors).message
     }
 
     override def undefined(entry: Log.Entry): Boolean = false
@@ -168,7 +163,7 @@ object LogUnit {
       val builder = new StringBuilder()
 
       if (values.nonEmpty) {
-        val customContextString = values.map(v => formatKv(withColors)(v.name, v.value)).mkString(", ")
+        val customContextString = values.map(v => LogFormat.formatKv(withColors)(v.name, v.value)).mkString(", ")
         builder.append(s"{$customContextString}")
       }
 
@@ -198,113 +193,6 @@ object LogUnit {
       unit.aliases.map(_ -> unit)
   }.toMap
 
-  def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter = {
-    RenderedParameter(arg, argToString(arg.value, withColors), normalizeName(arg.name))
-  }
 
-  def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
-    val templateBuilder = new StringBuilder()
-    val messageBuilder = new StringBuilder()
-
-    val head = entry.message.template.parts.head
-    templateBuilder.append(handle(head))
-    messageBuilder.append(handle(head))
-
-    val balanced = entry.message.template.parts.tail.zip(entry.message.args)
-
-    val parameters = mutable.ArrayBuffer[RenderedParameter]()
-    val unbalancedArgs = mutable.ArrayBuffer[RenderedParameter]()
-
-    process(templateBuilder, messageBuilder, parameters, withColors)(balanced)
-
-    val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
-    if (unbalanced.nonEmpty) {
-      templateBuilder.append(" {{ ")
-      messageBuilder.append(" {{ ")
-
-      val parts = List.fill(unbalanced.size -1)("; ") :+ ""
-
-      val x = parts.zip(unbalanced)
-      process(templateBuilder, messageBuilder, unbalancedArgs, withColors)(x)
-
-      templateBuilder.append(" }}")
-      messageBuilder.append(" }}")
-    }
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters, unbalancedArgs)
-  }
-
-  private def process(templateBuilder: mutable.StringBuilder, messageBuilder: mutable.StringBuilder, acc: mutable.ArrayBuffer[RenderedParameter], withColors: Boolean)(balanced: Seq[(String, LogArg)]): Unit = {
-    balanced.foreach {
-      case (part, arg) =>
-        val uncoloredRepr = formatArg(arg, withColors = false)
-
-        acc += uncoloredRepr
-
-        templateBuilder.append("${")
-        templateBuilder.append(uncoloredRepr.arg.name)
-        templateBuilder.append('}')
-        templateBuilder.append(handle(part))
-
-        val maybeColoredRepr = if (withColors) {
-          argToString(uncoloredRepr.arg.value, withColors)
-        } else {
-          uncoloredRepr.repr
-        }
-
-        if (!uncoloredRepr.arg.hiddenName) {
-          messageBuilder.append(formatKv(withColors)(uncoloredRepr.visibleName, maybeColoredRepr))
-        } else {
-          messageBuilder.append(maybeColoredRepr)
-        }
-        messageBuilder.append(handle(part))
-    }
-  }
-
-  private def normalizeName(s: String): String = {
-    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
-      s
-    } else {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-      s.replace(' ', '_').camelToUnderscores
-    }
-  }
-
-  private def handle(part: String) = {
-    StringContext.treatEscapes(part)
-  }
-
-  private def formatKv(withColor: Boolean)(name: String, value: Any): String = {
-    val key = wrapped(withColor, Console.GREEN, name)
-    val v = argToString(value, withColor)
-    s"$key=$v"
-  }
-
-  private def argToString(argValue: Any, withColors: Boolean): String = {
-    argValue match {
-      case null =>
-        wrapped(withColors, Console.YELLOW, "null")
-
-      case e: Throwable =>
-        wrapped(withColors, Console.YELLOW, e.toString)
-
-      case _ =>
-        Try(argValue.toString) match {
-          case Success(s) =>
-            wrapped(withColors, Console.CYAN, s)
-
-          case Failure(f) =>
-            import IzThrowable._
-            val message = s"[${argValue.getClass.getName}#toString failed]\n${f.stackTrace} "
-            wrapped(withColors, Console.RED, message)
-        }
-    }
-  }
-
-  private def wrapped(withColors: Boolean, color: String, message: String) = {
-    if (withColors) {
-      s"$color$message${Console.RESET}"
-    } else {
-      message
-    }
-  }
 }
+

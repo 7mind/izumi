@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.json
 
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.Log.LogArg
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
+import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogFormat
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import io.circe._
 import io.circe.syntax._
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
 import scala.collection.mutable
 import scala.runtime.RichInt
@@ -17,14 +17,14 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
 
     val result = mutable.ArrayBuffer[(String, Json)]()
 
-    val formatted = LogUnit.formatMessage(entry, withColors = false)
+    val formatted = LogFormat.formatMessage(entry, withColors = false)
     val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.visibleName, repr)
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }
 
     val ctx = parametersToJson[LogArg](entry.context.customContext.values, _.name, v => {
-      val p = LogUnit.formatArg(v, withColors = false)
+      val p = LogFormat.formatArg(v, withColors = false)
       repr(p)
     })
 
