@@ -292,7 +292,7 @@ final case class CSharpType (
           case Primitive.TBool => s"bool.Parse($src)"
           case Primitive.TUUID => s"new Guid($source)"
           case Primitive.TBLOB => ???
-          case e: EnumId => s"${renderType(currentDomain != "" && currentDomain != id.uniqueDomainName)}Helpers.From($source)"
+          case _: EnumId => s"${renderType(currentDomain != "" && currentDomain != id.uniqueDomainName)}Helpers.From($source)"
           case i: IdentifierId => s"${i.name}.From($source)"
           case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }

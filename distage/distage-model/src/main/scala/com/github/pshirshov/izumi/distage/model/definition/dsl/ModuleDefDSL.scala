@@ -102,7 +102,7 @@ object ModuleDefDSL {
     , protected val key: DIKey.TypeKey
   ) extends BindDSLMutBase[T] {
 
-    def named(name: String): BindNamedDSL[T] =
+    def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] =
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
 
     def namedByImpl: BindNamedDSL[T] =
@@ -151,7 +151,7 @@ object ModuleDefDSL {
     protected val mutableState: SetRef
   ) extends SetDSLMutBase[T] {
 
-    def named(name: String): SetNamedDSL[T] =
+    def named[I](name: I)(implicit idContract: IdContract[I]): SetNamedDSL[T] =
       addOp(SetIdAll(name))(new SetNamedDSL[T](_))
 
     /** These tags apply ONLY to EmptySet binding itself, not to set elements **/

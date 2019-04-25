@@ -4,7 +4,8 @@ import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, OrderedPlan, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.{FailedProvision, PlanInterpreter}
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
@@ -20,11 +21,13 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     parentContext.get[Planner].merge(a, b)
   }
 
-  override def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
-    produceDetailedF[F](plan).evalMap(_.throwOnFailure())
+
+  override protected[distage] def produceFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator] = {
+    produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  override def produceDetailedF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
-    parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext)
+
+  override protected[distage] def produceDetailedFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+    parentContext.get[PlanInterpreter].instantiate[F](plan, parentContext, filter)
   }
 }

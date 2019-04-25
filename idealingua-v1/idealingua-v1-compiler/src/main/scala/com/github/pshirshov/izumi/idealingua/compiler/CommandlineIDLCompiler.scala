@@ -35,6 +35,7 @@ object CommandlineIDLCompiler {
 
     val conf = parseArgs(args)
 
+
     val results = Seq(
       initDir(conf),
       runCompilations(izumiVersion, conf),
@@ -42,7 +43,7 @@ object CommandlineIDLCompiler {
     )
 
     if (!results.contains(true)) {
-      log.log("There was nothing to do. Try to run with `--help`")
+      log.log("There was nothing to do. Try to run with `:help`")
     }
   }
 
@@ -171,16 +172,8 @@ object CommandlineIDLCompiler {
     log.log("")
   }
 
-  private def parseArgs(args: Array[String]) = {
-    val default = IDLCArgs.default
-    val conf = IDLCArgs.parser.parse(args, default) match {
-      case Some(c) =>
-        c
-      case _ =>
-        IDLCArgs.parser.showUsage()
-        throw new IllegalArgumentException("Unexpected commandline")
-    }
-    conf
+  private def parseArgs(args: Array[String]): IDLCArgs = {
+    IDLCArgs.parseUnsafe(args)
   }
 
   private def toOption(conf: IDLCArgs, env: Map[String, String])(lopt: LanguageOpts): UntypedCompilerOptions = {

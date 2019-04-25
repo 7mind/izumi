@@ -30,10 +30,10 @@ class TrivialLoggerNullImpl() extends TrivialLogger {
 }
 
 object TrivialLogger {
-  def make[T: ClassTag](id: String, sink: AbstractStringTrivialSink = SystemErrStringTrivialSink, forceLog: Boolean = false): TrivialLogger = {
+  def make[T: ClassTag](id: String, sink: AbstractStringTrivialSink = SystemErrStringTrivialSink, forceLog: Boolean = false, default: Boolean = false): TrivialLogger = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-    val sink0 = if (System.getProperty(id).asBoolean().getOrElse(false) || forceLog) {
+    val sink0 = if (System.getProperty(id).asBoolean().getOrElse(default) || forceLog) {
       sink
     } else {
       NullStringTrivialSink

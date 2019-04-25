@@ -13,15 +13,13 @@ trait DistagePlugins {
   type PluginLoader = load.PluginLoader
   val PluginLoader: load.PluginLoader.type = load.PluginLoader
 
-  type PluginConfig = load.PluginLoaderDefaultImpl.PluginConfig
-  val PluginConfig: load.PluginLoaderDefaultImpl.PluginConfig.type = load.PluginLoaderDefaultImpl.PluginConfig
+  type PluginConfig = load.PluginLoader.PluginConfig
+  val PluginConfig: load.PluginLoader.PluginConfig.type = load.PluginLoader.PluginConfig
 
-  type PluginPluginLoaderDefaultImpl = load.PluginLoaderDefaultImpl
-  val PluginPluginLoaderDefaultImpl: load.PluginLoaderDefaultImpl.type = load.PluginLoaderDefaultImpl
   type PluginLoaderPredefImpl = load.PluginLoaderPredefImpl
 
-  type LoadedPlugins = plugins.LoadedPlugins
-  val LoadedPlugins: plugins.LoadedPlugins.type = plugins.LoadedPlugins
+  type LoadedPlugins = plugins.MergedPlugins
+  val LoadedPlugins: plugins.MergedPlugins.type = plugins.MergedPlugins
 
   type PluginMergeStrategy = plugins.merge.PluginMergeStrategy
 

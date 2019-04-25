@@ -14,8 +14,14 @@ import com.github.pshirshov.izumi.functional.Renderable
 // TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semiplan
 sealed trait AbstractPlan {
   def definition: ModuleBase
+
   def steps: Seq[ExecutableOp]
+
   def roots: Set[DIKey]
+
+  lazy val index: Map[DIKey, ExecutableOp] = {
+    steps.map(s => s.target -> s).toMap
+  }
 
   /** Get all imports (unresolved dependencies).
     *
@@ -50,7 +56,7 @@ sealed trait AbstractPlan {
     val safeSteps = steps.flatMap {
       case _: InitProxy =>
         Seq.empty
-      case i: MakeProxy=>
+      case i: MakeProxy =>
         Seq(i.op)
       case o => Seq(o)
     }
@@ -63,6 +69,15 @@ sealed trait AbstractPlan {
 
   def filter[T: Tag]: Seq[ExecutableOp] = {
     steps.filter(_.target == DIKey.get[T])
+  }
+
+  def collectChildren[T: Tag]: Seq[ExecutableOp] = {
+    val parent = SafeType.get[T]
+    steps.filter {
+      op =>
+        val maybeChild = ExecutableOp.instanceType(op)
+        maybeChild weak_<:< parent
+    }
   }
 
   def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
@@ -97,10 +112,6 @@ object AbstractPlan {
   * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey]) extends AbstractPlan {
-  lazy val index: Map[DIKey, ExecutableOp] = {
-    steps.map(s => s.target -> s).toMap
-  }
-
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
     SemiPlan(definition, steps.map(f).toVector, roots)
   }
@@ -141,9 +152,6 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], r
 }
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey], topology: PlanTopology) extends AbstractPlan {
-
-  //def render(implicit ev: Renderable[OrderedPlan]): String = ev.render(this)
-
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }
@@ -169,7 +177,15 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
 object OrderedPlan {
   implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
 
-  implicit class PlanSyntax(r: OrderedPlan) {
-    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(r)
+  implicit class PlanSyntax(plan: OrderedPlan) {
+    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
+
+    def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan).render()
+
+    def renderAllDeps(): String = {
+      val effectiveRoots = plan.keys.filter(k => plan.topology.dependees.direct(k).isEmpty)
+      effectiveRoots.map(root => plan.topology.dependencies.tree(root)).map(renderDeps).mkString("\n")
+    }
   }
+
 }

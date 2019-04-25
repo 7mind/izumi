@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
 
 import java.net.URI
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.functional.bio.BIOExit
@@ -12,8 +13,9 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import io.circe.Printer
 import io.circe.parser.parse
 import io.circe.syntax._
-import org.java_websocket.client.WebSocketClient
-import org.java_websocket.handshake.ServerHandshake
+import org.asynchttpclient.netty.ws.NettyWebSocket
+import org.asynchttpclient.ws.{WebSocket, WebSocketListener, WebSocketUpgradeHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 case class PacketInfo(method: IRTMethodId, packetId: RpcPacketId)
 
@@ -40,39 +42,67 @@ class ClientWsDispatcher[C <: Http4sContext]
 
   val requestState = new RequestState[BiIO]()
 
-  protected val wsClient: WebSocketClient = new WebSocketClient(baseUri) {
-    override def onOpen(handshakedata: ServerHandshake): Unit = {}
+  import org.asynchttpclient.Dsl._
 
-    override def onMessage(message: String): Unit = {
-      logger.debug(s"Incoming WS message: $message")
-
-      val result = for {
-        parsed <- BIO.fromEither(parse(message))
-        _ <- BIO.sync(logger.debug(s"parsed: $parsed"))
-        decoded <- BIO.fromEither(parsed.as[RpcPacket])
-        v <- routeResponse(decoded)
-      } yield {
-        v
-      }
-
-      BIORunner.unsafeRunAsyncAsEither(result) {
-        case Success(PacketInfo(packetId, method)) =>
-          logger.debug(s"Processed incoming packet $method: $packetId")
-
-        case Error(error) =>
-          logger.error(s"Failed to process request: $error")
-
-        case Termination(cause, _) =>
-          logger.error(s"Failed to process request, termination: $cause")
-      }
+  private val wsc = asyncHttpClient(config())
+  private val listener = new WebSocketListener() {
+    override def onOpen(websocket: WebSocket): Unit = {
+      logger.debug(s"WS connection open: $websocket")
     }
 
-    override def onClose(code: Int, reason: String, remote: Boolean): Unit = {
-      logger.debug(s"WS connection closed: $code, $reason, $remote")
+    override def onClose(websocket: WebSocket, code: Int, reason: String): Unit = {
+      logger.debug(s"WS connection closed: $websocket, $code, $reason")
     }
 
-    override def onError(exception: Exception): Unit = {
-      logger.debug(s"WS connection errored: $exception")
+    override def onError(t: Throwable): Unit = {
+      logger.debug(s"WS connection errored: $t")
+    }
+
+    override def onTextFrame(payload: String, finalFragment: Boolean, rsv: Int): Unit = {
+      processFrame(payload)
+    }
+  }
+
+
+  private val connection = new AtomicReference[NettyWebSocket]()
+
+  private def send(out: String): Unit = {
+    import scala.collection.JavaConverters._
+    connection.synchronized {
+      if (connection.get() == null) {
+        connection.set(wsc.prepareGet(baseUri.toString)
+          .execute(new WebSocketUpgradeHandler(List(listener).asJava))
+          .get())
+      }
+    }
+    connection.get().sendTextFrame(out).discard()
+  }
+
+  override def close(): Unit = {
+    wsc.close()
+  }
+
+  private def processFrame(payload: String): Unit = {
+    logger.debug(s"Incoming WS message: $payload")
+
+    val result = for {
+      parsed <- BIO.fromEither(parse(payload))
+      _ <- BIO.sync(logger.debug(s"parsed: $parsed"))
+      decoded <- BIO.fromEither(parsed.as[RpcPacket])
+      v <- routeResponse(decoded)
+    } yield {
+      v
+    }
+
+    BIORunner.unsafeRunAsyncAsEither(result) {
+      case Success(PacketInfo(packetId, method)) =>
+        logger.debug(s"Processed incoming packet $method: $packetId")
+
+      case Error(error) =>
+        logger.error(s"Failed to process request: $error")
+
+      case Termination(cause, _) =>
+        logger.error(s"Failed to process request, termination: $cause")
     }
   }
 
@@ -101,12 +131,12 @@ class ClientWsDispatcher[C <: Http4sContext]
               logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
               BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
-          maybeEncoded <- BIO.syncThrowable(maybePacket.map(r => printer.pretty(r.asJson)))
-          _ <- BIO.syncThrowable {
+          maybeEncoded <- BIO(maybePacket.map(r => printer.pretty(r.asJson)))
+          _ <- BIO {
             maybeEncoded match {
               case Some(response) =>
                 logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
-                wsClient.send(response)
+                send(response)
               case None =>
             }
           }
@@ -129,14 +159,6 @@ class ClientWsDispatcher[C <: Http4sContext]
     }
   }
 
-  wsClient.connect()
-  while (!wsClient.isOpen) {
-    Thread.`yield`()
-  }
-
-  override def close(): Unit = {
-    wsClient.closeBlocking()
-  }
 
   import scala.concurrent.duration._
 
@@ -160,11 +182,11 @@ class ClientWsDispatcher[C <: Http4sContext]
             w =>
               val pid = w.id.get // guaranteed to be present
 
-              BIO.syncThrowable {
+              BIO {
                 val out = printer.pretty(transformRequest(w).asJson)
                 logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                 requestState.request(pid, request.method)
-                wsClient.send(out)
+                send(out)
                 pid
               }
                 .flatMap {

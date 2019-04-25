@@ -23,14 +23,24 @@ class AnimalModel extends WordSpec with MkInjector {
         make[App]
       }, DIKey.get[App])
 
-      //val injector = Injector.Standard()
-      val injector = Injector.Standard(new GraphDumpBootstrapModule())
+      val debug = false
+
+      val injector = if (debug) {
+        Injector.Standard(new GraphDumpBootstrapModule())
+      } else {
+        Injector.Standard()
+      }
+
       val plan = injector.plan(definition)
-      import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-      println()
-      println(plan.render)
-      println()
-      println(plan.topology.dependencies.tree(DIKey.get[AccountsApiImpl]))
+
+      if (debug) {
+        println()
+        println(plan.render)
+        println()
+        println(plan.renderDeps(plan.topology.dependencies.tree(DIKey.get[AccountsApiImpl])))
+        println(plan.renderAllDeps())
+        println()
+      }
       val context = injector.produceUnsafe(plan)
       assert(context.find[App].nonEmpty)
     }

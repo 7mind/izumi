@@ -216,7 +216,8 @@ lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
   .settings(
-    libraryDependencies ++= (R.zio_core +: R.cats_all).map(_.cross(platformDepsCrossVersion.value) % Optional)
+    libraryDependencies ++= R.cats_all.map(_.cross(platformDepsCrossVersion.value) % Optional),
+    libraryDependencies ++= Seq(R.zio_core).map(_.cross(platformDepsCrossVersion.value) % Optional),
   )
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
@@ -267,10 +268,11 @@ lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
 lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
 lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
 
+//-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
   .depends(
     fundamentalsReflection,
-    fundamentalsBioJvm,
+    fundamentalsBioJvm, // all deps there are optional
   )
   .settings(
     libraryDependencies ++= R.cats_all.map(_ % Optional),
@@ -279,73 +281,63 @@ lazy val distageModel = inDiStage.as.module
 lazy val distageProxyCglib = inDiStage.as.module
   .depends(distageModel)
   .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-      , R.cglib_nodep
-    )
+    libraryDependencies += R.cglib_nodep
   )
+
+lazy val distageCore = inDiStage.as.module
+  .depends(fundamentalsFunctionalJvm, distageModel, distageProxyCglib)
 
 lazy val distageConfig = inDiStage.as.module
   .depends(
-    distageCore,
     fundamentalsTypesafeConfig,
+    distageModel,
+    distageCore.testOnlyRef,    
+  )
+  .settings(
+    libraryDependencies += R.typesafe_config
+  )
+
+lazy val distagePlugins = inDiStage.as.module
+  .depends(
+    distageModel,
+    distageCore.testOnlyRef,
+    distageConfig.testOnlyRef,
+    logstageCore.testOnlyRef,
+  )
+  .settings(
+    libraryDependencies ++= Seq(R.fast_classpath_scanner)
+  )
+
+lazy val distageRolesApi = inDiStage.as.module
+  .depends(distageModel)
+
+lazy val distageRoles = inDiStage.as.module
+  .depends(
+    distageRolesApi,
+    distageCore,
+    distagePlugins,
+    distageConfig,
     logstageRenderingCirce,
     logstageAdapterSlf4j,
     logstageDi,
   )
   .settings(
-    libraryDependencies ++= Seq(
-      R.typesafe_config
-    )
+    libraryDependencies ++= R.cats_all.map(_ % Optional),
+    libraryDependencies ++= Seq(R.zio_core).map(_ % Optional),
+
   )
 
-lazy val distagePlugins = inDiStage.as.module
-  .depends(distageCore, distageConfig.testOnlyRef)
+lazy val distageStatic = inDiStage.as.module
+  .depends(distageCore, distageRoles.testOnlyRef)
   .settings(
-    libraryDependencies ++= Seq(R.fast_classpath_scanner)
-  )
-
-lazy val distageApp = inDiStage.as.module
-  .depends(distageCore, distagePlugins, distageConfig)
-
-lazy val distageRolesApi = inDiStage.as.module
-  .depends(distageCore, distagePlugins)
-
-lazy val distageRoles = inDiStage.as.module
-  .depends(distageRolesApi, distageApp)
-
-lazy val distageRolesScalaopt = inDiStage.as.module
-  .depends(distageRoles)
-  .settings(
-    libraryDependencies += R.scopt
-  )
-
-lazy val distageCore = inDiStage.as.module
-  .depends(fundamentalsFunctionalJvm, distageModel, distageProxyCglib)
-  .settings(
-    libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
-    )
+    libraryDependencies += R.shapeless
   )
 
 lazy val distageTestkit = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, distageRoles, logstageDi)
   .settings(
-    libraryDependencies ++= Seq(R.scalatest, R.scalacheck, R.scalacheck_shapeless)
+    libraryDependencies ++= Seq(R.scalatest)
   )
-
-lazy val distageCats = inDiStage.as.module
-  .depends(distageCore)
-  .settings(
-    libraryDependencies ++= R.cats_all
-  )
-
-lazy val distageStatic = inDiStage.as.module
-  .depends(distageCore, distageApp.testOnlyRef)
-  .settings(
-    libraryDependencies += R.shapeless
-  )
-
 //-----------------------------------------------------------------------------
 
 lazy val logstageApi = inLogStage.as.module
@@ -387,8 +379,7 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
   )
 
 lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstageCore)
-  .settings(libraryDependencies ++= R.circe)
+  .depends(logstageCore, fundamentalsJsonCirceJvm)
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
@@ -415,9 +406,8 @@ lazy val idealinguaCoreJs = idealinguaCore.js.remember
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
 
 lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
-  .dependsOn(fundamentalsBio)
+  .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
   .settings(
-    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
@@ -428,10 +418,10 @@ lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntime
 
 lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaCore,
     idealinguaRuntimeRpcScala,
+    fundamentalsJsonCirce,
   )
 lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
   .settings(ShadingSettings)
@@ -448,7 +438,11 @@ lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
+  .settings(
+    libraryDependencies ++= R.http4s_all,
+    libraryDependencies += R.asynchttpclient,
+  )
+
 
 lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
 
@@ -470,12 +464,12 @@ lazy val idealinguaCompiler = inIdealinguaBase.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
+    libraryDependencies ++= Seq(R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
       art.withClassifier(Some("assembly"))
     },
 
@@ -496,9 +490,8 @@ lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
-  .dependsOn(fundamentalsBio)
+  .dependsOn(fundamentalsBio,     fundamentalsJsonCirce)
   .settings(
-    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
@@ -510,10 +503,10 @@ lazy val idealinguaV1TestDefs = inIdealinguaV1.as.module.dependsOn(idealinguaV1R
 lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
   .settings(libraryDependencies += R.scalameta)
-  .settings(libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value)))
   .depends(
     idealinguaV1Core,
     idealinguaV1RuntimeRpcScala,
+    fundamentalsJsonCirce,
   )
 lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
   .settings(ShadingSettings)
@@ -530,7 +523,10 @@ lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
   .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaV1TestDefs).map(_.testOnlyRef))
-  .settings(libraryDependencies ++= R.http4s_all ++ R.java_websocket)
+  .settings(
+    libraryDependencies ++= R.http4s_all,
+    libraryDependencies += R.asynchttpclient,
+  )
 
 lazy val idealinguaV1RuntimeRpcTypescript = inIdealinguaV1.as.module
 
@@ -552,12 +548,12 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.scopt, R.typesafe_config)
+    libraryDependencies ++= Seq(R.typesafe_config)
     , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
-    artifact in (Compile, assembly) := {
-      val art = (artifact in (Compile, assembly)).value
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
       art.withClassifier(Some("assembly"))
     },
 
@@ -593,8 +589,6 @@ lazy val logstage: Seq[ProjectReference] = Seq(
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles
-  , distageRolesScalaopt
-  , distageCats
   , distageStatic
   , distageTestkit
 )
@@ -699,7 +693,7 @@ lazy val microsite = inDoc.as.module
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     )
-//    , mdoc := run.in(Compile).evaluated
+    //    , mdoc := run.in(Compile).evaluated
     , mdocIn := baseDirectory.value / "src/main/tut"
     , sourceDirectory in Paradox := mdocOut.value
     , makeSite := makeSite.dependsOn(mdoc.toTask(" --no-link-hygiene")).value

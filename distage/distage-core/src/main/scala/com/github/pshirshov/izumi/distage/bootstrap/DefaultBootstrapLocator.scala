@@ -5,8 +5,9 @@ import com.github.pshirshov.izumi.distage.model._
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.provisioning._
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
+import com.github.pshirshov.izumi.distage.model.provisioning.{PlanInterpreter, _}
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
@@ -18,19 +19,24 @@ import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.distage.{provisioning, _}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import distage.TagK
 
 class DefaultBootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
 
   import DefaultBootstrapLocator.{bootstrapPlanner, bootstrapProducer}
+
+  override protected[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
   val parent: Option[AbstractLocator] = None
 
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
   protected val bootstrappedContext: Locator = {
-    val resource = bootstrapProducer.instantiate[Identity](plan, this)
+    val resource = bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
+
+
 
   def instances: Seq[IdentifiedRef] = bootstrappedContext.instances
 
@@ -101,7 +107,6 @@ object DefaultBootstrapLocator {
   final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     many[PlanningObserver]
 
-    make[LookupInterceptor].from(NullLookupInterceptor)
     make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]

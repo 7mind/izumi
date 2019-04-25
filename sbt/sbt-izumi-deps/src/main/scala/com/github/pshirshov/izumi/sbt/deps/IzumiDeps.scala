@@ -9,10 +9,9 @@ object IzumiDeps {
     val scala_212 = "2.12.8"
     val scala_213 = "2.13.0-M5"
 
-    val collection_compat = "0.3.0"
+    val collection_compat = "1.0.0"
 
-    val scala_java8_compat = "0.9.0" // 2.13+
-    val kind_projector = "0.9.9" // 2.13+
+    val kind_projector = "0.10.0" // 2.13+
     val scalatest = "3.2.0-SNAP9" // snap10 is broken // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
@@ -24,33 +23,25 @@ object IzumiDeps {
     val circe = "0.11.1" // 2.13+
     val circe_derivation = "0.11.0-M1"
     val jawn = "0.14.1"
-    val http4s = "0.20.0-M5" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.20.0" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "4.1.4" // https://github.com/scalameta/scalameta/issues/1693
-    val fastparse = "2.0.5" // https://github.com/lihaoyi/fastparse/issues/188
+    val scalameta = "4.1.6" // https://github.com/scalameta/scalameta/issues/1693
+    val fastparse = "2.1.0" // https://github.com/lihaoyi/fastparse/issues/188
 
     val scalacheck = "1.14.0"
-    val scalacheck_shapeless = "1.2.0-1"
 
+    // java, we need it bcs http4s ws client isn't ready yet
+    // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
+    val asynchttpclient = "2.8.1"
 
-    // TODO: we need to get rid of this
-    val java_websocket = "1.3.9" // java, we need it bcs http4s ws client isn't ready yet
-    val jaxb_api = "2.3.0" // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
-    val jaxb_core = "2.3.0.1"
-    val jaxb_impl = "2.3.0.1"
-    val activation = "1.1.1"
-
-    val classgraph = "4.8.0" // java
-    val slf4j = "1.7.25" // java
-    val typesafe_config = "1.3.3" // java
-
-    // good to drop - scala
-    val scopt = "3.7.1" // 2.13+
+    val classgraph = "4.8.25" // java
+    val slf4j = "1.7.26" // java
+    val typesafe_config = "1.3.4" // java
 
     // good to drop - java
-    val cglib_nodep = "3.2.8" // java
+    val cglib_nodep = "3.2.10" // java
 
-    val scala_xml = "1.1.1"
+    val scala_xml = "1.2.0"
   }
 
   object R {
@@ -60,17 +51,15 @@ object IzumiDeps {
     val scala_xml = "org.scala-lang.modules" %% "scala-xml" % V.scala_xml
 
     val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
-    val scalacheck_shapeless = "com.github.alexarchambault" %% "scalacheck-shapeless_1.14" % V.scalacheck_shapeless
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
     val zio_core: ModuleID = "org.scalaz" %% "scalaz-zio" % V.zio
     val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop-cats" % V.zio
 
-    private val scala_java8_compat = "org.scala-lang.modules" %% "scala-java8-compat" % V.scala_java8_compat
-    val essentials: Seq[ModuleID] = Seq(scala_java8_compat, collection_compat)
+    val essentials: Seq[ModuleID] = Seq(collection_compat)
 
-    val kind_projector = "org.spire-math" % "kind-projector" % V.kind_projector cross CrossVersion.binary
+    val kind_projector = "org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.binary
 
     val fast_classpath_scanner = "io.github.classgraph" % "classgraph" % V.classgraph
 
@@ -119,19 +108,10 @@ object IzumiDeps {
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client
 
-    @deprecated("we must throw this out once http4s implements client-side websockets", "2018-12-01")
-    val java_websocket: Seq[ModuleID] = Seq(
-      "org.java-websocket" % "Java-WebSocket" % V.java_websocket
-      , "javax.xml.bind" % "jaxb-api" % V.jaxb_api
-      , "com.sun.xml.bind" % "jaxb-core" % V.jaxb_core
-      , "com.sun.xml.bind" % "jaxb-impl" % V.jaxb_impl
-      , "javax.activation" % "activation" % V.activation
-    )
+    val asynchttpclient = "org.asynchttpclient" % "async-http-client" % V.asynchttpclient
 
     val slf4j_api = "org.slf4j" % "slf4j-api" % V.slf4j
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
-
-    val scopt = "com.github.scopt" %% "scopt" % V.scopt
 
     val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
   }
@@ -146,7 +126,6 @@ object IzumiDeps {
 
     val essentials: Seq[ModuleID] = Seq(scalatest)
 
-    val java_websocket: Seq[ModuleID] = R.java_websocket.map(_ % Test)
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)
     val zio_core = R.zio_core % Test

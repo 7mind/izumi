@@ -26,18 +26,14 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
   }
 
   override def onPhase50PreForwarding(finalPlan: SemiPlan): Unit = {
-    logPlan(finalPlan, "Resolved Plan")
+    doLog("Resolved Plan", finalPlan.toString)
   }
 
   override def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = {
     doLog("Final Plan", finalPlan.toString)
   }
 
-  private def logPlan(finalPlan: SemiPlan, title: String): Unit = {
-    doLog(title, finalPlan.toString)
-  }
-
-  private def doLog(title: String, body: String): Unit = {
+  private def doLog(title: => String, body: => String): Unit = {
     logger.log(Seq(
       "=" * 60 + s" $title " + "=" * 60
       , s"$body"

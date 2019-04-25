@@ -61,13 +61,13 @@ trait BIO[R[+ _, + _]] extends BIOInvariant[R] {
 }
 
 object BIO extends BIOSyntax {
-
   @inline def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
 
   @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
 
-  import scalaz.zio.{Exit, IO, Schedule}
+
   import scalaz.zio.duration.Duration.fromScala
+  import scalaz.zio.{Exit, IO, Schedule}
 
   implicit object BIOZio extends BIOAsync[IO] {
     @inline override def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =

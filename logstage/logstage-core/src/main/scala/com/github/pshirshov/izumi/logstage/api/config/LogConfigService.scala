@@ -5,7 +5,6 @@ import java.util.function
 
 import com.github.pshirshov.izumi.logstage.api.Log
 
-import scala.compat.java8.FunctionConverters._
 
 trait LogConfigService extends AutoCloseable {
   def loggerConfig: LoggerConfig
@@ -31,7 +30,7 @@ trait LogConfigService extends AutoCloseable {
         .map(id => loggerConfig.entries.get(id))
         .find(_.nonEmpty)
         .flatten.getOrElse(loggerConfig.root)
-  }.asJava
+  }
 
   @inline private[this] def configFor(e: Log.LoggerId): LoggerPathConfig = {
     configCache.computeIfAbsent(e.id, findConfig)

@@ -25,7 +25,7 @@ function versionate {
   bopen
   if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
     echo "Setting version suffix to $TRAVIS_BRANCH"
-    csbt "addVersionSuffix $TRAVIS_BRANCH"
+    csbt "\"addVersionSuffix $TRAVIS_BRANCH\""
   else
     echo "No version suffix required"
   fi
@@ -71,6 +71,10 @@ function publish {
   fi
 
   if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+    return 0
+  fi
+
+  if [[ ! ("$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$) ]] ; then
     return 0
   fi
 

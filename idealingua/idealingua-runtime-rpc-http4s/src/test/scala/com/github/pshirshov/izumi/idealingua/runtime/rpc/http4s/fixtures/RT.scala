@@ -16,9 +16,9 @@ import scala.concurrent.ExecutionContext.global
 object RT {
   final val logger = makeLogger()
   final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
-  final val handler = BIORunner.DefaultHandler.Custom(message => zio.IO.sync(logger.warn(s"Fiber failed: $message")))
-
   implicit val clock: Clock = Clock.Live
+
+  final val handler = BIORunner.DefaultHandler.Custom(message => zio.IO.sync(logger.warn(s"Fiber failed: $message")))
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(
     Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
   , Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor]

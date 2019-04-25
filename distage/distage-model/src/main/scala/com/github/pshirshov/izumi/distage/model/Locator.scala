@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -48,6 +49,8 @@ trait Locator {
   def get[T: Tag]: T
 
   def get[T: Tag](id: String): T
+
+  protected[distage] def finalizers[F[_]: TagK]: Seq[Finalizer[F]]
 
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
 

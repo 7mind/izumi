@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.plugins.load
 
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 
 trait PluginLoader {
   def load(): Seq[PluginBase]
@@ -19,4 +18,11 @@ object PluginLoader {
   def apply(plugins: Seq[PluginBase]): PluginLoader = new PluginLoaderPredefImpl(plugins)
 
   def empty: PluginLoader = PluginLoaderNullImpl
+
+  final case class PluginConfig
+  (
+    debug: Boolean
+    , packagesEnabled: Seq[String]
+    , packagesDisabled: Seq[String]
+  )
 }

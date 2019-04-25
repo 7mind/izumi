@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.provisioning
 
+import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
@@ -8,7 +9,7 @@ import scala.collection.{Map, Seq, mutable}
 trait Provision[+F[_]] {
   def instances: Map[DIKey, Any]
   def imports: Map[DIKey, Any]
-  def finalizers: Seq[(DIKey, () => F[Unit])]
+  def finalizers: Seq[Finalizer[F]]
 
   def narrow(allRequiredKeys: Set[DIKey]): Provision[F]
   def extend(values: Map[DIKey, Any]): Provision[F]
@@ -26,7 +27,7 @@ object Provision {
   (
     instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
     , imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    , finalizers: mutable.ListBuffer[(DIKey, () => F[Unit])] = mutable.ListBuffer[(DIKey, () => F[Unit])]()
+    , finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]]()
   ) extends Provision[F] {
     def toImmutable: ProvisionImmutable[F] = {
       ProvisionImmutable(instances, imports, finalizers)
@@ -45,13 +46,13 @@ object Provision {
    (
      instances: Map[DIKey, Any]
      , imports: Map[DIKey, Any]
-     , finalizers: Seq[(DIKey, () => F[Unit])]
+     , finalizers: Seq[Finalizer[F]]
    ) extends Provision[F] {
      override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
        ProvisionImmutable(
          instances.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
          , imports.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
-         , finalizers.filter(allRequiredKeys contains _._1)
+         , finalizers.filter(allRequiredKeys contains _.key)
        )
      }
 

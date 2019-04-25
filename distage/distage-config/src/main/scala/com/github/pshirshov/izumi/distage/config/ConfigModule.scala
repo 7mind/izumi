@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 
 case class ConfigInjectionOptions(
-                                 enableScalars: Boolean = false
+                                 enableScalars: Boolean = true
                                  , transformer: ConfigValueTransformer = ConfigValueTransformer.Null
                                )
 

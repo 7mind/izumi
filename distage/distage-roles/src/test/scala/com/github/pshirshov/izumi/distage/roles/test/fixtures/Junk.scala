@@ -1,0 +1,64 @@
+package com.github.pshirshov.izumi.distage.roles.test.fixtures
+
+import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
+
+import scala.collection.mutable
+
+object Junk {
+  trait Dummy
+
+
+  case class TestServiceConf(
+                              intval: Int
+                              , strval: String
+                              , overridenInt: Int
+                              , systemPropInt: Int
+                              , systemPropList: List[Int]
+                            )
+
+
+
+  class InitCounter {
+    val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
+    val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
+    val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()
+  }
+
+  trait Resource
+
+  class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
+    counter.startedCloseables += this
+
+    override def close(): Unit = counter.closedCloseables += this
+
+    override def resourcesAvailable(): ResourceCheck = {
+      counter.checkedResources += this
+      ResourceCheck.Success()
+    }
+  }
+
+  class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
+    counter.startedCloseables += this
+
+    override def close(): Unit = counter.closedCloseables += this
+
+    override def resourcesAvailable(): ResourceCheck = {
+      counter.checkedResources += this
+      ResourceCheck.Success()
+    }
+  }
+
+  case class Resource3(roleComponent: Resource4, counter: InitCounter) extends Resource
+
+  case class Resource4(closeable: Resource5, counter: InitCounter) extends Resource
+
+  case class Resource5(roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
+    counter.startedCloseables += this
+
+    override def close(): Unit = counter.closedCloseables += this
+  }
+
+  case class Resource6(counter: InitCounter) extends Resource
+
+}

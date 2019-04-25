@@ -26,7 +26,7 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 
 // https://github.com/xerial/sbt-sonatype
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.3")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.5")
 
 // https://github.com/sbt/sbt-release
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.9")

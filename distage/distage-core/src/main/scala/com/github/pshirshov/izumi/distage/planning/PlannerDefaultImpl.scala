@@ -2,13 +2,11 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
@@ -32,13 +30,13 @@ class PlannerDefaultImpl
   override def plan(input: PlannerInput): OrderedPlan = {
     val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
       case (currentPlan, binding) =>
-        Value(computeProvisioning(currentPlan, binding))
-          .eff(sanityChecker.assertProvisionsSane)
-          .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
-          .eff(sanityChecker.assertStepSane)
-          .map(hook.hookStep(input.bindings, currentPlan, binding, _))
-          .eff(planningObserver.onSuccessfulStep)
-          .get
+          Value(computeProvisioning(currentPlan, binding))
+            .eff(sanityChecker.assertProvisionsSane)
+            .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
+            .eff(sanityChecker.assertStepSane)
+            .map(hook.hookStep(input.bindings, currentPlan, binding, _))
+            .eff(planningObserver.onSuccessfulStep)
+            .get
     }
 
     Value(plan)

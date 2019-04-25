@@ -12,11 +12,11 @@ package object plugins extends DistagePlugins {
   override type PluginLoader = load.PluginLoader
   override val PluginLoader: load.PluginLoader.type = load.PluginLoader
 
-  override type PluginConfig = load.PluginLoaderDefaultImpl.PluginConfig
-  override val PluginConfig: load.PluginLoaderDefaultImpl.PluginConfig.type = load.PluginLoaderDefaultImpl.PluginConfig
+  override type PluginConfig = load.PluginLoader.PluginConfig
+  override val PluginConfig: load.PluginLoader.PluginConfig.type = load.PluginLoader.PluginConfig
 
-  override type LoadedPlugins = com.github.pshirshov.izumi.distage.plugins.LoadedPlugins
-  override val LoadedPlugins: com.github.pshirshov.izumi.distage.plugins.LoadedPlugins.type = com.github.pshirshov.izumi.distage.plugins.LoadedPlugins
+  override type LoadedPlugins = com.github.pshirshov.izumi.distage.plugins.MergedPlugins
+  override val LoadedPlugins: com.github.pshirshov.izumi.distage.plugins.MergedPlugins.type = com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 
   override type PluginMergeStrategy = merge.PluginMergeStrategy
 

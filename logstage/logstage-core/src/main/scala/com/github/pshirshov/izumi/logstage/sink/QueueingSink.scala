@@ -13,12 +13,17 @@ import scala.concurrent.duration._
 
 
 class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
-  extends LogSink with AutoCloseable {
+  extends LogSink
+    with AutoCloseable {
+
+  import QueueingSink._
+
   private val queue = new ConcurrentLinkedQueue[Log.Entry]()
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
 
   private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
+
   private val pollingThread = {
     val result = new Thread(new ThreadGroup("logstage"), poller(), "logstage-poll")
     result.setDaemon(true)
@@ -47,10 +52,16 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
       finish()
     }
   }
-  import QueueingSink._
 
   def start(): Unit = {
     pollingThread.start()
+  }
+
+  def flush(e: Log.Entry): Unit = {
+    queue.add(e).discard()
+    if (stop.get()) {
+      finish()
+    }
   }
 
   override def close(): Unit = {
@@ -76,12 +87,6 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
     entry
   }
 
-  override def flush(e: Log.Entry): Unit = {
-    queue.add(e).discard()
-    if (stop.get()) {
-      finish()
-    }
-  }
 
 }
 

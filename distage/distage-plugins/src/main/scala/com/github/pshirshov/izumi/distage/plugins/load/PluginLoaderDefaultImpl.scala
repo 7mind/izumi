@@ -1,14 +1,12 @@
 package com.github.pshirshov.izumi.distage.plugins.load
 
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
-import distage.plugins.PluginConfig
 import io.github.classgraph.{ClassGraph, ClassInfo}
 
 import scala.collection.JavaConverters._
 
-class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
+class PluginLoaderDefaultImpl(pluginConfig: PluginLoader.PluginConfig) extends PluginLoader {
   def load(): Seq[PluginBase] = {
     val base = classOf[PluginBase]
     val defClass = classOf[PluginDef]
@@ -45,13 +43,3 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
   }
 }
 
-object PluginLoaderDefaultImpl {
-
-  final case class PluginConfig
-  (
-    debug: Boolean
-  , packagesEnabled: Seq[String]
-  , packagesDisabled: Seq[String]
-  )
-
-}

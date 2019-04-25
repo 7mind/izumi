@@ -15,13 +15,13 @@ trait LogRouter extends AutoCloseable {
 object LogRouter {
   final val fallbackPropertyName = "izumi.logstage.routing.log-failures"
 
-  final val nullRouter = new LogRouter {
+  final val nullRouter: LogRouter = new LogRouter {
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = false
 
     override def log(entry: Log.Entry): Unit = {}
   }
 
-  final val debugRouter = new LogRouter {
+  final val debugRouter: LogRouter = new LogRouter {
     private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
 
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true

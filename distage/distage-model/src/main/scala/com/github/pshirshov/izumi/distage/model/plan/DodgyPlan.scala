@@ -8,9 +8,9 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.mutable
 
 final case class DodgyPlan(
-                            operations: OpMap
-                          , definition: ModuleBase
-                          , roots: Set[DIKey]
+                            operations: OpMap,
+                            definition: ModuleBase,
+                            roots: Set[DIKey],
                           )
 
 object DodgyPlan {
