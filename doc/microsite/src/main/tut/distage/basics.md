@@ -187,7 +187,9 @@ object HostPortModule extends ModuleDef {
 
 Given a `Locator` we can retrieve instances by type, call methods on them or summon them with a function:
 
-```scala mdoc:invisible
+```scala mdoc:invisible:reset
+import distage._
+
 class Hello {
   def apply(name: String): Unit = println(s"Hello $name")
 }
@@ -340,9 +342,6 @@ server.router.run(Request(uri = uri("/home")))
 ```
 
 ```scala mdoc
-class DBConnection
-class MessageQueueConnection
-
 server.router.run(Request(uri = uri("/blog/1")))
   .flatMap(_.as[String]).unsafeRunSync
 ```
@@ -425,21 +424,28 @@ Global resources will be deallocated when the app or the test ends.
 
 Note that lifecycle control via `DIResource` is available in non-FP applications as well via inheritance from `DIResource.Simple` and `DIResource.Mutable`.
 
-Basic example with `cats` Resource:
+Example with `cats` Resource:
 
-```scala mdoc
+```scala mdoc:reset
 import distage._
 import cats.effect._
 
+class DBConnection
+class MessageQueueConnection
 
-val dbResource = Resource.make(IO { println("Connecting to DB!"); new DBConnection })(_ => IO(println("Disconnecting DB")))
-val mqResource = Resource.make(IO { println("Connecting to Message Queue!"); new MessageQueueConnection })(_ => IO(println("Disconnecting Message Queue")))
+val dbResource = Resource.make(
+  acquire = IO { println("Connecting to DB!"); new DBConnection }
+)(release = _ => IO(println("Disconnecting DB")))
+
+val mqResource = Resource.make(
+  acquire = IO { println("Connecting to Message Queue!"); new MessageQueueConnection }
+)(release = _ => IO(println("Disconnecting Message Queue")))
 
 class MyApp(db: DBConnection, mq: MessageQueueConnection) {
   val run = IO(println("Hello World!"))
 }
 
-val module = new ModuleDef {
+def module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
   addImplicit[Bracket[IO, Throwable]]
@@ -448,9 +454,18 @@ val module = new ModuleDef {
 ```
 
 ```scala mdoc:invisible
+// cats conversions cause a reflection exception in mdoc
+val HACK_OVERRIDE_dbResource = DIResource.make(
+  acquire = IO { println("Connecting to DB!"); new DBConnection }
+)(release = _ => IO(println("Disconnecting DB")))
+
+val HACK_OVERRIDE_mqResource = DIResource.make(
+  acquire = IO { println("Connecting to Message Queue!"); new MessageQueueConnection }
+)(release = _ => IO(println("Disconnecting Message Queue")))
+
 val HACK_OVERRIDE_module = new ModuleDef {
-  make[DBConnection].fromResource(dbResource)
-  make[MessageQueueConnection].fromResource(mqResource)
+  make[DBConnection].fromResource(HACK_OVERRIDE_dbResource)
+  make[MessageQueueConnection].fromResource(HACK_OVERRIDE_mqResource)
   addImplicit[Bracket[IO, Throwable]]
   make[MyApp].from(new MyApp(_, _))
 }
