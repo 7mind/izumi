@@ -158,7 +158,7 @@ object ArgumentNameExtractionMacro {
     import c.universe._
     val prefixRepr = c.Expr[String](Literal(Constant(prefix)))
     reify {
-      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hidden = false)
+      LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hiddenName = false)
     }
   }
 
@@ -167,7 +167,7 @@ object ArgumentNameExtractionMacro {
     import c.universe._
     val paramRepTree = c.Expr[String](Literal(Constant(s)))
     reify {
-      LogArg(Seq(paramRepTree.splice), param.splice, hidden = true)
+      LogArg(Seq(paramRepTree.splice), param.splice, hiddenName = true)
     }
   }
 
@@ -175,7 +175,7 @@ object ArgumentNameExtractionMacro {
     import c.universe._
     val list = c.Expr[Seq[String]](q"List(..$s)")
     reify {
-      LogArg(list.splice, param.splice, hidden = false)
+      LogArg(list.splice, param.splice, hiddenName = false)
     }
   }
 

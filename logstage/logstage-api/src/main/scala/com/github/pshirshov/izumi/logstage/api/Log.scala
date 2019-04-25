@@ -61,7 +61,7 @@ object Log {
 
   }
 
-  final case class LogArg(path: Seq[String], value: Any, hidden: Boolean) {
+  final case class LogArg(path: Seq[String], value: Any, hiddenName: Boolean) {
     def name: String = path.last
   }
 
@@ -76,7 +76,7 @@ object Log {
   object CustomContext {
     def apply(map: Map[String, Any]): CustomContext = {
       val logArgs = map.map {
-        case (k, v) => LogArg(Seq(k), v, hidden = false)
+        case (k, v) => LogArg(Seq(k), v, hiddenName = false)
       }.toList
 
       CustomContext(logArgs)

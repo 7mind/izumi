@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import io.circe._
 import io.circe.syntax._
+import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
 import scala.collection.mutable
 import scala.runtime.RichInt
@@ -17,13 +18,13 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     val result = mutable.ArrayBuffer[(String, Json)]()
 
     val formatted = LogUnit.formatMessage(entry, withColors = false)
-    val params = parametersToJson[RenderedParameter](formatted.parameters, _.name, repr)
+    val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.visibleName, repr)
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }
 
     val ctx = parametersToJson[LogArg](entry.context.customContext.values, _.name, v => {
-      val p = LogUnit.formatArg(v.name, v.value, withColors = false)
+      val p = LogUnit.formatArg(v, withColors = false)
       repr(p)
     })
 
@@ -78,44 +79,52 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   }
 
   @inline private[this] def repr(parameter: RenderedParameter): Json = {
-    import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-
-    parameter.value match {
-      case null =>
-        Json.Null
-      case a: Json =>
-        a
-      case a: Double =>
-        Json.fromDoubleOrNull(a)
-      case a: BigDecimal =>
-        Json.fromBigDecimal(a)
-      case a: Int =>
-        Json.fromInt(a)
-      case a: BigInt =>
-        Json.fromBigInt(a)
-      case a: Boolean =>
-        Json.fromBoolean(a)
-      case a: Long =>
-        Json.fromLong(a)
+    val mapStruct: PartialFunction[Any, Json] = {
       case a: Iterable[_] =>
         val params = a
           .map {
             v =>
-              val formatted = LogUnit.formatArg(parameter.visibleName, v, withColors = false)
-              repr(formatted)
+              mapListElement.apply(v)
           }
           .toList
         Json.arr(params: _*)
-      case a: Throwable =>
-        Json.fromFields(Seq(
-          "type" -> Json.fromString(a.getClass.getName)
-          , "message" -> Json.fromString(a.getMessage)
-          , "stacktrace" -> Json.fromString(a.stackTrace)
-        ))
       case _ =>
         Json.fromString(parameter.repr)
     }
+
+    val mapParameter = mapScalar orElse mapStruct
+
+    mapParameter(parameter.value)
   }
 
+  private val mapScalar: PartialFunction[Any, Json] = {
+    case null =>
+      Json.Null
+    case a: Json =>
+      a
+    case a: Double =>
+      Json.fromDoubleOrNull(a)
+    case a: BigDecimal =>
+      Json.fromBigDecimal(a)
+    case a: Int =>
+      Json.fromInt(a)
+    case a: BigInt =>
+      Json.fromBigInt(a)
+    case a: Boolean =>
+      Json.fromBoolean(a)
+    case a: Long =>
+      Json.fromLong(a)
+    case a: Throwable =>
+      Json.fromFields(Seq(
+        "type" -> Json.fromString(a.getClass.getName)
+        , "message" -> Json.fromString(a.getMessage)
+        , "stacktrace" -> Json.fromString(a.stackTrace)
+      ))
+  }
 
+  private val mapToString: PartialFunction[Any, Json] = {
+    case o => Json.fromString(o.toString)
+  }
+
+  private val mapListElement = mapScalar orElse mapToString
 }

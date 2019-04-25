@@ -31,7 +31,7 @@ class LoggerInjectionTest extends WordSpec {
         make[ExampleApp]
       })
 
-      val loggerModule = new LogstageModule(router)
+      val loggerModule = new LogstageModule(router, false)
 
       val injector = Injector.Standard(loggerModule)
       val plan = injector.plan(definition)

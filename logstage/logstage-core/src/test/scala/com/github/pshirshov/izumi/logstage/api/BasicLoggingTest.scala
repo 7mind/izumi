@@ -17,11 +17,11 @@ class BasicLoggingTest extends WordSpec {
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
       assert(message.args ==
         List(
-          LogArg(Seq("arg1"), 1, hidden = false),
-          LogArg(Seq("arg2"), "argument 2", hidden = false),
-          LogArg(Seq("arg2"), "argument 2", hidden = false),
-          LogArg(Seq("UNNAMED:4"), 4, hidden = false),
-          LogArg(Seq("UNNAMED:4"), 4, hidden = false)
+          LogArg(Seq("arg1"), 1, hiddenName = false),
+          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
+          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false)
         )
       )
       assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
@@ -35,7 +35,7 @@ class BasicLoggingTest extends WordSpec {
   "String rendering policy" should {
     "not fail on unbalanced messages" in {
       val p = new StringRenderingPolicy(RenderingOptions(withColors = false))
-      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hidden = false), LogArg(Seq("[a2]"), 2, hidden = false))))
+      val rendered = render(p, Message(StringContext("begin ", " end"), Seq(LogArg(Seq("[a1]"), 1, hiddenName = false), LogArg(Seq("[a2]"), 2, hiddenName = false))))
       assert(rendered.endsWith("begin [a1]=1 end; [a2]=2"))
     }
   }
@@ -46,7 +46,7 @@ class BasicLoggingTest extends WordSpec {
       val s = "hi"
       val msg = Message(s"begin $i $s end")
 
-      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hidden = false), LogArg(Seq("s"), "hi", hidden = false))))
+      assert(msg == Message(StringContext("begin ", " ", " end"), Seq(LogArg(Seq("i"), 5, hiddenName = false), LogArg(Seq("s"), "hi", hiddenName = false))))
     }
   }
 

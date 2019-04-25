@@ -13,8 +13,7 @@ import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.Cont
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import com.github.pshirshov.izumi.logstage.distage.LogstageModule
 import distage.TagK
 
 
@@ -26,31 +25,43 @@ class ModuleProviderImpl[F[_] : TagK](
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
-      make[LogRouter].from(logger.router)
       make[RolesInfo].from(roles)
     }
+
+    val loggerModule = new LogstageModule(logger.router, true)
+
 
     val autosetModule = AutoSetModule()
       .register[AbstractRoleF[F]]
 
-
     val configModule = new ConfigModule(config, options.configInjectionOptions)
 
     val resourceRewriter = new BootstrapModuleDef {
-      make[IzLogger].from(logger)
       make[RewriteRules].from(options.rewriteRules)
       many[PlanningHook].add[ResourceRewriter]
     }
 
-
     Seq(
-      configModule,
-      autosetModule,
-      rolesModule,
-      resourceRewriter,
-    ) ++ Seq(
+      Seq(
+        configModule,
+        autosetModule,
+        rolesModule,
+        resourceRewriter,
+        loggerModule,
+      ),
       condModule(options.addGvDump, new GraphDumpBootstrapModule())
     ).flatten
+  }
+
+  def appModules(): Seq[Module] = {
+    val baseMod = new ModuleDef {
+      addImplicit[DIEffect[Identity]]
+      make[DIEffectRunner[Identity]].from(DIEffectRunner.IdentityImpl)
+    }
+
+    Seq(
+      baseMod
+    )
   }
 
   private def condModule(condition: Boolean, module: => distage.BootstrapModuleDef): Seq[BootstrapModuleDef] = {
@@ -59,17 +70,6 @@ class ModuleProviderImpl[F[_] : TagK](
     } else {
       Seq.empty
     }
-  }
-
-  def appModules(): Seq[Module] = {
-    val baseMod = new ModuleDef {
-      make[DIEffectRunner[Identity]].from(DIEffectRunner.IdentityImpl)
-      addImplicit[DIEffect[Identity]]
-      make[CustomContext].from(CustomContext.empty)
-      make[IzLogger]
-    }
-
-    Seq(baseMod)
   }
 
 }

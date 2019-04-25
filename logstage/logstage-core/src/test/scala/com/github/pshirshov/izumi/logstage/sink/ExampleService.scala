@@ -28,7 +28,8 @@ class ExampleService(logger: IzLogger) {
 
     case class Example(v: Int, f: Throwable)
     val x = Example(1, exception)
-    logger.crit(s"Argument name extracton: ${x.v}, ${x.f.getCause}, ${Example(2, exception).v}")
+    val y = "YVAL"
+    logger.crit(s"Argument name extracton: ${x.v}, $y, $y, ${x.f.getCause}, ${Example(2, exception).v}")
 
     logger.info(s"this.field value: $field")
 

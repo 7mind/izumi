@@ -168,7 +168,7 @@ object LogUnit {
       val builder = new StringBuilder()
 
       if (values.nonEmpty) {
-        val customContextString = values.map(formatKv(withColors)).mkString(", ")
+        val customContextString = values.map(v => formatKv(withColors)(v.name, v.value)).mkString(", ")
         builder.append(s"{$customContextString}")
       }
 
@@ -198,8 +198,8 @@ object LogUnit {
       unit.aliases.map(_ -> unit)
   }.toMap
 
-  def formatArg(argname: String, arg: Any, withColors: Boolean): RenderedParameter = {
-    RenderedParameter(arg, argToString(arg, withColors), argname, normalizeName(argname))
+  def formatArg(arg: LogArg, withColors: Boolean): RenderedParameter = {
+    RenderedParameter(arg, argToString(arg.value, withColors), normalizeName(arg.name))
   }
 
   def formatMessage(entry: Log.Entry, withColors: Boolean): RenderedMessage = {
@@ -211,49 +211,53 @@ object LogUnit {
     messageBuilder.append(handle(head))
 
     val balanced = entry.message.template.parts.tail.zip(entry.message.args)
-    val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
 
-    //val parameters = new mutable.HashMap[String, mutable.ArrayBuffer[RenderedParameter]]
     val parameters = mutable.ArrayBuffer[RenderedParameter]()
+    val unbalancedArgs = mutable.ArrayBuffer[RenderedParameter]()
 
+    process(templateBuilder, messageBuilder, parameters, withColors)(balanced)
+
+    val unbalanced = entry.message.args.takeRight(entry.message.args.length - balanced.length)
+    if (unbalanced.nonEmpty) {
+      templateBuilder.append(" {{ ")
+      messageBuilder.append(" {{ ")
+
+      val parts = List.fill(unbalanced.size -1)("; ") :+ ""
+
+      val x = parts.zip(unbalanced)
+      process(templateBuilder, messageBuilder, unbalancedArgs, withColors)(x)
+
+      templateBuilder.append(" }}")
+      messageBuilder.append(" }}")
+    }
+    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters, unbalancedArgs)
+  }
+
+  private def process(templateBuilder: mutable.StringBuilder, messageBuilder: mutable.StringBuilder, acc: mutable.ArrayBuffer[RenderedParameter], withColors: Boolean)(balanced: Seq[(String, LogArg)]): Unit = {
     balanced.foreach {
-      case (part, arg@LogArg(_, argValue, hidden)) =>
-        val uncoloredRepr = formatArg(arg.name, argValue, withColors = false)
+      case (part, arg) =>
+        val uncoloredRepr = formatArg(arg, withColors = false)
 
-        parameters += uncoloredRepr
+        acc += uncoloredRepr
 
         templateBuilder.append("${")
-        templateBuilder.append(uncoloredRepr.name)
+        templateBuilder.append(uncoloredRepr.arg.name)
         templateBuilder.append('}')
         templateBuilder.append(handle(part))
 
         val maybeColoredRepr = if (withColors) {
-          argToString(argValue, withColors)
+          argToString(uncoloredRepr.arg.value, withColors)
         } else {
           uncoloredRepr.repr
         }
 
-        if (!hidden) {
-          messageBuilder.append(formatKv(withColors)(LogArg(Seq(uncoloredRepr.visibleName), maybeColoredRepr, hidden = false)))
+        if (!uncoloredRepr.arg.hiddenName) {
+          messageBuilder.append(formatKv(withColors)(uncoloredRepr.visibleName, maybeColoredRepr))
         } else {
           messageBuilder.append(maybeColoredRepr)
         }
         messageBuilder.append(handle(part))
     }
-
-    unbalanced.foreach {
-      case arg@LogArg(_, argValue, hidden) =>
-        templateBuilder.append("; ?")
-        messageBuilder.append("; ")
-        val repr = argToString(argValue, withColors)
-        if (!hidden) {
-          messageBuilder.append(formatKv(withColors)(arg.copy(value = repr)))
-        } else {
-          messageBuilder.append(repr)
-        }
-    }
-
-    RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters)
   }
 
   private def normalizeName(s: String): String = {
@@ -269,10 +273,10 @@ object LogUnit {
     StringContext.treatEscapes(part)
   }
 
-  private def formatKv(withColor: Boolean)(kv: LogArg): String = {
-    val key = wrapped(withColor, Console.GREEN, kv.name)
-    val value = argToString(kv.value, withColor)
-    s"$key=$value"
+  private def formatKv(withColor: Boolean)(name: String, value: Any): String = {
+    val key = wrapped(withColor, Console.GREEN, name)
+    val v = argToString(value, withColor)
+    s"$key=$v"
   }
 
   private def argToString(argValue: Any, withColors: Boolean): String = {

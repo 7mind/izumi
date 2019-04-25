@@ -17,7 +17,7 @@ object LogMessageMacro {
         reifyContext(c)(stringContext, namedArgs)
 
       case Literal(c.universe.Constant(s)) =>
-        val emptyArgs = reify(List(LogArg(Seq("@type"), "const", hidden = false)))
+        val emptyArgs = reify(List.empty)
         val sc = q"StringContext(${s.toString})"
         reifyContext(c)(sc, emptyArgs)
 
@@ -33,8 +33,8 @@ object LogMessageMacro {
              |""".stripMargin)
 
         val emptyArgs = reify {
-          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
-          List(LogArg(Seq("@type"), "expr", hidden = false), LogArg(Seq("@expr"), repr, hidden = false))
+//          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
+          List.empty
         }
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)

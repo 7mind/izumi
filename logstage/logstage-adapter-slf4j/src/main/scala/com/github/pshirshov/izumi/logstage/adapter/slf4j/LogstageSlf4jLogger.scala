@@ -41,7 +41,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
       case Some(m) =>
         import scala.collection.JavaConverters._
         val markers = m.iterator().asScala.toSeq.map(_.getName)
-        CustomContext(Seq(LogArg(Seq("markers"), markers, hidden = false)))
+        CustomContext(Seq(LogArg(Seq("markers"), markers, hiddenName = false)))
 
       case None =>
         CustomContext(Seq.empty)
@@ -49,7 +49,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
     val messageArgs = args.zipWithIndex.map{
       kv =>
-        LogArg(Seq(s"_${kv._2}"), kv._1, hidden = true)
+        LogArg(Seq(s"_${kv._2}"), kv._1, hiddenName = true)
     }
 
     val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
