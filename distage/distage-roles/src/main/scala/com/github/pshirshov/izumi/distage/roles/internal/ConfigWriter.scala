@@ -3,13 +3,15 @@ package com.github.pshirshov.izumi.distage.roles.internal
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.distage.config.ResolvedConfig
+import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.definition.Id
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -25,6 +27,7 @@ class ConfigWriter[F[_] : DIEffect]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
+  options: ContextOptions
 )
   extends RoleTask[F] {
 
@@ -34,8 +37,8 @@ class ConfigWriter[F[_] : DIEffect]
     DIEffect[F].maybeSuspend(writeReferenceConfig(config))
   }
 
-  private[this] def writeReferenceConfig(config: WriteReference): Unit = {
-    val configPath = Paths.get(config.targetDir).toFile
+  private[this] def writeReferenceConfig(options: WriteReference): Unit = {
+    val configPath = Paths.get(options.targetDir).toFile
     logger.info(s"Config ${configPath.getAbsolutePath -> "directory to use"}...")
 
     if (!configPath.exists())
@@ -44,31 +47,31 @@ class ConfigWriter[F[_] : DIEffect]
     //val maybeVersion = IzManifest.manifest[LAUNCHER]().map(IzManifest.read).map(_.version)
     logger.info(s"Going to process ${roleInfo.availableRoleBindings.size -> "roles"}")
 
-    val commonConfig = buildConfig(config, ConfigurableComponent("common", Some(launcherVersion)))
-    if (!config.includeCommon) {
+    val commonConfig = buildConfig(options, ConfigurableComponent("common", Some(launcherVersion)))
+    if (!options.includeCommon) {
       val commonComponent = ConfigurableComponent("common", Some(launcherVersion))
-      writeConfig(config, commonComponent, None, commonConfig)
+      writeConfig(options, commonComponent, None, commonConfig)
     }
 
     Quirks.discard(for {
       role <- roleInfo.availableRoleBindings
     } yield {
       val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
-      val cfg = buildConfig(config, component.copy(parent = Some(commonConfig)))
+      val cfg = buildConfig(options, component.copy(parent = Some(commonConfig)))
 
-      val version = if (config.useLauncherVersion) {
+      val version = if (options.useLauncherVersion) {
         Some(ArtifactVersion(launcherVersion.version))
       } else {
         component.version
       }
       val versionedComponent = component.copy(version = version)
 
-      writeConfig(config, versionedComponent, None, cfg)
+      writeConfig(options, versionedComponent, None, cfg)
 
-      minimizedConfig(logger)(role)
+      minimizedConfig(logger, cfg)(role)
         .foreach {
           cfg =>
-            writeConfig(config, versionedComponent, Some("minimized"), cfg)
+            writeConfig(options, versionedComponent, Some("minimized"), cfg)
         }
     })
   }
@@ -98,9 +101,10 @@ class ConfigWriter[F[_] : DIEffect]
     filtered
   }
 
-  private[this] def minimizedConfig(logger: IzLogger)(role: RoleBinding): Option[Config] = {
+  private[this] def minimizedConfig(logger: IzLogger, config: Config)(role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
-    val newPlan = context.makePlan(Set(role.binding.key)).app //context.startupContext.startup(Array("--root-log-level", "crit", role.name)).plan
+    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions)
+    val newPlan = context.makePlan(Set(role.binding.key), cfg, distage.Module.empty).app
 
     if (newPlan.steps.exists(_.target == roleDIKey)) {
       newPlan

@@ -2,10 +2,10 @@ package com.github.pshirshov.izumi.distage.roles.internal
 
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef, ParserFailureHandler}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 

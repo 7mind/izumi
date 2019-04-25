@@ -16,7 +16,14 @@ class TestPlugin extends PluginDef {
   addImplicit[DIEffect[IO]]
   addImplicit[DIEffectRunner[IO]]
 
-  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(s"0.0.0-${System.currentTimeMillis()}"))
+  private val version = Option(System.getProperty(TestPlugin.versionProperty)) match {
+    case Some(value) =>
+      value
+    case None =>
+      s"0.0.0-${System.currentTimeMillis()}"
+  }
+
+  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]
 
   make[TestTask00[IO]]
@@ -34,6 +41,7 @@ object TestPlugin {
 
   trait NotCloseable
 
+  final val versionProperty = "launcher-version-test"
   class InheritedCloseable extends NotCloseable with AutoCloseable {
     override def close(): Unit = {}
   }

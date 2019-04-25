@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
 import com.github.pshirshov.izumi.distage.model.Locator
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
@@ -60,18 +60,17 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
     val appModule = provider.appModules().merge overridenBy env.appModule
-    val injector = Injector.Standard(bsModule)
 
     val allRoots = function.get.diKeys.toSet ++ additionalRoots
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, withMemoized, injector, logger)
+    val planner = makePlanner(options, withMemoized, logger)
 
-    val plan = planner.makePlan(allRoots)
+    val plan = planner.makePlan(allRoots, bootstrapOverride, appOverride)
 
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
-      injector.produceF[Identity](plan.runtime),
+      plan.injector.produceF[Identity](plan.runtime),
       implicitly[TagK[F]]
     ))
 
@@ -81,7 +80,7 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
 
     try {
-      makeExecutor(injector, logger)
+      makeExecutor(plan.injector, logger)
         .execute[F](plan, filters) {
         (locator, effect) =>
           implicit val e: DIEffect[F] = effect
@@ -109,6 +108,10 @@ abstract class DistageTestSupport[F[_] : TagK]
       }
     }
   }
+
+  protected def bootstrapOverride: BootstrapModule = Module.empty
+
+  protected def appOverride: ModuleBase = Module.empty
 
   private def applyMemoization(refinedBindings: ModuleBase): ModuleBase = {
     refinedBindings.map {
@@ -164,8 +167,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
   }
 
-  protected def makePlanner(options: ContextOptions, module: distage.ModuleBase, injector: Injector, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, module, injector, logger)
+  protected def makePlanner(options: ContextOptions, module: distage.ModuleBase, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, BootstrapModule.empty, module, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {

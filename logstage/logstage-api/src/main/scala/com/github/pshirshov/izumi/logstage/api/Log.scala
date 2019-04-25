@@ -27,8 +27,13 @@ object Log {
         throw new IllegalArgumentException(s"Unknown log level $lvl")
       })
 
-    def parseSafe(lvl:String, default: Level): Level =
-      labelMap.getOrElse(lvl.toLowerCase, default)
+    def parseSafe(lvl:String, default: Level): Level = {
+      labelMap
+        .find({case (k, _) => k.toLowerCase.startsWith(lvl.toLowerCase) || lvl.toLowerCase.startsWith(k.toLowerCase)})
+        .map(_._2)
+        .getOrElse(default)
+    }
+
 
     case object Trace extends Level {
       protected val asInt = 0

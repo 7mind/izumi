@@ -49,7 +49,7 @@ object RoleAppMain {
       ParserFailureHandler.PrintingHandler
     )
 
-  abstract class Slient[F[_] : TagK : DIEffect](launcher: RoleAppLauncher[F])
+  abstract class Silent[F[_] : TagK : DIEffect](launcher: RoleAppLauncher[F])
     extends RoleAppMain(
       launcher,
       AppFailureHandler.NullHandler,

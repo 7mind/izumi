@@ -1,30 +1,35 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage._
 
 class RoleAppPlannerImpl[F[_] : TagK](
                                        options: ContextOptions,
+                                       bsModule: BootstrapModule,
                                        appModule: distage.ModuleBase,
-                                       injector: Injector,
                                        logger: IzLogger,
                                      ) extends RoleAppPlanner[F] {
-  def makePlan(appMainRoots: Set[DIKey]): AppStartupPlans = {
+
+  def makePlan(appMainRoots: Set[DIKey], bsCustomization: BootstrapModule, customization: ModuleBase): AppStartupPlans = {
     val runtimeGcRoots: Set[DIKey] = Set(
       DIKey.get[DIEffectRunner[F]],
       DIKey.get[DIEffect[F]],
     )
 
-    val fullAppModule = appModule.overridenBy(new ModuleDef {
-      make[RoleAppPlanner[F]].from(RoleAppPlannerImpl.this)
-    })
+    val fullAppModule = appModule
+      .overridenBy(new ModuleDef {
+        make[RoleAppPlanner[F]].from(RoleAppPlannerImpl.this)
+        make[ContextOptions].from(options)
+      })
+      .overridenBy(customization)
 
+    val injector = Injector.Standard(bsModule.overridenBy(bsCustomization))
     val runtimePlan = injector.plan(fullAppModule, runtimeGcRoots)
 
     val rolesPlan = injector.plan(fullAppModule, appMainRoots)
@@ -44,21 +49,27 @@ class RoleAppPlannerImpl[F[_] : TagK](
     } else {
       emptyPlan(runtimePlan)
     }
-//            println("====")
-//            println(runtimePlan.render())
-//            println("----")
-//            println("====")
-//            println(integrationPlan.render())
-//            println("----")
-//            println("====")
-//            println(refinedRolesPlan.render())
-//            println("----")
+    //            println("====")
+    //            println(runtimePlan.render())
+    //            println("----")
+    //            println("====")
+    //            println(integrationPlan.render())
+    //            println("----")
+    //            println("====")
+    //            println(refinedRolesPlan.render())
+    //            println("----")
 
     verify(runtimePlan)
     verify(integrationPlan)
     verify(refinedRolesPlan)
 
-    AppStartupPlans(runtimePlan, integrationPlan, integrationComponents, refinedRolesPlan)
+    AppStartupPlans(
+      runtimePlan,
+      integrationPlan,
+      integrationComponents,
+      refinedRolesPlan,
+      injector
+    )
   }
 
 

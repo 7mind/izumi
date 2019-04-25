@@ -104,15 +104,15 @@ class RoleAppExecutorImpl[F[_] : TagK](
   }
 
   private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {
-    roles.availableRoleBindings.map {
+    roles.availableRoleBindings.flatMap {
       b =>
         val key = DIKey.TypeKey(b.tpe)
-        b.descriptor.id -> (rolesLocator.index.get(key) match {
+        rolesLocator.index.get(key) match {
           case Some(value: AbstractRoleF[F]) =>
-            value
-          case o =>
-            throw new DiAppBootstrapException(s"Requested $key for ${b.descriptor.id}, unexpectedly got $o")
-        })
+            Seq(b.descriptor.id -> value)
+          case _ =>
+            Seq.empty
+        }
     }.toMap
   }
 

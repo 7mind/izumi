@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.roles
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
+import com.github.pshirshov.izumi.distage.model.definition.Module
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
@@ -73,7 +74,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val loadedAppModule = defApp.definition
     earlyLogger.info(s"Loaded ${loadedAppModule.bindings.size -> "app bindings"} and ${loadedBsModule.bindings.size -> "bootstrap bindings"}...")
 
-    val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
+    val loader = makeConfigLoader(earlyLogger, parameters)
+    val config = loader.buildConfig()
 
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
     val options = contextOptions(parameters)
@@ -81,13 +83,13 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy loadedBsModule
     val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
 
-    val injector = Injector.Standard(bsModule)
-    val p = makePlanner(options, appModule, lateLogger, injector)
+
+    val planner = makePlanner(options, bsModule, appModule, lateLogger)
     val roots = gcRoots(roles, defBs, defApp)
-    val appPlan = p.makePlan(roots)
+    val appPlan = planner.makePlan(roots, BootstrapModule.empty, Module.empty)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
-    val r = makeExecutor(parameters, roles, lateLogger, injector)
+    val r = makeExecutor(parameters, roles, lateLogger, appPlan.injector)
     r.runPlan(appPlan)
   }
 
@@ -99,8 +101,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     )
   }
 
-  protected def makePlanner(options: ContextOptions, module: distage.Module, lateLogger: IzLogger, injector: Injector): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, module, injector, lateLogger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, module: distage.Module, lateLogger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, module, lateLogger)
   }
 
   protected def makeExecutor(parameters: RoleAppArguments, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
@@ -195,7 +197,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   protected def makeConfigLoader(logger: IzLogger, parameters: RoleAppArguments): ConfigLoader = {
     val maybeGlobalConfig = Options.configParam.findValue(parameters.globalParameters).asFile
 
-    val roleConfigs = parameters.roles.map {
+    val roleConfigs =  parameters.roles.map {
       r =>
         r.role -> Options.configParam.findValue(r.roleParameters).asFile
     }

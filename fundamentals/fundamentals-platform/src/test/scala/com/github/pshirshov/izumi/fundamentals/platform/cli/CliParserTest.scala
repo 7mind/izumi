@@ -20,6 +20,8 @@ class CliParserTest extends WordSpec {
       assert(new CLIParser().parse(Array("--x", "value")).isLeft)
       assert(new CLIParser().parse(Array("--x=value")).exists(_.globalParameters.values.head == Value("x", "value")))
       assert(new CLIParser().parse(Array(":init", "./tmp")) == Right(RoleAppArguments(Parameters.empty,Vector(RoleArg("init",Parameters.empty,Vector("./tmp"))))))
+      assert(new CLIParser().parse(Array(":init", "--target=./tmp")) == Right(RoleAppArguments(Parameters.empty,Vector(RoleArg("init",Parameters(Vector.empty,Vector(Value("target","./tmp"))),Vector.empty)))))
+      assert(new CLIParser().parse(Array(":init", "-t", "./tmp")) == Right(RoleAppArguments(Parameters.empty,Vector(RoleArg("init",Parameters(Vector.empty,Vector(Value("t","./tmp"))),Vector.empty)))))
     }
   }
 
