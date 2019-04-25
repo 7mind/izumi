@@ -13,11 +13,11 @@ class IzLogger
 , override val customContext: Log.CustomContext
 ) extends RoutingLogger {
 
-  def apply[V](context: Map[String, V]): IzLogger = context
+  def apply(context: CustomContext): IzLogger = withCustomContext(context)
+  def apply(context: Map[String, Any]): IzLogger = withMapAsCustomContext(context)
+  def apply(context: (String, Any)*): IzLogger = withMapAsCustomContext(context.toMap)
 
-  def apply[V](elems: (String, V)*): IzLogger = elems.toMap
-
-  implicit def withCustomContext(context: CustomContext): IzLogger = {
+  implicit override def withCustomContext(context: CustomContext): IzLogger = {
     new IzLogger(router, customContext + context)
   }
 

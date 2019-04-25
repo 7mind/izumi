@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.idealingua
 
 import java.io.File
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, LoadedModels}
 import com.github.pshirshov.izumi.idealingua.typer2.TyperOptions
 //import java.lang.management.ManagementFactory
@@ -56,6 +57,7 @@ object IDLTestTools {
 //      TypespaceCompilerBaseFacade.descriptor(IDLLanguage.parse(last)).rules
 //    }
 //    new ModelResolver(rules)
+    base.discard()
     new ModelResolver(TyperOptions())
   }
 
