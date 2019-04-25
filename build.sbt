@@ -291,7 +291,7 @@ lazy val distageConfig = inDiStage.as.module
   .depends(
     fundamentalsTypesafeConfig,
     distageModel,
-    distageCore.testOnlyRef,    
+    distageCore.testOnlyRef,
   )
   .settings(
     libraryDependencies += R.typesafe_config
@@ -715,7 +715,7 @@ lazy val microsite = inDoc.as.module
   .settings(
     paradoxMaterialTheme in Paradox ~= {
       _.withCopyright("7mind.io")
-        .withRepository(uri("https://github.com/pshirshov/izumi-r2"))
+        .withRepository(uri("https://github.com/7mind/izumi-r2"))
       //        .withColor("222", "434343")
     }
     , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
