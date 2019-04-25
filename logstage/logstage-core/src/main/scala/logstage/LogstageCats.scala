@@ -15,7 +15,7 @@ object LogstageCats {
       dynamic.flatMap(ctx => SyncSafe[F].syncSafe(f(logger.withCustomContext(ctx))))
     }
 
-    new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
+    new LogCreateIOSyncSafeInstance[F](SyncSafe[F]) with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         withContextLogger(_.log(entry))
       }

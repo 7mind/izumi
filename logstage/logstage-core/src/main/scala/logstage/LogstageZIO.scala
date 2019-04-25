@@ -1,5 +1,6 @@
 package logstage
 
+import com.github.pshirshov.izumi.functional.bio.SyncSafe2
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, Entry, Message}
@@ -9,7 +10,7 @@ import scalaz.zio.IO
 object LogstageZIO {
 
   def withFiberId(logger: AbstractLogger): LogBIO[IO] = {
-    new LogCreateIOSyncSafeInstance[IO[Nothing, ?]] with LogIO[IO[Nothing, ?]] {
+    new LogCreateIOSyncSafeInstance[IO[Nothing, ?]](SyncSafe2[IO]) with LogIO[IO[Nothing, ?]] {
 
       override def log(entry: Entry): IO[Nothing, Unit] = {
         withFiberContext(_.log(entry))

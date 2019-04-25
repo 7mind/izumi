@@ -34,7 +34,7 @@ object LogIO {
   def apply[F[_]: LogIO]: LogIO[F] = implicitly
 
   def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
-    new LogCreateIOSyncSafeInstance[F] with LogIO[F] {
+    new LogCreateIOSyncSafeInstance[F](SyncSafe[F]) with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }

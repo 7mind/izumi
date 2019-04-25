@@ -12,9 +12,9 @@ trait LogCreateIO[F[_]] {
 object LogCreateIO {
   def apply[F[_]: LogCreateIO]: LogCreateIO[F] = implicitly
 
-  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F]
+  implicit def logCreateIOSyncSafeInstance[F[_]: SyncSafe]: LogCreateIO[F] = new LogCreateIOSyncSafeInstance[F](SyncSafe[F])
 
-  class LogCreateIOSyncSafeInstance[F[_]](implicit protected val F: SyncSafe[F]) extends LogCreateIO[F] {
+  class LogCreateIOSyncSafeInstance[F[_]](protected val F: SyncSafe[F]) extends LogCreateIO[F] {
     override def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry] = {
       F.syncSafe(Entry.create(logLevel, message)(pos))
     }
