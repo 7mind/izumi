@@ -34,7 +34,7 @@ trait WithTags extends UniverseGeneric { self =>
   *   * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
   *   * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
   *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
-  *   * Further details at [[https://github.com/pshirshov/izumi-r2/pull/369]]
+  *   * Further details at [[https://github.com/7mind/izumi/pull/369]]
   */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] {

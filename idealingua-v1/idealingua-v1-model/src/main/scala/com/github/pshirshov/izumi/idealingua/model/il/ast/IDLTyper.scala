@@ -531,7 +531,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     }).asInstanceOf[T]
 
     if (out.path.toPackage == domainId.toPackage) {
-      mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/pshirshov/izumi-r2/issues/238
+      mapping.get(toIndefinite(out)) match { // here we drop expected type and re-type through index. Solving https://github.com/7mind/izumi/issues/238
         case Some(v: T) =>
           v
 

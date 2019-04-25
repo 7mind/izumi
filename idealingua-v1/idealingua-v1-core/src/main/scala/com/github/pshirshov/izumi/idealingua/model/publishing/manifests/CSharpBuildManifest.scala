@@ -26,7 +26,7 @@ object NugetOptions {
   def example: NugetOptions = NugetOptions(
     targetFramework = "net461",
     projectNaming = ProjectNamingRule.example,
-    iconUrl = "https://raw.githubusercontent.com/pshirshov/izumi-r2/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png",
+    iconUrl = "https://raw.githubusercontent.com/7mind/izumi/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png",
     requireLicenseAcceptance = false,
     dependencies = List(
       ManifestDependency("WebSocketSharp", "1.0.3-rc11"),

@@ -145,7 +145,7 @@ Notes:
 - At the moment the implementation of `@ExposedTestScope` (substring presence check) is imperfect and has to be improved,
 - **Transitive dependencies are not checked**, so in case you expose a class but do not expose it's dependencies your build will
   work under IDEA, but you will a classloading exception under sbt. 
-  This is going to be [improved](https://github.com/pshirshov/izumi-r2/issues/6) in the future.
+  This is going to be [improved](https://github.com/7mind/izumi/issues/6) in the future.
 
 ### Test Scope Publishing
 

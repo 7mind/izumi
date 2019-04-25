@@ -104,7 +104,7 @@ class BasicTest extends WordSpec with MkInjector {
 
 
   "support nested multiple bindings" in {
-    // https://github.com/pshirshov/izumi-r2/issues/261
+    // https://github.com/7mind/izumi/issues/261
     import BasicCase1._
     val definition = PlannerInput(new ModuleDef {
       many[JustTrait]

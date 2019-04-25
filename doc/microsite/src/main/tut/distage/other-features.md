@@ -176,19 +176,19 @@ Plugins also allow a program to extend itself at runtime by adding new `Plugin` 
 @@@ warning { title='TODO' }
 Sorry, this page is not ready yet
 
-Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/453
+Relevant ticket: https://github.com/7mind/izumi/issues/453
 @@@
 
 WIP
 
-You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/453
+You can participate in this ticket at https://github.com/7mind/izumi/issues/453
 
 ### Compile-Time Checks
 
 @@@ warning { title='TODO' }
 Sorry, this page is not ready yet
 
-Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/51
+Relevant ticket: https://github.com/7mind/izumi/issues/51
 @@@
 
 As of now, an experimental plugin-checking API is available in `distage-app` module.
@@ -276,7 +276,7 @@ final class AppPluginTest extends WordSpec {
 
 `checkWithConfig` will run at compile-time, every time that AppPluginTest is recompiled.
 
-You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/51
+You can participate in this ticket at https://github.com/7mind/izumi/issues/51
 
 ### Roles
 

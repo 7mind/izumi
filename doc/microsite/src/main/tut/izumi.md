@@ -8,7 +8,7 @@ Izumi Project
 Sorry, this page is not ready yet
 @@@
 
-[Github](https://github.com/pshirshov/izumi-r2)
+[Github](https://github.com/7mind/izumi)
 
 Dependencies
 ------------
@@ -94,7 +94,7 @@ libraryDependencies ++= Seq(
 
 You can find ScalaDoc API docs @scaladoc[here](izumi.index)
 
-You can find Izumi on github [here](https://github.com/pshirshov/izumi-r2)
+You can find Izumi on github [here](https://github.com/7mind/izumi)
 
 @@@ index
 

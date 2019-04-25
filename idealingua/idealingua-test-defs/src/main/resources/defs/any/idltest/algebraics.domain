@@ -28,7 +28,7 @@ adt AdtTester {
     ComplexAdt2
 }
 
-//https://github.com/pshirshov/izumi-r2/issues/363
+//https://github.com/7mind/izumi/issues/363
 /*
 adt Bad0 {
     Success

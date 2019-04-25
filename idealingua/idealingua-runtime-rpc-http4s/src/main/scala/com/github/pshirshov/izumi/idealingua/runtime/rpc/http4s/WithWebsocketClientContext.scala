@@ -272,5 +272,5 @@ object RawResponse {
 
   case class GoodRawResponse(data: Json, method: IRTMethodId) extends RawResponse
 
-  case class BadRawResponse() extends RawResponse // This needs to be extended: https://github.com/pshirshov/izumi-r2/issues/355
+  case class BadRawResponse() extends RawResponse // This needs to be extended: https://github.com/7mind/izumi/issues/355
 }

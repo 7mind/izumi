@@ -56,7 +56,7 @@ data Test02UserAnyVal {
 }
 
 // direct cyclic usage is disabled
-// https://github.com/pshirshov/izumi-r2/issues/334
+// https://github.com/7mind/izumi/issues/334
 /*
 data Cyclic00 {
   _: Cyclic00

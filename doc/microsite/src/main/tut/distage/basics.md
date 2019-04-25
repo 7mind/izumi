@@ -355,7 +355,7 @@ consult [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multi
 @@@ warning { title='TODO' }
 Sorry, this page is not ready yet
 
-Relevant ticket: https://github.com/pshirshov/izumi-r2/issues/230
+Relevant ticket: https://github.com/7mind/izumi/issues/230
 @@@
 
 Implicits are managed like any other class. To make them available for summoning, declare them in a module:
@@ -413,7 +413,7 @@ val kvstoreModuleGood = new ModuleDef {
 
 Implicits obey the usual lexical scope in user code.
 
-You can participate in this ticket at https://github.com/pshirshov/izumi-r2/issues/230
+You can participate in this ticket at https://github.com/7mind/izumi/issues/230
 
 ### Resource Bindings & Lifecycle
 

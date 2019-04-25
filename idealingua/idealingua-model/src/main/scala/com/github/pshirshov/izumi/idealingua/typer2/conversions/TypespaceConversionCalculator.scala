@@ -51,7 +51,7 @@ class TypespaceConversionCalculator(ts2: Typespace2) extends WarnLogger.WarnLogg
     }
 
     val allSpecs = upAndDown ++ structural ++ structuralSiblings
-    // TODO: automatic conversions aren't good for us, we should support custom specs, see https://github.com/pshirshov/izumi-r2/issues/504
+    // TODO: automatic conversions aren't good for us, we should support custom specs, see https://github.com/7mind/izumi/issues/504
 
     compute(allSpecs)
   }
