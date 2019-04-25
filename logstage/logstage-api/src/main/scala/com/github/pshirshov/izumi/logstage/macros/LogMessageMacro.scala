@@ -29,10 +29,11 @@ object LogMessageMacro {
              |${ArgumentNameExtractionMacro.example}
              |""".stripMargin)
 
-        val emptyArgs = reify {
-//          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
-          List.empty
-        }
+        val emptyArgs = reify(List.empty)
+        /* reify {
+          val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
+          ...
+        */
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
     }
