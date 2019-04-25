@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.{ParserRoleDescriptor, ParserSchema}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{Parameters, ParserDef, ParserFailureHandler}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -26,7 +26,7 @@ class Help[F[_] : DIEffect]
       .availableRoleBindings
       .map(rb => ParserRoleDescriptor(rb.descriptor.id, rb.descriptor.parser, rb.descriptor.doc))
 
-    val roleHelp = ParserDef.formatRoles(descriptors)
+    val roleHelp = ParserDef.makeDocs(ParserSchema(descriptors))
 
     val mainHelp = ParserDef.formatOptions(RoleAppLauncher.Options).map(_.shift(2))
 

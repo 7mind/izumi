@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.ParserRoleDescriptor
+import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserDef.{ParserRoleDescriptor, ParserSchema}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, Parameters, ParserDef, ParserFailureHandler}
 
 case class LanguageOpts(
@@ -68,13 +68,13 @@ object IDLCArgs {
         value
     }
 
-    val roleHelp = ParserDef.formatRoles(Seq(
+    val roleHelp = ParserDef.makeDocs(ParserSchema(Seq(
       ParserRoleDescriptor("init", IP, Some("setup project template. Invoke as :init <path>")),
       ParserRoleDescriptor("scala", LP, Some("scala target")),
       ParserRoleDescriptor("go", LP, Some("go target")),
       ParserRoleDescriptor("csharp", LP, Some("C#/Unity target")),
       ParserRoleDescriptor("typescript", LP, Some("Typescript target")),
-    ))
+    )))
 
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
       for {

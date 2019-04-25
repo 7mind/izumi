@@ -17,7 +17,7 @@ class ExampleService(logger: IzLogger) {
     val justAnArg = "this is an argument"
     val justAList = List[Any](10, "green", "bottles")
     loggerWithContext.trace("This would be automatically extended")
-    logger.debug(s"Service started. argument: $justAnArg, another arg: $justAList, Random value: ${Random.self.nextInt() -> "random value"}")
+    logger("ctx" -> "bottles").debug(s"Service started. argument: $justAnArg, another arg: $justAList, Random value: ${Random.self.nextInt() -> "random value"}")
     loggerWithSubcontext.info("Just a string")
     logger.crit(s"This is an expression: ${Random.nextInt() -> "xxx"}")
     logger.crit(s"This is an expression with invisible argument name: ${Random.nextInt() -> "xxx" -> null}")

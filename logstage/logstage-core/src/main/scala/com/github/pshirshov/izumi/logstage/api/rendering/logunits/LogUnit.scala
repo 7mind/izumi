@@ -198,15 +198,6 @@ object LogUnit {
       unit.aliases.map(_ -> unit)
   }.toMap
 
-  def normalizeName(s: String): String = {
-    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
-      s
-    } else {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-      s.replace(' ', '_').camelToUnderscores
-    }
-  }
-
   def formatArg(argname: String, arg: Any, withColors: Boolean): RenderedParameter = {
     RenderedParameter(arg, argToString(arg, withColors), argname, normalizeName(argname))
   }
@@ -263,6 +254,15 @@ object LogUnit {
     }
 
     RenderedMessage(entry, templateBuilder.toString(), messageBuilder.toString(), parameters)
+  }
+
+  private def normalizeName(s: String): String = {
+    if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
+      s
+    } else {
+      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      s.replace(' ', '_').camelToUnderscores
+    }
   }
 
   private def handle(part: String) = {

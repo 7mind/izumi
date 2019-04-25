@@ -1,25 +1,37 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.json
 
 import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.Log.LogContext
+import com.github.pshirshov.izumi.logstage.api.Log.LogArg
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogUnit
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import io.circe._
 import io.circe.syntax._
 
+import scala.collection.mutable
 import scala.runtime.RichInt
 
 class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
   override def render(entry: Log.Entry): String = {
     import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
 
+    val result = mutable.ArrayBuffer[(String, Json)]()
+
     val formatted = LogUnit.formatMessage(entry, withColors = false)
+    val params = parametersToJson[RenderedParameter](formatted.parameters, _.name, repr)
+    if (params.nonEmpty) {
+      result += "event" -> params.asJson
+    }
 
-    val params = parametersToJson(formatted.parameters)
-    val context = contextToJson(mkMap(entry.context.customContext.values))
+    val ctx = parametersToJson[LogArg](entry.context.customContext.values, _.name, v => {
+      val p = LogUnit.formatArg(v.name, v.value, withColors = false)
+      repr(p)
+    })
 
+    if (ctx.nonEmpty) {
+      result += "context" -> ctx.asJson
+    }
 
-    val eventInfo = Map(
+    val eventInfo = Json.fromFields(Seq(
       "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
       "logger" -> Json.fromString(entry.context.static.id.id),
       "line" -> Json.fromInt(entry.context.static.position.line),
@@ -31,21 +43,18 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
         "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
         "name" -> Json.fromString(entry.context.dynamic.threadData.threadName)
       )),
+    ))
+
+    val tail = Seq(
+      "meta" -> eventInfo,
+      "text" -> Json.fromFields(Seq(
+        "template" -> Json.fromString(formatted.template),
+        "message" -> Json.fromString(formatted.message),
+      ))
     )
+    result ++= tail
 
-    val messageInfo = Map(
-      "@event" -> eventInfo.asJson,
-      "@template" -> Json.fromString(formatted.template),
-      "@message" -> Json.fromString(formatted.message),
-    )
-
-    val parts = if (context.values.nonEmpty) {
-      Seq(params, messageInfo, Map("@context" -> context.asJson))
-    } else {
-      Seq(params, messageInfo)
-    }
-
-    val json = parts.reduce(_ ++ _).asJson
+    val json = Json.fromFields(result)
 
     if (prettyPrint) {
       json.pretty(Printer.spaces2)
@@ -54,8 +63,8 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     }
   }
 
-  protected def parametersToJson(params: Seq[RenderedParameter]): Map[String, Json] = {
-    val paramGroups = params.groupBy(_.name)
+  @inline private[this] def parametersToJson[T](params: Seq[T], name: T => String, repr: T => Json): Map[String, Json] = {
+    val paramGroups = params.groupBy(name)
     val (unary, multiple) = paramGroups.partition(_._2.size == 1)
     val paramsMap = unary.map {
       kv =>
@@ -68,59 +77,44 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     paramsMap ++ multiparamsMap
   }
 
-  protected def contextToJson(p: Map[String, Set[String]]): Map[String, Json] = {
-    val (unary, multiple) = p.partition(_._2.size == 1)
-    val paramsMap = unary.map {
-      kv =>
-        LogUnit.normalizeName(kv._1) -> Json.fromString(kv._2.head)
-    }
-    paramsMap ++ multiple.mapValues(v => Json.arr(v.toSeq.map(Json.fromString) : _*))
-  }
-
-  protected def repr(parameter: RenderedParameter): Json = {
+  @inline private[this] def repr(parameter: RenderedParameter): Json = {
     import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
 
-    parameter match {
-      case RenderedParameter(a: Json, _, _, _) =>
-        a
-      case RenderedParameter(a: Double, _, _, _) =>
-        Json.fromDoubleOrNull(a)
-      case RenderedParameter(a: BigDecimal, _, _, _) =>
-        Json.fromBigDecimal(a)
-      case RenderedParameter(a: Int, _, _, _) =>
-        Json.fromInt(a)
-      case RenderedParameter(a: BigInt, _, _, _) =>
-        Json.fromBigInt(a)
-      case RenderedParameter(a: Boolean, _, _, _) =>
-        Json.fromBoolean(a)
-      case RenderedParameter(a: Long, _, _, _) =>
-        Json.fromLong(a)
-      case RenderedParameter(null, _, _, _) =>
+    parameter.value match {
+      case null =>
         Json.Null
-      case RenderedParameter(a: Iterable[_], _, visibleName, _) =>
-        val params = a.map(v => repr(LogUnit.formatArg(visibleName, v, withColors = false))).toList
+      case a: Json =>
+        a
+      case a: Double =>
+        Json.fromDoubleOrNull(a)
+      case a: BigDecimal =>
+        Json.fromBigDecimal(a)
+      case a: Int =>
+        Json.fromInt(a)
+      case a: BigInt =>
+        Json.fromBigInt(a)
+      case a: Boolean =>
+        Json.fromBoolean(a)
+      case a: Long =>
+        Json.fromLong(a)
+      case a: Iterable[_] =>
+        val params = a
+          .map {
+            v =>
+              val formatted = LogUnit.formatArg(parameter.visibleName, v, withColors = false)
+              repr(formatted)
+          }
+          .toList
         Json.arr(params: _*)
-      case RenderedParameter(a: Throwable, _, _, _) =>
+      case a: Throwable =>
         Json.fromFields(Seq(
           "type" -> Json.fromString(a.getClass.getName)
           , "message" -> Json.fromString(a.getMessage)
           , "stacktrace" -> Json.fromString(a.stackTrace)
         ))
-      case RenderedParameter(_, repr, _, _) =>
-        Json.fromString(repr)
+      case _ =>
+        Json.fromString(parameter.repr)
     }
-  }
-
-  protected def mkMap(values: LogContext): Map[String, Set[String]] = {
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val customContext = values
-      .map(kv => (kv.name, kv.value))
-      .toMultimap
-      .map {
-        case (k, v) =>
-          k -> v.map(_.toString)
-      }
-    customContext
   }
 
 

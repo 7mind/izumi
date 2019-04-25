@@ -42,9 +42,25 @@ object ParserDef {
 
   case class ParserRoleDescriptor(id: String, parser: ParserDef, doc: Option[String])
 
-  def formatRoles(descriptors: Seq[ParserRoleDescriptor]): String = descriptors.map(formatRoleHelp)
+  case class ParserSchema(descriptors: Seq[ParserRoleDescriptor])
+
+  /** TODOs:
+    * - default parameters
+    * - free arg restrictions
+    * - decoding MUST fail on unknown parameters
+    * - automated decoder: ParserSchema[CaseClass](args: RoleAppArguments): CaseClass (compile-time in ideal case)
+    */
+  def makeDocs(schema: ParserSchema): String = schema.descriptors.map(formatRoleHelp)
     .mkString("\n\n")
 
+
+  def formatOptions(parser: ParserDef): Option[String] = {
+    if (parser._all.nonEmpty) {
+      Some(parser._all.values.map(formatArg).mkString("\n\n"))
+    } else {
+      None
+    }
+  }
 
   private[this] def formatRoleHelp(rb: ParserRoleDescriptor): String = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -56,14 +72,6 @@ object ParserDef {
       Seq(id, sub.shift(2)).mkString("\n\n")
     } else {
       id
-    }
-  }
-
-  def formatOptions(parser: ParserDef): Option[String] = {
-    if (parser._all.nonEmpty) {
-      Some(parser._all.values.map(formatArg).mkString("\n\n"))
-    } else {
-      None
     }
   }
 
