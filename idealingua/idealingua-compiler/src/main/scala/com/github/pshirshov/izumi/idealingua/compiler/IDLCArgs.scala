@@ -69,7 +69,7 @@ object IDLCArgs {
     }
 
     val roleHelp = ParserDef.formatRoles(Seq(
-      ParserRoleDescriptor("init", LP, Some("setup project template")),
+      ParserRoleDescriptor("init", IP, Some("setup project template. Invoke as :init <path>")),
       ParserRoleDescriptor("scala", LP, Some("scala target")),
       ParserRoleDescriptor("go", LP, Some("go target")),
       ParserRoleDescriptor("csharp", LP, Some("C#/Unity target")),
