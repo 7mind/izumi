@@ -202,5 +202,6 @@ def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
 * [Rendering policy](policy.md)
 * [Configuration](config.md)
 * [Logging contexts](custom_ctx.md)
+* [Syntax reference](syntax.md)
 
 @@@
