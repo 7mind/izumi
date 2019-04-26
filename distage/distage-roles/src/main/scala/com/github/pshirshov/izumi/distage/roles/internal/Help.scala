@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.distage.roles.internal
 
+
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserFailureHandler
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ParserRoleDescriptor
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, ParserSchema}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{RoleParserSchema, ParserSchema, ParserSchemaFormatter}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
@@ -25,11 +25,11 @@ class Help[F[_] : DIEffect]
   private[this] def showHelp(): Unit = {
     val descriptors = roleInfo
       .availableRoleBindings
-      .map(rb => ParserRoleDescriptor(rb.descriptor.id, rb.descriptor.parser, rb.descriptor.doc))
+      .map(rb => RoleParserSchema(rb.descriptor.id, rb.descriptor.parser, rb.descriptor.doc))
 
-    val roleHelp = ParserDef.makeDocs(ParserSchema(descriptors))
+    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(descriptors))
 
-    val mainHelp = ParserDef.formatOptions(RoleAppLauncher.Options).map(_.shift(2))
+    val mainHelp = ParserSchemaFormatter.formatOptions(RoleAppLauncher.Options).map(_.shift(2))
 
     val fullHelp =
       s"""${ParserFailureHandler.example}

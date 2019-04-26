@@ -1,11 +1,13 @@
 package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawValue}
+import ParserDef._
 
 import scala.collection.mutable
 
 trait ParserDef {
-  private val _all = mutable.LinkedHashMap[String, ArgDef]()
+  protected[schema] val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
 
   def all: Map[String, ArgDef] = _all.toMap
 
@@ -36,76 +38,47 @@ trait ParserDef {
 }
 
 
-
-
 object ParserDef {
+
   object Empty extends ParserDef
 
+  case class ArgDef private[cli](name: ArgNameDef, doc: String, valueDoc: Option[String])
 
-  case class ParserRoleDescriptor(id: String, parser: ParserDef, doc: Option[String])
+  object ArgDef {
 
+    implicit class ParameterDefExt(val parameter: ArgDef) extends AnyVal {
+      def findValue(parameters: RawEntrypointParams): Option[RawValue] = {
+        parameters.values.find(p => parameter.name.matches(p.name))
+      }
 
-  /** TODOs:
-    * - default parameters
-    * - free arg restrictions
-    * - decoding MUST fail on unknown parameters
-    * - automated decoder: ParserSchema[CaseClass](args: RoleAppArguments): CaseClass (compile-time in ideal case)
-    */
-  def makeDocs(schema: ParserSchema): String = schema.descriptors.map(formatRoleHelp)
-    .mkString("\n\n")
+      def findValues(parameters: RawEntrypointParams): Vector[RawValue] = {
+        parameters.values.filter(p => parameter.name.matches(p.name))
+      }
 
+      def hasFlag(parameters: RawEntrypointParams): Boolean = {
+        parameters.flags.exists(p => parameter.name.matches(p.name))
+      }
 
-  def formatOptions(parser: ParserDef): Option[String] = {
-    if (parser._all.nonEmpty) {
-      Some(parser._all.values.map(formatArg).mkString("\n\n"))
-    } else {
-      None
+      def hasNoFlag(parameters: RawEntrypointParams): Boolean = {
+        !hasFlag(parameters)
+      }
     }
+
   }
 
-  private[this] def formatRoleHelp(rb: ParserRoleDescriptor): String = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    val sub = Seq(rb.doc.toSeq, ParserDef.formatOptions(rb.parser).toSeq).flatten.mkString("\n\n")
+  case class ArgNameDef private[cli](long: String, short: Option[String]) {
+    def all: Set[String] = Set(long) ++ short.toSet
 
-    val id = s":${rb.id}"
+    def matches(name: String): Boolean = all.contains(name)
 
-    if (sub.nonEmpty) {
-      Seq(id, sub.shift(2)).mkString("\n\n")
-    } else {
-      id
+    def format: String = {
+      short match {
+        case Some(value) =>
+          s"$value, $long"
+        case None =>
+          s"$long"
+      }
     }
-  }
-
-  private[this] def formatArg(arg: ArgDef): String = {
-    val usage = (arg.name.short.map(_ => formatInfo(short = true, arg)).toSeq ++ Seq(formatInfo(short = false, arg))).mkString(", ")
-
-    s"$usage\n    ${arg.doc}"
-  }
-
-  private[this] def formatInfo(short: Boolean, arg: ArgDef): String = {
-    val name = if (short) {
-      arg.name.short.get
-    } else {
-      arg.name.long
-    }
-
-    val prefix = if (!short && arg.valueDoc.isDefined) {
-      "--"
-    } else {
-      "-"
-    }
-
-    arg.valueDoc match {
-      case Some(value) =>
-        if (short) {
-          s"$prefix$name $value"
-        } else {
-          s"$prefix$name=$value"
-        }
-      case None =>
-        s"$prefix$name"
-    }
-
   }
 
 }

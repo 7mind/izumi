@@ -578,8 +578,6 @@ lazy val logstage: Seq[ProjectReference] = Seq(
   , logstageAdapterSlf4j
   , logstageRenderingCirce
   , logstageConfig
-  , logstageZio
-  , logstageCats
 )
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles

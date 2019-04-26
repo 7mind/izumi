@@ -4,8 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ParserRoleDescriptor
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, ParserSchema}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema, ParserSchema, ParserSchemaFormatter}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
 case class LanguageOpts(
@@ -69,17 +68,17 @@ object IDLCArgs {
         value
     }
 
-    val roleHelp = ParserDef.makeDocs(ParserSchema(Seq(
-      ParserRoleDescriptor("init", IP, Some("setup project template. Invoke as :init <path>")),
-      ParserRoleDescriptor("scala", LP, Some("scala target")),
-      ParserRoleDescriptor("go", LP, Some("go target")),
-      ParserRoleDescriptor("csharp", LP, Some("C#/Unity target")),
-      ParserRoleDescriptor("typescript", LP, Some("Typescript target")),
+    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(Seq(
+      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>")),
+      RoleParserSchema("scala", LP, Some("scala target")),
+      RoleParserSchema("go", LP, Some("go target")),
+      RoleParserSchema("csharp", LP, Some("C#/Unity target")),
+      RoleParserSchema("typescript", LP, Some("Typescript target")),
     )))
 
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
       for {
-        gh <- ParserDef.formatOptions(P)
+        gh <- ParserSchemaFormatter.formatOptions(P)
       } yield {
         import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
         val fullHelp =
