@@ -43,9 +43,15 @@ class ExampleService(logger: IzLogger) {
     runMonadic()
   }
 
+  def triggerManyMessages(): Unit = {
+    (1 to 100).foreach {
+      i =>
+        logger.debug(s"step $i")
+    }
+  }
+
   private def testExceptions(): Unit = {
-    val exception = new RuntimeException("Oy vey!")
-    exception.setStackTrace(exception.getStackTrace.slice(0, 3))
+    val exception = makeException("Oy vey!")
     logger.crit(s"An exception will be displayed with stack: $exception")
     logger.crit(s"Getter method names are supported: ${exception.getCause}")
   }
@@ -53,7 +59,7 @@ class ExampleService(logger: IzLogger) {
   private def testCornercases(): Unit = {
     val arg1 = 5
     val nullarg = null
-    val exception = new RuntimeException("Boom!")
+    val exception = makeException("Boom!")
     logger.warn("[Cornercase] non-interpolated expression: " + 1)
     logger.crit(s"[Cornercase] Anonymous expression: ${2 + 2 == 4}, another one: ${5 * arg1 == 25}")
     logger.crit(s"[Cornercase] null value: $nullarg")
@@ -76,11 +82,10 @@ class ExampleService(logger: IzLogger) {
     suspended()
   }
 
-  def triggerManyMessages(): Unit = {
-    (1 to 100).foreach {
-      i =>
-        logger.debug(s"step $i")
-    }
+  private def makeException(message: String): RuntimeException = {
+    val exception = new RuntimeException(message)
+    exception.setStackTrace(exception.getStackTrace.slice(0, 3))
+    exception
   }
 }
 

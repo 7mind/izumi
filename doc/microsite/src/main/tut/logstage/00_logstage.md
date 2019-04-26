@@ -25,7 +25,7 @@ The following snippet:
 import logstage._
 import scala.util.Random
 
-val logger = IzLogger.DebugLogger
+val logger = IzLogger()
 
 val justAnArg = "example"
 val justAList = List[Any](10, "green", "bottles")
