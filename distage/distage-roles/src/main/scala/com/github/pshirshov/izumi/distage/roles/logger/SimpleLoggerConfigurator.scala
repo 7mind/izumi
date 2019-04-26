@@ -30,7 +30,7 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
         case None =>
           RenderingOptions()
       }
-      new StringRenderingPolicy(options, logconf.layout)
+      new StringRenderingPolicy(options)
     }
 
     val queueingSink = new QueueingSink(new ConsoleSink(renderingPolicy))

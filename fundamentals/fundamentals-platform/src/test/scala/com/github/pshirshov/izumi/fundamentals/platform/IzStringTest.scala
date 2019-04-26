@@ -22,10 +22,17 @@ class IzStringTest extends WordSpec {
     }
 
     "support ellipsed leftpad" in {
-      assert("x".ellipsedLeftPad(5) == "    x")
-      assert("xxxxxx".ellipsedLeftPad(5) == "...xx")
-      assert("xx".ellipsedLeftPad(1) == "x")
+      assert("x".leftEllipsed(5, "...") == "x")
+      assert("xxxxxx".leftEllipsed(5, "...") == "...xx")
+      assert("xx".leftEllipsed(1, "...") == "x")
     }
+
+    "support ellipsed rightpad" in {
+      assert("x".rightEllipsed(5, "...") == "x")
+      assert("xxxxxx".rightEllipsed(5, "...") == "xx...")
+      assert("xx".rightEllipsed(1, "...") == "x")
+    }
+
 
     "support minimization" in {
       assert("x".minimize(0) == "x")

@@ -9,13 +9,13 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.util.{Failure, Success, Try}
 
-class ConfigLoaderLocalFilesystemImpl(
+class ConfigLoaderLocalFSImpl(
                                        logger: IzLogger,
                                        primaryConfig: Option[File],
                                        roleConfigs: Map[String, Option[File]]
                                      ) extends ConfigLoader {
 
-  import ConfigLoaderLocalFilesystemImpl._
+  import ConfigLoaderLocalFSImpl._
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
   import scala.collection.JavaConverters._
@@ -114,7 +114,7 @@ class ConfigLoaderLocalFilesystemImpl(
   }
 }
 
-object ConfigLoaderLocalFilesystemImpl {
+object ConfigLoaderLocalFSImpl {
 
   sealed trait ConfigSource
 

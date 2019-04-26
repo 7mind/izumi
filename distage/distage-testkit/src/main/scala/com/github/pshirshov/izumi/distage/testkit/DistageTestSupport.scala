@@ -190,7 +190,7 @@ abstract class DistageTestSupport[F[_] : TagK]
       s"$lastPackage-test" -> None,
       s"$classname-test" -> None,
     )
-    new ConfigLoaderLocalFilesystemImpl(logger, None, moreConfigs)
+    new ConfigLoaderLocalFSImpl(logger, None, moreConfigs)
   }
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */

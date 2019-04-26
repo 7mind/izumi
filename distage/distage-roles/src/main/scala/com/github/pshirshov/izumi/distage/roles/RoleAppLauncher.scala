@@ -201,7 +201,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
       r =>
         r.role -> Options.configParam.findValue(r.roleParameters).asFile
     }
-    new ConfigLoaderLocalFilesystemImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
+    new ConfigLoaderLocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
 
   protected def makeMergeProvider(lateLogger: IzLogger, parameters: RawAppArgs): MergeProvider = {

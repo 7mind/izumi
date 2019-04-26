@@ -5,34 +5,38 @@ import java.nio.charset.StandardCharsets
 import scala.language.implicitConversions
 import scala.util.Try
 
+
+
+
+
 class IzString(s: String) {
-  @inline def utf8: Array[Byte] = {
+  @inline final def utf8: Array[Byte] = {
     s.getBytes(StandardCharsets.UTF_8)
   }
-  @inline def asBoolean(defValue: Boolean): Boolean = {
+  @inline final def asBoolean(defValue: Boolean): Boolean = {
     asBoolean().getOrElse(defValue)
   }
 
-  @inline def asBoolean(): Option[Boolean] = {
+  @inline final def asBoolean(): Option[Boolean] = {
     Try(s.toBoolean).toOption
   }
 
-  @inline def shift(delta: Int): String = {
+  @inline final def shift(delta: Int): String = {
     val shift = " " * delta
     s.split('\n').map(s => s"$shift$s").mkString("\n")
   }
 
-  @inline def densify(): String = {
+  @inline final def densify(): String = {
     s.replaceAll("\n\\s*\n", "\n\n").replaceAll("\\{\n\\s*\n", "{\n").replaceAll("\n\\s*\n\\}\n", "\n}").trim()
   }
 
-  @inline def leftPad(len: Int): String = leftPad(len, ' ')
+  @inline final def leftPad(len: Int): String = leftPad(len, ' ')
 
-  @inline def leftPad(len: Int, elem: Char): String = {
+  @inline final def leftPad(len: Int, elem: Char): String = {
     elem.toString * (len - s.length()) + s
   }
 
-  @inline def minimize(leave: Int): String = {
+  @inline final def minimize(leave: Int): String = {
     val parts = s.split('.').toVector
     if (parts.size < leave) {
       s
@@ -46,18 +50,52 @@ class IzString(s: String) {
   }
 
 
-  @inline def ellipsedLeftPad(limit: Int): String = {
-    val limited = if (s.length > limit && s.length > 3) {
-      s"...${s.takeRight(limit - 3)}"
-    } else if (s.length > limit && s.length <= 3) {
+  @inline final def leftEllipsed(limit: Int, ellipsis: String): String = {
+    val elen = ellipsis.length
+    if (s.length > limit && s.length > elen) {
+      s"$ellipsis${s.takeRight(limit - elen)}"
+    } else if (s.length > limit && s.length <= elen) {
       s"${s.takeRight(limit)}"
     } else {
       s
     }
-
-    import IzString._
-    limited.leftPad(limit, ' ')
   }
+
+  @inline final def rightEllipsed(limit: Int, ellipsis: String): String = {
+    val elen = ellipsis.length
+    if (s.length > limit && s.length > elen) {
+      s"${s.take(limit - elen)}$ellipsis"
+    } else if (s.length > limit && s.length <= elen) {
+      s"${s.take(limit)}"
+    } else {
+      s
+    }
+  }
+  @inline def centerEllipsed(maxLength: Int, ellipsis: Option[String]): String = {
+    if (s.length <= maxLength) {
+      s
+    } else {
+      val half = maxLength / 2
+      val (left, right) = ellipsis match {
+        case Some(_) =>
+          if (half * 2 < maxLength) {
+            (half, half)
+          } else {
+            (half - 1, half)
+          }
+        case None =>
+          if (half * 2 < maxLength) {
+            (half + 1, half)
+          } else {
+            (half, half)
+          }
+      }
+
+      s.take(left) + ellipsis.getOrElse("") + s.takeRight(right)
+    }
+  }
+
+
 
   def uncapitalize: String = {
     if (s == null) null
