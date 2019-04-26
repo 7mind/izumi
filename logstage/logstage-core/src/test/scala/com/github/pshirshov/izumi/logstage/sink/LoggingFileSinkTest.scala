@@ -48,7 +48,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
     val policy = ConsoleSink.simplePolicy()
 
-    val dummyFolder = "logstage"
+    val dummyFolder = "target/logstage"
 
     "write data to files correctly" in {
 
@@ -162,7 +162,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       val svc = fileSvcUtils.provideSvc(dummyFolder)
 
       svc.withPreparedData {
-        (0 until filesLimit).map { i => (i, (1 to fileSize).map(_.toString).toList) }.toList
+        (0 until filesLimit).map { i => (i, (1 to fileSize).map(idx => idx.toString).toList) }.toList
       }
 
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {

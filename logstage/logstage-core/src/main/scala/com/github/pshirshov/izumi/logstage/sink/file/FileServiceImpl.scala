@@ -64,6 +64,7 @@ object FileServiceImpl {
 
     private def createIfNotExists: Try[Unit] = {
       Try {
+        filePath.getParent.toFile.mkdirs().discard()
         Files.createFile(filePath).discard()
       } recover {
         case _: FileAlreadyExistsException =>
