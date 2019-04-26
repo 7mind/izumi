@@ -9,13 +9,13 @@ enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
 name := "izumi-r2"
-organization in ThisBuild := "com.github.pshirshov.izumi.r2"
+organization in ThisBuild := "io.7mind"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
 homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
 licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
 developers in ThisBuild := List(
-  Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/pshirshov"), email = "team@7mind.io"),
+  Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
 )
 
 releaseProcess := Seq[ReleaseStep](
