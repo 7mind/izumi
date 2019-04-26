@@ -68,29 +68,18 @@ object IDLCArgs {
         value
     }
 
-    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(GlobalArgsSchema(P, None), Seq(
-      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>"), freeArgsAllowed = false),
-      RoleParserSchema("scala", LP, Some("scala target"), freeArgsAllowed = false),
-      RoleParserSchema("go", LP, Some("go target"), freeArgsAllowed = false),
-      RoleParserSchema("csharp", LP, Some("C#/Unity target"), freeArgsAllowed = false),
-      RoleParserSchema("typescript", LP, Some("Typescript target"), freeArgsAllowed = false),
+    val globalArgs = GlobalArgsSchema(P, None, None)
+
+    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(globalArgs, Seq(
+      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>"), None, freeArgsAllowed = true),
+      RoleParserSchema("scala", LP, Some("scala target"), None, freeArgsAllowed = false),
+      RoleParserSchema("go", LP, Some("go target"), None, freeArgsAllowed = false),
+      RoleParserSchema("csharp", LP, Some("C#/Unity target"), None, freeArgsAllowed = false),
+      RoleParserSchema("typescript", LP, Some("Typescript target"), None, freeArgsAllowed = false),
     )))
 
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
-      for {
-        gh <- ParserSchemaFormatter.formatOptions(P)
-      } yield {
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-        val fullHelp =
-          s"""Global options:
-             |${gh.shift(2)}
-             |
-             |Supported commands:
-             |${roleHelp.shift(2)}
-           """.stripMargin
-        println(fullHelp)
-
-      }
+      println(roleHelp)
     }
 
     val init = parsed.roles.find(_.role == "init").map {

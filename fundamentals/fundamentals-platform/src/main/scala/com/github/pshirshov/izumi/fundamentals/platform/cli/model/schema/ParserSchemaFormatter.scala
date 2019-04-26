@@ -21,14 +21,6 @@ object ParserSchemaFormatter {
   }
 
 
-  def formatOptions(parser: ParserDef): Option[String] = {
-    if (!parser.isEmpty) {
-      Some(parser.enumerate.map(formatArg).mkString("\n\n"))
-    } else {
-      None
-    }
-  }
-
   private[this] def formatRoleHelp(rb: RoleParserSchema): String = {
     val sb = new StringBuilder()
     if (withColors) {
@@ -51,43 +43,45 @@ object ParserSchemaFormatter {
     }
 
     if (rb.freeArgsAllowed) {
+      if (withColors) {
+        sb.append(Console.MAGENTA)
+      }
       sb.append(" <args>")
+      if (withColors) {
+        sb.append(Console.RESET)
+      }
     }
     sb.append("\n")
 
-    sb.append(formatParser(rb.parser, rb.doc, rb.notes, 2, 2))
+    val pdoc = formatParser(rb.parser, rb.doc, rb.notes, 2, 2)
+    if (pdoc.nonEmpty) {
+      sb.append("\n")
+      sb.append(pdoc)
+      sb.append("\n")
+    }
 
     sb.toString()
   }
 
-  private def formatParser(parser: ParserDef, doc: Option[String], notes: Option[String], shift: Int, docShift: Int): String = {
-    val sb = new StringBuilder()
-
-    doc.foreach {
-      doc =>
-        sb.append("\n")
-        sb.append(doc.shift(docShift))
-        sb.append("\n")
-    }
-
-    if (parser.nonEmpty) {
-      val opts = formatOptions(parser).toSeq.mkString("\n\n")
-      sb.append("\n")
-      sb.append(
+  private[this] def formatParser(parser: ParserDef, doc: Option[String], notes: Option[String], shift: Int, docShift: Int): String = {
+    val optDoc = if (parser.nonEmpty) {
+      val opts = parser.enumerate.map(formatArg).mkString("\n\n")
+      Some(
         s"""Options:
            |
-           |${opts.shift(2)}""".stripMargin.shift(shift))
+           |${opts.shift(2)}
+           |""".stripMargin
+      )
+    } else {
+      None
     }
 
-    notes.foreach {
-      doc =>
-        sb.append("\n")
-        sb.append(doc.shift(docShift))
-        sb.append("\n")
-    }
+    Seq(
+      doc.map(_.trim.shift(docShift)),
+      optDoc.map(_.trim.shift(shift)),
+      notes.map(_.trim.shift(docShift)),
+    ).flatMap(_.toSeq).mkString("\n\n")
 
-
-    sb.toString()
   }
 
   private[this] def formatArg(arg: ArgDef): String = {
