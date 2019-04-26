@@ -113,7 +113,7 @@ Add the following to your `project/plugins.sbt` file:
 
 ```scala
 val izumi_version = "$izumi.version$"
-addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
+addSbtPlugin("io.7mind" % "sbt-idealingua" % izumi_version)
 ```
 
 @@@

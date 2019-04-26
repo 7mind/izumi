@@ -19,13 +19,13 @@ To use @ref[Izumi SBT Toolkit](sbt/00_sbt.md) add the following into `project/bu
 ```scala
 val izumi_version = "$izumi.version$"
 // sbt toolkit
-addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi" % izumi_version)
+addSbtPlugin("io.7mind" % "sbt-izumi" % izumi_version)
 
 // This is Izumi's BOM (Bill of Materials), see below
-addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-izumi-deps" % izumi_version)
+addSbtPlugin("io.7mind" % "sbt-izumi-deps" % izumi_version)
 
 // idealingua compiler (optional)
-addSbtPlugin("com.github.pshirshov.izumi.r2" % "sbt-idealingua" % izumi_version)
+addSbtPlugin("io.7mind" % "sbt-idealingua" % izumi_version)
 ```
 @@@
 
@@ -65,29 +65,29 @@ Alternatively, you can use the following artifact names and versions:
 @@@vars
 ```scala
 libraryDependencies ++= Seq(
-    "com.github.pshirshov.izumi.r2" %% "distage-core" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-config" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-testkit" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-static" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-app" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "distage-roles" % "$izumi.version$"
+    "io.7mind" %% "distage-core" % "$izumi.version$"
+  , "io.7mind" %% "distage-config" % "$izumi.version$"
+  , "io.7mind" %% "distage-cats" % "$izumi.version$"
+  , "io.7mind" %% "distage-testkit" % "$izumi.version$"
+  , "io.7mind" %% "distage-plugins" % "$izumi.version$"
+  , "io.7mind" %% "distage-static" % "$izumi.version$"
+  , "io.7mind" %% "distage-app" % "$izumi.version$"
+  , "io.7mind" %% "distage-roles" % "$izumi.version$"
   
-  , "com.github.pshirshov.izumi.r2" %% "logstage-core" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-adapter-slf4j " % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-config" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-config-di" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-cats" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-zio" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-api" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-di" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-rendering-circe " % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "logstage-sink-slf4j " % "$izumi.version$"
+  , "io.7mind" %% "logstage-core" % "$izumi.version$"
+  , "io.7mind" %% "logstage-adapter-slf4j " % "$izumi.version$"
+  , "io.7mind" %% "logstage-config" % "$izumi.version$"
+  , "io.7mind" %% "logstage-config-di" % "$izumi.version$"
+  , "io.7mind" %% "logstage-cats" % "$izumi.version$"
+  , "io.7mind" %% "logstage-zio" % "$izumi.version$"
+  , "io.7mind" %% "logstage-api" % "$izumi.version$"
+  , "io.7mind" %% "logstage-di" % "$izumi.version$"
+  , "io.7mind" %% "logstage-rendering-circe " % "$izumi.version$"
+  , "io.7mind" %% "logstage-sink-slf4j " % "$izumi.version$"
   
-  , "com.github.pshirshov.izumi.r2" %% "idealingua-v1-model" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "idealingua-v1-runtime-rpc-scala" % "$izumi.version$"
-  , "com.github.pshirshov.izumi.r2" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$"
+  , "io.7mind" %% "idealingua-v1-model" % "$izumi.version$"
+  , "io.7mind" %% "idealingua-v1-runtime-rpc-scala" % "$izumi.version$"
+  , "io.7mind" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$"
 )
 ```
 @@@

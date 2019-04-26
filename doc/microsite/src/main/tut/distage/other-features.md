@@ -124,7 +124,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-plugins" % "$izumi.version$"
+libraryDependencies += "io.7mind" %% "distage-plugins" % "$izumi.version$"
 ```
 
 @@@
@@ -204,7 +204,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-app" % "$izumi.version$"
+libraryDependencies += "io.7mind" %% "distage-app" % "$izumi.version$"
 ```
 
 @@@
@@ -304,7 +304,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-roles" % "$izumi.version$"
+libraryDependencies += "io.7mind" %% "distage-roles" % "$izumi.version$"
 ```
 
 @@@
@@ -513,7 +513,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-cats" % "$izumi.version$"
+libraryDependencies += "io.7mind" %% "distage-cats" % "$izumi.version$"
 ```
 
 @@@

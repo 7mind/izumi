@@ -15,7 +15,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "com.github.pshirshov.izumi.r2" %% "distage-config" % "$izumi.version$"
+libraryDependencies += "io.7mind" %% "distage-config" % "$izumi.version$"
 ```
 
 @@@
