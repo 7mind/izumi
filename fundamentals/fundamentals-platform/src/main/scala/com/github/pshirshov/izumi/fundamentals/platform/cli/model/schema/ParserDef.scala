@@ -7,8 +7,13 @@ import ParserDef._
 import scala.collection.mutable
 
 trait ParserDef {
-  protected[schema] val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
+  private val _all: mutable.LinkedHashMap[String, ArgDef] = mutable.LinkedHashMap[String, ArgDef]()
 
+  def isEmpty: Boolean = _all.isEmpty
+  def nonEmpty: Boolean = _all.nonEmpty
+
+
+  def enumerate: Seq[ArgDef] = _all.toSeq.map(_._2)
   def all: Map[String, ArgDef] = _all.toMap
 
   def arg(name: String, short: String, doc: String, valdoc: String): ArgDef = {

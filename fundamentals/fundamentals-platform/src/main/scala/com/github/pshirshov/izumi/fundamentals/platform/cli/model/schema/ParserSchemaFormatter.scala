@@ -1,37 +1,93 @@
 package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 object ParserSchemaFormatter {
-  /** TODOs:
-    * - default parameters
-    * - free arg restrictions
-    * - decoding MUST fail on unknown parameters
-    * - automated decoder: ParserSchema[CaseClass](args: RoleAppArguments): CaseClass (compile-time in ideal case)
-    */
-  def makeDocs(schema: ParserSchema): String = schema.descriptors.map(formatRoleHelp)
-    .mkString("\n\n")
+  private val withColors = !java.awt.GraphicsEnvironment.isHeadless
+
+
+  def makeDocs(schema: ParserSchema): String = {
+    val sb = new StringBuilder()
+
+    val maindoc = formatParser(schema.globalArgsSchema.parserDef, schema.globalArgsSchema.doc, schema.globalArgsSchema.notes, 2, 0)
+    if (maindoc.nonEmpty) {
+      sb.append(maindoc)
+      sb.append("\n\n")
+    }
+
+    sb.append(schema.descriptors.map(formatRoleHelp).mkString("\n"))
+    sb.toString()
+  }
 
 
   def formatOptions(parser: ParserDef): Option[String] = {
-    if (parser._all.nonEmpty) {
-      Some(parser._all.values.map(formatArg).mkString("\n\n"))
+    if (!parser.isEmpty) {
+      Some(parser.enumerate.map(formatArg).mkString("\n\n"))
     } else {
       None
     }
   }
 
   private[this] def formatRoleHelp(rb: RoleParserSchema): String = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    val sub = Seq(rb.doc.toSeq, formatOptions(rb.parser).toSeq).flatten.mkString("\n\n")
-
-    val id = s":${rb.id}"
-
-    if (sub.nonEmpty) {
-      Seq(id, sub.shift(2)).mkString("\n\n")
-    } else {
-      id
+    val sb = new StringBuilder()
+    if (withColors) {
+      sb.append(Console.GREEN)
+      sb.append(Console.BOLD)
     }
+    sb.append(s":${rb.id}")
+    if (withColors) {
+      sb.append(Console.RESET)
+    }
+
+    if (rb.parser.nonEmpty) {
+      if (withColors) {
+        sb.append(Console.YELLOW)
+      }
+      sb.append(" [options]")
+      if (withColors) {
+        sb.append(Console.RESET)
+      }
+    }
+
+    if (rb.freeArgsAllowed) {
+      sb.append(" <args>")
+    }
+    sb.append("\n")
+
+    sb.append(formatParser(rb.parser, rb.doc, rb.notes, 2, 2))
+
+    sb.toString()
+  }
+
+  private def formatParser(parser: ParserDef, doc: Option[String], notes: Option[String], shift: Int, docShift: Int): String = {
+    val sb = new StringBuilder()
+
+    doc.foreach {
+      doc =>
+        sb.append("\n")
+        sb.append(doc.shift(docShift))
+        sb.append("\n")
+    }
+
+    if (parser.nonEmpty) {
+      val opts = formatOptions(parser).toSeq.mkString("\n\n")
+      sb.append("\n")
+      sb.append(
+        s"""Options:
+           |
+           |${opts.shift(2)}""".stripMargin.shift(shift))
+    }
+
+    notes.foreach {
+      doc =>
+        sb.append("\n")
+        sb.append(doc.shift(docShift))
+        sb.append("\n")
+    }
+
+
+    sb.toString()
   }
 
   private[this] def formatArg(arg: ArgDef): String = {
@@ -53,15 +109,21 @@ object ParserSchemaFormatter {
       "-"
     }
 
+    val basename = if (withColors) {
+      s"${Console.YELLOW}$prefix$name${Console.RESET}"
+    } else {
+      s"$prefix$name"
+    }
+
     arg.valueDoc match {
       case Some(value) =>
         if (short) {
-          s"$prefix$name $value"
+          s"$basename $value"
         } else {
-          s"$prefix$name=$value"
+          s"$basename=$value"
         }
       case None =>
-        s"$prefix$name"
+        basename
     }
 
   }

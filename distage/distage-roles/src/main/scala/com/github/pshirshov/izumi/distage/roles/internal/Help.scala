@@ -5,11 +5,9 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.ParserFailureHandler
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{RoleParserSchema, ParserSchema, ParserSchemaFormatter}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class Help[F[_] : DIEffect]
 (
@@ -25,25 +23,30 @@ class Help[F[_] : DIEffect]
   private[this] def showHelp(): Unit = {
     val descriptors = roleInfo
       .availableRoleBindings
-      .map(rb => RoleParserSchema(rb.descriptor.id, rb.descriptor.parser, rb.descriptor.doc))
+      .map(rb => rb.descriptor.parserSchema)
 
-    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(descriptors))
+    val baseDoc =
+      s"""izumi/distage role application launcher
+         |
+         |  General commanline format:
+         |
+         |    launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
 
-    val mainHelp = ParserSchemaFormatter.formatOptions(RoleAppLauncher.Options).map(_.shift(2))
+    val notes =
+      s"""
+         |  Notes:
+         |
+         |    - Config file option (-c) is also appliable to every role individually
+         |
+         |  Examples:
+         |
+         |    launcher -c myconfig.json :help :myrole -c roleconfig.json""".stripMargin
 
-    val fullHelp =
-      s"""${ParserFailureHandler.example}
-         |
-         |Global options:
-         |
-         |${mainHelp.getOrElse("?")}
-         |
-         |Available roles:
-         |
-         |${roleHelp.shift(2)}
-       """.stripMargin
+    val help = ParserSchemaFormatter.makeDocs(
+      ParserSchema(GlobalArgsSchema(RoleAppLauncher.Options, Some(baseDoc), Some(notes)), descriptors)
+    )
 
-    println(fullHelp)
+    println(help)
   }
 
 }
@@ -51,7 +54,8 @@ class Help[F[_] : DIEffect]
 object Help extends RoleDescriptor {
   override final val id = "help"
 
-  override def doc: Option[String] = Some("show commandline help")
-
+  override def parserSchema: RoleParserSchema = {
+    RoleParserSchema(id, ParserDef.Empty, Some("show commandline help"), None, freeArgsAllowed = false)
+  }
 
 }

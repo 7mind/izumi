@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -171,8 +171,9 @@ class ConfigWriter[F[_] : DIEffect]
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
-
-  override def doc: Option[String] = Some("Dump reference configs for all the roles")
+  override def parserSchema: RoleParserSchema = {
+    RoleParserSchema(id, P, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
+  }
 
   /**
     * Configuration for [[ConfigWriter]]
@@ -192,8 +193,6 @@ object ConfigWriter extends RoleDescriptor {
                                           , parent: Option[Config] = None
                                         )
 
-
-  override def parser: ParserDef = P
 
   object P extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")

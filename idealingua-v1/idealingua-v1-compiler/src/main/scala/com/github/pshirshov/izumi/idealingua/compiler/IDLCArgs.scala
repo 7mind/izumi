@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema, ParserSchema, ParserSchemaFormatter}
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{GlobalArgsSchema, ParserDef, ParserSchema, ParserSchemaFormatter, RoleParserSchema}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
@@ -69,12 +69,12 @@ object IDLCArgs {
         value
     }
 
-    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(Seq(
-      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>")),
-      RoleParserSchema("scala", LP, Some("scala target")),
-      RoleParserSchema("go", LP, Some("go target")),
-      RoleParserSchema("csharp", LP, Some("C#/Unity target")),
-      RoleParserSchema("typescript", LP, Some("Typescript target")),
+    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(GlobalArgsSchema(P, None), Seq(
+      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>"), freeArgsAllowed = false),
+      RoleParserSchema("scala", LP, Some("scala target"), freeArgsAllowed = false),
+      RoleParserSchema("go", LP, Some("go target"), freeArgsAllowed = false),
+      RoleParserSchema("csharp", LP, Some("C#/Unity target"), freeArgsAllowed = false),
+      RoleParserSchema("typescript", LP, Some("Typescript target"), freeArgsAllowed = false),
     )))
 
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
