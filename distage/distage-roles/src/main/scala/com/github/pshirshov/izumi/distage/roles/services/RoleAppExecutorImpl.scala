@@ -14,7 +14,7 @@ import distage.{DIKey, Injector, TagK}
 
 
 class RoleAppExecutorImpl[F[_] : TagK](
-                                        protected val hook: ApplicationShutdownStrategy[F],
+                                        protected val hook: AppShutdownStrategy[F],
                                         roles: RolesInfo,
                                         injector: Injector,
                                         lateLogger: IzLogger,

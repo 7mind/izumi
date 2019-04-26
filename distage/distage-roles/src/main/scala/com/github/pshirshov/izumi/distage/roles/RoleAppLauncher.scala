@@ -54,7 +54,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def bootstrapConfig: BootstrapConfig
 
-  protected val hook: ApplicationShutdownStrategy[F]
+  protected val hook: AppShutdownStrategy[F]
 
   protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
 
@@ -223,11 +223,11 @@ object RoleAppLauncher {
 
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
-    override protected val hook: ApplicationShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+    override protected val hook: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
   }
 
   abstract class LauncherIdentity extends RoleAppLauncher[Identity] {
-    override protected val hook: ApplicationShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
+    override protected val hook: AppShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
   }
 
 }

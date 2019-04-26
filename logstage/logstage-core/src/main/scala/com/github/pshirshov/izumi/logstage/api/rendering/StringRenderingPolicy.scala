@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.logstage.api.Log
+import com.github.pshirshov.izumi.logstage.api.{Log, rendering}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
 
@@ -84,14 +84,14 @@ object StringRenderingPolicy {
       new Styler.Compact(
         Seq(new Extractor.LoggerName()),
         3
-      )), 32, TrimType.Left, Some("…")
+      )), 28, TrimType.Left, Some("…")
     ),
     Extractor.Space,
     new Extractor.Constant("["),
 
-    new Styler.Pad(Seq(new Extractor.ThreadId()), 5, PadType.Left, ' '),
+    new Styler.AdaptivePad(Seq(new Extractor.ThreadId()), 1, PadType.Left, ' '),
     new Extractor.Constant(":"),
-    new Styler.Pad(Seq(new Styler.Trim(Seq(new Extractor.ThreadName()), 20, TrimType.Center, Some("…"))), 20, PadType.Right, ' '),
+    new Styler.AdaptivePad(Seq(new rendering.logunits.Styler.Trim(Seq(new rendering.logunits.Extractor.ThreadName()), 20, TrimType.Center, Some("…"))), 4, PadType.Right, ' '),
     new Extractor.Constant("]"),
     Extractor.Space,
 

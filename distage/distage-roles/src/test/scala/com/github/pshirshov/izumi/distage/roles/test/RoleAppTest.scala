@@ -26,7 +26,7 @@ class TestLauncherBase extends RoleAppLauncher.LauncherF[IO]() {
 object ExampleLauncher extends TestLauncherBase
 
 object TestLauncher extends TestLauncherBase {
-  override protected val hook: ApplicationShutdownStrategy[IO] = new ImmediateExitShutdownStrategy()
+  override protected val hook: AppShutdownStrategy[IO] = new ImmediateExitShutdownStrategy()
 }
 
 

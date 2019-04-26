@@ -10,13 +10,13 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import scala.concurrent.{ExecutionContext, Promise}
 
 
-trait ApplicationShutdownStrategy[F[_]] {
+trait AppShutdownStrategy[F[_]] {
   def await(logger: IzLogger): F[Unit]
 
   def release(): Unit
 }
 
-class JvmExitHookLatchShutdownStrategy extends ApplicationShutdownStrategy[Identity] {
+class JvmExitHookLatchShutdownStrategy extends AppShutdownStrategy[Identity] {
   private val latch = new CountDownLatch(1)
 
   private val mainLatch: CountDownLatch = new CountDownLatch(1)
@@ -47,7 +47,7 @@ class JvmExitHookLatchShutdownStrategy extends ApplicationShutdownStrategy[Ident
   }
 }
 
-class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends ApplicationShutdownStrategy[F] {
+class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends AppShutdownStrategy[F] {
   def await(logger: IzLogger): F[Unit] = {
     DIEffect[F].maybeSuspend {
       logger.info("Exiting immediately...")
@@ -57,7 +57,7 @@ class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends ApplicationShutdown
   override def release(): Unit = {}
 }
 
-class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionContext) extends ApplicationShutdownStrategy[F] {
+class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionContext) extends AppShutdownStrategy[F] {
   private val shutdownPromise: Promise[Unit] = Promise[Unit]()
   private val mainLatch: CountDownLatch = new CountDownLatch(1)
 
