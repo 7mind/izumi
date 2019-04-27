@@ -5,8 +5,7 @@ import java.util.concurrent._
 
 import scalaz.zio.Exit.Cause
 import scalaz.zio._
-import scalaz.zio.internal.{Env, Executor, NamedThreadFactory, Scheduler}
-import scalaz.zio.internal.impls.Env
+import scalaz.zio.internal.{Executor, NamedThreadFactory, Platform, PlatformLive}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: F[E, A]): A
@@ -19,92 +18,84 @@ trait BIORunner[F[_, _]] {
 object BIORunner {
   def apply[F[_, _]: BIORunner]: BIORunner[F] = implicitly
 
-  def createZIO(env: Env): BIORunner[IO] = new ZIORunner(env)
+  def createZIO(platform: Platform): BIORunner[IO] = new ZIORunner(platform)
 
   def createZIO(
                  cpuPool: ThreadPoolExecutor
-               , blockingPool: ThreadPoolExecutor
                , handler: DefaultHandler = DefaultHandler.Default
                , yieldEveryNFlatMaps: Int = 1024
-               , timerPool: ScheduledExecutorService = newZioTimerPool()
                ): BIORunner[IO] = {
-    new ZIORunner(new ZIOEnvBase(cpuPool, blockingPool, handler, yieldEveryNFlatMaps, timerPool))
+    new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps))
   }
 
-  private[this] def newZioTimerPool(): ScheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
+  def newZioTimerPool(): ScheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
 
   sealed trait DefaultHandler
 
   object DefaultHandler {
-    case object Default extends DefaultHandler
-    case class Custom(handler: BIOExit.Failure[Any] => IO[Nothing, Unit]) extends DefaultHandler
+    final case object Default extends DefaultHandler
+    final case class Custom(handler: BIOExit.Failure[Any] => Unit) extends DefaultHandler
   }
 
   class ZIORunner
   (
-    val env: Env
-  ) extends BIORunner[IO] {
+    val platform: Platform
+  ) extends BIORunner[IO] with BIOExit.ZIO {
+
+    val runtime = Runtime((), platform)
+
     override def unsafeRun[E, A](io: IO[E, A]): A = {
       unsafeRunSyncAsEither(io) match {
         case BIOExit.Success(value) =>
           value
 
-        case value: BIOExit.Failure[_] =>
-          value match {
-            case e: BIOExit.Error[_] =>
-              e.error match {
-                case t: Throwable =>
-                  throw t
-                case o =>
-                  throw FiberFailure(Cause.fail(o))
-              }
-            case e: BIOExit.Termination =>
-              throw e.compoundException
+        case e: BIOExit.Error[_] =>
+          e.error match {
+            case t: Throwable =>
+              throw t
+            case o =>
+              throw FiberFailure(Cause.fail(o))
           }
+        case e: BIOExit.Termination =>
+          throw e.compoundException
       }
     }
 
     override def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
-      env.unsafeRunAsync[E, A](io, exitResult => callback(BIO.BIOZio.toBIOExit(exitResult)))
+      runtime.unsafeRunAsync[E, A](io)(exitResult => callback(toBIOExit(exitResult)))
     }
 
     override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): BIOExit[E, A] = {
-      val result = env.unsafeRunSync(io)
-      BIO.BIOZio.toBIOExit(result)
+      val result = runtime.unsafeRunSync(io)
+      toBIOExit(result)
     }
   }
 
   class ZIOEnvBase
   (
     cpuPool: ThreadPoolExecutor
-  , blockingBool: ThreadPoolExecutor
   , handler: DefaultHandler
   , yieldEveryNFlatMaps: Int
-  , timerPool: ScheduledExecutorService
-  ) extends Env {
+  ) extends Platform with BIOExit.ZIO {
 
-    private[this] final val cpu = Env.fromThreadPoolExecutor(Executor.Yielding, _ => yieldEveryNFlatMaps)(cpuPool)
-    private[this] final val blocking = Env.fromThreadPoolExecutor(Executor.Unyielding, _ => Int.MaxValue)(blockingBool)
+    private[this] final val cpu = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
 
-    override def reportFailure(cause: Exit.Cause[_]): IO[Nothing, _] = {
+    override def reportFailure(cause: Exit.Cause[_]): Unit = {
       handler match {
         case DefaultHandler.Default =>
-          if (cause.interrupted) IO.unit // do not log interruptions
-          else IO.sync(println(cause.toString))
+          // do not log interruptions
+          if (!cause.interrupted) {
+            println(cause.toString)
+          }
 
         case DefaultHandler.Custom(f) =>
-          f(BIO.BIOZio.toBIOExit(cause))
+          f(toBIOExit(cause))
       }
     }
 
-    override def executor(tpe: Executor.Role): Executor = tpe match {
-      case Executor.Yielding => cpu
-      case Executor.Unyielding => blocking
-    }
+    override def executor: Executor = cpu
 
-    override def scheduler: Scheduler = Scheduler.fromScheduledExecutorService(timerPool)
-
-    override def nonFatal(t: Throwable): Boolean = !t.isInstanceOf[VirtualMachineError]
+    override def fatal(t: Throwable): Boolean = t.isInstanceOf[VirtualMachineError]
 
     override def newWeakHashMap[A, B](): util.Map[A, B] = new util.WeakHashMap[A, B]()
   }

@@ -25,7 +25,7 @@ object LogstageZIO {
       }
 
       private[this] def withFiberContext[T](f : AbstractLogger => T): IO[Nothing, T] = {
-        IO.descriptor.map(_.id).flatMap(id => IO.sync(f(logger.withCustomContext(CustomContext("fiberId" -> id)))))
+        IO.descriptor.map(_.id).flatMap(id => IO.effectTotal(f(logger.withCustomContext(CustomContext("fiberId" -> id)))))
       }
     }
   }

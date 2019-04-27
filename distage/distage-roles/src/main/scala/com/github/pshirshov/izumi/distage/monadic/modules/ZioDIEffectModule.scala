@@ -5,7 +5,7 @@ import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter
-import com.github.pshirshov.izumi.functional.bio.BIORunner
+import com.github.pshirshov.izumi.functional.bio.{BIORunner, BlockingIO}
 import distage.Id
 import logstage.IzLogger
 import scalaz.zio
@@ -26,17 +26,20 @@ trait ZioDIEffectModule extends ModuleDef {
         ResourceRewriter.fromExecutorService(logger, Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
     }
 
+  make[BlockingIO[zio.IO]].from {
+    blockingPool: ThreadPoolExecutor @Id("zio.pool.io") =>
+      BlockingIO.ZIOFromThreadPool(blockingPool)
+  }
+
   make[BIORunner[zio.IO]].from {
     (
-      cpuPool: ThreadPoolExecutor@Id("zio.pool.cpu"),
-      blockingPool: ThreadPoolExecutor@Id("zio.pool.io"),
+      cpuPool: ThreadPoolExecutor @Id("zio.pool.cpu"),
       logger: IzLogger,
     ) =>
-      val handler = BIORunner.DefaultHandler.Custom(message => zio.IO.sync(logger.warn(s"Fiber failed: $message")))
+      val handler = BIORunner.DefaultHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
 
       BIORunner.createZIO(
         cpuPool
-        , blockingPool
         , handler
       )
   }

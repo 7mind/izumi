@@ -15,7 +15,7 @@ import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import scalaz.zio
-import scalaz.zio.interop.Task
+import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 object Http4sTestContext {
