@@ -6,8 +6,6 @@ import scalaz.zio.{IO, UIO, ZIO}
 import scalaz.zio.blocking.Blocking
 import scalaz.zio.internal.{Executor, PlatformLive}
 
-import scala.concurrent.ExecutionContext
-
 trait BlockingIO[F[_, _]] {
 
   /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes **/
