@@ -2,9 +2,10 @@ package com.github.pshirshov.izumi.distage.planning
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetElementBinding}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Module, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-trait EarlyAutoSetHook extends PlanningHookDefaultImpl {
+trait EarlyAutoSetHook extends PlanningHook {
   def elementOf(b: Binding): Option[RuntimeDIUniverse.DIKey]
 
   override def hookDefinition(defn: ModuleBase): ModuleBase = {

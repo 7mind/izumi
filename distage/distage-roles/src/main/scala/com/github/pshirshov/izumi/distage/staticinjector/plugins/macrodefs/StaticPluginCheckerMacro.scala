@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.staticinjector.plugins.macrodefs
 
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
+import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
 import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
@@ -144,7 +144,7 @@ object StaticPluginCheckerMacro {
         .add[ConfigReferenceExtractor]
     })
 
-    val bootstrap = new DefaultBootstrapLocator(DefaultBootstrapLocator.noReflectionBootstrap overridenBy config)
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config)
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)

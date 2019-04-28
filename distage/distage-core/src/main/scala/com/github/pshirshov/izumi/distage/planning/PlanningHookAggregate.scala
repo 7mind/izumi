@@ -24,13 +24,6 @@ final class PlanningHookAggregate
     }
   }
 
-  override def hookStep(context: ModuleBase, currentPlan: DodgyPlan, binding: Binding, next: DodgyPlan): DodgyPlan = {
-    hooks.foldLeft(currentPlan) {
-      case (acc, hook) =>
-        hook.hookStep(context, acc, binding, next)
-    }
-  }
-
   override def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>

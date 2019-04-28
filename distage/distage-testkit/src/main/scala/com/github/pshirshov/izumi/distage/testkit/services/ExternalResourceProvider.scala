@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit.services
 
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
+import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, LocatorDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
@@ -104,7 +104,7 @@ object ExternalResourceProvider {
 
     private val shutdownHook = new Thread(() => stop(), "termination-hook-memoizer")
 
-    private val logger = TrivialLogger.make[DefaultBootstrapLocator]("izumi.distage.debug.memoizer", default = true)
+    private val logger = TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.memoizer", default = true)
 
     Runtime.getRuntime.addShutdownHook(shutdownHook)
 
