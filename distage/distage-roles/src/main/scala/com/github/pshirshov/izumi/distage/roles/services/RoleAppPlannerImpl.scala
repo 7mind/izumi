@@ -15,8 +15,7 @@ class RoleAppPlannerImpl[F[_] : TagK](
                                        logger: IzLogger,
                                      ) extends RoleAppPlanner[F] {
 
-  val injector = Injector.Standard(bsModule)
-
+  private val injector = Injector.Standard(bsModule)
 
   def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {
     val fullAppModule = appModule
