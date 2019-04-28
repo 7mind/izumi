@@ -9,7 +9,7 @@ enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
 name := "izumi-r2"
-organization in ThisBuild := "io.7mind"
+organization in ThisBuild := "io.7mind.izumi"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
 homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
@@ -43,7 +43,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
       V.scala_213,
     )
     , scalaVersion := crossScalaVersions.value.head
-    , sonatypeProfileName := "io.7mind.izumi"
+    , sonatypeProfileName := "io.7mind"
     , addCompilerPlugin(R.kind_projector)
   )
 }
