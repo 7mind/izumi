@@ -163,11 +163,11 @@ val logger = IzLogger()
 
 ```scala mdoc
 import logstage.LogstageZIO
-import scalaz.zio.{IO, RTS}
+import scalaz.zio.{IO, DefaultRuntime}
 
 val log = LogstageZIO.withFiberId(logger)
 
-val rts = new RTS {}
+val rts = new DefaultRuntime {}
 rts.unsafeRun {
   log.info(s"Hey! I'm logging with ${log}stage!")
 }

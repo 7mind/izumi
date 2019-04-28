@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, FromCats}
-import com.github.pshirshov.izumi.functional.bio.BIO
+import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -26,6 +26,11 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("DIResource.fromCats(null)")
 //    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
+    BIOAsync.apply[Either](null)
+
+    And("Can search for BIO/BIOAsync")
+    assertTypeError("implicitly[BIOAsync[Either]]")
+    assertTypeError("implicitly[BIO[Either]]")
 
     And("`No More Orphans` type provider is inacessible")
     FromCats.discard()

@@ -593,7 +593,7 @@ val kvStoreModule = new ModuleDef {
   make[KVStore[IO]].fromEffect(KVStore.dummy)
 }
 
-new RTS{}.unsafeRun {
+new DefaultRuntime{}.unsafeRun {
   Injector().produceF[IO[Throwable, ?]](kvStoreModule)
     .use {
       objects =>
