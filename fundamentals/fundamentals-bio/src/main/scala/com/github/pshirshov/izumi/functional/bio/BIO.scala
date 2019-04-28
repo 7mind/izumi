@@ -62,7 +62,7 @@ object BIO extends BIOSyntax {
 
   @inline def apply[R[+ _, + _] : BIO]: BIO[R] = implicitly
 
-  implicit val BIOZio: BIO[IO] = new BIOZio
+  implicit object BIOZio extends BIOZio
 
   class BIOZio extends BIO[IO] with BIOExit.ZIO {
 
