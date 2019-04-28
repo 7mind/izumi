@@ -20,7 +20,6 @@ import com.github.pshirshov.izumi.distage.provisioning._
 import com.github.pshirshov.izumi.distage.provisioning.strategies._
 import com.github.pshirshov.izumi.distage.reflection._
 import com.github.pshirshov.izumi.distage.{provisioning, _}
-import com.github.pshirshov.izumi.functional.Value
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.TagK
@@ -33,14 +32,12 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 
   val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
 
-  private val _instances = new AtomicReference[Seq[IdentifiedRef]]()
-
-  protected val bootstrappedContext: Locator = {
+  private val bootstrappedContext: Locator = {
     val resource = bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
-    Value(resource.extract(resource.acquire).throwOnFailure())
-      .eff(locator => _instances.set(locator.instances))
-      .get
+    resource.extract(resource.acquire).throwOnFailure()
   }
+
+  private val _instances = new AtomicReference[Seq[IdentifiedRef]](bootstrappedContext.instances)
 
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 

@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.Id
+import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
@@ -30,7 +30,8 @@ class ConfigWriter[F[_] : DIEffect]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
-  options: ContextOptions
+  options: ContextOptions,
+  appModule: ModuleBase@Id("application.module")
 )
   extends RoleTask[F] {
 
@@ -106,8 +107,11 @@ class ConfigWriter[F[_] : DIEffect]
 
   private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
-    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions) overridenBy new LogstageModule(LogRouter.nullRouter, false)
-    val newPlan = context.makePlan(Set(role.binding.key), cfg, distage.Module.empty).app
+
+    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions) overridenBy
+      new LogstageModule(LogRouter.nullRouter, false)
+
+    val newPlan = context.makePlan(Set(roleDIKey), appModule overridenBy cfg).app
 
     if (newPlan.steps.exists(_.target == roleDIKey)) {
       newPlan

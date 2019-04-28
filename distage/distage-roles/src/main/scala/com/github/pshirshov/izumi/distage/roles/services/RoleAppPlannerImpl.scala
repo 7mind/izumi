@@ -12,24 +12,24 @@ import distage._
 class RoleAppPlannerImpl[F[_] : TagK](
                                        options: ContextOptions,
                                        bsModule: BootstrapModule,
-                                       appModule: distage.ModuleBase,
                                        logger: IzLogger,
                                      ) extends RoleAppPlanner[F] {
 
-  def makePlan(appMainRoots: Set[DIKey], bsCustomization: BootstrapModule, customization: ModuleBase): AppStartupPlans = {
-    val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[DIEffectRunner[F]],
-      DIKey.get[DIEffect[F]],
-    )
+  val injector = Injector.Standard(bsModule)
 
+
+  def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {
     val fullAppModule = appModule
       .overridenBy(new ModuleDef {
         make[RoleAppPlanner[F]].from(RoleAppPlannerImpl.this)
         make[ContextOptions].from(options)
+        make[ModuleBase].named("application.module").from(appModule)
       })
-      .overridenBy(customization)
 
-    val injector = Injector.Standard(bsModule.overridenBy(bsCustomization))
+    val runtimeGcRoots: Set[DIKey] = Set(
+      DIKey.get[DIEffectRunner[F]],
+      DIKey.get[DIEffect[F]],
+    )
     val runtimePlan = injector.plan(fullAppModule, runtimeGcRoots)
 
     val rolesPlan = injector.plan(fullAppModule, appMainRoots)

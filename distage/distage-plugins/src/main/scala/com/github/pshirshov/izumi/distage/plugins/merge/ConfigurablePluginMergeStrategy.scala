@@ -10,7 +10,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy {
-  override def merge(defs: Seq[PluginBase]): MergedPlugins = {
+  override def mergeBootstrap(defs: Seq[PluginBase]): MergedPlugins = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val allBindings = defs
       .map { plugin =>
@@ -26,6 +26,10 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .flatMap(resolve)
 
     MergedPlugins(Module.make(resolved.toSet))
+  }
+
+  override def merge(defs: Seq[PluginBase]): MergedPlugins = {
+    mergeBootstrap(defs)
   }
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Set[Binding] = {

@@ -26,7 +26,6 @@ import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
 
 
-
 abstract class DistageTestSupport[F[_] : TagK]
   extends DISyntax[F]
     with IgnoreSupport
@@ -58,16 +57,16 @@ abstract class DistageTestSupport[F[_] : TagK]
     val options = contextOptions()
     val provider = makeModuleProvider(options, config, logger, env.roles)
 
-    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
     val appModule = provider.appModules().merge overridenBy env.appModule
 
     val allRoots = function.get.diKeys.toSet ++ additionalRoots
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, bsModule, withMemoized, logger)
+    val planner = makePlanner(options, bsModule, logger)
 
-    val plan = planner.makePlan(allRoots, bootstrapOverride, appOverride)
+    val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
       plan.injector.produceF[Identity](plan.runtime),
@@ -167,8 +166,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
   }
 
-  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule,module: distage.ModuleBase, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, module, logger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {

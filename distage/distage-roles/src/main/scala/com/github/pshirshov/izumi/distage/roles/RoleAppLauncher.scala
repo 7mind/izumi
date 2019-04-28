@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.distage.roles
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.Module
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
@@ -66,43 +65,46 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val roles = loadRoles(parameters, earlyLogger, plugins)
 
     val mergeStrategy = makeMergeProvider(earlyLogger, parameters).mergeStrategy(plugins, roles)
-    val defBs: MergedPlugins = mergeStrategy.merge(plugins.bootstrap)
-    val defApp: MergedPlugins = mergeStrategy.merge(plugins.app)
-    validate(defBs, defApp)
+    val defBs = mergeStrategy.mergeBootstrap(plugins.bootstrap)
 
     val loadedBsModule = defBs.definition
-    val loadedAppModule = defApp.definition
-    earlyLogger.info(s"Loaded ${loadedAppModule.bindings.size -> "app bindings"} and ${loadedBsModule.bindings.size -> "bootstrap bindings"}...")
+    earlyLogger.info(s"Loaded ${loadedBsModule.bindings.size -> "bootstrap bindings"}...")
 
-    val loader = makeConfigLoader(earlyLogger, parameters)
-    val config = loader.buildConfig()
-
+    val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
     val options = contextOptions(parameters)
+
     val moduleProvider = makeModuleProvider(options, parameters, roles, config, lateLogger)
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy loadedBsModule
+
+    val roots = gcRoots(roles)
+
+
+    val planner = makePlanner(options, bsModule, lateLogger)
+
+    val defApp = mergeStrategy.merge(plugins.app)
+    validate(defBs, defApp)
+    val loadedAppModule = defApp.definition
+    lateLogger.info(s"Loaded ${loadedAppModule.bindings.size -> "app bindings"}...")
     val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
 
 
-    val planner = makePlanner(options, bsModule, appModule, lateLogger)
-    val roots = gcRoots(roles, defBs, defApp)
-    val appPlan = planner.makePlan(roots, BootstrapModule.empty, Module.empty)
+    val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
     val r = makeExecutor(parameters, roles, lateLogger, appPlan.injector)
     r.runPlan(appPlan)
   }
 
-  protected def gcRoots(rolesInfo: RolesInfo, bs: MergedPlugins, app: MergedPlugins): Set[DIKey] = {
-    Quirks.discard(bs, app)
+  protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = {
     rolesInfo.requiredComponents ++ Set(
       RuntimeDIUniverse.DIKey.get[ResolvedConfig],
       RuntimeDIUniverse.DIKey.get[Set[RoleService[F]]],
     )
   }
 
-  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, module: distage.Module, lateLogger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, module, lateLogger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, lateLogger)
   }
 
   protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
