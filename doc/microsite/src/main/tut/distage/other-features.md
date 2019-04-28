@@ -124,7 +124,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind" %% "distage-plugins" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$"
 ```
 
 @@@
@@ -204,7 +204,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind" %% "distage-app" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-app" % "$izumi.version$"
 ```
 
 @@@
@@ -304,7 +304,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind" %% "distage-roles" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-roles" % "$izumi.version$"
 ```
 
 @@@
@@ -513,7 +513,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind" %% "distage-cats" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-cats" % "$izumi.version$"
 ```
 
 @@@

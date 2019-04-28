@@ -787,7 +787,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind" %% "distage-plugins" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$"
 ```
 
 @@@

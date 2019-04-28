@@ -81,14 +81,14 @@ or
 ```scala
 val izumi_version = "$izumi.version$"
 // LogStage API, you need it to use the logger
-libraryDependencies += "io.7mind" %% "logstage-core" % izumi_version
+libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
 
 // LogStage machinery
 libraryDependencies ++= Seq(
   // json output
-    "io.7mind" %% "logstage-rendering-circe" % izumi_version
+    "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version
   // router from Slf4j to LogStage
-  , "io.7mind" %% "logstage-adapter-slf4j" % izumi_version    
+  , "io.7mind.izumi" %% "logstage-adapter-slf4j" % izumi_version    
 )
 ```
 @@@

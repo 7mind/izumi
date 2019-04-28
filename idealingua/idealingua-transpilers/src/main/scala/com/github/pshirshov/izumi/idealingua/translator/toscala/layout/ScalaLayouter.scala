@@ -84,8 +84,8 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val idlVersion = options.manifest.common.izumiVersion
         val deps = Seq("libraryDependencies" -> Append(
           Seq(
-            RawExpr(s""" "io.7mind" %% "idealingua-runtime-rpc-scala" % "$idlVersion" """),
-            RawExpr(s""" "io.7mind" %% "idealingua-model" % "$idlVersion" """),
+            RawExpr(s""" "io.7mind.izumi" %% "idealingua-runtime-rpc-scala" % "$idlVersion" """),
+            RawExpr(s""" "io.7mind.izumi" %% "idealingua-model" % "$idlVersion" """),
 
           )
         ))
