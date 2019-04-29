@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.mono
 
 import cats.effect.Sync
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOInvariant, SyncSafe2}
+import com.github.pshirshov.izumi.functional.bio.{BIO, SyncSafe2}
 
 import scala.language.implicitConversions
 
@@ -39,11 +39,6 @@ trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
 }
 
 trait LowPrioritySyncSafeInstances1 {
-  implicit def fromBIOInvariant[F[_, _]: BIOInvariant]: SyncSafe[F[Nothing, ?]] =
-    new SyncSafe[F[Nothing, ?]] {
-      override def syncSafe[A](f: => A): F[Nothing, A] = BIOInvariant[F].sync(f)
-    }
-
   /**
     * Emulate covariance. We're forced to employ these because
     * we can't make SyncSafe covariant, because covariant implicits
