@@ -168,9 +168,11 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
 }
 
 object BIO extends BIOSyntax {
+  @inline def apply[F[+_, +_] : BIO]: BIO[F] = implicitly
+
   @inline def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
 
-  @inline def apply[F[+_, +_] : BIO]: BIO[F] = implicitly
+  object syntax extends BIOSyntax
 
   implicit object BIOZio extends BIOZio
 

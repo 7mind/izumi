@@ -25,8 +25,7 @@ trait BIOSyntax {
   final object catz extends BIOCatsConversions
 }
 
-object BIOSyntax
-  extends BIOSyntax {
+object BIOSyntax {
 
   final class BIOFunctorOps[F[_, + _], E, A](private val r: F[E, A])(implicit private val F: BIOFunctor[F]) {
     @inline def map[B](f: A => B): F[E, B] = F.map(r)(f)
