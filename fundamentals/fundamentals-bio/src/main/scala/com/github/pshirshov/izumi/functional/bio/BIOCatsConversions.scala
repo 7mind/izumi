@@ -48,7 +48,7 @@ trait BIOCatsConversions7 {
 
 object BIOCatsConversions {
 
-  abstract class BIOCatsFunctor[F[_, +_], E] extends cats.Functor[F[E, ?]] {
+  trait BIOCatsFunctor[F[_, +_], E] extends cats.Functor[F[E, ?]] {
     def F: BIOFunctor[F]
 
     @inline override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
@@ -63,12 +63,12 @@ object BIOCatsConversions {
     @inline override final def leftMap[A, B, C](fab: F[A, B])(f: A => C): F[C, B] = F.leftMap(fab)(f)
   }
 
-  abstract class BIOCatsApplicative[F[+_, +_], E] extends BIOCatsFunctor[F, E] with BIOCatsBifunctor[F] with cats.Applicative[F[E, ?]] {
+  trait BIOCatsApplicative[F[+_, +_], E] extends cats.Applicative[F[E, ?]] with BIOCatsFunctor[F, E] with BIOCatsBifunctor[F] {
     override def F: BIOApplicative[F]
 
     @inline override final def ap[A, B](ff: F[E, A => B])(fa: F[E, A]): F[E, B] = F.map2(ff, fa)(_.apply(_))
     @inline override final def map2[A, B, Z](fa: F[E, A], fb: F[E, B])(f: (A, B) => Z): F[E, Z] = F.map2(fa, fb)(f)
-    @inline override final def map2Eval[A, B, Z](fa: F[E, A], fb: Eval[F[E, B]])(f: (A, B) => Z): Eval[F[E, Z]] = Eval(F.map2(fa, fb.value)(f))
+    @inline override final def map2Eval[A, B, Z](fa: F[E, A], fb: Eval[F[E, B]])(f: (A, B) => Z): Eval[F[E, Z]] = Eval.later(F.map2(fa, fb.value)(f))
 
     @inline override final def pure[A](x: A): F[E, A] = F.now(x)
     @inline override final def point[A](x: A): F[E, A] = F.now(x)
@@ -87,7 +87,7 @@ object BIOCatsConversions {
     @inline override final def fromEither[A](x: Either[E, A]): F[E, A] = F.fromEither(x)
   }
 
-  abstract class BIOCatsMonad[F[+_, +_], E] extends BIOCatsApplicative[F, E] with cats.Monad[F[E, ?]] {
+  abstract class BIOCatsMonad[F[+_, +_], E] extends cats.Monad[F[E, ?]] with BIOCatsApplicative[F, E] {
     override def F: BIOMonad[F]
 
     @inline override final def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
