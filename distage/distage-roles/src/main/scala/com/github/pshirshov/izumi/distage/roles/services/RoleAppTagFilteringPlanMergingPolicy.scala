@@ -2,8 +2,8 @@ package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
+import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl
-import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl.DIKeyConflictResolution
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
@@ -14,7 +14,7 @@ import distage.DIKey
 abstract class TagFilteringPlanMergingPolicy extends PlanMergingPolicyDefaultImpl {
   protected def allDisabledTags: BindingTag.Expressions.Expr
 
-  override protected def resolveConflict(key: DIKey, operations: Set[DodgyPlan.JustOp]): PlanMergingPolicyDefaultImpl.DIKeyConflictResolution = {
+  override protected def resolveConflict(key: DIKey, operations: Set[DodgyPlan.JustOp]): DIKeyConflictResolution = {
     val filtered = operations.filterNot(op => allDisabledTags.evaluate(op.binding.tags))
     filtered match {
       case s if s.size == 1 =>
