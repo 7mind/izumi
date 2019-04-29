@@ -124,7 +124,7 @@ class BindingTranslatorImpl(
   }
 
   private[this] def setElementDiscriminatorKey(b: SetElementBinding[DIKey], currentPlan: DodgyPlan): DIKey = {
-    val goodIdx = currentPlan.operations.size.toString
+    val goodIdx = currentPlan.size.toString
 
     val tpe = b.implementation match {
       case i: ImplDef.TypeImpl =>

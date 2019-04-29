@@ -1,14 +1,9 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, NextOps, OrderedPlan}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, OrderedPlan, SemiPlan}
 
 trait PlanMergingPolicy {
-  def extendPlan(currentPlan: DodgyPlan, binding: Binding, currentOp: NextOps): DodgyPlan
 
-  def finalizePlan(completedPlan: DodgyPlan): SemiPlan
+  def freeze(completedPlan: DodgyPlan): SemiPlan
 
-  def addImports(plan: SemiPlan): SemiPlan
-
-  def reorderOperations(completedPlan: SemiPlan): OrderedPlan
 }

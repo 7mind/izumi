@@ -83,14 +83,15 @@ object BootstrapLocator {
     val hook = new PlanningHookAggregate(Set.empty)
     val translator = new BindingTranslatorImpl(reflectionProvider, hook)
     new PlannerDefaultImpl(
-      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true)
-      , reflectionProvider
-      , new SanityCheckerDefaultImpl(analyzer)
-      , NoopDIGC
-      , bootstrapObserver
-      , new PlanMergingPolicyDefaultImpl(analyzer, symbolIntrospector)
-      , hook
-      , translator
+      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true),
+      new SanityCheckerDefaultImpl(analyzer),
+      NoopDIGC,
+      bootstrapObserver,
+      new PlanMergingPolicyDefaultImpl,
+      hook,
+      translator,
+      analyzer,
+      symbolIntrospector,
     )
   }
 
