@@ -17,11 +17,5 @@ package object plugins extends DistagePlugins {
 
   override type PluginMergeStrategy = merge.PluginMergeStrategy
 
-  override type ConfigurablePluginMergeStrategy = merge.ConfigurablePluginMergeStrategy
-  override val ConfigurablePluginMergeStrategy: merge.ConfigurablePluginMergeStrategy.type = merge.ConfigurablePluginMergeStrategy
-
-  override type PluginMergeConfig = merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-  override val PluginMergeConfig: merge.ConfigurablePluginMergeStrategy.PluginMergeConfig.type = merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-
   override val SimplePluginMergeStrategy: merge.SimplePluginMergeStrategy.type = merge.SimplePluginMergeStrategy
 }

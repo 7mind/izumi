@@ -18,6 +18,7 @@ import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Fil
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.distage.testkit.services._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -154,6 +155,7 @@ abstract class DistageTestSupport[F[_] : TagK]
       config,
       roles,
       options,
+      RawAppArgs.empty,
     )
   }
 

@@ -4,13 +4,14 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
 import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import com.github.pshirshov.izumi.distage.roles.model.AbstractRoleF
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.distage.LogstageModule
@@ -22,10 +23,13 @@ class ModuleProviderImpl[F[_] : TagK](
                                        config: AppConfig,
                                        roles: RolesInfo,
                                        options: ContextOptions,
+                                       args: RawAppArgs,
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
       make[RolesInfo].from(roles)
+      make[RawAppArgs].from(args)
+      make[PlanMergingPolicy].from[RoleAppTagFilteringPlanMergingPolicy]
     }
 
     val loggerModule = new LogstageModule(logger.router, true)

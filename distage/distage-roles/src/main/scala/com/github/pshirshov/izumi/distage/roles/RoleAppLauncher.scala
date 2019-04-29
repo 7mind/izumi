@@ -83,12 +83,11 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
     val defApp = mergeStrategy.merge(plugins.app)
+    lateLogger.info(s"Loaded ${defApp.bindings.size -> "app bindings"}...")
+
     validate(defBs, defApp)
 
-    lateLogger.info(s"Loaded ${defApp.bindings.size -> "app bindings"}...")
     val appModule = moduleProvider.appModules().merge overridenBy defApp
-
-
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
@@ -110,7 +109,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def makeMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs, roles: RolesInfo): PluginMergeStrategy = {
-    new MergeProviderImpl(lateLogger, parameters).mergeStrategy(roles)
+    Quirks.discard(lateLogger, parameters, roles)
+    SimplePluginMergeStrategy
   }
 
   protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
@@ -123,12 +123,12 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
 
   protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
-    Quirks.discard(parameters)
     new ModuleProviderImpl[F](
       lateLogger,
       config,
       roles,
-      options
+      options,
+      parameters,
     )
   }
 
@@ -239,3 +239,5 @@ object RoleAppLauncher {
   }
 
 }
+
+

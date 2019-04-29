@@ -1,13 +1,13 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
+import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.distage.roles.services.{TagFilteringPlanMergingPolicy, PluginSource, PluginSourceImpl}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -39,7 +39,10 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val roles = loadRoles(logger)
     val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
-    val defBs = mergeStrategy.merge(plugins.bootstrap)
+    TagFilteringPlanMergingPolicy.log(logger, disabledTags)
+    val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from(TagFilteringPlanMergingPolicy.make(disabledTags))
+    }
     val defApp = mergeStrategy.merge(plugins.app)
     TestEnvironment(
       defBs,
@@ -66,12 +69,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
     Quirks.discard(lateLogger)
-    new ConfigurablePluginMergeStrategy(PluginMergeConfig(
-      disabledTags
-      , Set.empty
-      , Set.empty
-      , Map.empty
-    ))
+    SimplePluginMergeStrategy
   }
 
   protected def bootstrapConfig: BootstrapConfig = {

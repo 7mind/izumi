@@ -17,8 +17,8 @@ class RoleAppPlannerImpl[F[_] : TagK](
 
   private val injector = Injector.Standard(bsModule)
 
-  def reboot(bsModule: BootstrapModule): RoleAppPlannerImpl[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, logger)
+  def reboot(bsOverride: BootstrapModule): RoleAppPlannerImpl[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule overridenBy bsOverride, logger)
   }
 
   def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {

@@ -5,6 +5,10 @@ import java.nio.file.Path
 
 case class RawAppArgs(globalParameters: RawEntrypointParams, roles: Vector[RawRoleParams])
 
+object RawAppArgs {
+  def empty: RawAppArgs = RawAppArgs(RawEntrypointParams.empty, Vector.empty)
+}
+
 case class RawRoleParams(role: String, roleParameters: RawEntrypointParams, freeArgs: Vector[String])
 
 case class RawEntrypointParams(flags: Vector[RawFlag], values: Vector[RawValue])

@@ -8,19 +8,19 @@ import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
+import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
+import com.github.pshirshov.izumi.distage.roles.services.TagFilteringPlanMergingPolicy
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
 import com.typesafe.config.ConfigFactory
 import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
 import io.github.classgraph.ClassGraph
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
@@ -134,16 +134,19 @@ object StaticPluginCheckerMacro {
            , abort: String => Unit
            ): Unit = {
 
-    val module = new ConfigurablePluginMergeStrategy(PluginMergeConfig(BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))))
-      .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
+    val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
+    val expr = BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
+    val policy = TagFilteringPlanMergingPolicy.make(expr)
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
       many[PlanningHook]
         .add[ConfigReferenceExtractor]
     })
 
-    val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config)
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from(policy)
+    })
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
