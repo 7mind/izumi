@@ -10,7 +10,7 @@ trait BIOFunctor[F[_, +_]] {
 }
 
 object BIOFunctor {
-  def apply[F[_, _]: BIOFunctor]: BIOFunctor[F] = implicitly
+  def apply[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
 }
 
 trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
@@ -19,7 +19,7 @@ trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
 }
 
 object BIOBifunctor {
-  def apply[F[_, _]: BIOBifunctor]: BIOBifunctor[F] = implicitly
+  def apply[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
 }
 
 trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
@@ -39,7 +39,7 @@ trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
 }
 
 object BIOApplicative {
-  def apply[F[_, _]: BIOApplicative]: BIOApplicative[F] = implicitly
+  def apply[F[+_, +_]: BIOApplicative]: BIOApplicative[F] = implicitly
 }
 
 trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
@@ -47,7 +47,7 @@ trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
 }
 
 object BIOGuarantee {
-  def apply[F[_, _]: BIOGuarantee]: BIOGuarantee[F] = implicitly
+  def apply[F[+_, +_]: BIOGuarantee]: BIOGuarantee[F] = implicitly
 }
 
 trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
@@ -69,7 +69,7 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
 }
 
 object BIOError {
-  def apply[F[_, _]: BIOError]: BIOError[F] = implicitly
+  def apply[F[+_, +_]: BIOError]: BIOError[F] = implicitly
 }
 
 trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
@@ -104,8 +104,8 @@ trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
   }
 }
 
-object BIOError {
-  def apply[F[_, _]: BIOError]: BIOError[F] = implicitly
+object BIOMonad {
+  def apply[F[+_, +_]: BIOMonad]: BIOMonad[F] = implicitly
 }
 
 trait BIOBracket[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
@@ -126,7 +126,7 @@ trait BIOBracket[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
 }
 
 object BIOBracket {
-  def apply[F[_, _]: BIOBracket]: BIOBracket[F] = implicitly
+  def apply[F[+_, +_]: BIOBracket]: BIOBracket[F] = implicitly
 }
 
 trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
@@ -139,7 +139,7 @@ trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
 }
 
 object BIOPanic {
-  def apply[F[_, _]: BIOPanic]: BIOPanic[F] = implicitly
+  def apply[F[+_, +_]: BIOPanic]: BIOPanic[F] = implicitly
 }
 
 trait BIO[F[+_, +_]] extends BIOPanic[F] {
