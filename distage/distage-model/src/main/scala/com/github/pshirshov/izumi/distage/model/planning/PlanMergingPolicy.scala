@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, T
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
 
@@ -40,11 +41,12 @@ object PlanMergingPolicy {
         case s if s.exists(_.isInstanceOf[JustOp]) && s.exists(_.isInstanceOf[SetOp]) =>
           DIKeyConflictResolution.Failed(operations.map(_.op))
         case other =>
-          DIKeyConflictResolution.Failed(operations.map(_.op))
+          DIKeyConflictResolution.Failed(other.map(_.op))
       }
     }
 
     protected def resolveConflict(key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
+      Quirks.discard(key)
       DIKeyConflictResolution.Failed(operations.map(_.op))
     }
   }
