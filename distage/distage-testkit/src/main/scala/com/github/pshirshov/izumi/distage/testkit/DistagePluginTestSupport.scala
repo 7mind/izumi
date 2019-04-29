@@ -2,13 +2,12 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
+import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -40,13 +39,11 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val roles = loadRoles(logger)
     val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
-    val defBs: MergedPlugins = mergeStrategy.merge(plugins.bootstrap)
-    val defApp: MergedPlugins = mergeStrategy.merge(plugins.app)
-    val loadedBsModule = defBs.definition
-    val loadedAppModule = defApp.definition
+    val defBs = mergeStrategy.merge(plugins.bootstrap)
+    val defApp = mergeStrategy.merge(plugins.app)
     TestEnvironment(
-      loadedBsModule,
-      loadedAppModule,
+      defBs,
+      defApp,
       roles,
     )
   }

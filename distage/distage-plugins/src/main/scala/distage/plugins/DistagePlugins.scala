@@ -17,10 +17,6 @@ trait DistagePlugins {
   val PluginConfig: load.PluginLoader.PluginConfig.type = load.PluginLoader.PluginConfig
 
   type PluginLoaderPredefImpl = load.PluginLoaderPredefImpl
-
-  type LoadedPlugins = plugins.MergedPlugins
-  val LoadedPlugins: plugins.MergedPlugins.type = plugins.MergedPlugins
-
   type PluginMergeStrategy = plugins.merge.PluginMergeStrategy
 
   type ConfigurablePluginMergeStrategy = plugins.merge.ConfigurablePluginMergeStrategy

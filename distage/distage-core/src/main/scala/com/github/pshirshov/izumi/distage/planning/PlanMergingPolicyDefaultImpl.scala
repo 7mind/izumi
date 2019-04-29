@@ -148,7 +148,6 @@ class PlanMergingPolicyDefaultImpl
         val merged = ops.tail.foldLeft(ops.head) {
           case (acc, op) =>
             acc.copy(members = acc.members ++ op.members)
-
         }
         DIKeyConflictResolution.Successful(Set(merged))
       case s if s.size == 1 =>

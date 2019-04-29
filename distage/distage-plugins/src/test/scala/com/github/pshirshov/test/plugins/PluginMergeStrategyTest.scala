@@ -31,7 +31,7 @@ class PluginMergeStrategyTest extends WordSpec {
         }
       ))
 
-      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)).definition)
+      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)))
       assert(Injector.Standard().produceUnsafe(definition).get[TestImpl1].justASet == Set.empty)
     }
 
@@ -55,7 +55,7 @@ class PluginMergeStrategyTest extends WordSpec {
         }
       ))
 
-      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)).definition)
+      val definition = PlannerInput(mergeStrategy.merge(Seq(plugin1, plugin2)))
       assert(Injector.Standard().produceUnsafe(definition).get[TestDependency] != null)
     }
   }

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
+import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.model.{DiAppBootstrapException, RoleService}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
@@ -64,29 +64,29 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val plugins = makePluginLoader(bootstrapConfig).load()
     val roles = loadRoles(parameters, earlyLogger, plugins)
 
-    val mergeStrategy = makeMergeProvider(earlyLogger, parameters).mergeStrategy(plugins, roles)
-    val defBs = mergeStrategy.mergeBootstrap(plugins.bootstrap)
+    val defBs = makeBootstrapMergeStrategy(earlyLogger, parameters).merge(plugins.bootstrap)
+    // TODO: check that there are no conflicts
 
-    val loadedBsModule = defBs.definition
-    earlyLogger.info(s"Loaded ${loadedBsModule.bindings.size -> "bootstrap bindings"}...")
+    earlyLogger.info(s"Loaded ${defBs.bindings.size -> "bootstrap bindings"}...")
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
     val options = contextOptions(parameters)
 
     val moduleProvider = makeModuleProvider(options, parameters, roles, config, lateLogger)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy loadedBsModule
+    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs
 
     val roots = gcRoots(roles)
 
 
     val planner = makePlanner(options, bsModule, lateLogger)
 
+    val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
     val defApp = mergeStrategy.merge(plugins.app)
     validate(defBs, defApp)
-    val loadedAppModule = defApp.definition
-    lateLogger.info(s"Loaded ${loadedAppModule.bindings.size -> "app bindings"}...")
-    val appModule = moduleProvider.appModules().merge overridenBy loadedAppModule
+
+    lateLogger.info(s"Loaded ${defApp.bindings.size -> "app bindings"}...")
+    val appModule = moduleProvider.appModules().merge overridenBy defApp
 
 
     val appPlan = planner.makePlan(roots, appModule)
@@ -101,6 +101,16 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
       RuntimeDIUniverse.DIKey.get[ResolvedConfig],
       RuntimeDIUniverse.DIKey.get[Set[RoleService[F]]],
     )
+  }
+
+
+  protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs): PluginMergeStrategy = {
+    Quirks.discard(lateLogger, parameters)
+    SimplePluginMergeStrategy
+  }
+
+  protected def makeMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs, roles: RolesInfo): PluginMergeStrategy = {
+    new MergeProviderImpl(lateLogger, parameters).mergeStrategy(roles)
   }
 
   protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
@@ -181,13 +191,13 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     logger.info(s"$msg : $details")
   }
 
-  protected def validate(bootstrapAutoDef: MergedPlugins, appDef: MergedPlugins): Unit = {
-    val conflicts = bootstrapAutoDef.definition.keys.intersect(appDef.definition.keys)
+  protected def validate(bootstrapAutoDef: ModuleBase, appDef: ModuleBase): Unit = {
+    val conflicts = bootstrapAutoDef.keys.intersect(appDef.keys)
     if (conflicts.nonEmpty) {
       throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
     }
 
-    if (appDef.definition.bindings.isEmpty) {
+    if (appDef.bindings.isEmpty) {
       throw new DiAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
@@ -199,29 +209,25 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
     val maybeGlobalConfig = Options.configParam.findValue(parameters.globalParameters).asFile
 
-    val roleConfigs =  parameters.roles.map {
+    val roleConfigs = parameters.roles.map {
       r =>
         r.role -> Options.configParam.findValue(r.roleParameters).asFile
     }
     new ConfigLoaderLocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
 
-  protected def makeMergeProvider(lateLogger: IzLogger, parameters: RawAppArgs): MergeProvider = {
-    new MergeProviderImpl(lateLogger, parameters)
-  }
 }
 
 object RoleAppLauncher {
+
   object Options extends ParserDef {
-    final val logLevelRootParam = arg("log-level-root",  "ll", "root log level", "{trace|debug|info|warn|error|critical}")
+    final val logLevelRootParam = arg("log-level-root", "ll", "root log level", "{trace|debug|info|warn|error|critical}")
     final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
     @deprecated("We should stop using tags", "2019-04-19")
     final val useDummies = flag("mode:dummies", "use dummy mode")
   }
-
-
 
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.plugins.merge
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{ImplBinding, SetBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Module, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection
 import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
@@ -11,7 +11,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginMergeStrategy {
 
-  override def merge(defs: Seq[PluginBase]): MergedPlugins = {
+  override def merge(defs: Seq[PluginBase]): ModuleBase = {
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val allBindings = defs
       .map { plugin =>
@@ -26,7 +26,7 @@ class ConfigurablePluginMergeStrategy(config: PluginMergeConfig) extends PluginM
       .toMultimap
       .flatMap(resolve)
 
-    MergedPlugins(Module.make(resolved.toSet))
+    Module.make(resolved.toSet)
   }
 
   protected def resolve(kv: (reflection.universe.RuntimeDIUniverse.DIKey, Set[Binding])): Set[Binding] = {

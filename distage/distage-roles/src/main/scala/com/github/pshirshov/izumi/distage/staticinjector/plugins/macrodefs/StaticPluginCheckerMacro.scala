@@ -136,7 +136,6 @@ object StaticPluginCheckerMacro {
 
     val module = new ConfigurablePluginMergeStrategy(PluginMergeConfig(BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))))
       .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
-      .definition
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
