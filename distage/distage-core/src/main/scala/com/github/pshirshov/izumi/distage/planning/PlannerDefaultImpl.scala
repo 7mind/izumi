@@ -22,10 +22,16 @@ class PlannerDefaultImpl
 
   override def plan(input: PlannerInput): OrderedPlan = {
     Value(prepare(input))
+      .map(freeze)
+      .map(finish)
+      .get
+  }
+
+  override def freeze(plan: DodgyPlan): SemiPlan = {
+    Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
       .map(planMergingPolicy.finalizePlan)
-      .map(finish)
       .get
   }
 
@@ -34,7 +40,7 @@ class PlannerDefaultImpl
     order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.roots ++ b.roots))
   }
 
-  private def prepare(input: PlannerInput): DodgyPlan = {
+  override def prepare(input: PlannerInput): DodgyPlan = {
     hook
       .hookDefinition(input.bindings)
       .bindings
@@ -48,7 +54,7 @@ class PlannerDefaultImpl
       }
   }
 
-  def finish(semiPlan: SemiPlan): OrderedPlan = {
+  override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
       .map(planMergingPolicy.addImports)
       .eff(planningObserver.onPhase05PreGC)

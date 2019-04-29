@@ -8,13 +8,13 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
   * Input for [[Planner]]
   *
   * @param bindings Bindings probably created using [[com.github.pshirshov.izumi.distage.model.definition.ModuleDef]] DSL
-  * @param roots Garbage collection roots.
+  * @param roots    Garbage collection roots.
   *
-  *              Garbage collector will remove all bindings that aren't direct or indirect dependencies
-  *              of the chosen root DIKeys from the plan - they will never be instantiated.
+  *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
+  *                 of the chosen root DIKeys from the plan - they will never be instantiated.
   *
-  *              If left empty, garbage collection will not be performed – that would be equivalent to
-  *              designating all DIKeys as roots.
+  *                 If left empty, garbage collection will not be performed – that would be equivalent to
+  *                 designating all DIKeys as roots.
   */
 final case class PlannerInput(
                                bindings: ModuleBase,
@@ -28,8 +28,14 @@ object PlannerInput {
 trait Planner {
   def plan(input: PlannerInput): OrderedPlan
 
-  def finish(semiPlan: SemiPlan): OrderedPlan
   def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
+
+  // plan lifecycle
+  def prepare(input: PlannerInput): DodgyPlan
+
+  def freeze(plan: DodgyPlan): SemiPlan
+
+  def finish(semiPlan: SemiPlan): OrderedPlan
 
   final def plan(input: ModuleBase, roots: Set[DIKey] = Set.empty): OrderedPlan = plan(PlannerInput(input, roots))
 }

@@ -14,10 +14,11 @@ trait AbstractGCTracer[NodeId, Node] {
 
   final def gc(elements: Vector[Node]): Pruned = {
     val reachable = mutable.HashSet[NodeId]()
-    val roots = elements.map(id).filter(isRoot).toSet
+    val mapping = elements.map(e => id(e) -> e).toMap
+    val roots = mapping.keySet.filter(isRoot)
     reachable ++= roots
 
-    trace(elements.map(e => id(e) -> e).toMap, roots, reachable)
+    trace(mapping, roots, reachable)
 
     prePrune(Pruned(elements, reachable.toSet)).prune
   }
