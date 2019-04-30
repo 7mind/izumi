@@ -60,7 +60,7 @@ object BIOSyntax {
   final class BIOMonadOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOMonad[F]) {
     @inline def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E, A, E1, B](r)(f0)
 
-    @inline def peek[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+    @inline def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline def forever: F[E, Nothing] = F.forever(r)
   }
