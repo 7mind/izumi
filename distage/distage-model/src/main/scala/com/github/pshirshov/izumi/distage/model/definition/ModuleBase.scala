@@ -149,10 +149,12 @@ object ModuleBase {
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
-    // Using lawless equals/hashcode
-    bs.groupBy(identity)
-      .values
-      .map(_.reduce(_ addTags _.tags))
+    bs.groupBy(_.group)
+      .map {
+        case (k, v) =>
+          assert(v.forall(_.key == k.key))
+          v.reduce(_ addTags _.tags)
+      }
       .toSet
   }
 
