@@ -63,14 +63,6 @@ object BindingTag {
 
   implicit def apply(tag: AxisMember): BindingTag = AxisTag(tag)
 
-  object Expressions extends TagExpr.For[BindingTag] {
-
-//    implicit class C(val sc: StringContext) {
-//      def t(args: Any*): Expr = Has(apply(sc.s(args: _*)))
-//    }
-
-  }
-
 }
 
 sealed trait AxisBase {

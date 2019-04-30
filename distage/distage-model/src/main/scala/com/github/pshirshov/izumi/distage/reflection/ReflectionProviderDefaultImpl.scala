@@ -36,7 +36,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.requiredKeys
 
             if (excessiveSymbols.nonEmpty) {
-              throw new UnsupportedDefinitionException(s"Factory method signature contains symbols which are not required for target product: $excessiveSymbols, product: $resultType, context: $symbl", null)
+              throw new UnsupportedDefinitionException(
+                s"""Augmentation failure.
+                   |  Type $symbl has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
+                   |  But method signature contains unrequired symbols: $excessiveSymbols
+                   |  This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
             }
 
             Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
@@ -105,9 +109,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private def methodToAssociation(symbl: SafeType, method: MethodSymb): Association.AbstractMethod = {
-      val methodSymb = SymbolInfo.Runtime(method, symbl, wasGeneric = false)
-      val context = DependencyContext.MethodContext(symbl, methodSymb)
-      Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
+    val methodSymb = SymbolInfo.Runtime(method, symbl, wasGeneric = false)
+    val context = DependencyContext.MethodContext(symbl, methodSymb)
+    Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyProvider.keyFromMethod(context, methodSymb))
   }
 
   protected object ConcreteSymbol {
@@ -136,9 +140,9 @@ object ReflectionProviderDefaultImpl {
   class Runtime
   (
     override val keyProvider: DependencyKeyProvider.Runtime
-  , override val symbolIntrospector: SymbolIntrospector.Runtime
+    , override val symbolIntrospector: SymbolIntrospector.Runtime
   ) extends ReflectionProvider.Runtime
-      with ReflectionProviderDefaultImpl
+    with ReflectionProviderDefaultImpl
 
   object Static {
     def apply(macroUniverse: DIUniverse)

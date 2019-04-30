@@ -4,7 +4,7 @@ import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
-import com.github.pshirshov.izumi.distage.model.definition.AxisBase
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, EnvAxis}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
@@ -26,8 +26,6 @@ import distage._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
-
-
 
 
 /**
@@ -84,7 +82,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     val roots = gcRoots(roles)
 
-    val activation = new ActivationParser().parseActivation(earlyLogger, parameters, defApp, requiredActivations)
+    val activation = new ActivationParser().parseActivation(earlyLogger, parameters, defApp, defaultActivations, requiredActivations)
 
     val options = contextOptions(parameters)
     val moduleProvider = makeModuleProvider(options, parameters, activation, roles, config, lateLogger)
@@ -100,6 +98,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
+  protected def defaultActivations: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Production)
 
   protected def requiredActivations: Map[AxisBase, AxisMember] = Map.empty
 

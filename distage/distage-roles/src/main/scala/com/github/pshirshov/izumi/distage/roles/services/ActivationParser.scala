@@ -10,7 +10,13 @@ import distage.ModuleBase
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class ActivationParser {
-  def parseActivation(logger: IzLogger, parameters: RawAppArgs, defApp: ModuleBase, requiredActivations: Map[AxisBase, AxisMember]): AppActivation = {
+  def parseActivation(
+                       logger: IzLogger,
+                       parameters: RawAppArgs,
+                       defApp: ModuleBase,
+                       defaultActivations: Map[AxisBase, AxisMember],
+                       requiredActivations: Map[AxisBase, AxisMember],
+                     ): AppActivation = {
     val uses = Options.use.findValues(parameters.globalParameters)
     val allChoices = defApp.bindings.flatMap(_.tags).collect({ case BindingTag.AxisTag(choice) => choice })
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
@@ -55,8 +61,20 @@ class ActivationParser {
               throw new DiAppBootstrapException(s"Unknown axis: $axisName")
           }
       }
-      .toMap
 
-    AppActivation(availableUses, activeChoices ++ requiredActivations)
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    val badChoices = activeChoices.toMultimap.filter(_._2.size > 1)
+    if (badChoices.nonEmpty) {
+      val conflicts = badChoices
+        .map {
+          case (name, c) =>
+            s"$name: ${c.mkString(", ")}"
+        }
+        .niceList()
+      logger.crit(s"Conflicting choices, you can activate one choice on each axis $conflicts")
+      throw new DiAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
+    }
+
+    AppActivation(availableUses, defaultActivations ++ activeChoices ++ requiredActivations)
   }
 }

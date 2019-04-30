@@ -15,7 +15,7 @@ trait IzJvm {
 
   def startTime: ZonedDateTime = getStartTime.asEpochMillisUtc
 
-  def isHeadless: Boolean = !java.awt.GraphicsEnvironment.isHeadless
+  def isHeadless: Boolean = java.awt.GraphicsEnvironment.isHeadless
 
   def hasColorfulTerminal: Boolean = {
     val maybeTerm = Option(System.getenv("TERM"))
@@ -23,7 +23,13 @@ trait IzJvm {
   }
 
   def terminalColorsEnabled: Boolean = {
-    !isHeadless && hasColorfulTerminal
+    import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
+
+    all(
+      !isHeadless,
+      //hasColorfulTerminal, // idea doesn't set TERM :(
+    )
+
   }
 
   protected def getUptime: Long = ManagementFactory.getRuntimeMXBean.getUptime

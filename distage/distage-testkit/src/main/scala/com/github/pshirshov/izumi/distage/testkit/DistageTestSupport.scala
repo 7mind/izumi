@@ -199,10 +199,12 @@ abstract class DistageTestSupport[F[_] : TagK]
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
-      (roots - DIKey.get[LocatorRef]).map {
-        key =>
-          SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
-      }
+      (roots - DIKey.get[LocatorRef])
+        .filterNot(_.tpe.tpe.typeSymbol.isAbstract)
+        .map {
+          key =>
+            SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
+        }
     }
 
     paramsModule overridenBy primaryModule

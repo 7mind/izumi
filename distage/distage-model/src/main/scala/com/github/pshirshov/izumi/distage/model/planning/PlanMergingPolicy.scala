@@ -20,7 +20,7 @@ object PlanMergingPolicy {
 
     final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
 
-    final case class Failed(ops: Set[InstantiationOp]) extends DIKeyConflictResolution
+    final case class Failed(ops: Set[InstantiationOp], explanation: String) extends DIKeyConflictResolution
   }
 
   trait WithResolve {
@@ -39,15 +39,15 @@ object PlanMergingPolicy {
         case s if s.nonEmpty && s.forall(_.isInstanceOf[JustOp]) =>
           resolveConflict(key, s.collect({ case c: JustOp => c }))
         case s if s.exists(_.isInstanceOf[JustOp]) && s.exists(_.isInstanceOf[SetOp]) =>
-          DIKeyConflictResolution.Failed(operations.map(_.op))
+          DIKeyConflictResolution.Failed(operations.map(_.op), "Set and non-set bindings to the same key")
         case other =>
-          DIKeyConflictResolution.Failed(other.map(_.op))
+          DIKeyConflictResolution.Failed(other.map(_.op), "Unsupported combinations of operations")
       }
     }
 
     protected def resolveConflict(key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
       Quirks.discard(key)
-      DIKeyConflictResolution.Failed(operations.map(_.op))
+      DIKeyConflictResolution.Failed(operations.map(_.op), "Default policy cannot handle multiple bindings")
     }
   }
 }

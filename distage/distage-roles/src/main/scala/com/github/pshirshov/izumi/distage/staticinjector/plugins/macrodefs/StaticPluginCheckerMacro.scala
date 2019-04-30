@@ -12,16 +12,10 @@ import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, Pla
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
-import com.github.pshirshov.izumi.distage.roles.services.TagFilteringPlanMergingPolicy
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
-import com.typesafe.config.ConfigFactory
-import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
-import io.github.classgraph.ClassGraph
+import distage._
 
-import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
@@ -137,8 +131,8 @@ object StaticPluginCheckerMacro {
     val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
     // TODO:
-    val expr = BindingTag.Expressions.False //Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
-    val policy: PlanMergingPolicy = TagFilteringPlanMergingPolicy.make(expr)
+    val expr = ??? // BindingTag.Expressions.False //Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
+    val policy: PlanMergingPolicy = ??? //TagFilteringPlanMergingPolicy.make(expr)
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
