@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.model.definition.BindingTag
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp}
+import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import distage.DIKey
 
 
 class UniqueActivationPlanMergingPolicy(
@@ -25,14 +26,40 @@ class UniqueActivationPlanMergingPolicy(
     } else {
       if (filtered.nonEmpty) {
         val hints = makeHints(filtered)
-        DIKeyConflictResolution.Failed(ops, s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
+        DIKeyConflictResolution.Failed(operations.map(_.op), s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
       } else {
         val hints = makeHints(operations)
-        DIKeyConflictResolution.Failed(ops, s"All options were filtered out, original candidates: ${hints.niceList()}")
+        DIKeyConflictResolution.Failed(operations.map(_.op), s"All options were filtered out, original candidates: ${hints.niceList()}")
       }
     }
   }
 
+
+
+
+  override protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[ExecutableOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+    val lastTry = issues.map {
+      case (k, v) =>
+        val filtered = v.candidates.filter(isReachable)
+        if (filtered.size == 1) {
+          k -> DIKeyConflictResolution.Successful(filtered)
+        } else {
+          k -> v
+        }
+    }
+    val failed = lastTry.collect({case (k, f: DIKeyConflictResolution.Failed) => k -> f})
+    if (failed.nonEmpty) {
+      printIssues(failed)
+    } else {
+      val good = lastTry.collect({case (_, DIKeyConflictResolution.Successful(ops)) => ops})
+      val allResolved = (resolved.values.flatten ++ good.flatten).toVector
+      SemiPlan(plan.definition, allResolved, plan.roots)
+    }
+  }
+
+  private def isReachable(op: ExecutableOp): Boolean = {
+    false
+  }
 
   private def makeHints(ops: Set[DodgyPlan.JustOp]): Seq[String] = {
     ops

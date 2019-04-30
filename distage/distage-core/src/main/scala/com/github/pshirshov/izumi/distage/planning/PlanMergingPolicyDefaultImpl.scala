@@ -4,26 +4,42 @@ import com.github.pshirshov.izumi.distage.model.exceptions.ConflictingDIKeyBindi
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.{DIKeyConflictResolution, WithResolve}
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import distage.DIKey
+
+import scala.collection.mutable
 
 
 class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy with WithResolve {
 
-  override final def freeze(completedPlan: DodgyPlan): SemiPlan = {
-    val resolved = completedPlan.freeze.map({case (k, v) => k -> resolve(completedPlan, k, v)}).toMap
+  override final def freeze(plan: DodgyPlan): SemiPlan = {
+    val resolved = mutable.HashMap[DIKey, Set[ExecutableOp]]()
+    val issues = mutable.HashMap[DIKey, DIKeyConflictResolution.Failed]()
 
-    val allOperations = resolved.values.collect { case DIKeyConflictResolution.Successful(op) => op }.flatten.toSeq
-    val issues = resolved.collect { case (k, f: DIKeyConflictResolution.Failed) => (k, f) }.toMap
+    plan.freeze.foreach {
+      case (k, v) =>
+        resolve(plan, k, v) match {
+          case DIKeyConflictResolution.Successful(op) =>
+            resolved.put(k, op)
+          case f: DIKeyConflictResolution.Failed =>
+            issues.put(k, f)
+        }
+    }
 
     if (issues.nonEmpty) {
-      handleIssues(issues)
+      handleIssues(plan, resolved.toMap, issues.toMap)
     } else {
-      SemiPlan(completedPlan.definition, allOperations.toVector, completedPlan.roots)
+      SemiPlan(plan.definition, resolved.values.flatten.toVector, plan.roots)
     }
   }
 
 
-  def handleIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+  protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[ExecutableOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+    Quirks.discard(plan, resolved)
+    printIssues(issues)
+  }
+
+  protected def printIssues(issues: Map[distage.DIKey, DIKeyConflictResolution.Failed]): Nothing = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     // TODO: issues == slots, we may apply slot logic here
     val issueRepr = issues.map {
@@ -32,7 +48,7 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy with WithResolve 
            |
            |${f.explanation.shift(4)}
            |
-           |    Candidates left: ${f.ops.niceList().shift(4)}""".stripMargin
+           |    Candidates left: ${f.candidates.niceList().shift(4)}""".stripMargin
     }
 
     throw new ConflictingDIKeyBindingsException(

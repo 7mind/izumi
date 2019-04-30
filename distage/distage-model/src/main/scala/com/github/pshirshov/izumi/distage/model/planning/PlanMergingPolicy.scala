@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
 
-  def freeze(completedPlan: DodgyPlan): SemiPlan
+  def freeze(plan: DodgyPlan): SemiPlan
 
 }
 
@@ -19,7 +19,7 @@ object PlanMergingPolicy {
 
     final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
 
-    final case class Failed(ops: Set[ExecutableOp], explanation: String) extends DIKeyConflictResolution
+    final case class Failed(candidates: Set[ExecutableOp], explanation: String) extends DIKeyConflictResolution
   }
 
   trait WithResolve {
