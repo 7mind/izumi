@@ -77,20 +77,22 @@ object BindingTag {
 
 }
 
-trait Axis[+MM <: AxisMember] {
-
+sealed trait AxisBase {
   def name: String
 
-  override def toString: String = s"axis:$name"
+  override def toString: String = s"$name"
+  implicit def self: AxisBase = this
 
-  implicit def self: Axis[AxisMember] = this
+}
+
+trait Axis[+MM <: AxisMember] extends AxisBase {
 
 }
 
 object Axis {
 
   trait AxisMember {
-    def axis: Axis[AxisMember]
+    def axis: AxisBase
 
     def activatedBy: Set[AxisMember] = Set.empty
 
@@ -101,23 +103,18 @@ object Axis {
       n.split('$').last
     }
 
-    override def toString: String = s"$axis/$id"
+    override def toString: String = s"$axis:$id"
   }
 
 }
 
 
-abstract class EnvAxis()(implicit val axis: Axis[AxisMember]) extends AxisMember
+abstract class EnvAxis()(implicit val axis: AxisBase) extends AxisMember
 
 object EnvAxis extends Axis[EnvAxis] {
-  override def name: String = "impl"
+  override def name: String = "env"
 
   case object Production extends EnvAxis
 
   case object Mock extends EnvAxis
-
-
 }
-
-
-

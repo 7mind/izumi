@@ -3,11 +3,13 @@ package com.github.pshirshov.izumi.distage.roles
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
+import com.github.pshirshov.izumi.distage.model.definition.AxisBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import com.github.pshirshov.izumi.distage.roles.model.{DiAppBootstrapException, RoleService}
+import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, DiAppBootstrapException, RoleService}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
@@ -24,6 +26,8 @@ import distage._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
+
+
 
 
 /**
@@ -71,15 +75,6 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
     val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
-    val options = contextOptions(parameters)
-
-    val moduleProvider = makeModuleProvider(options, parameters, roles, config, lateLogger)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs
-
-    val roots = gcRoots(roles)
-
-
-    val planner = makePlanner(options, bsModule, lateLogger)
 
     val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
     val defApp = mergeStrategy.merge(plugins.app)
@@ -87,6 +82,15 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     validate(defBs, defApp)
 
+    val roots = gcRoots(roles)
+
+    val activation = new ActivationParser().parseActivation(earlyLogger, parameters, defApp, requiredActivations)
+
+    val options = contextOptions(parameters)
+    val moduleProvider = makeModuleProvider(options, parameters, activation, roles, config, lateLogger)
+    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs
+
+    val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appModule = moduleProvider.appModules().merge overridenBy defApp
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
@@ -94,6 +98,10 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val r = makeExecutor(parameters, roles, lateLogger, appPlan.injector)
     r.runPlan(appPlan)
   }
+
+
+
+  protected def requiredActivations: Map[AxisBase, AxisMember] = Map.empty
 
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = {
     rolesInfo.requiredComponents ++ Set(
@@ -113,8 +121,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     SimplePluginMergeStrategy
   }
 
-  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, lateLogger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, lateLogger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, lateLogger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, activation, lateLogger)
   }
 
   protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
@@ -122,13 +130,14 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     new ModuleProviderImpl[F](
       lateLogger,
       config,
       roles,
       options,
       parameters,
+      activation,
     )
   }
 
@@ -225,10 +234,8 @@ object RoleAppLauncher {
     final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
-    @deprecated("We should stop using tags", "2019-04-19")
-    final val useDummies = flag("mode:dummies", "use dummy mode")
+    final val use = arg("use", "u", "activate choice on funcionality axis", "<axis>:<choice>")
   }
-
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
     override protected val hook: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)

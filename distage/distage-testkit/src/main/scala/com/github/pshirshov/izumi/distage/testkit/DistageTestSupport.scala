@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
@@ -65,7 +66,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, bsModule, logger)
+    val planner = makePlanner(options, bsModule, activation, logger)
 
     val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
@@ -108,6 +109,8 @@ abstract class DistageTestSupport[F[_] : TagK]
       }
     }
   }
+
+  protected def activation: AppActivation
 
   protected def bootstrapOverride: BootstrapModule = BootstrapModule.empty
 
@@ -168,8 +171,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
   }
 
-  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, logger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, activation, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {

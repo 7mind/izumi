@@ -7,7 +7,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunne
 import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import com.github.pshirshov.izumi.distage.planning.AutoSetModule
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import com.github.pshirshov.izumi.distage.roles.model.AbstractRoleF
+import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, AppActivation}
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
@@ -24,11 +24,13 @@ class ModuleProviderImpl[F[_] : TagK](
                                        roles: RolesInfo,
                                        options: ContextOptions,
                                        args: RawAppArgs,
+                                       activation: AppActivation,
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
       make[RolesInfo].from(roles)
       make[RawAppArgs].from(args)
+      make[AppActivation].from(activation)
       make[PlanMergingPolicy].from[RoleAppTagFilteringPlanMergingPolicy]
     }
 

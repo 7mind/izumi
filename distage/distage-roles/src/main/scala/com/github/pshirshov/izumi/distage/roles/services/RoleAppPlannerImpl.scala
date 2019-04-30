@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
-import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -12,13 +12,14 @@ import distage._
 class RoleAppPlannerImpl[F[_] : TagK](
                                        options: ContextOptions,
                                        bsModule: BootstrapModule,
+                                       activation: AppActivation,
                                        logger: IzLogger,
                                      ) extends RoleAppPlanner[F] {
 
   private val injector = Injector.Standard(bsModule)
 
   def reboot(bsOverride: BootstrapModule): RoleAppPlannerImpl[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule overridenBy bsOverride, logger)
+    new RoleAppPlannerImpl[F](options, bsModule overridenBy bsOverride, activation, logger)
   }
 
   def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {

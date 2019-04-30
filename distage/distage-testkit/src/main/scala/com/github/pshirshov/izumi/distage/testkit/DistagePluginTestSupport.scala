@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, BootstrapModule, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
+import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{TagFilteringPlanMergingPolicy, PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.distage.roles.services.{ModuleProviderImpl, PluginSource, PluginSourceImpl, RoleAppPlanner, RoleAppTagFilteringPlanMergingPolicy, TagFilteringPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -39,9 +40,10 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val roles = loadRoles(logger)
     val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
-    TagFilteringPlanMergingPolicy.log(logger, disabledTags)
+
     val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from(TagFilteringPlanMergingPolicy.make(disabledTags))
+      make[PlanMergingPolicy].from[RoleAppTagFilteringPlanMergingPolicy]
+      make[AppActivation].from(activation)
     }
     val defApp = mergeStrategy.merge(plugins.app)
     TestEnvironment(
@@ -61,10 +63,11 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-  protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
+
+  protected def activation: AppActivation = AppActivation.empty
 
   protected def memoizationContextId: MemoizationContextId = {
-    MemoizationContextId.PerRuntimeAndTagsAndBsconfig[F](bootstrapConfig, disabledTags, distage.SafeType.getK(implicitly[TagK[F]]))
+    MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, distage.SafeType.getK(implicitly[TagK[F]]))
   }
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
