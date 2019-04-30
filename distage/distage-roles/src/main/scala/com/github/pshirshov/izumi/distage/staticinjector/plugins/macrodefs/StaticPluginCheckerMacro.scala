@@ -67,59 +67,59 @@ object StaticPluginCheckerMacro {
            , configFileRegex: c.Expr[String]
            ): c.Expr[Unit] = {
 
-    val abort = c.abort(c.enclosingPosition, _: String): Unit
-
-    val pluginPath = stringLiteral(c)(c.universe)(pluginsPackage.tree)
-
-    val loadedPlugins = if (pluginPath == "") {
-      Seq.empty
-    } else {
-      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
-        debug = false
-        , packagesEnabled = Seq(pluginPath)
-        , packagesDisabled = Seq.empty
-      ))
-
-      pluginLoader.load()
-    }
-
-    val configRegex = stringLiteral(c)(c.universe)(configFileRegex.tree)
-
-    val configModule = if (configRegex == "") {
-      None
-    } else {
-      val scanResult = new ClassGraph().scan()
-      val configUrls = try {
-        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
-        try {
-          resourceList.getURLs.asScala.toList
-        } finally resourceList.close()
-      } finally scanResult.close()
-
-      val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
-
-      Some(new ConfigModule(AppConfig(referenceConfig)))
-    }
-
-    val gcRootPath = stringLiteral(c)(c.universe)(gcRoot.tree)
-
-    val gcRootModule = if (gcRootPath == "") {
-      None
-    } else {
-      Some(constructClass[PluginBase](gcRootPath, abort))
-    }
-
-    val requirementsPath = stringLiteral(c)(c.universe)(requirements.tree)
-
-    val requirementsModule = if (requirementsPath == "") {
-      None
-    } else {
-      Some(constructClass[ModuleRequirements](requirementsPath, abort))
-    }
-
-    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(',').toSet
-
-    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, disableTags, abort = abort)
+//    val abort = c.abort(c.enclosingPosition, _: String): Unit
+//
+//    val pluginPath = stringLiteral(c)(c.universe)(pluginsPackage.tree)
+//
+//    val loadedPlugins = if (pluginPath == "") {
+//      Seq.empty
+//    } else {
+//      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
+//        debug = false
+//        , packagesEnabled = Seq(pluginPath)
+//        , packagesDisabled = Seq.empty
+//      ))
+//
+//      pluginLoader.load()
+//    }
+//
+//    val configRegex = stringLiteral(c)(c.universe)(configFileRegex.tree)
+//
+//    val configModule = if (configRegex == "") {
+//      None
+//    } else {
+//      val scanResult = new ClassGraph().scan()
+//      val configUrls = try {
+//        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+//        try {
+//          resourceList.getURLs.asScala.toList
+//        } finally resourceList.close()
+//      } finally scanResult.close()
+//
+//      val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
+//
+//      Some(new ConfigModule(AppConfig(referenceConfig)))
+//    }
+//
+//    val gcRootPath = stringLiteral(c)(c.universe)(gcRoot.tree)
+//
+//    val gcRootModule = if (gcRootPath == "") {
+//      None
+//    } else {
+//      Some(constructClass[PluginBase](gcRootPath, abort))
+//    }
+//
+//    val requirementsPath = stringLiteral(c)(c.universe)(requirements.tree)
+//
+//    val requirementsModule = if (requirementsPath == "") {
+//      None
+//    } else {
+//      Some(constructClass[ModuleRequirements](requirementsPath, abort))
+//    }
+//
+//    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(',').toSet
+//
+//    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, disableTags, abort = abort)
 
     c.universe.reify(())
   }
@@ -136,7 +136,8 @@ object StaticPluginCheckerMacro {
 
     val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
-    val expr = BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
+    // TODO:
+    val expr = BindingTag.Expressions.False //Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
     val policy: PlanMergingPolicy = TagFilteringPlanMergingPolicy.make(expr)
 
     // If configModule is defined - check config, otherwise skip config keys

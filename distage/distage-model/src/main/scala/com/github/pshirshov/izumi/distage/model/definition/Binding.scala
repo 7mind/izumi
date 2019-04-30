@@ -17,8 +17,9 @@ sealed trait Binding {
   def tags: Set[BindingTag]
 
   def withTarget[K <: DIKey](key: K): Binding
-  protected[distage] def withTags(tags: Set[BindingTag]): Binding
   def addTags(tags: Set[BindingTag]): Binding
+
+  protected[distage] def withTags(tags: Set[BindingTag]): Binding
 }
 
 object Binding {
@@ -96,14 +97,6 @@ object Binding {
     def withImpl[T: Tag](function: ProviderMagnet[T]): R =
       binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
-
-//  implicit final class WithTags[R](private val binding: Binding {def withTags(tags: Set[BindingTag]): R}) extends AnyVal {
-//    def withTags(tags: String*): R =
-//      binding.withTags(BindingTag.fromSeq(tags))
-//
-//    def addTags(tags: String*): R =
-//      binding.withTags(BindingTag.fromSeq(tags))
-//  }
 
 }
 

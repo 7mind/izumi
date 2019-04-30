@@ -57,7 +57,7 @@ abstract class DistageTestSupport[F[_] : TagK]
     val config = loader.buildConfig()
     val env = loadEnvironment(config, logger)
     val options = contextOptions()
-    val provider = makeModuleProvider(options, config, logger, env.roles)
+    val provider = makeModuleProvider(options, config, logger, env.roles, env.activation)
 
     val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
     val appModule = provider.appModules().merge overridenBy env.appModule
@@ -66,7 +66,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, bsModule, activation, logger)
+    val planner = makePlanner(options, bsModule, env.activation, logger)
 
     val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
@@ -110,8 +110,6 @@ abstract class DistageTestSupport[F[_] : TagK]
     }
   }
 
-  protected def activation: AppActivation
-
   protected def bootstrapOverride: BootstrapModule = BootstrapModule.empty
 
   protected def appOverride: ModuleBase = Module.empty
@@ -151,7 +149,7 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
 
-  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
     new ModuleProviderImpl[F](
       lateLogger,
@@ -159,6 +157,7 @@ abstract class DistageTestSupport[F[_] : TagK]
       roles,
       options,
       RawAppArgs.empty,
+      activation,
     )
   }
 

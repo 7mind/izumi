@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.ModuleDef
+import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
 
 @ExposedTestScope
 class StaticTestPlugin extends SneakyPlugin {

@@ -61,17 +61,13 @@ object BindingTag {
 
   case class AxisTag(choice: AxisMember) extends BindingTag
 
-  case class StringTag(tag: String) extends BindingTag
-
   implicit def apply(tag: AxisMember): BindingTag = AxisTag(tag)
-
-  implicit def apply(tag: String): BindingTag = StringTag(tag)
 
   object Expressions extends TagExpr.For[BindingTag] {
 
-    implicit class C(val sc: StringContext) {
-      def t(args: Any*): Expr = Has(apply(sc.s(args: _*)))
-    }
+//    implicit class C(val sc: StringContext) {
+//      def t(args: Any*): Expr = Has(apply(sc.s(args: _*)))
+//    }
 
   }
 

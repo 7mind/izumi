@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, BootstrapModule, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -8,7 +8,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, Si
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{ModuleProviderImpl, PluginSource, PluginSourceImpl, RoleAppPlanner, RoleAppTagFilteringPlanMergingPolicy, TagFilteringPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl, RoleAppTagFilteringPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -50,6 +50,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
       defBs,
       defApp,
       roles,
+      activation,
     )
   }
 

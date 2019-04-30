@@ -335,7 +335,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "preserve tags in multi set bindings" in {
-
+    import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
     val definition = PlannerInput(new ModuleDef {
       many[Int].named("zzz")
         .add(5).tagged("t3")
@@ -344,7 +344,7 @@ class BasicTest extends WordSpec with MkInjector {
     })
 
     assert(definition.bindings.bindings.collectFirst {
-      case SetElementBinding(_, _, s, _) if Set(BindingTag("t1"), BindingTag("t2")).diff(s).isEmpty => true
+      case SetElementBinding(_, _, s, _) if Set.apply[BindingTag]("t1", "t2").diff(s).isEmpty => true
     }.nonEmpty)
   }
 }

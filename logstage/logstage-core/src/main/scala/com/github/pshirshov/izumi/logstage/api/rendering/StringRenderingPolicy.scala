@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.logstage.api.rendering
 
 import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.logstage.api.{Log, rendering}
@@ -16,7 +17,7 @@ class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer
       all(
         options.colored,
         System.getProperty("izumi.logstage.rendering.colored").asBoolean(true),
-        !java.awt.GraphicsEnvironment.isHeadless,
+        IzJvm.terminalColorsEnabled,
       ),
       System.getProperty("izumi.logstage.rendering.colored.forced").asBoolean(false),
     )

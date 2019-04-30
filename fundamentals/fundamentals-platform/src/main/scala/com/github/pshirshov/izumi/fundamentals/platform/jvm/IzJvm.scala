@@ -15,6 +15,17 @@ trait IzJvm {
 
   def startTime: ZonedDateTime = getStartTime.asEpochMillisUtc
 
+  def isHeadless: Boolean = !java.awt.GraphicsEnvironment.isHeadless
+
+  def hasColorfulTerminal: Boolean = {
+    val maybeTerm = Option(System.getenv("TERM"))
+    maybeTerm.isDefined
+  }
+
+  def terminalColorsEnabled: Boolean = {
+    !isHeadless && hasColorfulTerminal
+  }
+
   protected def getUptime: Long = ManagementFactory.getRuntimeMXBean.getUptime
 
   protected def getStartTime: Long = ManagementFactory.getRuntimeMXBean.getStartTime

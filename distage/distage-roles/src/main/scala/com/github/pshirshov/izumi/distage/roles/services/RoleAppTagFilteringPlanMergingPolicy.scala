@@ -47,11 +47,6 @@ object TagFilteringPlanMergingPolicy {
 
 @deprecated("We should stop using tags", "2019-04-29")
 class RoleAppTagFilteringPlanMergingPolicy(logger: IzLogger, activation: AppActivation, roles: RolesInfo) extends TagFilteringPlanMergingPolicy {
-
-  protected val unrequiredRoleTags: Set[BindingTag.Expressions.Expr] = {
-    roles.unrequiredRoleNames.map(v => BindingTag.Expressions.Has(BindingTag(v)): BindingTag.Expressions.Expr)
-  }
-
   protected val disabledTags: BindingTag.Expressions.Expr = {
     activation.active.get(EnvAxis) match {
       case Some(EnvAxis.Mock) =>
@@ -61,7 +56,7 @@ class RoleAppTagFilteringPlanMergingPolicy(logger: IzLogger, activation: AppActi
     }
   }
 
-  override protected val allDisabledTags = BindingTag.Expressions.Or(Set(disabledTags) ++ unrequiredRoleTags)
+  override protected val allDisabledTags = BindingTag.Expressions.Or(Set(disabledTags))
 
   // TODO: dirty
   TagFilteringPlanMergingPolicy.log(logger, disabledTags)
