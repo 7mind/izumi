@@ -10,26 +10,29 @@ import distage.DIKey
 class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy with WithResolve {
 
   override final def freeze(completedPlan: DodgyPlan): SemiPlan = {
-    val resolved = completedPlan.freeze.map({case (k, v) => k -> resolve(k, v)}).toMap
+    val resolved = completedPlan.freeze.map({case (k, v) => k -> resolve(completedPlan, k, v)}).toMap
 
     val allOperations = resolved.values.collect { case DIKeyConflictResolution.Successful(op) => op }.flatten.toSeq
     val issues = resolved.collect { case (k, f: DIKeyConflictResolution.Failed) => (k, f) }.toMap
 
     if (issues.nonEmpty) {
       handleIssues(issues)
+    } else {
+      SemiPlan(completedPlan.definition, allOperations.toVector, completedPlan.roots)
     }
-
-    // it's not neccessary to sort the plan at this stage, it's gonna happen after GC
-    SemiPlan(completedPlan.definition, allOperations.toVector, completedPlan.roots)
   }
 
 
-  def handleIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): Nothing = {
+  def handleIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     // TODO: issues == slots, we may apply slot logic here
     val issueRepr = issues.map {
       case (k, f) =>
-        s"Conflict resolution failed key $k with reason `${f.explanation}`: ${f.ops.niceList().shift(2)}"
+        s"""Conflict resolution failed key $k with reason
+           |
+           |${f.explanation.shift(4)}
+           |
+           |    Candidates left: ${f.ops.niceList().shift(4)}""".stripMargin
     }
 
     throw new ConflictingDIKeyBindingsException(

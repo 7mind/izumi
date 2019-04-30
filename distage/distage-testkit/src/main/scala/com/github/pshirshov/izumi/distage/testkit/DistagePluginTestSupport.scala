@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef, EnvAxis}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -8,7 +9,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, Si
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl, RoleAppTagFilteringPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, UniqueActivationPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -41,16 +42,19 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
 
-    val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[RoleAppTagFilteringPlanMergingPolicy]
-      make[AppActivation].from(activation)
-    }
     val defApp = mergeStrategy.merge(plugins.app)
+
+    val available = ActivationParser.findAvailableChoices(logger, defApp)
+    val appActivation = AppActivation(available, activation)
+    val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from[UniqueActivationPlanMergingPolicy]
+      make[AppActivation].from(appActivation)
+    }
     TestEnvironment(
       defBs,
       defApp,
       roles,
-      activation,
+      appActivation,
     )
   }
 
@@ -65,7 +69,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   }
 
 
-  protected def activation: AppActivation = AppActivation.empty
+  protected def activation: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Mock)
 
   protected def memoizationContextId: MemoizationContextId = {
     MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, distage.SafeType.getK(implicitly[TagK[F]]))

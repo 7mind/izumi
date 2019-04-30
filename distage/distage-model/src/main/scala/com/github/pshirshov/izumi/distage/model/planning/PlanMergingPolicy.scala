@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.planning
 
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, TraceableOp}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -20,12 +19,12 @@ object PlanMergingPolicy {
 
     final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
 
-    final case class Failed(ops: Set[InstantiationOp], explanation: String) extends DIKeyConflictResolution
+    final case class Failed(ops: Set[ExecutableOp], explanation: String) extends DIKeyConflictResolution
   }
 
   trait WithResolve {
     this: PlanMergingPolicy =>
-    final protected def resolve(key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
+    final protected def resolve(plan: DodgyPlan, key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
       operations match {
         case s if s.size == 1 =>
           DIKeyConflictResolution.Successful(Set(s.head.op))
@@ -37,7 +36,7 @@ object PlanMergingPolicy {
           }
           DIKeyConflictResolution.Successful(Set(merged))
         case s if s.nonEmpty && s.forall(_.isInstanceOf[JustOp]) =>
-          resolveConflict(key, s.collect({ case c: JustOp => c }))
+          resolveConflict(plan, key, s.collect({ case c: JustOp => c }))
         case s if s.exists(_.isInstanceOf[JustOp]) && s.exists(_.isInstanceOf[SetOp]) =>
           DIKeyConflictResolution.Failed(operations.map(_.op), "Set and non-set bindings to the same key")
         case other =>
@@ -45,8 +44,8 @@ object PlanMergingPolicy {
       }
     }
 
-    protected def resolveConflict(key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
-      Quirks.discard(key)
+    protected def resolveConflict(plan: DodgyPlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
+      Quirks.discard(key, plan)
       DIKeyConflictResolution.Failed(operations.map(_.op), "Default policy cannot handle multiple bindings")
     }
   }

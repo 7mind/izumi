@@ -4,7 +4,7 @@ package com.github.pshirshov.izumi.distage.testkit.fixtures
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.model.definition.{DIResource, EnvAxis}
 import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
@@ -69,6 +69,11 @@ class TestService2(
                     , @ConfPath("missing-test-section") val cfg1: TestConfig
                   )
 
+trait Conflict
+class Conflict1 extends Conflict
+class Conflict2 extends Conflict
+
+
 class TestPlugin
   extends PluginDef
     with CatsDIEffectModule
@@ -83,7 +88,8 @@ class TestPlugin
   make[TestComponent1]
   make[TestFailingIntegrationResource]
   make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
-
+  make[Conflict].tagged(EnvAxis.Production).from[Conflict1]
+  make[Conflict].tagged(EnvAxis.Mock).from[Conflict2]
 }
 
 

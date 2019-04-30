@@ -98,7 +98,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  protected def defaultActivations: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Production)
+  //protected def defaultActivations: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Production)
+  protected def defaultActivations: Map[AxisBase, AxisMember] = Map.empty
 
   protected def requiredActivations: Map[AxisBase, AxisMember] = Map.empty
 

@@ -59,6 +59,11 @@ abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
       service: TestService1 =>
         assert(service != null)
     }
+
+    "resolve conflicts" in di {
+      service: Conflict =>
+        assert(service.isInstanceOf[Conflict2])
+    }
   }
 
 

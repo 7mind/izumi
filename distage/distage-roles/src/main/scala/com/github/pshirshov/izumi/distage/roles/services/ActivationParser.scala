@@ -18,20 +18,8 @@ class ActivationParser {
                        requiredActivations: Map[AxisBase, AxisMember],
                      ): AppActivation = {
     val uses = Options.use.findValues(parameters.globalParameters)
-    val allChoices = defApp.bindings.flatMap(_.tags).collect({ case BindingTag.AxisTag(choice) => choice })
-    val allAxis = allChoices.map(_.axis).groupBy(_.name)
+    val availableUses: Map[AxisBase, Set[AxisMember]] = ActivationParser.findAvailableChoices(logger, defApp)
 
-    val badAxis = allAxis.filter(_._2.size > 1)
-    if (badAxis.nonEmpty) {
-      val conflicts = badAxis.map {
-        case (name, value) =>
-          s"$name: ${value.niceList().shift(2)}"
-      }
-      logger.crit(s"Conflicting axis ${conflicts.niceList() -> "names"}")
-      throw new DiAppBootstrapException(s"Conflicting axis: $conflicts")
-    }
-
-    val availableUses = allChoices.groupBy(_.axis)
 
     def options: String = availableUses
       .map {
@@ -76,5 +64,25 @@ class ActivationParser {
     }
 
     AppActivation(availableUses, defaultActivations ++ activeChoices ++ requiredActivations)
+  }
+
+
+}
+
+object ActivationParser {
+  def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisMember]] = {
+    val allChoices = defApp.bindings.flatMap(_.tags).collect({ case BindingTag.AxisTag(choice) => choice })
+    val allAxis = allChoices.map(_.axis).groupBy(_.name)
+    val badAxis = allAxis.filter(_._2.size > 1)
+    if (badAxis.nonEmpty) {
+      val conflicts = badAxis.map {
+        case (name, value) =>
+          s"$name: ${value.niceList().shift(2)}"
+      }
+      logger.crit(s"Conflicting axis ${conflicts.niceList() -> "names"}")
+      throw new DiAppBootstrapException(s"Conflicting axis: $conflicts")
+    }
+    val availableUses = allChoices.groupBy(_.axis)
+    availableUses
   }
 }
