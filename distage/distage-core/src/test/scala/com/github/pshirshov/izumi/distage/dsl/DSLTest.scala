@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 
@@ -198,8 +198,8 @@ class DSLTest extends WordSpec {
       }
 
       assert(definition.bindings == Set(
-        Bindings.binding[TestClass].withTags("tag1", "tag2")
-        , Bindings.binding[TestDependency0].withTags("tag1", "tag2", "sniv"))
+        Bindings.binding[TestClass].withTags(Set("tag1", "tag2"))
+        , Bindings.binding[TestDependency0].withTags(Set("tag1", "tag2", "sniv")))
       )
     }
 
@@ -254,7 +254,7 @@ class DSLTest extends WordSpec {
     "Tags in different overriden modules are merged" in {
       import BasicCase1._
 
-      val tags12 = Seq("1", "2")
+      val tags12: Seq[BindingTag] = Seq("1", "2")
 
       val def1 = new ModuleDef {
         make[TestDependency0].tagged("a").tagged("b")

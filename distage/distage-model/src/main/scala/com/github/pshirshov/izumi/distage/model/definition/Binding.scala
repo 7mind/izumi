@@ -17,7 +17,7 @@ sealed trait Binding {
   def tags: Set[BindingTag]
 
   def withTarget[K <: DIKey](key: K): Binding
-  protected def withTags(tags: Set[BindingTag]): Binding
+  protected[distage] def withTags(tags: Set[BindingTag]): Binding
   def addTags(tags: Set[BindingTag]): Binding
 }
 
@@ -35,56 +35,48 @@ object Binding {
 
     def withImplDef(implDef: ImplDef): ImplBinding
     override def withTarget[K <: DIKey](key: K): ImplBinding
-    protected override def withTags(tags: Set[BindingTag]): ImplBinding
+    protected[distage] def withTags(tags: Set[BindingTag]): ImplBinding
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
   sealed trait SetBinding extends Binding
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding {
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding {
     override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
-
-    override def tags: Set[BindingTag] = _tags + BindingTag.TSingleton
 
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SingletonBinding[T] = copy(key = key)
-    protected override def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(_tags = newTags)
+    protected[distage] def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object SingletonBinding {
-    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag] = BindingTag.untaggedTags)(implicit pos: CodePositionMaterializer): SingletonBinding[K] =
+    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag] = Set.empty)(implicit pos: CodePositionMaterializer): SingletonBinding[K] =
       new SingletonBinding[K](key, implementation, tags, pos.get.position)
   }
 
-  final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, _tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
+  final case class SetElementBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
     override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
-
-    override def tags: Set[BindingTag] = _tags + BindingTag.TSetElement
-
     override def withImplDef(implDef: ImplDef): SetElementBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding[T] = copy(key = key)
-    protected override def withTags(newTags: Set[BindingTag]): SetElementBinding[K] = copy(_tags = newTags)
+    protected[distage] def withTags(newTags: Set[BindingTag]): SetElementBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object SetElementBinding {
-    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag] = BindingTag.untaggedTags)(implicit pos: CodePositionMaterializer): SetElementBinding[K] =
+    def apply[K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag] = Set.empty)(implicit pos: CodePositionMaterializer): SetElementBinding[K] =
       new SetElementBinding[K](key, implementation, tags, pos.get.position)
   }
 
-  final case class EmptySetBinding[+K <: DIKey](key: K, _tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding {
+  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding {
     override def group: GroupingKey = GroupingKey.Key(key)
-
-    override def tags: Set[BindingTag] = _tags + BindingTag.TSet
-
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
-    protected override def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(_tags = newTags)
+    protected[distage] def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
   object EmptySetBinding {
-    def apply[K <: DIKey](key: K, tags: Set[BindingTag] = BindingTag.untaggedTags)(implicit pos: CodePositionMaterializer): EmptySetBinding[K] =
+    def apply[K <: DIKey](key: K, tags: Set[BindingTag] = Set.empty)(implicit pos: CodePositionMaterializer): EmptySetBinding[K] =
       new EmptySetBinding[K](key, tags, pos.get.position)
   }
 
@@ -105,13 +97,13 @@ object Binding {
       binding.withImplDef(ImplDef.ProviderImpl(function.get.ret, function.get))
   }
 
-  implicit final class WithTags[R](private val binding: Binding {def withTags(tags: Set[BindingTag]): R}) extends AnyVal {
-    def withTags(tags: String*): R =
-      binding.withTags(BindingTag.fromSeq(tags))
-
-    def addTags(tags: String*): R =
-      binding.withTags(BindingTag.fromSeq(tags))
-  }
+//  implicit final class WithTags[R](private val binding: Binding {def withTags(tags: Set[BindingTag]): R}) extends AnyVal {
+//    def withTags(tags: String*): R =
+//      binding.withTags(BindingTag.fromSeq(tags))
+//
+//    def addTags(tags: String*): R =
+//      binding.withTags(BindingTag.fromSeq(tags))
+//  }
 
 }
 

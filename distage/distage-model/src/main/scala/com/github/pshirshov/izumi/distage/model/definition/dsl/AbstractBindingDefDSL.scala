@@ -182,7 +182,7 @@ object AbstractBindingDefDSL {
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
-      ops.foldLeft(SetElementBinding(setKey, implDef, BindingTag.untaggedTags, pos)) {
+      ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
@@ -202,9 +202,9 @@ object AbstractBindingDefDSL {
 
       implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
 
-      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, BindingTag.untaggedTags, pos)
+      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, Set.empty, pos)
 
-      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), BindingTag.untaggedTags, pos)
+      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>

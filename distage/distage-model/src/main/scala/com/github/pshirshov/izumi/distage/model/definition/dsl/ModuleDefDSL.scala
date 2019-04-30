@@ -1,12 +1,12 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
+import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import com.github.pshirshov.izumi.distage.model.definition._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
@@ -102,16 +102,19 @@ object ModuleDefDSL {
     , protected val key: DIKey.TypeKey
   ) extends BindDSLMutBase[T] {
 
-    def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] =
+    def named[I](name: I)(implicit idContract: IdContract[I]): BindNamedDSL[T] = {
       addOp(SetId(name))(new BindNamedDSL[T](_, key.named(name)))
+    }
 
-    def namedByImpl: BindNamedDSL[T] =
+    def namedByImpl: BindNamedDSL[T] = {
       addOp(SetIdFromImplName())(new BindNamedDSL[T](_, key.named(key.toString)))
+    }
 
-    def tagged(tags: BindingTag*): BindDSL[T] =
+    def tagged(tags: BindingTag*): BindDSL[T] = {
       addOp(AddTags(tags.toSet)) {
         new BindDSL[T](_, key)
       }
+    }
 
   }
 

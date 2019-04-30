@@ -2,15 +2,15 @@ package com.github.pshirshov.izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.{ExecutorService, Executors}
 
+import com.github.pshirshov.izumi.distage.model.definition.EnvAxis
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 
 class ResourcesPlugin extends PluginDef {
   import ResourcesPlugin._
   make[InitCounter]
-  make[Conflict].tagged(BackendPluginTags.Dummy).from[C1]
-  make[Conflict].tagged(BackendPluginTags.Production).from[C2]
+  make[Conflict].tagged(EnvAxis.Mock).from[C1]
+  make[Conflict].tagged(EnvAxis.Production).from[C2]
 
   make[ExecutorService].from(Executors.newCachedThreadPool())
   make[Resource1]

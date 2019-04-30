@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, EnvAxis}
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.model.BackendPluginTags
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -27,9 +26,9 @@ abstract class TagFilteringPlanMergingPolicy extends PlanMergingPolicyDefaultImp
 
   protected def filterProductionTags(useDummy: Boolean): BindingTag.Expressions.Composite = {
     if (useDummy) {
-      BindingTag.Expressions.all(BackendPluginTags.Production, BackendPluginTags.Storage)
+      BindingTag.Expressions.any(EnvAxis.Production)
     } else {
-      BindingTag.Expressions.any(BackendPluginTags.Test, BackendPluginTags.Dummy)
+      BindingTag.Expressions.any(EnvAxis.Mock)
     }
   }
 }
