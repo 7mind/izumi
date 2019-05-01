@@ -12,7 +12,9 @@ import scala.collection.mutable
 
 class TracingDIGC
 (
-  plan: SemiPlan
+  roots: Set[DIKey],
+  fullIndex: Map[DIKey, ExecutableOp],
+  override val ignoreMissing: Boolean,
 ) extends AbstractGCTracer[DIKey, ExecutableOp] {
 
   @inline
@@ -58,11 +60,19 @@ class TracingDIGC
     val prefiltered = pruned.nodes.map {
       case c: CreateSet =>
         val weakMembers = c.members
-          .map(m => (m, plan.index(m)))
+          .map {
+            m =>
+              val setMemberOp = if (ignoreMissing) {
+                fullIndex.get(m)
+              } else {
+                Some(fullIndex(m))
+              }
+              (m, setMemberOp)
+          }
           .collect {
-            case (k, op: ExecutableOp.WiringOp) =>
+            case (k, Some(op: ExecutableOp.WiringOp)) =>
               (k, op.wiring)
-            case (k, op: ExecutableOp.MonadicOp) =>
+            case (k, Some(op: ExecutableOp.MonadicOp)) =>
               (k, op.effectWiring)
           }
           .collect {
@@ -87,14 +97,14 @@ class TracingDIGC
     Pruned(prefiltered, newTraced.toSet)
   }
 
-  override protected def isRoot(node: DIKey): Boolean = plan.roots(node)
+  override protected def isRoot(node: DIKey): Boolean = roots.contains(node)
 
   override protected def id(node: ExecutableOp): DIKey = node.target
 }
 
 object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: SemiPlan): SemiPlan = {
-    val collected = new TracingDIGC(plan).gc(plan.steps)
+    val collected = new TracingDIGC(plan.roots, plan.index, ignoreMissing = false).gc(plan.steps)
 
     val updatedDefn = {
       val oldDefn = plan.definition.bindings

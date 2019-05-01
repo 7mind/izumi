@@ -4,13 +4,14 @@ package com.github.pshirshov.izumi.distage.testkit.fixtures
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.model.definition.{DIResource, EnvAxis}
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 
 import scala.collection.mutable
 
@@ -70,9 +71,12 @@ class TestService2(
                   )
 
 trait Conflict
-class Conflict1 extends Conflict
-class Conflict2 extends Conflict
+case class Conflict1() extends Conflict
+case class Conflict2(u: UnsolvableConflict) extends Conflict
 
+trait UnsolvableConflict
+class UnsolvableConflict1 extends UnsolvableConflict
+class UnsolvableConflict2 extends UnsolvableConflict
 
 class TestPlugin
   extends PluginDef
@@ -88,8 +92,10 @@ class TestPlugin
   make[TestComponent1]
   make[TestFailingIntegrationResource]
   make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
-  make[Conflict].tagged(EnvAxis.Production).from[Conflict1]
-  make[Conflict].tagged(EnvAxis.Mock).from[Conflict2]
+  make[Conflict].tagged(Env.Test).from[Conflict1]
+  make[Conflict].tagged(Env.Prod).from[Conflict2]
+  make[UnsolvableConflict].from[UnsolvableConflict1]
+  make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
 

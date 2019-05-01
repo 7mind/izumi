@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.definition.{Axis, AxisBase, Binding, BindingTag}
 import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
 import distage.ModuleBase
@@ -10,7 +10,7 @@ import scala.language.implicitConversions
 @ExposedTestScope
 object TestTagOps {
 
-  abstract class TestAxis()(implicit val axis: AxisBase) extends AxisMember
+  abstract class TestAxis()(implicit val axis: AxisBase) extends AxisValue
 
   implicit def apply(tag: String): BindingTag = TestAxis.TestTag(tag)
 

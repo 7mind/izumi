@@ -3,8 +3,8 @@ package com.github.pshirshov.izumi.distage.roles
 import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, EnvAxis}
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, StandardAxis}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
@@ -98,10 +98,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  //protected def defaultActivations: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Production)
-  protected def defaultActivations: Map[AxisBase, AxisMember] = Map.empty
+  protected def defaultActivations: Map[AxisBase, AxisValue] = Map(StandardAxis.Env -> StandardAxis.Env.Prod)
 
-  protected def requiredActivations: Map[AxisBase, AxisMember] = Map.empty
+  protected def requiredActivations: Map[AxisBase, AxisValue] = Map.empty
 
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = {
     rolesInfo.requiredComponents ++ Set(

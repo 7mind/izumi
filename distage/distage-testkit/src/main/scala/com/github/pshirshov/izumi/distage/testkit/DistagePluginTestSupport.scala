@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef, EnvAxis}
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -14,6 +14,7 @@ import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
@@ -68,8 +69,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-
-  protected def activation: Map[AxisBase, AxisMember] = Map(EnvAxis -> EnvAxis.Mock)
+  protected def activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
 
   protected def memoizationContextId: MemoizationContextId = {
     MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, distage.SafeType.getK(implicitly[TagK[F]]))

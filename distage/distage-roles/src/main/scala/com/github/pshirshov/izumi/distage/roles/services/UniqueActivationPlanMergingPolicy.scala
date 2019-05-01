@@ -5,6 +5,7 @@ import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, S
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.planning.PlanMergingPolicyDefaultImpl
+import com.github.pshirshov.izumi.distage.planning.gc.TracingDIGC
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.DIKey
@@ -34,31 +35,35 @@ class UniqueActivationPlanMergingPolicy(
     }
   }
 
-
-
-
   override protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[ExecutableOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+    logger.debug(s"Not enough data to solve conflicts, will try to prune: ${formatIssues(issues) -> "issues"}")
+
+    val ops = resolved.values.flatten.toVector
+    val index = ops.map(op => op.target -> op).toMap
+    val collected = new TracingDIGC(plan.roots, index, ignoreMissing = true).gc(ops)
+
     val lastTry = issues.map {
       case (k, v) =>
-        val filtered = v.candidates.filter(isReachable)
+        val filtered = v.candidates.filter(op => collected.reachable.contains(op.target))
         if (filtered.size == 1) {
           k -> DIKeyConflictResolution.Successful(filtered)
+        } else if (filtered.isEmpty) {
+          k -> DIKeyConflictResolution.Successful(Set.empty)
         } else {
           k -> v
         }
     }
+
     val failed = lastTry.collect({case (k, f: DIKeyConflictResolution.Failed) => k -> f})
+
     if (failed.nonEmpty) {
-      printIssues(failed)
+      throwOnIssues(failed)
     } else {
-      val good = lastTry.collect({case (_, DIKeyConflictResolution.Successful(ops)) => ops})
+      logger.info(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, continuing...")
+      val good = lastTry.collect({case (_, DIKeyConflictResolution.Successful(s)) => s})
       val allResolved = (resolved.values.flatten ++ good.flatten).toVector
       SemiPlan(plan.definition, allResolved, plan.roots)
     }
-  }
-
-  private def isReachable(op: ExecutableOp): Boolean = {
-    false
   }
 
   private def makeHints(ops: Set[DodgyPlan.JustOp]): Seq[String] = {

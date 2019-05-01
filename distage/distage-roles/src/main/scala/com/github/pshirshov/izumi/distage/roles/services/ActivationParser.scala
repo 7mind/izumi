@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BindingTag}
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher.Options
 import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
@@ -14,11 +14,11 @@ class ActivationParser {
                        logger: IzLogger,
                        parameters: RawAppArgs,
                        defApp: ModuleBase,
-                       defaultActivations: Map[AxisBase, AxisMember],
-                       requiredActivations: Map[AxisBase, AxisMember],
+                       defaultActivations: Map[AxisBase, AxisValue],
+                       requiredActivations: Map[AxisBase, AxisValue],
                      ): AppActivation = {
     val uses = Options.use.findValues(parameters.globalParameters)
-    val availableUses: Map[AxisBase, Set[AxisMember]] = ActivationParser.findAvailableChoices(logger, defApp)
+    val availableUses: Map[AxisBase, Set[AxisValue]] = ActivationParser.findAvailableChoices(logger, defApp)
 
 
     def options: String = availableUses
@@ -70,7 +70,7 @@ class ActivationParser {
 }
 
 object ActivationParser {
-  def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisMember]] = {
+  def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisValue]] = {
     val allChoices = defApp.bindings.flatMap(_.tags).collect({ case BindingTag.AxisTag(choice) => choice })
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
     val badAxis = allAxis.filter(_._2.size > 1)

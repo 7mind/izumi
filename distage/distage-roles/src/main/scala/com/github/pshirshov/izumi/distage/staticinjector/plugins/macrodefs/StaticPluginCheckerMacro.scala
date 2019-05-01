@@ -6,16 +6,24 @@ import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
+import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
+import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, UniqueActivationPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
+import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.typesafe.config.ConfigFactory
 import distage._
+import io.github.classgraph.ClassGraph
 
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
@@ -55,84 +63,85 @@ object StaticPluginCheckerMacro {
 
   def check(c: blackbox.Context)
            ( pluginsPackage: c.Expr[String]
-           , gcRoot: c.Expr[String]
-           , requirements: c.Expr[String]
-           , disabledTags: c.Expr[String]
-           , configFileRegex: c.Expr[String]
+             , gcRoot: c.Expr[String]
+             , requirements: c.Expr[String]
+             , activations: c.Expr[String]
+             , configFileRegex: c.Expr[String]
            ): c.Expr[Unit] = {
 
-//    val abort = c.abort(c.enclosingPosition, _: String): Unit
-//
-//    val pluginPath = stringLiteral(c)(c.universe)(pluginsPackage.tree)
-//
-//    val loadedPlugins = if (pluginPath == "") {
-//      Seq.empty
-//    } else {
-//      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
-//        debug = false
-//        , packagesEnabled = Seq(pluginPath)
-//        , packagesDisabled = Seq.empty
-//      ))
-//
-//      pluginLoader.load()
-//    }
-//
-//    val configRegex = stringLiteral(c)(c.universe)(configFileRegex.tree)
-//
-//    val configModule = if (configRegex == "") {
-//      None
-//    } else {
-//      val scanResult = new ClassGraph().scan()
-//      val configUrls = try {
-//        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
-//        try {
-//          resourceList.getURLs.asScala.toList
-//        } finally resourceList.close()
-//      } finally scanResult.close()
-//
-//      val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
-//
-//      Some(new ConfigModule(AppConfig(referenceConfig)))
-//    }
-//
-//    val gcRootPath = stringLiteral(c)(c.universe)(gcRoot.tree)
-//
-//    val gcRootModule = if (gcRootPath == "") {
-//      None
-//    } else {
-//      Some(constructClass[PluginBase](gcRootPath, abort))
-//    }
-//
-//    val requirementsPath = stringLiteral(c)(c.universe)(requirements.tree)
-//
-//    val requirementsModule = if (requirementsPath == "") {
-//      None
-//    } else {
-//      Some(constructClass[ModuleRequirements](requirementsPath, abort))
-//    }
-//
-//    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(',').toSet
-//
-//    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, disableTags, abort = abort)
+    val abort = c.abort(c.enclosingPosition, _: String): Unit
+
+    val pluginPath = stringLiteral(c)(c.universe)(pluginsPackage.tree)
+
+    val loadedPlugins = if (pluginPath == "") {
+      Seq.empty
+    } else {
+      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
+        debug = false
+        , packagesEnabled = Seq(pluginPath)
+        , packagesDisabled = Seq.empty
+      ))
+
+      pluginLoader.load()
+    }
+
+    val configRegex = stringLiteral(c)(c.universe)(configFileRegex.tree)
+
+    val configModule = if (configRegex == "") {
+      None
+    } else {
+      val scanResult = new ClassGraph().scan()
+      val configUrls = try {
+        val resourceList = scanResult.getResourcesMatchingPattern(configRegex.r.pattern)
+        try {
+          resourceList.getURLs.asScala.toList
+        } finally resourceList.close()
+      } finally scanResult.close()
+
+      val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
+
+      Some(new ConfigModule(AppConfig(referenceConfig)))
+    }
+
+    val gcRootPath = stringLiteral(c)(c.universe)(gcRoot.tree)
+
+    val gcRootModule = if (gcRootPath == "") {
+      None
+    } else {
+      Some(constructClass[PluginBase](gcRootPath, abort))
+    }
+
+    val requirementsPath = stringLiteral(c)(c.universe)(requirements.tree)
+
+    val requirementsModule = if (requirementsPath == "") {
+      None
+    } else {
+      Some(constructClass[ModuleRequirements](requirementsPath, abort))
+    }
+
+    val activationsVals = stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
+
+    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
 
     c.universe.reify(())
   }
 
   def check(
              loadedPlugins: Seq[PluginBase]
-           , configModule: Option[ConfigModule]
-           , additional: ModuleBase
-           , root: Option[ModuleBase]
-           , moduleRequirements: Option[ModuleRequirements]
-           , disabledTags: Set[String]
-           , abort: String => Unit
+             , configModule: Option[ConfigModule]
+             , additional: ModuleBase
+             , root: Option[ModuleBase]
+             , moduleRequirements: Option[ModuleRequirements]
+             , activations: Seq[String]
+             , abort: String => Unit
            ): Unit = {
 
     val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
-    // TODO:
-    val expr = ??? // BindingTag.Expressions.False //Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))
-    val policy: PlanMergingPolicy = ??? //TagFilteringPlanMergingPolicy.make(expr)
+    val logger = IzLogger.NullLogger
+    val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(RoleAppLauncher.Options.use.name.long, a)).toVector))
+    val activation = new ActivationParser().parseActivation(logger, args, module, Map.empty, Map.empty)
+    val policy: PlanMergingPolicy = new UniqueActivationPlanMergingPolicy(logger, activation)
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {

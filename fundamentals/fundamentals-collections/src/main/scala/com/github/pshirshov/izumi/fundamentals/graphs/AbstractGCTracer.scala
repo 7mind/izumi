@@ -4,13 +4,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 trait AbstractGCTracer[NodeId, Node] {
-  case class Pruned(nodes: Vector[Node], reachable: Set[NodeId]) {
-    @inline
-    def prune: Pruned = {
-      val filteredNodes = nodes.filter(s => reachable.contains(id(s)))
-      Pruned(filteredNodes, reachable)
-    }
-  }
+
+  case class Pruned(nodes: Vector[Node], reachable: Set[NodeId])
 
   final def gc(elements: Vector[Node]): Pruned = {
     val reachable = mutable.HashSet[NodeId]()
@@ -20,13 +15,27 @@ trait AbstractGCTracer[NodeId, Node] {
 
     trace(mapping, roots, reachable)
 
-    prePrune(Pruned(elements, reachable.toSet)).prune
+    prune(prePrune(Pruned(elements, reachable.toSet)))
   }
+
+  @inline
+  private def prune(pruned: Pruned): Pruned = {
+    val filteredNodes = pruned.nodes.filter(s => pruned.reachable.contains(id(s)))
+    Pruned(filteredNodes, pruned.reachable)
+  }
+
 
   @tailrec
   private def trace(index: Map[NodeId, Node], toTrace: Set[NodeId], reachable: mutable.HashSet[NodeId]): Unit = {
     val newDeps = toTrace
-      .map(index.apply)
+      .flatMap {
+        id =>
+          if (ignoreMissing) {
+            index.get(id).toSeq
+          } else {
+            Seq(index(id))
+          }
+      }
       .flatMap(extractDependencies(index, _))
       .diff(reachable)
 
@@ -35,6 +44,8 @@ trait AbstractGCTracer[NodeId, Node] {
       trace(index, newDeps, reachable)
     }
   }
+
+  protected def ignoreMissing: Boolean
 
   protected def prePrune(pruned: Pruned): Pruned
 

@@ -1,67 +1,17 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisMember
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 
 import scala.language.implicitConversions
 
-//import scala.language.implicitConversions
-//sealed trait BindingTag extends Any
-//
-//object BindingTag {
-//
-//  final case object Untagged extends BindingTag {
-//    override def toString: String = "<*>"
-//  }
-//
-//  final case object TSingleton extends BindingTag {
-//    override def toString: String = "<singleton>"
-//  }
-//
-//  final case object TSet extends BindingTag {
-//    override def toString: String = "<set>"
-//  }
-//
-//  final case object TSetElement extends BindingTag {
-//    override def toString: String = "<set-element>"
-//  }
-//
-//  final case class StringTag(value: String) extends AnyVal with BindingTag {
-//    override def toString: String = value
-//  }
-//
-//  implicit def fromString(tag: String): BindingTag = StringTag(tag)
-//
-//  implicit def fromStrings(tags: Seq[String]): Seq[BindingTag] = Seq(tags.map(BindingTag.apply): _*)
-//
-//  final val untaggedTags: Set[BindingTag] = Set(Untagged)
-//
-//  def apply(tag: String): BindingTag = StringTag(tag)
-//
-//  def apply(tags: String*): Set[BindingTag] = Set(tags.map(BindingTag.apply): _*)
-//
-//  def fromSeq(tags: Seq[String]): Set[BindingTag] = apply(tags: _*)
-//
-
-//}
-
-//sealed trait Parameter
-//
-//object Parameter {
-//
-//  case class AxisDef(axis: Axis[AxisMember], choice: AxisMember) extends Parameter
-//
-//  case class OverrideDef(key: Key, choice: String) extends Parameter
-//
-//}
 
 sealed trait BindingTag
 
 object BindingTag {
 
-  case class AxisTag(choice: AxisMember) extends BindingTag
+  case class AxisTag(choice: AxisValue) extends BindingTag
 
-  implicit def apply(tag: AxisMember): BindingTag = AxisTag(tag)
+  implicit def apply(tag: AxisValue): BindingTag = AxisTag(tag)
 
 }
 
@@ -69,22 +19,19 @@ sealed trait AxisBase {
   def name: String
 
   override def toString: String = s"$name"
+
   implicit def self: AxisBase = this
 
 }
 
-trait Axis[+MM <: AxisMember] extends AxisBase {
+trait Axis[+MM <: AxisValue] extends AxisBase {
 
 }
 
 object Axis {
 
-  trait AxisMember {
+  trait AxisValue {
     def axis: AxisBase
-
-    def activatedBy: Set[AxisMember] = Set.empty
-
-    def deactivatedBy: Set[AxisMember] = Set.empty
 
     def id: String = {
       val n = getClass.getName.toLowerCase
@@ -96,13 +43,36 @@ object Axis {
 
 }
 
+object StandardAxis {
 
-abstract class EnvAxis()(implicit val axis: AxisBase) extends AxisMember
+  abstract class Env()(implicit val axis: AxisBase) extends AxisValue
 
-object EnvAxis extends Axis[EnvAxis] {
-  override def name: String = "env"
+  object Env extends Axis[Env] {
+    override def name: String = "env"
 
-  case object Production extends EnvAxis
+    case object Prod extends Env
 
-  case object Mock extends EnvAxis
+    case object Test extends Env
+  }
+
+  abstract class Repo()(implicit val axis: AxisBase) extends AxisValue
+
+  object Repo extends Axis[Repo] {
+    override def name: String = "stor"
+
+    case object Prod extends Repo
+
+    case object Dummy extends Repo
+  }
+
+  abstract class ExternalApi()(implicit val axis: AxisBase) extends AxisValue
+
+  object ExternalApi extends Axis[ExternalApi] {
+    override def name: String = "api"
+
+    case object Prod extends ExternalApi
+
+    case object Mock extends ExternalApi
+  }
+
 }
