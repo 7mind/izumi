@@ -31,7 +31,7 @@ trait BIOAsync[R[+ _, + _]] extends BIO[R] {
 object BIOAsync {
   def apply[R[+ _, + _] : BIOAsync]: BIOAsync[R] = implicitly
 
-  implicit def BIOAsyncZio(implicit clockService: Clock): BIOAsync[IO] = new BIO.BIOZio with BIOAsync[IO] {
+  implicit def BIOAsyncZio(implicit clockService: Clock): BIOAsync[IO] = new BIO.BIOZio[Any] with BIOAsync[IO] {
 
     @inline override def `yield`: IO[Nothing, Unit] = IO.yieldNow
 

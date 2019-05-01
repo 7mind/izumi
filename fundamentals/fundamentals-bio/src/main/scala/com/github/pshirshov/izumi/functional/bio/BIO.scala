@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.IO
+import scalaz.zio.{IO, ZIO}
 
 import scala.util.Try
 
@@ -174,19 +174,22 @@ object BIO extends BIOSyntax {
 
   object syntax extends BIOSyntax
 
-  implicit object BIOZio extends BIOZio
+  @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
 
-  class BIOZio extends BIO[IO] with BIOExit.ZIO {
+  object BIOZio extends BIOZio[Any]
+
+  class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
+    private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
     @inline override final def now[A](a: A): IO[Nothing, A] = IO.succeed(a)
     @inline override final def sync[A](effect: => A): IO[Nothing, A] = IO.effectTotal(effect)
-    @inline override final def point[R](v: => R): IO[Nothing, R] = IO.succeedLazy(v)
+    @inline override final def point[A](v: => A): IO[Nothing, A] = IO.succeedLazy(v)
     @inline override final def syncThrowable[A](effect: => A): IO[Throwable, A] = IO.effect(effect)
 
-    @inline override final def fail[E](v: => E): IO[E, Nothing] = IO.effectTotal(v).flatMap(IO.fail)
-    @inline override final def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.effectTotal(v).flatMap(IO.die)
+    @inline override final def fail[E](v: => E): IO[E, Nothing] = IO.effectTotal(v).flatMap[R, E, Nothing](IO.fail)
+    @inline override final def terminate(v: => Throwable): IO[Nothing, Nothing] = IO.effectTotal(v).flatMap[R, Nothing, Nothing](IO.die)
 
-    @inline override final def fromEither[L, R](v: => Either[L, R]): IO[L, R] = IO.fromEither(v)
+    @inline override final def fromEither[L, R0](v: => Either[L, R0]): IO[L, R0] = IO.fromEither(v)
     @inline override final def fromTry[A](effect: => Try[A]): IO[Throwable, A] = IO.fromTry(effect)
 
     @inline override final def void[E, A](r: IO[E, A]): IO[E, Unit] = r.unit
@@ -198,27 +201,33 @@ object BIO extends BIOSyntax {
     @inline override final def bimap[E, A, E2, B](r: IO[E, A])(f: E => E2, g: A => B): IO[E2, B] = r.bimap(f, g)
 
     @inline override final def flatMap[E, A, E1 >: E, B](r: IO[E, A])(f0: A => IO[E1, B]): IO[E1, B] = r.flatMap(f0)
-    @inline override final def flatten[E, A](r: IO[E, IO[E, A]]): IO[E, A] = IO.flatten(r)
+    @inline override final def flatten[E, A](r: IO[E, IO[E, A]]): IO[E, A] = ZIO.flatten(r)
     @inline override final def *>[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, B] = f *> next
     @inline override final def <*[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, A] = f <* next
-    @inline override final def map2[E, A, E2 >: E, B, C](r1: IO[E, A], r2: => IO[E2, B])(f: (A, B) => C): IO[E2, C] = r1.zipWith(IO.suspend(r2))(f)
+    @inline override final def map2[E, A, E2 >: E, B, C](r1: IO[E, A], r2: => IO[E2, B])(f: (A, B) => C): IO[E2, C] = {
+      r1.zipWith(ZIO.suspend(r2))(f)
+    }
 
     @inline override final def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.foldM(err, succ)
     @inline override final def catchAll[E, A, E2, A2 >: A](r: IO[E, A])(f: E => IO[E2, A2]): IO[E2, A2] = r.catchAll(f)
-    @inline override final def guarantee[E, A](f: IO[E, A])(cleanup: IO[Nothing, Unit]): IO[E, A] = f.ensuring(cleanup)
+    @inline override final def guarantee[E, A](f: IO[E, A])(cleanup: IO[Nothing, Unit]): IO[E, A] = {
+      ZIO.accessM(r => f.ensuring(cleanup.provide(r)))
+    }
     @inline override final def attempt[E, A](r: IO[E, A]): IO[Nothing, Either[E, A]] = r.either
     @inline override final def redeemPure[E, A, B](r: IO[E, A])(err: E => B, succ: A => B): IO[Nothing, B] = r.fold(err, succ)
 
-    @inline override final def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
-      IO.bracket(acquire)(v => release(v))(use)
+    @inline override final def bracket[E, A, B](acquire: IO[E, A])(release: A => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
+      ZIO.bracket(acquire)(v => release(v))(use)
+    }
 
-    @inline override final def bracketCase[E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] =
-      IO.bracketExit[Any, E, A, B](acquire, { case (a, exit) => release(a, toBIOExit(exit)) }, use)
+    @inline override final def bracketCase[E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
+      ZIO.bracketExit[R, E, A, B](acquire, { case (a, exit) => release(a, toBIOExit(exit)) }, use)
+    }
 
-    @inline override final def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = IO.foreach(l)(f)
+    @inline override final def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreach(l)(f)
 
     @inline override final def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[BIOExit.Failure[E], A] => IO[BIOExit.Failure[E2], B]): IO[E2, B] = {
-      r.sandboxWith[Any, E2, B](r => f(r.mapError(toBIOExit[E])).mapError(failureToCause[E2]))
+      r.sandboxWith[R, E2, B](r => f(r.mapError(toBIOExit[E])).mapError(failureToCause[E2]))
     }
 
     @inline override final def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(toBIOExit[E])
