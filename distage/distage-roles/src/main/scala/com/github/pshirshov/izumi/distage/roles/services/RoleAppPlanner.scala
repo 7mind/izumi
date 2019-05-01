@@ -6,8 +6,8 @@ import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStart
 import distage.{BootstrapModule, DIKey, Injector}
 
 trait RoleAppPlanner[F[_]] {
-  def makePlan(appMainRoots: Set[DIKey], bsCustomization: BootstrapModule,customization: ModuleBase): AppStartupPlans
-
+  def reboot(bsModule: BootstrapModule): RoleAppPlannerImpl[F]
+  def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans
 }
 
 object RoleAppPlanner {

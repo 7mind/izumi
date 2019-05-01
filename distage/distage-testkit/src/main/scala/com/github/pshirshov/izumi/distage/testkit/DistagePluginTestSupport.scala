@@ -1,18 +1,20 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.plugins.MergedPlugins
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.{ConfigurablePluginMergeStrategy, PluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.services.{PluginSource, PluginSourceImpl}
+import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
+import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.config.AppConfig
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
@@ -40,14 +42,20 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val roles = loadRoles(logger)
     val plugins = makePluginLoader(config).load()
     val mergeStrategy = makeMergeStrategy(logger)
-    val defBs: MergedPlugins = mergeStrategy.merge(plugins.bootstrap)
-    val defApp: MergedPlugins = mergeStrategy.merge(plugins.app)
-    val loadedBsModule = defBs.definition
-    val loadedAppModule = defApp.definition
+
+    val defApp = mergeStrategy.merge(plugins.app)
+
+    val available = ActivationParser.findAvailableChoices(logger, defApp)
+    val appActivation = AppActivation(available, activation)
+    val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
+      make[AppActivation].from(appActivation)
+    }
     TestEnvironment(
-      loadedBsModule,
-      loadedAppModule,
+      defBs,
+      defApp,
       roles,
+      appActivation,
     )
   }
 
@@ -61,20 +69,15 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-  protected def disabledTags: BindingTag.Expressions.Expr = BindingTag.Expressions.False
+  protected def activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
 
   protected def memoizationContextId: MemoizationContextId = {
-    MemoizationContextId.PerRuntimeAndTagsAndBsconfig[F](bootstrapConfig, disabledTags, distage.SafeType.getK(implicitly[TagK[F]]))
+    MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, distage.SafeType.getK(implicitly[TagK[F]]))
   }
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
     Quirks.discard(lateLogger)
-    new ConfigurablePluginMergeStrategy(PluginMergeConfig(
-      disabledTags
-      , Set.empty
-      , Set.empty
-      , Map.empty
-    ))
+    SimplePluginMergeStrategy
   }
 
   protected def bootstrapConfig: BootstrapConfig = {

@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit.services
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.AxisBase
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import distage.SafeType
 
@@ -10,7 +11,7 @@ object MemoizationContextId {
 
   case object Shared extends MemoizationContextId
 
-  case class PerRuntimeAndTagsAndBsconfig[F[_]](bootstrapConfig: BootstrapConfig, expr: BindingTag.Expressions.Expr, fType: SafeType) extends MemoizationContextId
+  case class PerRuntimeAndActivationAndBsconfig[F[_]](bootstrapConfig: BootstrapConfig, activation: Map[AxisBase, AxisValue], fType: SafeType) extends MemoizationContextId
 
   case class Custom(id: String) extends MemoizationContextId
 

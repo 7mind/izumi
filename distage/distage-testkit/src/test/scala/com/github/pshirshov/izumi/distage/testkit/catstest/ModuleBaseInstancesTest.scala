@@ -7,6 +7,8 @@ import com.github.pshirshov.izumi.distage.model.definition._
 import distage.interop.cats._
 import org.scalatest.WordSpec
 
+import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
+
 class ModuleBaseInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {
     "allow monoidal operations between different types of binding dsls" in {
@@ -46,8 +48,9 @@ class ModuleBaseInstancesTest extends WordSpec {
         , Bindings.binding(TestInstanceBinding())
       )) |+| mod3 // function pointer equality on magic trait providers
 
-      assert(catsSyntaxEq(combinedModules) === complexModule)
-      assert(catsSyntaxEq(plusModules) === complexModule)
+
+      assert(combinedModules === complexModule)
+      assert(plusModules === complexModule)
     }
   }
 }

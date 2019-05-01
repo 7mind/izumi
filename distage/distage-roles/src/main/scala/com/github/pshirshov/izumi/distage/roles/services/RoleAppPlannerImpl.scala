@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.roles.services
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
-import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -12,24 +12,28 @@ import distage._
 class RoleAppPlannerImpl[F[_] : TagK](
                                        options: ContextOptions,
                                        bsModule: BootstrapModule,
-                                       appModule: distage.ModuleBase,
+                                       activation: AppActivation,
                                        logger: IzLogger,
                                      ) extends RoleAppPlanner[F] {
 
-  def makePlan(appMainRoots: Set[DIKey], bsCustomization: BootstrapModule, customization: ModuleBase): AppStartupPlans = {
-    val runtimeGcRoots: Set[DIKey] = Set(
-      DIKey.get[DIEffectRunner[F]],
-      DIKey.get[DIEffect[F]],
-    )
+  private val injector = Injector.Standard(bsModule)
 
+  def reboot(bsOverride: BootstrapModule): RoleAppPlannerImpl[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule overridenBy bsOverride, activation, logger)
+  }
+
+  def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {
     val fullAppModule = appModule
       .overridenBy(new ModuleDef {
         make[RoleAppPlanner[F]].from(RoleAppPlannerImpl.this)
         make[ContextOptions].from(options)
+        make[ModuleBase].named("application.module").from(appModule)
       })
-      .overridenBy(customization)
 
-    val injector = Injector.Standard(bsModule.overridenBy(bsCustomization))
+    val runtimeGcRoots: Set[DIKey] = Set(
+      DIKey.get[DIEffectRunner[F]],
+      DIKey.get[DIEffect[F]],
+    )
     val runtimePlan = injector.plan(fullAppModule, runtimeGcRoots)
 
     val rolesPlan = injector.plan(fullAppModule, appMainRoots)

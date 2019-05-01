@@ -6,8 +6,6 @@ trait SanityChecker {
 
   def assertFinalPlanSane(plan: OrderedPlan): Unit
 
-  def assertStepSane(plan: DodgyPlan): Unit
-
   def assertNoDuplicateOps(ops: Seq[ExecutableOp]): Unit
 
   def assertProvisionsSane(nextOps: NextOps): Unit = {

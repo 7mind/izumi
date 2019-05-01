@@ -4,14 +4,16 @@ package com.github.pshirshov.izumi.distage.roles.internal
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
 class Help[F[_] : DIEffect]
 (
   roleInfo: RolesInfo,
+  activation: AppActivation,
 )
   extends RoleTask[F] {
 
@@ -24,6 +26,13 @@ class Help[F[_] : DIEffect]
     val descriptors = roleInfo
       .availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
+
+    val activations = activation.choices
+      .map {
+        case (axis, members) =>
+          s"$axis:${members.niceList().shift(2)}"
+      }
+      .niceList().shift(2)
 
     val baseDoc =
       s"""izumi/distage role application launcher
@@ -40,7 +49,10 @@ class Help[F[_] : DIEffect]
          |
          |  Examples:
          |
-         |    launcher -c myconfig.json :help :myrole -c roleconfig.json""".stripMargin
+         |    launcher -c myconfig.json :help :myrole -c roleconfig.json
+         |
+         |Available functionality choices:
+         |$activations""".stripMargin
 
     val help = ParserSchemaFormatter.makeDocs(
       ParserSchema(GlobalArgsSchema(RoleAppLauncher.Options, Some(baseDoc), Some(notes)), descriptors)

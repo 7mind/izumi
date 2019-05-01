@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.functional
 
+// TODO: canbuildfrom/compat
+
 trait IzEither {
   implicit class EitherFolderExt1[L, R](result: Seq[Either[List[L], R]]) {
     def biAggregate: Either[List[L], List[R]] = {
@@ -20,6 +22,14 @@ trait IzEither {
       } else {
         Left(bad.flatten.toList)
       }
+    }
+  }
+
+  implicit class BiSplit[L, R](e: Seq[Either[L, R]]) {
+    def lrPartition: (Seq[L], Seq[R]) = {
+      val left = e.collect({ case Left(l) => l })
+      val right = e.collect({ case Right(r) => r })
+      (left, right)
     }
   }
 }

@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.Id
+import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
@@ -30,7 +30,8 @@ class ConfigWriter[F[_] : DIEffect]
   launcherVersion: ArtifactVersion@Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
-  options: ContextOptions
+  options: ContextOptions,
+  appModule: ModuleBase@Id("application.module")
 )
   extends RoleTask[F] {
 
@@ -60,8 +61,7 @@ class ConfigWriter[F[_] : DIEffect]
       role <- roleInfo.availableRoleBindings
     } yield {
       val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
-      val cfg = buildConfig(options, component.copy(parent = Some(commonConfig)))
-
+      val refConfig = buildConfig(options, component.copy(parent = Some(commonConfig)))
       val version = if (options.useLauncherVersion) {
         Some(ArtifactVersion(launcherVersion.version))
       } else {
@@ -69,13 +69,19 @@ class ConfigWriter[F[_] : DIEffect]
       }
       val versionedComponent = component.copy(version = version)
 
-      writeConfig(options, versionedComponent, None, cfg)
+      try {
+        writeConfig(options, versionedComponent, None, refConfig)
 
-      minimizedConfig(cfg, role)
-        .foreach {
-          cfg =>
-            writeConfig(options, versionedComponent, Some("minimized"), cfg)
-        }
+        minimizedConfig(refConfig, role)
+          .foreach {
+            cfg =>
+              writeConfig(options, versionedComponent, Some("minimized"), cfg)
+          }
+      } catch {
+        case exception: Throwable =>
+          logger.crit(s"Cannot process role ${role.descriptor.id}")
+          throw exception
+      }
     })
   }
 
@@ -106,8 +112,13 @@ class ConfigWriter[F[_] : DIEffect]
 
   private[this] def minimizedConfig(config: Config, role: RoleBinding): Option[Config] = {
     val roleDIKey = role.binding.key
-    val cfg = new ConfigModule(AppConfig(config), options.configInjectionOptions) overridenBy new LogstageModule(LogRouter.nullRouter, false)
-    val newPlan = context.makePlan(Set(role.binding.key), cfg, distage.Module.empty).app
+
+    val cfg = Seq(
+      new ConfigModule(AppConfig(config), options.configInjectionOptions),
+      new LogstageModule(LogRouter.nullRouter, false),
+    ).overrideLeft
+
+    val newPlan = context.reboot(cfg).makePlan(Set(roleDIKey), appModule).app
 
     if (newPlan.steps.exists(_.target == roleDIKey)) {
       newPlan

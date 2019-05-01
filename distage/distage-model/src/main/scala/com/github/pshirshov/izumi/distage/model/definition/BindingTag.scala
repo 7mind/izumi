@@ -1,50 +1,78 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 
 import scala.language.implicitConversions
 
-sealed trait BindingTag extends Any
+
+sealed trait BindingTag
 
 object BindingTag {
 
-  final case object Untagged extends BindingTag {
-    override def toString: String = "<*>"
-  }
+  case class AxisTag(choice: AxisValue) extends BindingTag
 
-  final case object TSingleton extends BindingTag {
-    override def toString: String = "<singleton>"
-  }
+  implicit def apply(tag: AxisValue): BindingTag = AxisTag(tag)
 
-  final case object TSet extends BindingTag {
-    override def toString: String = "<set>"
-  }
+}
 
-  final case object TSetElement extends BindingTag {
-    override def toString: String = "<set-element>"
-  }
+sealed trait AxisBase {
+  def name: String
 
-  final case class StringTag(value: String) extends AnyVal with BindingTag {
-    override def toString: String = value
-  }
+  override def toString: String = s"$name"
 
-  implicit def fromString(tag: String): BindingTag = StringTag(tag)
+  implicit def self: AxisBase = this
 
-  implicit def fromStrings(tags: Seq[String]): Seq[BindingTag] = Seq(tags.map(BindingTag.apply): _*)
+}
 
-  final val untaggedTags: Set[BindingTag] = Set(Untagged)
+trait Axis[+MM <: AxisValue] extends AxisBase {
 
-  def apply(tag: String): BindingTag = StringTag(tag)
+}
 
-  def apply(tags: String*): Set[BindingTag] = Set(tags.map(BindingTag.apply): _*)
+object Axis {
 
-  def fromSeq(tags: Seq[String]): Set[BindingTag] = apply(tags: _*)
+  trait AxisValue {
+    def axis: AxisBase
 
-  object Expressions extends TagExpr.For[BindingTag] {
-
-    implicit class C(val sc: StringContext) {
-      def t(args: Any*): Expr = Has(apply(sc.s(args: _*)))
+    def id: String = {
+      val n = getClass.getName.toLowerCase
+      n.split('$').last
     }
 
+    override def toString: String = s"$axis:$id"
   }
+
+}
+
+object StandardAxis {
+
+  abstract class Env()(implicit val axis: AxisBase) extends AxisValue
+
+  object Env extends Axis[Env] {
+    override def name: String = "env"
+
+    case object Prod extends Env
+
+    case object Test extends Env
+  }
+
+  abstract class Repo()(implicit val axis: AxisBase) extends AxisValue
+
+  object Repo extends Axis[Repo] {
+    override def name: String = "stor"
+
+    case object Prod extends Repo
+
+    case object Dummy extends Repo
+  }
+
+  abstract class ExternalApi()(implicit val axis: AxisBase) extends AxisValue
+
+  object ExternalApi extends Axis[ExternalApi] {
+    override def name: String = "api"
+
+    case object Prod extends ExternalApi
+
+    case object Mock extends ExternalApi
+  }
+
 }

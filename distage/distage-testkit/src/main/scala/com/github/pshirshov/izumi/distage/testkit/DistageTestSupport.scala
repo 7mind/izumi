@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
@@ -18,13 +19,13 @@ import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Fil
 import com.github.pshirshov.izumi.distage.roles.services._
 import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.distage.testkit.services._
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
-
 
 
 abstract class DistageTestSupport[F[_] : TagK]
@@ -56,18 +57,18 @@ abstract class DistageTestSupport[F[_] : TagK]
     val config = loader.buildConfig()
     val env = loadEnvironment(config, logger)
     val options = contextOptions()
-    val provider = makeModuleProvider(options, config, logger, env.roles)
+    val provider = makeModuleProvider(options, config, logger, env.roles, env.activation)
 
-    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule
+    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
     val appModule = provider.appModules().merge overridenBy env.appModule
 
     val allRoots = function.get.diKeys.toSet ++ additionalRoots
 
     val refinedBindings = refineBindings(allRoots, appModule)
     val withMemoized = applyMemoization(refinedBindings)
-    val planner = makePlanner(options, bsModule, withMemoized, logger)
+    val planner = makePlanner(options, bsModule, env.activation, logger)
 
-    val plan = planner.makePlan(allRoots, bootstrapOverride, appOverride)
+    val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
       plan.injector.produceF[Identity](plan.runtime),
@@ -148,13 +149,15 @@ abstract class DistageTestSupport[F[_] : TagK]
 
   protected def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
 
-  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo): ModuleProvider[F] = {
+  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
     new ModuleProviderImpl[F](
       lateLogger,
       config,
       roles,
       options,
+      RawAppArgs.empty,
+      activation,
     )
   }
 
@@ -167,8 +170,8 @@ abstract class DistageTestSupport[F[_] : TagK]
     )
   }
 
-  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule,module: distage.ModuleBase, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, module, logger)
+  protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, logger: IzLogger): RoleAppPlanner[F] = {
+    new RoleAppPlannerImpl[F](options, bsModule, activation, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
@@ -196,10 +199,12 @@ abstract class DistageTestSupport[F[_] : TagK]
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
-      (roots - DIKey.get[LocatorRef]).map {
-        key =>
-          SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
-      }
+      (roots - DIKey.get[LocatorRef])
+        .filterNot(_.tpe.tpe.typeSymbol.isAbstract)
+        .map {
+          key =>
+            SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
+        }
     }
 
     paramsModule overridenBy primaryModule

@@ -2,14 +2,18 @@ package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.{Bindings, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 
 
-class DSLTest extends WordSpec {
 
-  import TagOps._
+
+
+class DSLTest extends WordSpec {
+  import TestTagOps._
+
+
 
   "Basic DSL" should {
     "allow to define contexts" in {
@@ -42,6 +46,7 @@ class DSLTest extends WordSpec {
     }
   }
 
+
   "Module DSL" should {
     "allow to define contexts" in {
       import BasicCase1._
@@ -51,7 +56,7 @@ class DSLTest extends WordSpec {
         make[TestDependency0].from[TestImpl0]
       }
 
-      assert(Module.bindings == Set(
+      assert(Module.bindings === Set(
         Bindings.binding[TestClass]
         , Bindings.binding[TestDependency0, TestImpl0]
       ))
@@ -87,7 +92,7 @@ class DSLTest extends WordSpec {
           .add[SetImpl3]
       }
 
-      assert(definition == Module.make(
+      assert(definition === Module.make(
         Set(
           Bindings.emptySet[SetTrait]
           , Bindings.setElement[SetTrait, SetImpl1]
@@ -158,7 +163,7 @@ class DSLTest extends WordSpec {
       ))
         .++(mod3) // function pointer equality on magic trait providers
 
-      assert(combinedModules == complexModule)
+      assert(combinedModules === complexModule)
     }
 
     "allow operations between objects of ModuleDef" in {
@@ -197,9 +202,9 @@ class DSLTest extends WordSpec {
         tag("tag2")
       }
 
-      assert(definition.bindings == Set(
-        Bindings.binding[TestClass].withTags("tag1", "tag2")
-        , Bindings.binding[TestDependency0].withTags("tag1", "tag2", "sniv"))
+      assert(definition.bindings === Set(
+        Bindings.binding[TestClass].withTags(Set("tag1", "tag2"))
+        , Bindings.binding[TestDependency0].withTags(Set("tag1", "tag2", "sniv")))
       )
     }
 
@@ -254,7 +259,7 @@ class DSLTest extends WordSpec {
     "Tags in different overriden modules are merged" in {
       import BasicCase1._
 
-      val tags12 = Seq("1", "2")
+      val tags12: Seq[BindingTag] = Seq("1", "2")
 
       val def1 = new ModuleDef {
         make[TestDependency0].tagged("a").tagged("b")

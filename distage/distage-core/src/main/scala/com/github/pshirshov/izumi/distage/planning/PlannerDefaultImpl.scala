@@ -1,55 +1,68 @@
 package com.github.pshirshov.izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
+import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
 import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
+import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
+import distage.DIKey
 
-class PlannerDefaultImpl
+final class PlannerDefaultImpl
 (
-  protected val forwardingRefResolver: ForwardingRefResolver
-, protected val reflectionProvider: ReflectionProvider.Runtime
-, protected val sanityChecker: SanityChecker
-, protected val gc: DIGarbageCollector
-, protected val planningObservers: Set[PlanningObserver]
-, protected val planMergingPolicy: PlanMergingPolicy
-, protected val planningHooks: Set[PlanningHook]
+  forwardingRefResolver: ForwardingRefResolver,
+  sanityChecker: SanityChecker,
+  gc: DIGarbageCollector,
+  planningObserver: PlanningObserver,
+  planMergingPolicy: PlanMergingPolicy,
+  hook: PlanningHook,
+  bindingTranslator: BindingTranslator,
+  analyzer: PlanAnalyzer,
+  symbolIntrospector: SymbolIntrospector.Runtime,
 )
   extends Planner {
 
-  private[this] val hook = new PlanningHookAggregate(planningHooks)
-  private[this] val planningObserver = new PlanningObserverAggregate(planningObservers)
 
   override def plan(input: PlannerInput): OrderedPlan = {
-    val plan = hook.hookDefinition(input.bindings).bindings.foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
-      case (currentPlan, binding) =>
-          Value(computeProvisioning(currentPlan, binding))
-            .eff(sanityChecker.assertProvisionsSane)
-            .map(planMergingPolicy.extendPlan(currentPlan, binding, _))
-            .eff(sanityChecker.assertStepSane)
-            .map(hook.hookStep(input.bindings, currentPlan, binding, _))
-            .eff(planningObserver.onSuccessfulStep)
-            .get
-    }
-
-    Value(plan)
-      .map(hook.phase00PostCompletion)
-      .eff(planningObserver.onPhase00PlanCompleted)
-      .map(planMergingPolicy.finalizePlan)
+    Value(prepare(input))
+      .map(freeze)
       .map(finish)
       .get
   }
 
-  def finish(semiPlan: SemiPlan): OrderedPlan = {
+  override def freeze(plan: DodgyPlan): SemiPlan = {
+    Value(plan)
+      .map(hook.phase00PostCompletion)
+      .eff(planningObserver.onPhase00PlanCompleted)
+      .map(planMergingPolicy.freeze)
+      .get
+  }
+
+  // TODO: add tests
+  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.roots ++ b.roots))
+  }
+
+  override def prepare(input: PlannerInput): DodgyPlan = {
+    hook
+      .hookDefinition(input.bindings)
+      .bindings
+      .foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
+        case (currentPlan, binding) =>
+          Value(bindingTranslator.computeProvisioning(currentPlan, binding))
+            .eff(sanityChecker.assertProvisionsSane)
+            .map(next => currentPlan.append(binding, next))
+            .eff(planningObserver.onSuccessfulStep)
+            .get
+      }
+  }
+
+  override def finish(semiPlan: SemiPlan): OrderedPlan = {
     Value(semiPlan)
-      .map(planMergingPolicy.addImports)
+      .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
       .map(doGC)
       .map(hook.phase10PostGC)
@@ -60,10 +73,19 @@ class PlannerDefaultImpl
       .get
   }
 
-  // TODO: add tests
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.roots ++ b.roots))
+  private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
+    Value(semiPlan)
+      .map(hook.phase45PreForwardingCleanup)
+      .map(hook.phase50PreForwarding)
+      .eff(planningObserver.onPhase50PreForwarding)
+      .map(reorderOperations)
+      .map(forwardingRefResolver.resolve)
+      .map(hook.phase90AfterForwarding)
+      .eff(planningObserver.onPhase90AfterForwarding)
+      .eff(sanityChecker.assertFinalPlanSane)
+      .get
   }
+
 
   private[this] def doGC(semiPlan: SemiPlan): SemiPlan = {
     if (semiPlan.roots.nonEmpty) {
@@ -73,141 +95,96 @@ class PlannerDefaultImpl
     }
   }
 
-  private[this] def order(semiPlan: SemiPlan): OrderedPlan = {
-    Value(semiPlan)
-      .map(hook.phase45PreForwardingCleanup)
-      .map(hook.phase50PreForwarding)
-      .eff(planningObserver.onPhase50PreForwarding)
-      .map(planMergingPolicy.reorderOperations)
-      .map(forwardingRefResolver.resolve)
-      .map(hook.phase90AfterForwarding)
-      .eff(planningObserver.onPhase90AfterForwarding)
-      .eff(sanityChecker.assertFinalPlanSane)
-      .get
+  private[this] def addImports(plan: SemiPlan): SemiPlan = {
+    val topology = analyzer.topology(plan.steps)
+    val imports = topology
+      .dependees
+      .graph
+      .filterKeys(k => !plan.index.contains(k))
+      .map {
+        case (missing, refs) =>
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).flatMap(_.origin)
+          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin)
+      }
+      .toMap
+
+    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector, plan.roots)
   }
 
-  private[this] def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
-    binding match {
-      case singleton: SingletonBinding[_] =>
-        val newOp = provisionSingleton(singleton)
+  private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
+    val topology = analyzer.topology(completedPlan.steps)
 
-        NextOps(
-          sets = Map.empty
-        , provisions = Seq(newOp)
-        )
+    val index = completedPlan.index
 
-      case set: SetElementBinding[_] =>
-        val target = set.key
+    def break(keys: Set[DIKey]): DIKey = {
+      val loop = keys.toList
 
-        val discriminator = setElementDiscriminatorKey(set, currentPlan)
-        val elementKey = DIKey.SetElementKey(target, discriminator)
-        val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-        val oldSet = next.sets.getOrElse(target, CreateSet(target, target.tpe, Set.empty, Some(binding)))
-        val newSet = oldSet.copy(members = oldSet.members + elementKey)
+      val best = loop.sortWith {
+        case (fst, snd) =>
+          val fsto = index(fst)
+          val sndo = index(snd)
+          val fstp = symbolIntrospector.canBeProxied(fsto.target.tpe)
+          val sndp = symbolIntrospector.canBeProxied(sndo.target.tpe)
 
-        NextOps(
-          sets = next.sets.updated(target, newSet)
-        , provisions = next.provisions
-        )
+          if (fstp && !sndp) {
+            true
+          } else if (!fstp) {
+            false
+          } else if (!fsto.isInstanceOf[ReferenceKey] && sndo.isInstanceOf[ReferenceKey]) {
+            true
+          } else if (fsto.isInstanceOf[ReferenceKey]) {
+            false
+          } else {
+            val fstHasByName: Boolean = hasByNameParameter(fsto)
+            val sndHasByName: Boolean = hasByNameParameter(sndo)
 
-      case set: EmptySetBinding[_] =>
-        val newSet = CreateSet(set.key, set.key.tpe, Set.empty, Some(binding))
+            if (!fstHasByName && sndHasByName) {
+              true
+            } else if (fstHasByName && !sndHasByName) {
+              false
+            } else {
+              analyzer.requirements(fsto).size > analyzer.requirements(sndo).size
+            }
+          }
 
-        NextOps(
-          sets = Map(set.key -> newSet)
-        , provisions = Seq.empty
-        )
-    }
-  }
+      }.head
 
-  private[this] def provisionSingleton(binding: Binding.ImplBinding): InstantiationOp = {
-    val target = binding.key
-    val wiring0 = implToWiring(binding.implementation)
-    val wiring = hook.hookWiring(binding, wiring0)
-
-    wiringToInstantiationOp(target, binding, wiring)
-  }
-
-  private[this] def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): InstantiationOp = {
-    wiring match {
-      case w: PureWiring =>
-        pureWiringToWiringOp(target, binding, w)
-
-      case w: MonadicWiring.Effect =>
-        MonadicOp.ExecuteEffect(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
-
-      case w: MonadicWiring.Resource =>
-        MonadicOp.AllocateResource(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
-    }
-  }
-
-  private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: PureWiring): WiringOp = {
-    wiring match {
-      case w: Constructor =>
-        WiringOp.InstantiateClass(target, w, Some(binding))
-
-      case w: AbstractSymbol =>
-        WiringOp.InstantiateTrait(target, w, Some(binding))
-
-      case w: Factory =>
-        WiringOp.InstantiateFactory(target, w, Some(binding))
-
-      case w: FactoryFunction =>
-        WiringOp.CallFactoryProvider(target, w, Some(binding))
-
-      case w: Function =>
-        WiringOp.CallProvider(target, w, Some(binding))
-
-      case w: Instance =>
-        WiringOp.ReferenceInstance(target, w, Some(binding))
-
-      case w: Reference =>
-        WiringOp.ReferenceKey(target, w, Some(binding))
-    }
-  }
-
-  private[this] def implToWiring(implementation: ImplDef): Wiring = {
-    implementation match {
-      case d: ImplDef.DirectImplDef =>
-        directImplToPureWiring(d)
-      case e: ImplDef.EffectImpl =>
-        MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, directImplToPureWiring(e.effectImpl))
-      case r: ImplDef.ResourceImpl =>
-        MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, directImplToPureWiring(r.resourceImpl))
-    }
-  }
-
-  private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): PureWiring = {
-    implementation match {
-      case i: ImplDef.TypeImpl =>
-        reflectionProvider.symbolToWiring(i.implType)
-      case p: ImplDef.ProviderImpl =>
-        reflectionProvider.providerToWiring(p.function)
-      case i: ImplDef.InstanceImpl =>
-        SingletonWiring.Instance(i.implType, i.instance)
-      case r: ImplDef.ReferenceImpl =>
-        SingletonWiring.Reference(r.implType, r.key, r.weak)
-    }
-  }
-
-  private[this] def setElementDiscriminatorKey(b: SetElementBinding[DIKey], currentPlan: DodgyPlan): DIKey = {
-    val goodIdx = currentPlan.operations.size.toString
-
-    val tpe = b.implementation match {
-      case i: ImplDef.TypeImpl =>
-        DIKey.TypeKey(i.implType)
-      case r: ImplDef.ReferenceImpl =>
-        r.key
-      case i: ImplDef.InstanceImpl =>
-        DIKey.TypeKey(i.implType).named(s"instance:$goodIdx")
-      case p: ImplDef.ProviderImpl =>
-        DIKey.TypeKey(p.implType).named(s"provider:$goodIdx")
-      case e: ImplDef.EffectImpl =>
-        DIKey.TypeKey(e.implType).named(s"effect:$goodIdx")
-      case r: ImplDef.ResourceImpl =>
-        DIKey.TypeKey(r.implType).named(s"resource:$goodIdx")
+      index(best) match {
+        case op: ReferenceKey =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
+        case op: ImportDependency =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
+        case op: ProxyOp =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is proxy O_o: $keys", op)
+        case op: InstantiationOp if !symbolIntrospector.canBeProxied(op.target.tpe) =>
+          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
+        case _: InstantiationOp =>
+          best
+      }
     }
 
-    tpe
+    val sortedKeys = new Toposort().cycleBreaking(
+      topology.dependencies.graph
+      , Seq.empty
+      , break
+    ) match {
+      case Left(value) =>
+        throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")
+
+      case Right(value) =>
+        value
+    }
+
+    val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
+
+    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.roots, topology)
   }
+
+  private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
+    val fstoTpe = ExecutableOp.instanceType(fsto)
+    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
+    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+    hasByName
+  }
+
 }

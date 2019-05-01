@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 
 import scala.collection.mutable
 
@@ -69,6 +70,14 @@ class TestService2(
                     , @ConfPath("missing-test-section") val cfg1: TestConfig
                   )
 
+trait Conflict
+case class Conflict1() extends Conflict
+case class Conflict2(u: UnsolvableConflict) extends Conflict
+
+trait UnsolvableConflict
+class UnsolvableConflict1 extends UnsolvableConflict
+class UnsolvableConflict2 extends UnsolvableConflict
+
 class TestPlugin
   extends PluginDef
     with CatsDIEffectModule
@@ -83,7 +92,10 @@ class TestPlugin
   make[TestComponent1]
   make[TestFailingIntegrationResource]
   make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
-
+  make[Conflict].tagged(Env.Test).from[Conflict1]
+  make[Conflict].tagged(Env.Prod).from[Conflict2]
+  make[UnsolvableConflict].from[UnsolvableConflict1]
+  make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
 

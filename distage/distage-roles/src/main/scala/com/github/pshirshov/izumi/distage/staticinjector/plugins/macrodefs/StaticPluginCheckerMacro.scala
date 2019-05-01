@@ -1,26 +1,28 @@
 package com.github.pshirshov.izumi.distage.staticinjector.plugins.macrodefs
 
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator
+import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
 import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import com.github.pshirshov.izumi.distage.plugins.PluginBase
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy
-import com.github.pshirshov.izumi.distage.plugins.merge.ConfigurablePluginMergeStrategy.PluginMergeConfig
+import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
+import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
+import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.ConfigFactory
-import distage.{BootstrapModuleDef, DIKey, Injector, Module, ModuleBase, OrderedPlan}
+import distage._
 import io.github.classgraph.ClassGraph
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.reflect.api.Universe
@@ -29,42 +31,42 @@ import scala.reflect.runtime.currentMirror
 
 object StaticPluginCheckerMacro {
 
-  def implDefault[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(disableTags: c.Expr[String]): c.Expr[Unit] = {
+  def implDefault[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), disableTags, c.Expr[String](q"${""}"))
+    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(disableTags: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), disableTags, configFileRegex)
+    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, configFileRegex)
   }
 
-  def implWithPlugin[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], disableTags: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPlugin[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(pluginPath, disableTags, c.Expr[String](q"${""}"))
+    implWithPluginConfig[T, R](c)(pluginPath, activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithPluginConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], disableTags: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPluginConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     StaticPluginCheckerMacro.check(c)(
       pluginPath
       , c.Expr[String](q"${weakTypeOf[T].typeSymbol.asClass.fullName}")
       , c.Expr[String](q"${weakTypeOf[R].typeSymbol.asClass.fullName}")
-      , disableTags
+      , activations
       , configFileRegex
     )
   }
 
   def check(c: blackbox.Context)
            ( pluginsPackage: c.Expr[String]
-           , gcRoot: c.Expr[String]
-           , requirements: c.Expr[String]
-           , disabledTags: c.Expr[String]
-           , configFileRegex: c.Expr[String]
+             , gcRoot: c.Expr[String]
+             , requirements: c.Expr[String]
+             , activations: c.Expr[String]
+             , configFileRegex: c.Expr[String]
            ): c.Expr[Unit] = {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
@@ -117,26 +119,29 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val disableTags = stringLiteral(c)(c.universe)(disabledTags.tree).split(',').toSet
+    val activationsVals = stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
 
-    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, disableTags, abort = abort)
+    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
 
     c.universe.reify(())
   }
 
   def check(
              loadedPlugins: Seq[PluginBase]
-           , configModule: Option[ConfigModule]
-           , additional: ModuleBase
-           , root: Option[ModuleBase]
-           , moduleRequirements: Option[ModuleRequirements]
-           , disabledTags: Set[String]
-           , abort: String => Unit
+             , configModule: Option[ConfigModule]
+             , additional: ModuleBase
+             , root: Option[ModuleBase]
+             , moduleRequirements: Option[ModuleRequirements]
+             , activations: Seq[String]
+             , abort: String => Unit
            ): Unit = {
 
-    val module = new ConfigurablePluginMergeStrategy(PluginMergeConfig(BindingTag.Expressions.Or(disabledTags.map(BindingTag.apply).map(BindingTag.Expressions.Has))))
-      .merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
-      .definition
+    val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
+
+    val logger = IzLogger.NullLogger
+    val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(RoleAppLauncher.Options.use.name.long, a)).toVector))
+    val activation = new ActivationParser().parseActivation(logger, args, module, Map.empty, Map.empty)
+    val policy: PlanMergingPolicy = new PruningPlanMergingPolicy(logger, activation)
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
@@ -144,7 +149,9 @@ object StaticPluginCheckerMacro {
         .add[ConfigReferenceExtractor]
     })
 
-    val bootstrap = new DefaultBootstrapLocator(DefaultBootstrapLocator.noReflectionBootstrap overridenBy config)
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from(policy)
+    })
     val injector = Injector.inherit(bootstrap)
 
     val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)

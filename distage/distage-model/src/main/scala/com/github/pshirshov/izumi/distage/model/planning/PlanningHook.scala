@@ -13,11 +13,6 @@ trait PlanningHook {
 
   def hookDefinition(defn: ModuleBase): ModuleBase = defn
 
-  def hookStep(context: ModuleBase, currentPlan: DodgyPlan, binding: Binding, next: DodgyPlan): DodgyPlan = {
-    Quirks.discard(context, currentPlan, binding)
-    next
-  }
-
   def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = plan
 
   def phase10PostGC(plan: SemiPlan): SemiPlan = plan

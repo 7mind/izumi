@@ -13,13 +13,6 @@ trait ModuleBase {
 
   final def keys: Set[DIKey] = bindings.map(_.key)
 
-  override final def equals(obj: Any): Boolean = obj match {
-    case that: ModuleBase => bindings == that.bindings
-    case _ => false
-  }
-
-  override final def hashCode: Int = bindings.hashCode()
-
   override final def toString: String = bindings.toString()
 }
 
@@ -134,7 +127,7 @@ object ModuleBase {
             existingMappings
           } else {
             // merge tags wrt strange Binding equals
-            modulewiseMerge(newMappings, existingMappings intersect newMappings)
+            modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
           }
       }
 
@@ -149,10 +142,12 @@ object ModuleBase {
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
-    // Using lawless equals/hashcode
-    bs.groupBy(identity)
-      .values
-      .map(_.reduce(_ addTags _.tags))
+    bs.groupBy(_.group)
+      .map {
+        case (k, v) =>
+          assert(v.forall(_.key == k.key))
+          v.reduce(_ addTags _.tags)
+      }
       .toSet
   }
 

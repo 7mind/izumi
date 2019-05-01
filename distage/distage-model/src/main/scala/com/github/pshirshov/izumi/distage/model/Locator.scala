@@ -27,7 +27,7 @@ trait Locator {
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Keys may be not unique.
     *
-    * @see [[com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapLocator]]
+    * @see [[com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator]]
     */
   final def allInstances: Seq[IdentifiedRef] =
     parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances

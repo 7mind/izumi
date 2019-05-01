@@ -71,6 +71,7 @@ class IzString(s: String) {
       s
     }
   }
+
   @inline def centerEllipsed(maxLength: Int, ellipsis: Option[String]): String = {
     if (s.length <= maxLength) {
       s
@@ -95,7 +96,14 @@ class IzString(s: String) {
     }
   }
 
-
+  @inline def split2(splitter: Char): (String, String) = {
+    val parts = s.split(splitter)
+    if (parts.length > 2) {
+      (parts.head, parts.tail.mkString(splitter.toString))
+    } else {
+      (parts.head, parts.tail.mkString(splitter.toString))
+    }
+  }
 
   def uncapitalize: String = {
     if (s == null) null

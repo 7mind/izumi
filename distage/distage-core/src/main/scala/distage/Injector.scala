@@ -1,7 +1,7 @@
 package distage
 
 import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
-import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, DefaultBootstrapLocator}
+import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, BootstrapLocator}
 import com.github.pshirshov.izumi.distage.model.definition.BootstrapContextModule
 
 object Injector {
@@ -19,7 +19,7 @@ object Injector {
   /**
     * Create a new Injector from a custom [[BootstrapContextModule]]
     *
-    * @see [[DefaultBootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
+    * @see [[BootstrapLocator]] and [[CglibBootstrap]] for a list available bootstrap modules
     */
   def apply(bootstrapBase: BootstrapContextModule, overrides: BootstrapModule*): Injector = {
     bootstrap(bootstrapBase, overrides.merge)
@@ -39,7 +39,7 @@ object Injector {
                                overrides: BootstrapModule = BootstrapModule.empty,
                              ): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
-    val bootstrapLocator = new DefaultBootstrapLocator(bootstrapDefinition)
+    val bootstrapLocator = new BootstrapLocator(bootstrapDefinition)
     inherit(bootstrapLocator)
   }
 
@@ -55,21 +55,21 @@ object Injector {
 
   object NoCogen extends InjectorBootstrap {
     def apply(): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapLocator.noReflectionBootstrap)
+      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap)
     }
 
     def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapLocator.noReflectionBootstrap, overrides = overrides.merge)
+      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap, overrides = overrides.merge)
     }
   }
 
   object NoProxies extends InjectorBootstrap {
     def apply(): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapLocator.noProxiesBootstrap)
+      bootstrap(bootstrapBase = BootstrapLocator.noProxiesBootstrap)
     }
 
     def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(bootstrapBase = DefaultBootstrapLocator.noProxiesBootstrap, overrides = overrides.merge)
+      bootstrap(bootstrapBase = BootstrapLocator.noProxiesBootstrap, overrides = overrides.merge)
     }
   }
 
