@@ -24,7 +24,7 @@ class StaticPluginCheckerTest extends WordSpec {
   }
 
   "Check with invalid tags" in {
-    assertTypeError("""StaticPluginChecker.checkWithConfig[StaticTestPlugin, LogstageModuleRequirements]("", ".*check-test-good.conf")""")
+    assertTypeError("""StaticPluginChecker.checkWithConfig[StaticTestPlugin, LogstageModuleRequirements]("missing:tag", ".*check-test-good.conf")""")
   }
 
   "Check when config is false" in {
