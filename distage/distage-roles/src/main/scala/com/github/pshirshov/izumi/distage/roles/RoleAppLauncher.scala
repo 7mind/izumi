@@ -233,7 +233,7 @@ object RoleAppLauncher {
     final val logFormatParam = arg("log-format", "lf", "log format", "{hocon|json}")
     final val configParam = arg("config", "c", "path to config file", "<path>")
     final val dumpContext = flag("debug-dump-graph", "dump DI graph for debugging")
-    final val use = arg("use", "u", "activate choice on funcionality axis", "<axis>:<choice>")
+    final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
