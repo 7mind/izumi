@@ -12,5 +12,7 @@ class IRTMissingHandlerException(message: String, val v: Any, cause: Option[Thro
 
 class IRTLimitReachedException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
+class IRTUnathorizedRequestContextException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
+
 class IRTGenericFailure(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
