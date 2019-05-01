@@ -37,7 +37,7 @@ class Help[F[_] : DIEffect]
     val baseDoc =
       s"""izumi/distage role application launcher
          |
-         |  General commanline format:
+         |  General commandline format:
          |
          |    launcher [launcher options] [:role-name [role options] -- <role-args>]""".stripMargin
 
