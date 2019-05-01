@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, Si
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, UniqueActivationPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -48,7 +48,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val available = ActivationParser.findAvailableChoices(logger, defApp)
     val appActivation = AppActivation(available, activation)
     val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[UniqueActivationPlanMergingPolicy]
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
       make[AppActivation].from(appActivation)
     }
     TestEnvironment(

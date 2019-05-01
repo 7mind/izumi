@@ -88,8 +88,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val moduleProvider = makeModuleProvider(options, parameters, activation, roles, config, lateLogger)
     val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs
 
-    val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appModule = moduleProvider.appModules().merge overridenBy defApp
+    val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 

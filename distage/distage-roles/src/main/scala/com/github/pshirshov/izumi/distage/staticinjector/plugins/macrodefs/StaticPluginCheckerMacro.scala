@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, UniqueActivationPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -31,32 +31,32 @@ import scala.reflect.runtime.currentMirror
 
 object StaticPluginCheckerMacro {
 
-  def implDefault[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(disableTags: c.Expr[String]): c.Expr[Unit] = {
+  def implDefault[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), disableTags, c.Expr[String](q"${""}"))
+    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(disableTags: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), disableTags, configFileRegex)
+    implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, configFileRegex)
   }
 
-  def implWithPlugin[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], disableTags: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPlugin[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
-    implWithPluginConfig[T, R](c)(pluginPath, disableTags, c.Expr[String](q"${""}"))
+    implWithPluginConfig[T, R](c)(pluginPath, activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithPluginConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], disableTags: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPluginConfig[T <: PluginBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     StaticPluginCheckerMacro.check(c)(
       pluginPath
       , c.Expr[String](q"${weakTypeOf[T].typeSymbol.asClass.fullName}")
       , c.Expr[String](q"${weakTypeOf[R].typeSymbol.asClass.fullName}")
-      , disableTags
+      , activations
       , configFileRegex
     )
   }
@@ -141,7 +141,7 @@ object StaticPluginCheckerMacro {
     val logger = IzLogger.NullLogger
     val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(RoleAppLauncher.Options.use.name.long, a)).toVector))
     val activation = new ActivationParser().parseActivation(logger, args, module, Map.empty, Map.empty)
-    val policy: PlanMergingPolicy = new UniqueActivationPlanMergingPolicy(logger, activation)
+    val policy: PlanMergingPolicy = new PruningPlanMergingPolicy(logger, activation)
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {

@@ -11,10 +11,10 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.DIKey
 
 
-class UniqueActivationPlanMergingPolicy(
-                                         logger: IzLogger,
-                                         activation: AppActivation,
-                                       ) extends PlanMergingPolicyDefaultImpl {
+class PruningPlanMergingPolicy(
+                                logger: IzLogger,
+                                activation: AppActivation,
+                              ) extends PlanMergingPolicyDefaultImpl {
   private val activeTags = activation.active.values.toSet
 
   import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -54,14 +54,16 @@ class UniqueActivationPlanMergingPolicy(
         }
     }
 
-    val failed = lastTry.collect({case (k, f: DIKeyConflictResolution.Failed) => k -> f})
+    val failed = lastTry.collect({ case (k, f: DIKeyConflictResolution.Failed) => k -> f })
 
     if (failed.nonEmpty) {
       throwOnIssues(failed)
     } else {
-      logger.info(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, continuing...")
-      val good = lastTry.collect({case (_, DIKeyConflictResolution.Successful(s)) => s})
-      val allResolved = (resolved.values.flatten ++ good.flatten).toVector
+      val good = lastTry.collect({ case (k, DIKeyConflictResolution.Successful(s)) => k -> s })
+      val erased = good.filter(_._2.isEmpty)
+      logger.debug(s"Erased conflicts: ${erased.keys.niceList() -> "erased conflicts"}")
+      logger.info(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
+      val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
       SemiPlan(plan.definition, allResolved, plan.roots)
     }
   }

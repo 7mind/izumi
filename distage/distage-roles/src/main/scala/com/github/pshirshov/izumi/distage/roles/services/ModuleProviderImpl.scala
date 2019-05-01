@@ -31,7 +31,7 @@ class ModuleProviderImpl[F[_] : TagK](
       make[RolesInfo].from(roles)
       make[RawAppArgs].from(args)
       make[AppActivation].from(activation)
-      make[PlanMergingPolicy].from[UniqueActivationPlanMergingPolicy]
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
     }
 
     val loggerModule = new LogstageModule(logger.router, true)
