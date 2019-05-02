@@ -274,6 +274,11 @@ class HttpServer[C <: Http4sContext]
         logger.debug(s"${context -> null}: Request failed because of request limit reached $method: $error")
         dsl.TooManyRequests()
 
+      case Error(error: IRTUnathorizedRequestContextException) =>
+        logger.debug(s"${context -> null}: Request failed because of unexpected request context reached $method: $error")
+        // workaarount because implicits conflict
+        dsl.Forbidden().map(_.copy(status = dsl.Unauthorized))
+
       case Error(error) =>
         logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
         dsl.InternalServerError()
