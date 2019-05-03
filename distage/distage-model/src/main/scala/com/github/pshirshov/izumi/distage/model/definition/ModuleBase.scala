@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
+import cats.kernel.BoundedSemilattice
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilatice, ModuleBaseSemilattice}
 import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
@@ -19,8 +21,11 @@ trait ModuleBase {
 object ModuleBase {
   type Aux[S] = ModuleBase {type Self <: S}
 
-  implicit val moduleBaseApi: ModuleMake[ModuleBase] = s => new ModuleBase {
-    override val bindings: Set[Binding] = s
+  implicit val moduleBaseApi: ModuleMake[ModuleBase] = {
+    binds =>
+      new ModuleBase {
+        override val bindings: Set[Binding] = binds
+      }
   }
 
   def empty: ModuleBase = make(Set.empty)
@@ -151,8 +156,33 @@ object ModuleBase {
       .toSet
   }
 
+//  implicit def catsKernelStdPartialOrderHashForModuleBase[T <: ModuleBase]: PartialOrder[T] with Hash[T] =
+//    new PartialOrder[T] with Hash[T] {
+//      override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
+//
+//      override def hash(x: T): Int = x.hashCode()
+//
+//      override def eqv(x: T, y: T): Boolean = x == y
+//    }
+
+  /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_]: CatsBoundedSemilatice]: K[T] =
+    new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
+
 }
 
+private object ModuleBaseInstances {
 
+  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T] : ModuleMake] extends BoundedSemilattice[T] {
+    def empty: T = ModuleMake[T].empty
 
+    def combine(x: T, y: T): T = x ++ y
+  }
+
+  sealed abstract class CatsBoundedSemilatice[K[_]]
+  object CatsBoundedSemilatice {
+    implicit val get: CatsBoundedSemilatice[BoundedSemilattice] = null
+  }
+
+}
 

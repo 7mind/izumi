@@ -9,7 +9,6 @@ import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import distage._
-import distage.interop.cats._
 import org.scalatest.{GivenWhenThen, WordSpec}
 
 class CatsExtensionsTest extends WordSpec with GivenWhenThen {

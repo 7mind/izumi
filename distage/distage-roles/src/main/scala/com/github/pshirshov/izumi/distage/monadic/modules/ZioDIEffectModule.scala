@@ -17,7 +17,8 @@ trait ZioDIEffectModule extends ModuleDef {
   make[ThreadPoolExecutor].named("zio.pool.cpu")
     .fromResource {
       logger: IzLogger =>
-        ResourceRewriter.fromExecutorService(logger, Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor])
+        val coresOr2 = Runtime.getRuntime.availableProcessors() max 2
+        ResourceRewriter.fromExecutorService(logger, Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
     }
 
   make[ThreadPoolExecutor].named("zio.pool.io")
