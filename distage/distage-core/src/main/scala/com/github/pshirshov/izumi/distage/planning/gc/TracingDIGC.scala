@@ -106,7 +106,7 @@ class TracingDIGC
 object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: SemiPlan): SemiPlan = {
     plan.gcMode match {
-      case GCMode.GCRoot(roots) =>
+      case GCMode.GCRoots(roots) =>
         assert(roots.nonEmpty)
         val collected = new TracingDIGC(roots, plan.index, ignoreMissing = false).gc(plan.steps)
 

@@ -11,7 +11,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition  = PlannerInput(new ModuleDef {
+    val definition  = PlannerInput.noGc(new ModuleDef {
       make[TestDependency]
       make[StableObjectInheritingTrait1.TestDependency]
     })
@@ -27,7 +27,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition  = PlannerInput(new ModuleDef {
+    val definition  = PlannerInput.noGc(new ModuleDef {
       make[TestDependency]
       make[TestClass]
     })
@@ -42,7 +42,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
     val testProviderModule = new TestModule
 
-    val definition  = PlannerInput(new ModuleDef {
+    val definition  = PlannerInput.noGc(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
@@ -61,7 +61,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       val testProviderModule = new TestModule
 
-      val definition  = PlannerInput(new ModuleDef {
+      val definition  = PlannerInput.noGc(new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.TestClass]
         make[testProviderModule.TestDependency]
@@ -85,7 +85,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
     val testProviderModule = new TestModule
 
-    val definition  = PlannerInput(new ModuleDef {
+    val definition  = PlannerInput.noGc(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
@@ -103,7 +103,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   "can handle class local path-dependent injections (macros can)" in {
-    val definition  = PlannerInput(new ModuleDef {
+    val definition  = PlannerInput.noGc(new ModuleDef {
       make[TopLevelPathDepTest.type].from[TopLevelPathDepTest.type](TopLevelPathDepTest: TopLevelPathDepTest.type)
       make[TopLevelPathDepTest.TestClass]
       make[TopLevelPathDepTest.TestDependency]
@@ -122,7 +122,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
-      val definition  = PlannerInput(new ModuleDef {
+      val definition  = PlannerInput.noGc(new ModuleDef {
         make[TestFactory]
       })
 
@@ -137,7 +137,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
-      val definition  = PlannerInput(new ModuleDef {
+      val definition  = PlannerInput.noGc(new ModuleDef {
         make[Circular1]
         make[Circular2]
       })
@@ -154,7 +154,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassStablePathsCase._
       import StableObjectInheritingTrait._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[ByNameCircular1]
         make[ByNameCircular2]
       })
@@ -171,7 +171,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
-      val definition  = PlannerInput(new ModuleDef {
+      val definition  = PlannerInput.noGc(new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.TestFactory]
       })
@@ -187,7 +187,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
-      val definition  = PlannerInput(new ModuleDef {
+      val definition  = PlannerInput.noGc(new ModuleDef {
         make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.Circular1]
         make[testProviderModule.Circular2]
@@ -200,7 +200,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
-    private val definition  = PlannerInput(new ModuleDef {
+    private val definition  = PlannerInput.noGc(new ModuleDef {
       make[InnerPathDepTest.this.type].from[InnerPathDepTest.this.type](InnerPathDepTest.this: InnerPathDepTest.this.type)
       make[TestClass]
       make[TestDependency]

@@ -21,7 +21,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestDependency]
       stat[TestTrait]
     }
-    val plan = injector.plan(PlannerInput(definition))
+    val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestTrait].x == TestDependency(TestConf(false)))
@@ -39,7 +39,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestDependency]
       stat[TestGenericConfFactory[TestConfAlias]]
     }
-    val plan = injector.plan(PlannerInput(definition))
+    val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestDependency] == TestDependency(TestConf(false)))
@@ -58,7 +58,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
       stat[TestFactory]
       stat[TestGenericConfFactory[TestConfAlias]]
     }
-    val plan = injector.plan(PlannerInput(definition))
+    val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
     val factory = context.get[TestFactory]
@@ -84,7 +84,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
         (conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10)
       }
     }
-    val plan = injector.plan(PlannerInput(definition))
+    val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[ConcreteProduct] == ConcreteProduct(TestConf(false), 50))

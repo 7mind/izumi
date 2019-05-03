@@ -11,7 +11,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle factory injections" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Factory]
       make[Dependency]
       make[OverridingFactory]
@@ -48,7 +48,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle generic arguments in cglib factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
@@ -67,7 +67,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   "handle named assisted dependencies in cglib factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[NamedAssistedFactory]
       make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
@@ -92,7 +92,7 @@ class FactoriesTest extends WordSpec with MkInjector {
     intercept[UnsupportedWiringException] {
       import FactoryCase1._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[FactoryProducingFactory]
         make[Dependency]
       })
@@ -110,7 +110,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   "cglib factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dependency]
       make[TestClass]
       make[Factory]

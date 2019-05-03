@@ -48,7 +48,7 @@ final class PlannerDefaultImpl
     val roots = if (allRoots.isEmpty) {
       GCMode.NoGC
     } else {
-      GCMode.GCRoot(allRoots)
+      GCMode.GCRoots(allRoots)
     }
 
     order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, roots))

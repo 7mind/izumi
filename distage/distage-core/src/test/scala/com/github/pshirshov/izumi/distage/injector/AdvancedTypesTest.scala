@@ -14,7 +14,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "support generics" in {
     import TypesCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[List[Dep]].named("As").from(List(DepA()))
       make[List[Dep]].named("Bs").from(List(DepB()))
       make[List[DepA]].from(List(DepA(), DepA(), DepA()))
@@ -34,7 +34,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "support classes with typealiases" in {
     import TypesCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[DepA]
       make[TestClass2[TypeAliasDepA]]
     })
@@ -49,7 +49,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "support traits with typealiases" in {
     import TypesCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[DepA]
       make[TestTrait]
     })
@@ -64,7 +64,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "type annotations in di keys do not result in different keys" in {
     import TraitCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dependency1 @Id("special")]
       make[Trait1]
     })
@@ -82,7 +82,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle `with` types" in {
     import TypesCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait2 with Trait1].from[Trait6]
@@ -100,7 +100,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle refinement & structural types" in {
     import TypesCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
@@ -131,7 +131,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     }
 
     val injector = mkInjector()
-    val plan = injector.plan(PlannerInput(new Definition[Dep2]))
+    val plan = injector.plan(PlannerInput.noGc(new Definition[Dep2]))
     val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait1[Dep, Dep2]]
@@ -148,7 +148,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
       make[T { def dep: Dep }].from[G]
     }
 
-    val definition = PlannerInput(new Definition[Trait1, Trait1])
+    val definition = PlannerInput.noGc(new Definition[Trait1, Trait1])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -167,7 +167,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
       make[T with Trait1].from[G]
     }
 
-    val definition = PlannerInput(new Definition[Trait3[Dep], Trait3[Dep]])
+    val definition = PlannerInput.noGc(new Definition[Trait3[Dep], Trait3[Dep]])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -186,7 +186,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
       make[Trait3[T] with K].from[Trait5[T]]
     }
 
-    val definition = PlannerInput(new Definition[Dep, Trait4])
+    val definition = PlannerInput.noGc(new Definition[Dep, Trait4])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
@@ -199,7 +199,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
 
   "structural types are unsupported in class strategy" in {
     intercept[UnsupportedWiringException] {
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[{def a: Int}]
         make[Int].from(5)
       })
@@ -216,7 +216,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     intercept[UnsupportedWiringException] {
       import TypesCase4._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Dep {}]
       })
 

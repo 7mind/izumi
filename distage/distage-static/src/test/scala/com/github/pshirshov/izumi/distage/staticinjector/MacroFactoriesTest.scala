@@ -10,7 +10,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle macro factory injections" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new StaticModuleDef {
+    val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[Factory]
       stat[Dependency]
       stat[OverridingFactory]
@@ -47,7 +47,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle generic arguments in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new StaticModuleDef {
+    val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
@@ -66,7 +66,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new StaticModuleDef {
+    val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[AssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
@@ -83,7 +83,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "handle named assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new StaticModuleDef {
+    val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[NamedAssistedFactory]
       stat[Dependency]
       make[Dependency].named("special").from(SpecialDep())
@@ -124,7 +124,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
   "macro factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition = PlannerInput(new StaticModuleDef {
+    val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[Dependency]
       stat[TestClass]
       stat[Factory]

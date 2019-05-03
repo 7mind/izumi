@@ -10,7 +10,7 @@ class ProvidersTest extends WordSpec with MkInjector {
   "instantiate provider bindings" in {
     import ProviderCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[TestClass].from((_: Dependency1) => new TestClass(null))
       make[Dependency1].from(() => new Dependency1Sub {})
     })
@@ -27,7 +27,7 @@ class ProvidersTest extends WordSpec with MkInjector {
   "support named bindings in method reference providers" in {
     import ProviderCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[TestDependency].named("classdeftypeann1")
       make[TestClass].from(implType _)
     })
@@ -45,7 +45,7 @@ class ProvidersTest extends WordSpec with MkInjector {
   "support named bindings in lambda providers" in {
     import ProviderCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[TestDependency].named("classdeftypeann1")
       make[TestClass].from { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
     })

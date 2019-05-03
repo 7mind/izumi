@@ -33,7 +33,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     }
 
     val listInjector = mkInjector()
-    val listPlan = listInjector.plan(PlannerInput(Definition[List](5)))
+    val listPlan = listInjector.plan(PlannerInput.noGc(Definition[List](5)))
     val listContext = listInjector.produceUnsafe(listPlan)
 
     assert(listContext.get[TestTrait].get == List(5))
@@ -46,7 +46,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
     val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.plan(PlannerInput(Definition[OptionT[List, ?]](5)))
+    val optionTPlan = optionTInjector.plan(PlannerInput.noGc(Definition[OptionT[List, ?]](5)))
     val optionTContext = optionTInjector.produceUnsafe(optionTPlan)
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
@@ -55,7 +55,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
     val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.plan(PlannerInput(Definition[Either[String, ?]](5)))
+    val eitherPlan = eitherInjector.plan(PlannerInput.noGc(Definition[Either[String, ?]](5)))
 
     val eitherContext = eitherInjector.produceUnsafe(eitherPlan)
 
@@ -67,7 +67,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
       == Right(Right(Right(Right(Right("aaa"))))))
 
     val idInjector = mkInjector()
-    val idPlan = idInjector.plan(PlannerInput(Definition[id](5)))
+    val idPlan = idInjector.plan(PlannerInput.noGc(Definition[id](5)))
     val idContext = idInjector.produceUnsafe(idPlan)
 
     assert(idContext.get[TestTrait].get == 5)
@@ -152,7 +152,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     val value: Either[String, Int] = Right(5)
     val definition = new Definition[Either, Option, Int](value)
 
-    val context = Injector.Standard().produceUnsafe(PlannerInput(definition))
+    val context = Injector.Standard().produceUnsafe(PlannerInput.noGc(definition))
     assert(context != null)
 
     assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])

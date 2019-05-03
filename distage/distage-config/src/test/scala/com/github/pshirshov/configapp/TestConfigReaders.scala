@@ -35,27 +35,27 @@ case class Wrapper[A](wrap: A)
 case class Service[A](@AutoConf conf: A)
 
 object TestConfigReaders {
-  final val mapDefinition = PlannerInput(new ModuleDef {
+  final val mapDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[MapCaseClass]]
   })
 
-  final val listDefinition = PlannerInput(new ModuleDef {
+  final val listDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[ListCaseClass]]
   })
 
-  final val optDefinition = PlannerInput(new ModuleDef {
+  final val optDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[OptionCaseClass]]
   })
 
-  final val backticksDefinition = PlannerInput(new ModuleDef {
+  final val backticksDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[BackticksCaseClass]]
   })
 
-  final val sealedDefinition = PlannerInput(new ModuleDef {
+  final val sealedDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[SealedCaseClass]]
   })
 
-  final val tupleDefinition = PlannerInput(new ModuleDef {
+  final val tupleDefinition = PlannerInput.noGc(new ModuleDef {
     make[Service[TupleCaseClass]]
   })
 }

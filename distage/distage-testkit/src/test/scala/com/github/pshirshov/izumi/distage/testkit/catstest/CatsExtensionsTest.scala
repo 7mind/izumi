@@ -19,7 +19,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       import BasicCase1._
       import CircularCase3._
 
-      val definition1 = PlannerInput(new ModuleDef {
+      val definition1 = PlannerInput.noGc(new ModuleDef {
         make[SelfReference]
       })
 
@@ -36,7 +36,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       Then("traverse should substitute")
       final case class TestDependency1Eq(unresolved: NotInContext) extends TestDependency1
       val testDependencyPlan = injector.plan(
-        PlannerInput(new ModuleDef {
+        PlannerInput.noGc(new ModuleDef {
           make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
         })
       )

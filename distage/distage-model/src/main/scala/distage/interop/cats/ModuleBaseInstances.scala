@@ -2,6 +2,7 @@ package distage.interop.cats
 
 import cats.kernel.instances.set._
 import cats.kernel.{BoundedSemilattice, Hash, Monoid, PartialOrder}
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
 import com.github.pshirshov.izumi.distage.model.plan.SemiPlan
 
@@ -39,7 +40,7 @@ trait SemiPlanInstances {
 
   implicit def catsKernelStdMonoidForSemiPlan: Monoid[SemiPlan] =
     new Monoid[SemiPlan] {
-      override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty, Set.empty)
+      override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty, GCMode.NoGC)
 
       override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
     }

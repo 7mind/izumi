@@ -26,7 +26,7 @@ class LoggerInjectionTest extends WordSpec {
       val testSink = new TestSink()
       val router = ConfigurableLogRouter(IzLogger.Level.Trace, testSink)
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[ExampleService]
         make[ExampleApp]
       })

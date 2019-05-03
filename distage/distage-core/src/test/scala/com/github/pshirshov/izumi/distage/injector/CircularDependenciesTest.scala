@@ -15,7 +15,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support circular dependencies" in {
     import CircularCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular2]
       make[Circular1]
     })
@@ -32,7 +32,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support circular dependencies with final class implementations" in {
     import CircularCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular2].from[Circular2Impl]
       make[Circular1].from[Circular1Impl]
     })
@@ -49,7 +49,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support trait initialization" in {
     import CircularCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[CircularBad1]
       make[CircularBad2]
     })
@@ -68,7 +68,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support circular dependencies in providers" in {
     import CircularCase1._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular2].from { c: Circular1 => new Circular2(c) }
       make[Circular1].from { c: Circular2 =>
         val a = new Circular1 {
@@ -90,7 +90,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support complex circular dependencies" in {
     import CircularCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
@@ -117,7 +117,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Supports self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[SelfReference]
     })
 
@@ -133,7 +133,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Support self-referencing provider" in {
     import CircularCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[SelfReference].from {
         self: SelfReference =>
           new SelfReference(self)
@@ -152,7 +152,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Support by-name self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[ByNameSelfReference]
     })
 
@@ -168,7 +168,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Locator.instances returns instances in the order they were created in" in {
     import CircularCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular3]
       make[Circular1]
       make[Circular2]
@@ -199,7 +199,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support by-name circular dependencies" in {
     import ByNameCycle._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular2]
       make[Circular1]
       make[Int].from(1)
@@ -222,7 +222,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support generic circular dependencies when generics are erased by type-erasure" in {
     import CircularCase5._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[ErasedCircular[Dependency]]
       make[PhantomDependency[Dependency]]
     })
@@ -240,7 +240,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support fully generic circular dependencies" in {
     import CircularCase5._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[GenericCircular[Dependency]]
       make[Dependency]
     })
@@ -258,7 +258,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support named circular dependencies" in {
     import CircularCase4._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[IdTypeCircular]
       make[IdParamCircular]
       make[Dependency[IdTypeCircular]].named("special")
@@ -279,7 +279,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "support type refinements in circular dependencies" in {
     import CircularCase6._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dependency {def dep: RefinedCircular}].from[RealDependency]
       make[RefinedCircular]
     })

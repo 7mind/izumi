@@ -15,7 +15,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
   "support trait fields" in {
     import TraitCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[ATraitWithAField]
     })
 
@@ -29,7 +29,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
   "support named bindings in cglib traits" in {
     import TraitCase4._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep].named("A").from[DepA]
       make[Dep].named("B").from[DepB]
       make[Trait]
@@ -54,7 +54,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
   "override protected defs in cglib traits" in {
     import TraitCase5._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[TestTrait]
       make[Dep]
     })
@@ -72,7 +72,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     val ex = intercept[ProvisioningException] {
       import TraitCase5._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[TestTrait {def dep: Dep}]
         make[Dep]
       })
@@ -91,7 +91,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     val ex = intercept[ProvisioningException] {
       import TypesCase3._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Dep]
         make[Dep2]
         make[Trait2 with Trait1]
@@ -112,7 +112,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
   "handle refinement & structural types" in {
     import TypesCase3._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait1 {def dep: Dep2}].from[Trait3[Dep2]]
@@ -134,7 +134,7 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     intercept[ClassCastException] {
       import TraitCase6._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Dep]
         make[AnyValDep].from(AnyValDep(_))
         make[TestTrait]

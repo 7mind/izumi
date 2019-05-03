@@ -10,11 +10,11 @@ abstract class AbstractGreeterServer[R[+_, +_] : BIO, C]
 
   import R._
 
-  override def greet(ctx: C, name: String, surname: String): Just[String] = point {
+  override def greet(ctx: C, name: String, surname: String): Just[String] = now {
     s"Hi, $name $surname!"
   }
 
-  override def sayhi(ctx: C): Just[String] = point {
+  override def sayhi(ctx: C): Just[String] = now {
     "Hi!"
   }
 
@@ -22,7 +22,7 @@ abstract class AbstractGreeterServer[R[+_, +_] : BIO, C]
     Right("value")
   }
 
-  override def nothing(ctx: C): Or[Nothing, String] = point {
+  override def nothing(ctx: C): Or[Nothing, String] = now {
     ""
   }
 }

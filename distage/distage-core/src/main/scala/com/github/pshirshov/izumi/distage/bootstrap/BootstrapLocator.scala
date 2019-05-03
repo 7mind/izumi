@@ -30,7 +30,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 
   val parent: Option[AbstractLocator] = None
 
-  val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput(bindings))
+  val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput.noGc(bindings))
 
   private val bootstrappedContext: Locator = {
     val resource = bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)

@@ -52,7 +52,7 @@ class HttpServer3(@AutoConf val listenOn: HostPort) extends TestAppService {
 }
 
 object TestConfigApp {
-  final val definition = PlannerInput(new ModuleDef {
+  final val definition = PlannerInput.noGc(new ModuleDef {
     make[HttpServer1]
     make[HttpServer2]
     make[HttpServer3]
@@ -83,7 +83,7 @@ object TestConfigApp {
     make[TestConfigApp]
   })
 
-  final val setDefinition = PlannerInput(new ModuleDef {
+  final val setDefinition = PlannerInput.noGc(new ModuleDef {
     many[TestAppService]
         .add[DataPuller1]
   })

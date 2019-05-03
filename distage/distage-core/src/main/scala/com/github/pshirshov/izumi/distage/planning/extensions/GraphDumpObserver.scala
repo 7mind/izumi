@@ -85,7 +85,7 @@ final class GraphDumpObserver
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
     val roots = finalPlan.gcMode match {
-      case GCMode.GCRoot(r) =>
+      case GCMode.GCRoots(r) =>
         r
       case GCMode.NoGC =>
         Set.empty[DIKey]

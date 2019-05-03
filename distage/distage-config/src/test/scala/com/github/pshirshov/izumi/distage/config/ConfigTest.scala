@@ -159,7 +159,7 @@ class ConfigTest extends WordSpec {
 
       val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[TestDependency]
         make[TestTrait]
       })
@@ -176,7 +176,7 @@ class ConfigTest extends WordSpec {
 
       val injector = Injector.Standard(mkConfigModule("fixtures-test.conf"))
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[TestDependency]
         make[TestFactory]
         make[TestGenericConfFactory[TestConfAlias]]

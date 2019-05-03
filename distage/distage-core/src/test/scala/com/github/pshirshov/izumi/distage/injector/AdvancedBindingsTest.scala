@@ -16,13 +16,13 @@ class AdvancedBindingsTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
 
-    val def1 = PlannerInput(new ModuleDef {
+    val def1 = PlannerInput.noGc(new ModuleDef {
       todo[TestDependency0]
     })
-    val def2 = PlannerInput(new ModuleDef {
+    val def2 = PlannerInput.noGc(new ModuleDef {
       make[TestDependency0].todo
     })
-    val def3 = PlannerInput(new ModuleDef {
+    val def3 = PlannerInput.noGc(new ModuleDef {
       make[TestDependency0].named("fug").todo
     })
 
@@ -38,7 +38,7 @@ class AdvancedBindingsTest extends WordSpec with MkInjector {
   "Set element references are the same as their referees" in {
     import SetCase2._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       make[Service1]
 
       many[Service]

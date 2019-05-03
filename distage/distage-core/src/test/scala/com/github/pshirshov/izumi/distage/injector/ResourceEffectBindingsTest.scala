@@ -66,7 +66,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "execute effects again in reference bindings" in {
       val execIncrement = (_: Ref[Fn, Int]).update(_ + 1)
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Ref[Fn, Int]].fromEffect(Ref[Fn](0))
 
         make[Fn[Int]].from(execIncrement)
@@ -88,7 +88,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "Support self-referencing circular effects" in {
       import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase3._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
         make[SelfReference].fromEffect {
           (ref: Ref[Fn, Boolean], self: SelfReference) =>
@@ -120,7 +120,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     }
 
     "work with set bindings" in {
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Ref[Fn, Set[Char]]].fromEffect(Ref[Fn](Set.empty[Char]))
 
         many[Char]
@@ -223,7 +223,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "work in a basic case in Identity monad" in {
       import ClassResourceCase._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Res].fromResource[SimpleResource]// FIXME: syntax
       })
 
@@ -243,7 +243,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "work in a basic case in Suspend2 monad" in {
       import ClassResourceCase._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[Res].fromResource[SuspendResource]
       })
 
@@ -294,7 +294,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "work with set bindings" in {
       import com.github.pshirshov.izumi.distage.fixtures.ResourceCases.ClassResourceCase._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         many[Res]
           .addResource[SimpleResource]
           .addResource[SuspendResource]
@@ -322,7 +322,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "incompatible effects error aborts interpreter before any work is done" in {
       import BasicCase1._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[NotInContext]
         make[TestClass]
         make[TestDependency3]
@@ -363,7 +363,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     "deallocate correctly in case of exceptions" in {
       import ResourceCase1._
 
-      val definition = PlannerInput(new ModuleDef {
+      val definition = PlannerInput.noGc(new ModuleDef {
         make[mutable.Queue[Ops]].fromEffect(queueEffect)
         make[X].fromResource[XResource]
         make[Y].fromResource[YResource]
