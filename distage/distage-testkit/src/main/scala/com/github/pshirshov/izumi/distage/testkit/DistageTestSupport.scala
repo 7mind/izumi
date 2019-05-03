@@ -28,7 +28,7 @@ import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
 
 
-abstract class DistageTestSupport[F[_] : TagK]
+abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   extends DISyntax[F]
     with IgnoreSupport
     with SuppressionSupport {
