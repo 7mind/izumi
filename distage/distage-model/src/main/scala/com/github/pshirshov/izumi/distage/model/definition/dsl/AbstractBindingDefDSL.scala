@@ -1,10 +1,11 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, MultipleRef, SetRef, SingletonInstruction, SingletonRef}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
@@ -14,12 +15,14 @@ import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
+trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   private[definition] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
+
+  private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): MultipleDSL[T]
 
   private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
 
@@ -35,6 +38,11 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = registered(new SingletonRef(Bindings.binding[T]))
     _bindDSL[T](ref)
+  }
+
+  final protected def bindMany[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    val ref = registered(new MultipleRef(Bindings.binding[T]))
+    _multipleDSL[T](ref)
   }
 
   /**
@@ -131,6 +139,22 @@ object AbstractBindingDefDSL {
     def key: DIKey.TypeKey = initial.key
 
     def append(op: SingletonInstruction): SingletonRef = {
+      ops += op
+      this
+    }
+  }
+
+  final class MultipleRef(implBinding: SingletonBinding[DIKey.BasicKey], ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
+    override def interpret: Seq[Binding] = {
+      val referenceBindings = ops.map {
+        case ImplWithReference(key) =>
+          SingletonBinding(key, ImplDef.ReferenceImpl(implBinding.implementation.implType, implBinding.key, weak = false))
+      }.toList
+
+      implBinding :: referenceBindings
+    }
+
+    def append(op: MultipleInstruction): MultipleRef = {
       ops += op
       this
     }
@@ -233,6 +257,13 @@ object AbstractBindingDefDSL {
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
 
     final case class SetIdFromImplName() extends SingletonInstruction
+  }
+
+  sealed trait MultipleInstruction
+
+  object MultipleInstruction {
+
+    final case class ImplWithReference(key: DIKey) extends MultipleInstruction
   }
 
   sealed trait SetInstruction

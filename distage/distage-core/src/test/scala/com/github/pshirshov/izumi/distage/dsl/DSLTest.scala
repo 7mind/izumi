@@ -300,6 +300,16 @@ class DSLTest extends WordSpec {
       assert(definition1.bindings.map(_.tags.strings) == Set(Set("tag1"), Set("tag2")))
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
+
+    "support binding to multiple interfaces" in {
+      import BasicCase6._
+
+      val definition = new ModuleDef {
+        bindMany[ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definition != null)
+    }
   }
 
 }

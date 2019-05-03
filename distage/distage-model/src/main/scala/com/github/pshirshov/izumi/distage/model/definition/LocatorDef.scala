@@ -4,6 +4,7 @@ import com.github.pshirshov.izumi.distage.AbstractLocator
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL
+import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
@@ -24,12 +25,15 @@ import scala.collection.mutable
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able to unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
 trait LocatorDef
   extends AbstractLocator
-     with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.SetDSL] {
+    with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
   override protected[distage] def finalizers[F[_] : universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
   override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
+
+  override private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): LocatorDef.MultipleDSL[T] =
+    new definition.LocatorDef.MultipleDSL[T](ref)
 
   override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): LocatorDef.SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
@@ -107,6 +111,25 @@ object LocatorDef {
     }
   }
 
+  final class MultipleDSL[T]
+  (
+    protected val mutableState: MultipleRef
+  ) extends MultipleDSLMutBase[T] {
+
+    def to[I <: T : Tag]: MultipleDSL[T] = {
+      addOp(ImplWithReference(DIKey.get[I]))(new MultipleDSL[T](_))
+    }
+
+  }
+
+  sealed trait MultipleDSLMutBase[T] extends MultipleDSLBase[T] {
+    protected def mutableState: MultipleRef
+
+    protected def addOp[R](op: MultipleInstruction)(newState: MultipleRef => R): R = {
+      newState(mutableState.append(op))
+    }
+  }
+
   final class SetDSL[T](protected val mutableState: SetRef) extends SetDSLMutBase[T] {
     def named(name: String): SetNamedDSL[T] =
       addOp(SetIdAll(name))(new SetNamedDSL(_))
@@ -134,6 +157,9 @@ object LocatorDef {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def bind(impl: ImplDef): AfterBind
+  }
+
+  trait MultipleDSLBase[T] {
   }
 
   trait SetDSLBase[T, AfterAdd] {
