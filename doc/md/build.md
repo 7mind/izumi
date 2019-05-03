@@ -6,7 +6,7 @@ Prerequisites
 
 On mac:
 
-```
+```bash
 brew tap caskroom/versions
 brew update
 brew install homebrew/cask/java sbt npm go
@@ -30,3 +30,10 @@ So, in case you wish to work with IDL animal model project you should:
 1. Perform `sbt publishLocal` from project root
 2. `cd` into [sbt/sbt-tests/src/sbt-test](sbt/sbt-tests/src/sbt-test/) or open it as a project
 3. Play 
+
+Docs
+----
+
+```bash
+sbt 'mdoc --no-link-hygiene --watch'
+```

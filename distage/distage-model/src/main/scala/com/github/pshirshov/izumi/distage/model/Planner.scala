@@ -60,4 +60,6 @@ trait Planner {
   def freeze(plan: DodgyPlan): SemiPlan
 
   def finish(semiPlan: SemiPlan): OrderedPlan
+
+  final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = plan(PlannerInput(input, gcMode))
 }

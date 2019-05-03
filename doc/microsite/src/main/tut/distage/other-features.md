@@ -40,9 +40,9 @@ val HACK_OVERRIDE_module = new ModuleDef {
 ```
 
 ```scala mdoc:override
-val roots = Set[DIKey](DIKey.get[A])
+val gc = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
 
-val locator = Injector().produceUnsafe(HACK_OVERRIDE_module, roots = roots)
+val locator = Injector().produceUnsafe(HACK_OVERRIDE_module, mode = gc)
 
 // A and B are here
 locator.find[A]

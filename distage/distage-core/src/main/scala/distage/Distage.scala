@@ -22,6 +22,9 @@ trait Distage {
   type Locator = model.Locator
   type Producer = model.Producer
 
+  type GCMode = model.GCMode
+  val GCMode: model.GCMode.type = model.GCMode
+
   type PlannerInput = model.PlannerInput
   val PlannerInput: model.PlannerInput.type = model.PlannerInput
 

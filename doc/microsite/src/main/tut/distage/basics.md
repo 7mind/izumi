@@ -53,7 +53,7 @@ The app above uses `Greeter` and `Byer` to hold a simple conversation with the u
 To actually run the app, we'll have to bind the real implementations of `Greeter` and `Byer`.
 
 ```scala mdoc
-import distage.{ModuleDef, Injector}
+import distage.{ModuleDef, Injector, GCMode}
 
 object HelloByeModule extends ModuleDef {
   make[Greeter].from[PrintGreeter]
@@ -79,7 +79,7 @@ object HACK_OVERRIDE_HelloByeModule extends ModuleDef {
 ```scala mdoc:override:silent
 val injector = Injector()
 
-val plan = injector.plan(HACK_OVERRIDE_HelloByeModule)
+val plan = injector.plan(HACK_OVERRIDE_HelloByeModule, GCMode.NoGC)
 val objects = injector.produceUnsafe(plan)
 
 val app = objects.get[HelloByeApp]
@@ -95,7 +95,7 @@ Once finished, it will happily return the `plan` back to you as a simple datatyp
 We can print `HelloByeModule`'s plan while we're at it:
 
 ```scala mdoc:invisible
-val HACK_OVERRIDE_plan = injector.plan(HelloByeModule)
+val HACK_OVERRIDE_plan = injector.plan(HelloByeModule, GCMode.NoGC)
 ```
 
 ```scala mdoc:override
@@ -140,7 +140,7 @@ val caps = HACK_OVERRIDE_HelloByeModule.overridenBy(new ModuleDef {
   })
 })
 
-val capsUniverse = injector.produceUnsafe(caps)
+val capsUniverse = injector.produceUnsafe(caps, GCMode.NoGC)
 ```
 
 ```scala mdoc
@@ -207,7 +207,7 @@ object HelloByeModule extends ModuleDef {
 ```scala mdoc
 import scala.util.Random
 
-val objects = Injector().produceUnsafe(HelloByeModule)
+val objects = Injector().produceUnsafe(HelloByeModule, GCMode.NoGC)
 
 objects.run {
   (hello: Hello, bye: Bye) =>
@@ -329,7 +329,7 @@ val finalModule = Seq(
     HACK_OVERRIDE_HttpServerModule,
   ).merge
 
-val objects = Injector().produceUnsafe(finalModule)
+val objects = Injector().produceUnsafe(finalModule, GCMode.NoGC)
 
 val server = objects.get[HttpServer]
 ```
@@ -474,7 +474,7 @@ val HACK_OVERRIDE_module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc:override
-Injector().produceF[IO](HACK_OVERRIDE_module).use {
+Injector().produceF[IO](HACK_OVERRIDE_module, GCMode.NoGC).use {
   objects =>
     objects.get[MyApp].run
 }.unsafeRunSync()
@@ -512,7 +512,7 @@ val HACK_OVERRIDE_module = new ModuleDef {
 ```
 
 ```scala mdoc:override
-val closedInit = Injector().produce(HACK_OVERRIDE_module).use {
+val closedInit = Injector().produce(HACK_OVERRIDE_module, GCMode.NoGC).use {
   objects =>
     val init = objects.get[Init] 
     println(init.initialized)
@@ -572,7 +572,7 @@ object KVStore {
     ref <- Ref.make(Map.empty[String, String])
     kvStore = new KVStore[IO] {
       def put(key: String, value: String): IO[Nothing, Unit] =
-        ref.update(_ + (key -> value)).void
+        ref.update(_ + (key -> value)).unit
       
       def get(key: String): IO[NoSuchElementException, String] = 
         for {
@@ -594,7 +594,7 @@ val kvStoreModule = new ModuleDef {
 }
 
 new DefaultRuntime{}.unsafeRun {
-  Injector().produceF[IO[Throwable, ?]](kvStoreModule)
+  Injector().produceF[IO[Throwable, ?]](kvStoreModule, GCMode.NoGC)
     .use {
       objects =>
         val kv = objects.get[KVStore[IO]]
@@ -707,7 +707,7 @@ object TryInterpreters extends ModuleDef {
 val TryProgram = new HACK_OVERRIDE_Program[Try] ++ TryInterpreters
 
 // create object graph
-val objects = Injector().produceUnsafe(TryProgram)
+val objects = Injector().produceUnsafe(TryProgram, GCMode.NoGC)
 
 // run
 objects.get[TaglessProgram[Try]].program
