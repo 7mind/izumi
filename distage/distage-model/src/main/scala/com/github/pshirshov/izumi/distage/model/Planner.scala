@@ -2,13 +2,30 @@ package com.github.pshirshov.izumi.distage.model
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 import com.github.pshirshov.izumi.distage.model.plan._
+import com.github.pshirshov.izumi.distage.model.reflection.universe
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+
+sealed trait GCMode {
+  def toSet: Set[DIKey]
+}
+object GCMode {
+  case class GCRoot(roots: Set[DIKey]) extends GCMode {
+    override def toSet: Set[universe.RuntimeDIUniverse.DIKey] = roots
+  }
+  case object NoGC extends GCMode {
+    override def toSet: Set[RuntimeDIUniverse.DIKey] = Set.empty
+  }
+
+  def apply(key: DIKey, more: DIKey*): GCMode = GCRoot(more.toSet + key)
+}
+
 
 /**
   * Input for [[Planner]]
   *
   * @param bindings Bindings probably created using [[com.github.pshirshov.izumi.distage.model.definition.ModuleDef]] DSL
-  * @param roots    Garbage collection roots.
+  * @param mode     Garbage collection roots.
   *
   *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
   *                 of the chosen root DIKeys from the plan - they will never be instantiated.
@@ -18,11 +35,16 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
   */
 final case class PlannerInput(
                                bindings: ModuleBase,
-                               roots: Set[DIKey],
+                               mode: GCMode,
                              )
 
 object PlannerInput {
-  def apply(bindings: ModuleBase, roots: DIKey*): PlannerInput = new PlannerInput(bindings, Set(roots: _*))
+  def noGc(bindings: ModuleBase) = new PlannerInput(bindings, GCMode.NoGC)
+  def apply(bindings: ModuleBase): PlannerInput = noGc(bindings)
+  def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = {
+    assert(roots.nonEmpty)
+    new PlannerInput(bindings, GCMode.GCRoot(roots))
+  }
 }
 
 trait Planner {
@@ -36,6 +58,4 @@ trait Planner {
   def freeze(plan: DodgyPlan): SemiPlan
 
   def finish(semiPlan: SemiPlan): OrderedPlan
-
-  final def plan(input: ModuleBase, roots: Set[DIKey] = Set.empty): OrderedPlan = plan(PlannerInput(input, roots))
 }

@@ -72,9 +72,9 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
     }
 
     val injector = Injector()
-    val plan = injector.plan(definition ++ new ModuleDef {
+    val plan = injector.plan(PlannerInput(definition ++ new ModuleDef {
       addImplicit[Bracket[IO, Throwable]]
-    })
+    }))
 
     def assert1(ctx: Locator) = {
       IO {

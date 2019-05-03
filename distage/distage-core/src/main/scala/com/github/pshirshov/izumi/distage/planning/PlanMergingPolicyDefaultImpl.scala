@@ -30,7 +30,7 @@ class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy with WithResolve 
     if (issues.nonEmpty) {
       handleIssues(plan, resolved.toMap, issues.toMap)
     } else {
-      SemiPlan(plan.definition, resolved.values.flatten.toVector, plan.roots)
+      SemiPlan(plan.definition, resolved.values.flatten.toVector, plan.gcMode)
     }
   }
 

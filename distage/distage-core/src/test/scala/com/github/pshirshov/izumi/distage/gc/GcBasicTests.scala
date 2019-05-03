@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.gc
 
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import com.github.pshirshov.izumi.distage.model.{GCMode, PlannerInput}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
 import distage.DIKey
@@ -18,7 +18,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular3]
         make[Circular4]
         make[Trash]
-      }, roots = DIKey.get[Circular2]))
+      }, GCMode(DIKey.get[Circular2])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.find[Trash].isEmpty)
@@ -35,7 +35,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[MkS3Client].from[Impl]
         make[S3Component]
         make[App]
-      }, roots = DIKey.get[App]))
+      }, GCMode(DIKey.get[App])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.get[App] != null)
@@ -51,7 +51,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[S3Upload]
         make[Ctx]
         make[S3Component]
-      }, roots = DIKey.get[Ctx]))
+      }, GCMode(DIKey.get[Ctx])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.get[Ctx].upload.client != null)
@@ -69,7 +69,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Ctx]
         make[S3Component]
         many[IntegrationComponent].add[S3Component]
-      }, roots = DIKey.get[Ctx], DIKey.get[Initiator]))
+      }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.get[Ctx] != null)
@@ -84,7 +84,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
         make[T1].using[Circular1]
         make[T2].using[Circular2]
-      }, roots = DIKey.get[Circular2]))
+      }, GCMode(DIKey.get[Circular2])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.get[Circular1].c2 != null)
@@ -99,7 +99,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[T1].from[Circular1]
         make[T2].from[Circular2]
-      }, roots = DIKey.get[T1]))
+      }, GCMode(DIKey.get[T1])))
 
       val result = injector.produceUnsafe(plan)
       assert(result.get[T1] != null)
@@ -131,7 +131,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
               override def nothing: Int = 2
             }
         }
-      }, roots = DIKey.get[Circular2]))
+      }, GCMode(DIKey.get[Circular2])))
       val result = injector.produceUnsafe(plan)
       assert(result.get[Circular1].nothing == 1)
       assert(result.get[Circular2].nothing == 2)
@@ -145,7 +145,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, roots = DIKey.get[Circular2]))
+      }, GCMode(DIKey.get[Circular2])))
 
       val result = injector.produceUnsafe(plan)
 
@@ -161,7 +161,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         injector.plan(PlannerInput(new ModuleDef {
           make[Circular1]
           make[Circular2]
-        }, roots = DIKey.get[Circular2]))
+        }, GCMode(DIKey.get[Circular2])))
       }
     }
 
@@ -171,7 +171,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, roots = DIKey.get[Circular2]))
+      }, GCMode(DIKey.get[Circular2])))
 
       val result = injector.produceUnsafe(plan)
 
@@ -185,7 +185,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
       val plan = injector.plan(PlannerInput(new ModuleDef {
         make[Circular1]
         make[Circular2]
-      }, roots = DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]]))
+      }, GCMode(DIKey.get[Circular2], DIKey.get[Set[AutoCloseable]])))
 
       val result = injector.produceUnsafe(plan)
 
@@ -204,7 +204,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         many[T1]
           .ref[Circular1]
           .ref[Circular2]
-      }, roots = DIKey.get[Circular4], DIKey.get[Set[T1]], DIKey.get[Circular3]))
+      }, GCMode(DIKey.get[Circular4], DIKey.get[Set[T1]], DIKey.get[Circular3])))
 
       val result = injector.produceUnsafe(plan)
 
@@ -220,7 +220,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
         make[T1]
         make[Box[T1]].from(new Box(new T1))
-      }, roots = DIKey.get[Circular1], DIKey.get[Circular2], DIKey.get[Set[T1]]))
+      }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2], DIKey.get[Set[T1]])))
 
       val result = injector.produceUnsafe(plan)
 

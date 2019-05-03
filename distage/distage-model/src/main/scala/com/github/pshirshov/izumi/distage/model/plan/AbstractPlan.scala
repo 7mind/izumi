@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.Locator
+import com.github.pshirshov.izumi.distage.model.{GCMode, Locator}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
@@ -17,7 +17,7 @@ sealed trait AbstractPlan {
 
   def steps: Seq[ExecutableOp]
 
-  def roots: Set[DIKey]
+  def gcMode: GCMode
 
   lazy val index: Map[DIKey, ExecutableOp] = {
     steps.map(s => s.target -> s).toMap
@@ -33,7 +33,7 @@ sealed trait AbstractPlan {
     steps.collect { case i: ImportDependency => i }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector), roots)
+    SemiPlan(definition, steps = AbstractPlan.resolveImports(f, steps.toVector), gcMode)
   }
 
   final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
@@ -60,7 +60,7 @@ sealed trait AbstractPlan {
         Seq(i.op)
       case o => Seq(o)
     }
-    SemiPlan(definition, safeSteps.toVector, roots)
+    SemiPlan(definition, safeSteps.toVector, gcMode)
   }
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
@@ -111,21 +111,21 @@ object AbstractPlan {
   *
   * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
   */
-final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey]) extends AbstractPlan {
+final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode) extends AbstractPlan {
   def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    SemiPlan(definition, steps.map(f).toVector, roots)
+    SemiPlan(definition, steps.map(f).toVector, gcMode)
   }
 
   def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.flatMap(f).toVector, roots)
+    SemiPlan(definition, steps.flatMap(f).toVector, gcMode)
   }
 
   def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.collect(f).toVector, roots)
+    SemiPlan(definition, steps.collect(f).toVector, gcMode)
   }
 
   def ++(that: AbstractPlan): SemiPlan = {
-    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps, roots)
+    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps, gcMode)
   }
 
   override def resolveImport[T: Tag](instance: T): SemiPlan =
@@ -151,7 +151,7 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], r
 
 }
 
-final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], roots: Set[DIKey], topology: PlanTopology) extends AbstractPlan {
+final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode, topology: PlanTopology) extends AbstractPlan {
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }

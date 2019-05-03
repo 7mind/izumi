@@ -30,10 +30,10 @@ package object cats
 
   implicit final class OrderedPlanExts(private val plan: OrderedPlan) extends AnyVal {
     def traverse[F[_]: Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
-      plan.steps.traverse(f).map(SemiPlan(plan.definition, _, plan.roots))
+      plan.steps.traverse(f).map(SemiPlan(plan.definition, _, plan.gcMode))
 
     def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
-      plan.steps.traverse(f).map(s => SemiPlan(plan.definition, s.flatten, plan.roots))
+      plan.steps.traverse(f).map(s => SemiPlan(plan.definition, s.flatten, plan.gcMode))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 

@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
 import com.github.pshirshov.izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
@@ -83,7 +84,12 @@ final class GraphDumpObserver
     val missingKeysSeq = missingKeys.toSeq
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
-    val roots = finalPlan.roots
+    val roots = finalPlan.gcMode match {
+      case GCMode.GCRoot(r) =>
+        r
+      case GCMode.NoGC =>
+        Set.empty[DIKey]
+    }
 
     goodKeys.foreach {
       k =>

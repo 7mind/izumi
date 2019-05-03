@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import com.github.pshirshov.izumi.distage.model.{GCMode, PlannerInput}
 import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import distage._
 import org.scalatest.WordSpec
@@ -21,7 +21,7 @@ class AnimalModel extends WordSpec with MkInjector {
         make[AccountsApiImpl]
         make[UnrequiredDep]
         make[App]
-      }, DIKey.get[App])
+      }, GCMode(DIKey.get[App]))
 
       val debug = false
 

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
@@ -34,9 +35,9 @@ class RoleAppPlannerImpl[F[_] : TagK](
       DIKey.get[DIEffectRunner[F]],
       DIKey.get[DIEffect[F]],
     )
-    val runtimePlan = injector.plan(fullAppModule, runtimeGcRoots)
+    val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-    val rolesPlan = injector.plan(fullAppModule, appMainRoots)
+    val rolesPlan = injector.plan(PlannerInput(fullAppModule, appMainRoots))
 
     val integrationComponents = rolesPlan.collectChildren[IntegrationCheck].map(_.target).toSet
 
@@ -78,7 +79,7 @@ class RoleAppPlannerImpl[F[_] : TagK](
 
 
   private def emptyPlan(runtimePlan: OrderedPlan): OrderedPlan = {
-    OrderedPlan(runtimePlan.definition, Vector.empty, Set.empty, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
+    OrderedPlan(runtimePlan.definition, Vector.empty, GCMode.NoGC, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
   }
 
   private def verify(plan: OrderedPlan): Unit = {

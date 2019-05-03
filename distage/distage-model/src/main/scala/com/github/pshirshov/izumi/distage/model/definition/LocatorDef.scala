@@ -16,7 +16,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.{Locator, definition}
+import com.github.pshirshov.izumi.distage.model.{GCMode, Locator, definition}
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
@@ -57,7 +57,7 @@ trait LocatorDef
       }.toSet
     )
 
-    OrderedPlan(moduleDef, ops, Set.empty, topology)
+    OrderedPlan(moduleDef, ops, GCMode.NoGC, topology)
   }
 
   override def parent: Option[Locator] = None

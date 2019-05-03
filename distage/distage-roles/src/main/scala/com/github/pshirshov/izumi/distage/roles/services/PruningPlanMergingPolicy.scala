@@ -40,7 +40,9 @@ class PruningPlanMergingPolicy(
 
     val ops = resolved.values.flatten.toVector
     val index = ops.map(op => op.target -> op).toMap
-    val collected = new TracingDIGC(plan.roots, index, ignoreMissing = true).gc(ops)
+    val roots = plan.gcMode.toSet
+    assert(roots.nonEmpty)
+    val collected = new TracingDIGC(roots, index, ignoreMissing = true).gc(ops)
 
     val lastTry = issues.map {
       case (k, v) =>
@@ -64,7 +66,7 @@ class PruningPlanMergingPolicy(
       logger.debug(s"Erased conflicts: ${erased.keys.niceList() -> "erased conflicts"}")
       logger.info(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
       val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
-      SemiPlan(plan.definition, allResolved, plan.roots)
+      SemiPlan(plan.definition, allResolved, plan.gcMode)
     }
   }
 

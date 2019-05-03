@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.injector
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
 import com.github.pshirshov.izumi.distage.fixtures.ResourceCases._
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
@@ -25,7 +26,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
-      }, roots = DIKey.get[Int])
+      }, GCMode(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -38,7 +39,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
-      }, roots = DIKey.get[Int])
+      }, GCMode(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -52,7 +53,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Suspend2[Nothing, ?], Int, IntSuspend]
-      }, roots = DIKey.get[Int])
+      }, GCMode(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -109,7 +110,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val definition = PlannerInput(new ModuleDef {
         make[Int].named("2").from(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
-      }, roots = DIKey.get[Int])
+      }, GCMode(DIKey.get[Int]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
@@ -268,7 +269,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
           .ref[S3Component]
         make[S3Component].fromResource(s3ComponentResource[Fn] _)
         make[S3Client].fromResource(s3clientResource[Fn] _)
-      }, DIKey.get[S3Client])
+      }, GCMode(DIKey.get[S3Client]))
 
       val injector = mkInjector()
       val plan = injector.plan(definition)

@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan._
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
@@ -14,7 +15,7 @@ import scala.collection.mutable
 
 final class DodgyPlan(
                        val definition: ModuleBase,
-                       val roots: Set[DIKey],
+                       val gcMode: GCMode,
                      ) {
 
   private val ops = new mutable.ArrayBuffer[TraceableOp]()
@@ -51,8 +52,8 @@ object DodgyPlan {
   case class JustOp(key: DIKey, op: InstantiationOp, binding: Binding) extends TraceableOp
   case class SetOp(key: DIKey, op: CreateSet, binding: Binding) extends TraceableOp
 
-  def empty(definition: ModuleBase, roots: Set[DIKey]): DodgyPlan = {
-    new DodgyPlan(definition, roots)
+  def empty(definition: ModuleBase, gcMode: GCMode): DodgyPlan = {
+    new DodgyPlan(definition, gcMode)
   }
 }
 

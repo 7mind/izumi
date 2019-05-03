@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDepende
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
+import com.github.pshirshov.izumi.distage.model.{GCMode, Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
 import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
 import distage.DIKey
@@ -43,14 +43,22 @@ final class PlannerDefaultImpl
 
   // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.roots ++ b.roots))
+    val allRoots = a.gcMode.toSet ++ b.gcMode.toSet
+    // TODO: semantically it may be incorrect to combine "NoGC" and "GC" modes this way, because "NOGC" effectively means "all roots"
+    val roots = if (allRoots.isEmpty) {
+      GCMode.NoGC
+    } else {
+      GCMode.GCRoot(allRoots)
+    }
+
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, roots))
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {
     hook
       .hookDefinition(input.bindings)
       .bindings
-      .foldLeft(DodgyPlan.empty(input.bindings, input.roots)) {
+      .foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
         case (currentPlan, binding) =>
           Value(bindingTranslator.computeProvisioning(currentPlan, binding))
             .eff(sanityChecker.assertProvisionsSane)
@@ -64,7 +72,7 @@ final class PlannerDefaultImpl
     Value(semiPlan)
       .map(addImports)
       .eff(planningObserver.onPhase05PreGC)
-      .map(doGC)
+      .map(gc.gc)
       .map(hook.phase10PostGC)
       .eff(planningObserver.onPhase10PostGC)
       .map(hook.phase20Customization)
@@ -86,15 +94,6 @@ final class PlannerDefaultImpl
       .get
   }
 
-
-  private[this] def doGC(semiPlan: SemiPlan): SemiPlan = {
-    if (semiPlan.roots.nonEmpty) {
-      gc.gc(semiPlan)
-    } else {
-      semiPlan
-    }
-  }
-
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
     val topology = analyzer.topology(plan.steps)
     val imports = topology
@@ -108,7 +107,7 @@ final class PlannerDefaultImpl
       }
       .toMap
 
-    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector, plan.roots)
+    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector, plan.gcMode)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -177,7 +176,7 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.roots, topology)
+    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.gcMode, topology)
   }
 
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
