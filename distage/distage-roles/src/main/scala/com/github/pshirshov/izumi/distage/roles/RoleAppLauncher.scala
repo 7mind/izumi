@@ -66,8 +66,8 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     val plugins = makePluginLoader(bootstrapConfig).load()
     val roles = loadRoles(parameters, earlyLogger, plugins)
 
+    // default PlanMergingPolicy will be applied to bootstrap module, so any non-trivial conflict in bootstrap bindings will fail the app
     val defBs = makeBootstrapMergeStrategy(earlyLogger, parameters).merge(plugins.bootstrap)
-    // TODO: check that there are no conflicts
 
     earlyLogger.info(s"Loaded ${defBs.bindings.size -> "bootstrap bindings"}...")
 
