@@ -493,32 +493,11 @@ locator.get[Set[SetElem]].size == 2
 
 ### Cats Integration
 
-You can use `produceF` with `cats.effect.IO` with just `distage-core`.
+Additional cats instances and syntax are available automatically
+without imports if you already depend on cats via [No More Orphans](https://blog.7mind.io/no-more-orphans.html)
+technique.
 
-@ref[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without any additional modules.
-
-@@@ warning { title='deprecated' }
-All cats instances & syntax will be rolled into `distage-core`. (via sbt's `Optional` dependencies, they will only be
-available if your project depends on `cats`.)
-@@@
-
-To import cats integration add `distage-cats` library:
-
-```scala
-libraryDependencies += Izumi.R.distage_cats
-```
-
-or
-
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-cats" % "$izumi.version$"
-```
-
-@@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
+@ref[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without imports.
 
 Usage:
 
@@ -526,7 +505,6 @@ Usage:
 import cats.implicits._
 import cats.effect._
 import distage._
-import distage.interop.cats._
 import com.example.{DBConnection, AppEntrypoint}
 
 object Main extends IOApp {
@@ -538,7 +516,7 @@ object Main extends IOApp {
         case i if i.target == DIKey.get[DBConnection] =>
            DBConnection.create[IO]
       } 
-      classes <- Injector().produceF[IO](plan) // produceF allows using `IO` with effect and resource bindings
+      classes <- Injector().produceF[IO](plan) // produceF allows using cats `IO` with effect and resource bindings
       _ <- classes.get[AppEntrypoint].run
     } yield ()
   }
