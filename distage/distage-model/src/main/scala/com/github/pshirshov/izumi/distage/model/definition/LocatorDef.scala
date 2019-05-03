@@ -122,7 +122,7 @@ object LocatorDef {
 
   }
 
-  sealed trait MultipleDSLMutBase[T] extends MultipleDSLBase[T] {
+  sealed trait MultipleDSLMutBase[T] {
     protected def mutableState: MultipleRef
 
     protected def addOp[R](op: MultipleInstruction)(newState: MultipleRef => R): R = {
@@ -157,9 +157,6 @@ object LocatorDef {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def bind(impl: ImplDef): AfterBind
-  }
-
-  trait MultipleDSLBase[T] {
   }
 
   trait SetDSLBase[T, AfterAdd] {

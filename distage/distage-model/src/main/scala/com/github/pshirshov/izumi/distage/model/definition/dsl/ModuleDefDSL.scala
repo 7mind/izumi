@@ -164,7 +164,7 @@ object ModuleDefDSL {
 
   }
 
-  sealed trait MultipleDSLMutBase[T] extends MultipleDSLBase[T] {
+  sealed trait MultipleDSLMutBase[T] {
     protected def mutableState: MultipleRef
 
     protected def addOp[R](op: MultipleInstruction)(newState: MultipleRef => R): R = {
@@ -460,9 +460,6 @@ object ModuleDefDSL {
 
 
     protected def bind(impl: ImplDef): AfterBind
-  }
-
-  trait MultipleDSLBase[T] {
   }
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {

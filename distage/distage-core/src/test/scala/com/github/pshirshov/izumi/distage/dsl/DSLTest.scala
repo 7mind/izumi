@@ -308,7 +308,15 @@ class DSLTest extends WordSpec {
         bindMany[ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definition != null)
+      assert(definition === Module.make(
+        Set(
+          Bindings.binding[ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      )
+      )
     }
   }
 
