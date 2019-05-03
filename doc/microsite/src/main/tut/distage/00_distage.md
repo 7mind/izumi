@@ -62,6 +62,8 @@ Further reading
 - @ref[Other features](other-features.md)
 - @ref[Debugging](debugging.md)
 - @ref[Cookbook](cookbook.md)
+- @ref[Role-Based Apps](roles.md)
+- @ref[Testkit](testkit.md)
 - @ref[Syntax reference](reference.md)
 
 ## PPER
@@ -75,6 +77,8 @@ See @ref[PPER Overview](../pper/00_pper.md)
 * [Other features](other-features.md)
 * [Debugging](debugging.md)
 * [Cookbook](cookbook.md)
+* [Role-Based Apps](roles.md)
+* [Testkit](testkit.md)
 * [Syntax reference](reference.md)
 
 @@@
