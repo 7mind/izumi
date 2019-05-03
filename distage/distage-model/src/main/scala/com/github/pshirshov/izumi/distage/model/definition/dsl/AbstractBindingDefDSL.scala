@@ -1,14 +1,16 @@
 package com.github.pshirshov.izumi.distage.model.definition.dsl
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, MultipleRef, SetRef, SingletonInstruction, SingletonRef}
 import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, SafeType, Tag, TagK}
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -40,10 +42,59 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     _bindDSL[T](ref)
   }
 
-  final protected def bindMany[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    val ref = registered(new MultipleRef(Bindings.binding[T]))
-    _multipleDSL[T](ref)
+  final protected def bind[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+   bindImpl[T](ImplDef.TypeImpl(SafeType.get[T]))
   }
+
+  final protected def bind[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.InstanceImpl(SafeType.get[T], instance))
+  }
+
+  final protected def bind[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
+  }
+
+  final protected def bindReference[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.ReferenceImpl(SafeType.get[T], DIKey.get[T], weak = false))
+  }
+
+  final protected def bindReference[T: Tag](name: String)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.ReferenceImpl(SafeType.get[T], DIKey.get[T].named(name), weak = false))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T : Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T : Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T : Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
+  }
+
+  final protected def bindResource[T <: DIResourceBase[Any, T]](implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[T])))
+  }
+
+  final protected def bindResource[T <: DIResourceBase[Any, T]](instance: T with DIResourceBase[Any, T])(implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[T], instance)))
+  }
+
+  final protected def bindResource[T <: DIResourceBase[Any, T]](function: ProviderMagnet[T with DIResourceBase[Any, T]])(implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[T], function.get)))
+  }
+
+  final protected def bindResource[R0, T <: DIResourceBase[Any, T]]
+  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[T with DIResourceBase[Any, T]], tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[T], adapt(function).get)))
+  }
+
 
   /**
     * Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
@@ -113,6 +164,11 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
   /** Same as `make[T].named(name).from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
     registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
+  }
+
+  private[distage] def bindImpl[T: Tag](implDef: ImplDef)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    val ref = registered(new MultipleRef(SingletonBinding(DIKey.get[T], implDef)))
+    _multipleDSL[T](ref)
   }
 
 }
