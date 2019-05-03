@@ -68,14 +68,6 @@ In the future we are going to (or may) implement more tools based on PPER approa
 2. Best in the world cluster orchestration tool
 3. Best in the world load testing/macro-benchmark tool
 
-Contributors
-============
-
-See:
-
-- [Build notes](doc/md/build.md)
-- [Project flow](doc/md/flow.md)
-
 Credits
 =======
 
@@ -86,4 +78,13 @@ for monitoring and profiling Java and .NET applications.
 YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/) 
 [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
+
+
+Contributors
+============
+
+See:
+
+- [Build notes](doc/md/build.md)
+- [Project flow](doc/md/flow.md)
 
