@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit.catstest
 
 import cats.effect.{Bracket, IO, Resource, Sync}
+import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
 import com.github.pshirshov.izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.FromCats
@@ -42,7 +43,7 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
       make[MyApp]
     }
 
-    Injector().produceF[IO](module).use {
+    Injector().produceF[IO](module, GCMode.NoGC).use {
       objects =>
         objects.get[MyApp].run
     }.unsafeRunSync()

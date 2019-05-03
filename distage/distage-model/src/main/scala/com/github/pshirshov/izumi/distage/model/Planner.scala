@@ -11,7 +11,7 @@ sealed trait GCMode {
 }
 object GCMode {
   case class GCRoots(roots: Set[DIKey]) extends GCMode {
-    assert(roots.nonEmpty)
+    assert(roots.nonEmpty, "GC roots set cannot be empty")
     override def toSet: Set[universe.RuntimeDIUniverse.DIKey] = roots
   }
   case object NoGC extends GCMode {
@@ -40,8 +40,10 @@ final case class PlannerInput(
                              )
 
 object PlannerInput {
-  def noGc(bindings: ModuleBase) = new PlannerInput(bindings, GCMode.NoGC)
-  //def apply(bindings: ModuleBase): PlannerInput = noGc(bindings)
+  def noGc(bindings: ModuleBase): PlannerInput = {
+    new PlannerInput(bindings, GCMode.NoGC)
+  }
+
   def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = {
     new PlannerInput(bindings, GCMode.GCRoots(roots))
   }
