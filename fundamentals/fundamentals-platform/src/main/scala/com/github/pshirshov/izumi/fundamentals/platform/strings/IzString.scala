@@ -6,13 +6,11 @@ import scala.language.implicitConversions
 import scala.util.Try
 
 
-
-
-
 class IzString(s: String) {
   @inline final def utf8: Array[Byte] = {
     s.getBytes(StandardCharsets.UTF_8)
   }
+
   @inline final def asBoolean(defValue: Boolean): Boolean = {
     asBoolean().getOrElse(defValue)
   }
@@ -132,7 +130,7 @@ class IzString(s: String) {
     s.indexOf(separator.toInt) match {
       case -1 => ("", s)
       case idx =>
-        (s.substring(0, idx), s.substring(idx+1, s.length))
+        (s.substring(0, idx), s.substring(idx + 1, s.length))
     }
   }
 
@@ -140,7 +138,7 @@ class IzString(s: String) {
     s.lastIndexOf(separator.toInt) match {
       case -1 => ("", s)
       case idx =>
-        (s.substring(0, idx), s.substring(idx+1, s.length))
+        (s.substring(0, idx), s.substring(idx + 1, s.length))
     }
   }
 
