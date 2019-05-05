@@ -1,5 +1,6 @@
 -Xmx3G
 -XX:+UseG1GC
+-Xshare:on
 -XX:ReservedCodeCacheSize=256m
 -XX:MaxMetaspaceSize=1512m
 -noverify
@@ -7,3 +8,10 @@
 -XX:+OmitStackTraceInFastThrow
 -Dsun.io.useCanonCaches=false
 -XX:SoftRefLRUPolicyMSPerMB=50
+
+#-Xshare:dump
+#-Xlog:class+load=info
+
+#-XX:+UnlockExperimentalVMOptions
+#-XX:+UseZGC
+#-XX:+UseShenandoahGC
