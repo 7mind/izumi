@@ -66,23 +66,23 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
     bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
     bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
     bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
   }
 
-  final protected def bindResource[R0, R <: DIResourceBase[Any, T], T: Tag]
-  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, T]], tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R0, R <: DIResourceBase[Any, T], T]
+  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, T]], tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
     bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
   }
