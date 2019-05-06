@@ -54,14 +54,6 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
   }
 
-  final protected def bindReference[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    bindImpl[T](ImplDef.ReferenceImpl(SafeType.get[T], DIKey.get[T], weak = false))
-  }
-
-  final protected def bindReference[T: Tag](name: String)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    bindImpl[T](ImplDef.ReferenceImpl(SafeType.get[T], DIKey.get[T].named(name), weak = false))
-  }
-
   final protected def bindEffect[F[_]: TagK, T : Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
   }

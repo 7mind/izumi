@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 
@@ -312,9 +311,9 @@ class DSLTest extends WordSpec {
       assert(definition === Module.make(
         Set(
           Bindings.binding[ImplXYZ]
-          , SingletonBinding(DIKey.get[TraitX], ImplDef.ReferenceImpl(SafeType.get[ImplXYZ], DIKey.get[ImplXYZ], weak = false))
-          , SingletonBinding(DIKey.get[TraitY], ImplDef.ReferenceImpl(SafeType.get[ImplXYZ], DIKey.get[ImplXYZ], weak = false))
-          , SingletonBinding(DIKey.get[TraitZ], ImplDef.ReferenceImpl(SafeType.get[ImplXYZ], DIKey.get[ImplXYZ], weak = false))
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
         )
       )
       )
