@@ -2,7 +2,9 @@ package com.github.pshirshov.izumi.distage.dsl
 
 import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
 import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, Module}
+import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
+import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage._
 import org.scalatest.WordSpec
 
@@ -304,6 +306,8 @@ class DSLTest extends WordSpec {
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
+      val implXYZ = new ImplXYZ
+
       val definition = new ModuleDef {
         bind[ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
       }
@@ -311,6 +315,21 @@ class DSLTest extends WordSpec {
       assert(definition === Module.make(
         Set(
           Bindings.binding[ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      )
+      )
+
+      val definitionEffect = new ModuleDef {
+        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionEffect === Module.make (
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)))
           , Bindings.reference[TraitX, ImplXYZ]
           , Bindings.reference[TraitY, ImplXYZ]
           , Bindings.reference[TraitZ, ImplXYZ]

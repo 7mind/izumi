@@ -54,37 +54,37 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
   }
 
-  final protected def bindEffect[F[_]: TagK, T : Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_]: TagK, T: Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
   }
 
-  final protected def bindEffect[F[_]: TagK, T : Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_]: TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
   }
 
-  final protected def bindEffect[F[_]: TagK, T : Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_]: TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
-  final protected def bindResource[T <: DIResourceBase[Any, T]](implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[T])))
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
   }
 
-  final protected def bindResource[T <: DIResourceBase[Any, T]](instance: T with DIResourceBase[Any, T])(implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[T], instance)))
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
   }
 
-  final protected def bindResource[T <: DIResourceBase[Any, T]](function: ProviderMagnet[T with DIResourceBase[Any, T]])(implicit tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, T], T: Tag](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[T], function.get)))
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
   }
 
-  final protected def bindResource[R0, T <: DIResourceBase[Any, T]]
-  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[T with DIResourceBase[Any, T]], tag: ResourceTag[T], pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R0, R <: DIResourceBase[Any, T], T: Tag]
+  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, T]], tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[T] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[T], adapt(function).get)))
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
   }
 
 
