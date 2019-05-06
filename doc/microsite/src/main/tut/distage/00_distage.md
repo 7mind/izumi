@@ -32,17 +32,20 @@ Why to use distage?
 6. **Simpler debugging**:
     `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
     before any instantiations happen.
-7. **High Correctness**: 
+7. **Higher Correctness**: 
     `distage` supports resources natively and guarantees proper cleanups even when something went wrong.
 8. **Cheaper integration tests**:
-    `distage` provides you great memoization support for your tests so you may reuse heave resources (like database connections) in your
+    `distage` provides you great memoization support for your tests so you may reuse heavy resources (like database connections) in your
     integration tests not sacrificing correctness.
+9. **No pressure**: 
+    `distage` is non-invasive and designed not to interfere with your of writing Scala code. 
+    It just removes all the initialization boilerplate. You don't need to learn magic tricks to write components for distage application. 
 
 Also `distage` is approved by industry leaders:
 
 > Given its native support for type classes and higher-kinded types -- both features indispensable to functional programming -- distage is one of the leading dependency injection libraries out there. Bonus points for being built by a wicked-smart team that contributes to ZIO! 
 > 
-> – *John A. De Goes*
+> -– *John A. De Goes*
 
 FAQ
 ---
