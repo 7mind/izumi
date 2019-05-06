@@ -12,7 +12,7 @@ object IzumiDeps {
     val collection_compat = "1.0.0"
 
     val kind_projector = "0.10.0" // 2.13+
-    val scalatest = "3.2.0-SNAP9" // snap10 is broken // 2.13+
+    val scalatest = "3.0.7" // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
 
@@ -28,7 +28,7 @@ object IzumiDeps {
     val scalameta = "4.1.6" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "2.1.0" // https://github.com/lihaoyi/fastparse/issues/188
 
-    val scalacheck = "1.14.0"
+    //val scalacheck = "1.14.0"
 
     // java, we need it bcs http4s ws client isn't ready yet
     // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
@@ -50,7 +50,7 @@ object IzumiDeps {
     val scala_reflect = "org.scala-lang" % "scala-reflect"
     val scala_xml = "org.scala-lang.modules" %% "scala-xml" % V.scala_xml
 
-    val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
+    //val scalacheck = "org.scalacheck" %% "scalacheck" % V.scalacheck
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
@@ -122,9 +122,13 @@ object IzumiDeps {
 
   object T {
     val scalatest = R.scalatest % Test
+    //val scalacheck = R.scalacheck % Test
     val slf4j_simple = R.slf4j_simple % Test
 
-    val essentials: Seq[ModuleID] = Seq(scalatest)
+    val essentials: Seq[ModuleID] = Seq(
+      scalatest,
+      //scalacheck,
+    )
 
     val circe: Seq[ModuleID] = R.circe.map(_ % Test)
     val cats_all: Seq[ModuleID] = R.cats_all.map(_ % Test)

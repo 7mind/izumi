@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.serialization
+package com.github.pshirshov.izumi.fundamentals.platform.bytes
 
 import java.nio.ByteBuffer
 
@@ -11,7 +11,7 @@ class IzByteBuffer(bytes: ByteBuffer) {
   }
 
   def readObject[T]: T = {
-    import IzSerializable._
+    import IzBytes._
     toByteArray.readObject[T]
   }
 }

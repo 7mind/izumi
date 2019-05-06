@@ -61,8 +61,8 @@ val LibSettings = new SettingsGroup {
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
-      libraryDependencies ++= R.essentials
-      , libraryDependencies ++= T.essentials
+      libraryDependencies ++= R.essentials,
+      libraryDependencies ++= T.essentials,
     )
   ).flatten
 }
@@ -204,14 +204,23 @@ lazy val fundamentalsCollections = inFundamentals.as.cross(platforms)
 lazy val fundamentalsCollectionsJvm = fundamentalsCollections.jvm.remember
 lazy val fundamentalsCollectionsJs = fundamentalsCollections.js.remember
 
+
 lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsCollections)
 lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm.remember
 lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
+  .enablePlugins(ScalaJSBundlerPlugin)
+  .settings(
+    scalaJSModuleKind := ModuleKind.CommonJSModule,
+    npmDependencies in Compile ++= Seq(
+      "hash.js" -> "1.1.7"
+    ),
+  )
 
 lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
 lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
 lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
+
 
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsFunctional)
@@ -263,10 +272,11 @@ lazy val fundamentalsReflection = inFundamentals.as.module
 lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
   .settings(
-    libraryDependencies ++= R.circe
+    libraryDependencies ++= R.circe.map(_.cross(platformDepsCrossVersion.value))
   )
 lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
 lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
+  .settings(libraryDependencies += C.jawn)
 
 //-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
@@ -428,7 +438,6 @@ lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
   ).map(_.testOnlyRef))
 
 lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
-  .settings(libraryDependencies += C.jawn)
 
 lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
   .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
@@ -513,7 +522,7 @@ lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
   ).map(_.testOnlyRef))
 
 lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
-  .settings(libraryDependencies += C.jawn)
+
 
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
   .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)

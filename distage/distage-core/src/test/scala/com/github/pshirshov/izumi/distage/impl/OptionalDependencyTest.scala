@@ -64,8 +64,8 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
     }
     assert(!open)
 
-    Then("DIResource.toCats doesn't work")
-    assertDoesNotCompile("resource.toCats")
+//    Then("DIResource.toCats doesn't work")
+//    assertDoesNotCompile("resource.toCats")
   }
 
 }
