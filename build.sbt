@@ -61,8 +61,8 @@ val LibSettings = new SettingsGroup {
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
-      libraryDependencies ++= R.essentials,
-      libraryDependencies ++= T.essentials,
+      libraryDependencies ++= R.essentials.map(_.cross(platformDepsCrossVersion.value)),
+      libraryDependencies ++= T.essentials.map(_.cross(platformDepsCrossVersion.value)),
     )
   ).flatten
 }
