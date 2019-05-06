@@ -336,6 +336,21 @@ class DSLTest extends WordSpec {
         )
       )
       )
+
+      val definitionResource = new ModuleDef {
+        bindResource[DIResource.Simple[ImplXYZ], ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionResource === Module.make (
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]])))
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      )
+      )
     }
   }
 
