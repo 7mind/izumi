@@ -14,6 +14,27 @@ steps:
   displayName: 'Run a one-line script'
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
+    export SOURCEDIR=$(pwd)
+    export CNAME="izumi-build-$(date +%s)"
+    export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
+    export HOMEDIR="$( cd ~ ; pwd -P )"
+
+    #if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
+    #  openssl aes-256-cbc -K $encrypted_0429e73c206c_key -iv $encrypted_0429e73c206c_iv -in secrets.tar.enc -out secrets.tar -d
+    #  tar xvf secrets.tar
+    #  ln -s .secrets/local.sbt local.sbt
+    #fi
+
+    docker pull $IMAGE
+
+    docker run --rm --name $CNAME \
+        -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
+        -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
+        -e TRAVIS_PULL_REQUEST=false \
+        -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
+        -e NPM_TOKEN=$(token.npm) \
+        -e NUGET_TOKEN=$(token.nuget) \
+        --volume "${SOURCEDIR}":/work:z \
+        --volume "${HOMEDIR}":/root:z \
+        $IMAGE bash -xe travis.sh coverage
   displayName: 'Run a multi-line script'
