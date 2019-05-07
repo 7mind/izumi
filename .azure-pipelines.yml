@@ -16,7 +16,10 @@ jobs:
     pool: 
       vmImage: 'ubuntu-latest'
     steps:
-      - script: |
+      - script: |#!/usr/bin/env bash -xe
+          env
+          pwd
+
           bash docker.sh coverage
         displayName: 'Tests and Coverage'
   - job: sbt
