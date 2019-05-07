@@ -47,8 +47,9 @@ env:
 
 jobs:
   include:
-    -stage: "extract"
+    - stage: "extract"
       script: bash extract.sh
+      
     #- stage: "Tests & Coverage"
     #  script: bash docker.sh coverage
     #- stage: "SBT Tests"
