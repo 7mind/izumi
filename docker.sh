@@ -12,7 +12,7 @@ else
     export TRAVIS_PULL_REQUEST=true
 fi
 
-export TRAVIS_BRANCH=$(echo $BUILD_SOURCEBRANCH | sed -E "s/refs\/heads//")
+export TRAVIS_BRANCH=$(echo $BUILD_SOURCEBRANCH | sed -E "s/refs\/heads\///")
 export TRAVIS_TAG=$BUILD_SOURCEBRANCH
 
 if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
