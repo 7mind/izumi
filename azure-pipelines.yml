@@ -11,11 +11,13 @@ trigger:
 variables:
 - group: security-tokens
 
-pool:
+parameters:
   vmImage: 'ubuntu-latest'
 
 jobs:
   - job: build
+    pool: 
+      vmImage: ${{ parameters.vmImage }}  
     steps:
       - script: |
           export IMAGE="septimalmind/izumi-env:jdk11-5"
@@ -50,6 +52,8 @@ jobs:
               $IMAGE bash -xe travis.sh coverage
         displayName: 'Build'
   - job: sbt
+    pool: 
+      vmImage: ${{ parameters.vmImage }}  
     steps:
       - script: |
           export IMAGE="septimalmind/izumi-env:jdk11-5"
@@ -84,6 +88,8 @@ jobs:
               $IMAGE bash -xe travis.sh scripted
         displayName: 'Build'
   - job: site
+    pool: 
+      vmImage: ${{ parameters.vmImage }}  
     dependsOn: build
     steps:
       - script: |
@@ -119,6 +125,8 @@ jobs:
               $IMAGE bash -xe travis.sh site
         displayName: 'Build'
   - job: publish
+    pool: 
+      vmImage: ${{ parameters.vmImage }}  
     dependsOn: build
     steps:
       - script: |
