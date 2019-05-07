@@ -6,6 +6,9 @@
 trigger:
 - master
 
+variables:
+- group: security-tokens
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -14,6 +17,7 @@ steps:
   displayName: 'Run a one-line script'
 
 - script: |
+    export IMAGE="septimalmind/izumi-env:jdk11-5"
     export SOURCEDIR=$(pwd)
     export CNAME="izumi-build-$(date +%s)"
     export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
