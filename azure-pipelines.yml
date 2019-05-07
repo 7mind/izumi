@@ -20,6 +20,7 @@ steps:
     uname -a
     free -h
     df -h
+    echo $SYSTEM_PULLREQUEST_PULLREQUESTNUMBER
 - script: |
     export IMAGE="septimalmind/izumi-env:jdk11-5"
     export SOURCEDIR=$(pwd)
