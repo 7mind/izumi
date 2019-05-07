@@ -28,10 +28,15 @@ steps:
     export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
     export HOMEDIR="$( cd ~ ; pwd -P )"
 
-    if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
+    if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
       openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
       tar xvf secrets.tar
       ln -s .secrets/local.sbt local.sbt
+      export TRAVIS_PULL_REQUEST=false
+      echo "UNPACKED!"
+    else 
+      export TRAVIS_PULL_REQUEST=true
+      echo "P/R!"
     fi
 
     docker pull $IMAGE
@@ -39,7 +44,7 @@ steps:
     docker run --rm --name $CNAME \
         -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
         -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
-        -e TRAVIS_PULL_REQUEST=false \
+        -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
         -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
         -e NPM_TOKEN=$(token.npm) \
         -e NUGET_TOKEN=$(token.nuget) \
