@@ -17,14 +17,14 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - script: |
-          docker.sh coverage
+          bash docker.sh coverage
         displayName: 'Tests and Coverage'
   - job: sbt
     pool: 
       vmImage: 'ubuntu-latest'
     steps:
       - script: |
-          docker.sh scripted
+          bash docker.sh scripted
         displayName: 'SBT plugin tests'
   - job: site
     pool: 
@@ -32,7 +32,7 @@ jobs:
     dependsOn: build
     steps:
       - script: |
-          docker.sh site
+          bash docker.sh site
         displayName: 'Publish Site'
   - job: publish
     pool: 
@@ -40,5 +40,5 @@ jobs:
     dependsOn: build
     steps:
       - script: |
-          docker.sh publish
+          bash docker.sh publish
         displayName: 'Publish to Maven Central'
