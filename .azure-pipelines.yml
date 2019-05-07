@@ -16,18 +16,18 @@ jobs:
     pool: 
       vmImage: 'ubuntu-latest'
     steps:
-      - script: |#!/usr/bin/env bash -xe
+      - script: |
+          #!/usr/bin/env bash -xe
           env
           pwd
-
-          bash docker.sh coverage
+          #bash docker.sh coverage
         displayName: 'Tests and Coverage'
   - job: sbt
     pool: 
       vmImage: 'ubuntu-latest'
     steps:
       - script: |
-          bash docker.sh scripted
+          #bash docker.sh scripted
         displayName: 'SBT plugin tests'
   - job: site
     pool: 
@@ -35,7 +35,7 @@ jobs:
     dependsOn: build
     steps:
       - script: |
-          bash docker.sh site
+          #bash docker.sh site
         displayName: 'Publish Site'
   - job: publish
     pool: 
@@ -43,5 +43,5 @@ jobs:
     dependsOn: build
     steps:
       - script: |
-          bash docker.sh publish
+          #bash docker.sh publish
         displayName: 'Publish to Maven Central'
