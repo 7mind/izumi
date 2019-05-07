@@ -9,15 +9,17 @@ function block_close {
 }
 
 function bopen {
-    block_open ${FUNCNAME[1]}
+    #block_open ${FUNCNAME[1]}
+    :
 }
 
 function bclose {
-    block_close ${FUNCNAME[1]}
+    #block_close ${FUNCNAME[1]}
+    :
 }
 
 function csbt {
-    COMMAND="time sbt -v $*"
+    COMMAND="time sbt -no-colors -v $*"
     eval $COMMAND
 }
 
