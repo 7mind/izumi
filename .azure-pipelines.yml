@@ -24,6 +24,7 @@ jobs:
           TOKEN_NPM: $(token.npm)
           TOKEN_NUGET: $(token.nuget)
           TOKEN_CODECOV: $(token.codecov)
+      - task: PublishTestResults@2
     displayName: 'Tests and Coverage'
   - job: sbt
     pool: 
