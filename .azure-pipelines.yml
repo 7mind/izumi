@@ -12,26 +12,13 @@ variables:
 - group: security-tokens
 
 jobs:
-  - job: experiment
-    pool:
+  - job: build
+    pool: 
       vmImage: 'ubuntu-latest'
     container: septimalmind/izumi-env:jdk11-5
     steps:
       - script: |
-          printenv
-        env:
-          OPENSSL_KEY: $(openssl.key)
-          OPENSSL_IV: $(openssl.iv)
-          TOKEN_NPM: $(token.npm)
-          TOKEN_NUGET: $(token.nuget)
-          TOKEN_CODECOV: $(token.codecov)
-    displayName: 'Experiment: container jobs'
-  - job: build
-    pool: 
-      vmImage: 'ubuntu-latest'
-    steps:
-      - script: |
-          bash docker.sh coverage
+          bash travis.sh coverage
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
@@ -43,9 +30,10 @@ jobs:
   - job: sbt
     pool: 
       vmImage: 'ubuntu-latest'
+    container: septimalmind/izumi-env:jdk11-5
     steps:
       - script: |
-          bash docker.sh scripted
+          bash travis.sh scripted
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
@@ -56,10 +44,11 @@ jobs:
   - job: site
     pool: 
       vmImage: 'ubuntu-latest'
+    container: septimalmind/izumi-env:jdk11-5
     dependsOn: build
     steps:
       - script: |
-          bash docker.sh site
+          bash travis.sh unpack site
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
@@ -70,10 +59,11 @@ jobs:
   - job: publish
     pool: 
       vmImage: 'ubuntu-latest'
+    container: septimalmind/izumi-env:jdk11-5
     dependsOn: build
     steps:
       - script: |
-          bash docker.sh publish
+          bash travis.sh unpack publish
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)

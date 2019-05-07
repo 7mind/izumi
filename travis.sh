@@ -1,5 +1,18 @@
 #!/bin/bash -xe
 
+if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+    export TRAVIS_PULL_REQUEST=false
+else
+    export TRAVIS_PULL_REQUEST=true
+fi
+
+export TRAVIS_BRANCH=$(echo $BUILD_SOURCEBRANCH | sed -E "s/refs\/heads\///")
+export TRAVIS_TAG=$BUILD_SOURCEBRANCH
+export NPM_TOKEN=${TOKEN_NPM}
+export NUGET_TOKEN=${TOKEN_NUGET}
+export CODECOV_TOKEN=${TOKEN_CODECOV}
+
+
 function block_open {
     echo -en "travis_fold:start:$1\\r"
 }
@@ -95,6 +108,14 @@ function publish {
   bclose
 }
 
+function unpack {
+    if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
+        openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
+        tar xvf secrets.tar
+        ln -s .secrets/local.sbt local.sbt
+    fi
+}
+
 function info {
   bopen
   ls -la .
@@ -132,6 +153,10 @@ case $i in
 
     site)
         site
+    ;;
+
+    unpack)
+        unpack
     ;;
 
     *)
