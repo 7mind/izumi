@@ -12,7 +12,7 @@ variables:
 - group: security-tokens
 
 jobs:
-  - job: build
+  - job: experiment
     pool:
       vmImage: 'ubuntu-latest'
     container: septimalmind/izumi-env:jdk11-5
