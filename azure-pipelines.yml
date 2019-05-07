@@ -11,13 +11,10 @@ trigger:
 variables:
 - group: security-tokens
 
-parameters:
-  vmImage: 'ubuntu-latest'
-
 jobs:
   - job: build
     pool: 
-      vmImage: ${{ parameters.vmImage }}  
+      vmImage: 'ubuntu-latest'
     steps:
       - script: |
           export IMAGE="septimalmind/izumi-env:jdk11-5"
@@ -53,7 +50,7 @@ jobs:
         displayName: 'Build'
   - job: sbt
     pool: 
-      vmImage: ${{ parameters.vmImage }}  
+      vmImage: 'ubuntu-latest'
     steps:
       - script: |
           export IMAGE="septimalmind/izumi-env:jdk11-5"
@@ -89,7 +86,7 @@ jobs:
         displayName: 'Build'
   - job: site
     pool: 
-      vmImage: ${{ parameters.vmImage }}  
+      vmImage: 'ubuntu-latest' 
     dependsOn: build
     steps:
       - script: |
@@ -126,7 +123,7 @@ jobs:
         displayName: 'Build'
   - job: publish
     pool: 
-      vmImage: ${{ parameters.vmImage }}  
+      vmImage: 'ubuntu-latest'
     dependsOn: build
     steps:
       - script: |
