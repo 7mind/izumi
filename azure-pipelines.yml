@@ -12,10 +12,6 @@ variables:
 pool:
   vmImage: 'ubuntu-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
 - script: |
     export IMAGE="septimalmind/izumi-env:jdk11-5"
     export SOURCEDIR=$(pwd)
@@ -38,7 +34,8 @@ steps:
         -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
         -e NPM_TOKEN=$(token.npm) \
         -e NUGET_TOKEN=$(token.nuget) \
+        -e CODECOV_TOKEN=$(token.codecov) \
         --volume "${SOURCEDIR}":/work:z \
         --volume "${HOMEDIR}":/root:z \
-        $IMAGE bash -xe travis.sh coverage
-  displayName: 'Run a multi-line script'
+        $IMAGE bash -xe travis.sh coverage scripted
+  displayName: 'Build'
