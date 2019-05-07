@@ -47,11 +47,13 @@ env:
 
 jobs:
   include:
-    - stage: "Tests & Coverage"
-      script: bash docker.sh coverage
-    - stage: "SBT Tests"
-      script: bash docker.sh scripted
-    - stage: "Publish"
-      script: bash docker.sh versionate publish
-    - stage: "Site"
-      script: bash docker.sh versionate site
+    -stage: "extract"
+      script: bash extract.sh
+    #- stage: "Tests & Coverage"
+    #  script: bash docker.sh coverage
+    #- stage: "SBT Tests"
+    #  script: bash docker.sh scripted
+    #- stage: "Publish"
+    #  script: bash docker.sh versionate publish
+    #- stage: "Site"
+    #  script: bash docker.sh versionate site
