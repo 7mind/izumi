@@ -51,5 +51,5 @@ steps:
         -e CODECOV_TOKEN=$(token.codecov) \
         --volume "${SOURCEDIR}":/work:z \
         --volume "${HOMEDIR}":/root:z \
-        $IMAGE bash -xe travis.sh coverage scripted
+        $IMAGE bash -xe travis.sh coverage scripted versionate publish site
   displayName: 'Build'
