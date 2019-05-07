@@ -16,6 +16,11 @@ pool:
 
 steps:
 - script: |
+    cat /proc/cpuinfo
+    uname -a
+    free -h
+    df -h
+- script: |
     export IMAGE="septimalmind/izumi-env:jdk11-5"
     export SOURCEDIR=$(pwd)
     export CNAME="izumi-build-$(date +%s)"
