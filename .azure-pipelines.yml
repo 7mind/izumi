@@ -13,6 +13,20 @@ variables:
 
 jobs:
   - job: build
+    pool:
+      vmImage: 'ubuntu-latest'
+    container: septimalmind/izumi-env:jdk11-5
+    steps:
+      - script: |
+          printenv
+        env:
+          OPENSSL_KEY: $(openssl.key)
+          OPENSSL_IV: $(openssl.iv)
+          TOKEN_NPM: $(token.npm)
+          TOKEN_NUGET: $(token.nuget)
+          TOKEN_CODECOV: $(token.codecov)
+    displayName: 'Experiment: container jobs'
+  - job: build
     pool: 
       vmImage: 'ubuntu-latest'
     steps:
