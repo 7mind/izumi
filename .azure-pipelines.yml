@@ -15,54 +15,54 @@ jobs:
   - job: build
     pool: 
       vmImage: 'ubuntu-latest'
-    env:
-      OPENSSL_KEY: $(openssl.key)
-      OPENSSL_IV: $(openssl.iv)
-      TOKEN_NPM: $(token.npm)
-      TOKEN_NUGET: $(token.nuget)
-      TOKEN_CODECOV: $(token.codecov)
     steps:
       - script: |
           bash docker.sh coverage
+        env:
+          OPENSSL_KEY: $(openssl.key)
+          OPENSSL_IV: $(openssl.iv)
+          TOKEN_NPM: $(token.npm)
+          TOKEN_NUGET: $(token.nuget)
+          TOKEN_CODECOV: $(token.codecov)
     displayName: 'Tests and Coverage'
   - job: sbt
     pool: 
       vmImage: 'ubuntu-latest'
-    env:
-      OPENSSL_KEY: $(openssl.key)
-      OPENSSL_IV: $(openssl.iv)
-      TOKEN_NPM: $(token.npm)
-      TOKEN_NUGET: $(token.nuget)
-      TOKEN_CODECOV: $(token.codecov)
     steps:
       - script: |
           bash docker.sh scripted
+        env:
+          OPENSSL_KEY: $(openssl.key)
+          OPENSSL_IV: $(openssl.iv)
+          TOKEN_NPM: $(token.npm)
+          TOKEN_NUGET: $(token.nuget)
+          TOKEN_CODECOV: $(token.codecov)
     displayName: 'SBT plugin tests'
   - job: site
     pool: 
       vmImage: 'ubuntu-latest'
-    env:
-      OPENSSL_KEY: $(openssl.key)
-      OPENSSL_IV: $(openssl.iv)
-      TOKEN_NPM: $(token.npm)
-      TOKEN_NUGET: $(token.nuget)
-      TOKEN_CODECOV: $(token.codecov)
     dependsOn: build
     steps:
       - script: |
           bash docker.sh site
+        env:
+          OPENSSL_KEY: $(openssl.key)
+          OPENSSL_IV: $(openssl.iv)
+          TOKEN_NPM: $(token.npm)
+          TOKEN_NUGET: $(token.nuget)
+          TOKEN_CODECOV: $(token.codecov)
     displayName: 'Publish Site'
   - job: publish
     pool: 
       vmImage: 'ubuntu-latest'
-    env:
-      OPENSSL_KEY: $(openssl.key)
-      OPENSSL_IV: $(openssl.iv)
-      TOKEN_NPM: $(token.npm)
-      TOKEN_NUGET: $(token.nuget)
-      TOKEN_CODECOV: $(token.codecov)
     dependsOn: build
     steps:
       - script: |
           bash docker.sh publish
+        env:
+          OPENSSL_KEY: $(openssl.key)
+          OPENSSL_IV: $(openssl.iv)
+          TOKEN_NPM: $(token.npm)
+          TOKEN_NUGET: $(token.nuget)
+          TOKEN_CODECOV: $(token.codecov)
     displayName: 'Publish to Maven Central'
