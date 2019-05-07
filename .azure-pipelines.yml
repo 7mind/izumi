@@ -15,33 +15,54 @@ jobs:
   - job: build
     pool: 
       vmImage: 'ubuntu-latest'
+    env:
+      OPENSSL_KEY: $(openssl.key)
+      OPENSSL_IV: $(openssl.iv)
+      TOKEN_NPM: $(token.npm)
+      TOKEN_NUGET: $(token.nuget)
+      TOKEN_CODECOV: $(token.codecov)
     steps:
       - script: |
-          #!/usr/bin/env bash -xe
-          env
-          pwd
-          #bash docker.sh coverage
-        displayName: 'Tests and Coverage'
+          bash docker.sh coverage
+    displayName: 'Tests and Coverage'
   - job: sbt
     pool: 
       vmImage: 'ubuntu-latest'
+    env:
+      OPENSSL_KEY: $(openssl.key)
+      OPENSSL_IV: $(openssl.iv)
+      TOKEN_NPM: $(token.npm)
+      TOKEN_NUGET: $(token.nuget)
+      TOKEN_CODECOV: $(token.codecov)
     steps:
       - script: |
-          #bash docker.sh scripted
-        displayName: 'SBT plugin tests'
+          bash docker.sh scripted
+    displayName: 'SBT plugin tests'
   - job: site
     pool: 
-      vmImage: 'ubuntu-latest' 
+      vmImage: 'ubuntu-latest'
+    env:
+      OPENSSL_KEY: $(openssl.key)
+      OPENSSL_IV: $(openssl.iv)
+      TOKEN_NPM: $(token.npm)
+      TOKEN_NUGET: $(token.nuget)
+      TOKEN_CODECOV: $(token.codecov)
     dependsOn: build
     steps:
       - script: |
-          #bash docker.sh site
-        displayName: 'Publish Site'
+          bash docker.sh site
+    displayName: 'Publish Site'
   - job: publish
     pool: 
       vmImage: 'ubuntu-latest'
+    env:
+      OPENSSL_KEY: $(openssl.key)
+      OPENSSL_IV: $(openssl.iv)
+      TOKEN_NPM: $(token.npm)
+      TOKEN_NUGET: $(token.nuget)
+      TOKEN_CODECOV: $(token.codecov)
     dependsOn: build
     steps:
       - script: |
-          #bash docker.sh publish
-        displayName: 'Publish to Maven Central'
+          bash docker.sh publish
+    displayName: 'Publish to Maven Central'
