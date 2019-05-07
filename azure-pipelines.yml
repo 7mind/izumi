@@ -14,42 +14,142 @@ variables:
 pool:
   vmImage: 'ubuntu-latest'
 
-steps:
-- script: |
-    cat /proc/cpuinfo
-    uname -a
-    free -h
-    df -h
-    echo $SYSTEM_PULLREQUEST_PULLREQUESTNUMBER
-- script: |
-    export IMAGE="septimalmind/izumi-env:jdk11-5"
-    export SOURCEDIR=$(pwd)
-    export CNAME="izumi-build-$(date +%s)"
-    export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
-    export HOMEDIR="$( cd ~ ; pwd -P )"
+jobs:
+  - job: build
+    steps:
+      - script: |
+          export IMAGE="septimalmind/izumi-env:jdk11-5"
+          export SOURCEDIR=$(pwd)
+          export CNAME="izumi-build-$(date +%s)"
+          export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
+          export HOMEDIR="$( cd ~ ; pwd -P )"
 
-    if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
-      openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
-      tar xvf secrets.tar
-      ln -s .secrets/local.sbt local.sbt
-      export TRAVIS_PULL_REQUEST=false
-      echo "UNPACKED!"
-    else 
-      export TRAVIS_PULL_REQUEST=true
-      echo "P/R!"
-    fi
+          if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+            openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
+            tar xvf secrets.tar
+            ln -s .secrets/local.sbt local.sbt
+            export TRAVIS_PULL_REQUEST=false
+            echo "UNPACKED!"
+          else
+            export TRAVIS_PULL_REQUEST=true
+            echo "P/R!"
+          fi
 
-    docker pull $IMAGE
+          docker pull $IMAGE
 
-    docker run --rm --name $CNAME \
-        -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
-        -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
-        -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
-        -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
-        -e NPM_TOKEN=$(token.npm) \
-        -e NUGET_TOKEN=$(token.nuget) \
-        -e CODECOV_TOKEN=$(token.codecov) \
-        --volume "${SOURCEDIR}":/work:z \
-        --volume "${HOMEDIR}":/root:z \
-        $IMAGE bash -xe travis.sh coverage scripted versionate publish site
-  displayName: 'Build'
+          docker run --rm --name $CNAME \
+              -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+              -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
+              -e NPM_TOKEN=$(token.npm) \
+              -e NUGET_TOKEN=$(token.nuget) \
+              -e CODECOV_TOKEN=$(token.codecov) \
+              --volume "${SOURCEDIR}":/work:z \
+              --volume "${HOMEDIR}":/root:z \
+              $IMAGE bash -xe travis.sh coverage
+        displayName: 'Build'
+  - job: sbt
+    steps:
+      - script: |
+          export IMAGE="septimalmind/izumi-env:jdk11-5"
+          export SOURCEDIR=$(pwd)
+          export CNAME="izumi-build-$(date +%s)"
+          export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
+          export HOMEDIR="$( cd ~ ; pwd -P )"
+
+          if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+            openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
+            tar xvf secrets.tar
+            ln -s .secrets/local.sbt local.sbt
+            export TRAVIS_PULL_REQUEST=false
+            echo "UNPACKED!"
+          else
+            export TRAVIS_PULL_REQUEST=true
+            echo "P/R!"
+          fi
+
+          docker pull $IMAGE
+
+          docker run --rm --name $CNAME \
+              -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+              -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
+              -e NPM_TOKEN=$(token.npm) \
+              -e NUGET_TOKEN=$(token.nuget) \
+              -e CODECOV_TOKEN=$(token.codecov) \
+              --volume "${SOURCEDIR}":/work:z \
+              --volume "${HOMEDIR}":/root:z \
+              $IMAGE bash -xe travis.sh scripted
+        displayName: 'Build'
+  - job: site
+    dependsOn: build
+    steps:
+      - script: |
+          export IMAGE="septimalmind/izumi-env:jdk11-5"
+          export SOURCEDIR=$(pwd)
+          export CNAME="izumi-build-$(date +%s)"
+          export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
+          export HOMEDIR="$( cd ~ ; pwd -P )"
+
+          if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+            openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
+            tar xvf secrets.tar
+            ln -s .secrets/local.sbt local.sbt
+            export TRAVIS_PULL_REQUEST=false
+            echo "UNPACKED!"
+          else
+            export TRAVIS_PULL_REQUEST=true
+            echo "P/R!"
+          fi
+
+          docker pull $IMAGE
+
+          docker run --rm --name $CNAME \
+              -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+              -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
+              -e NPM_TOKEN=$(token.npm) \
+              -e NUGET_TOKEN=$(token.nuget) \
+              -e CODECOV_TOKEN=$(token.codecov) \
+              --volume "${SOURCEDIR}":/work:z \
+              --volume "${HOMEDIR}":/root:z \
+              $IMAGE bash -xe travis.sh site
+        displayName: 'Build'
+  - job: publish
+    dependsOn: build
+    steps:
+      - script: |
+          export IMAGE="septimalmind/izumi-env:jdk11-5"
+          export SOURCEDIR=$(pwd)
+          export CNAME="izumi-build-$(date +%s)"
+          export RESOURCEDIR="$( cd "$(dirname "$0")" ; pwd -P )"
+          export HOMEDIR="$( cd ~ ; pwd -P )"
+
+          if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+            openssl aes-256-cbc -K $(openssl.key) -iv $(openssl.iv) -in secrets.tar.enc -out secrets.tar -d
+            tar xvf secrets.tar
+            ln -s .secrets/local.sbt local.sbt
+            export TRAVIS_PULL_REQUEST=false
+            echo "UNPACKED!"
+          else
+            export TRAVIS_PULL_REQUEST=true
+            echo "P/R!"
+          fi
+
+          docker pull $IMAGE
+
+          docker run --rm --name $CNAME \
+              -e TRAVIS_BRANCH=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_TAG=$BUILD_SOURCEBRANCH \
+              -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST \
+              -e TRAVIS_BUILD_NUMBER=$BUILD_BUILDID \
+              -e NPM_TOKEN=$(token.npm) \
+              -e NUGET_TOKEN=$(token.nuget) \
+              -e CODECOV_TOKEN=$(token.codecov) \
+              --volume "${SOURCEDIR}":/work:z \
+              --volume "${HOMEDIR}":/root:z \
+              $IMAGE bash -xe travis.sh publish
+        displayName: 'Build'
