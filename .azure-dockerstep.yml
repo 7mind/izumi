@@ -10,4 +10,20 @@ jobs:
           vmImage: 'ubuntu-latest'
         container: septimalmind/izumi-env:jdk11-5
         steps:
+          - script: |
+               echo "CPU:"
+               cat /proc/cpuinfo
+               echo "RAM:"
+               free -h
+               echo "DISK":
+               df -h
+               echo "ENVIRONMENT:"
+               printenv
+            displayName: "Diagnostics"
           - ${{ job.steps }}
+            env:
+              OPENSSL_KEY: $(openssl.key)
+              OPENSSL_IV: $(openssl.iv)
+              TOKEN_NPM: $(token.npm)
+              TOKEN_NUGET: $(token.nuget)
+              TOKEN_CODECOV: $(token.codecov)
