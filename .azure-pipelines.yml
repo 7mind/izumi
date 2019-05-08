@@ -21,6 +21,10 @@ jobs:
             - script: |
                   bash travis.sh coverage
             - task: PublishTestResults@2
+            - task: PublishCodeCoverageResults@1
+              inputs:
+                codeCoverageTool: 'Cobertura'
+                summaryFileLocation: './target/scala-2.12/coverage-report/cobertura.xml'
         - job: sbt
           displayName: 'SBT plugin tests'
           steps:
