@@ -43,13 +43,13 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
-                         bash travis.sh unpack site
-            env:
-              OPENSSL_KEY: $(openssl.key)
-              OPENSSL_IV: $(openssl.iv)
-              TOKEN_NPM: $(token.npm)
-              TOKEN_NUGET: $(token.nuget)
-              TOKEN_CODECOV: $(token.codecov)
+                bash travis.sh unpack site
+              env:
+                OPENSSL_KEY: $(openssl.key)
+                OPENSSL_IV: $(openssl.iv)
+                TOKEN_NPM: $(token.npm)
+                TOKEN_NUGET: $(token.nuget)
+                TOKEN_CODECOV: $(token.codecov)
         - job: publish
             displayName: 'Publish to Maven Central'
             dependsOn: build
