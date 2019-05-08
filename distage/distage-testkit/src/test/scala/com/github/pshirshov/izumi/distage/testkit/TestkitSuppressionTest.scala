@@ -42,8 +42,8 @@ abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
-private class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
+class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
 
-private class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
+class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
 
-private class TestkitSuppressionTestZio extends TestkitSuppressionTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitSuppressionTestZio extends TestkitSuppressionTest[scalaz.zio.IO[Throwable, ?]]

@@ -33,8 +33,8 @@ abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
 }
 
 
-private class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
+class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
 
-private class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
+class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
 
-private class TestkitIgnoredTestZio extends TestkitIgnoredTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitIgnoredTestZio extends TestkitIgnoredTest[scalaz.zio.IO[Throwable, ?]]

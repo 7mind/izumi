@@ -14,8 +14,8 @@ abstract class TestkitIntegrationCheckTest[F[_] : TagK] extends TestkitSelftest[
   }
 }
 
-private class TestkitIntegrationCheckTestIO extends TestkitIntegrationCheckTest[IO]
+class TestkitIntegrationCheckTestIO extends TestkitIntegrationCheckTest[IO]
 
-private class TestkitIntegrationCheckTestIdentity extends TestkitIntegrationCheckTest[Identity]
+class TestkitIntegrationCheckTestIdentity extends TestkitIntegrationCheckTest[Identity]
 
-private class TestkitIntegrationCheckTestZio extends TestkitIntegrationCheckTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitIntegrationCheckTestZio extends TestkitIntegrationCheckTest[scalaz.zio.IO[Throwable, ?]]

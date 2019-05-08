@@ -53,8 +53,8 @@ abstract class TestkitMemoizationTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
-private class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
+class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
 
-private class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
+class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
 
-private class TestkitMemoizationTestZio extends TestkitMemoizationTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitMemoizationTestZio extends TestkitMemoizationTest[scalaz.zio.IO[Throwable, ?]]

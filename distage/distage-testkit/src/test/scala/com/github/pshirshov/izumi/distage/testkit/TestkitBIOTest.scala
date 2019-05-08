@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.functional.bio.{BIO, BIOError}
 import com.github.pshirshov.izumi.functional.bio.BIO.syntax._
 import distage.{ModuleBase, TagK, TagKK}
 
-private abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK: Lambda[f[_, _] => TagK[f[Throwable, ?]]]] extends DistagePluginBioSpec[F]
+abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK: Lambda[f[_, _] => TagK[f[Throwable, ?]]]] extends DistagePluginBioSpec[F]
   with DistageBioSpecBIOSyntax[F] {
 
   override protected def pluginPackages: Seq[String] = thisPackage
@@ -24,4 +24,4 @@ private abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK: Lambda[f[_, _] => T
 
 }
 
-private class TestkitBIOTestZio extends TestkitBIOTest[scalaz.zio.IO]
+class TestkitBIOTestZio extends TestkitBIOTest[scalaz.zio.IO]

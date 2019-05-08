@@ -83,11 +83,11 @@ abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
   }
 }
 
-private class TestkitTestIO extends TestkitTest[IO]
+class TestkitTestIO extends TestkitTest[IO]
 
-private class TestkitTestIdentity extends TestkitTest[Identity]
+class TestkitTestIdentity extends TestkitTest[Identity]
 
-private class TestkitTestZio extends TestkitTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitTestZio extends TestkitTest[scalaz.zio.IO[Throwable, ?]]
 
 object TestkitTest {
 
