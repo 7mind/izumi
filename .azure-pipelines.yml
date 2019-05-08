@@ -24,7 +24,7 @@ jobs:
             - task: PublishCodeCoverageResults@1
               inputs:
                 codeCoverageTool: 'Cobertura'
-                summaryFileLocation: './target/scala-2.12/coverage-report/cobertura.xml'
+                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
         - job: sbt
           displayName: 'SBT plugin tests'
           steps:
