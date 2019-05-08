@@ -19,7 +19,7 @@ jobs:
           displayName: 'Tests and Coverage'
           steps:
             - script: |
-                  bash travis.sh coverage
+                  bash .build.sh coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -29,7 +29,7 @@ jobs:
           displayName: 'SBT plugin tests'
           steps:
             - script: |
-                bash travis.sh scripted
+                bash .build.sh scripted
         - job: site
           dependsOn:
           - build
@@ -37,7 +37,7 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
-                bash travis.sh secrets site
+                bash .build.sh secrets site
         - job: publish
           displayName: 'Publish to Maven Central'
           dependsOn:
@@ -45,7 +45,7 @@ jobs:
           - sbt
           steps:
             - script: |
-                bash travis.sh secrets publish
+                bash .build.sh secrets publish
 
 #cache:
 #  directories:

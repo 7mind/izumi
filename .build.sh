@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 function csbt {
-    COMMAND="time sbt -no-colors -v $*"
+    COMMAND="time sbt -batch -no-colors -v $*"
     eval $COMMAND
 }
 
