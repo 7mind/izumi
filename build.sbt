@@ -550,7 +550,6 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
 )
 
 lazy val allJsProjects = fundamentalsJs ++
-  idealinguaJs ++
   idealinguaV1Js
 
 lazy val allProjects = fundamentalsJvm ++
