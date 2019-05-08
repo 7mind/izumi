@@ -12,65 +12,53 @@ variables:
 - group: security-tokens
 
 jobs:
-  - job: build
-    pool: 
-      vmImage: 'ubuntu-latest'
-    container: septimalmind/izumi-env:jdk11-5
-    steps:
-      - script: |
-          #bash travis.sh coverage
-          echo 1
-        env:
-          OPENSSL_KEY: $(openssl.key)
-          OPENSSL_IV: $(openssl.iv)
-          TOKEN_NPM: $(token.npm)
-          TOKEN_NUGET: $(token.nuget)
-          TOKEN_CODECOV: $(token.codecov)
-      - task: PublishTestResults@2
-    displayName: 'Tests and Coverage'
-  - job: sbt
-    pool: 
-      vmImage: 'ubuntu-latest'
-    container: septimalmind/izumi-env:jdk11-5
-    steps:
-      - script: |
-          #bash travis.sh scripted
-          echo 2
-        env:
-          OPENSSL_KEY: $(openssl.key)
-          OPENSSL_IV: $(openssl.iv)
-          TOKEN_NPM: $(token.npm)
-          TOKEN_NUGET: $(token.nuget)
-          TOKEN_CODECOV: $(token.codecov)
-    displayName: 'SBT plugin tests'
-  - job: site
-    pool: 
-      vmImage: 'ubuntu-latest'
-    container: septimalmind/izumi-env:jdk11-5
-    #dependsOn: build
-    steps:
-      - script: |
-          bash travis.sh unpack site
-        env:
-          OPENSSL_KEY: $(openssl.key)
-          OPENSSL_IV: $(openssl.iv)
-          TOKEN_NPM: $(token.npm)
-          TOKEN_NUGET: $(token.nuget)
-          TOKEN_CODECOV: $(token.codecov)
-    displayName: 'Publish Site'
-  - job: publish
-    pool: 
-      vmImage: 'ubuntu-latest'
-    container: septimalmind/izumi-env:jdk11-5
-    dependsOn: build
-    steps:
-      - script: |
-          #bash travis.sh unpack publish
-          echo 3
-        env:
-          OPENSSL_KEY: $(openssl.key)
-          OPENSSL_IV: $(openssl.iv)
-          TOKEN_NPM: $(token.npm)
-          TOKEN_NUGET: $(token.nuget)
-          TOKEN_CODECOV: $(token.codecov)
-    displayName: 'Publish to Maven Central'
+  - template: .azure-dockerstep.yml
+    parameters:
+      jobs:
+        - job: build
+          displayName: 'Tests and Coverage'
+          steps:
+            - script: |
+                  bash travis.sh coverage
+              env:
+                OPENSSL_KEY: $(openssl.key)
+                OPENSSL_IV: $(openssl.iv)
+                TOKEN_NPM: $(token.npm)
+                TOKEN_NUGET: $(token.nuget)
+                TOKEN_CODECOV: $(token.codecov)
+            - task: PublishTestResults@2
+        - job: sbt
+          displayName: 'SBT plugin tests'
+          steps:
+            - script: |
+                bash travis.sh scripted
+              env:
+                OPENSSL_KEY: $(openssl.key)
+                OPENSSL_IV: $(openssl.iv)
+                TOKEN_NPM: $(token.npm)
+                TOKEN_NUGET: $(token.nuget)
+                TOKEN_CODECOV: $(token.codecov)
+        - job: site
+          dependsOn: build
+          displayName: 'Publish Site'
+          steps:
+            - script: |
+                         bash travis.sh unpack site
+            env:
+              OPENSSL_KEY: $(openssl.key)
+              OPENSSL_IV: $(openssl.iv)
+              TOKEN_NPM: $(token.npm)
+              TOKEN_NUGET: $(token.nuget)
+              TOKEN_CODECOV: $(token.codecov)
+        - job: publish
+            displayName: 'Publish to Maven Central'
+            dependsOn: build
+            steps:
+              - script: |
+                  bash travis.sh unpack publish
+                env:
+                  OPENSSL_KEY: $(openssl.key)
+                  OPENSSL_IV: $(openssl.iv)
+                  TOKEN_NPM: $(token.npm)
+                  TOKEN_NUGET: $(token.nuget)
+                  TOKEN_CODECOV: $(token.codecov)
