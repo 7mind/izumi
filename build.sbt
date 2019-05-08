@@ -17,6 +17,7 @@ licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licen
 developers in ThisBuild := List(
   Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
 )
+scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
