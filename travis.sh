@@ -13,7 +13,8 @@ export NUGET_TOKEN=${TOKEN_NUGET}
 export CODECOV_TOKEN=${TOKEN_CODECOV}
 export TRAVIS_BUILD_NUMBER=${BUILD_BUILDID}
 export TRAVIS_COMMIT=${BUILD_SOURCEVERSION}
-git config --global user.name "$USER"
+export USERNAME=${USER:-`whoami`}
+git config --global user.name "$USERNAME"
 git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
 
 git config --global user.name
