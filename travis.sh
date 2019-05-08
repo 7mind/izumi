@@ -18,6 +18,7 @@ git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
 
 git config --global user.name
 git config --global user.email
+printenv
 
 function block_open {
     echo -en "travis_fold:start:$1\\r"
