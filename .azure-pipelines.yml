@@ -27,7 +27,7 @@ jobs:
             - script: |
                 bash travis.sh scripted
         - job: site
-          dependsOn: build
+          #dependsOn: build
           displayName: 'Publish Site'
           steps:
             - script: |
