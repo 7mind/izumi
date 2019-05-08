@@ -16,10 +16,12 @@ export TRAVIS_COMMIT=${BUILD_SOURCEVERSION}
 export USERNAME=${USER:-`whoami`}
 git config --global user.name "$USERNAME"
 git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
+git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-git config --global user.name
-git config --global user.email
 printenv
+
+mkdir -p ~/.sbt/1.0/plugins/
+echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
 
 function block_open {
     echo -en "travis_fold:start:$1\\r"
