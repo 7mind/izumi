@@ -51,14 +51,14 @@ jobs:
                 TOKEN_NUGET: $(token.nuget)
                 TOKEN_CODECOV: $(token.codecov)
         - job: publish
-            displayName: 'Publish to Maven Central'
-            dependsOn: build
-            steps:
-              - script: |
-                  bash travis.sh unpack publish
-                env:
-                  OPENSSL_KEY: $(openssl.key)
-                  OPENSSL_IV: $(openssl.iv)
-                  TOKEN_NPM: $(token.npm)
-                  TOKEN_NUGET: $(token.nuget)
-                  TOKEN_CODECOV: $(token.codecov)
+          displayName: 'Publish to Maven Central'
+          dependsOn: build
+          steps:
+            - script: |
+                bash travis.sh unpack publish
+              env:
+                OPENSSL_KEY: $(openssl.key)
+                OPENSSL_IV: $(openssl.iv)
+                TOKEN_NPM: $(token.npm)
+                TOKEN_NUGET: $(token.nuget)
+                TOKEN_CODECOV: $(token.codecov)
