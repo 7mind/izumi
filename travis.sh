@@ -11,7 +11,10 @@ export TRAVIS_TAG=$BUILD_SOURCEBRANCH
 export NPM_TOKEN=${TOKEN_NPM}
 export NUGET_TOKEN=${TOKEN_NUGET}
 export CODECOV_TOKEN=${TOKEN_CODECOV}
-
+export TRAVIS_BUILD_NUMBER=${BUILD_BUILDID}
+export TRAVIS_COMMIT=${BUILD_SOURCEVERSION}
+git config --global user.name "$USER"
+git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
 
 function block_open {
     echo -en "travis_fold:start:$1\\r"
