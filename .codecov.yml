@@ -1,3 +1,4 @@
+# https://docs.codecov.io/docs/codecov-yaml
 codecov:
   notify:
     require_ci_to_pass: yes
