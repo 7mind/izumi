@@ -2,8 +2,8 @@ parameters:
   jobs: []
 
 jobs:
-  - ${{ each job in parameters.jobs }}: # Each job
-      - ${{ each pair in job }}:          # Insert all properties other than "steps"
+  - ${{ each job in parameters.jobs }}:
+      - ${{ each pair in job }}:
           ${{ if ne(pair.key, 'steps') }}:
             ${{ pair.key }}: ${{ pair.value }}
         pool:
@@ -20,7 +20,9 @@ jobs:
                echo "ENVIRONMENT:"
                printenv
             displayName: "Diagnostics"
-          - ${{ job.steps }}
+          - ${{ each step in job.steps }}
+            - ${{ each pair in step }}:
+                ${{ pair.key }}: ${{ pair.value }}
             env:
               OPENSSL_KEY: $(openssl.key)
               OPENSSL_IV: $(openssl.iv)
