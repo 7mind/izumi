@@ -18,7 +18,8 @@ jobs:
     container: septimalmind/izumi-env:jdk11-5
     steps:
       - script: |
-          bash travis.sh coverage
+          #bash travis.sh coverage
+          echo 1
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
@@ -33,7 +34,8 @@ jobs:
     container: septimalmind/izumi-env:jdk11-5
     steps:
       - script: |
-          bash travis.sh scripted
+          #bash travis.sh scripted
+          echo 2
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
@@ -45,7 +47,7 @@ jobs:
     pool: 
       vmImage: 'ubuntu-latest'
     container: septimalmind/izumi-env:jdk11-5
-    dependsOn: build
+    #dependsOn: build
     steps:
       - script: |
           bash travis.sh unpack site
@@ -63,7 +65,8 @@ jobs:
     dependsOn: build
     steps:
       - script: |
-          bash travis.sh unpack publish
+          #bash travis.sh unpack publish
+          echo 3
         env:
           OPENSSL_KEY: $(openssl.key)
           OPENSSL_IV: $(openssl.iv)
