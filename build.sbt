@@ -398,89 +398,6 @@ lazy val fastparseShaded = inShade.as.module
   .settings(libraryDependencies ++= Seq(R.fastparse % "shaded"))
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-lazy val idealinguaModel = inIdealinguaX.as.cross(platforms)
-lazy val idealinguaModelJvm = idealinguaModel.jvm.remember
-lazy val idealinguaModelJs = idealinguaModel.js.remember
-
-lazy val idealinguaCore = inIdealinguaX.as.cross(platforms)
-  .depends(idealinguaModel)
-lazy val idealinguaCoreJvm = idealinguaCore.jvm.remember
-  .depends(fastparseShaded)
-  .settings(ShadingSettings)
-lazy val idealinguaCoreJs = idealinguaCore.js.remember
-  .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
-
-lazy val idealinguaRuntimeRpcScala = inIdealinguaX.as.cross(platforms)
-  .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
-  .settings(
-    libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
-  )
-
-lazy val idealinguaRuntimeRpcScalaJvm = idealinguaRuntimeRpcScala.jvm.remember
-lazy val idealinguaRuntimeRpcScalaJs = idealinguaRuntimeRpcScala.js.remember
-
-lazy val idealinguaTestDefs = inIdealingua.as.module.dependsOn(idealinguaRuntimeRpcScalaJvm)
-
-lazy val idealinguaTranspilers = inIdealinguaX.as.cross(platforms)
-  .settings(libraryDependencies += R.scala_xml)
-  .depends(
-    idealinguaCore,
-    idealinguaRuntimeRpcScala,
-    fundamentalsJsonCirce,
-  )
-lazy val idealinguaTranspilersJvm = idealinguaTranspilers.jvm.remember
-  .settings(ShadingSettings)
-  .dependsSeq(Seq(
-    idealinguaTestDefs,
-    idealinguaRuntimeRpcTypescript,
-    idealinguaRuntimeRpcGo,
-    idealinguaRuntimeRpcCSharp,
-  ).map(_.testOnlyRef))
-
-lazy val idealinguaTranspilersJs = idealinguaTranspilers.js.remember
-
-lazy val idealinguaRuntimeRpcHttp4s = inIdealingua.as.module
-  .depends(idealinguaRuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
-  .dependsSeq(Seq(idealinguaTestDefs).map(_.testOnlyRef))
-  .settings(
-    libraryDependencies ++= R.http4s_all,
-    libraryDependencies += R.asynchttpclient,
-  )
-
-
-lazy val idealinguaRuntimeRpcTypescript = inIdealingua.as.module
-
-lazy val idealinguaRuntimeRpcCSharp = inIdealingua.as.module
-
-lazy val idealinguaRuntimeRpcGo = inIdealingua.as.module
-
-lazy val idealinguaCompilerDeps = Seq[ProjectReferenceEx](
-  idealinguaTranspilersJvm,
-  idealinguaRuntimeRpcScalaJvm,
-  idealinguaRuntimeRpcTypescript,
-  idealinguaRuntimeRpcGo,
-  idealinguaRuntimeRpcCSharp,
-  idealinguaTestDefs,
-)
-
-lazy val idealinguaCompiler = inIdealinguaBase.as.module
-  .depends(idealinguaCompilerDeps: _*)
-  .settings(AppSettings)
-  .enablePlugins(ScriptedPlugin)
-  .settings(
-    libraryDependencies ++= Seq(R.typesafe_config)
-    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
-  )
-  .settings(
-    artifact in(Compile, assembly) := {
-      val art = (artifact in(Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    },
-
-    addArtifact(artifact in(Compile, assembly), assembly)
-  )
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 lazy val idealinguaV1Model = inIdealinguaV1X.as.cross(platforms)
 lazy val idealinguaV1ModelJvm = idealinguaV1Model.jvm.remember
 lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
@@ -593,16 +510,6 @@ lazy val distage: Seq[ProjectReference] = Seq(
   , distageStatic
   , distageTestkit
 )
-lazy val idealingua: Seq[ProjectReference] = Seq(
-  fastparseShaded,
-  idealinguaModelJvm,
-  idealinguaCoreJvm,
-  idealinguaTranspilersJvm,
-  idealinguaRuntimeRpcScalaJvm,
-  idealinguaRuntimeRpcHttp4s,
-  idealinguaCompiler,
-  idealinguaTestDefs,
-)
 
 lazy val idealinguaV1: Seq[ProjectReference] = Seq(
   fastparseShaded,
@@ -627,13 +534,6 @@ lazy val izsbt: Seq[ProjectReference] = Seq(
   sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps
 )
 
-lazy val idealinguaJs: Seq[ProjectReference] = Seq(
-  idealinguaModelJs,
-  idealinguaCoreJs,
-  idealinguaRuntimeRpcScalaJs,
-  idealinguaTranspilersJs,
-)
-
 lazy val idealinguaV1Js: Seq[ProjectReference] = Seq(
   idealinguaV1ModelJs,
   idealinguaV1CoreJs,
@@ -656,7 +556,6 @@ lazy val allJsProjects = fundamentalsJs ++
 lazy val allProjects = fundamentalsJvm ++
   distage ++
   logstage ++
-  idealingua ++
   idealinguaV1 ++
   izsbt ++
   Seq(microsite: ProjectReference)
