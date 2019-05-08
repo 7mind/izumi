@@ -1,7 +1,0 @@
-domain idltest.events
-
-buzzer TestBuzzer {
-  line empty()
-  line userRegistered(firstName: str, secondName: str)
-  line hello(name: str): str
-}

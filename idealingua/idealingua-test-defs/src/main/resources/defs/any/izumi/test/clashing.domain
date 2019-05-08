@@ -1,5 +1,0 @@
-domain izumi.test.clashing
-
-import izumi.test.clashing.another
-
-alias Imported = izumi.test.clashing.another#SomeEnum

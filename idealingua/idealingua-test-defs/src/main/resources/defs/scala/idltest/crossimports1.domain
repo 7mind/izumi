@@ -1,9 +1,0 @@
-@nonportable()
-domain idltest.crossimports1
-
-import idltest.crossimports2
-import idltest.crossimports3
-
-data Dummy1 {
-  other: idltest.crossimports2#Dummy2
-}

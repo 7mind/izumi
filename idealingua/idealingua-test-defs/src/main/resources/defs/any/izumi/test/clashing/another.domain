@@ -1,5 +1,0 @@
-domain izumi.test.clashing.another
-
-enum SomeEnum {
-  VALUE
-}

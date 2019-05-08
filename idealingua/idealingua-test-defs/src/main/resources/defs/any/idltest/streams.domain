@@ -1,7 +1,0 @@
-domain idltest.streams
-
-// NOTE: It's just a syntax. Streams aren't supported by transpilers yet. https://github.com/7mind/izumi/issues/89
-streams TestStreams {
-  toclient empty(firstName: str, secondName: str)
-  toserver hello(name: str)
-}
