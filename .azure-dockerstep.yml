@@ -21,5 +21,11 @@ jobs:
                printenv
             displayName: "Diagnostics"
           - ${{ each step in job.steps }}:
-              - ${{ each pair in step }}:
+              env:
+                OPENSSL_KEY: $(openssl.key)
+                OPENSSL_IV: $(openssl.iv)
+                TOKEN_NPM: $(token.npm)
+                TOKEN_NUGET: $(token.nuget)
+                TOKEN_CODECOV: $(token.codecov)
+              ${{ each pair in step }}:
                   ${{ pair.key }}: ${{ pair.value }}
