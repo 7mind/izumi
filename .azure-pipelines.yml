@@ -31,14 +31,48 @@ jobs:
             - script: |
                 bash travis.sh scripted
         - job: site
-          #dependsOn: build
+          dependsOn:
+          - build
+          - sbt
           displayName: 'Publish Site'
           steps:
             - script: |
-                bash travis.sh unpack site
+                bash travis.sh secrets site
         - job: publish
           displayName: 'Publish to Maven Central'
-          dependsOn: build
+          dependsOn:
+          - build
+          - sbt
           steps:
             - script: |
-                bash travis.sh unpack publish
+                bash travis.sh secrets publish
+
+#cache:
+#  directories:
+#  - $HOME/.sbt
+#  - $HOME/.ivy2
+#  - $HOME/.coursier
+#  - $HOME/.cache/coursier
+#  - $HOME/.m2
+#
+#before_cache:
+#  - du -h -d 1 $HOME/.ivy2/
+#  - du -h -d 2 $HOME/.sbt/
+#  - du -h -d 2 $HOME/.m2/
+#  - du -h -d 2 $HOME/.coursier/
+#  - du -h -d 2 $HOME/.cache/coursier/
+#  - sudo find $HOME/.sbt -name "*.lock" -type f -delete
+#  - sudo find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+#  - sudo rm -rf ~/.ivy2/local
+#  - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;
+#
+#before_install:
+#  - mkdir -p ~/.sbt/
+#  - mkdir -p ~/.sbt/1.0/plugins/
+#  - mkdir -p ~/.m2/
+#  - mkdir -p ~/.ivy2/
+#  - mkdir -p ~/.coursier/
+#  - mkdir -p ~/.cache/coursier
+#  - echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
+#  - sudo rm -rf ~/.ivy2/local
+#  - sudo find ~/.m2/ ~/.ivy2/ ~/.sbt/ ~/.coursier/ ~/.cache/coursier -name '*izumi*' -prune -exec rm -rf "{}" \;

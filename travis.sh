@@ -1,82 +1,34 @@
 #!/bin/bash -xe
 
-if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
-    export TRAVIS_PULL_REQUEST=false
-else
-    export TRAVIS_PULL_REQUEST=true
-fi
-
-export TRAVIS_BRANCH=${BUILD_SOURCEBRANCHNAME}
-export TRAVIS_TAG=${BUILD_SOURCEBRANCHNAME}
-export NPM_TOKEN=${TOKEN_NPM}
-export NUGET_TOKEN=${TOKEN_NUGET}
-export CODECOV_TOKEN=${TOKEN_CODECOV}
-export TRAVIS_BUILD_NUMBER=${BUILD_BUILDID}
-export TRAVIS_COMMIT=${BUILD_SOURCEVERSION}
-export USERNAME=${USER:-`whoami`}
-git config --global user.name "$USERNAME"
-git config --global user.email "$TRAVIS_BUILD_NUMBER@$TRAVIS_COMMIT"
-git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-
-printenv
-
-mkdir -p ~/.sbt/1.0/plugins/
-echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
-
-function block_open {
-    echo -en "travis_fold:start:$1\\r"
-}
-
-function block_close {
-    echo -en "travis_fold:end:$1\\r"
-}
-
-function bopen {
-    #block_open ${FUNCNAME[1]}
-    :
-}
-
-function bclose {
-    #block_close ${FUNCNAME[1]}
-    :
-}
-
 function csbt {
     COMMAND="time sbt -no-colors -v $*"
     eval $COMMAND
 }
 
 function versionate {
-  bopen
-  if [[ "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "develop" && ! ( "$TRAVIS_TAG" =~ ^v.*$ ) ]] ; then
-    echo "Setting version suffix to $TRAVIS_BRANCH"
-    csbt "\"addVersionSuffix $TRAVIS_BRANCH\""
+  if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
+    echo "Setting version suffix to $CI_BRANCH"
+    csbt "\"addVersionSuffix $CI_BRANCH\""
   else
     echo "No version suffix required"
   fi
-  bclose
 }
 
 function coverage {
-  bopen
   csbt clean coverage test coverageReport || exit 1
   bash <(curl -s https://codecov.io/bash)
-  bclose
 }
 
 function scripted {
-  bopen
   csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
-  bclose
 }
 
 function site {
-  bopen
-  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
+  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
-  if [[ "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
-    echo "Publishing site from branch=$TRAVIS_BRANCH; tag=$TRAVIS_TAG"
+  if [[ "$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ]] ; then
+    echo "Publishing site from branch=$CI_BRANCH; tag=$CI_TAG"
     chown -R root:root ~/.ssh
     chmod 600 .secrets/travis-deploy-key
     eval "$(ssh-agent -s)"
@@ -84,14 +36,12 @@ function site {
 
     csbt clean makeSite ghpagesPushSite || exit 1
   else
-    echo "Not publishing site, because $TRAVIS_BRANCH is not 'develop'"
+    echo "Not publishing site, because $CI_BRANCH is not 'develop'"
   fi
-  bclose
 }
 
 function publish {
-  bopen
-  if [[ "$TRAVIS_PULL_REQUEST" != "false"  ]] ; then
+  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
 
@@ -99,41 +49,70 @@ function publish {
     return 0
   fi
 
-  if [[ ! ("$TRAVIS_BRANCH" == "develop" || "$TRAVIS_TAG" =~ ^v.*$) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$) ]] ; then
     return 0
   fi
 
   echo "PUBLISH..."
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
-  export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${TRAVIS_BUILD_NUMBER}"/")
+  export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
   ./idealingua/idealingua-runtime-rpc-typescript/src/npmjs/publish.sh
   ./idealingua/idealingua-runtime-rpc-c-sharp/src/main/nuget/publish.sh
 
   csbt clean package publishSigned || exit 1
 
-  if [[ "$TRAVIS_TAG" =~ ^v.*$ ]] ; then
+  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
-  bclose
+  
 }
 
-function unpack {
-    if [[ "$TRAVIS_PULL_REQUEST" == "false"  ]] ; then
+function init {
+    echo "=== INIT ==="
+    if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
+        export CI_PULL_REQUEST=false
+    else
+        export CI_PULL_REQUEST=true
+    fi
+
+    export CI_BRANCH=${BUILD_SOURCEBRANCHNAME}
+    export CI_TAG=${BUILD_SOURCEBRANCHNAME}
+    export CI_BUILD_NUMBER=${BUILD_BUILDID}
+    export CI_COMMIT=${BUILD_SOURCEVERSION}
+
+    export NPM_TOKEN=${TOKEN_NPM}
+    export NUGET_TOKEN=${TOKEN_NUGET}
+    export CODECOV_TOKEN=${TOKEN_CODECOV}
+    export USERNAME=${USER:-`whoami`}
+
+    printenv
+
+    git config --global user.name "$USERNAME"
+    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
+    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+    mkdir -p ~/.sbt/1.0/plugins/
+    echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
+
+    echo "pwd: `pwd`"
+    echo "Current directory:"
+    ls -la .
+    echo "Home:"
+    ls -la ~
+
+    echo "=== END ==="
+}
+
+function secrets {
+    if [[ "$CI_PULL_REQUEST" == "false"  ]] ; then
         openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
         tar xvf secrets.tar
         ln -s .secrets/local.sbt local.sbt
     fi
 }
 
-function info {
-  bopen
-  ls -la .
-  ls -la ~
-  bclose
-}
-
-info
+init
 
 PARAMS=()
 SOFT=0
@@ -165,8 +144,8 @@ case $i in
         site
     ;;
 
-    unpack)
-        unpack
+    secrets)
+        secrets
     ;;
 
     *)
