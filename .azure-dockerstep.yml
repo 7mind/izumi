@@ -20,9 +20,9 @@ jobs:
                echo "ENVIRONMENT:"
                printenv
             displayName: "Diagnostics"
-          - ${{ each step in job.steps }}
+          - ${{ each step in job.steps }}:
             - ${{ each pair in step }}:
-                ${{ pair.key }}: ${{ pair.value }}
+              ${{ pair.key }}: ${{ pair.value }}
             env:
               OPENSSL_KEY: $(openssl.key)
               OPENSSL_IV: $(openssl.iv)
