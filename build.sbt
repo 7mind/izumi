@@ -596,7 +596,7 @@ lazy val microsite = inDoc.as.module
     //    , mdoc := run.in(Compile).evaluated
     , mdocIn := baseDirectory.value / "src/main/tut"
     , sourceDirectory in Paradox := mdocOut.value
-    , makeSite := makeSite.dependsOn(mdoc.toTask(" --no-link-hygiene")).value
+    , (mappings in SitePlugin.autoImport.makeSite):= (mappings in SitePlugin.autoImport.makeSite).dependsOn(mdoc.toTask(" --no-link-hygiene")).value
     , version in Paradox := version.value
     , excludeFilter in ghpagesCleanSite :=
       new FileFilter {
