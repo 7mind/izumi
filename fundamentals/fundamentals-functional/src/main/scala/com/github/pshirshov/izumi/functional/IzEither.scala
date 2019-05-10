@@ -32,6 +32,24 @@ trait IzEither {
       (left, right)
     }
   }
+
+  implicit class BiFind[T](s: Seq[T]) {
+    def biFind[E](predicate: T => Either[List[E], Boolean]): Either[List[E], Option[T]] = {
+      val i = s.iterator
+      while (i.hasNext) {
+        val a = i.next()
+        predicate(a) match {
+          case Left(value) =>
+            return Left(value)
+          case Right(value) if value =>
+            return Right(Some(a))
+
+          case Right(_) =>
+        }
+      }
+      Right(None)
+    }
+  }
 }
 
 object IzEither extends IzEither {

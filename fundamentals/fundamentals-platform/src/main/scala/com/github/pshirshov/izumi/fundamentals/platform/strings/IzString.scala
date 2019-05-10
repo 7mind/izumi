@@ -19,8 +19,8 @@ class IzString(s: String) {
     Try(s.toBoolean).toOption
   }
 
-  @inline final def shift(delta: Int): String = {
-    val shift = " " * delta
+  @inline final def shift(delta: Int, fill: String = " "): String = {
+    val shift = fill * delta
     s.split('\n').map(s => s"$shift$s").mkString("\n")
   }
 
@@ -96,11 +96,7 @@ class IzString(s: String) {
 
   @inline def split2(splitter: Char): (String, String) = {
     val parts = s.split(splitter)
-    if (parts.length > 2) {
-      (parts.head, parts.tail.mkString(splitter.toString))
-    } else {
-      (parts.head, parts.tail.mkString(splitter.toString))
-    }
+    (parts.head, parts.tail.mkString(splitter.toString))
   }
 
   def uncapitalize: String = {
@@ -142,13 +138,16 @@ class IzString(s: String) {
     }
   }
 
+  def block(delta: Int, open: String, close: String): String = {
+    s"$open${shift(delta)}$close"
+  }
 }
 
 class IzIterable[A](s: Iterable[A]) {
-  def niceList(shift: String = " "): String = {
+  def niceList(shift: String = " ", prefix: String = "- "): String = {
     if (s.nonEmpty) {
-      val prefix = s"\n$shift- "
-      s.mkString(prefix, prefix, "")
+      val fullPrefix = s"\n$shift$prefix"
+      s.mkString(fullPrefix, fullPrefix, "")
     } else {
       "ø"
     }
