@@ -24,7 +24,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
     "work in a basic case in Identity monad" in {
       val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
+        make[Int].named("2").fromValue(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
       }, GCMode(DIKey.get[Int]))
 
@@ -37,7 +37,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
     "work in a basic case in Suspend2 monad" in {
       val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
+        make[Int].named("2").fromValue(2)
         make[Int].fromEffect { i: Int @Id("2") => Suspend2(10 + i) }
       }, GCMode(DIKey.get[Int]))
 
@@ -51,7 +51,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
     "work with constructor binding" in {
       val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
+        make[Int].named("2").fromValue(2)
         make[Int].fromEffect[Suspend2[Nothing, ?], Int, IntSuspend]
       }, GCMode(DIKey.get[Int]))
 
@@ -108,7 +108,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
     "support Identity effects in Suspend monad" in {
       val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
+        make[Int].named("2").fromValue(2)
         make[Int].fromEffect[Identity, Int] { i: Int @Id("2") => 10 + i }
       }, GCMode(DIKey.get[Int]))
 

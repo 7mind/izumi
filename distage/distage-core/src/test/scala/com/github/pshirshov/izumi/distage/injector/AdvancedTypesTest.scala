@@ -15,9 +15,9 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     import TypesCase1._
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[List[Dep]].named("As").from(List(DepA()))
-      make[List[Dep]].named("Bs").from(List(DepB()))
-      make[List[DepA]].from(List(DepA(), DepA(), DepA()))
+      make[List[Dep]].named("As").fromValue(List(DepA()))
+      make[List[Dep]].named("Bs").fromValue(List(DepB()))
+      make[List[DepA]].fromValue(List(DepA(), DepA(), DepA()))
       make[TestClass[DepA]]
     })
 
@@ -201,7 +201,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     intercept[UnsupportedWiringException] {
       val definition = PlannerInput.noGc(new ModuleDef {
         make[{def a: Int}]
-        make[Int].from(5)
+        make[Int].fromValue(5)
       })
 
       val injector = mkInjector()

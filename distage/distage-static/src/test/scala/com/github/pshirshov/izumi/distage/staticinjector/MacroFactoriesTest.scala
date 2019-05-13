@@ -49,7 +49,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
 
     val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[GenericAssistedFactory]
-      make[Dependency].from(ConcreteDep())
+      make[Dependency].fromValue(ConcreteDep())
     })
 
     val injector = mkInjector()
@@ -68,7 +68,7 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
 
     val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[AssistedFactory]
-      make[Dependency].from(ConcreteDep())
+      make[Dependency].fromValue(ConcreteDep())
     })
 
     val injector = mkInjector()
@@ -86,8 +86,8 @@ class MacroFactoriesTest extends WordSpec with MkInjector {
     val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[NamedAssistedFactory]
       stat[Dependency]
-      make[Dependency].named("special").from(SpecialDep())
-      make[Dependency].named("veryspecial").from(VerySpecialDep())
+      make[Dependency].named("special").fromValue(SpecialDep())
+      make[Dependency].named("veryspecial").fromValue(VerySpecialDep())
     })
 
     val injector = mkInjector()

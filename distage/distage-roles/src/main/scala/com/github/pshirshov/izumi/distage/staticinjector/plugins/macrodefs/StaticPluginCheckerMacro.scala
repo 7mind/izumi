@@ -150,7 +150,7 @@ object StaticPluginCheckerMacro {
     })
 
     val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from(policy)
+      make[PlanMergingPolicy].fromValue(policy)
     })
     val injector = Injector.inherit(bootstrap)
 

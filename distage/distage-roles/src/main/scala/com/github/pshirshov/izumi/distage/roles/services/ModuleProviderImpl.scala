@@ -28,9 +28,9 @@ class ModuleProviderImpl[F[_] : TagK](
                                      ) extends ModuleProvider[F] {
   def bootstrapModules(): Seq[BootstrapModuleDef] = {
     val rolesModule = new BootstrapModuleDef {
-      make[RolesInfo].from(roles)
-      make[RawAppArgs].from(args)
-      make[AppActivation].from(activation)
+      make[RolesInfo].fromValue(roles)
+      make[RawAppArgs].fromValue(args)
+      make[AppActivation].fromValue(activation)
       make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
     }
 
@@ -43,7 +43,7 @@ class ModuleProviderImpl[F[_] : TagK](
     val configModule = new ConfigModule(config, options.configInjectionOptions)
 
     val resourceRewriter = new BootstrapModuleDef {
-      make[RewriteRules].from(options.rewriteRules)
+      make[RewriteRules].fromValue(options.rewriteRules)
       many[PlanningHook].add[ResourceRewriter]
     }
 
@@ -62,7 +62,7 @@ class ModuleProviderImpl[F[_] : TagK](
   def appModules(): Seq[Module] = {
     val baseMod = new ModuleDef {
       addImplicit[DIEffect[Identity]]
-      make[DIEffectRunner[Identity]].from(DIEffectRunner.IdentityImpl)
+      make[DIEffectRunner[Identity]].fromValue(DIEffectRunner.IdentityImpl)
     }
 
     Seq(

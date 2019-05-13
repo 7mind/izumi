@@ -13,9 +13,9 @@ class LogstageModule(router: LogRouter, setupStatic: Boolean) extends BootstrapM
     StaticLogRouter.instance.setup(router)
   }
 
-  make[LogRouter].from(router)
+  make[LogRouter].fromValue(router)
 
-  make[CustomContext].from(CustomContext.empty)
+  make[CustomContext].fromValue(CustomContext.empty)
   make[LoggerHook].from[LoggerHookLoggingImpl]
   many[PlanningObserver].add[PlanningObserverLoggingImpl]
 

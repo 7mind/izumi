@@ -50,7 +50,7 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[GenericAssistedFactory]
-      make[Dependency].from(ConcreteDep())
+      make[Dependency].fromValue(ConcreteDep())
     })
 
     val injector = mkInjector()
@@ -70,8 +70,8 @@ class FactoriesTest extends WordSpec with MkInjector {
     val definition = PlannerInput.noGc(new ModuleDef {
       make[NamedAssistedFactory]
       make[Dependency]
-      make[Dependency].named("special").from(SpecialDep())
-      make[Dependency].named("veryspecial").from(VerySpecialDep())
+      make[Dependency].named("special").fromValue(SpecialDep())
+      make[Dependency].named("veryspecial").fromValue(VerySpecialDep())
     })
 
     val injector = mkInjector()

@@ -26,9 +26,9 @@ class RoleAppPlannerImpl[F[_] : TagK](
   def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans = {
     val fullAppModule = appModule
       .overridenBy(new ModuleDef {
-        make[RoleAppPlanner[F]].from(RoleAppPlannerImpl.this)
-        make[ContextOptions].from(options)
-        make[ModuleBase].named("application.module").from(appModule)
+        make[RoleAppPlanner[F]].fromValue(RoleAppPlannerImpl.this)
+        make[ContextOptions].fromValue(options)
+        make[ModuleBase].named("application.module").fromValue(appModule)
       })
 
     val runtimeGcRoots: Set[DIKey] = Set(

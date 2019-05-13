@@ -49,7 +49,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     val appActivation = AppActivation(available, activation)
     val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
       make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
-      make[AppActivation].from(appActivation)
+      make[AppActivation].fromValue(appActivation)
     }
     TestEnvironment(
       defBs,

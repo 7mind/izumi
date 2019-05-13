@@ -21,20 +21,20 @@ class DSLTest extends WordSpec {
       val definition: ModuleBase = new ModuleDef {
         make[TestClass]
         make[TestDependency0].from[TestImpl0]
-        make[TestInstanceBinding].from(TestInstanceBinding())
+        make[TestInstanceBinding].fromValue(TestInstanceBinding())
 
         make[TestClass]
           .named("named.test.class")
         make[TestDependency0]
           .named("named.test.dependency.0")
         make[TestInstanceBinding].named("named.test")
-          .from(TestInstanceBinding())
+          .fromValue(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
           .add[Impl0]
-          .add(new Impl1)
+          .addValue(new Impl1)
         many[JustTrait].named("named.set")
-          .add(new Impl2())
+          .addValue(new Impl2())
         many[JustTrait].named("named.set")
           .add[Impl3]
 

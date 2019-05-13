@@ -19,17 +19,17 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[TestTrait].from[TestServiceClass[F]]
       make[TestServiceClass[F]]
       make[TestServiceTrait[F]]
-      make[Int].named("TestService").from(getResult)
+      make[Int].named("TestService").fromValue(getResult)
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
-      make[Either[String, Boolean]].from(Right(true))
+      make[Either[String, Boolean]].fromValue(Right(true))
 
-      make[Either[F[String], F[F[F[F[String]]]]]].from(Right(Pointed[F].point(Pointed[F].point(Pointed[F].point(Pointed[F].point("aaa"))))))
+      make[Either[F[String], F[F[F[F[String]]]]]].fromValue(Right(Pointed[F].point(Pointed[F].point(Pointed[F].point(Pointed[F].point("aaa"))))))
 
-      make[F[Nothing]].from(null.asInstanceOf[F[Nothing]])
-      make[F[Any]].from(Pointed[F].point(1: Any))
+      make[F[Nothing]].fromValue(null.asInstanceOf[F[Nothing]])
+      make[F[Any]].fromValue(Pointed[F].point(1: Any))
 
       make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
-      make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
+      make[F[Either[Int, F[String]]]].fromValue(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
     val listInjector = mkInjector()
@@ -146,7 +146,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
       make[TestClassFA[Either, Int]]
       final val t2 = Tag[TestClassFA[F, A]]
 
-      make[F[String, Int]].from(v)
+      make[F[String, Int]].fromValue(v)
     }
 
     val value: Either[String, Int] = Right(5)

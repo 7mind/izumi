@@ -13,21 +13,21 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
 
     case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
       // TODO: hmmm, what to do with this
-      make[Pointed[F]].from(Pointed[F])
+      make[Pointed[F]].fromValue(Pointed[F])
 
       make[TestTrait].stat[TestServiceClass[F]]
       stat[TestServiceClass[F]]
       stat[TestServiceTrait[F]]
-      make[Int].named("TestService").from(getResult)
+      make[Int].named("TestService").fromValue(getResult)
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
-      make[Either[String, Boolean]].from(Right(true))
+      make[Either[String, Boolean]].fromValue(Right(true))
 
       //        TODO: Nothing doesn't resolve properly yet when F is unknown...
       //        make[F[Nothing]]
       //        make[Either[String, F[Int]]].from(Right(Pointed[F].point(1)))
-      make[F[Any]].from(Pointed[F].point(1: Any))
+      make[F[Any]].fromValue(Pointed[F].point(1: Any))
       make[Either[String, F[Int]]].from { fAnyInt: F[Any] => Right[String, F[Int]](fAnyInt.asInstanceOf[F[Int]]) }
-      make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
+      make[F[Either[Int, F[String]]]].fromValue(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
     val listInjector = mkInjector()

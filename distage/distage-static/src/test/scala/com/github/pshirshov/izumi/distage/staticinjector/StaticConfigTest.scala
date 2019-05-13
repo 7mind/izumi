@@ -79,7 +79,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val injector = mkInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
-      make[Int].named("depInt").from(5)
+      make[Int].named("depInt").fromValue(5)
       make[ConcreteProduct].from {
         (conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10)
       }

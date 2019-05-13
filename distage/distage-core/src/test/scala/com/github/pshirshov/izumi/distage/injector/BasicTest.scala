@@ -22,7 +22,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestDependency1]
       make[TestCaseClass]
       make[LocatorDependent]
-      make[TestInstanceBinding].from(TestInstanceBinding())
+      make[TestInstanceBinding].fromValue(TestInstanceBinding())
     })
 
     val injector = mkInjector()
@@ -84,10 +84,10 @@ class BasicTest extends WordSpec with MkInjector {
 
       many[JustTrait]
         .add[JustTrait]
-        .add(new Impl1)
+        .addValue(new Impl1)
 
       many[JustTrait].named("named.set")
-        .add(new Impl2())
+        .addValue(new Impl2())
 
       many[JustTrait].named("named.set")
         .add[Impl3]
@@ -108,7 +108,7 @@ class BasicTest extends WordSpec with MkInjector {
     import BasicCase1._
     val definition = PlannerInput.noGc(new ModuleDef {
       many[JustTrait]
-        .add(new Impl1)
+        .addValue(new Impl1)
     })
 
     val injector = mkInjector()
@@ -132,7 +132,7 @@ class BasicTest extends WordSpec with MkInjector {
       make[TestDependency0].named("named.test.dependency.0")
         .from[TestImpl0Good]
       make[TestInstanceBinding].named("named.test")
-        .from(TestInstanceBinding())
+        .fromValue(TestInstanceBinding())
       make[TestDependency0].namedByImpl
         .from[TestImpl0Good]
     })
@@ -179,7 +179,7 @@ class BasicTest extends WordSpec with MkInjector {
     import BasicCase1._
     val definition = PlannerInput.noGc(new ModuleDef {
       make[TestCaseClass2]
-      make[TestInstanceBinding].from(new TestInstanceBinding)
+      make[TestInstanceBinding].fromValue(new TestInstanceBinding)
     })
 
     val injector = mkInjector()
@@ -284,13 +284,13 @@ class BasicTest extends WordSpec with MkInjector {
 
   "handle set inclusions" in {
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[Set[Int]].named("x").from(Set(1, 2, 3))
-      make[Set[Int]].named("y").from(Set(4, 5, 6))
+      make[Set[Int]].named("x").fromValue(Set(1, 2, 3))
+      make[Set[Int]].named("y").fromValue(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
       many[Int].refSet[Set[Int]]("y")
 
-      make[Set[None.type]].from(Set(None))
-      make[Set[Some[Int]]].from(Set(Some(7)))
+      make[Set[None.type]].fromValue(Set(None))
+      make[Set[Some[Int]]].fromValue(Set(Some(7)))
       many[Option[Int]].refSet[Set[None.type]]
       many[Option[Int]].refSet[Set[Some[Int]]]
     })
@@ -303,12 +303,12 @@ class BasicTest extends WordSpec with MkInjector {
 
   "handle multiple set element binds" in {
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[Int].from(7)
+      make[Int].fromValue(7)
 
-      many[Int].add(5)
-      many[Int].add(0)
+      many[Int].addValue(5)
+      many[Int].addValue(0)
 
-      many[Int].addSet(Set(1, 2, 3))
+      many[Int].addSetValue(Set(1, 2, 3))
 
       many[Int].add { i: Int => i - 1 }
       many[Int].addSet {
@@ -338,9 +338,9 @@ class BasicTest extends WordSpec with MkInjector {
     import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
     val definition = PlannerInput.noGc(new ModuleDef {
       many[Int].named("zzz")
-        .add(5).tagged("t3")
-        .addSet(Set(1, 2, 3)).tagged("t1", "t2")
-        .addSet(Set(1, 2, 3)).tagged("t3", "t4")
+        .addValue(5).tagged("t3")
+        .addSetValue(Set(1, 2, 3)).tagged("t1", "t2")
+        .addSetValue(Set(1, 2, 3)).tagged("t3", "t4")
     })
 
     assert(definition.bindings.bindings.collectFirst {

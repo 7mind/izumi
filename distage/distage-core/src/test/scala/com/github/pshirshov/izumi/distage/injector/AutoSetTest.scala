@@ -22,7 +22,7 @@ class AutoSetTest extends WordSpec with MkInjector {
     val injector = Injector.Standard(new BootstrapModuleDef {
       many[AutoCloseable]
       many[PlanningHook]
-        .add(new AssignableFromAutoSetHook[Ordered, Ordered](identity))
+        .addValue(new AssignableFromAutoSetHook[Ordered, Ordered](identity))
     })
 
     val autoCloseableSet = injector.produceUnsafe(PlannerInput.noGc(definition)).get[Set[Ordered]]

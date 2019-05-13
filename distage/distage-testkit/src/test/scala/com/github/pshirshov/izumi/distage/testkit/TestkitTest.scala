@@ -78,7 +78,7 @@ abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
 
   override protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     super.refineBindings(roots, primaryModule) overridenBy new ModuleDef {
-      make[TestConfig].named(ConfPathId(DIKey.get[TestService2], "<test-override>", "missing-test-section")).from(TestConfig(111, 222))
+      make[TestConfig].named(ConfPathId(DIKey.get[TestService2], "<test-override>", "missing-test-section")).fromValue(TestConfig(111, 222))
     }
   }
 }

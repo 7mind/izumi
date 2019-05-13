@@ -21,16 +21,16 @@ object ConfigInjectionOptions {
 
 class ConfigModule(config: AppConfig, configInjectorConfig: ConfigInjectionOptions = ConfigInjectionOptions()) extends BootstrapModuleDef {
 
-  make[ConfigInjectionOptions].from(configInjectorConfig)
+  make[ConfigInjectionOptions].fromValue(configInjectorConfig)
 
-  make[AppConfig].from(config)
+  make[AppConfig].fromValue(config)
 
   many[PlanningHook]
     .add[ConfigReferenceExtractor]
     .add[ConfigProvider]
 
   many[RuntimeConfigReaderCodecs]
-    .add(RuntimeConfigReaderCodecs.default)
+    .addValue(RuntimeConfigReaderCodecs.default)
   make[RuntimeConfigReader]
     .from(RuntimeConfigReaderDefaultImpl.apply _)
 }

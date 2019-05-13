@@ -14,7 +14,7 @@ class ResourcesPlugin extends PluginDef {
   make[UnsolvableConflict].from[UnsolvableConflict1]
   make[UnsolvableConflict].from[UnsolvableConflict2]
 
-  make[ExecutorService].from(Executors.newCachedThreadPool())
+  make[ExecutorService].fromValue(Executors.newCachedThreadPool())
   make[Resource1]
   make[Resource2]
   make[Resource3]

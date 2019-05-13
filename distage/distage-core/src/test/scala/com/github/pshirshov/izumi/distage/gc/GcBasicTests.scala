@@ -219,7 +219,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular1]
         make[Circular2]
         make[T1]
-        make[Box[T1]].from(new Box(new T1))
+        make[Box[T1]].fromValue(new Box(new T1))
       }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2], DIKey.get[Set[T1]])))
 
       val result = injector.produceUnsafe(plan)

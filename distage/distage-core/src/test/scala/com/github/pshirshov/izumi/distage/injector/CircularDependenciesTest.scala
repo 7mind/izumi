@@ -202,7 +202,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val definition = PlannerInput.noGc(new ModuleDef {
       make[Circular2]
       make[Circular1]
-      make[Int].from(1)
+      make[Int].fromValue(1)
     })
 
     val injector = mkInjector()

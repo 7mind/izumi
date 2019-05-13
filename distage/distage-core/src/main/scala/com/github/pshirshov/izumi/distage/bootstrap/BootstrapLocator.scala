@@ -139,7 +139,7 @@ object BootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
-    make[Boolean].named("distage.init-proxies-asap").from(true)
+    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]

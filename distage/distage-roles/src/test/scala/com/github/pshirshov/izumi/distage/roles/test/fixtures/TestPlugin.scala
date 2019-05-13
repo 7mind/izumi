@@ -23,7 +23,7 @@ class TestPlugin extends PluginDef {
       s"0.0.0-${System.currentTimeMillis()}"
   }
 
-  make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
+  make[ArtifactVersion].named("launcher-version").fromValue(ArtifactVersion(version))
   many[Dummy]
 
   make[TestTask00[IO]]
