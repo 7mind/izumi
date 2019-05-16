@@ -594,7 +594,7 @@ lazy val microsite = inDoc.as.module
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
     ),
-    classLoaderLayeringStrategy in Compile := ClassLoaderLayeringStrategy.ScalaLibrary,
+    classLoaderLayeringStrategy in Compile := ClassLoaderLayeringStrategy.Flat,
     mdocIn := baseDirectory.value / "src/main/tut",
     sourceDirectory in Paradox := mdocOut.value,
     mdocExtraArguments ++= Seq(" --no-link-hygiene"),

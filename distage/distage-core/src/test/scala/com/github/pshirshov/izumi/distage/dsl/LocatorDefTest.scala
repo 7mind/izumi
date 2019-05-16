@@ -19,10 +19,10 @@ class LocatorDefTest extends WordSpec {
       val testCaseClass2 = TestCaseClass2(testInstanceBinding)
 
       val ctx = new LocatorDef {
-        make[TestDependency0].from(testDependency0)
-        make[TestDependency1].from(testDependency1)
-        make[TestInstanceBinding].from(testInstanceBinding)
-        make[TestCaseClass2].named("fug").from(testCaseClass2)
+        make[TestDependency0].fromValue(testDependency0)
+        make[TestDependency1].fromValue(testDependency1)
+        make[TestInstanceBinding].fromValue(testInstanceBinding)
+        make[TestCaseClass2].named("fug").fromValue(testCaseClass2)
       }
 
       assert(ctx.get[TestDependency0] == testDependency0)
@@ -72,13 +72,13 @@ class LocatorDefTest extends WordSpec {
 
       val ctx = new LocatorDef {
         many[TestInstanceBinding].named("r")
-          .add(TestInstanceBinding())
-          .add(TestInstanceBinding(
+          .addValue(TestInstanceBinding())
+          .addValue(TestInstanceBinding(
             """ Ma-ma-magic in her eyes, Leandoer's paradise
               | All my, all my, boys off drugs, I've been lost in this life""".stripMargin))
 
         many[TestInstanceBinding]
-          .add(TestInstanceBinding())
+          .addValue(TestInstanceBinding())
       }
 
       assert(ctx.instances.size == 2)
@@ -88,7 +88,7 @@ class LocatorDefTest extends WordSpec {
 
     ".run and .runOption works" in {
       val ctx = new LocatorDef {
-        make[Int].from(5)
+        make[Int].fromValue(5)
       }
 
       assert(ctx.run { i: Int => i + 5 } == 10)

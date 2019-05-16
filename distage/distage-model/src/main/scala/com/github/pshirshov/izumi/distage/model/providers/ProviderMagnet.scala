@@ -140,10 +140,14 @@ object ProviderMagnet {
   }
 
   def pure[A: Tag](a: A): ProviderMagnet[A] = {
+    lift(a)
+  }
+
+  def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
         associations = Seq.empty
-      , fun = (_: Seq[Any]) => a
+        , fun = (_: Seq[Any]) => a
       )
     )
   }

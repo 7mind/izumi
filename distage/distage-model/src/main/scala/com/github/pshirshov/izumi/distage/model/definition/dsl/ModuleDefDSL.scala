@@ -225,7 +225,10 @@ object ModuleDefDSL {
     final def from[I <: T : Tag]: AfterBind =
       bind(ImplDef.TypeImpl(SafeType.get[I]))
 
-    final def from[I <: T : Tag](instance: I): AfterBind =
+    final def from[I <: T : Tag](instance: => I): AfterBind =
+      from(ProviderMagnet.lift(instance))
+
+    final def fromValue[I <: T : Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**
@@ -444,7 +447,10 @@ object ModuleDefDSL {
     final def add[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.TypeImpl(SafeType.get[I]))
 
-    final def add[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def add[I <: T : Tag](instance: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
+      add(ProviderMagnet.lift(instance))
+
+    final def addValue[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     final def add[I <: T : Tag](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterAdd =
@@ -489,7 +495,10 @@ object ModuleDefDSL {
       *   many[T].addSet(Set(new T, new T, new T))
       * }}}
       * */
-    final def addSet[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+    final def addSet[I <: Set[_ <: T] : Tag](instance: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
+      addSet(ProviderMagnet.lift(instance))
+
+    final def addSetValue[I <: Set[_ <: T] : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       multiSetAdd(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     final def addSet[I <: Set[_ <: T] : Tag](function: ProviderMagnet[I])(implicit pos: CodePositionMaterializer): AfterMultiAdd =
