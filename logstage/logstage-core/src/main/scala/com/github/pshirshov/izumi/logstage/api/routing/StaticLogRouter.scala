@@ -19,6 +19,8 @@ class StaticLogRouter extends LogRouter {
     proxied.set(router)
   }
 
+  def get: LogRouter = proxied.get()
+
   override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = {
     proxied.get() match {
       case p if p != null =>

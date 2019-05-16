@@ -92,8 +92,9 @@ function init {
     git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
     git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-    mkdir -p ~/.sbt/1.0/plugins/
-    echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
+    # coursier is not required since sbt 1.3.0
+    #mkdir -p ~/.sbt/1.0/plugins/
+    #echo 'addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")' > ~/.sbt/1.0/plugins/build.sbt
 
     echo "pwd: `pwd`"
     echo "Current directory:"

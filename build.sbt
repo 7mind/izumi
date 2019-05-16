@@ -379,9 +379,10 @@ lazy val logstageConfig = inLogStage.as.module
 lazy val logstageAdapterSlf4j = inLogStage.as.module
   .depends(logstageCore)
   .settings(
-    libraryDependencies += R.slf4j_api
-    , compileOrder in Compile := CompileOrder.Mixed
-    , compileOrder in Test := CompileOrder.Mixed
+    libraryDependencies += R.slf4j_api,
+    compileOrder in Compile := CompileOrder.Mixed,
+    compileOrder in Test := CompileOrder.Mixed,
+    classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
   )
 
 lazy val logstageRenderingCirce = inLogStage.as.module
