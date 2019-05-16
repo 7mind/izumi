@@ -34,8 +34,8 @@ val module = new ModuleDef {
 ```scala mdoc:invisible
 val HACK_OVERRIDE_module = new ModuleDef {
   make[A].from(new A(_))
-  make[B].from(new B)
-  make[C].from(new C)
+  make[B].fromValue(new B)
+  make[C].fromValue(new C)
 }
 ```
 

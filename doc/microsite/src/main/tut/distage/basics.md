@@ -70,8 +70,8 @@ Let's launch the app and see what happens:
 // A hack because `tut` REPL fails to create classes via reflection when defined in REPL for some reason..
 // Also, we want to override HelloByeApp to not use stdin
 object HACK_OVERRIDE_HelloByeModule extends ModuleDef {
-  make[Greeter].from(new PrintGreeter)
-  make[Byer].from(new PrintByer)
+  make[Greeter].fromValue(new PrintGreeter)
+  make[Byer].fromValue(new PrintByer)
   make[HelloByeApp].from(new HelloByeApp(_, _))
 }
 ```
@@ -135,7 +135,7 @@ Modules can be combined into larger modules with `++` and `overridenBy` operator
 
 ```scala mdoc:override:silent
 val caps = HACK_OVERRIDE_HelloByeModule.overridenBy(new ModuleDef {
-  make[Greeter].from(new Greeter {
+  make[Greeter].fromValue(new Greeter {
     override def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
   })
 })
@@ -176,7 +176,7 @@ To inject named instances or @ref[config values](config_injection.md#config-inje
 import distage.config._
 
 object HostPortModule extends ModuleDef {
-  make[HostPort].named("default").from(HostPort("localhost", 8080))
+  make[HostPort].named("default").fromValue(HostPort("localhost", 8080))
   make[HostPort].from {
     (maybeConfigHostPort: Option[HostPort] @ConfPath("http"),
      defaultHostPort: HostPort @Id("default")) =>
@@ -199,8 +199,8 @@ class Bye {
 }
 
 object HelloByeModule extends ModuleDef {
-  make[Hello].from(new Hello)
-  make[Bye].from(new Bye)
+  make[Hello].fromValue(new Hello)
+  make[Bye].fromValue(new Bye)
 }
 ```
 
@@ -271,7 +271,7 @@ object HomeRouteModule extends ModuleDef {
   }
 
   many[HttpRoutes[IO]]
-    .add(homeRoute)
+    .addValue(homeRoute)
 }
 ```
 
@@ -289,7 +289,7 @@ object BlogRouteModule extends ModuleDef {
   }
   
   many[HttpRoutes[IO]]
-    .add(blogRoute)
+    .addValue(blogRoute)
 }
 ```
 
@@ -699,8 +699,8 @@ def tryInteraction = new Interaction[Try] {
 }
 
 object TryInterpreters extends ModuleDef {
-  make[Validation[Try]].from(tryValidation)
-  make[Interaction[Try]].from(tryInteraction)
+  make[Validation[Try]].fromValue(tryValidation)
+  make[Interaction[Try]].fromValue(tryInteraction)
 }
 
 // combine all modules
@@ -719,11 +719,11 @@ The program module is polymorphic over its eventual monad, we can easily paramet
 import cats.effect._
 
 def SyncInterpreters[F[_]: TagK](implicit F: Sync[F]) = new ModuleDef {
-  make[Validation[F]].from(new Validation[F] {
+  make[Validation[F]].fromValue(new Validation[F] {
     def minSize(s: String, n: Int): F[Boolean] = F.delay(s.size >= n)
     def hasNumber(s: String): F[Boolean] = F.delay(s.exists(c => "0123456789".contains(c)))
   })
-  make[Interaction[F]].from(new Interaction[F] {
+  make[Interaction[F]].fromValue(new Interaction[F] {
     def tell(s: String): F[Unit] = F.delay(println(s))
     def ask(s: String): F[String] = F.delay("This could have been user input 1")
   })

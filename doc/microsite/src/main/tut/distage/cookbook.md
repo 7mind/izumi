@@ -17,7 +17,7 @@ val path = new Path {}
 
 val module = new ModuleDef {
   make[path.A]
-  make[path.type].from[path.type](path: path.type)
+  make[path.type].fromValue[path.type](path: path.type)
 }
 ```
 
@@ -26,7 +26,7 @@ The same applies to type projections:
 ```scala mdoc
 val module1 = new ModuleDef {
   make[Path#B]
-  make[Path].from(new Path {})
+  make[Path].fromValue(new Path {})
 }
 ```
 
@@ -34,7 +34,7 @@ Function and instance bindings and also compile-time mode in `distage-static` mo
 
 ```scala mdoc
 val module2 = new ModuleDef {
-  make[Path#B].from {
+  make[Path#B].fromValue {
     val path = new Path {}
     new path.B
   }
