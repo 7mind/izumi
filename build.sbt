@@ -42,10 +42,10 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     crossScalaVersions := Seq(
       V.scala_212,
       V.scala_213,
-    )
-    , scalaVersion := crossScalaVersions.value.head
-    , sonatypeProfileName := "io.7mind"
-    , addCompilerPlugin(R.kind_projector)
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    sonatypeProfileName := "io.7mind",
+    addCompilerPlugin(R.kind_projector)
   )
 }
 
@@ -73,14 +73,14 @@ val SbtSettings = new SettingsGroup {
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
-      target ~= { t => t.toPath.resolve("primary").toFile }
-      , crossScalaVersions := Seq(
+      target ~= { t => t.toPath.resolve("primary").toFile },
+      crossScalaVersions := Seq(
         V.scala_212
-      )
-      , libraryDependencies ++= Seq(
+      ),
+      libraryDependencies ++= Seq(
         "org.scala-sbt" % "sbt" % sbtVersion.value
-      )
-      , sbtPlugin := true
+      ),
+      sbtPlugin := true
     )
   ).flatten
 }
@@ -94,14 +94,14 @@ val ShadingSettings = new SettingsGroup {
     inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ IzumiPublishingPlugin.projectSettings) ++
       _root_.coursier.ShadingPlugin.projectSettings ++
       Seq(
-        publish := publish.in(Shading).value
-        , publishLocal := publishLocal.in(Shading).value
-        , PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value
-        , PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value
-        , shadingNamespace := "izumi.shaded"
-        , shadeNamespaces ++= Set(
-          "fastparse"
-          , "sourcecode"
+        publish := publish.in(Shading).value,
+        publishLocal := publishLocal.in(Shading).value,
+        PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
+        PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value,
+        shadingNamespace := "izumi.shaded",
+        shadeNamespaces ++= Set(
+          "fastparse",
+          "sourcecode"
           //            , "net.sf.cglib"
         )
       )
@@ -133,8 +133,8 @@ val SbtScriptedSettings = new SettingsGroup {
       scriptedLaunchOpts := {
         scriptedLaunchOpts.value ++
           Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-      }
-      , scriptedBufferLog := false
+      },
+      scriptedBufferLog := false
     )
   ).flatten
 }
@@ -237,9 +237,9 @@ lazy val WithFundamentals = new SettingsGroup {
   override val id = SettingsGroupId("WithFundamentals")
 
   override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
-    fundamentalsCollectionsJvm
-    , fundamentalsPlatformJvm
-    , fundamentalsFunctionalJvm
+    fundamentalsCollectionsJvm,
+    fundamentalsPlatformJvm,
+    fundamentalsFunctionalJvm
   )
 }
 
@@ -247,9 +247,9 @@ lazy val WithFundamentalsX = new SettingsGroup {
   override val id = SettingsGroupId("WithFundamentalsX")
 
   override def sharedLibs: Seq[ProjectReferenceEx] = Seq(
-    fundamentalsCollections
-    , fundamentalsPlatform
-    , fundamentalsFunctional
+    fundamentalsCollections,
+    fundamentalsPlatform,
+    fundamentalsFunctional
   )
 }
 // --------------------------------------------
@@ -357,10 +357,10 @@ lazy val logstageApi = inLogStage.as.module
 lazy val logstageCore = inLogStage.as.module
   .depends(logstageApi, fundamentalsBioJvm)
   .settings(
-    libraryDependencies ++= T.zio_core +: T.cats_all
-  , libraryDependencies ++= Seq(
-      R.zio_core % Optional
-    , R.cats_core % Optional
+    libraryDependencies ++= T.zio_core +: T.cats_all,
+    libraryDependencies ++= Seq(
+      R.zio_core % Optional,
+      R.cats_core % Optional
     )
   )
 
@@ -390,8 +390,8 @@ lazy val logstageRenderingCirce = inLogStage.as.module
 
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
-    logstageApi
-    , logstageCore.testOnlyRef
+    logstageApi,
+    logstageCore.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 //-----------------------------------------------------------------------------
@@ -413,7 +413,7 @@ lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
-  .dependsOn(fundamentalsBio,     fundamentalsJsonCirce)
+  .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
   .settings(
     libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
@@ -471,8 +471,8 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .settings(AppSettings)
   .enablePlugins(ScriptedPlugin)
   .settings(
-    libraryDependencies ++= Seq(R.typesafe_config)
-    , mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
+    libraryDependencies ++= Seq(R.typesafe_config),
+    mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
   )
   .settings(
     artifact in(Compile, assembly) := {
@@ -500,17 +500,17 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageCore
-  , logstageDi
-  , logstageSinkSlf4j
-  , logstageAdapterSlf4j
-  , logstageRenderingCirce
-  , logstageConfig
+  logstageCore,
+  logstageDi,
+  logstageSinkSlf4j,
+  logstageAdapterSlf4j,
+  logstageRenderingCirce,
+  logstageConfig
 )
 lazy val distage: Seq[ProjectReference] = Seq(
-  distageRoles
-  , distageStatic
-  , distageTestkit
+  distageRoles,
+  distageStatic,
+  distageTestkit
 )
 
 lazy val idealinguaV1: Seq[ProjectReference] = Seq(
@@ -577,29 +577,34 @@ lazy val microsite = inDoc.as.module
     MdocPlugin
   )
   .settings(
-    skip in publish := true
-    , DocKeys.prefix := {
+    skip in publish := true,
+    DocKeys.prefix := {
       if (isSnapshot.value) {
         "latest/snapshot"
       } else {
         "latest/release"
       }
-    }
-    , siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api"
-    , siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc"
-    , previewFixedPort := Some(9999)
-    , git.remoteRepo := "git@github.com:7mind/izumi-microsite.git"
-    , paradoxProperties ++= Map(
+    },
+    siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
+    siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc",
+    previewFixedPort := Some(9999),
+    git.remoteRepo := "git@github.com:7mind/izumi-microsite.git",
+    paradoxProperties ++= Map(
       "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
       "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
       "izumi.version" -> version.value,
-    )
-    //    , mdoc := run.in(Compile).evaluated
-    , mdocIn := baseDirectory.value / "src/main/tut"
-    , sourceDirectory in Paradox := mdocOut.value
-    , (mappings in SitePlugin.autoImport.makeSite):= (mappings in SitePlugin.autoImport.makeSite).dependsOn(mdoc.toTask(" --no-link-hygiene")).value
-    , version in Paradox := version.value
-    , excludeFilter in ghpagesCleanSite :=
+    ),
+    classLoaderLayeringStrategy in Compile := ClassLoaderLayeringStrategy.ScalaLibrary,
+    mdocIn := baseDirectory.value / "src/main/tut",
+    sourceDirectory in Paradox := mdocOut.value,
+    mdocExtraArguments ++= Seq(" --no-link-hygiene"),
+    (mappings in SitePlugin.autoImport.makeSite) := {
+      (mappings in SitePlugin.autoImport.makeSite)
+        .dependsOn(mdoc.toTask(" "))
+        .value
+    },
+    version in Paradox := version.value,
+    excludeFilter in ghpagesCleanSite :=
       new FileFilter {
         def accept(f: File): Boolean = {
           (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
@@ -618,9 +623,9 @@ lazy val microsite = inDoc.as.module
       _.withCopyright("7mind.io")
         .withRepository(uri("https://github.com/7mind/izumi"))
       //        .withColor("222", "434343")
-    }
-    , addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
-    , unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
+    },
+    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
 
 

@@ -17,16 +17,16 @@ object IzumiDeps {
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.6.0" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.2.0"
+    val cats_effect = "1.3.0"
     val zio = "1.0-RC4"
 
     val circe = "0.11.1" // 2.13+
     val circe_derivation = "0.11.0-M1"
-    val jawn = "0.14.1"
+    val jawn = "0.14.2"
     val http4s = "0.20.0" // https://github.com/http4s/http4s/issues/1797
 
     val scalameta = "4.1.6" // https://github.com/scalameta/scalameta/issues/1693
-    val fastparse = "2.1.0" // https://github.com/lihaoyi/fastparse/issues/188
+    val fastparse = "2.1.2" // https://github.com/lihaoyi/fastparse/issues/188
 
     //val scalacheck = "1.14.0"
 
