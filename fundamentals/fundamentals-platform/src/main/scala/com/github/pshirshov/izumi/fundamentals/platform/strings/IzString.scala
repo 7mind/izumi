@@ -2,6 +2,8 @@ package com.github.pshirshov.izumi.fundamentals.platform.strings
 
 import java.nio.charset.StandardCharsets
 
+import com.github.pshirshov.izumi.fundamentals.platform.strings
+
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -140,6 +142,31 @@ class IzString(s: String) {
 
   def block(delta: Int, open: String, close: String): String = {
     s"$open${shift(delta)}$close"
+  }
+
+  def listing(header: String): String = {
+    import IzString._
+    header + "\n" + listing().shift(1, "| ")
+  }
+  def listing(): String = {
+    val lines = s.split('\n')
+    import scala.math._
+    val magnitude = log10(lines.length)
+    val min = floor(magnitude).toInt
+    val max = ceil(magnitude).toInt
+    val pad = if (min == max) {
+      min + 1
+    } else {
+      max
+    }
+
+    import IzString._
+    lines.zipWithIndex
+      .map {
+        case (l, i) =>
+          s"${i.toString.leftPad(pad)}: $l"
+      }
+      .mkString("\n")
   }
 }
 
