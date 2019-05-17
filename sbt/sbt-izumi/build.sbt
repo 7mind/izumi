@@ -38,7 +38,7 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
 //https://github.com/aiyanbo/sbt-dependency-updates
-addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.1.13")
+addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.0")
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")

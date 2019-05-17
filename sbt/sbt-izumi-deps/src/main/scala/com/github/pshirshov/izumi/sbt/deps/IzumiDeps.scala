@@ -23,9 +23,9 @@ object IzumiDeps {
     val circe = "0.11.1" // 2.13+
     val circe_derivation = "0.11.0-M1"
     val jawn = "0.14.2"
-    val http4s = "0.20.0" // https://github.com/http4s/http4s/issues/1797
+    val http4s = "0.20.1" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "4.1.6" // https://github.com/scalameta/scalameta/issues/1693
+    val scalameta = "4.1.9" // https://github.com/scalameta/scalameta/issues/1693
     val fastparse = "2.1.2" // https://github.com/lihaoyi/fastparse/issues/188
 
     //val scalacheck = "1.14.0"
@@ -39,7 +39,7 @@ object IzumiDeps {
     val typesafe_config = "1.3.4" // java
 
     // good to drop - java
-    val cglib_nodep = "3.2.10" // java
+    val cglib_nodep = "3.2.12" // java
 
     val scala_xml = "1.2.0"
   }
