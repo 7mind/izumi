@@ -22,7 +22,7 @@ object BIORunner {
 
   def createZIO(
                  cpuPool: ThreadPoolExecutor
-               , handler: DefaultHandler = DefaultHandler.Default
+               , handler: FailureHandler = FailureHandler.Default
                , yieldEveryNFlatMaps: Int = 1024
                ): BIORunner[IO] = {
     new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps))
@@ -30,11 +30,10 @@ object BIORunner {
 
   def newZioTimerPool(): ScheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
 
-  sealed trait DefaultHandler
-
-  object DefaultHandler {
-    final case object Default extends DefaultHandler
-    final case class Custom(handler: BIOExit.Failure[Any] => Unit) extends DefaultHandler
+  sealed trait FailureHandler
+  object FailureHandler {
+    final case object Default extends FailureHandler
+    final case class Custom(handler: BIOExit.Failure[Any] => Unit) extends FailureHandler
   }
 
   class ZIORunner
@@ -56,6 +55,7 @@ object BIORunner {
             case o =>
               throw FiberFailure(Cause.fail(o))
           }
+
         case e: BIOExit.Termination =>
           throw e.compoundException
       }
@@ -74,7 +74,7 @@ object BIORunner {
   class ZIOEnvBase
   (
     cpuPool: ThreadPoolExecutor
-  , handler: DefaultHandler
+  , handler: FailureHandler
   , yieldEveryNFlatMaps: Int
   ) extends Platform with BIOExit.ZIO {
 
@@ -82,13 +82,13 @@ object BIORunner {
 
     override def reportFailure(cause: Exit.Cause[_]): Unit = {
       handler match {
-        case DefaultHandler.Default =>
+        case FailureHandler.Default =>
           // do not log interruptions
           if (!cause.interrupted) {
             println(cause.toString)
           }
 
-        case DefaultHandler.Custom(f) =>
+        case FailureHandler.Custom(f) =>
           f(toBIOExit(cause))
       }
     }

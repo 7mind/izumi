@@ -21,7 +21,7 @@ object RT {
   final val printer: Printer = Printer.noSpaces.copy(dropNullValues = true)
   implicit val clock: Clock = Clock.Live
 
-  final val handler = BIORunner.DefaultHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
+  final val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
   val platform = new bio.BIORunner.ZIOEnvBase(
     Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
     , handler

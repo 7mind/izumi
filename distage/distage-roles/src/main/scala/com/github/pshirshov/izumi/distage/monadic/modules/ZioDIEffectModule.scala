@@ -29,7 +29,7 @@ trait ZioDIEffectModule extends ModuleDef {
 
   make[BlockingIO[zio.IO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.pool.io") =>
-      BlockingIO.ZIOFromThreadPool(blockingPool)
+      BlockingIO.BlockingZIOFromThreadPool(blockingPool)
   }
 
   make[BIORunner[zio.IO]].from {
@@ -37,7 +37,7 @@ trait ZioDIEffectModule extends ModuleDef {
       cpuPool: ThreadPoolExecutor @Id("zio.pool.cpu"),
       logger: IzLogger,
     ) =>
-      val handler = BIORunner.DefaultHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
+      val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
 
       BIORunner.createZIO(
         cpuPool

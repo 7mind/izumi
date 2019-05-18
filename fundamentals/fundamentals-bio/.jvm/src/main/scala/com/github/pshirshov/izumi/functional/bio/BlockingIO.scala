@@ -27,7 +27,7 @@ trait BlockingIO[F[_, _]] {
 object BlockingIO {
   def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
 
-  def ZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO[IO] = {
+  def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO[IO] = {
     val executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
     val blocking = new Blocking {
       override val blocking: Blocking.Service[Any] = new Blocking.Service[Any] {
