@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.impl.{BIOAsyncZio, BIOZio}
-import scalaz.zio.ZIO
+import com.github.pshirshov.izumi.functional.bio.impl.BIOZio
 
 import scala.util.Try
 
@@ -13,9 +12,8 @@ trait BIOFunctor[F[_, +_]] {
 object BIOFunctor {
   def apply[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
 
-  // place ZIO instances at the root of hierarchy, so that they're visible for summons of any class in hierarchy
+  // place ZIO instance at the root of hierarchy, so that it's visible when summoning any class in hierarchy
   @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
-  @inline implicit final def BIOAsyncZio[R](implicit clockService: scalaz.zio.clock.Clock): BIOAsync[ZIO[R, +?, +?]] = new BIOAsyncZio[R](clockService)
 }
 
 trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {

@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.functional.bio.{BIO, BIOError}
-import com.github.pshirshov.izumi.functional.bio.BIO.syntax._
+import com.github.pshirshov.izumi.functional.bio.BIO._
 import distage.{ModuleBase, TagK, TagKK}
 
 abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK: Lambda[f[_, _] => TagK[f[Throwable, ?]]]] extends DistagePluginBioSpec[F]

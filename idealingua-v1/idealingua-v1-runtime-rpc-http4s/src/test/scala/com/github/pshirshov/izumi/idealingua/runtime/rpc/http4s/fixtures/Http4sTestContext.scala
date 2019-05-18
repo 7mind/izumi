@@ -4,7 +4,6 @@ import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
-import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._

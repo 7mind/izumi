@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.r2.idealingua.test
 
 import _root_.io.circe.syntax._
-import com.github.pshirshov.izumi.functional.bio.BIO._
 import com.github.pshirshov.izumi.idealingua.runtime.rpc.{ContextExtender, IRTServerMultiplexor}
 import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceServerWrapped
 import scalaz.zio._

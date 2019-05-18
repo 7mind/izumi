@@ -1,5 +1,9 @@
 package com.github.pshirshov.izumi.functional.bio
 
+import com.github.pshirshov.izumi.functional.bio.impl.BIOAsyncZio
+import scalaz.zio.ZIO
+import scalaz.zio.clock.Clock
+
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 trait BIOAsync[R[+ _, + _]] extends BIO[R] {
@@ -26,4 +30,6 @@ trait BIOAsync[R[+ _, + _]] extends BIO[R] {
 
 object BIOAsync {
   def apply[R[+ _, + _] : BIOAsync]: BIOAsync[R] = implicitly
+
+  implicit def BIOAsyncZio[R](implicit clockService: Clock): BIOAsync[ZIO[R, +?, +?]] = new BIOAsyncZio[R](clockService)
 }
