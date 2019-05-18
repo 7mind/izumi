@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.functional.bio.{BIO, BIOError}
 import com.github.pshirshov.izumi.functional.bio.BIO._
 import distage.{ModuleBase, TagK, TagKK}
 
-abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK: Lambda[f[_, _] => TagK[f[Throwable, ?]]]] extends DistagePluginBioSpec[F]
+abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK](implicit ev: TagK[F[Throwable, ?]]) extends DistagePluginBioSpec[F]
   with DistageBioSpecBIOSyntax[F] {
 
   override protected def pluginPackages: Seq[String] = thisPackage
