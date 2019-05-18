@@ -2,8 +2,6 @@ package com.github.pshirshov.izumi.fundamentals.platform.strings
 
 import java.nio.charset.StandardCharsets
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings
-
 import scala.language.implicitConversions
 import scala.util.Try
 
@@ -151,7 +149,7 @@ class IzString(s: String) {
   def listing(): String = {
     val lines = s.split('\n')
     import scala.math._
-    val magnitude = log10(lines.length)
+    val magnitude = log10(lines.length.toDouble)
     val min = floor(magnitude).toInt
     val max = ceil(magnitude).toInt
     val pad = if (min == max) {
