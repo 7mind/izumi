@@ -56,6 +56,9 @@ FAQ
 **A**: `distage` has static verification mechanisms allowing to achieve same level of guarantees as hand-written static code.
         Full compile-time DI support is under development.
  
+**Q**: how to pronounce "distage" ?
+
+**A**: we pronounce it as 'dee-stage', although you can pronounce it however you like!
 
 Further reading
 ---------------
