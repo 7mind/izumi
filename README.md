@@ -38,7 +38,7 @@ Docs
 
 Example projects:
 * [DIStage Example Project](https://github.com/7mind/distage-sample)
-* [Idealingua Example Project](https://github.com/kaishh/izumi-petstore)
+* [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
 
 Slides:
 * [ScalaUA Slides about DIStage](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
