@@ -106,8 +106,7 @@ class RoleAppExecutorImpl[F[_] : TagK](
   private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {
     roles.availableRoleBindings.flatMap {
       b =>
-        val key = DIKey.TypeKey(b.tpe)
-        rolesLocator.index.get(key) match {
+        rolesLocator.index.get(b.binding.key) match {
           case Some(value: AbstractRoleF[F]) =>
             Seq(b.descriptor.id -> value)
           case _ =>

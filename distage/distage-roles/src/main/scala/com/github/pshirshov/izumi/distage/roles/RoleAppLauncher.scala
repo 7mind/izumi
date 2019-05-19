@@ -179,7 +179,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
         } else {
           s"[ ]"
         }
-        s"$active ${r.descriptor.id}, ${r.tpe}, source=${r.source.getOrElse("N/A")}"
+        s"$active ${r.descriptor.id}, ${r.binding.key}, source=${r.source.getOrElse("N/A")}"
     }.sorted
 
     logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
