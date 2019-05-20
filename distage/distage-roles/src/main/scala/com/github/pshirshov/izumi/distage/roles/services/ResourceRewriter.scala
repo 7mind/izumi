@@ -168,6 +168,7 @@ object ResourceRewriter {
                          )
 
 
+  /** Like [[DIResource.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire) {
       ac =>

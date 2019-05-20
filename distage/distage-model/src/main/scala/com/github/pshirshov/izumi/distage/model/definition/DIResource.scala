@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
-import cats.Applicative
+import cats.{Applicative, ~>}
 import cats.effect.Bracket
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
@@ -130,16 +130,19 @@ object DIResource {
   }
 
   def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
-    def a = acquire
-    def r = release
-    new DIResource.Simple[A] {
-      override def acquire: A = a
-      override def release(a: A): Unit = r(a)
-    }
+    make[Identity, A](acquire)(release)
+  }
+
+  def liftF[F[_], A](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+    make(acquire)(_ => F.unit)
   }
 
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
+  }
+
+  def fromAutoCloseableF[F[_], A <: AutoCloseable](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+    make(acquire)(a => F.maybeSuspend(a.close()))
   }
 
   implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
@@ -161,6 +164,15 @@ object DIResource {
     /** Convert [[DIResource]] into a [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
       Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
+    }
+
+    def mapK[G[x] >: F[x], C[_]](f: G ~> C): DIResourceBase[C, A] = {
+      new DIResourceBase[C, A] {
+        override type InnerResource = resource.InnerResource
+        override def acquire: C[InnerResource] = f(resource.acquire)
+        override def release(res: InnerResource): C[Unit] = f(resource.release(res))
+        override def extract(res: InnerResource): A = resource.extract(res)
+      }
     }
   }
 
@@ -189,6 +201,12 @@ object DIResource {
     final def map[B](f: OuterResource => B): DIResourceBase[F, B] = mapImpl(this)(f)
     final def flatMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => DIResourceBase[G, B]): DIResourceBase[G, B] = flatMapImpl[G, OuterResource, B](this)(f)
     final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
+
+    /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
+    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = logAcquireImpl[G, OuterResource](this: this.type)(f)
+
+    /** Wrap release action of this resource in another effect, e.g. for logging purposes */
+    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = logReleaseImpl[G, OuterResource](this: this.type)(f)
   }
 
   /**
@@ -212,7 +230,7 @@ object DIResource {
     *       dependency on `Bracket[F, Throwable]` for
     *       your corresponding `F` type
     */
-  implicit def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
+  implicit final def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
     providerFromCatsProvider(ProviderMagnet.pure(resource))
   }
 
@@ -249,12 +267,13 @@ object DIResource {
     *       dependency on `Bracket[F, Throwable]` for
     *       your corresponding `F` type
     */
-  implicit def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+  implicit final def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
     resourceProvider
       .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
       .map { case (resource, bracket) => fromCats(resource)(bracket) }
   }
 
+  @inline
   private[this] final def mapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => B): DIResourceBase[F, B] = {
     new DIResourceBase[F, B] {
       type InnerResource = self.InnerResource
@@ -264,6 +283,7 @@ object DIResource {
     }
   }
 
+  @inline
   private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
 
     def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
@@ -303,8 +323,29 @@ object DIResource {
     }
   }
 
+  @inline
   private[this] final def evalMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => F[B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
     flatMapImpl(self)(a => DIResource.make(f(a))(_ => F.unit))
+  }
+
+  @inline
+  private[this] final def logAcquireImpl[F[_], A](self: DIResourceBase[F, A])(f: (=> F[self.InnerResource]) => F[self.InnerResource]): DIResourceBase[F, A] = {
+    new DIResourceBase[F, A] {
+      override final type InnerResource = self.InnerResource
+      override def acquire: F[InnerResource] = f(self.acquire)
+      override def release(resource: InnerResource): F[Unit] = self.release(resource)
+      override def extract(resource: InnerResource): A = self.extract(resource)
+    }
+  }
+
+  @inline
+  private[this] final def logReleaseImpl[F[_], A](self: DIResourceBase[F, A])(f: (self.InnerResource => F[Unit], self.InnerResource) => F[Unit]): DIResourceBase[F, A] = {
+    new DIResourceBase[F, A] {
+      override final type InnerResource = self.InnerResource
+      override def acquire: F[InnerResource] = self.acquire
+      override def release(resource: InnerResource): F[Unit] = f(self.release, resource)
+      override def extract(resource: InnerResource): A = self.extract(resource)
+    }
   }
 
   trait ResourceTag[R] {
