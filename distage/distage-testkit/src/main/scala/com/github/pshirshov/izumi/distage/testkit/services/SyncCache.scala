@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit.services
 
 import scala.collection.mutable
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+
 class SyncCache[K, V] {
 
   def enumerate(): Seq[(K, V)] = sync {

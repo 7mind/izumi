@@ -54,8 +54,8 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   protected final def dio(function: ProviderMagnet[F[_]]): Unit = {
     val logger = makeLogger()
     val loader = makeConfigLoader(logger)
+    val env = loadEnvironment(logger)
     val config = loader.buildConfig()
-    val env = loadEnvironment(config, logger)
     val options = contextOptions()
     val provider = makeModuleProvider(options, config, logger, env.roles, env.activation)
 
@@ -141,7 +141,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     }
   }
 
-  protected def loadEnvironment(config: AppConfig, logger: IzLogger): TestEnvironment
+  protected def loadEnvironment(logger: IzLogger): TestEnvironment
 
   protected def bootstrapLogLevel: Level = IzLogger.Level.Warn
 

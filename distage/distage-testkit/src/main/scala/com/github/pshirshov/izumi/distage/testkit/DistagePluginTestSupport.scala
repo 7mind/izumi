@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -13,8 +14,6 @@ import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, Plug
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
-import distage.config.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
@@ -30,24 +29,27 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def pluginBootstrapPackages: Option[Seq[String]] = None
 
-  final protected def loadEnvironment(config: AppConfig, logger: IzLogger): TestEnvironment = {
-    if (memoizePlugins) {
-      DistagePluginTestSupport.getOrCompute(bootstrapConfig, doLoad(logger, bootstrapConfig))
+  final protected def loadEnvironment(logger: IzLogger): TestEnvironment = {
+    val config = bootstrapConfig
+    val plugins = if (memoizePlugins) {
+      DistagePluginTestSupport.getOrCompute(config, makePluginLoader(config).load())
     } else {
-      doLoad(logger, bootstrapConfig)
+      makePluginLoader(config).load()
     }
+    doLoad(logger, plugins)
   }
 
-  private def doLoad(logger: IzLogger, config: BootstrapConfig): TestEnvironment = {
-    val roles = loadRoles(logger)
-    val plugins = makePluginLoader(config).load()
+  private def doLoad(logger: IzLogger, plugins: PluginSource.AllLoadedPlugins): TestEnvironment = {
     val mergeStrategy = makeMergeStrategy(logger)
-
     val defApp = mergeStrategy.merge(plugins.app)
+    val bootstrap = mergeStrategy.merge(plugins.bootstrap)
+
+    val roles = loadRoles(logger)
 
     val available = ActivationParser.findAvailableChoices(logger, defApp)
     val appActivation = AppActivation(available, activation)
-    val defBs = mergeStrategy.merge(plugins.bootstrap) overridenBy new BootstrapModuleDef {
+
+    val defBs = bootstrap overridenBy new BootstrapModuleDef {
       make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
       make[AppActivation].from(appActivation)
     }
@@ -60,7 +62,10 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   }
 
   protected def memoizePlugins: Boolean = {
-    Option(System.getProperty("izumi.distage.testkit.plugins.memoize", "true")).contains("true")
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
+    System.getProperty("izumi.distage.testkit.plugins.memoize")
+      .asBoolean(true)
   }
 
   protected def loadRoles(logger: IzLogger): RolesInfo = {
@@ -95,6 +100,6 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
 
 
-object DistagePluginTestSupport extends SyncCache[BootstrapConfig, TestEnvironment] {
+object DistagePluginTestSupport extends SyncCache[BootstrapConfig, PluginSource.AllLoadedPlugins] {
   // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
 }
