@@ -162,7 +162,7 @@ object ExternalResourceProvider {
 
                 runner.run {
                   for {
-                    _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers for ${rt.tag}..."))) {
+                    _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.tag.tag.tpe.toString}..."))) {
                       case (acc, f) =>
                         acc.guarantee {
                           for {
@@ -171,7 +171,7 @@ object ExternalResourceProvider {
                           } yield ()
                         }
                     }
-                    _ <- effect.maybeSuspend(logger.log(s"Finished finalizers for ${rt.tag}!"))
+                    _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.tag.tag.tpe.toString}!"))
 
                   } yield ()
                 }
