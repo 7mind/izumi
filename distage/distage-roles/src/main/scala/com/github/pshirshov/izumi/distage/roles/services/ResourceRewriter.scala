@@ -17,7 +17,6 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 class ResourceRewriter(
                         logger: IzLogger,
                         rules: RewriteRules,
-
                       ) extends PlanningHook {
 
   import ResourceRewriter._

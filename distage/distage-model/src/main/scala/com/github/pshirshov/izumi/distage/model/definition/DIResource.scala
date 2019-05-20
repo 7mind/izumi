@@ -166,11 +166,12 @@ object DIResource {
 
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResourceBase[Identity, A] with AutoCloseable {
+  trait Mutable[+A] extends DIResourceBase[Identity, A] {
     this: A =>
     override final type InnerResource = Unit
-    override final def release(resource: Unit): Unit = close()
+    override final def release(resource: Unit): Unit = release()
     override final def extract(resource: Unit): A = this
+    def release(): Unit
   }
 
   trait Cats[F[_], A] extends DIResourceBase[F, A] {
