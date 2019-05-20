@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.macros.{DIUniverseLif
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import com.github.pshirshov.izumi.distage.provisioning.{AnyConstructor, FactoryConstructor, FactoryTools}
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -101,10 +101,12 @@ object FactoryConstructorMacro {
     val executorArg = q"$executorName: $executorType"
     val allArgs = executorArg +: dependencyArgs
     val allMethods = producerMethods ++ dependencyMethods
+
+    val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
     val instantiate = if (allMethods.isEmpty) {
-      q"new $targetType {}"
+      q"new ..$parents {}"
     } else {
-      q"new $targetType { ..$allMethods }"
+      q"new ..$parents { ..$allMethods }"
     }
 
     val defConstructor =

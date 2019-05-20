@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.reflection.macros.TrivialMacroLo
 import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
 import com.github.pshirshov.izumi.distage.provisioning.TraitConstructor
 import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import com.github.pshirshov.izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
 
 import scala.reflect.macros.blackbox
 
@@ -41,10 +41,12 @@ object TraitConstructorMacro {
         q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
     }.unzip
 
+    val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
+
     val instantiate = if (wireMethods.isEmpty)
-      q"new $targetType {}"
+      q"new ..$parents {}"
     else
-      q"new $targetType { ..$wireMethods }"
+      q"new ..$parents { ..$wireMethods }"
 
     val constructorDef = q"""
       ${if (wireArgs.nonEmpty)

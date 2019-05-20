@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
-class MacroFactoriesTest extends WordSpec with MkInjector {
+class MacroAutoFactoriesTest extends WordSpec with MkInjector {
 
   "handle macro factory injections" in {
     import FactoryCase1._

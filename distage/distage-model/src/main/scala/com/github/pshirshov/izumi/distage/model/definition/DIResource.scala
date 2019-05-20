@@ -1,14 +1,14 @@
 package com.github.pshirshov.izumi.distage.model.definition
-
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
-import cats.{Applicative, ~>}
 import cats.effect.Bracket
+import cats.{Applicative, ~>}
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -160,7 +160,7 @@ object DIResource {
       if (!(es.isShutdown || es.isTerminated)) {
         es.shutdown()
         if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-          es.shutdownNow()
+          es.shutdownNow().discard()
         }
       }
     }

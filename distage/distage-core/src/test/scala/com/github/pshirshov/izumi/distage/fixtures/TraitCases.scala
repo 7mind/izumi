@@ -94,6 +94,13 @@ object TraitCases {
         dep.toString
       }
     }
+
+    trait TestTraitAny {
+      protected val dep: Any
+      def rd: String = {
+        dep.toString
+      }
+    }
   }
 
   object TraitCase6 {

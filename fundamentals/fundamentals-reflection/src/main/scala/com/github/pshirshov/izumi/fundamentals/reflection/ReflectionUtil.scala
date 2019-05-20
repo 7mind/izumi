@@ -6,7 +6,7 @@ import scala.collection.immutable.ListMap
 import scala.reflect.api
 import scala.reflect.api.{Mirror, TypeCreator, Universe}
 import scala.reflect.internal.Symbols
-import scala.reflect.runtime.{universe => u}
+import scala.reflect.runtime.{universe => ru}
 import scala.language.reflectiveCalls
 import scala.util.{Failure, Success, Try}
 
@@ -18,13 +18,13 @@ class MethodMirrorException(message: String, cause: Throwable = null) extends Re
 
 
 object ReflectionUtil {
-  val mm: u.Mirror = scala.reflect.runtime.currentMirror
+  val mm: ru.Mirror = scala.reflect.runtime.currentMirror
 
-  def toJavaMethod(definingClass: u.Type, methodSymbol: u.Symbol): Method = {
+  def toJavaMethod(definingClass: ru.Type, methodSymbol: ru.Symbol): Method = {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
     val method = methodSymbol.asMethod
     definingClass match {
-      case r: u.RefinedTypeApi =>
+      case r: ru.RefinedTypeApi =>
         throw new MethodMirrorException(
           s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}")
 
@@ -38,9 +38,9 @@ object ReflectionUtil {
     }
   }
 
-  def toJavaMethod(clazz: Class[_], methodSymbol: u.MethodSymbol): Try[Method] = {
+  def toJavaMethod(clazz: Class[_], methodSymbol: ru.MethodSymbol): Try[Method] = {
     Try {
-      val mirror = u.runtimeMirror(clazz.getClassLoader)
+      val mirror = ru.runtimeMirror(clazz.getClassLoader)
       val privateMirror = mirror.asInstanceOf[ {
         def methodToJava(sym: Symbols#MethodSymbol): Method
       }]
@@ -91,8 +91,18 @@ object ReflectionUtil {
     * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
     * calling this method.
     */
-  def runtimeAnnotation(tpe: u.Type, scalaArgs: List[u.Tree], javaArgs: ListMap[u.Name, u.JavaArgument]): u.Annotation =
-    u.Annotation.apply(tpe, scalaArgs, javaArgs)
+  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation =
+    ru.Annotation.apply(tpe, scalaArgs, javaArgs)
+
+  def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
+    def go(tpe: U#Type): List[U#Type] = {
+      tpe match {
+        case r: U#RefinedTypeApi => r.parents.flatMap(intersectionTypeMembers[U](_: U#Type))
+        case _ => List(tpe)
+      }
+    }
+    go(targetType).distinct
+  }
 
   def kindOf(tpe: Universe#Type): Kind =
     Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))

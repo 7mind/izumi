@@ -19,7 +19,7 @@ class TagMacro(val c: blackbox.Context) {
   protected[this] val logger: TrivialLogger = TrivialLogger.make[this.type]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
 
   /**
-    * Workaround for a scalac bug whereby it loses the correct type of HKTag ar
+    * Workaround for a scalac bug whereby it loses the correct type of HKTag argument
     * Here, if implicit resolution fails, we just inspect and recreate HKTag Arg again.
     *
     * See: TagTest, "scalac bug: can't find HKTag when obscured by type lambda"

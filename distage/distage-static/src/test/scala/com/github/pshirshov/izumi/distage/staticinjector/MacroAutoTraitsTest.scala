@@ -1,13 +1,15 @@
 package com.github.pshirshov.izumi.distage.staticinjector
 
+import com.github.pshirshov.izumi.distage.fixtures.TraitCases.TraitCase4.Trait
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
+import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3
 import com.github.pshirshov.izumi.distage.model.PlannerInput
 import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
 
-class MacroTraitsTest extends WordSpec with MkInjector {
+class MacroAutoTraitsTest extends WordSpec with MkInjector {
 
   "construct a basic trait" in {
     val traitCtor = AnyConstructor[Aaa].provider.get
@@ -97,6 +99,41 @@ class MacroTraitsTest extends WordSpec with MkInjector {
     val instantiated3 = context.get[Trait2]
     assert(instantiated3.isInstanceOf[Trait2])
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
+  }
+
+  "can instantiate traits with refinements" in {
+    import TraitCase5._
+
+    val definition = PlannerInput.noGc(new StaticModuleDef {
+      stat[TestTraitAny {def dep: Dep}]
+      stat[Dep]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+    val instantiated = context.get[TestTraitAny {def dep: Dep}]
+
+    assert(instantiated.dep eq context.get[Dep])
+  }
+
+  "can instantiate `with` types" in {
+    import TypesCase3._
+
+    val definition = PlannerInput.noGc(new StaticModuleDef {
+      stat[Dep]
+      stat[Dep2]
+      stat[Trait2 with (Trait2 with (Trait2 with Trait1))]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val instantiated = context.get[Trait2 with (Trait2 with (Trait2 with Trait1))]
+
+    assert(instantiated.dep eq context.get[Dep])
+    assert(instantiated.dep2 eq context.get[Dep2])
   }
 
   "support named bindings in macro traits" in {

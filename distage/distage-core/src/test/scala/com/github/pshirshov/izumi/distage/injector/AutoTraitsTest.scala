@@ -68,26 +68,26 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     assert(instantiated.rd == Dep().toString)
   }
 
-  "progression test: can't instantiate traits with refinements" in {
+  "progression test: can't instantiate traits with refinements (macros can)" in {
     val ex = intercept[ProvisioningException] {
       import TraitCase5._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[TestTrait {def dep: Dep}]
+        make[TestTraitAny {def dep: Dep}]
         make[Dep]
       })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produceUnsafe(plan)
-      val instantiated = context.get[TestTrait]
+      val instantiated = context.get[TestTraitAny {def dep: Dep}]
 
-      assert(instantiated.rd == Dep().toString)
+      assert(instantiated.dep eq context.get[Dep])
     }
     assert(ex.getSuppressed.exists(_.isInstanceOf[MethodMirrorException]))
   }
 
-  "progression test: can't instantiate `with` types" in {
+  "progression test: can't instantiate `with` types (macros can)" in {
     val ex = intercept[ProvisioningException] {
       import TypesCase3._
 
@@ -103,8 +103,8 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
       val instantiated = context.get[Trait2 with Trait1]
 
-      assert(instantiated.dep == context.get[Dep])
-      assert(instantiated.dep2 == context.get[Dep])
+      assert(instantiated.dep eq context.get[Dep])
+      assert(instantiated.dep2 eq context.get[Dep2])
     }
     assert(ex.getSuppressed.exists(_.isInstanceOf[MethodMirrorException]))
   }
