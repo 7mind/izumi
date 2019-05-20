@@ -177,6 +177,7 @@ object ResourceRewriter {
     }
   }
 
+  /** Like [[DIResource.fromExecutorService]], but with added logging */
   def fromExecutorService[A <: ExecutorService](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire) {
       es =>

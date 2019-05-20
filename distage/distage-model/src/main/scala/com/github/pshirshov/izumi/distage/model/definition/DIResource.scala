@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.model.definition
 
+import java.util.concurrent.{ExecutorService, TimeUnit}
+
 import cats.{Applicative, ~>}
 import cats.effect.Bracket
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
@@ -120,6 +122,14 @@ trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
 object DIResource {
   import cats.effect.Resource
 
+  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
+    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
+      F.bracket(acquire = resource.acquire)(release = resource.release)(
+        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
+      )
+    }
+  }
+
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     def a = acquire
     def r = release
@@ -145,11 +155,14 @@ object DIResource {
     make(acquire)(a => F.maybeSuspend(a.close()))
   }
 
-  implicit final class DIResourceUse[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-    def use[B](use: A => F[B])(implicit F: DIEffect[F]): F[B] = {
-      F.bracket(acquire = resource.acquire)(release = resource.release)(
-        use = a => F.flatMap(F.maybeSuspend(resource.extract(a)))(use)
-      )
+  def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
+    makeSimple(acquire) { es =>
+      if (!(es.isShutdown || es.isTerminated)) {
+        es.shutdown()
+        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+          es.shutdownNow()
+        }
+      }
     }
   }
 
