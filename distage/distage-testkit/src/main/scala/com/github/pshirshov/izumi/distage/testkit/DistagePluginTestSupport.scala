@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.testkit.DistagePluginTestSupport.{CacheKey, CacheValue}
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -29,33 +30,40 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def pluginBootstrapPackages: Option[Seq[String]] = None
 
+  /**
+    * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
+    */
   final protected def loadEnvironment(logger: IzLogger): TestEnvironment = {
     val config = bootstrapConfig
-    val plugins = if (memoizePlugins) {
-      DistagePluginTestSupport.getOrCompute(config, makePluginLoader(config).load())
-    } else {
-      makePluginLoader(config).load()
+
+    def env(): CacheValue = {
+      val plugins = makePluginLoader(config).load()
+      val mergeStrategy = makeMergeStrategy(logger)
+      val defApp = mergeStrategy.merge(plugins.app)
+      val bootstrap = mergeStrategy.merge(plugins.bootstrap)
+      val availableActivations = ActivationParser.findAvailableChoices(logger, defApp)
+      CacheValue(plugins, bootstrap, defApp, availableActivations)
     }
+
+    val plugins = if (memoizePlugins) {
+      DistagePluginTestSupport.Cache.getOrCompute(CacheKey(config), env())
+    } else {
+      env()
+    }
+
     doLoad(logger, plugins)
   }
 
-  private def doLoad(logger: IzLogger, plugins: PluginSource.AllLoadedPlugins): TestEnvironment = {
-    val mergeStrategy = makeMergeStrategy(logger)
-    val defApp = mergeStrategy.merge(plugins.app)
-    val bootstrap = mergeStrategy.merge(plugins.bootstrap)
-
+  private def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
     val roles = loadRoles(logger)
-
-    val available = ActivationParser.findAvailableChoices(logger, defApp)
-    val appActivation = AppActivation(available, activation)
-
-    val defBs = bootstrap overridenBy new BootstrapModuleDef {
+    val appActivation = AppActivation(env.availableActivations, activation)
+    val defBs = env.bsModule overridenBy new BootstrapModuleDef {
       make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
       make[AppActivation].from(appActivation)
     }
     TestEnvironment(
       defBs,
-      defApp,
+      env.appModule,
       roles,
       appActivation,
     )
@@ -100,6 +108,16 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
 
 
-object DistagePluginTestSupport extends SyncCache[BootstrapConfig, PluginSource.AllLoadedPlugins] {
-  // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
+object DistagePluginTestSupport {
+  case class CacheKey(config: BootstrapConfig)
+  case class CacheValue(
+                         plugins: PluginSource.AllLoadedPlugins,
+                         bsModule: ModuleBase,
+                         appModule: ModuleBase,
+                         availableActivations: Map[AxisBase, Set[AxisValue]],
+                       )
+
+  object Cache extends SyncCache[CacheKey, CacheValue] {
+    // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
+  }
 }
