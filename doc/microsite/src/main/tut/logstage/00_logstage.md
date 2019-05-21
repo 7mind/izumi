@@ -66,7 +66,7 @@ Dependencies
 // LogStage API, you need it to use the logger
 libraryDependencies += Izumi.R.logstage_core
 
-// LogStage machinery
+// optional
 libraryDependencies ++= Seq(
   // json output
     Izumi.R.logstage_rendering_circe
@@ -83,7 +83,7 @@ val izumi_version = "$izumi.version$"
 // LogStage API, you need it to use the logger
 libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
 
-// LogStage machinery
+// optional
 libraryDependencies ++= Seq(
   // json output
     "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version
