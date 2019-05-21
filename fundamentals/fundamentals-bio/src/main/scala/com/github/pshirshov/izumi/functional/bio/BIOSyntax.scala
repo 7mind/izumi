@@ -75,7 +75,7 @@ object BIOSyntax {
 
     @inline def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A, E2, A2](r)(h)
 
-    @inline def leftTap[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.catchAll(r)(e => F.*>(f(e), F.fail(e)))
+    @inline def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.catchAll(r)(e => F.*>(f(e), F.fail(e)))
 
     @inline def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
   }
