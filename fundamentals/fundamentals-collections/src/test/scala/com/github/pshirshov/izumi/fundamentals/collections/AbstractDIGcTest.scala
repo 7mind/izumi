@@ -1,22 +1,24 @@
 package com.github.pshirshov.izumi.fundamentals.collections
 
-import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
+import com.github.pshirshov.izumi.fundamentals.graphs.{AbstractGCTracer, Loops}
 import org.scalatest.WordSpec
 
 class AbstractDIGcTest extends WordSpec {
+  import AbstractDIGcTest._
+
+  private val graph = Vector(
+    Node(NodeId("root:1"), Set(NodeId("2"))),
+    Node(NodeId("2"), Set(NodeId("3"), NodeId("4"))),
+    Node(NodeId("3"), Set(NodeId("2"))),
+    Node(NodeId("4"), Set(NodeId("4"))),
+    Node(NodeId("5"), Set(NodeId("5"))),
+  )
+
 
   "abstract GC" should {
     "not loop forever on circular dependencies" in {
-      import AbstractDIGcTest._
       val gc = new TestGCTracer(false)
 
-      val graph = Vector(
-        Node(NodeId("root:1"), Set(NodeId("2"))),
-        Node(NodeId("2"), Set(NodeId("3"), NodeId("4"))),
-        Node(NodeId("3"), Set(NodeId("2"))),
-        Node(NodeId("4"), Set(NodeId("4"))),
-        Node(NodeId("5"), Set(NodeId("5"))),
-      )
       val result = gc.gc(graph)
 
       assert(result.reachable == Set(NodeId("root:1"), NodeId("2"), NodeId("3"), NodeId("4")))
@@ -37,6 +39,14 @@ class AbstractDIGcTest extends WordSpec {
       intercept[java.util.NoSuchElementException] {
         gc2.gc(graph)
       }
+    }
+  }
+
+  "loop detector" should {
+    "detect loops" in {
+      val map = graph.map(n => n.id -> n.deps).toMap
+      val loops = Loops.findCyclesFor(NodeId("root:1"), n => map.get(n))
+      assert(loops == Seq(List(NodeId("root:1"), NodeId("2"), NodeId("4")), List(NodeId("root:1"), NodeId("2"), NodeId("3"))))
     }
   }
 }

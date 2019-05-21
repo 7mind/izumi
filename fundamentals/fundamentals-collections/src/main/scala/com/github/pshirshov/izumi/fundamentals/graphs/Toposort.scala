@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.graphs
 import scala.annotation.tailrec
 
 class Toposort {
+
   import Toposort._
 
   @tailrec
@@ -46,7 +47,7 @@ class Toposort {
       deps.exists {
         d =>
           if (stack.contains(d)) {
-           false
+            false
           } else {
             test(toPreds, stack + d, d, needle)
           }
@@ -57,5 +58,10 @@ class Toposort {
 }
 
 object Toposort {
+
   final case class InconsistentInput[T](issues: Map[T, scala.collection.immutable.Set[T]])
+
 }
+
+
+
