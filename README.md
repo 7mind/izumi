@@ -80,6 +80,10 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
 
+[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/) 
+
+[Triplequote Hydra](https://triplequote.com/) is the world’s only parallel compiler for the Scala language. Hydra works by parallelizing all of the Scala compiler phases, taking full advantage of the many cores available in modern hardware.
+
 Contributors
 ============
 
