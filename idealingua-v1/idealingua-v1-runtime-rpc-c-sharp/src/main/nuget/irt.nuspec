@@ -7,7 +7,7 @@
         <owners>izumi</owners>
         <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
         <projectUrl>https://izumi.7mind.io</projectUrl>
-        <iconUrl>https://raw.githubusercontent.com/7mind/izumi/develop/idealingua/idealingua-runtime-rpc-c-sharp/src/main/resources/unicorn.png</iconUrl>
+        <iconUrl>https://raw.githubusercontent.com/7mind/izumi/develop/idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/resources/unicorn.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <releaseNotes></releaseNotes>
         <description>Preliminary C# RPC runtime for Izumi IDL Compiler</description>
