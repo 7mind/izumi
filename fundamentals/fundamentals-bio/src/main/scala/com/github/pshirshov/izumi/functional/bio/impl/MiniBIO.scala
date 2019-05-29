@@ -110,7 +110,7 @@ object MiniBIO {
   final case class Redeem[E, A, +E1, +B](io: MiniBIO[E, A], err: BIOExit.Failure[E] => MiniBIO[E1, B], succ: A => MiniBIO[E1, B]) extends MiniBIO[E1, B]
 
   implicit val BIOMiniBIO: BIO[MiniBIO] = new BIO[MiniBIO] {
-    override def now[A](a: A): MiniBIO[Nothing, A] = sync(a)
+    override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
     override def point[V](v: => V): MiniBIO[Nothing, V] = Sync(() => BIOExit.Success(v))
     override def flatMap[E, A, E1 >: E, B](r: MiniBIO[E, A])(f: A => MiniBIO[E1, B]): MiniBIO[E1, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => BIOExit.Error(v))
@@ -138,15 +138,15 @@ object MiniBIO {
     }
 
     override def sandboxWith[E, A, E2, B](r: MiniBIO[E, A])(f: MiniBIO[BIOExit.Failure[E], A] => MiniBIO[BIOExit.Failure[E2], B]): MiniBIO[E2, B] = {
-      redeem(f(sandbox(r)))(err = e => Fail(() => e), succ = now)
+      redeem(f(sandbox(r)))(err = e => Fail(() => e), succ = pure)
     }
 
     override def sandbox[E, A](r: MiniBIO[E, A]): MiniBIO[BIOExit.Failure[E], A] = {
-      Redeem[E, A, BIOExit.Failure[E], A](r, e => fail(e), now)
+      Redeem[E, A, BIOExit.Failure[E], A](r, e => fail(e), pure)
     }
 
     override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIO[E, B]): MiniBIO[E, List[B]] = {
-      val x = l.foldLeft(now(Nil): MiniBIO[E, List[B]]) { (acc, a) =>
+      val x = l.foldLeft(pure(Nil): MiniBIO[E, List[B]]) { (acc, a) =>
         flatMap(acc)(list => map(f(a))(_ :: list))
       }
       map(x)(_.reverse)
