@@ -35,7 +35,7 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R
       case Some(value) =>
         invoke(extender.extend(context, parsedBody), toInvoke, value, parsedBody).map(Some.apply)
       case None =>
-        BIO.now(None)
+        BIO.pure(None)
     }
   }
 

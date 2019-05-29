@@ -90,7 +90,7 @@ object DIEffect
     type E = Throwable
     new DIEffect[F[Throwable, ?]] {
       import BIO._
-      override def pure[A](a: A): F[E, A] = F.now(a)
+      override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 

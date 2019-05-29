@@ -70,8 +70,8 @@ object BIOCatsConversions {
     @inline override final def map2[A, B, Z](fa: F[E, A], fb: F[E, B])(f: (A, B) => Z): F[E, Z] = F.map2(fa, fb)(f)
     @inline override final def map2Eval[A, B, Z](fa: F[E, A], fb: Eval[F[E, B]])(f: (A, B) => Z): Eval[F[E, Z]] = Eval.later(F.map2(fa, fb.value)(f))
 
-    @inline override final def pure[A](x: A): F[E, A] = F.now(x)
-    @inline override final def point[A](x: A): F[E, A] = F.now(x)
+    @inline override final def pure[A](x: A): F[E, A] = F.pure(x)
+    @inline override final def point[A](x: A): F[E, A] = F.pure(x)
 
     @inline override final def productR[A, B](fa: F[E, A])(fb: F[E, B]): F[E, B] = F.*>(fa, fb)
     @inline override final def productL[A, B](fa: F[E, A])(fb: F[E, B]): F[E, A] = F.<*(fa, fb)
@@ -95,7 +95,7 @@ object BIOCatsConversions {
     @inline override final def tailRecM[A, B](a: A)(f: A => F[E, Either[A, B]]): F[E, B] = {
       F.flatMap(f(a)) {
         case Left(next) => tailRecM(next)(f)
-        case Right(res) => F.now(res)
+        case Right(res) => F.pure(res)
       }
     }
   }
