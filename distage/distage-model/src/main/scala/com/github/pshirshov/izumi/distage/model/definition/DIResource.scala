@@ -191,12 +191,13 @@ object DIResource {
 
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResourceBase[Identity, A] {
-    this: A =>
+  trait Mutable[+A] extends DIResource.Token[Identity, A] { this: A => }
+
+  trait Token[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
-    override final def release(resource: Unit): Unit = release()
+    override final def release(resource: Unit): F[Unit] = release()
     override final def extract(resource: Unit): A = this
-    def release(): Unit
+    def release(): F[Unit]
   }
 
   trait Cats[F[_], A] extends DIResourceBase[F, A] {
