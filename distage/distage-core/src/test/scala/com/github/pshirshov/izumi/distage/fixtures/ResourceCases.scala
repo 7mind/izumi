@@ -119,7 +119,7 @@ object ResourceCases {
   class MutResource extends DIResource.Mutable[MutResource] {
     var init: Boolean = false
     override def acquire: Unit = { init = true }
-    override def release(): Unit = ()
+    override def release: Unit = ()
   }
 
   class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
