@@ -153,7 +153,8 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
   @inline def sync[A](effect: => A): F[Nothing, A]
   @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
-  @inline def pure[A](v: A): F[Nothing, A] = pure(v)
+  @deprecated("use .pure", "29.04.2019")
+  @inline def now[A](v: A): F[Nothing, A] = pure(v)
 
   @deprecated("use .pure for pure values, .sync for effects or delayed computations", "29.04.2019")
   @inline def point[A](v: => A): F[Nothing, A]
