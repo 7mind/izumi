@@ -19,6 +19,7 @@ trait IzManifest {
   val BuildSbt = "X-Build-SBT"
 
   val Version = "X-Version"
+  val ImplementationVersion = "Implementation-Version"
   val VersionJava = "Version"
   val VersionBundle = "Bundle-Version"
 
@@ -100,7 +101,7 @@ trait IzManifest {
   }
 
   protected def appVersion(mf: jar.Manifest): ArtifactVersion = {
-    getFirst(mf)(Seq(Version, VersionJava, VersionBundle)) match {
+    getFirst(mf)(Seq(Version, ImplementationVersion, VersionJava, VersionBundle)) match {
       case Some(version) =>
         ArtifactVersion(version)
       case _ =>
