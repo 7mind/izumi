@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil._
-import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0.globalSubtypeCheckLock
 
 import scala.reflect.runtime.{universe => ru}
 
@@ -73,22 +72,20 @@ class SafeType0[U <: SingletonUniverse](
     }
   }
 
+  // <:< is not thread-safe and upstream refuses to fix that.
+  // https://github.com/scala/bug/issues/10766
   final def <:<(that: SafeType0[U]): Boolean =
-    globalSubtypeCheckLock.synchronized {
+    SafeType0.synchronized {
       dealiased <:< that.dealiased || freeTermPrefixTypeSuffixHeuristicEq(_ <:< _, dealiased, that.dealiased)
     }
 
   final def weak_<:<(that: SafeType0[U]): Boolean =
-    globalSubtypeCheckLock.synchronized {
+    SafeType0.synchronized {
       (dealiased weak_<:< that.dealiased) || freeTermPrefixTypeSuffixHeuristicEq(_ weak_<:< _, dealiased, that.dealiased)
     }
 }
 
 object SafeType0 {
-
-  // <:< is not thread-safe and upstream refuses to fix that.
-  // https://github.com/scala/bug/issues/10766
-  private[SafeType0] object globalSubtypeCheckLock
 
   def apply[U <: SingletonUniverse](u: U, tpe: U#Type): SafeType0[U] = new SafeType0[U](u, tpe)
 
