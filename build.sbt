@@ -45,6 +45,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     ),
     scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
+    testOptions in Test += Tests.Argument("-oDF"),
     addCompilerPlugin(R.kind_projector)
   )
 }
