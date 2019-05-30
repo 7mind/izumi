@@ -70,8 +70,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
         q"""
            def invoke(ctx: ${sp.Ctx.t}, input: Input): Just[Output] = {
               ${sp.BIO.n}.redeem(_service.$nameTerm(ctx, ..${Input.sigCall}))(
-                      err => _F.now(new ${Output.negativeBranchType.typeFull}(err))
-                      , succ => _F.now(new ${Output.positiveBranchType.typeFull}(succ))
+                      err => _F.pure(new ${Output.negativeBranchType.typeFull}(err))
+                      , succ => _F.pure(new ${Output.positiveBranchType.typeFull}(succ))
                    )
            }"""
     }
@@ -104,7 +104,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                   { err => ${sp.BIO.n}.terminate(err) },
                   {
                     case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                      ${sp.BIO.n}.now(v.value)
+                      ${sp.BIO.n}.pure(v.value)
                     case v => $exception
                   })
            }"""
@@ -117,7 +117,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                    { err => ${sp.BIO.n}.terminate(err) },
                    {
                      case IRTMuxResponse(IRTResBody(_: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                       ${sp.BIO.n}.now(())
+                       ${sp.BIO.n}.pure(())
                      case v => $exception
             })
            }"""
@@ -130,7 +130,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                     { err => ${sp.BIO.n}.terminate(err) },
                     {
                       case IRTMuxResponse(IRTResBody(v: _M.$nameTerm.Output), method) if method == _M.$nameTerm.id =>
-                        ${sp.BIO.n}.now(v)
+                        ${sp.BIO.n}.pure(v)
                       case v => $exception
                     })
            }"""
@@ -148,7 +148,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
                              ${sp.BIO.n}.fail(va.value)
 
                            case va : ${Output.positiveBranchType.typeFull} =>
-                             ${sp.BIO.n}.now(va.value)
+                             ${sp.BIO.n}.pure(va.value)
 
                            case v =>
                              $exception
