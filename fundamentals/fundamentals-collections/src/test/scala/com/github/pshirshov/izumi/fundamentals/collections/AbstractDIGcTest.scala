@@ -46,7 +46,7 @@ class AbstractDIGcTest extends WordSpec {
     "detect loops" in {
       val map = graph.map(n => n.id -> n.deps).toMap
       val loops = Loops.findCyclesFor(NodeId("root:1"), n => map.get(n))
-      assert(loops == Seq(List(NodeId("root:1"), NodeId("2"), NodeId("4")), List(NodeId("root:1"), NodeId("2"), NodeId("3"))))
+      assert(loops.toSet == Set(List(NodeId("root:1"), NodeId("2"), NodeId("4"), NodeId("4")), List(NodeId("root:1"), NodeId("2"), NodeId("3"), NodeId("2"))))
     }
   }
 }

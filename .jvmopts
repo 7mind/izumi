@@ -13,7 +13,7 @@
 -noverify
 -server
 
--Xshare:on
+#-Xshare:on
 
 #-Xshare:dump
 #-Xlog:class+load=info
