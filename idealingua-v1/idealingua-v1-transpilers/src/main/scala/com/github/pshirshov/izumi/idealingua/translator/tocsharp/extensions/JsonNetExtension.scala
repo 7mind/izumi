@@ -401,7 +401,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |${
       i.alternatives.map(m =>
         s"""if (al is ${i.id.name}.${m.name}) {
-           |    writer.WritePropertyName("${m.name}");
+           |    writer.WritePropertyName("${(if (m.memberName.isEmpty) m.typeId.name else m.memberName.get)}");
            |    var v = (al as ${i.id.name}.${m.name}).Value;
            |${renderSerialize(m.typeId, "v").shift(4)}
            |} else""".stripMargin).mkString("\n").shift(8)
@@ -418,7 +418,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |        switch (kv.Name) {
        |${
       i.alternatives.map(m =>
-        s"""case "${m.name}": {
+        s"""case "${(if (m.memberName.isEmpty) m.typeId.name else m.memberName.get)}": {
            |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType(true)}>(kv.Value.CreateReader());
            |    return new ${i.id.name}.${m.name}(v);
            |}
@@ -430,7 +430,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |    }
        |}
      """.stripMargin
-  }
+  } // ${alternatives.map(a => "case '" + (if (a.memberName.isEmpty) a.typeId.name else a.memberName.get)
 
   override def imports(ctx: CSTContext, id: Adt)(implicit im: CSharpImports, ts: Typespace): List[String] = {
     discard(ctx)
