@@ -73,7 +73,7 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
 
   override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
     Quirks.discard(id, initial, packet)
-    (None, BIO.now(None))
+    (None, BIO.pure(None))
   }
 
   override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#RequestContext = {
@@ -131,7 +131,7 @@ class WsSessionsStorageImpl[C <: Http4sContext]
               for {
                 json <- codec.encode(request)
                 id <- BIO.sync(session.enqueue(request.method, json))
-                resp <- BIO.bracket(BIO.now(id)) {
+                resp <- BIO.bracket(BIO.pure(id)) {
                   id =>
                     logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
                     BIO.sync(session.requestState.forget(id))

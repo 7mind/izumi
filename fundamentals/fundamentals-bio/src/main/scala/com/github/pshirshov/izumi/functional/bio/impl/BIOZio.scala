@@ -13,7 +13,7 @@ object BIOZio extends BIOZio[Any]
 class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
   private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
-  @inline override final def now[A](a: A): IO[Nothing, A] = ZIO.succeed(a)
+  @inline override final def pure[A](a: A): IO[Nothing, A] = ZIO.succeed(a)
   @inline override final def sync[A](effect: => A): IO[Nothing, A] = ZIO.effectTotal(effect)
   @inline override final def point[A](v: => A): IO[Nothing, A] = ZIO.succeedLazy(v)
   @inline override final def syncThrowable[A](effect: => A): IO[Throwable, A] = ZIO.effect(effect)

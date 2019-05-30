@@ -26,7 +26,7 @@ object BIOBifunctor {
 }
 
 trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
-  def now[A](a: A): F[Nothing, A]
+  def pure[A](a: A): F[Nothing, A]
 
   /** execute two operations in order, map their results */
   def map2[E, A, E2 >: E, B, C](firstOp: F[E, A], secondOp: => F[E2, B])(f: (A, B) => C): F[E2, C]
@@ -37,7 +37,7 @@ trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
   /** execute two operations in order, same as `*>`, but return result of first operation */
   def <*[E, A, E2 >: E, B](firstOp: F[E, A], secondOp: => F[E2, B]): F[E2, A]
 
-  @inline final val unit: F[Nothing, Unit] = now(())
+  @inline final val unit: F[Nothing, Unit] = pure(())
   @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
 }
 
@@ -57,10 +57,10 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   def fail[E](v: => E): F[E, Nothing]
   def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B]
 
-  @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(now), succ.andThen(now))
+  @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(pure), succ.andThen(pure))
   @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
-  @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, now)
-  @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(now, fail(_))
+  @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
+  @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(pure, fail(_))
   @inline final def fromOption[A](effect: => Option[A]): F[Unit, A] = fromOption(())(effect)
 
   def fromEither[E, V](effect: => Either[E, V]): F[E, V]
@@ -68,7 +68,7 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   def fromTry[A](effect: => Try[A]): F[Throwable, A]
 
   // defaults
-  @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => now(g(a)))
+  @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))
 }
 
 object BIOError {
@@ -88,7 +88,7 @@ trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
 
   // defaults
   @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
-    flatMap(r)(a => now(f(a)))
+    flatMap(r)(a => pure(f(a)))
   }
 
   /** execute two operations in order, return result of second operation */
@@ -119,7 +119,7 @@ trait BIOBracket[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
   }
 
   @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
-    redeem(r)(e => flatMap(f(e))(fail(_)), now)
+    redeem(r)(e => flatMap(f(e))(fail(_)), pure)
   }
 
   // defaults
@@ -153,12 +153,14 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
   @inline def sync[A](effect: => A): F[Nothing, A]
   @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
-  @deprecated("use .now for pure values, .sync for effects or delayed computations", "29.04.2019")
+  @inline def pure[A](v: A): F[Nothing, A] = pure(v)
+
+  @deprecated("use .pure for pure values, .sync for effects or delayed computations", "29.04.2019")
   @inline def point[A](v: => A): F[Nothing, A]
 
   @inline override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
     case Left(e) => fail(e): F[E, A]
-    case Right(v) => now(v): F[E, A]
+    case Right(v) => pure(v): F[E, A]
   }
 
   @inline override def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): F[E, A] = {

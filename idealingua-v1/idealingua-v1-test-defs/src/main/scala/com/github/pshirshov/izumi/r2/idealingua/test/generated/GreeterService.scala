@@ -39,7 +39,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R
   override def greet(name: String, surname: String): R.Just[String] = {
     R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))( { err => R.terminate(err) }, {
       case IRTMuxResponse(IRTResBody(v: _M.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
-        R.now(v.value)
+        R.pure(v.value)
       case v =>
         R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
     })
@@ -54,7 +54,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R
             case va: GreeterServiceMethods.alternative.AlternativeOutput.Failure =>
               R.fail(va.value)
             case va: GreeterServiceMethods.alternative.AlternativeOutput.Success =>
-              R.now(va.value)
+              R.pure(va.value)
             case _ =>
               R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
           }
@@ -102,7 +102,7 @@ class GreeterServiceServerWrapped[F[+ _, + _] : BIO, C](service: GreeterServiceS
     override val marshaller: GreeterServerMarshallers.alternative.type = GreeterServerMarshallers.alternative
 
     override def invoke(ctx: C, input: Input): Just[Output] = {
-      F.redeem(service.alternative(ctx))(err => F.now(AlternativeOutput.Failure(err)), succ => F.now(AlternativeOutput.Success(succ)))
+      F.redeem(service.alternative(ctx))(err => F.pure(AlternativeOutput.Failure(err)), succ => F.pure(AlternativeOutput.Success(succ)))
     }
   }
 

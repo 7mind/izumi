@@ -143,17 +143,17 @@ class HttpServer[C <: Http4sContext]
         .map(handleResult(context, _))
 
     case Close(_) =>
-      BIO.now(None)
+      BIO.pure(None)
 
     case v: Binary =>
-      BIO.now(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+      BIO.pure(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
 
     case _: Pong =>
       onHeartbeat(requestTime).map(_ => None)
 
     case unknownMessage =>
       logger.error(s"Cannot handle unknown websocket message $unknownMessage")
-      BIO.now(None)
+      BIO.pure(None)
   }
 
   def onHeartbeat(requestTime: ZonedDateTime): C#MonoIO[Unit] = {
@@ -183,10 +183,10 @@ class HttpServer[C <: Http4sContext]
       response <- respond(context, unmarshalled).sandbox.catchAll {
         case BIOExit.Termination(exception, allExceptions) =>
           logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions")
-          BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+          BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
         case BIOExit.Error(exception) =>
           logger.error(s"${context -> null}: WS processing failed, $message, $exception")
-          BIO.now(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+          BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
       }
     } yield response
   }
@@ -207,7 +207,7 @@ class HttpServer[C <: Http4sContext]
             case None =>
               BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
             case Some(resp) =>
-              BIO.now(rpc.RpcPacket.rpcResponse(id, resp))
+              BIO.pure(rpc.RpcPacket.rpcResponse(id, resp))
           }
         } yield {
           Some(packet)
@@ -285,7 +285,7 @@ class HttpServer[C <: Http4sContext]
 
       case Termination(_, (cause: IRTHttpFailureException) :: _) =>
         logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
-        BIO.now(Response(status = cause.status))
+        BIO.pure(Response(status = cause.status))
 
       case Termination(_, (cause: RejectedExecutionException) :: _) =>
         logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")

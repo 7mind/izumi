@@ -117,7 +117,7 @@ class ClientWsDispatcher[C <: Http4sContext]
 
         val responsePkt = for {
           maybeResponse <- buzzerMuxer.doInvoke(data, wsClientContextProvider.toContext(p), methodId)
-          maybePacket <- BIO.now(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
+          maybePacket <- BIO.pure(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
         } yield {
           maybePacket
         }
@@ -126,10 +126,10 @@ class ClientWsDispatcher[C <: Http4sContext]
           maybePacket <- responsePkt.sandbox.catchAll {
             case BIOExit.Termination(exception, allExceptions) =>
               logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $allExceptions")
-              BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+              BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
             case BIOExit.Error(exception) =>
               logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
-              BIO.now(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+              BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
           maybeEncoded <- BIO(maybePacket.map(r => printer.pretty(r.asJson)))
           _ <- BIO {
