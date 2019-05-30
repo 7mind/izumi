@@ -7,7 +7,7 @@ using System.Linq;
 using IRT.Marshaller;
 
 namespace IRT {
-    [JsonConverter(typeof(Either_JsonNetConverter<,>))]
+    [JsonConverter(typeof(Either_JsonNetConverter))]
     public abstract class Either<L, A> {
         public abstract Either<L, B> Map<B>(Func<A, B> f);
         public abstract Either<V, B> BiMap<V, B>(Func<A, B> g, Func<L, V> f);
