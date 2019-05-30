@@ -165,14 +165,74 @@ namespace IRT {
     }
 
     // TODO Consider moving out of here to the marshaller itself
-    public class Either_JsonNetConverter<L, R>: JsonNetConverter<Either<L, R>> {
-        public override void WriteJson(JsonWriter writer, Either<L, R> al, JsonSerializer serializer) {
+    // This implementation seems to trigger some issues with Json.net, as it doesn't know how to
+    // deserialize a generic type like this...
+//     public class Either_JsonNetConverter<L, R>: JsonNetConverter<Either<L, R>> {
+//         public override void WriteJson(JsonWriter writer, Either<L, R> al, JsonSerializer serializer) {
+//             writer.WriteStartObject();
+
+//             if (al.IsLeft()) {
+//                 writer.WritePropertyName("Failure");
+//                 var l = al.GetLeft();
+//                 if (typeof(L).IsInterface) {
+//                     // Serializing polymorphic type
+//                     writer.WriteStartObject();
+//                     writer.WritePropertyName((l as IRTTI).GetFullClassName());
+//                     serializer.Serialize(writer, l);
+//                     writer.WriteEndObject();
+//                 } else {
+//                     serializer.Serialize(writer, l);
+//                 }
+//             } else {
+//                 writer.WritePropertyName("Success");
+//                 var r = al.GetRight();
+//                 if (typeof(R).IsInterface) {
+//                     // Serializing polymorphic type
+//                     writer.WriteStartObject();
+//                     writer.WritePropertyName((r as IRTTI).GetFullClassName());
+//                     serializer.Serialize(writer, r);
+//                     writer.WriteEndObject();
+//                 } else {
+//                     serializer.Serialize(writer, r);
+//                 }
+//             }
+
+//             writer.WriteEndObject();
+//         }
+
+//         public override Either<L, R> ReadJson(JsonReader reader, System.Type objectType, Either<L, R> existingValue, bool hasExistingValue, JsonSerializer serializer) {
+//             var json = JObject.Load(reader);
+//             var kv = json.Properties().First();
+//             switch (kv.Name) {
+//                 case "Success": {
+//                     var v = serializer.Deserialize<R>(kv.Value.CreateReader());
+//                     return new Either<L, R>.Right(v);
+//                 }
+
+//                 case "Failure": {
+//                     var v = serializer.Deserialize<L>(kv.Value.CreateReader());
+//                     return new Either<L, R>.Left(v);
+//                 }
+
+//                 default:
+//                     throw new System.Exception("Unknown either Either<L, R> type: " + kv.Name);
+//             }
+//         }
+//     }
+    
+    public class Either_JsonNetConverter : JsonConverter
+    {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            Type valueType = value.GetType();
+            Type[] genArgs = valueType.GetGenericArguments();
+            
             writer.WriteStartObject();
 
-            if (al.IsLeft()) {
+            if ((bool)valueType.GetMethod("IsLeft").Invoke(value, new object[0])) {
                 writer.WritePropertyName("Failure");
-                var l = al.GetLeft();
-                if (typeof(L).IsInterface) {
+                var l = valueType.GetMethod("GetLeft").Invoke(value, new object[0]);
+                if (genArgs[0].IsInterface) {
                     // Serializing polymorphic type
                     writer.WriteStartObject();
                     writer.WritePropertyName((l as IRTTI).GetFullClassName());
@@ -183,8 +243,8 @@ namespace IRT {
                 }
             } else {
                 writer.WritePropertyName("Success");
-                var r = al.GetRight();
-                if (typeof(R).IsInterface) {
+                var r = valueType.GetMethod("GetRight").Invoke(value, new object[0]);
+                if (genArgs[1].IsInterface) {
                     // Serializing polymorphic type
                     writer.WriteStartObject();
                     writer.WritePropertyName((r as IRTTI).GetFullClassName());
@@ -198,23 +258,35 @@ namespace IRT {
             writer.WriteEndObject();
         }
 
-        public override Either<L, R> ReadJson(JsonReader reader, System.Type objectType, Either<L, R> existingValue, bool hasExistingValue, JsonSerializer serializer) {
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            Type[] genArgs = objectType.GetGenericArguments();
+            
             var json = JObject.Load(reader);
             var kv = json.Properties().First();
             switch (kv.Name) {
                 case "Success": {
-                    var v = serializer.Deserialize<R>(kv.Value.CreateReader());
-                    return new Either<L, R>.Right(v);
+                    var v = serializer.Deserialize(kv.Value.CreateReader(), genArgs[1]);
+                    var rightType = typeof(Either<,>.Right).MakeGenericType(genArgs);
+
+                    return Activator.CreateInstance(rightType, v);
                 }
 
                 case "Failure": {
-                    var v = serializer.Deserialize<L>(kv.Value.CreateReader());
-                    return new Either<L, R>.Left(v);
+                    var v = serializer.Deserialize(kv.Value.CreateReader(), genArgs[0]);
+                    var leftType = typeof(Either<,>.Left).MakeGenericType(genArgs);
+
+                    return Activator.CreateInstance(leftType, v);
                 }
 
                 default:
                     throw new System.Exception("Unknown either Either<L, R> type: " + kv.Name);
             }
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return typeof(Either<,>).IsAssignableFrom(objectType);
         }
     }
 }

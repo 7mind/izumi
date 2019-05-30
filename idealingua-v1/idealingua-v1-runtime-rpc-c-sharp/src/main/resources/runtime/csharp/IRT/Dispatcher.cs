@@ -22,12 +22,7 @@ namespace IRT {
         }
 
         public bool Unregister(string serviceName) {
-            if (!services.ContainsKey(serviceName)) {
-                return false;
-            }
-
-            services.Remove(serviceName);
-            return true;
+            return services.Remove(serviceName);
         }
 
         public D Dispatch(C ctx, string service, string method, D data) {

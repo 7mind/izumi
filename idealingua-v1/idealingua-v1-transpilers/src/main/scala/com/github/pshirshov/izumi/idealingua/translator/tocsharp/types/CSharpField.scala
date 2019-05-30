@@ -17,7 +17,7 @@ final case class CSharpField(
 
   private def renderMemberImpl(forInterface: Boolean, by: String): String = {
     if (tp.isNative) {
-      s"${if (forInterface) "" else "public "}${tp.renderType()} ${if (by.isEmpty) "" else s"$by."}${renderMemberName()} { get; set; }"
+      s"${if (forInterface) "" else "public "}${tp.renderType(true)} ${if (by.isEmpty) "" else s"$by."}${renderMemberName()} { get; set; }"
     } else {
       "Not Implemented renderMember()"
     }

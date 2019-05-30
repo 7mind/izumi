@@ -100,7 +100,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
          |// to make them type aliases within another namespace.
          |//
          |// Had it been fully supported, the code would be something like:
-         |// using ${i.id.name} = ${cstype.renderType()}
+         |// using ${i.id.name} = ${cstype.renderType(true)}
          |//
          |// For the time being, please use the target type everywhere you need.
          """.stripMargin
@@ -147,7 +147,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def renderAdtUsings(m: AdtMember)(implicit im: CSharpImports, ts: Typespace): String = {
-    s"using _${m.name} = ${CSharpType(m.typeId).renderType()};"
+    s"using _${m.name} = ${CSharpType(m.typeId).renderType(true)};"
   }
 
   protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -175,14 +175,14 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
       at.success match {
         case _: Algebraic => s"${name}Success" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
         case _: Struct => s"${name}Success"
-        case si: Singular => CSharpType(si.typeId).renderType()
+        case si: Singular => CSharpType(si.typeId).renderType(true)
         case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.success.toString)
       }
     else
       at.failure match {
         case _: Algebraic => s"${name}Failure" /*ts.tools.toNegativeBranchName(alternative.failure.)*/
         case _: Struct => s"${name}Failure"
-        case si: Singular => CSharpType(si.typeId).renderType()
+        case si: Singular => CSharpType(si.typeId).renderType(true)
         case _ => throw new Exception("Not supported alternative non singular or algebraic " + at.failure.toString)
       }
   }
@@ -389,7 +389,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
         val returnValue = if (isServiceMethodReturnExistent(method.asInstanceOf[DefMethod.RPCMethod])) s"<${renderRPCMethodOutputSignature(svcOrBuzzer, m)}>" else ""
 
         val callback = s"${if (m.signature.input.fields.isEmpty) "" else ", "}Action$returnValue onSuccess, Action<Exception> onFailure, Action onAny = null, C ctx = null"
-        val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType() + " " + CSharpField.safeVarName(f.name)).mkString(", ")
+        val fields = m.signature.input.fields.map(f => CSharpType(f.typeId).renderType(true) + " " + CSharpField.safeVarName(f.name)).mkString(", ")
         val context = s"C ctx${if (m.signature.input.fields.isEmpty) "" else ", "}"
         if (forClient) {
           s"void ${m.name.capitalize}($fields$callback)"
@@ -403,7 +403,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   protected def renderRPCMethodOutputModel(svcOrBuzzer: String, method: DefMethod.RPCMethod)(implicit imports: CSharpImports, ts: Typespace): String = method.signature.output match {
     case _: Struct => s"$svcOrBuzzer.Out${method.name.capitalize}"
     case _: Algebraic => s"$svcOrBuzzer.Out${method.name.capitalize}"
-    case si: Singular => s"${CSharpType(si.typeId).renderType()}"
+    case si: Singular => s"${CSharpType(si.typeId).renderType(true)}"
     case _: Void => "void"
     case at: Alternative => renderAlternativeType(s"$svcOrBuzzer.Out${method.name.capitalize}", at)
   }

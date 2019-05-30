@@ -24,7 +24,7 @@ final case class CSharpClass (
       val indent = if (withWrapper) 4 else 0
 
       val ctorWithParams =
-        s"""public $name(${fields.map(f => s"${f.tp.renderType()} ${f.renderMemberName(capitalize = false, uncapitalize = true)}").mkString(", ")}) {
+        s"""public $name(${fields.map(f => s"${f.tp.renderType(true)} ${f.renderMemberName(capitalize = false, uncapitalize = true)}").mkString(", ")}) {
            |${fields.map(f => s"this.${f.renderMemberName()} = ${f.renderMemberName(capitalize = false, uncapitalize = true)};").mkString("\n").shift(4)}
            |}
          """.stripMargin
