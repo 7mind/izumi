@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil._
+import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0.globalSubtypeCheckLock
 
 import scala.reflect.runtime.{universe => ru}
 
 // TODO: hotspots, hashcode on keys is inefficient
 class SafeType0[U <: SingletonUniverse](
-                                         private val u: U // Needed just for the corner case in TagText."work with odd type prefixes" ._.
+                                         private val u: U // Needed just for the corner case in TagTest."work with odd type prefixes" ._.
                                          , val tpe: U#Type) {
 
   private final val dealiased: U#Type = {
@@ -73,13 +74,21 @@ class SafeType0[U <: SingletonUniverse](
   }
 
   final def <:<(that: SafeType0[U]): Boolean =
-    dealiased <:< that.dealiased || freeTermPrefixTypeSuffixHeuristicEq(_ <:< _, dealiased, that.dealiased)
+    globalSubtypeCheckLock.synchronized {
+      dealiased <:< that.dealiased || freeTermPrefixTypeSuffixHeuristicEq(_ <:< _, dealiased, that.dealiased)
+    }
 
   final def weak_<:<(that: SafeType0[U]): Boolean =
-    (dealiased weak_<:< that.dealiased) || freeTermPrefixTypeSuffixHeuristicEq(_ weak_<:< _, dealiased, that.dealiased)
+    globalSubtypeCheckLock.synchronized {
+      (dealiased weak_<:< that.dealiased) || freeTermPrefixTypeSuffixHeuristicEq(_ weak_<:< _, dealiased, that.dealiased)
+    }
 }
 
 object SafeType0 {
+
+  // <:< is not thread-safe and upstream refuses to fix that.
+  // https://github.com/scala/bug/issues/10766
+  private[SafeType0] object globalSubtypeCheckLock
 
   def apply[U <: SingletonUniverse](u: U, tpe: U#Type): SafeType0[U] = new SafeType0[U](u, tpe)
 
