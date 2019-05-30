@@ -102,7 +102,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
     val adt = i.alternatives.head
     val testValue =
       if (adt.typeId.isInstanceOf[InterfaceId])
-        s"new ${CSharpType(adt.typeId).renderType()}Struct()"
+        s"new ${CSharpType(adt.typeId).renderType(true)}Struct()"
     else
       s"${CSharpType(adt.typeId).renderType(true)}TestHelper.Create()"
 

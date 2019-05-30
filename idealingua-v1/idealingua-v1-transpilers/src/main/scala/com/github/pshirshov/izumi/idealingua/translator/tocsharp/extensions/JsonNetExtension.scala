@@ -243,9 +243,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
           val mk = CSharpType(gm.keyType)
           val mt = CSharpType(gm.valueType)
           Some(
-            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType(true)}();
                |foreach (var ${dst}_kv in ((JObject)$src).Properties()) {
-               |    ${mt.renderType()} ${dst}_dv;
+               |    ${mt.renderType(true)} ${dst}_dv;
                |${(if (propertyNeedsPrepare(mt.id)) prepareReadPropertyValue(dst + "_kv.Value", dst + "_dv", mt, createDst = false, currentDomain).get else s"${dst}_dv = ${readPropertyValue(dst + "_kv.Value", mt, currentDomain)};").shift(4)}
                |    $dst.Add(${mk.renderFromString(dst + "_kv.Name", unescape = false, currentDomain)}, ${dst}_dv);
                |}
@@ -255,9 +255,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case gl: Generic.TList =>
           val lt = CSharpType(gl.valueType)
           Some(
-            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType(true)}();
                |foreach (var ${dst}_sv in (JArray)$src) {
-               |    ${lt.renderType()} ${dst}_d;
+               |    ${lt.renderType(true)} ${dst}_d;
                |${(if (propertyNeedsPrepare(gl.valueType)) prepareReadPropertyValue(dst + "_sv", dst + "_d", lt, createDst = false, currentDomain).get else s"${dst}_d = ${readPropertyValue(dst + "_sv", lt, currentDomain)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
@@ -267,9 +267,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case gs: Generic.TSet =>
           val st = CSharpType(gs.valueType)
           Some(
-            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
+            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType(true)}();
                |foreach (var ${dst}_lv in (JArray)$src) {
-               |    ${st.renderType()} ${dst}_d;
+               |    ${st.renderType(true)} ${dst}_d;
                |${(if (propertyNeedsPrepare(gs.valueType)) prepareReadPropertyValue(dst + "_lv", dst + "_d", st, createDst = false, currentDomain).get else s"${dst}_d = ${readPropertyValue(dst + "_lv", st, currentDomain)};").shift(4)}
                |    $dst.Add(${dst}_d);
                |}
@@ -279,7 +279,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
         case o: Generic.TOption =>
           val ot = CSharpType(o.valueType)
           Some(
-            s"""${i.renderType()} $dst = null;
+            s"""${i.renderType(true)} $dst = null;
                |if ($src != null && $src.Type != JTokenType.Null) {
                |${(if (propertyNeedsPrepare(o.valueType)) prepareReadPropertyValue(src, dst, ot, createDst = false, currentDomain).get else s"$dst = ${readPropertyValue(src, ot, currentDomain)};").shift(4)}
                |}
@@ -290,11 +290,11 @@ object JsonNetExtension extends CSharpTranslatorExtension {
 
         case _: DTOId =>
 //          Some(
-//            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType()}();
-//               |$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
+//            s"""${if (createDst) "var " else " "}$dst = new ${i.renderType(true)}();
+//               |$dst = serializer.Deserialize<${i.renderType(true)}>($src.CreateReader());""".stripMargin
 //          )
           Some(
-            s"""${if (createDst) "var " else ""}$dst = serializer.Deserialize<${i.renderType()}>($src.CreateReader());""".stripMargin
+            s"""${if (createDst) "var " else ""}$dst = serializer.Deserialize<${i.renderType(true)}>($src.CreateReader());""".stripMargin
           )
 
         case _ => throw new Exception("Other cases should have been checked already.")
@@ -327,8 +327,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
       }
       case _ => t.id match {
         case _: EnumId => s"${t.renderType(t.id.uniqueDomainName != currentDomain)}Helpers.From($src.Value<string>())"
-        case _: IdentifierId => s"${t.renderType()}.From($src.Value<string>())"
-        case _: InterfaceId | _: AdtId => s"serializer.Deserialize<${t.renderType()}>($src.CreateReader())"
+        case _: IdentifierId => s"${t.renderType(true)}.From($src.Value<string>())"
+        case _: InterfaceId | _: AdtId => s"serializer.Deserialize<${t.renderType(true)}>($src.CreateReader())"
         case al: AliasId => readPropertyValue(src, CSharpType(ts.dealias(al)), currentDomain)
         case _ => throw new IDLException(s"Impossible readPropertyValue type: ${t.id}")
       }
@@ -419,7 +419,7 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |${
       i.alternatives.map(m =>
         s"""case "${m.name}": {
-           |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType()}>(kv.Value.CreateReader());
+           |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType(true)}>(kv.Value.CreateReader());
            |    return new ${i.id.name}.${m.name}(v);
            |}
            """.stripMargin).mkString("\n").shift(12)
@@ -460,8 +460,8 @@ object JsonNetExtension extends CSharpTranslatorExtension {
   override def postModelEmit(ctx: CSTContext, name: String, alternative: Alternative, leftType: TypeId, rightType: TypeId)(implicit im: CSharpImports, ts: Typespace): String = {
     discard(ctx)
 
-    val left = CSharpType(leftType).renderType()
-    val right = CSharpType(rightType).renderType()
+    val left = CSharpType(leftType).renderType(true)
+    val right = CSharpType(rightType).renderType(true)
     s"""public class ${name}_JsonNetConverter: JsonNetConverter<$name> {
        |    public override void WriteJson(JsonWriter writer, $name al, JsonSerializer serializer) {
        |        writer.WriteStartObject();

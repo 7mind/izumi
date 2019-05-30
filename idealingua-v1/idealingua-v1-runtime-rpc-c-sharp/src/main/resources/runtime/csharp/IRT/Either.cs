@@ -286,7 +286,7 @@ namespace IRT {
 
         public override bool CanConvert(Type objectType)
         {
-            return true;
+            return typeof(Either<,>).IsAssignableFrom(objectType);
         }
     }
 }

@@ -134,9 +134,9 @@ final case class CSharpType (
 
   private def getInitValue(id: TypeId): Option[String] = id match {
     case g: Generic => g match {
-      case _: Generic.TMap => Some(s"new ${renderType()}()")
-      case _: Generic.TList => Some(s"new ${renderType()}()")
-      case _: Generic.TSet => Some(s"new ${renderType()}()")
+      case _: Generic.TMap => Some(s"new ${renderType(withPackage = true)}()")
+      case _: Generic.TList => Some(s"new ${renderType(withPackage = true)}()")
+      case _: Generic.TSet => Some(s"new ${renderType(withPackage = true)}()")
       case _: Generic.TOption => None
     }
     case p: Primitive => p match {
