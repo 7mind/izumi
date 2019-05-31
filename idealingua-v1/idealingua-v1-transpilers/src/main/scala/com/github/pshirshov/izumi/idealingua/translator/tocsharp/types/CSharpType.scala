@@ -225,7 +225,7 @@ final case class CSharpType (
 
   private def randomAdt(i: AdtId, depth: Int): String = {
     val adt = ts(i).asInstanceOf[Adt]
-    s"""new ${i.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.name}.${adt.alternatives.head.name}(
+    s"""new ${i.path.toPackage.map(p => p.capitalize).mkString(".") + "." + i.name}.${adt.alternatives.head.wireId}(
        |${CSharpType(adt.alternatives.head.typeId).getRandomValue(depth - 1).shift(4)}
        |)
      """.stripMargin

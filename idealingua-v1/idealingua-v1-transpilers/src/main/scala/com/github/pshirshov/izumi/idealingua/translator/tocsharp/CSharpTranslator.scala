@@ -109,31 +109,31 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
 
   protected def renderAdtMember(adtName: String, member: AdtMember): String = {
     val operators =
-      s"""    public static explicit operator _${member.name}(${member.name} m) {
+      s"""    public static explicit operator _${member.wireId}(${member.wireId} m) {
          |        return m.Value;
          |    }
          |
-         |    public static explicit operator ${member.name}(_${member.name} m) {
-         |        return new ${member.name}(m);
+         |    public static explicit operator ${member.wireId}(_${member.wireId} m) {
+         |        return new ${member.wireId}(m);
          |    }
        """.stripMargin
 
     val operatorsDummy =
       s"""    // We would normally want to have an operator, but unfortunately if it is an interface,
          |    // it will fail on "user-defined conversions to or from an interface are not allowed".
-         |    // public static explicit operator _${member.name}(${member.name} m) {
+         |    // public static explicit operator _${member.wireId}(${member.wireId} m) {
          |    //     return m.Value;
          |    // }
          |    //
-         |    // public static explicit operator ${member.name}(_${member.name} m) {
-         |    //     return new ${member.name}(m);
+         |    // public static explicit operator ${member.wireId}(_${member.wireId} m) {
+         |    //     return new ${member.wireId}(m);
          |    // }
        """.stripMargin
 
     //    val memberType = CSharpType(member.typeId)
-    s"""public sealed class ${member.name}: $adtName {
-       |    public _${member.name} Value { get; private set; }
-       |    public ${member.name}(_${member.name} value) {
+    s"""public sealed class ${member.wireId}: $adtName {
+       |    public _${member.wireId} Value { get; private set; }
+       |    public ${member.wireId}(_${member.wireId} value) {
        |        this.Value = value;
        |    }
        |
@@ -147,7 +147,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
   }
 
   protected def renderAdtUsings(m: AdtMember)(implicit im: CSharpImports, ts: Typespace): String = {
-    s"using _${m.name} = ${CSharpType(m.typeId).renderType(true)};"
+    s"using _${m.wireId} = ${CSharpType(m.typeId).renderType(true)};"
   }
 
   protected def renderAdtImpl(adtName: String, members: List[AdtMember], renderUsings: Boolean = true)(implicit im: CSharpImports, ts: Typespace): String = {
@@ -158,7 +158,7 @@ class CSharpTranslator(ts: Typespace, options: CSharpTranslatorOptions) extends 
        |${ext.preModelEmit(ctx, adt)}
        |public abstract class $adtName {
        |    public interface I${adtName}Visitor {
-       |${members.map(m => s"        void Visit(${m.name} visitor);").mkString("\n")}
+       |${members.map(m => s"        void Visit(${m.wireId} visitor);").mkString("\n")}
        |    }
        |
        |    public abstract void Visit(I${adtName}Visitor visitor);

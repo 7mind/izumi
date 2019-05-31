@@ -17,7 +17,7 @@ object DuplicateMemberRule extends VerificationRule {
         }
 
       case t: Adt =>
-        val duplicates = t.alternatives.groupBy(v => v.name).filter(_._2.lengthCompare(1) > 0)
+        val duplicates = t.alternatives.groupBy(v => v.typename).filter(_._2.lengthCompare(1) > 0)
         if (duplicates.nonEmpty) {
           Seq(TypespaceError.DuplicateAdtElements(t.id, duplicates.keys.toList))
         } else {

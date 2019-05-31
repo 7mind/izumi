@@ -47,20 +47,20 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${t.within(c.name).typeFull} => Map(${Lit.String(c.name)} -> v.value).asJson"""
+        p"""case v: ${t.within(c.typename).typeFull} => Map(${Lit.String(c.wireId)} -> v.value).asJson"""
 
     }
 
 
     val dec = implementors.map {
       c =>
-        p"""case ${Lit.String(c.name)} => value.as[${toScala(c.typeId).typeAbsolute}].map(${t.within(c.name).termFull}.apply)"""
+        p"""case ${Lit.String(c.wireId)} => value.as[${toScala(c.typeId).typeAbsolute}].map(${t.within(c.typename).termFull}.apply)"""
     }
 
     val missingDefinitionCase =
       p"""case _ =>
            val cname = ${Lit.String(id.wireId)}
-           val alts = List(..${implementors.map(c => Lit.String(c.name))}).mkString(",")
+           val alts = List(..${implementors.map(c => Lit.String(c.wireId))}).mkString(",")
            Left(DecodingFailure(s"Can't decode type $$fname as $$cname, expected one of [$$alts]", value.history))
       """
 
