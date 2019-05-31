@@ -400,9 +400,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |        writer.WriteStartObject();
        |${
       i.alternatives.map(m =>
-        s"""if (al is ${i.id.name}.${m.name}) {
-           |    writer.WritePropertyName("${m.name}");
-           |    var v = (al as ${i.id.name}.${m.name}).Value;
+        s"""if (al is ${i.id.name}.${m.wireId}) {
+           |    writer.WritePropertyName("${m.wireId}");
+           |    var v = (al as ${i.id.name}.${m.wireId}).Value;
            |${renderSerialize(m.typeId, "v").shift(4)}
            |} else""".stripMargin).mkString("\n").shift(8)
     }
@@ -418,9 +418,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
        |        switch (kv.Name) {
        |${
       i.alternatives.map(m =>
-        s"""case "${m.name}": {
+        s"""case "${m.wireId}": {
            |    var v = serializer.Deserialize<${CSharpType(m.typeId).renderType(true)}>(kv.Value.CreateReader());
-           |    return new ${i.id.name}.${m.name}(v);
+           |    return new ${i.id.name}.${m.wireId}(v);
            |}
            """.stripMargin).mkString("\n").shift(12)
     }

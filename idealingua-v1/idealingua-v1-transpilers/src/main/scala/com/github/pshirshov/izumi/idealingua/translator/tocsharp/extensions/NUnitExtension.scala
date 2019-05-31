@@ -109,7 +109,7 @@ object NUnitExtension extends CSharpTranslatorExtension {
     val code =
       s"""public static class ${name}TestHelper {
          |    public static $name Create() {
-         |        return new $name.${adt.name}($testValue);
+         |        return new $name.${adt.wireId}($testValue);
          |    }
          |}
          |

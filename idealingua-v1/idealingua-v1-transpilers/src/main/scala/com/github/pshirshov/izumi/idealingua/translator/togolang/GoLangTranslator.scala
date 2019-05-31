@@ -197,7 +197,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderAdtMember(structName: String, member: AdtMember, im: GoLangImports): String = {
-    renderAdtMember(structName, member.name, member.typeId, im)
+    renderAdtMember(structName, member.wireId, member.typeId, im)
   }
 
   protected def renderAdtMember(structName: String, memberName: String, memberType: TypeId, im: GoLangImports): String = {
@@ -425,7 +425,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"""
          |func NewTest$name() *$name {
          |    res := &$name{}
-         |    res.Set${alternatives.head.name}(NewTest${
+         |    res.Set${alternatives.head.wireId}(NewTest${
         alternatives.head.typeId.name + (alternatives.head.typeId match {
           case iface: InterfaceId => ts.tools.implId(iface).name;
           case _ => ""
@@ -464,7 +464,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    }
        |
          |    switch v.valueType {
-       |${alternatives.map(al => "case \"" + al.name + "\": {\n" + renderAdtSerialization(al, imports).shift(4) + "\n}").mkString("\n").shift(8)}
+       |${alternatives.map(al => "case \"" + al.wireId + "\": {\n" + renderAdtSerialization(al, imports).shift(4) + "\n}").mkString("\n").shift(8)}
        |        default:
        |            return nil, fmt.Errorf("$name encountered an unknown type '%s' during serialization", v.valueType)
        |    }
@@ -479,7 +479,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |    for className, content := range raw {
        |        v.valueType = className
        |        switch className {
-       |${alternatives.map(al => "case \"" + al.name + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString("\n").shift(12)}
+       |${alternatives.map(al => "case \"" + al.wireId + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString("\n").shift(12)}
        |            default:
        |                return fmt.Errorf("$name encountered an unknown type '%s' during deserialization", className)
        |        }
@@ -491,15 +491,15 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderAdtAlternativeTest(i: Adt, m: AdtMember, im: GoLangImports): String = {
-    s"""func Test${i.id.name}As${m.name}(t *testing.T) {
+    s"""func Test${i.id.name}As${m.wireId}(t *testing.T) {
        |    adt := &${i.id.name}{}
-       |    adt.Set${m.name}(${GoLangType(m.typeId, im, ts).testValue()})
+       |    adt.Set${m.wireId}(${GoLangType(m.typeId, im, ts).testValue()})
        |
-       |    if !adt.Is${m.name}() {
-       |        t.Errorf("type '%s' Is${m.name} must be true.", "${i.id.name}")
+       |    if !adt.Is${m.wireId}() {
+       |        t.Errorf("type '%s' Is${m.wireId} must be true.", "${i.id.name}")
        |    }
        |
-       |${i.alternatives.map(al => if (al.name == m.name) "" else s"""if adt.Is${al.name}() {\n    t.Errorf("type '%s' Is${al.name} must be false.", "${i.id.name}")\n}""").mkString("\n").shift(4)}
+       |${i.alternatives.map(al => if (al.wireId == m.wireId) "" else s"""if adt.Is${al.wireId}() {\n    t.Errorf("type '%s' Is${al.wireId} must be false.", "${i.id.name}")\n}""").mkString("\n").shift(4)}
        |
        |    serialized, err := json.Marshal(adt)
        |    if err != nil {
@@ -512,8 +512,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |        t.Errorf("type '%s' json deserialization failed. %+v, json: %s", "${i.id.name}", err, string(serialized))
        |    }
        |
-       |    if !adt2.Is${m.name}() {
-       |        t.Errorf("type '%s' Is${m.name} must be true after deserialization.", "${i.id.name}")
+       |    if !adt2.Is${m.wireId}() {
+       |        t.Errorf("type '%s' Is${m.wireId} must be true after deserialization.", "${i.id.name}")
        |    }
        |}
      """.stripMargin

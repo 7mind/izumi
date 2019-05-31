@@ -15,7 +15,7 @@ class AdtRenderer(ctx: STContext) {
 
     val members = i.alternatives.map {
       m =>
-        val memberName = m.name
+        val memberName = m.typename
         val mt = t.within(memberName)
         val original = conv.toScala(m.typeId)
 

@@ -229,7 +229,7 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
          |        package: '$pkg',
          |        type: IntrospectorTypes.Adt,
          |        options: [
-         |${adt.alternatives.map(f => unwindAdtMember(f.name, f.typeId)).mkString(",\n").shift(12)}
+         |${adt.alternatives.map(f => unwindAdtMember(f.wireId, f.typeId)).mkString(",\n").shift(12)}
          |        ]
          |    } as IIntrospectorAdtObject
          |);

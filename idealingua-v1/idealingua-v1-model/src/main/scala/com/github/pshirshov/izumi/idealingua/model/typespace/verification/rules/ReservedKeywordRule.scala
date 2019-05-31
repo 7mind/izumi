@@ -21,7 +21,7 @@ class ReservedKeywordRule(context: String, keywords: Set[String]) extends Verifi
           case TypeDef.Enumeration(_, members, _) =>
             check(t, members.map(_.value))
           case TypeDef.Adt(_, alternatives, _) =>
-            check(t, alternatives.map(_.name))
+            check(t, alternatives.map(_.typename))
           case TypeDef.Identifier(_, fields, _) =>
             check(t, fields.map(_.name))
           case structure: TypeDef.WithStructure =>

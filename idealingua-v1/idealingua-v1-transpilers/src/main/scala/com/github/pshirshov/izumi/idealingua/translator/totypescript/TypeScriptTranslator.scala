@@ -392,7 +392,7 @@ class TypeScriptTranslator(ts: Typespace, options: TypescriptTranslatorOptions) 
        |        const id = Object.keys(data)[0];
        |        const content = data[id];
        |        switch (id) {
-       |${alternatives.map(a => "case '" + a.name + "': return " + conv.deserializeType("content", a.typeId, typespace, asAny = true) + ";").mkString("\n").shift(12)}
+       |${alternatives.map(a => "case '" + a.wireId + "': return " + conv.deserializeType("content", a.typeId, typespace, asAny = true) + ";").mkString("\n").shift(12)}
        |            default:
        |                throw new Error('Unknown type id ' + id + ' for ${name}');
        |        }
