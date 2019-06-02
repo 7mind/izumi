@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.distage.plugins.load
 import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
 import io.github.classgraph.{ClassGraph, ClassInfo}
+import scala.reflect.runtime.universe
 
 import scala.collection.JavaConverters._
 
@@ -27,15 +28,30 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginLoader.PluginConfig) extends P
 
     try {
       val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
-      val plugins = implementors.filter {
-        case classInfo: ClassInfo =>
-          classInfo.getConstructorInfo.asScala.exists(_.getParameterInfo.isEmpty)
-      }
+      implementors
+        .asScala
+        .filterNot(_.isAbstract)
+        .flatMap {
+          classInfo =>
+            val constructors = classInfo.getConstructorInfo.asScala
 
-      val pluginClasses = plugins.loadClasses(base).asScala
+            if (constructors.isEmpty) {
+              val clz = classInfo.loadClass()
+              val runtimeMirror = universe.runtimeMirror(clz.getClassLoader)
+              val symbol = runtimeMirror.classSymbol(clz)
+              if (symbol.isModuleClass) {
+                Seq(runtimeMirror.reflectModule(symbol.thisPrefix.termSymbol.asModule).instance.asInstanceOf[PluginBase])
+              } else {
+                Seq.empty
+              }
+            } else if (constructors.exists(_.getParameterInfo.isEmpty)) {
+              val clz = classInfo.loadClass()
+              clz.getDeclaredConstructors.find(_.getParameterCount == 0).map(_.newInstance().asInstanceOf[PluginBase]).toSeq
+            } else {
+              Seq.empty
+            }
 
-      pluginClasses
-        .map(_.getDeclaredConstructor().newInstance())
+        }
         .toSeq // 2.13 compat
     } finally {
       scanResult.close()
