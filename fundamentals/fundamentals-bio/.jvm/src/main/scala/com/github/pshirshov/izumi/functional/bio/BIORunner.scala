@@ -2,10 +2,12 @@ package com.github.pshirshov.izumi.functional.bio
 
 import java.util
 import java.util.concurrent._
+import java.util.concurrent.atomic.AtomicInteger
 
 import scalaz.zio.Exit.Cause
 import scalaz.zio._
-import scalaz.zio.internal.{Executor, NamedThreadFactory, Platform, PlatformLive}
+import scalaz.zio.internal.tracing.TracingConfig
+import scalaz.zio.internal.{Executor, Platform, PlatformLive, Tracing}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: F[E, A]): A
@@ -24,8 +26,9 @@ object BIORunner {
                  cpuPool: ThreadPoolExecutor
                , handler: FailureHandler = FailureHandler.Default
                , yieldEveryNFlatMaps: Int = 1024
+               , tracingConfig: TracingConfig = TracingConfig.enabled
                ): BIORunner[IO] = {
-    new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps))
+    new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
   }
 
   def newZioTimerPool(): ScheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
@@ -76,6 +79,7 @@ object BIORunner {
     cpuPool: ThreadPoolExecutor
   , handler: FailureHandler
   , yieldEveryNFlatMaps: Int
+  , tracingConfig: TracingConfig
   ) extends Platform with BIOExit.ZIO {
 
     private[this] final val cpu = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
@@ -97,7 +101,35 @@ object BIORunner {
 
     override def fatal(t: Throwable): Boolean = t.isInstanceOf[VirtualMachineError]
 
+    override def tracing: Tracing = Tracing.enabledWith(tracingConfig)
+
+    override def reportFatal(t: Throwable): Nothing = {
+      t.printStackTrace()
+      sys.exit(-1)
+    }
+
     override def newWeakHashMap[A, B](): util.Map[A, B] = new util.WeakHashMap[A, B]()
+  }
+
+  final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
+
+    private val parentGroup =
+      Option(System.getSecurityManager).fold(Thread.currentThread().getThreadGroup)(_.getThreadGroup)
+
+    private val threadGroup = new ThreadGroup(parentGroup, name)
+    private val threadCount = new AtomicInteger(1)
+    private val threadHash  = Integer.toUnsignedString(this.hashCode())
+
+    override def newThread(r: Runnable): Thread = {
+      val newThreadNumber = threadCount.getAndIncrement()
+
+      val thread = new Thread(threadGroup, r)
+      thread.setName(s"$name-$newThreadNumber-$threadHash")
+      thread.setDaemon(daemon)
+
+      thread
+    }
+
   }
 
 }

@@ -91,7 +91,7 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
   }
 
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
-    ZIO.effectAsync[E, A] {
+    ZIO.effectAsync[R, E, A] {
       cb =>
         register {
           case Right(v) =>
