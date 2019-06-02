@@ -42,6 +42,8 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
 
   @inline override final def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[E, A, E2, A2 >: A](r: IO[E, A])(f: E => IO[E2, A2]): IO[E2, A2] = r.catchAll(f)
+  @inline override final def catchSome[E, A, E2 >: E, A2 >: A](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E2, A2]]): ZIO[R, E2, A2] = r.catchSome(f)
+
   @inline override final def guarantee[E, A](f: IO[E, A])(cleanup: IO[Nothing, Unit]): IO[E, A] = {
     ZIO.accessM(r => f.ensuring(cleanup.provide(r)))
   }
@@ -57,10 +59,6 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
   }
 
   @inline override final def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreach(l)(f)
-
-  @inline override final def sandboxWith[E, A, E2, B](r: IO[E, A])(f: IO[BIOExit.Failure[E], A] => IO[BIOExit.Failure[E2], B]): IO[E2, B] = {
-    r.sandboxWith[R, E2, B](r => f(r.mapError(toBIOExit[E])).mapError(failureToCause[E2]))
-  }
 
   @inline override final def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(toBIOExit[E])
 }

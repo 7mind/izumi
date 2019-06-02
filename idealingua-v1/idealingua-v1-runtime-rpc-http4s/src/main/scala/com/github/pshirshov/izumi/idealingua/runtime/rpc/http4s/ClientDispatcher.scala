@@ -65,13 +65,13 @@ class ClientDispatcher[C <: Http4sContext]
           }
 
           decoded.sandbox.catchAll {
-            case BIOExit.Error(error) =>
-              logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error")
-              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on $body: $error", Option(error)))
+            case BIOExit.Error(error, trace) =>
+              logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error $trace")
+              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on body=$body: error=$error trace=$trace", Option(error)))
 
-            case BIOExit.Termination(f, _) =>
-              logger.info(s"${input.method -> "method"}: decoder failed on $body: $f")
-              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on $body: $f", Option(f)))
+            case BIOExit.Termination(f, _, trace) =>
+              logger.info(s"${input.method -> "method"}: decoder failed on $body: $f $trace")
+              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on body=$body: f=$f trace=$trace", Option(f)))
           }
       }
     }

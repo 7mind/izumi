@@ -98,11 +98,11 @@ class ClientWsDispatcher[C <: Http4sContext]
       case Success(PacketInfo(packetId, method)) =>
         logger.debug(s"Processed incoming packet $method: $packetId")
 
-      case Error(error) =>
-        logger.error(s"Failed to process request: $error")
+      case Error(error, trace) =>
+        logger.error(s"Failed to process request: $error $trace")
 
-      case Termination(cause, _) =>
-        logger.error(s"Failed to process request, termination: $cause")
+      case Termination(cause, _, trace) =>
+        logger.error(s"Failed to process request, termination: $cause $trace")
     }
   }
 
@@ -124,11 +124,11 @@ class ClientWsDispatcher[C <: Http4sContext]
 
         for {
           maybePacket <- responsePkt.sandbox.catchAll {
-            case BIOExit.Termination(exception, allExceptions) =>
-              logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $allExceptions")
+            case BIOExit.Termination(exception, allExceptions, trace) =>
+              logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $allExceptions, $trace")
               BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
-            case BIOExit.Error(exception) =>
-              logger.error(s"${packetInfo -> null}: WS processing failed, $exception")
+            case BIOExit.Error(exception, trace) =>
+              logger.error(s"${packetInfo -> null}: WS processing failed, $exception $trace")
               BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
           maybeEncoded <- BIO(maybePacket.map(r => printer.pretty(r.asJson)))

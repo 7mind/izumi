@@ -11,6 +11,7 @@ import io.circe.Printer
 import scalaz.zio
 import scalaz.zio.Runtime
 import scalaz.zio.clock.Clock
+import scalaz.zio.internal.tracing.TracingConfig
 import scalaz.zio.interop.catz._
 import scalaz.zio.interop.catz.implicits._
 
@@ -24,8 +25,9 @@ object RT {
   final val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
   val platform = new bio.BIORunner.ZIOEnvBase(
     Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
-    , handler
-    , 1024
+  , handler
+  , 1024
+  , TracingConfig.enabled
   )
   implicit val runtime: Runtime[Any] = Runtime((), platform)
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(platform)
