@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio.impl
 
+import com.github.pshirshov.izumi.functional.bio.BIOExit.Trace
 import com.github.pshirshov.izumi.functional.bio.impl.MiniBIO.Fail
 import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
 
@@ -49,7 +50,7 @@ sealed trait MiniBIO[+E, +A] {
       case MiniBIO.Sync(a) =>
         val exit = try { a() } catch {
           case t: Throwable =>
-            BIOExit.Termination(t)
+            BIOExit.Termination(t, Trace.empty)
         }
         exit match {
           case BIOExit.Success(value) =>
@@ -71,7 +72,7 @@ sealed trait MiniBIO[+E, +A] {
       case MiniBIO.Fail(e) =>
         val err = try e() catch {
           case t: Throwable =>
-            BIOExit.Termination(t)
+            BIOExit.Termination(t, Trace.empty)
         }
         val catcher = stack.dropWhile(!_.isInstanceOf[Catcher[_, _, _, _]])
         catcher match {
@@ -102,7 +103,7 @@ object MiniBIO {
 
   final case class Fail[+E](e: () => BIOExit.Failure[E]) extends MiniBIO[E, Nothing]
   object Fail {
-    def terminate(t: Throwable): Fail[Nothing] = Fail(() => BIOExit.Termination(t))
+    def terminate(t: Throwable): Fail[Nothing] = Fail(() => BIOExit.Termination(t, Trace.empty))
     def halt[E](e: => BIOExit.Failure[E]): Fail[E] = Fail(() => e)
   }
   final case class Sync[+E, +A](a: () => BIOExit[E, A]) extends MiniBIO[E, A]
@@ -113,17 +114,26 @@ object MiniBIO {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
     override def point[V](v: => V): MiniBIO[Nothing, V] = Sync(() => BIOExit.Success(v))
     override def flatMap[E, A, E1 >: E, B](r: MiniBIO[E, A])(f: A => MiniBIO[E1, B]): MiniBIO[E1, B] = FlatMap(r, f)
-    override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => BIOExit.Error(v))
+    override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => BIOExit.Error(v, Trace.empty))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)
 
-    override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync(() => try { BIOExit.Success(effect) } catch { case e: Throwable => BIOExit.Error(e) } )
+    override def syncThrowable[A](effect: => A): MiniBIO[Throwable, A] = Sync {
+      () => try { BIOExit.Success(effect) } catch { case e: Throwable => BIOExit.Error(e, Trace.empty) }
+    }
     override def sync[A](effect: => A): MiniBIO[Nothing, A] = Sync(() => BIOExit.Success(effect))
 
     override def redeem[E, A, E2, B](r: MiniBIO[E, A])(err: E => MiniBIO[E2, B], succ: A => MiniBIO[E2, B]): MiniBIO[E2, B] = {
       Redeem[E, A, E2, B](r, {
-        case BIOExit.Termination(t, e) => Fail.halt(BIOExit.Termination(t, e))
-        case BIOExit.Error(e) => err(e)
+        case BIOExit.Termination(t, e, c) => Fail.halt(BIOExit.Termination(t, e, c))
+        case BIOExit.Error(e, _) => err(e)
       }, succ)
+    }
+
+    override def catchSome[E, A, E2 >: E, A2 >: A](r: MiniBIO[E, A])(f: PartialFunction[E, MiniBIO[E2, A2]]): MiniBIO[E2, A2] = {
+      Redeem[E, A, E2, A2](r, {
+        case BIOExit.Termination(t, e, c) => Fail.halt(BIOExit.Termination(t, e, c))
+        case exit@BIOExit.Error(e, _) => f.applyOrElse(e, (_: E) => Fail.halt(exit))
+      }, pure)
     }
 
     override def bracketCase[E, A, B](acquire: MiniBIO[E, A])(release: (A, BIOExit[E, B]) => MiniBIO[Nothing, Unit])(use: A => MiniBIO[E, B]): MiniBIO[E, B] = {
@@ -135,10 +145,6 @@ object MiniBIO {
         , succ = v => map(release(a, BIOExit.Success(v)))(_ => v)
         )
       )
-    }
-
-    override def sandboxWith[E, A, E2, B](r: MiniBIO[E, A])(f: MiniBIO[BIOExit.Failure[E], A] => MiniBIO[BIOExit.Failure[E2], B]): MiniBIO[E2, B] = {
-      redeem(f(sandbox(r)))(err = e => Fail(() => e), succ = pure)
     }
 
     override def sandbox[E, A](r: MiniBIO[E, A]): MiniBIO[BIOExit.Failure[E], A] = {

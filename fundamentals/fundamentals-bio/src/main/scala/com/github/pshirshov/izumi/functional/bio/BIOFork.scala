@@ -11,6 +11,11 @@ object BIOFork {
 
   implicit object BIOForkZio extends BIOFork[IO] {
     override def fork[E, A](f: IO[E, A]): IO[Nothing, BIOFiber[IO, E, A]] =
-      f.fork.map(BIOFiber.fromZIO)
+      f.fork
+        // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
+        //  unless wrapped in `interruptible`
+        //  see: https://github.com/zio/zio/issues/945
+        .interruptible
+        .map(BIOFiber.fromZIO)
   }
 }

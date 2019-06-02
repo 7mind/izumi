@@ -35,7 +35,7 @@ class Http4sTransportTest extends WordSpec {
 
           disp.cancelCredentials()
           BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Termination(exception: IRTUnexpectedHttpStatus, _) =>
+            case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
               assert(exception.status == Status.Forbidden)
             case o =>
               fail(s"Expected IRTGenericFailure but got $o")
@@ -44,7 +44,7 @@ class Http4sTransportTest extends WordSpec {
           //
           disp.setupCredentials("user", "badpass")
           BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Termination(exception: IRTUnexpectedHttpStatus, _) =>
+            case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
               assert(exception.status == Status.Unauthorized)
             case o =>
               fail(s"Expected IRTGenericFailure but got $o")
@@ -73,7 +73,7 @@ class Http4sTransportTest extends WordSpec {
 
         disp.setupCredentials("user", "badpass")
         BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-          case Termination(_: IRTGenericFailure, _) =>
+          case Termination(_: IRTGenericFailure, _, _) =>
           case o =>
             fail(s"Expected IRTGenericFailure but got $o")
         }
@@ -95,20 +95,20 @@ class Http4sTransportTest extends WordSpec {
       .evalMap(_ => Task(f))
       .compile.drain
 
-    BIOR.unsafeRun(io.supervise)
+    BIOR.unsafeRun(io.interruptChildren)
   }
 
   def checkBadBody(body: String, disp: IRTDispatcher[rt.BiIO] with TestHttpDispatcher): Unit = {
     val dummy = IRTMuxRequest(IRTReqBody((1, 2)), GreeterServiceMethods.greet.id)
     val badJson = BIOR.unsafeRunSyncAsEither(disp.sendRaw(dummy, body.getBytes))
     badJson match {
-      case Error(value: IRTUnexpectedHttpStatus) =>
+      case Error(value: IRTUnexpectedHttpStatus, _) =>
         assert(value.status == Status.BadRequest).discard()
-      case Error(value) =>
+      case Error(value, _) =>
         fail(s"Unexpected error: $value")
       case Success(value) =>
         fail(s"Unexpected success: $value")
-      case Termination(exception, _) =>
+      case Termination(exception, _, _) =>
         fail("Unexpected failure", exception)
     }
   }

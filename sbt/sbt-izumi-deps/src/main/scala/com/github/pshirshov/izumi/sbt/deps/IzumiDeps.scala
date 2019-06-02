@@ -17,8 +17,8 @@ object IzumiDeps {
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.6.0" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.3.0"
-    val zio = "1.0-RC4"
+    val cats_effect = "1.3.1"
+    val zio = "1.0-RC5"
 
     val circe = "0.11.1" // 2.13+
     val circe_derivation = "0.11.0-M1"

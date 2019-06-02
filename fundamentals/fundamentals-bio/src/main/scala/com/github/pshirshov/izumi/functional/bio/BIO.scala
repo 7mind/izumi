@@ -56,6 +56,7 @@ object BIOGuarantee {
 trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   def fail[E](v: => E): F[E, Nothing]
   def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B]
+  def catchSome[E, A, E2 >: E, A2 >: A](r: F[E, A])(f: PartialFunction[E, F[E2, A2]]): F[E2, A2]
 
   @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(pure), succ.andThen(pure))
   @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
@@ -134,11 +135,9 @@ object BIOBracket {
 
 trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
   def terminate(v: => Throwable): F[Nothing, Nothing]
+  def sandbox[E, A](r: F[E, A]): F[BIOExit.Failure[E], A]
 
   @inline final def orTerminate[E <: Throwable, A](r: F[E, A]): F[Nothing, A] = catchAll(r)(terminate(_))
-
-  def sandbox[E, A](r: F[E, A]): F[BIOExit.Failure[E], A]
-  def sandboxWith[E, A, E2, B](r: F[E, A])(f: F[BIOExit.Failure[E], A] => F[BIOExit.Failure[E2], B]): F[E2, B]
 }
 
 object BIOPanic {

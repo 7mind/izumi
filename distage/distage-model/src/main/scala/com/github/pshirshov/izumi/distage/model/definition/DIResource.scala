@@ -191,24 +191,24 @@ object DIResource {
 
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResource.LiftF[Identity, A] { this: A => }
+  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
 
-  trait MutableNoClose[+A] extends DIResource.LiftFNoClose[Identity, A] { this: A => }
+  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
   abstract class NoClose[+F[_]: DIEffect, +A] extends DIResourceBase[F, A] {
     override final def release(resource: InnerResource): F[Unit] = DIEffect[F].unit
   }
 
-  abstract class LiftFNoClose[+F[_]: DIEffect, +A] extends NoClose[F, A] { this: A =>
-    override type InnerResource = Unit
-    override final def extract(resource: Unit): A = this
-  }
-
-  trait LiftF[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
+  trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
     override final def release(resource: Unit): F[Unit] = release
     override final def extract(resource: Unit): A = this
     def release: F[Unit]
+  }
+
+  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends NoClose[F, A] { this: A =>
+    override type InnerResource = Unit
+    override final def extract(resource: Unit): A = this
   }
 
   trait Cats[F[_], A] extends DIResourceBase[F, A] {

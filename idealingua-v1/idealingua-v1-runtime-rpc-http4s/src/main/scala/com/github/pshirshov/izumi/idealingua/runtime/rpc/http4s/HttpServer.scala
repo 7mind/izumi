@@ -166,10 +166,10 @@ class HttpServer[C <: Http4sContext]
       case Success(v) =>
         v.map(_.asJson).map(printer.pretty)
 
-      case Error(error) =>
+      case Error(error, _) =>
         Some(handleWsError(context, List(error), None, "failure"))
 
-      case Termination(cause, _) =>
+      case Termination(cause, _, _) =>
         Some(handleWsError(context, List(cause), None, "termination"))
     }
   }
@@ -181,11 +181,11 @@ class HttpServer[C <: Http4sContext]
       id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
       _ <- BIO.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandbox.catchAll {
-        case BIOExit.Termination(exception, allExceptions) =>
-          logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions")
+        case BIOExit.Termination(exception, allExceptions, trace) =>
+          logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions, $trace")
           BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
-        case BIOExit.Error(exception) =>
-          logger.error(s"${context -> null}: WS processing failed, $message, $exception")
+        case BIOExit.Error(exception, trace) =>
+          logger.error(s"${context -> null}: WS processing failed, $message, $exception $trace")
           BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
       }
     } yield response
@@ -262,37 +262,37 @@ class HttpServer[C <: Http4sContext]
             dsl.NotFound()
         }
 
-      case Error(error: circe.Error) =>
-        logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
+      case Error(error: circe.Error, trace) =>
+        logger.info(s"${context -> null}: Parsing failure while handling $method: $error $trace")
         dsl.BadRequest()
 
-      case Error(error: IRTDecodingException) =>
-        logger.info(s"${context -> null}: Parsing failure while handling $method: $error")
+      case Error(error: IRTDecodingException, trace) =>
+        logger.info(s"${context -> null}: Parsing failure while handling $method: $error $trace")
         dsl.BadRequest()
 
-      case Error(error: IRTLimitReachedException) =>
-        logger.debug(s"${context -> null}: Request failed because of request limit reached $method: $error")
+      case Error(error: IRTLimitReachedException, trace) =>
+        logger.debug(s"${context -> null}: Request failed because of request limit reached $method: $error $trace")
         dsl.TooManyRequests()
 
-      case Error(error: IRTUnathorizedRequestContextException) =>
-        logger.debug(s"${context -> null}: Request failed because of unexpected request context reached $method: $error")
+      case Error(error: IRTUnathorizedRequestContextException, trace) =>
+        logger.debug(s"${context -> null}: Request failed because of unexpected request context reached $method: $error $trace")
         // workaarount because implicits conflict
         dsl.Forbidden().map(_.copy(status = dsl.Unauthorized))
 
-      case Error(error) =>
-        logger.info(s"${context -> null}: Unexpected failure while handling $method: $error")
+      case Error(error, trace) =>
+        logger.info(s"${context -> null}: Unexpected failure while handling $method: $error $trace")
         dsl.InternalServerError()
 
-      case Termination(_, (cause: IRTHttpFailureException) :: _) =>
-        logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause")
+      case Termination(_, (cause: IRTHttpFailureException) :: _, trace) =>
+        logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause, $trace")
         BIO.pure(Response(status = cause.status))
 
-      case Termination(_, (cause: RejectedExecutionException) :: _) =>
-        logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause")
+      case Termination(_, (cause: RejectedExecutionException) :: _, trace) =>
+        logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause $trace")
         dsl.TooManyRequests()
 
-      case Termination(cause, _) =>
-        logger.error(s"${context -> null}: Execution failed, termination, $method, ${context.request}, $cause")
+      case Termination(cause, _, trace) =>
+        logger.error(s"${context -> null}: Execution failed, termination, $method, ${context.request}, $cause, $trace")
         dsl.InternalServerError()
     }
   }

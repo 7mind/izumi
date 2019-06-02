@@ -75,6 +75,8 @@ object BIOSyntax {
 
     @inline def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A, E2, A2](r)(h)
 
+    @inline def catchSome[E2 >: E, A2 >: A](h: PartialFunction[E, F[E2, A2]]): F[E2, A2] = F.catchSome[E, A, E2, A2](r)(h)
+
     @inline def tapError[E1 >: E](f: E => F[E1, Unit]): F[E1, A] = F.catchAll(r)(e => F.*>(f(e), F.fail(e)))
 
     @inline def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
@@ -95,12 +97,12 @@ object BIOSyntax {
   }
 
   final class BIOPanicOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOPanic[F]) {
-
-    @inline def sandboxWith[E2, B](f: F[BIOExit.Failure[E], A] => F[BIOExit.Failure[E2], B]): F[E2, B] = F.sandboxWith(r)(f)
-
     @inline def sandbox: F[BIOExit.Failure[E], A] = F.sandbox(r)
 
     @inline def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
+
+    @inline def terminationToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
+      F.catchAll(F.sandbox(r))(failure => F.fail(failure.toThrowable))
   }
 
   final class BIOOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIO[F]) {
