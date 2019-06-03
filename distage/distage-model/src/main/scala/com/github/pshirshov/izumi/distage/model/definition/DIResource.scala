@@ -232,6 +232,8 @@ object DIResource {
 
     /** Wrap release action of this resource in another effect, e.g. for logging purposes */
     final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = logReleaseImpl[G, OuterResource](this: this.type)(f)
+
+    final def void: DIResourceBase[F, Unit] = map(_ => ())
   }
 
   /**
