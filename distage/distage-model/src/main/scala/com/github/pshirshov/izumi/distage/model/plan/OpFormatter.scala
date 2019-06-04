@@ -160,7 +160,7 @@ object OpFormatter {
             name
           }
 
-          s"""par $fname: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
+          s"""arg $fname: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
 
         case Association.AbstractMethod(_, name, tpe, wireWith) =>
           s"""def $name: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
