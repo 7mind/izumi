@@ -8,9 +8,12 @@ import java.util.jar.JarFile
 import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
+import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 sealed trait ResourceLocation
 
@@ -68,11 +71,13 @@ class IzResources(clazz: Class[_]) {
       Some(new PathReference(Paths.get(u.toURI), null))
     } catch {
       case _: FileSystemNotFoundException =>
-        val env: Map[String, _] = Map.empty
-        import scala.collection.JavaConverters._
+        IzFiles.getFs(u.toURI) match {
+          case Failure(exception) =>
+            throw exception
+          case Success(fs) =>
+            Some(new PathReference(fs.provider().getPath(u.toURI), fs))
+        }
 
-        val fs: FileSystem = FileSystems.newFileSystem(u.toURI, env.asJava)
-        Some(new PathReference(fs.provider().getPath(u.toURI), fs))
     }
   }
 

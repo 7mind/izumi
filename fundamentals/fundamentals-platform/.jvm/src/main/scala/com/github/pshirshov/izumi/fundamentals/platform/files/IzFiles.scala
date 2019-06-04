@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.platform.files
 
 import java.io.{File, IOException}
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
@@ -10,8 +11,19 @@ import java.util.stream.Collectors
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
+import scala.collection.JavaConverters._
+
+import scala.util.Try
 
 object IzFiles {
+  def getFs(uri: URI): Try[FileSystem] = synchronized {
+    Try(FileSystems.getFileSystem(uri))
+      .recover {
+        case _ =>
+          FileSystems.newFileSystem(uri, Map.empty[String, Any].asJava)
+      }
+  }
+
   def getLastModified(directory: File): Option[LocalDateTime] = {
     import IzTime._
 
@@ -31,7 +43,6 @@ object IzFiles {
   }
 
   def walk(directory: File): Seq[Path] = {
-    import scala.collection.JavaConverters._
     Files.walk(directory.toPath).collect(Collectors.toList()).asScala.toSeq
   }
 

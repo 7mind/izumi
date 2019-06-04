@@ -2,10 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.files
 
 import java.io.File
 import java.net.URI
-import java.nio.file.{FileSystem, FileSystems, Path}
-import java.util.Collections
-
-import scala.util.Try
+import java.nio.file.{FileSystem, Path}
 
 object IzZip {
 
@@ -45,7 +42,7 @@ object IzZip {
         f =>
           val uri = f.toURI
           val jarUri = URI.create(s"jar:${uri.toString}")
-          val fs = getFs(jarUri).get
+          val fs = IzFiles.getFs(jarUri).get
 
           try {
             enumerate(predicate, fs)
@@ -56,13 +53,7 @@ object IzZip {
       }
   }
 
-  private def getFs(uri: URI): Try[FileSystem] = {
-    Try(FileSystems.getFileSystem(uri))
-      .recover {
-        case _ =>
-          FileSystems.newFileSystem(uri, Collections.emptyMap[String, Any]())
-      }
-  }
+
 
   private def enumerate(predicate: Path => Boolean, fs: FileSystem): Iterable[Path] = {
     import scala.collection.JavaConverters._
