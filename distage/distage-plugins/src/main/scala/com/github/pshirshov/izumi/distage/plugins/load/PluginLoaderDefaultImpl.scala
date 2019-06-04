@@ -2,10 +2,10 @@ package com.github.pshirshov.izumi.distage.plugins.load
 
 import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
 import com.github.pshirshov.izumi.functional.Value
-import io.github.classgraph.{ClassGraph, ClassInfo}
-import scala.reflect.runtime.universe
+import io.github.classgraph.ClassGraph
 
 import scala.collection.JavaConverters._
+import scala.reflect.runtime.universe
 
 class PluginLoaderDefaultImpl(pluginConfig: PluginLoader.PluginConfig) extends PluginLoader {
   def load(): Seq[PluginBase] = {

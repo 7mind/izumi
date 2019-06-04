@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.plugins
 
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, Module, ModuleMake}
+import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase, ModuleMake}
 
-trait PluginBase extends Module {
+trait PluginBase extends ModuleBase {
   override type Self <: PluginBase
 }
 

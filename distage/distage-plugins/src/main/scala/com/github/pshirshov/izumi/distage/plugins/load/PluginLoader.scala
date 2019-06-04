@@ -22,7 +22,7 @@ object PluginLoader {
   final case class PluginConfig
   (
     debug: Boolean
-    , packagesEnabled: Seq[String]
-    , packagesDisabled: Seq[String]
+  , packagesEnabled: Seq[String]
+  , packagesDisabled: Seq[String]
   )
 }
