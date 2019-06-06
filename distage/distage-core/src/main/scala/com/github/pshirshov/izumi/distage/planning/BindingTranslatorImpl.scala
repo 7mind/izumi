@@ -103,8 +103,10 @@ class BindingTranslatorImpl(
     implementation match {
       case d: ImplDef.DirectImplDef =>
         directImplToPureWiring(d)
+
       case e: ImplDef.EffectImpl =>
         MonadicWiring.Effect(e.implType, e.effectHKTypeCtor, directImplToPureWiring(e.effectImpl))
+
       case r: ImplDef.ResourceImpl =>
         MonadicWiring.Resource(r.implType, r.effectHKTypeCtor, directImplToPureWiring(r.resourceImpl))
     }
@@ -114,10 +116,13 @@ class BindingTranslatorImpl(
     implementation match {
       case i: ImplDef.TypeImpl =>
         reflectionProvider.symbolToWiring(i.implType)
+
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
+
       case i: ImplDef.InstanceImpl =>
         SingletonWiring.Instance(i.implType, i.instance)
+
       case r: ImplDef.ReferenceImpl =>
         SingletonWiring.Reference(r.implType, r.key, r.weak)
     }
@@ -129,14 +134,19 @@ class BindingTranslatorImpl(
     val tpe = b.implementation match {
       case i: ImplDef.TypeImpl =>
         DIKey.TypeKey(i.implType)
+
       case r: ImplDef.ReferenceImpl =>
         r.key
+
       case i: ImplDef.InstanceImpl =>
         DIKey.TypeKey(i.implType).named(s"instance:$goodIdx")
+
       case p: ImplDef.ProviderImpl =>
         DIKey.TypeKey(p.implType).named(s"provider:$goodIdx")
+
       case e: ImplDef.EffectImpl =>
         DIKey.TypeKey(e.implType).named(s"effect:$goodIdx")
+
       case r: ImplDef.ResourceImpl =>
         DIKey.TypeKey(r.implType).named(s"resource:$goodIdx")
     }

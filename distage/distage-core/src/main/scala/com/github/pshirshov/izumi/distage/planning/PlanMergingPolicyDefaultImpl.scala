@@ -10,8 +10,7 @@ import distage.DIKey
 
 import scala.collection.mutable
 
-
-class PlanMergingPolicyDefaultImpl() extends PlanMergingPolicy with WithResolve {
+class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
 
   override final def freeze(plan: DodgyPlan): SemiPlan = {
     val resolved = mutable.HashMap[DIKey, Set[ExecutableOp]]()

@@ -8,9 +8,16 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 
 sealed trait GCMode {
   def toSet: Set[DIKey]
+
+  final def ++(that: GCMode): GCMode = (this, that) match {
+    case (GCMode.NoGC, _) => GCMode.NoGC
+    case (_, GCMode.NoGC) => GCMode.NoGC
+    case (GCMode.GCRoots(aRoots), GCMode.GCRoots(bRoots)) =>
+      GCMode.GCRoots(aRoots ++ bRoots)
+  }
 }
 object GCMode {
-  case class GCRoots(roots: Set[DIKey]) extends GCMode {
+  final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")
     override def toSet: Set[universe.RuntimeDIUniverse.DIKey] = roots
   }

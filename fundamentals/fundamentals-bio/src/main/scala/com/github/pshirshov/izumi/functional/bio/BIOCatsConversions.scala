@@ -82,6 +82,7 @@ object BIOCatsConversions {
 
     @inline override final def raiseError[A](e: E): F[E, A] = F.fail(e)
     @inline override final def handleErrorWith[A](fa: F[E, A])(f: E => F[E, A]): F[E, A] = F.catchAll(fa)(f)
+    @inline override final def recoverWith[A](fa: F[E, A])(pf: PartialFunction[E, F[E, A]]): F[E, A] = F.catchSome(fa)(pf)
 
     @inline override final def attempt[A](fa: F[E, A]): F[E, Either[E, A]] = F.attempt(fa)
     @inline override final def fromEither[A](x: Either[E, A]): F[E, A] = F.fromEither(x)

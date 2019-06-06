@@ -15,6 +15,7 @@ class ForwardingRefResolverDefaultImpl
   protected val reflectionProvider: ReflectionProvider.Runtime,
   @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
 ) extends ForwardingRefResolver {
+
   override def resolve(plan: OrderedPlan): OrderedPlan = {
     val reftable = planAnalyzer.topologyFwdRefs(plan.steps)
 

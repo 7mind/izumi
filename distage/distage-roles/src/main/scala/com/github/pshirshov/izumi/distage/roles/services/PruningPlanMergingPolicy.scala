@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.DIKey
 
-
 class PruningPlanMergingPolicy(
                                 logger: IzLogger,
                                 activation: AppActivation,

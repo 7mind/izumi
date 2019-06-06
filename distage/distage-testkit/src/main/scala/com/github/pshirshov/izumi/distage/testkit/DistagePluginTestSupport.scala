@@ -33,7 +33,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   /**
     * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
     */
-  final protected def loadEnvironment(logger: IzLogger): TestEnvironment = {
+  override protected final def loadEnvironment(logger: IzLogger): TestEnvironment = {
     val config = bootstrapConfig
 
     def env(): CacheValue = {
@@ -54,7 +54,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     doLoad(logger, plugins)
   }
 
-  private def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
+  protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
     val roles = loadRoles(logger)
     val appActivation = AppActivation(env.availableActivations, activation)
     val defBs = env.bsModule overridenBy new BootstrapModuleDef {

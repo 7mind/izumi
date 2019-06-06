@@ -25,7 +25,6 @@ final class PlannerDefaultImpl
 )
   extends Planner {
 
-
   override def plan(input: PlannerInput): OrderedPlan = {
     Value(prepare(input))
       .map(freeze)
@@ -43,15 +42,7 @@ final class PlannerDefaultImpl
 
   // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    val allRoots = a.gcMode.toSet ++ b.gcMode.toSet
-    // TODO: semantically it may be incorrect to combine "NoGC" and "GC" modes this way, because "NOGC" effectively means "all roots"
-    val roots = if (allRoots.isEmpty) {
-      GCMode.NoGC
-    } else {
-      GCMode.GCRoots(allRoots)
-    }
-
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, roots))
+    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {

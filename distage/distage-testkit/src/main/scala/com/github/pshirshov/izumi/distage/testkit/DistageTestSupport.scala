@@ -32,13 +32,14 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   extends DISyntax[F]
     with IgnoreSupport
     with SuppressionSupport {
+
   private lazy val erpInstance = externalResourceProvider
 
   protected def externalResourceProvider: ExternalResourceProvider = ExternalResourceProvider.Null
 
   protected def memoizationContextId: MemoizationContextId
 
-  private def doMemoize(locator: Locator): Unit = {
+  protected final def doMemoize(locator: Locator): Unit = {
     val fmap = locator.finalizers[F].zipWithIndex.map {
       case (f, idx) =>
         f.key -> OrderedFinalizer(f, idx)
@@ -52,6 +53,8 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   }
 
   protected final def dio(function: ProviderMagnet[F[_]]): Unit = {
+    verifyTotalSuppression()
+
     val logger = makeLogger()
     val loader = makeConfigLoader(logger)
     val env = loadEnvironment(logger)
@@ -72,7 +75,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
       plan.injector.produceF[Identity](plan.runtime),
-      implicitly[TagK[F]]
+      tagK
     ))
 
     val filters = Filters[F](
@@ -80,11 +83,12 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
       (finalizers: Seq[PlanInterpreter.Finalizer[Identity]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
     )
 
+    verifyTotalSuppression()
     try {
       makeExecutor(plan.injector, logger)
         .execute[F](plan, filters) {
         (locator, effect) =>
-          implicit val e: DIEffect[F] = effect
+          implicit val F: DIEffect[F] = effect
 
           for {
             _ <- DIEffect[F].maybeSuspend(doMemoize(locator))
@@ -92,11 +96,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
             _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
             _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
             _ <- locator.run(function)
-          } yield {
-
-          }
-
-
+          } yield ()
       }
     } catch {
       case i: IntegrationCheckException =>
@@ -114,7 +114,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   protected def appOverride: ModuleBase = Module.empty
 
-  private def applyMemoization(refinedBindings: ModuleBase): ModuleBase = {
+  protected final def applyMemoization(refinedBindings: ModuleBase): ModuleBase = {
     refinedBindings.map {
       b =>
         erpInstance.getMemoized(memoizationContextId, b.key) match {

@@ -14,9 +14,9 @@ trait DistageBioSpecBIOSyntax[F[+_, +_]] { this: DistageTestSupport[F[Throwable,
       .zip(ProviderMagnet.identity[BIOError[F]])
       .map[F[Throwable, _]] {
         case (effect, bio) =>
-          bio.catchAll(effect) {
-            case t: Throwable => bio.fail(t)
-            case otherError: Any => bio.fail(BIOBadBranch(otherError))
+          bio.leftMap(effect) {
+            case t: Throwable => t
+            case otherError: Any => BIOBadBranch(otherError)
           }
       }
 
