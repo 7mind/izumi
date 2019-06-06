@@ -139,12 +139,16 @@ object DIResource {
     }
   }
 
-  def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
-    make[Identity, A](acquire)(release)
+  def make_[F[_], A](acquire: => F[A])(release: => F[Unit]): DIResource[F, A] = {
+    make(acquire)(_ => release)
   }
 
   def liftF[F[_], A](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
     make(acquire)(_ => F.unit)
+  }
+
+  def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
+    make[Identity, A](acquire)(release)
   }
 
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
