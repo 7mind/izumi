@@ -24,9 +24,7 @@ sealed trait AxisBase {
 
 }
 
-trait Axis[+MM <: AxisValue] extends AxisBase {
-
-}
+trait Axis[+MM <: AxisValue] extends AxisBase
 
 object Axis {
 
@@ -58,7 +56,7 @@ object StandardAxis {
   abstract class Repo()(implicit val axis: AxisBase) extends AxisValue
 
   object Repo extends Axis[Repo] {
-    override def name: String = "stor"
+    override def name: String = "repo"
 
     case object Prod extends Repo
 
