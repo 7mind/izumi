@@ -146,6 +146,7 @@ class IzString(s: String) {
     import IzString._
     header + "\n" + listing().shift(1, "| ")
   }
+
   def listing(): String = {
     val lines = s.split('\n')
     import scala.math._
@@ -162,7 +163,7 @@ class IzString(s: String) {
     lines.zipWithIndex
       .map {
         case (l, i) =>
-          s"${i.toString.leftPad(pad)}: $l"
+          s"${(i+1).toString.leftPad(pad)}: $l"
       }
       .mkString("\n")
   }
