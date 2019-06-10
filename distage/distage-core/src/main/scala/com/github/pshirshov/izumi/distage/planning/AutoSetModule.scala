@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
 
-class AutoSetModule extends BootstrapModuleDef {
+abstract class AutoSetModule extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {
     many[T]
     many[PlanningHook].add(new AssignableFromAutoSetHook[T, T](identity))
@@ -19,5 +19,5 @@ class AutoSetModule extends BootstrapModuleDef {
 }
 
 object AutoSetModule {
-  def apply(): AutoSetModule = new AutoSetModule()
+  def apply(): AutoSetModule = new AutoSetModule {}
 }
