@@ -10,6 +10,6 @@ class BIOSyntaxTest extends WordSpec {
       def hello = BIO(println("hello world!"))
     }
 
-    assert(new X[scalaz.zio.IO].hello != null)
+    assert(new X[zio.IO].hello != null)
   }
 }

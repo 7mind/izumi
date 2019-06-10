@@ -1,9 +1,9 @@
 package com.github.pshirshov.izumi.functional.bio.impl
 
 import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync, BIOExit}
-import scalaz.zio.{ZIO, ZSchedule}
-import scalaz.zio.clock.Clock
-import scalaz.zio.duration.Duration.fromScala
+import zio.{ZIO, ZSchedule}
+import zio.clock.Clock
+import zio.duration.Duration.fromScala
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try

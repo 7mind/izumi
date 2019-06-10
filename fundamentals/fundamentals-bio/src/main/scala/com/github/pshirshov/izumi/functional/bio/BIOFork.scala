@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.IO
+import zio.IO
 
 trait BIOFork[R[_, _]] {
   def fork[E, A](f: R[E, A]): R[Nothing, BIOFiber[R, E, A]]

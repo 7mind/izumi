@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.BIOExit.ZIO
-import scalaz.zio.{Fiber, IO}
+import zio.{Fiber, IO}
 
 trait BIOFiber[F[_, _], E, A] {
   def join: F[E, A]

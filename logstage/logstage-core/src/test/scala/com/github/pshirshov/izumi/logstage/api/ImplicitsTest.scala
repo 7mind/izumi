@@ -26,14 +26,14 @@ class ImplicitsTest extends WordSpec {
   }
 
   "create LogBIO from BIO" in {
-    val log: LogBIO[scalaz.zio.IO] = LogBIO.fromLogger(IzLogger())
+    val log: LogBIO[zio.IO] = LogBIO.fromLogger(IzLogger())
     log.discard()
 
     def logIO[F[+_, +_]: BIO]: LogBIO[F] = LogIO.fromLogger(IzLogger())
-    logIO[scalaz.zio.IO]
+    logIO[zio.IO]
 
     def logBIO[F[+_, +_]: BIO]: LogBIO[F] = LogBIO.fromLogger(IzLogger())
-    logBIO[scalaz.zio.IO]
+    logBIO[zio.IO]
   }
 
   "LogBIO to LogIO covariance works when partially annotated" in {

@@ -8,12 +8,11 @@ import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
 import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import io.circe.Printer
-import scalaz.zio
-import scalaz.zio.Runtime
-import scalaz.zio.clock.Clock
-import scalaz.zio.internal.tracing.TracingConfig
-import scalaz.zio.interop.catz._
-import scalaz.zio.interop.catz.implicits._
+import zio.Runtime
+import zio.clock.Clock
+import zio.internal.tracing.TracingConfig
+import zio.interop.catz._
+import zio.interop.catz.implicits._
 
 import scala.concurrent.ExecutionContext.global
 

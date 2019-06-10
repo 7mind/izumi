@@ -363,8 +363,8 @@ Implicits are managed like any other class. To make them available for summoning
 ```scala
 import cats.Monad
 import distage._
-import scalaz.zio.IO
-import scalaz.zio.interop.catz._
+import zio.IO
+import zio.interop.catz._
 
 object IOMonad extends ModuleDef {
   addImplicit[Monad[IO[Throwable, ?]]]
@@ -538,7 +538,7 @@ Example with `ZIO` `Semaphore`:
 ```scala mdoc:reset-class
 import distage._
 import distage.config._
-import scalaz.zio._
+import zio._
 
 case class Content(bytes: Array[Byte])
 
