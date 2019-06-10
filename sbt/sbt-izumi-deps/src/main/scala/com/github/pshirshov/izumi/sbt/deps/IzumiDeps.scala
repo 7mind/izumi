@@ -12,13 +12,13 @@ object IzumiDeps {
     val collection_compat = "1.0.0"
 
     val kind_projector = "0.10.0" // 2.13+
-    val scalatest = "3.0.7" // 2.13+
+    val scalatest = "3.0.8" // 2.13+
 
     val shapeless = "2.3.3" // 2.13+
 
     val cats = "1.6.1" // 1.2.0 is 2.13+ but we are blocked by http4s
     val cats_effect = "1.3.1"
-    val zio = "1.0-RC5"
+    val zio = "1.0.0-RC8-4"
 
     val circe = "0.11.1" // 2.13+
     val circe_derivation = "0.11.0-M1"
@@ -54,8 +54,8 @@ object IzumiDeps {
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
-    val zio_core: ModuleID = "org.scalaz" %% "scalaz-zio" % V.zio
-    val zio_interop: ModuleID = "org.scalaz" %% "scalaz-zio-interop-cats" % V.zio
+    val zio_core: ModuleID = "dev.zio" %% "zio" % V.zio
+    val zio_interop: ModuleID = "dev.zio" %% "zio-interop-cats" % V.zio
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
 
