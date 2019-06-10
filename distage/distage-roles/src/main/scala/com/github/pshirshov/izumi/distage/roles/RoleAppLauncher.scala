@@ -4,6 +4,7 @@ import cats.effect.LiftIO
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
 import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, StandardAxis}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
@@ -98,7 +99,11 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
 
-  protected def defaultActivations: Map[AxisBase, AxisValue] = Map(StandardAxis.Env -> StandardAxis.Env.Prod)
+  protected def defaultActivations: Map[AxisBase, AxisValue] = Map(
+    Env -> Env.Prod,
+    Repo -> Repo.Prod,
+    ExternalApi -> ExternalApi.Prod,
+  )
 
   protected def requiredActivations: Map[AxisBase, AxisValue] = Map.empty
 

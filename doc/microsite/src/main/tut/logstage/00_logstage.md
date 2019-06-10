@@ -118,8 +118,10 @@ contextLogger.info(s"Hey")
 SLF4J Router
 ------------
 
-By default `logstage_adapter-slf4j` will route into `stderr`, due to the global mutable nature of `slf4j` you'll have to
-configure a global singleton to use the same `LogRouter` as your logger:
+When not configured, `logstage-adapter-slf4j` will log to `stderr`.
+
+Due to the global mutable nature of `slf4j` you'll have to configure 
+a global singleton to use the same `LogRouter` as your logger:
 
 ```scala mdoc:reset
 import logstage._

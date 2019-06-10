@@ -32,7 +32,6 @@ class ResourceRewriter(
     }
   }
 
-
   private def rewrite[T: Tag](convert: T => DIResource[Identity, T])(b: Binding): Seq[Binding] = {
     b match {
       case binding: Binding.ImplBinding =>
@@ -40,10 +39,10 @@ class ResourceRewriter(
           case b: Binding.SingletonBinding[_] =>
             rewriteImpl(convert, b.key, b.origin, b.implementation) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
+                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(finish(b, newImpl))
               case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
+                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(b.copy(key = originalKey), finish(b, newImpl))
               case DontChange =>
                 Seq(binding)
@@ -53,10 +52,10 @@ class ResourceRewriter(
           case b: Binding.SetElementBinding[_] =>
             rewriteImpl(convert, b.key, b.origin, b.implementation) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
+                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(finish(b, newImpl))
               case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${implicitly[Tag[T]].tag -> "type"}")
+                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(b.copy(key = originalKey), finish(b, newImpl))
               case RewriteResult.DontChange =>
                 Seq(binding)
@@ -78,7 +77,6 @@ class ResourceRewriter(
     original.copy(implementation = res)
   }
 
-
   private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
     import RewriteResult._
     implementation match {
@@ -92,7 +90,7 @@ class ResourceRewriter(
 
             case _: ImplDef.InstanceImpl =>
               if (rules.warnOnExternal) {
-                logger.warn(s"External entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"}, it will NOT be finalized!")
+                logger.warn(s"External entity $key defined at $origin is ${SafeType.get[T] -> "type"}, it will NOT be finalized!")
               }
               DontChange
 
@@ -121,7 +119,7 @@ class ResourceRewriter(
         implDef match {
           case _: ImplDef.EffectImpl =>
             if (implDef.implType weak_<:< SafeType.get[T]) {
-              logger.error(s"Effect entity $key defined at $origin is ${implicitly[Tag[T]].tag -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
+              logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[T] -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
             }
             DontChange
 
@@ -133,10 +131,6 @@ class ResourceRewriter(
     }
   }
 
-
-
-
-
 }
 
 object ResourceRewriter {
@@ -145,9 +139,9 @@ object ResourceRewriter {
 
   object RewriteResult {
 
-    case class ReplaceImpl(newImpl: DirectImplDef) extends RewriteResult
+    final case class ReplaceImpl(newImpl: DirectImplDef) extends RewriteResult
 
-    case class ReplaceAndPreserve(newImpl: DirectImplDef, originalKey: DIKey) extends RewriteResult
+    final case class ReplaceAndPreserve(newImpl: DirectImplDef, originalKey: DIKey) extends RewriteResult
 
     case object DontChange extends RewriteResult
 
@@ -162,10 +156,10 @@ object ResourceRewriter {
 
   }
 
-  case class RewriteRules(
-                           applyRewrites: Boolean = true,
-                           warnOnExternal: Boolean = true,
-                         )
+  final case class RewriteRules(
+                                 applyRewrites: Boolean = true,
+                                 warnOnExternal: Boolean = true,
+                               )
 
 
   /** Like [[DIResource.fromAutoCloseable]], but with added logging */

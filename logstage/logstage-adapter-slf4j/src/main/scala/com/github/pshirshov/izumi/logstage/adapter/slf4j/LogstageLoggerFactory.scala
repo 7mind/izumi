@@ -5,7 +5,6 @@ import java.util.concurrent.ConcurrentHashMap
 import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 import org.slf4j.{ILoggerFactory, Logger}
 
-
 class LogstageLoggerFactory extends ILoggerFactory {
   private val loggers = new ConcurrentHashMap[String, Logger]()
 

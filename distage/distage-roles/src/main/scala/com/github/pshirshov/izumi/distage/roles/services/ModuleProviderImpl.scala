@@ -36,7 +36,6 @@ class ModuleProviderImpl[F[_] : TagK](
 
     val loggerModule = new LogstageModule(logger.router, true)
 
-
     val autosetModule = AutoSetModule()
       .register[AbstractRoleF[F]]
 
