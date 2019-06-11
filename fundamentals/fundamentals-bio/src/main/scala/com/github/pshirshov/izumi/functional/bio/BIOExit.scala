@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import scalaz.zio.{Exit, FiberFailure}
+import zio.{Exit, FiberFailure}
 
 sealed trait BIOExit[+E, +A]
 

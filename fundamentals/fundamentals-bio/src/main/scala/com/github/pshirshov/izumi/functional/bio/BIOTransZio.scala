@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import cats.arrow.FunctionK
-import scalaz.zio._
+import zio._
 
 trait BIOTransZio[R[_, _]] {
   def toZio[E]: FunctionK[R[E, ?], IO[E, ?]]

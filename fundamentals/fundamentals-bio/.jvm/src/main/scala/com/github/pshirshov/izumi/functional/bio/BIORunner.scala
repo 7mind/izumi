@@ -4,10 +4,10 @@ import java.util
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import scalaz.zio.Exit.Cause
-import scalaz.zio._
-import scalaz.zio.internal.tracing.TracingConfig
-import scalaz.zio.internal.{Executor, Platform, PlatformLive, Tracing}
+import zio.Exit.Cause
+import zio._
+import zio.internal.tracing.TracingConfig
+import zio.internal.{Executor, Platform, PlatformLive, Tracing}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: F[E, A]): A

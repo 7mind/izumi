@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import com.github.pshirshov.izumi.logstage.api.AbstractLogger
 import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, Entry, Message}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
-import scalaz.zio.IO
+import zio.IO
 
 object LogstageZIO {
 

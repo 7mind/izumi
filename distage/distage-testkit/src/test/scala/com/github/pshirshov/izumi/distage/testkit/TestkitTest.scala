@@ -87,7 +87,7 @@ class TestkitTestIO extends TestkitTest[IO]
 
 class TestkitTestIdentity extends TestkitTest[Identity]
 
-class TestkitTestZio extends TestkitTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitTestZio extends TestkitTest[zio.IO[Throwable, ?]]
 
 object TestkitTest {
 

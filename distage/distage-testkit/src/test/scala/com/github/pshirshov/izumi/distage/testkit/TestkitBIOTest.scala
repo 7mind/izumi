@@ -24,4 +24,4 @@ abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK](implicit ev: TagK[F[Throwab
 
 }
 
-class TestkitBIOTestZio extends TestkitBIOTest[scalaz.zio.IO]
+class TestkitBIOTestZio extends TestkitBIOTest[zio.IO]

@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter
 import com.github.pshirshov.izumi.functional.bio.{BIORunner, BlockingIO}
 import distage.Id
 import logstage.IzLogger
-import scalaz.zio
 
 trait ZioDIEffectModule extends ModuleDef {
   make[DIEffectRunner[zio.IO[Throwable, ?]]].from[DIEffectRunner.BIOImpl[zio.IO]]

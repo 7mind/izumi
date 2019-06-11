@@ -8,9 +8,9 @@ import org.http4s._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import org.scalatest.WordSpec
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
-import scalaz.zio.interop.catz.implicits._
+import zio.Task
+import zio.interop.catz._
+import zio.interop.catz.implicits._
 
 class Http4sTransportTest extends WordSpec {
 

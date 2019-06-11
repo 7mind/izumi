@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.functional.bio
 
 import com.github.pshirshov.izumi.functional.bio.impl.BIOAsyncZio
-import scalaz.zio.ZIO
-import scalaz.zio.clock.Clock
+import zio.ZIO
+import zio.clock.Clock
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

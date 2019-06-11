@@ -18,4 +18,4 @@ class TestkitIntegrationCheckTestIO extends TestkitIntegrationCheckTest[IO]
 
 class TestkitIntegrationCheckTestIdentity extends TestkitIntegrationCheckTest[Identity]
 
-class TestkitIntegrationCheckTestZio extends TestkitIntegrationCheckTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitIntegrationCheckTestZio extends TestkitIntegrationCheckTest[zio.IO[Throwable, ?]]

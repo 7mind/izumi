@@ -165,7 +165,7 @@ val logger = IzLogger()
 
 ```scala mdoc
 import logstage.LogstageZIO
-import scalaz.zio.{IO, DefaultRuntime}
+import zio.{IO, DefaultRuntime}
 
 val log = LogstageZIO.withFiberId(logger)
 

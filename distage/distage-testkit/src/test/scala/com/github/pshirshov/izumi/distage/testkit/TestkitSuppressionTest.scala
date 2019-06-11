@@ -46,4 +46,4 @@ class TestkitSuppressionTestIO extends TestkitSuppressionTest[IO]
 
 class TestkitSuppressionTestIdentity extends TestkitSuppressionTest[Identity]
 
-class TestkitSuppressionTestZio extends TestkitSuppressionTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitSuppressionTestZio extends TestkitSuppressionTest[zio.IO[Throwable, ?]]

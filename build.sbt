@@ -434,6 +434,10 @@ lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   )
 lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
   .settings(ShadingSettings)
+  .settings(
+    // FIXME: workaround for broken classpath on sbt 1.3.0-RC2 (ClassLoaderLayeringStrategy.Flat doesn't help)
+    fork in Test := true,
+  )
   .dependsSeq(Seq(
     idealinguaV1TestDefs,
     idealinguaV1RuntimeRpcTypescript,
@@ -473,7 +477,7 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .enablePlugins(ScriptedPlugin)
   .settings(
     libraryDependencies ++= Seq(R.typesafe_config),
-    mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler")
+    mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler"),
   )
   .settings(
     artifact in(Compile, assembly) := {

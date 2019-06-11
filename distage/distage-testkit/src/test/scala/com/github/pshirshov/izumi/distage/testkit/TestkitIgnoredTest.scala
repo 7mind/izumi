@@ -37,4 +37,4 @@ class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
 
 class TestkitIgnoredTestIdentity extends TestkitIgnoredTest[Identity]
 
-class TestkitIgnoredTestZio extends TestkitIgnoredTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitIgnoredTestZio extends TestkitIgnoredTest[zio.IO[Throwable, ?]]

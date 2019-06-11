@@ -57,4 +57,4 @@ class TestkitMemoizationTestIO extends TestkitMemoizationTest[IO]
 
 class TestkitMemoizationTestIdentity extends TestkitMemoizationTest[Identity]
 
-class TestkitMemoizationTestZio extends TestkitMemoizationTest[scalaz.zio.IO[Throwable, ?]]
+class TestkitMemoizationTestZio extends TestkitMemoizationTest[zio.IO[Throwable, ?]]

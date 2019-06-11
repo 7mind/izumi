@@ -6,7 +6,7 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDepende
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.{GCMode, Planner, PlannerInput}
+import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
 import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
 import distage.DIKey
