@@ -17,7 +17,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
 
 // https://www.scala-sbt.org/sbt-site/
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.4.0")
 
 // https://github.com/sbt/sbt-ghpages
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
