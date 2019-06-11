@@ -29,7 +29,7 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.6.0")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.0" )
 
 // https://www.scala-js.org/
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.27")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.28")
 
 // https://scalacenter.github.io/scalajs-bundler/
 addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.14.0")
