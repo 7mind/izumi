@@ -29,7 +29,7 @@ class IzLogger
 
 object IzLogger {
 
-  val Level: Log.Level.type = Log.Level
+  final val Level: Log.Level.type = Log.Level
 
   /**
     * By default, a basic colored console logger with global [[Level.Trace]] minimum threshold
@@ -67,14 +67,4 @@ object IzLogger {
     */
   final lazy val DebugLogger = new IzLogger(LogRouter.debugRouter, CustomContext.empty)
 
-  def parseLevel(v: String): Log.Level = {
-    v.charAt(0).toLower match {
-      case 't' => Log.Level.Trace
-      case 'd' => Log.Level.Debug
-      case 'i' => Log.Level.Info
-      case 'w' => Log.Level.Warn
-      case 'e' => Log.Level.Error
-      case 'c' => Log.Level.Crit
-    }
-  }
 }

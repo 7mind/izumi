@@ -18,6 +18,9 @@ trait LogStage {
   type LogRouter = api.logger.LogRouter
   val LogRouter: api.logger.LogRouter.type = api.logger.LogRouter
 
+  type StaticLogRouter = api.routing.StaticLogRouter
+  val StaticLogRouter: api.routing.StaticLogRouter.type = api.routing.StaticLogRouter
+
   type Log = api.Log.type
   val Log: api.Log.type = api.Log
 

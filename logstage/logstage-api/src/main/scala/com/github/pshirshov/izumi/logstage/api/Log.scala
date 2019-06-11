@@ -34,6 +34,16 @@ object Log {
         .getOrElse(default)
     }
 
+    def parseLetter(v: String): Level = {
+      v.charAt(0).toLower match {
+        case 't' => Log.Level.Trace
+        case 'd' => Log.Level.Debug
+        case 'i' => Log.Level.Info
+        case 'w' => Log.Level.Warn
+        case 'e' => Log.Level.Error
+        case 'c' => Log.Level.Crit
+      }
+    }
 
     case object Trace extends Level {
       protected val asInt = 0

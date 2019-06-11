@@ -118,10 +118,11 @@ contextLogger.info(s"Hey")
 SLF4J Router
 ------------
 
-When not configured, `logstage-adapter-slf4j` will log to `stderr`.
+When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
 
-Due to the global mutable nature of `slf4j` you'll have to configure 
-a global singleton to use the same `LogRouter` as your logger:
+Due to the global mutable nature of `slf4j` to configure slf4j logging you'll
+have to mutate a global singleton. To change its settings, replace its `LogRouter`
+with the same one you use elsewhere in your application. 
 
 ```scala mdoc:reset
 import logstage._
@@ -129,7 +130,7 @@ import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
 
 val myLogger = IzLogger()
 
-// configure SLF4j to use the same router as `myLogger`
+// configure SLF4j to use the same router that `myLogger` uses
 StaticLogRouter.instance.setup(myLogger.router)
 ```
 

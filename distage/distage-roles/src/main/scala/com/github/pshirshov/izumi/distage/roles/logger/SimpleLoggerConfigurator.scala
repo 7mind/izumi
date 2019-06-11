@@ -38,7 +38,7 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
 
     val levels = logconf.levels.flatMap {
       case (stringLevel, pack) =>
-        val level = IzLogger.parseLevel(stringLevel)
+        val level = Log.Level.parseLetter(stringLevel)
         pack.map((_, LoggerPathConfig(level, sinks)))
     }
 

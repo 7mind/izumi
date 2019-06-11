@@ -20,7 +20,7 @@ class Slf4jAdapterTest extends WordSpec {
       assert(StaticLoggerBinder.getSingleton != null)
       assert(StaticLoggerBinder.getSingleton.getLoggerFactory != null)
       assert(StaticLoggerBinder.getSingleton.getLoggerFactory.isInstanceOf[LogstageLoggerFactory])
-      assert(StaticLogRouter.instance.get eq router)
+      assert(StaticLogRouter.instance.get() eq router)
 
       logger.trace("Debug message")
       logger.trace("Debug message: {}")
