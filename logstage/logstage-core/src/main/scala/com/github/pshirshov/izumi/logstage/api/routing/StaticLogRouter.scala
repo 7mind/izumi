@@ -2,24 +2,39 @@ package com.github.pshirshov.izumi.logstage.api.routing
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.logstage.api.rendering.StringRenderingPolicy
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingOptions
-import com.github.pshirshov.izumi.logstage.sink.FallbackConsoleSink
+import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
 
+/**
+  * When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
+  *
+  * Due to the global mutable nature of `slf4j` to configure slf4j logging you'll
+  * have to mutate a global singleton. To change its settings, replace its `LogRouter`
+  * with the same one you use elsewhere in your application.
+  *
+  * {{{
+  *   import logstage._
+  *   import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+  *
+  *   val myLogger = IzLogger()
+  *
+  *   // configure SLF4j to use the same router that `myLogger` uses
+  *   StaticLogRouter.instance.setup(myLogger.router)
+  * }}}
+  */
 class StaticLogRouter extends LogRouter {
-  private val proxied = new AtomicReference[LogRouter]()
 
-  private val trivialLogger = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
-  private val fallbackSink = new FallbackConsoleSink(new StringRenderingPolicy(RenderingOptions()), trivialLogger)
+  private val proxied = new AtomicReference[LogRouter](null)
+
+  private val fallbackSink = ConsoleSink.ColoredConsoleSink
+  private val fallbackThreshold = Log.Level.Info
 
   def setup(router: LogRouter): Unit = {
     proxied.set(router)
   }
 
-  def get: LogRouter = proxied.get()
+  def get(): LogRouter = proxied.get()
 
   override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = {
     proxied.get() match {
@@ -27,19 +42,18 @@ class StaticLogRouter extends LogRouter {
         p.acceptable(id, messageLevel)
 
       case null =>
-        messageLevel >= Log.Level.Warn
+        messageLevel >= fallbackThreshold
     }
   }
 
   override def log(entry: Log.Entry): Unit = {
     proxied.get() match {
-      case p if p != null =>
+      case null =>
+        if (acceptable(entry.context.static.id, entry.context.dynamic.level))
+          fallbackSink.flush(entry)
+
+      case p =>
         p.log(entry)
-
-      case null if acceptable(entry.context.static.id, entry.context.dynamic.level) =>
-        fallbackSink.flush(entry)
-
-      case _ =>
     }
   }
 
