@@ -97,11 +97,9 @@ tsc
 popd
 ```
 
+## Example Project
 
-
-## Pet Store Example
-
-See [izumi-petstore](https://github.com/kaishh/izumi-petstore) for samples in Scala, TypeScript, Go, C# and other languages.
+See [idealingua-example](https://github.com/7mind/idealingua-example) for examples for Scala, TypeScript, Go, C# and other languages.
 
 # Installation
 
