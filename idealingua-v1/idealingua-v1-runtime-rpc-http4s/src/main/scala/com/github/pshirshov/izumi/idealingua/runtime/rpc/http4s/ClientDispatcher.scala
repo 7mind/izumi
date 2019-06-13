@@ -5,8 +5,8 @@ import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.idealingua.runtime.rpc._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import fs2.Stream
-import io.circe.parser.parse
 import io.circe
+import io.circe.parser.parse
 import org.http4s._
 import org.http4s.client.blaze._
 
@@ -38,10 +38,15 @@ class ClientDispatcher[C <: Http4sContext]
   }
 
   protected def runRequest[T](handler: Response[MonoIO] => MonoIO[T], req: Request[MonoIO]): BiIO[Throwable, T] = {
-    BlazeClientBuilder[MonoIO](c.clientExecutionContext).resource.use {
+    val builder = blazeClientBuilder(BlazeClientBuilder[MonoIO](c.clientExecutionContext))
+    builder.resource.use {
       client =>
         client.fetch(req)(handler)
     }
+  }
+
+  protected def blazeClientBuilder(defaultBuilder: BlazeClientBuilder[MonoIO]) : BlazeClientBuilder[MonoIO] = {
+    defaultBuilder
   }
 
   protected def handleResponse(input: IRTMuxRequest, resp: Response[MonoIO]): MonoIO[IRTMuxResponse] = {
