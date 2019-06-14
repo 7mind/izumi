@@ -29,7 +29,7 @@ class ConfigLoaderLocalFSImpl(
     }
       .toList
 
-    val allConfigs = commonConfigFile ++ roleConfigFiles
+    val allConfigs = roleConfigFiles ++ commonConfigFile
 
     val cfgInfo = allConfigs.map {
       case r: ConfigSource.Resource =>
