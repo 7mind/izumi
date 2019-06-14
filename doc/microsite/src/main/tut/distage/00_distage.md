@@ -58,11 +58,12 @@ FAQ
  
 **Q**: how to pronounce "distage" ?
 
-**A**: we pronounce it as 'dee-stage', although you can pronounce it however you like!
+**A**: 'Dee-stage', but you can pronounce it however you like!
 
 Further reading
 ---------------
 
+- [distage Example Project](https://github.com/7mind/distage-sample)
 - Slides - [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 - @ref[Tutorial](basics.md#tutorial)
 - @ref[Config Injection](config_injection.md)
