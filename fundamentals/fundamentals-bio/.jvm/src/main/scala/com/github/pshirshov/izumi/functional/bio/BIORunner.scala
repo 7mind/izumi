@@ -31,7 +31,9 @@ object BIORunner {
     new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
   }
 
-  def newZioTimerPool(): ScheduledExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
+  def newZioTimerPool(): ScheduledExecutorService = {
+    Executors.newScheduledThreadPool(1, new NamedThreadFactory("zio-timer", true))
+  }
 
   sealed trait FailureHandler
   object FailureHandler {
@@ -82,7 +84,9 @@ object BIORunner {
   , tracingConfig: TracingConfig
   ) extends Platform with BIOExit.ZIO {
 
-    private[this] final val cpu = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
+    override val executor: Executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
+
+    override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
 
     override def reportFailure(cause: Exit.Cause[_]): Unit = {
       handler match {
@@ -97,11 +101,7 @@ object BIORunner {
       }
     }
 
-    override def executor: Executor = cpu
-
     override def fatal(t: Throwable): Boolean = t.isInstanceOf[VirtualMachineError]
-
-    override def tracing: Tracing = Tracing.enabledWith(tracingConfig)
 
     override def reportFatal(t: Throwable): Nothing = {
       t.printStackTrace()
