@@ -9,8 +9,6 @@ import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{Fa
 import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-import scala.annotation.unchecked.uncheckedVariance
-
 trait PlanInterpreter {
   def instantiate[F[_] : TagK : DIEffect](
                                            plan: OrderedPlan
@@ -28,7 +26,11 @@ object PlanInterpreter {
     def all[F[_]]: FinalizersFilter[F] = (finalizers: Seq[Finalizer[F]]) => finalizers
   }
 
-  case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], tag: TagK[F @uncheckedVariance])
+  final case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], fType: SafeType)
+
+  object Finalizer {
+    def apply[F[_]: TagK](key: DIKey, effect: () => F[Unit]): Finalizer[F] = new Finalizer(key, effect, SafeType.getK[F])
+  }
 
   final case class FailedProvision[F[_]](
                                           failed: ProvisionImmutable[F],
@@ -62,13 +64,10 @@ object PlanInterpreter {
   }
 
   object FailedProvision {
-
     implicit final class FailedProvisionExt[F[_]](private val p: Either[FailedProvision[F], Locator]) extends AnyVal {
       def throwOnFailure()(implicit F: DIEffect[F]): F[Locator] = p.fold(_.throwException(), F.pure)
     }
-
   }
-
 
 }
 

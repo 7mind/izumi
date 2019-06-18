@@ -15,6 +15,7 @@ import com.github.pshirshov.izumi.distage.testkit.DistagePluginTestSupport.{Cach
 import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
+import distage.SafeType
 
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
@@ -85,7 +86,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   protected def activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
 
   protected def memoizationContextId: MemoizationContextId = {
-    MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, distage.SafeType.getK(implicitly[TagK[F]]))
+    MemoizationContextId.PerRuntimeAndActivationAndBsconfig[F](bootstrapConfig, activation, SafeType.getK[F])
   }
 
   protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {

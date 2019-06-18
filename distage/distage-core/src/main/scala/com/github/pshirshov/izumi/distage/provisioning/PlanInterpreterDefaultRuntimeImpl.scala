@@ -207,11 +207,11 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer, implicitly[TagK[F]])
+        active.finalizers prepend Finalizer(target, finalizer)
 
       case r@NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer, implicitly[TagK[F]])
+        active.finalizers prepend Finalizer(target, finalizer)
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
