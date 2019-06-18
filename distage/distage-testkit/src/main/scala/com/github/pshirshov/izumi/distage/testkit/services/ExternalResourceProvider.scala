@@ -25,7 +25,7 @@ trait ExternalResourceProvider {
 
   def size: Int
 
-  def registerShutdownRuntime[F[_]](rt: => PreparedShutdownRuntime[F]): Unit
+  def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit
 }
 
 object ExternalResourceProvider {
@@ -34,7 +34,11 @@ object ExternalResourceProvider {
 
   case class MemoizedInstance[+F[_]](ref: IdentifiedRef, finalizer: Option[OrderedFinalizer[F@uncheckedVariance]])
 
-  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], tag: TagK[F@uncheckedVariance])
+  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F @uncheckedVariance])
+
+  object PreparedShutdownRuntime {
+    def apply[F[_]: TagK](runner: DIResourceBase[Identity, Locator]) = new PreparedShutdownRuntime[F](runner, SafeType.getK[F], TagK[F])
+  }
 
   object Null extends ExternalResourceProvider {
 
@@ -53,19 +57,20 @@ object ExternalResourceProvider {
 
     override def size: Int = 0
 
-    override def registerShutdownRuntime[F[_]](rt: => PreparedShutdownRuntime[F]): Unit = {
-      Quirks.discard(rt)
+    override def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+      Quirks.forget(rt)
     }
   }
 
+  def singleton[F[_]: TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
 
-  def singleton[F[_] : TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
+  class Singleton[F[_]: TagK](
+                               memoize: IdentifiedRef => Boolean
+                             ) extends ExternalResourceProvider {
 
-  class Singleton[F[_] : TagK](memoize: IdentifiedRef => Boolean) extends ExternalResourceProvider {
+    import Singleton.{MemoizationKey, cache, registerRT}
 
-    import Singleton._
-
-    private def keyF: TagK[F] = implicitly[TagK[F]]
+    private[this] final val keyF = SafeType.getK[F]
 
     override def process(ctx: MemoizationContextId, ref: MemoizedInstance[Any]): Unit = {
       if (memoize(ref.ref)) {
@@ -89,18 +94,18 @@ object ExternalResourceProvider {
       cache.size
     }
 
-    override def registerShutdownRuntime[F1[_]](rt: => PreparedShutdownRuntime[F1]): Unit = {
+    override def registerShutdownRuntime[F1[_]: TagK](rt: => PreparedShutdownRuntime[F1]): Unit = {
       registerRT[F1](rt)
     }
   }
 
   object Singleton {
 
-    case class MemoizationKey[+F[_]](ctx: MemoizationContextId, key: DIKey, tag: TagK[F@uncheckedVariance])
+    case class MemoizationKey(ctx: MemoizationContextId, key: DIKey, fType: SafeType)
 
     private val runtimes = new SyncCache[SafeType, PreparedShutdownRuntime[Any]]()
 
-    private val cache = new SyncCache[MemoizationKey[Any], MemoizedInstance[Any]]()
+    private val cache = new SyncCache[MemoizationKey, MemoizedInstance[Any]]()
 
     private val shutdownHook = new Thread(() => stop(), "termination-hook-memoizer")
 
@@ -108,33 +113,36 @@ object ExternalResourceProvider {
 
     Runtime.getRuntime.addShutdownHook(shutdownHook)
 
-    registerRT(
+    registerRT[Identity](
       PreparedShutdownRuntime[Identity](
-        DIResource.make[Identity, Locator] {
+        DIResource.liftF[Identity, Locator] {
           new LocatorDef {
             addImplicit[DIEffectRunner[Identity]]
             addImplicit[DIEffect[Identity]]
           }
-        } { _ => () },
-        implicitly[TagK[Identity]]
+        }
       )
     )
 
-    private def registerRT[F1[_]](rt: => PreparedShutdownRuntime[F1]): Unit = {
-      runtimes.putIfNotExist(SafeType.getK[Any](rt.tag.asInstanceOf[TagK[Any]]), rt)
+    private def registerRT[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+      runtimes.putIfNotExist(SafeType.getK[F], rt)
     }
 
 
-    type FakeF[T]
 
     private def stop(): Unit = {
+      object fake {
+        type FakeF[T]
+      }
+      import fake.FakeF
+
       runtimes.enumerate().foreach {
         case (rtType, rt) =>
 
           val effects = cache.enumerate()
             .filter {
               case (k, _) =>
-                rtType == SafeType.getK[Any](k.tag)
+                rtType == k.fType
             }
             .flatMap(_._2.finalizer.toSeq)
             .sortBy(_.order)
@@ -145,10 +153,12 @@ object ExternalResourceProvider {
             }
           import DIEffect.syntax._
 
-          implicit val effectTagK: TagK[FakeF] = rt.tag.asInstanceOf[TagK[FakeF]]
+          implicit val effectTagK: TagK[FakeF] = rt.fTag.asInstanceOf[TagK[FakeF]]
           Quirks.discard(effectTagK)
-          val effectTag: SafeType = SafeType.get[DIEffect[FakeF]]
-          val runnerTag: SafeType = SafeType.get[DIEffectRunner[FakeF]]
+
+          val effectTag = SafeType.get[DIEffect[FakeF]]
+          val runnerTag = SafeType.get[DIEffectRunner[FakeF]]
+
           if (effects.nonEmpty) {
             rt.runner.use {
               locator =>
@@ -162,7 +172,7 @@ object ExternalResourceProvider {
 
                 runner.run {
                   for {
-                    _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.tag.tag.tpe.toString}..."))) {
+                    _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.fType}..."))) {
                       case (acc, f) =>
                         acc.guarantee {
                           for {
@@ -171,13 +181,11 @@ object ExternalResourceProvider {
                           } yield ()
                         }
                     }
-                    _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.tag.tag.tpe.toString}!"))
-
+                    _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.fType}!"))
                   } yield ()
                 }
             }
           }
-
       }
 
     }
