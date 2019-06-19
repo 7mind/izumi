@@ -37,6 +37,13 @@ trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
   /** execute two operations in order, same as `*>`, but return result of first operation */
   def <*[E, A, E2 >: E, B](firstOp: F[E, A], secondOp: => F[E2, B]): F[E2, A]
 
+  def traverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
+
+  @inline final def forever[E, A](r: F[E, A]): F[E, Nothing] = *>(r, forever(r))
+  @inline final def traverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(traverse(l)(f))
+  @inline final def sequence[E, A, B](l: Iterable[F[E, A]]): F[E, List[A]] = traverse(l)(identity)
+  @inline final def sequence_[E](l: Iterable[F[E, Unit]]): F[E, Unit] = void(traverse(l)(identity))
+
   @inline final val unit: F[Nothing, Unit] = pure(())
   @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
 }
@@ -79,13 +86,7 @@ object BIOError {
 trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
   def flatMap[E, A, E2 >: E, B](r: F[E, A])(f: A => F[E2, B]): F[E2, B]
   def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
-  def traverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
-  @inline final def forever[E, A](r: F[E, A]): F[E, Nothing] = flatMap(r)(_ => forever(r))
-
-  @inline final def traverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(traverse(l)(f))
-  @inline final def sequence[E, A, B](l: Iterable[F[E, A]]): F[E, List[A]] = traverse(l)(identity)
-  @inline final def sequence_[E](l: Iterable[F[E, Unit]]): F[E, Unit] = void(traverse(l)(identity))
 
   // defaults
   @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
