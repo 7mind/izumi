@@ -11,6 +11,7 @@ import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScr
 import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.layout.TypescriptNamingConvention
 
+import scala.util.Try
 import scala.util.control.Breaks._
 
 final case class TypeScriptImport(id: TypeId, pkg: String)
@@ -106,7 +107,7 @@ object TypeScriptImports {
 
     breakable{
       for( i <- srcPkg.indices){
-        if (destPkg.size < i || srcPkg(i) != destPkg(i)) {
+        if (destPkg.size < i || pathDiffers(srcPkg, destPkg, i)) {
           break
         }
 
@@ -140,6 +141,10 @@ object TypeScriptImports {
     }
 
     Seq(importFile)
+  }
+
+  private def pathDiffers(srcPkg : Package, destPkg: Package, depth: Int) : Boolean = {
+    Try(srcPkg(depth) != destPkg(depth)).getOrElse(true)
   }
 
   protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
