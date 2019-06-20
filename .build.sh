@@ -65,7 +65,7 @@ function publish {
   if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
-  
+
 }
 
 function init {
@@ -77,7 +77,7 @@ function init {
     fi
 
     export CI_BRANCH=${BUILD_SOURCEBRANCHNAME}
-    export CI_TAG=${BUILD_SOURCEBRANCHNAME}
+    export CI_TAG=`git describe --tags | grep v | head -n 1`
     export CI_BUILD_NUMBER=${BUILD_BUILDID}
     export CI_COMMIT=${BUILD_SOURCEVERSION}
 
