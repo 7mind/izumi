@@ -51,6 +51,8 @@ object BIOSyntax {
 
     /** execute two operations in order, same as `*>`, but return result of first operation */
     @inline def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*[E, A, E1, B](r, f0)
+
+    @inline def forever: F[E, Nothing] = F.forever(r)
   }
 
   final class BIOGuaranteeOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOGuarantee[F]) {
@@ -61,8 +63,6 @@ object BIOSyntax {
     @inline def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E, A, E1, B](r)(f0)
 
     @inline def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
-
-    @inline def forever: F[E, Nothing] = F.forever(r)
   }
 
   final class BIOErrorOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOError[F]) {
