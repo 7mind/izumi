@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-EMAIL=pshirshov@gmail.com
+EMAIL=${EMAIL:-pshirshov@gmail.com}
 SSHKEYNAME=travis-deploy-key
 
 PASSPHRASE=$(uuidgen)
