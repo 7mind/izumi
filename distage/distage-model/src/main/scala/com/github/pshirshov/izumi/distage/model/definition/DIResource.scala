@@ -6,9 +6,11 @@ import cats.{Applicative, ~>}
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
+import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.reflection.TagMacro
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -131,8 +133,8 @@ object DIResource {
   }
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
-    def a = acquire
-    def r = release
+    @inline def a = acquire
+    @inline def r = release
     new DIResource[F, A] {
       override def acquire: F[A] = a
       override def release(resource: A): F[Unit] = r(resource)
@@ -199,9 +201,18 @@ object DIResource {
 
   trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
-  abstract class NoClose[+F[_]: DIEffect, +A] extends DIResourceBase[F, A] {
-    override final def release(resource: InnerResource): F[Unit] = DIEffect[F].unit
+  abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
+
+  class LiftF[+F[_]: DIEffect, A](acquire: => F[A]) extends { private[this] final val tmp = () => acquire } with NoClose[F, A] {
+    override def acquire: F[A] = tmp()
   }
+
+  class Make[+F[_], A](acquire: => F[A])(release: A => F[Unit]) extends { private[this] final val tmp = () => acquire } with DIResource[F, A] {
+    override def acquire: F[A] = tmp()
+    override def release(resource: A): F[Unit] = release.apply(resource)
+  }
+
+  class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
@@ -210,7 +221,7 @@ object DIResource {
     def release: F[Unit]
   }
 
-  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends NoClose[F, A] { this: A =>
+  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
     override type InnerResource = Unit
     override final def extract(resource: Unit): A = this
   }
@@ -238,6 +249,12 @@ object DIResource {
     final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = logReleaseImpl[G, OuterResource](this: this.type)(f)
 
     final def void: DIResourceBase[F, Unit] = map(_ => ())
+  }
+
+  object DIResourceBase {
+    abstract class NoClose[+F[_]: DIEffect, +A] extends DIResourceBase[F, A] {
+      override final def release(resource: InnerResource): F[Unit] = DIEffect[F].unit
+    }
   }
 
   /**
@@ -401,7 +418,10 @@ object DIResource {
     }
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
-      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!")
+      val tagMacro = new TagMacro(c)
+      val tagTrace = tagMacro.getImplicitError[RuntimeDIUniverse.type]()
+
+      c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }
   }
 
@@ -409,6 +429,9 @@ object DIResource {
     /**
       * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
       * a workaround for highlighting in Intellij IDEA
+     *
+     * (it's also used to display error trace from TagK @implicitNotFound)
+     *
       * TODO: include link to IJ bug tracker
       */
     implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
