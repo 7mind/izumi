@@ -10,11 +10,11 @@ import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, PlatformLive, Tracing}
 
 trait BIORunner[F[_, _]] {
-  def unsafeRun[E, A](io: F[E, A]): A
+  def unsafeRun[E, A](io: => F[E, A]): A
 
-  def unsafeRunSyncAsEither[E, A](io: F[E, A]): BIOExit[E, A]
+  def unsafeRunSyncAsEither[E, A](io: => F[E, A]): BIOExit[E, A]
 
-  def unsafeRunAsyncAsEither[E, A](io: F[E, A])(callback: BIOExit[E, A] => Unit): Unit
+  def unsafeRunAsyncAsEither[E, A](io: => F[E, A])(callback: BIOExit[E, A] => Unit): Unit
 }
 
 object BIORunner {
@@ -48,7 +48,7 @@ object BIORunner {
 
     val runtime = Runtime((), platform)
 
-    override def unsafeRun[E, A](io: IO[E, A]): A = {
+    override def unsafeRun[E, A](io: => IO[E, A]): A = {
       unsafeRunSyncAsEither(io) match {
         case BIOExit.Success(value) =>
           value
@@ -66,11 +66,11 @@ object BIORunner {
       }
     }
 
-    override def unsafeRunAsyncAsEither[E, A](io: IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
+    override def unsafeRunAsyncAsEither[E, A](io: => IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
       runtime.unsafeRunAsync[E, A](io)(exitResult => callback(toBIOExit(exitResult)))
     }
 
-    override def unsafeRunSyncAsEither[E, A](io: IO[E, A]): BIOExit[E, A] = {
+    override def unsafeRunSyncAsEither[E, A](io: => IO[E, A]): BIOExit[E, A] = {
       val result = runtime.unsafeRunSync(io)
       toBIOExit(result)
     }
@@ -93,7 +93,7 @@ object BIORunner {
         case FailureHandler.Default =>
           // do not log interruptions
           if (!cause.interrupted) {
-            println(cause.toString)
+            System.err.println(cause.prettyPrint)
           }
 
         case FailureHandler.Custom(f) =>
