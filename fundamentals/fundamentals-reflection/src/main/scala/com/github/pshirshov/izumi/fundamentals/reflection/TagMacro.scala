@@ -81,6 +81,13 @@ class TagMacro(val c: blackbox.Context) {
     res
   }
 
+  def getImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): String =
+    symbolOf[DIU#Tag[Any]].annotations.headOption.flatMap(
+      AnnotationTools.findArgument(_) {
+        case Literal(Constant(s: String)) => s
+      }
+    ).getOrElse(defaultError)
+
   @inline
   protected[this] def mkRefined[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
 
@@ -280,14 +287,6 @@ class TagMacro(val c: blackbox.Context) {
   @inline
   protected[this] def resetImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): Unit =
     setImplicitError[DIU](defaultError)
-
-  @inline
-  protected[this] def getImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): String =
-    symbolOf[DIU#Tag[Any]].annotations.headOption.flatMap(
-      AnnotationTools.findArgument(_) {
-        case Literal(Constant(s: String)) => s
-      }
-    ).getOrElse(defaultError)
 
   @inline
   protected[this] def setImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](err: String): Unit = {

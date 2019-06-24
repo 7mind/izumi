@@ -10,6 +10,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 import scala.collection.immutable.Queue
 import scala.collection.mutable
@@ -389,6 +390,20 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val ops = resource.use(ops => Suspend2(ops)).run().right.get
 
       assert(ops == Seq(XStart, YStart, YStop, XStop))
+    }
+
+    "Display tag macro stack trace when ResourceTag is not found" in {
+      try {
+        assertCompiles(
+          """
+          def x[F[_]]: ModuleDef = new ModuleDef {
+            make[Any].fromResource[DIResource[F, Any]]
+          }
+        """
+        )
+      } catch {
+        case t: TestFailedException if t.message.get contains "<trace>" =>
+      }
     }
 
   }
