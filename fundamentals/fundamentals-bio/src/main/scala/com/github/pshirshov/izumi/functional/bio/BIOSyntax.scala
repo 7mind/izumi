@@ -32,7 +32,7 @@ object BIOSyntax {
 
     @inline def as[B](b: B): F[E, B] = F.map(r)(_ => b)
 
-    @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = map(ev)
+    @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = { val _ = ev; r.asInstanceOf[F[E, A1]] }
 
     @inline def void: F[E, Unit] = F.void(r)
   }
@@ -42,7 +42,7 @@ object BIOSyntax {
 
     @inline def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
-    @inline def widenError[E1](implicit ev: E <:< E1): F[E1, A] = leftMap(ev)
+    @inline def widenError[E1](implicit ev: E <:< E1): F[E1, A] = { val _ = ev; r.asInstanceOf[F[E1, A]] }
   }
 
   final class BIOApplicativeOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOApplicative[F]) {
@@ -92,7 +92,7 @@ object BIOSyntax {
     @inline def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
       F.bracket(r: F[E1, A])(release)(use)
 
-    @inline def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E1, A] = {
+    @inline def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = {
       new BIOMonadOps(new BIOErrorOps(r).tapError(err)).tap(succ)
     }
 
