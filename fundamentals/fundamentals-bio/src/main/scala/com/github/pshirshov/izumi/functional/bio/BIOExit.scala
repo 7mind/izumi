@@ -24,7 +24,6 @@ object BIOExit {
 
   sealed trait Failure[+E] extends BIOExit[E, Nothing] {
     def toEither: Either[List[Throwable], E]
-
     def toEitherCompound: Either[Throwable, E]
 
     def trace: Trace
@@ -34,13 +33,11 @@ object BIOExit {
 
   final case class Error[+E](error: E, trace: Trace) extends BIOExit.Failure[E] {
     override def toEither: Right[List[Throwable], E] = Right(error)
-
     override def toEitherCompound: Right[Throwable, E] = Right(error)
   }
 
   final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace) extends BIOExit.Failure[Nothing] {
     override def toEither: Left[List[Throwable], Nothing] = Left(allExceptions)
-
     override def toEitherCompound: Left[Throwable, Nothing] = Left(compoundException)
   }
 

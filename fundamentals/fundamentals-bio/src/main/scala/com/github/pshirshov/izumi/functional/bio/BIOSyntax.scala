@@ -32,7 +32,7 @@ object BIOSyntax {
 
     @inline def as[B](b: B): F[E, B] = F.map(r)(_ => b)
 
-    @inline def widen[A1 >: A]: F[E, A1] = r
+    @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = { val _ = ev; r.asInstanceOf[F[E, A1]] }
 
     @inline def void: F[E, Unit] = F.void(r)
   }
@@ -42,10 +42,13 @@ object BIOSyntax {
 
     @inline def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
-    @inline def widenError[E1 >: E]: F[E1, A] = r
+    @inline def widenError[E1](implicit ev: E <:< E1): F[E1, A] = { val _ = ev; r.asInstanceOf[F[E1, A]] }
   }
 
   final class BIOApplicativeOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOApplicative[F]) {
+    /** execute two operations in order, map their results */
+    @inline def map2[E2 >: E, B, C](r2: => F[E2, B])(f: (A, B) => C): F[E2, C] = F.map2(r, r2)(f)
+
     /** execute two operations in order, return result of second operation */
     @inline def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>[E, A, E1, B](r, f0)
 
@@ -89,6 +92,10 @@ object BIOSyntax {
     @inline def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
       F.bracket(r: F[E1, A])(release)(use)
 
+    @inline def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = {
+      new BIOMonadOps(new BIOErrorOps(r).tapError(err)).tap(succ)
+    }
+
     @inline def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromEither[E1, A1](_))
 
     @inline def fromOption[E1 >: E, A1](errorOnNone: E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
@@ -101,7 +108,19 @@ object BIOSyntax {
 
     @inline def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
 
-    @inline def terminationToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
+    /**
+     * Catch all _defects_ in this effect and convert them to Throwable
+     * Example:
+     *
+     * {{{
+     *   BIO[F].pure(1)
+     *     .map(_ => ???)
+     *     .sandboxThrowable
+     *     .catchAll(_ => BIO(println("Caught error!")))
+     * }}}
+     *
+     * */
+    @inline def sandboxThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.catchAll(F.sandbox(r))(failure => F.fail(failure.toThrowable))
   }
 

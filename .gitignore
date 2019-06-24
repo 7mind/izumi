@@ -2,7 +2,7 @@
 .idea
 *.jps
 /local.sbt
-.secrets
+.secrets*
 /config 
 
 secrets.tar
