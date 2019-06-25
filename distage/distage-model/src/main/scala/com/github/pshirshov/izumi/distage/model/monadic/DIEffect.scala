@@ -21,9 +21,9 @@ trait DIEffect[F[_]] {
   def maybeSuspend[A](eff: => A): F[A]
 
 
-  /** A stronger version of `handleErrorWith`, the difference is that
+  /** A stronger version of `recoverWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
-  def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
+  def definitelyRecover[A](action: => F[A], recover: PartialFunction[Throwable, F[A]]): F[A]
 
   def fail[A](t: => Throwable): F[A]
 
@@ -65,8 +65,8 @@ object DIEffect
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
-    override def definitelyRecover[A](fa: => Identity[A], recover: Throwable => Identity[A]): Identity[A] = {
-      try fa catch { case t: Throwable => recover(t) }
+    override def definitelyRecover[A](fa: => Identity[A], recover: PartialFunction[Throwable, Identity[A]]): Identity[A] = {
+      try fa catch recover
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -99,8 +99,9 @@ object DIEffect
         //  - hmm, usage of DIEffect in PlanInterpreter *is* completely exception-safe (because of .definitelyRecover)
         F.syncThrowable(eff)
       }
-      override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
-        suspendF(fa).sandbox.catchAll(recover apply _.toThrowable)
+      override def definitelyRecover[A](fa: => F[E, A], recover: PartialFunction[Throwable, F[E, A]]): F[E, A] = {
+        // FIXME: sandbox itself loses traces, need .halt combinator ._.
+        suspendF(fa).sandbox//.leftMap(_.toThrowable).catchSome(recover)
       }
 
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
@@ -136,8 +137,8 @@ trait FromCats {
       override def maybeSuspend[A](eff: => A): F[A] = {
         F.delay(eff)
       }
-      override def definitelyRecover[A](fa: => F[A], recover: Throwable => F[A]): F[A] = {
-        F.handleErrorWith(F.suspend(fa))(recover)
+      override def definitelyRecover[A](fa: => F[A], recover: PartialFunction[Throwable, F[A]]): F[A] = {
+        F.recoverWith(F.suspend(fa))(recover)
       }
       override def fail[A](t: => Throwable): F[A] = F.suspend(F.raiseError(t))
       override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {

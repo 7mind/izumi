@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.roles._
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -32,15 +33,14 @@ class RoleAppExecutorImpl[F[_] : TagK](
     StartupPlanExecutor.default(lateLogger, injector)
   }
 
-  protected def doRun(locator: Locator, effect: DIEffect[F]): F[Unit] = {
-    val roleIndex = getRoleIndex(locator)
-    implicit val e: DIEffect[F] = effect
+  protected def doRun(locator: Locator, integrationCheckResult: Option[IntegrationCheckException], effect: DIEffect[F]): F[Unit] = {
+    implicit val F: DIEffect[F] = effect
     for {
+      _ <- integrationCheckResult.fold(F.unit)(F.fail(_))
+      roleIndex = getRoleIndex(locator)
       _ <- runTasks(roleIndex)
       _ <- runRoles(roleIndex)
-    } yield {
-
-    }
+    } yield ()
   }
 
   protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit effect: DIEffect[F]): F[Unit] = {

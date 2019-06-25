@@ -26,6 +26,7 @@ import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
+import org.scalatest.exceptions.{TestCanceledException, TestPendingException}
 
 
 abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
@@ -84,23 +85,37 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
     verifyTotalSuppression()
     try {
-      makeExecutor(plan.injector, logger)
-        .execute[F](plan, filters) {
-        (locator, effect) =>
+      val res = makeExecutor(plan.injector, logger)
+        .execute(plan, filters) {
+        (locator, integrationCheckResult, effect) =>
           implicit val F: DIEffect[F] = effect
 
-          for {
-            _ <- DIEffect[F].maybeSuspend(doMemoize(locator))
-            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
-            _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
-            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
-            _ <- locator.run(function)
-          } yield ()
+          F.definitelyRecover[Option[Throwable]](
+            action =
+              for {
+                _ <- integrationCheckResult.fold(F.unit)(F.fail(_))
+                _ <- F.maybeSuspend(doMemoize(locator))
+                _ <- F.maybeSuspend(verifyTotalSuppression())
+                _ <- F.maybeSuspend(beforeRun(locator))
+                _ <- F.maybeSuspend(verifyTotalSuppression())
+                _ <- locator.run(function)
+              } yield None
+          , recover = {
+              case exc@(_: IntegrationCheckException | _: TestCanceledException | _: TestPendingException) =>
+                F.pure(Some(exc))
+              case e =>
+                F.fail(e)
+            }
+          )
       }
-    } catch {
-      case i: IntegrationCheckException =>
-        suppressTheRestOfTestSuite()
-        ignoreThisTest(Some(i.getMessage), Option(i.getCause))
+      res match {
+        case Some(i: IntegrationCheckException) =>
+          suppressTheRestOfTestSuite()
+          ignoreThisTest(Some(i.getMessage), Option(i.getCause))
+        case Some(exc) =>
+          throw exc
+        case _ =>
+      }
     } finally {
       val cacheSize = erpInstance.size(memoizationContextId)
       if (cacheSize > 0) {

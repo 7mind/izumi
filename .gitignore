@@ -1,9 +1,10 @@
 .hydra
 .idea
+.java-version
 *.jps
 /local.sbt
 .secrets*
-/config 
+/config
 
 secrets.tar
 build/project

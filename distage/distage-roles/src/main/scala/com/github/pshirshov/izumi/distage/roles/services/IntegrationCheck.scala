@@ -14,10 +14,10 @@ import scala.util.control.NonFatal
 trait IntegrationChecker {
   def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]]
 
-  final def checkOrFail(integrationComponents: Set[DIKey], integrationLocator: Locator): Unit = {
-    check(integrationComponents, integrationLocator).fold(()) {
+  final def checkOrException(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[IntegrationCheckException] = {
+    check(integrationComponents, integrationLocator).map {
       failures =>
-        throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
+        new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
     }
   }
 }
