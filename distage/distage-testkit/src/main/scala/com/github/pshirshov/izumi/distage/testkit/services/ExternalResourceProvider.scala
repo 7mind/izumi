@@ -128,6 +128,15 @@ object ExternalResourceProvider {
       runtimes.putIfNotExist(SafeType.getK[F], rt)
     }
 
+    /**
+     * Fake HKT to use in-place of (unknown at compile-time) user effect type
+     *
+     * NOTE: DO NOT move this into an `object` or inside `stop()`, since then
+     * scala-reflect will start generating TypeTags for it and break it. Whether or not
+     * scala-reflect generates a TypeTag for an abstract member type is inconsistent
+     * and depends on the type's placement
+     * @see TagTest "Handle abstract types instead of parameters"
+     * */
     private[Singleton] type FakeF[T]
 
     private def stop(): Unit = {
@@ -151,6 +160,7 @@ object ExternalResourceProvider {
 
           implicit val effectTagK: TagK[FakeF] = rt.fTag.asInstanceOf[TagK[FakeF]]
           Quirks.discard(effectTagK)
+          assert(!effectTagK.toString.contains("FakeF"))
 
           val effectTag = SafeType.get[DIEffect[FakeF]]
           val runnerTag = SafeType.get[DIEffectRunner[FakeF]]

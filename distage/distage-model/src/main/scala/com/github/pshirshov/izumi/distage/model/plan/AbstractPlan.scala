@@ -22,7 +22,13 @@ sealed trait AbstractPlan {
 
   def gcMode: GCMode
 
-  lazy val index: Map[DIKey, ExecutableOp] = {
+  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
+  def resolveImport[T: Tag](instance: T): AbstractPlan
+  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
+
+  def locateImports(locator: Locator): AbstractPlan
+
+  final lazy val index: Map[DIKey, ExecutableOp] = {
     steps.map(s => s.target -> s).toMap
   }
 
@@ -53,9 +59,53 @@ sealed trait AbstractPlan {
     }
   }
 
-  final def keys: Set[DIKey] = steps.map(_.target).toSet
+  final def keys: Set[DIKey] = {
+    steps.map(_.target).toSet
+  }
 
-  final def toSemi: SemiPlan = {
+  final def filter[T: Tag]: Seq[ExecutableOp] = {
+    steps.filter(_.target == DIKey.get[T])
+  }
+
+  final def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
+    val SemiPlan(definition, steps, gcMode) = toSemi
+    SemiPlan(definition, steps.map(f), gcMode)
+  }
+
+  final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
+    val SemiPlan(definition, steps, gcMode) = toSemi
+    SemiPlan(definition, steps.flatMap(f), gcMode)
+  }
+
+  final def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
+    val SemiPlan(definition, steps, gcMode) = toSemi
+    SemiPlan(definition, steps.collect(f), gcMode)
+  }
+
+  final def ++(that: AbstractPlan): SemiPlan = {
+    val SemiPlan(definition, steps, gcMode) = toSemi
+    val that0 = that.toSemi
+    SemiPlan(definition ++ that0.definition, steps ++ that0.steps, gcMode)
+  }
+
+  final def collectChildren[T: Tag]: Seq[ExecutableOp] = {
+    val parent = SafeType.get[T]
+    steps.filter {
+      op =>
+        val maybeChild = ExecutableOp.instanceType(op)
+        maybeChild weak_<:< parent
+    }
+  }
+
+  final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
+    steps.foldLeft(z)(f)
+  }
+
+  override def toString: String = {
+    steps.map(_.toString).mkString("\n")
+  }
+
+  def toSemi: SemiPlan = {
     val safeSteps = steps.flatMap {
       case _: InitProxy =>
         Seq.empty
@@ -66,34 +116,6 @@ sealed trait AbstractPlan {
     SemiPlan(definition, safeSteps.toVector, gcMode)
   }
 
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
-
-  def resolveImport[T: Tag](instance: T): AbstractPlan
-
-  def filter[T: Tag]: Seq[ExecutableOp] = {
-    steps.filter(_.target == DIKey.get[T])
-  }
-
-  def collectChildren[T: Tag]: Seq[ExecutableOp] = {
-    val parent = SafeType.get[T]
-    steps.filter {
-      op =>
-        val maybeChild = ExecutableOp.instanceType(op)
-        maybeChild weak_<:< parent
-    }
-  }
-
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
-
-  def locateImports(locator: Locator): AbstractPlan
-
-  final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
-    steps.foldLeft(z)(f)
-  }
-
-  override def toString: String = {
-    steps.map(_.toString).mkString("\n")
-  }
 }
 
 object AbstractPlan {
@@ -115,21 +137,8 @@ object AbstractPlan {
   * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode) extends AbstractPlan {
-  def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    SemiPlan(definition, steps.map(f).toVector, gcMode)
-  }
 
-  def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.flatMap(f).toVector, gcMode)
-  }
-
-  def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    SemiPlan(definition, steps.collect(f).toVector, gcMode)
-  }
-
-  def ++(that: AbstractPlan): SemiPlan = {
-    SemiPlan(definition ++ that.definition, steps.toVector ++ that.steps, gcMode)
-  }
+  override def toSemi: SemiPlan = this
 
   override def resolveImport[T: Tag](instance: T): SemiPlan =
     resolveImports {

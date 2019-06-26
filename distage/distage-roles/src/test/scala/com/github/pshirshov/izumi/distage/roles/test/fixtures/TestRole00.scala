@@ -5,11 +5,13 @@ import java.util.concurrent.ExecutorService
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
+import com.github.pshirshov.izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
+import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestRole00.TestRole00Resource
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
+import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 
@@ -26,15 +28,17 @@ object TestTask00 extends RoleDescriptor {
 }
 
 
-class TestRole00[F[_] : DIEffect](
-                                   @ConfPath("testservice") val conf: TestServiceConf
-                                   , val dummies: Set[Dummy]
-                                   , val counter: InitCounter
-                                   , logger: IzLogger
-                                   , notCloseable: NotCloseable
-                                   , val resources: Set[Resource]
-                                   , val es: ExecutorService
-                                 ) extends RoleService[F]  {
+class TestRole00[F[_] : DIEffect]
+(
+  val conf: TestServiceConf @ConfPath("testservice")
+, val dummies: Set[Dummy]
+, val counter: InitCounter
+, val resource: TestRole00Resource[F]
+, logger: IzLogger
+, notCloseable: NotCloseable
+, val resources: Set[Resource]
+, val es: ExecutorService
+) extends RoleService[F]  {
   notCloseable.discard()
 
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
@@ -47,12 +51,20 @@ class TestRole00[F[_] : DIEffect](
   }
 }
 
-
-
 object TestRole00 extends RoleDescriptor {
   override final val id = "testrole00"
 
   override def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, Some("Example role"), None, freeArgsAllowed = true)
+
+  final case class IntegrationOnlyCfg(flag: Boolean)
+
+  final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck)
+  final class TestRole00ResourceIntegrationCheck
+  (
+    private val cfg: IntegrationOnlyCfg @ConfPath("integrationOnlyCfg")
+  ) extends IntegrationCheck {
+    override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
+  }
 }
 
 class TestRole01[F[_] : DIEffect](logger: IzLogger) extends RoleService[F] {

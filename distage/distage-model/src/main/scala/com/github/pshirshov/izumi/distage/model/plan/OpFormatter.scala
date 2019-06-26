@@ -62,14 +62,14 @@ object OpFormatter {
                 case ReferenceInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
                   if (wiring.instance!=null) {
-                    s"${formatKey(target)} $pos := ${wiring.instance.getClass}#${wiring.instance.hashCode()}"
+                    s"${formatKey(target)} $pos := value ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}"
                   } else {
                     s"${formatKey(target)} $pos := null"
                   }
 
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  s"${formatKey(target)} $pos := ${formatKey(wiring.key)}"
+                  s"${formatKey(target)} $pos := ref ${formatKey(wiring.key)}"
               }
           }
 

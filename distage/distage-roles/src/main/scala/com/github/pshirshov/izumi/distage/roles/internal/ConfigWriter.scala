@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
 import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleBase}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
+import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
 import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
@@ -118,10 +119,10 @@ class ConfigWriter[F[_] : DIEffect]
       new LogstageModule(LogRouter.nullRouter, false),
     ).overrideLeft
 
-    val newPlan = context.reboot(cfg).makePlan(Set(roleDIKey), appModule).app
+    val plans = context.reboot(cfg).makePlan(Set(roleDIKey), appModule)
 
-    if (newPlan.steps.exists(_.target == roleDIKey)) {
-      newPlan
+    def getConfig(plan: OrderedPlan): Option[Config] = {
+      plan
         .filter[ResolvedConfig]
         .collect {
           case op: WiringOp.ReferenceInstance =>
@@ -131,6 +132,16 @@ class ConfigWriter[F[_] : DIEffect]
           case r: ResolvedConfig =>
             r.minimized()
         }
+    }
+
+    def getConfigOrEmpty(plan: OrderedPlan) = {
+      getConfig(plan) getOrElse ConfigFactory.empty()
+    }
+
+    if (plans.app.steps.exists(_.target == roleDIKey)) {
+      getConfig(plans.app)
+        .map(_.withFallback(getConfigOrEmpty(plans.integration)))
+        .map(_.withFallback(getConfigOrEmpty(plans.runtime)))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
       None

@@ -1,19 +1,17 @@
 package com.github.pshirshov.izumi.distage.model.plan
 
 import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan
 import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-
 
 sealed trait ExecutableOp {
   def target: DIKey
 
   def origin: Option[Binding]
 
-  override def toString: String = new plan.OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full).format(this)
+  override def toString: String = new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full).format(this)
 }
 
 object ExecutableOp {

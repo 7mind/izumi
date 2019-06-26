@@ -1,14 +1,15 @@
 package com.github.pshirshov.izumi.distage.roles.test
 
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 import org.scalatest.WordSpec
 
-
-class RoleAppTest extends WordSpec with WithProperties {
+class RoleAppTest extends WordSpec
+  with WithProperties {
 
   "Role Launcher" should {
     "produce config dumps and support minimization" in {
@@ -20,10 +21,13 @@ class RoleAppTest extends WordSpec with WithProperties {
 
       val cfg1 = cfg("configwriter", version)
       val cfg2 = cfg("configwriter-minimized", version)
+      val cfg3 = cfg("testrole00-minimized", version)
 
       assert(cfg1.exists())
       assert(cfg2.exists())
+      assert(cfg3.exists())
       assert(cfg1.length() > cfg2.length())
+      assert(new String(Files.readAllBytes(cfg3.toPath), UTF_8).contains("integrationOnlyCfg"))
     }
   }
 

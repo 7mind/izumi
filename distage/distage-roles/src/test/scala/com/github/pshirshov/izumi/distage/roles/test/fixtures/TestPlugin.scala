@@ -6,6 +6,7 @@ import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunne
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.internal.{ConfigWriter, Help}
 import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
+import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
 
 
@@ -31,6 +32,8 @@ class TestPlugin extends PluginDef {
   make[TestRole01[IO]]
   make[TestRole02[IO]]
 
+  make[TestRole00Resource[IO]]
+  make[TestRole00ResourceIntegrationCheck]
 
   make[NotCloseable].from[InheritedCloseable]
   make[ConfigWriter[IO]]
