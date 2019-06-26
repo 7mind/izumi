@@ -25,7 +25,7 @@ trait ExternalResourceProvider {
 
   def size: Int
 
-  def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit
+  def registerShutdownRuntime[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit
 }
 
 object ExternalResourceProvider {
@@ -34,10 +34,10 @@ object ExternalResourceProvider {
 
   case class MemoizedInstance[+F[_]](ref: IdentifiedRef, finalizer: Option[OrderedFinalizer[F@uncheckedVariance]])
 
-  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F @uncheckedVariance])
+  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F@uncheckedVariance])
 
   object PreparedShutdownRuntime {
-    def apply[F[_]: TagK](runner: DIResourceBase[Identity, Locator]) = new PreparedShutdownRuntime[F](runner, SafeType.getK[F], TagK[F])
+    def apply[F[_] : TagK](runner: DIResourceBase[Identity, Locator]) = new PreparedShutdownRuntime[F](runner, SafeType.getK[F], TagK[F])
   }
 
   object Null extends ExternalResourceProvider {
@@ -57,16 +57,16 @@ object ExternalResourceProvider {
 
     override def size: Int = 0
 
-    override def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+    override def registerShutdownRuntime[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
       Quirks.forget(rt)
     }
   }
 
-  def singleton[F[_]: TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
+  def singleton[F[_] : TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
 
-  class Singleton[F[_]: TagK](
-                               memoize: IdentifiedRef => Boolean
-                             ) extends ExternalResourceProvider {
+  class Singleton[F[_] : TagK](
+                                memoize: IdentifiedRef => Boolean
+                              ) extends ExternalResourceProvider {
 
     import Singleton.{MemoizationKey, cache, registerRT}
 
@@ -94,7 +94,7 @@ object ExternalResourceProvider {
       cache.size
     }
 
-    override def registerShutdownRuntime[F1[_]: TagK](rt: => PreparedShutdownRuntime[F1]): Unit = {
+    override def registerShutdownRuntime[F1[_] : TagK](rt: => PreparedShutdownRuntime[F1]): Unit = {
       registerRT[F1](rt)
     }
   }
@@ -124,10 +124,9 @@ object ExternalResourceProvider {
       )
     )
 
-    private def registerRT[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+    private def registerRT[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
       runtimes.putIfNotExist(SafeType.getK[F], rt)
     }
-
 
 
     private def stop(): Unit = {
@@ -162,28 +161,35 @@ object ExternalResourceProvider {
           if (effects.nonEmpty) {
             rt.runner.use {
               locator =>
-                implicit val effect: DIEffect[FakeF] = locator.instances
-                  .find(_.key.tpe == effectTag)
-                  .get.value.asInstanceOf[DIEffect[FakeF]]
 
-                implicit val runner: DIEffectRunner[FakeF] = locator.instances
-                  .find(_.key.tpe == runnerTag)
-                  .get.value.asInstanceOf[DIEffectRunner[FakeF]]
-
-                runner.run {
-                  for {
-                    _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.fType}..."))) {
-                      case (acc, f) =>
-                        acc.guarantee {
-                          for {
-                            _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
-                            _ <- effect.suspendF(f.effect())
-                          } yield ()
-                        }
-                    }
-                    _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.fType}!"))
-                  } yield ()
+                val shutdown = for {
+                  eff <- locator.instances.find(_.key.tpe == effectTag).map(_.value.asInstanceOf[DIEffect[FakeF]])
+                  ru <- locator.instances.find(_.key.tpe == runnerTag).map(_.value.asInstanceOf[DIEffectRunner[FakeF]])
+                } yield {
+                  implicit val effect: DIEffect[FakeF] = eff
+                  implicit val runner: DIEffectRunner[FakeF] = ru
+                  runner.run {
+                    for {
+                      _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.fType}..."))) {
+                        case (acc, f) =>
+                          acc.guarantee {
+                            for {
+                              _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
+                              _ <- effect.suspendF(f.effect())
+                            } yield ()
+                          }
+                      }
+                      _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.fType}!"))
+                    } yield ()
+                  }
                 }
+
+                shutdown match {
+                  case Some(_) =>
+                  case None =>
+                    logger.log(s"Failed to build shutdown context. Required keys: $effectTag, $runnerTag, Locator content: ${locator.index.keySet}")
+                }
+
             }
           }
       }
