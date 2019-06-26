@@ -9,7 +9,7 @@ secrets.tar
 build/project
 .DS_Store
 .metals
-
+.java-version
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Scala template

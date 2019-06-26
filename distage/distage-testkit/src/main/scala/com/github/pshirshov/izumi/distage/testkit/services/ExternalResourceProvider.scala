@@ -25,7 +25,7 @@ trait ExternalResourceProvider {
 
   def size: Int
 
-  def registerShutdownRuntime[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit
+  def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit
 }
 
 object ExternalResourceProvider {
@@ -34,10 +34,10 @@ object ExternalResourceProvider {
 
   case class MemoizedInstance[+F[_]](ref: IdentifiedRef, finalizer: Option[OrderedFinalizer[F@uncheckedVariance]])
 
-  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F@uncheckedVariance])
+  case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F @uncheckedVariance])
 
   object PreparedShutdownRuntime {
-    def apply[F[_] : TagK](runner: DIResourceBase[Identity, Locator]) = new PreparedShutdownRuntime[F](runner, SafeType.getK[F], TagK[F])
+    def apply[F[_]: TagK](runner: DIResourceBase[Identity, Locator]) = new PreparedShutdownRuntime[F](runner, SafeType.getK[F], TagK[F])
   }
 
   object Null extends ExternalResourceProvider {
@@ -57,16 +57,16 @@ object ExternalResourceProvider {
 
     override def size: Int = 0
 
-    override def registerShutdownRuntime[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+    override def registerShutdownRuntime[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
       Quirks.forget(rt)
     }
   }
 
-  def singleton[F[_] : TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
+  def singleton[F[_]: TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
 
-  class Singleton[F[_] : TagK](
-                                memoize: IdentifiedRef => Boolean
-                              ) extends ExternalResourceProvider {
+  class Singleton[F[_]: TagK](
+                               memoize: IdentifiedRef => Boolean
+                             ) extends ExternalResourceProvider {
 
     import Singleton.{MemoizationKey, cache, registerRT}
 
@@ -94,7 +94,7 @@ object ExternalResourceProvider {
       cache.size
     }
 
-    override def registerShutdownRuntime[F1[_] : TagK](rt: => PreparedShutdownRuntime[F1]): Unit = {
+    override def registerShutdownRuntime[F1[_]: TagK](rt: => PreparedShutdownRuntime[F1]): Unit = {
       registerRT[F1](rt)
     }
   }
@@ -124,16 +124,13 @@ object ExternalResourceProvider {
       )
     )
 
-    private def registerRT[F[_] : TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
+    private def registerRT[F[_]: TagK](rt: => PreparedShutdownRuntime[F]): Unit = {
       runtimes.putIfNotExist(SafeType.getK[F], rt)
     }
 
+    private[Singleton] type FakeF[T]
 
     private def stop(): Unit = {
-      object fake {
-        type FakeF[T]
-      }
-      import fake.FakeF
 
       runtimes.enumerate().foreach {
         case (rtType, rt) =>
