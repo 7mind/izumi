@@ -72,17 +72,17 @@ docker run -ti --rm septimalmind/izumi-env
 Then try this snippet:
 
 ```bash
-export COMPILER="com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$"
-export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots
+export COMPILER="io.7mind.izumi:idealingua-v1-compiler_2.12:$izumi.version$"
+export S_REPOSITORY=https://oss.sonatype.org/content/repositories/snapshots 
 export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 
 # create sample project in `testproject` directory
-coursier launch -E '*:*' -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- -i testproject
-
-cd testproject
+coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject 
 
 # compile Scala and Typescript projects using all the defaults
-coursier launch -E '*:*' -r S_REPOSITORY -r $R_REPOSITORY $COMPILER -- typescript scala go csharp
+coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :scala :typescript
+
+cd testproject 
 
 # Run SBT on generated Scala project
 pushd .
@@ -90,12 +90,15 @@ cd target/scala
 sbt package
 popd
 
-# Run SBT on generated Typescript project
+# Run tsc on generated Typescript project
 pushd .
 cd target/typescript
 yarn install
 tsc
 popd
+
+apt install -y mc
+mc
 ```
 
 ## Example Project
