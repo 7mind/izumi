@@ -79,10 +79,10 @@ export R_REPOSITORY=https://oss.sonatype.org/content/repositories/releases
 # create sample project in `testproject` directory
 coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :init testproject 
 
+cd testproject 
+
 # compile Scala and Typescript projects using all the defaults
 coursier launch -r $S_REPOSITORY -r $R_REPOSITORY $COMPILER -- :scala :typescript
-
-cd testproject 
 
 # Run SBT on generated Scala project
 pushd .
