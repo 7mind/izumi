@@ -5,6 +5,19 @@ import scala.language.implicitConversions
 
 trait BIOSyntax {
 
+  /**
+   * A convenient dependent summoner for BIO* hierarchy.
+   * Auto-narrows to the most powerful available class:
+   *
+   * {{{
+   *   def y[F[+_, +_]: BIOAsync] = {
+   *     F.timeout(5.seconds)(F.forever(F.unit))
+   *   }
+   * }}}
+   *
+   * */
+  @inline final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
+
   @inline implicit final def ToFunctorOps[F[_, + _] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
   @inline implicit final def ToBifunctorOps[F[+ _, + _] : BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
   @inline implicit final def ToApplicativeOps[F[+ _, + _] : BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
