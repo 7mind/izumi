@@ -86,7 +86,7 @@ object DIEffect
     override def fail[A](t: => Throwable): Identity[A] = throw t
   }
 
-  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): DIEffect[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]: BIO]: DIEffect[F[Throwable, ?]] = {
     type E = Throwable
     new DIEffect[F[Throwable, ?]] {
       import BIO._
