@@ -1,8 +1,10 @@
 package com.github.pshirshov.izumi.fundamentals.bio
 
-import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad}
 import org.scalatest.WordSpec
+
+import scala.concurrent.duration._
 
 class BIOSyntaxTest extends WordSpec {
 
@@ -28,6 +30,22 @@ class BIOSyntaxTest extends WordSpec {
     }
 
     x[zio.IO]
+  }
+
+  "F summoner examples" in {
+    def x[F[+_, +_]: BIOMonad] = {
+      F.when(false)(F.unit)
+    }
+    def y[F[+_, +_]: BIOAsync] = {
+      F.timeout(F.forever(F.unit))(5.seconds)
+    }
+    def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
+      F.map(z[F])(_ => ())
+    }
+    lazy val a = x
+    lazy val b = y[zio.IO](_: BIOAsync[zio.IO])
+    lazy val c = z
+    lazy val _ = (a, b, c)
   }
 
 }

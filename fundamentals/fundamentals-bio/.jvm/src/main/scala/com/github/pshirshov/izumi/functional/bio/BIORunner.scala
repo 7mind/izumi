@@ -53,7 +53,7 @@ object BIORunner {
         case BIOExit.Success(value) =>
           value
 
-        case BIOExit.Error(error, trace) =>
+        case BIOExit.Error(error, _) =>
           error match {
             case t: Throwable =>
               throw t
@@ -61,7 +61,7 @@ object BIORunner {
               throw FiberFailure(Cause.fail(o))
           }
 
-        case BIOExit.Termination(compoundException, _, trace) =>
+        case BIOExit.Termination(compoundException, _, _) =>
           throw compoundException
       }
     }
