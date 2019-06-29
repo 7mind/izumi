@@ -464,13 +464,10 @@ lazy val sbtIzumiDeps = inSbt.as
   .module
   .settings(withBuildInfo("com.github.pshirshov.izumi.sbt.deps", "Izumi"))
 
-lazy val sbtIdealingua = inSbt.as
-  .module
-  .depends(idealinguaV1CompilerDeps: _*)
 
 lazy val sbtTests = inSbt.as
   .module
-  .depends(sbtIzumiDeps, sbtIzumi, sbtIdealingua)
+  .depends(sbtIzumiDeps, sbtIzumi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
   logstageCore,
@@ -505,7 +502,7 @@ lazy val fundamentalsJvm: Seq[ProjectReference] = Seq(
 )
 
 lazy val izsbt: Seq[ProjectReference] = Seq(
-  sbtIzumi, sbtIdealingua, sbtTests, sbtIzumiDeps
+  sbtIzumi, sbtTests, sbtIzumiDeps
 )
 
 lazy val idealinguaV1Js: Seq[ProjectReference] = Seq(
