@@ -7,41 +7,39 @@ object IzumiDeps {
   object V {
     // foundation
     val scala_212 = "2.12.8"
-    val scala_213 = "2.13.0-M5"
+    val scala_213 = "2.13.0"
 
-    val collection_compat = "1.0.0"
+    val collection_compat = "2.1.1"
 
-    val kind_projector = "0.10.0" // 2.13+
-    val scalatest = "3.0.8" // 2.13+
+    val kind_projector = "0.10.3"
+    val scalatest = "3.0.8"
 
-    val shapeless = "2.3.3" // 2.13+
+    val shapeless = "2.3.3"
 
-    val cats = "1.6.1" // 1.2.0 is 2.13+ but we are blocked by http4s
-    val cats_effect = "1.3.1"
+    val cats = "2.0.0-M4"
     val zio = "1.0.0-RC8-12"
 
-    val circe = "0.11.1" // 2.13+
-    val circe_derivation = "0.11.0-M1"
+    val circe = "0.12.0-M3"
     val jawn = "0.14.2"
-    val http4s = "0.20.1" // https://github.com/http4s/http4s/issues/1797
 
-    val scalameta = "4.1.9" // https://github.com/scalameta/scalameta/issues/1693
-    val fastparse = "2.1.2" // https://github.com/lihaoyi/fastparse/issues/188
+    val http4s = "0.21.0-M1"
 
-    //val scalacheck = "1.14.0"
-
-    // java, we need it bcs http4s ws client isn't ready yet
-    // https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j
-    val asynchttpclient = "2.8.1"
-
-    val classgraph = "4.8.25" // java
-    val slf4j = "1.7.26" // java
-    val typesafe_config = "1.3.4" // java
-
-    // good to drop - java
-    val cglib_nodep = "3.2.12" // java
+    val scalameta = "4.2.0"
+    val fastparse = "2.1.3"
 
     val scala_xml = "1.2.0"
+
+    // java-only dependencies below
+    // java, we need it bcs http4s ws client isn't ready yet
+    val asynchttpclient = "2.10.1"
+
+    val classgraph = "4.8.43"
+    val slf4j = "1.7.26"
+    val typesafe_config = "1.3.4"
+
+    // good to drop - java
+    val cglib_nodep = "3.2.12"
+
   }
 
   object R {
@@ -66,7 +64,7 @@ object IzumiDeps {
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
 
     val cats_core = "org.typelevel" %% "cats-core" % V.cats
-    val cats_effect = "org.typelevel" %% "cats-effect" % V.cats_effect
+    val cats_effect = "org.typelevel" %% "cats-effect" % V.cats
     val cats_all: Seq[ModuleID] = Seq(
       cats_core
       , cats_effect
@@ -81,20 +79,14 @@ object IzumiDeps {
 
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
 
-    val circe: Seq[ModuleID] = (Seq(
-      "io.circe" %% "circe-core"
-      , "io.circe" %% "circe-generic"
-      , "io.circe" %% "circe-generic-extras"
-      , "io.circe" %% "circe-parser"
-      , "io.circe" %% "circe-literal"
-    ).map(_ % V.circe) ++ Seq(
-      "io.circe" %% "circe-derivation" % V.circe_derivation exclude("io.circe", "circe-core"))
-      ).map(
-      _.exclude("org.typelevel", "cats-kernel")
-        .exclude("org.typelevel", "cats-core")
-    ) ++ Seq(
-      cats_core
-    )
+    val circe: Seq[ModuleID] = Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-generic-extras",
+      "io.circe" %% "circe-parser",
+      "io.circe" %% "circe-literal",
+      "io.circe" %% "circe-derivation",
+    ).map(_ % V.circe)
 
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"

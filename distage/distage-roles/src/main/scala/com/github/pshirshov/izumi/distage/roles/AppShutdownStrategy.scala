@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.roles
 
 import java.util.concurrent.CountDownLatch
 
-import cats.effect.{IO, LiftIO}
+import cats.effect.{ContextShift, IO, LiftIO}
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.logstage.api.IzLogger
@@ -92,6 +92,8 @@ class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionC
         logger.info("Going to shut down...")
     }
 
-    LiftIO[F].liftIO(IO.fromFuture(IO.pure(f)))
+    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
+    val fio = IO.fromFuture(IO.pure(f))
+    LiftIO[F].liftIO(fio)
   }
 }

@@ -86,29 +86,6 @@ val SbtSettings = new SettingsGroup {
   ).flatten
 }
 
-val ShadingSettings = new SettingsGroup {
-  override val id = SettingsGroupId("ShadingSettings")
-
-  override val plugins: Set[Plugins] = Set(ShadingPlugin)
-
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    inConfig(_root_.coursier.ShadingPlugin.Shading)(PgpSettings.projectSettings ++ IzumiPublishingPlugin.projectSettings) ++
-      _root_.coursier.ShadingPlugin.projectSettings ++
-      Seq(
-        publish := publish.in(Shading).value,
-        publishLocal := publishLocal.in(Shading).value,
-        PgpKeys.publishSigned := PgpKeys.publishSigned.in(Shading).value,
-        PgpKeys.publishLocalSigned := PgpKeys.publishLocalSigned.in(Shading).value,
-        shadingNamespace := "izumi.shaded",
-        shadeNamespaces ++= Set(
-          "fastparse",
-          "sourcecode"
-          //            , "net.sf.cglib"
-        )
-      )
-  ).flatten
-}
-
 val WithoutBadPlugins = new SettingsGroup {
   override val id = SettingsGroupId("WithoutBadPlugins")
 
@@ -151,10 +128,6 @@ lazy val inDoc = In("doc")
 lazy val base = Seq(GlobalSettings, LibSettings, WithoutBadPlugins)
 
 lazy val inFundamentals = In("fundamentals")
-  .settingsSeq(base)
-
-lazy val inShade = In("shade")
-  .settings(ShadingSettings)
   .settingsSeq(base)
 
 lazy val inSbt = In("sbt")
@@ -395,23 +368,17 @@ lazy val logstageSinkSlf4j = inLogStage.as.module
     logstageCore.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
-//-----------------------------------------------------------------------------
-
-lazy val fastparseShaded = inShade.as.module
-  .settings(libraryDependencies ++= Seq(R.fastparse % "shaded"))
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 lazy val idealinguaV1Model = inIdealinguaV1X.as.cross(platforms)
 lazy val idealinguaV1ModelJvm = idealinguaV1Model.jvm.remember
 lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
 
 lazy val idealinguaV1Core = inIdealinguaV1X.as.cross(platforms)
+  .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
   .depends(idealinguaV1Model)
 lazy val idealinguaV1CoreJvm = idealinguaV1Core.jvm.remember
-  .depends(fastparseShaded)
-  .settings(ShadingSettings)
 lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
-  .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
+
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
   .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
@@ -433,7 +400,6 @@ lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
     fundamentalsJsonCirce,
   )
 lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
-  .settings(ShadingSettings)
   .settings(
     // FIXME: workaround for broken classpath on sbt 1.3.0-RC2 (ClassLoaderLayeringStrategy.Flat doesn't help)
     fork in Test := true,
@@ -519,7 +485,6 @@ lazy val distage: Seq[ProjectReference] = Seq(
 )
 
 lazy val idealinguaV1: Seq[ProjectReference] = Seq(
-  fastparseShaded,
   idealinguaV1ModelJvm,
   idealinguaV1CoreJvm,
   idealinguaV1TranspilersJvm,
