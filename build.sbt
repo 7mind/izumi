@@ -19,6 +19,8 @@ developers in ThisBuild := List(
 )
 scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
 
+scapegoatVersion in ThisBuild := "1.3.8"
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
   inquireVersions, // : ReleaseStep
