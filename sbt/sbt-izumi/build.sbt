@@ -41,8 +41,5 @@ addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.0")
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")
 
-// https://github.com/sksamuel/sbt-scapegoat
-addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.9")
-
 // https://github.com/sbt/sbt-duplicates-finder
 addSbtPlugin("org.scala-sbt" % "sbt-duplicates-finder" % "0.8.1")
