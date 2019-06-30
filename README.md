@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE) 
 [![Gitter](https://badges.gitter.im/7mind/izumi.svg)](https://gitter.im/7mind/izumi)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
-[![Latest version](https://index.scala-lang.org/pshirshov/izumi-r2/izumi-r2/latest.svg?color=orange)](https://index.scala-lang.org/pshirshov/izumi-r2/izumi-r2)
+[![Latest version](https://index.scala-lang.org/7mind/izumi/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
 ![:3](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
 ![:3](https://img.shields.io/badge/😿-For%20Humans-blue.svg)
 ![:3](https://img.shields.io/badge/🏢-Enterprise%20Grade-999999.svg)
