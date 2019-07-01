@@ -64,9 +64,14 @@ class SafeType0[U <: SingletonUniverse](
   override final def equals(obj: Any): Boolean = {
     obj match {
       case that: SafeType0[U] @unchecked =>
-        dealiased =:= that.dealiased ||
-          singletonFreeTermHeuristicEq(dealiased, that.dealiased) ||
-          freeTermPrefixTypeSuffixHeuristicEq(_ =:= _, dealiased, that.dealiased)
+        (tpe eq that.tpe) ||
+          // Synchronizing =:= too just in case...
+          // https://github.com/scala/bug/issues/10766
+          SafeType0.synchronized {
+            dealiased =:= that.dealiased ||
+              singletonFreeTermHeuristicEq(dealiased, that.dealiased) ||
+              freeTermPrefixTypeSuffixHeuristicEq(_ =:= _, dealiased, that.dealiased)
+          }
       case _ =>
         false
     }
@@ -86,9 +91,7 @@ class SafeType0[U <: SingletonUniverse](
 }
 
 object SafeType0 {
-
   def apply[U <: SingletonUniverse](u: U, tpe: U#Type): SafeType0[U] = new SafeType0[U](u, tpe)
-
   def apply(tpe: ru.Type): SafeType0[ru.type] = new SafeType0[ru.type](ru, tpe)
 
   def get[T: ru.TypeTag]: SafeType0[ru.type] = new SafeType0[ru.type](ru, ru.typeOf[T])
