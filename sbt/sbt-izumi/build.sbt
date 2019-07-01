@@ -6,7 +6,7 @@ libraryDependencies ++= Seq(
 sbtPlugin := true
 
 // https://github.com/coursier/coursier#sbt-plugin
-addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M14-4")
 
 // https://github.com/scoverage/sbt-scoverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
