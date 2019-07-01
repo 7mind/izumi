@@ -7,4 +7,3 @@ lazy val pluginVersion = if (sys.props.isDefinedAt("plugin.version")) {
 updateOptions := updateOptions.value.withLatestSnapshots(false)
 
 addSbtPlugin("io.7mind.izumi" % "sbt-izumi-deps" % pluginVersion)
-addSbtPlugin("io.7mind.izumi" %% "sbt-izumi" % pluginVersion)

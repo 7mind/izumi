@@ -1,13 +1,14 @@
 package com.github.pshirshov.izumi.fundamentals.graphs
 
 import scala.annotation.tailrec
+import scala.collection.immutable
 
 class Toposort {
 
   import Toposort._
 
   @tailrec
-  final def cycleBreaking[T](toPreds: Map[T, scala.collection.immutable.Set[T]], done: Seq[T], break: Set[T] => T): Either[InconsistentInput[T], Seq[T]] = {
+  final def cycleBreaking[T](toPreds: Map[T, Set[T]], done: Seq[T], break: immutable.Set[T] => T): Either[InconsistentInput[T], Seq[T]] = {
     val (noPreds, hasPreds) = toPreds.partition {
       _._2.isEmpty
     }
@@ -18,11 +19,11 @@ class Toposort {
       } else { // circular dependency
         val loopMembers = hasPreds.filterKeys(isInvolvedIntoCycle(hasPreds))
         if (loopMembers.nonEmpty) {
-          val breakLoopAt = break(loopMembers.keySet)
+          val breakLoopAt = break(loopMembers.keySet.toSet)
           val found = Set(breakLoopAt)
           val next = hasPreds.filterKeys(k => k != breakLoopAt).mapValues(_ -- found).toMap
 
-          cycleBreaking(next, done ++ found, break) // 2.13 compat
+          cycleBreaking(next, done ++ found, break)
         } else {
           Left(InconsistentInput(hasPreds))
         }
@@ -30,15 +31,15 @@ class Toposort {
     } else {
       val found = noPreds.keySet
       val next = hasPreds.mapValues(_ -- found).toMap
-      cycleBreaking(next, done ++ found, break) // 2.13 compat
+      cycleBreaking(next, done ++ found, break)
     }
   }
 
-  private def isInvolvedIntoCycle[T](toPreds: Map[T, scala.collection.immutable.Set[T]])(key: T): Boolean = {
+  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
     test(toPreds, Set.empty, key, key)
   }
 
-  private def test[T](toPreds: Map[T, scala.collection.immutable.Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
     val deps = toPreds.getOrElse(toTest, Set.empty)
 
     if (deps.contains(needle)) {
@@ -59,7 +60,7 @@ class Toposort {
 
 object Toposort {
 
-  final case class InconsistentInput[T](issues: Map[T, scala.collection.immutable.Set[T]])
+  final case class InconsistentInput[T](issues: Map[T, Set[T]])
 
 }
 
