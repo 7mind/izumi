@@ -11,15 +11,24 @@ import scala.util.{Failure, Success}
 
 
 object ProjectAttributeMacro {
-  def extractSbtProjectVersion(): Option[String] = macro readProjectFile
+  def extractSbtProjectGroupId(): Option[String] = macro extractSbtProjectGroupIdMacro
 
-  def readProjectFile(c: blackbox.Context)(): c.Expr[Option[String]] = {
+  def extractSbtProjectVersion(): Option[String] = macro extractSbtProjectVersionMacro
+
+  def extractSbtProjectGroupIdMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extract(c, "attributes.sbt", "organization")
+  }
+
+  def extractSbtProjectVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extract(c, "version.sbt", "version")
+
+  }
+
+  private def extract(c: blackbox.Context, attrFile: String, attrname: String): c.Expr[Option[String]] = {
     val srcPath = Paths.get(c.enclosingPosition.source.path)
-    import c.universe._
-
     val result = for {
       root <- projectRoot(srcPath)
-      versionFile <- maybeFile(root.resolve("version.sbt"))
+      versionFile <- maybeFile(root.resolve(attrFile))
       content <- scala.util.Try(new String(Files.readAllBytes(versionFile), StandardCharsets.UTF_8)) match {
         case Failure(exception) =>
           c.warning(c.enclosingPosition, s"Failed to read $versionFile: ${exception.stackTrace}")
@@ -27,18 +36,40 @@ object ProjectAttributeMacro {
         case Success(value) =>
           Some(value)
       }
-      parts = content.split('"')
-      out <- if (parts.length == 3) {
-        Some(parts(1))
-      } else {
-        c.warning(c.enclosingPosition, s"Unexpected version file content: $content")
-        None
+      parts = parse(content)
+      out <- parts.get(attrname) match {
+        case Some(value) =>
+          Some(value)
+        case None =>
+          c.warning(c.enclosingPosition, s"Unexpected version file content: $content")
+          None
       }
     } yield {
       out
     }
+    import c.universe._
 
     c.Expr[Option[String]](q"$result")
+
+  }
+
+  def parse(content: String): Map[String, String] = {
+    content.split("\n").flatMap {
+      c =>
+        val parts = c.split("\\:\\=").map(_.trim)
+        if (parts.length == 2) {
+          val name = parts.head.split(' ').head
+          val value = parts.last
+          val v = if (value.startsWith("\"") && value.endsWith("\"")) {
+            value.substring(1, value.length - 1)
+          } else {
+            value
+          }
+          Seq(name -> v)
+        } else {
+          Seq.empty
+        }
+    }.toMap
   }
 
   private def maybeFile(p: Path): Option[Path] = {
