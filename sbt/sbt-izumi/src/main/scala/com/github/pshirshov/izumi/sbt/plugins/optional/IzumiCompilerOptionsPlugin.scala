@@ -65,7 +65,6 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
         , "-Xsource:2.13"
         , "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString
         , "-opt-warnings:_"
-        , "-Ywarn-extra-implicit"
         , "-Ywarn-unused:_"
         , "-Yno-adapted-args"
         , "-explaintypes" // Explain type errors in more detail.
@@ -97,7 +96,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
         , "-Ywarn-nullary-override" // Warn when non-nullary `def f()' overrides nullary `def f'.
         , "-Ywarn-nullary-unit" // Warn when nullary methods return Unit.
         , "-Ywarn-numeric-widen" // Warn when numerics are widened.
-        , "-Ywarn-self-implicit"
+        //, "-Ywarn-self-implicit"
         , "-Ywarn-unused-import" // Warn when imports are unused.
         , "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
 
