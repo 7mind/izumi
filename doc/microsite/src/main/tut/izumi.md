@@ -4,11 +4,15 @@ out: index.html
 Izumi Project
 =============
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
+Izumi (*jap. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
 
-[Github](https://github.com/7mind/izumi)
+including the following components:
+
+1. @ref[**distage**](distage/00_distage.md) – Staged, transparent and debuggable runtime & compile-time Dependency Injection Framework,
+2. @ref[**logstage**](logstage/00_logstage.md) – Automatic structural logs from Scala string interpolations,
+3. @ref[**idealingua**](idealingua/00_idealingua.md) – API Definition, Data Modeling and RPC Language, optimized for fast prototyping – like gRPC, but with a human face. Currently generates servers and clients for Go, TypeScript, C# and Scala,
+4. @ref[**Opinionated SBT plugins**](sbt/00_sbt.md) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven),
+5. @ref[**Percept-Plan-Execute-Repeat (PPER)**](pper/00_pper.md) – a pattern that enables modeling very complex domains and orchestrate deadly complex processes a lot easier than you're used to.
 
 Dependencies
 ------------
@@ -18,45 +22,50 @@ To use @ref[Izumi SBT Toolkit](sbt/00_sbt.md) add the following into `project/bu
 @@@vars
 ```scala
 val izumi_version = "$izumi.version$"
+
 // sbt toolkit
 addSbtPlugin("io.7mind.izumi" % "sbt-izumi" % izumi_version)
 
-// This is Izumi's BOM (Bill of Materials), see below
+// This is Izumi Bill of Materials, see below
 addSbtPlugin("io.7mind.izumi" % "sbt-izumi-deps" % izumi_version)
-
-// idealingua compiler (optional)
-addSbtPlugin("io.7mind.izumi" % "sbt-idealingua" % izumi_version)
 ```
 @@@
 
 
 You can use izumi's `BOM` definitions to import (from @ref[`sbt-izumi-deps` plugin](sbt/00_sbt.md#bills-of-materials)). BOM will insert the correct version automatically:
 
+@ref[**distage**](distage/00_distage.md) modules:
+
 ```scala
 libraryDependencies ++= Seq(
-  
-  // distage
-    Izumi.R.distage_core
-  , Izumi.R.distage_config // Typesafe Config support
-  , Izumi.R.distage_cats // Cats Integration
-  , Izumi.R.distage_static // Compile-time checks & reflection-less mode
-  , Izumi.R.distage_plugins // runtime Plugins support
-  , Izumi.R.logstage_di // LogStage integration
-  , Izumi.R.distage_app  // DiApp
-  , Izumi.R.distage_roles  // Roles
-  
-  // LogStage
-  , Izumi.R.logstage_core
-  , Izumi.R.logstage_zio // ZIO Integration (log current FiberId)
-  , Izumi.R.logstage_cats // Cats Integration
-  , Izumi.R.logstage_adapter_slf4j // Route Slf4J logs to logstage
-  , Izumi.R.logstage_rendering_circe // dump structured log as JSON
-  , Izumi.R.logstage_sink_slf4j // write to slf4j
-  
-  // Idealingua Runtime Dependencies (for use with Idealingua compiler)
-  , Izumi.R.idealingua_runtime_rpc_http4s
-  , Izumi.R.idealingua_runtime_rpc_scala
-  , Izumi.R.idealingua_model
+  Izumi.R.distage_core, // Core DIStage library
+  Izumi.T.distage_testkit,  // Testkit for ScalaTest
+  Izumi.R.distage_static, // Compile-time checks & reflection-less mode
+  Izumi.R.distage_config, // Typesafe Config support
+  Izumi.R.distage_plugins, // Classpath discovery support
+  Izumi.R.distage_roles,  // Roles & Application entrypoint framework
+)
+```
+
+@ref[**logstage**](logstage/00_logstage.md) modules:
+
+```scala
+libraryDependencies ++= Seq(
+  Izumi.R.logstage_core, // Core LogStage library
+  Izumi.R.logstage_config, // Configure LogStage with Typesafe Config
+  Izumi.R.logstage_di, // LogStage integration with DIStage
+  Izumi.R.logstage_adapter_slf4j, // Route Slf4J logs to LogStage
+  Izumi.R.logstage_sink_slf4j, // Route LogStage logs to Slf4J
+  Izumi.R.logstage_rendering_circe, // Write logs as JSON
+)
+```
+
+@ref[**IdeaLingua**](idealingua/00_idealingua.md) modules:
+
+```scala
+// Idealingua Runtime Dependencies (for use with the Idealingua compiler)
+libraryDependencies ++= Seq(
+  Izumi.R.idealingua_runtime_rpc_http4s
 )
 ```
 
@@ -65,29 +74,21 @@ Alternatively, you can use the following artifact names and versions:
 @@@vars
 ```scala
 libraryDependencies ++= Seq(
-    "io.7mind.izumi" %% "distage-core" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-config" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-cats" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-testkit" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-static" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-app" % "$izumi.version$"
-  , "io.7mind.izumi" %% "distage-roles" % "$izumi.version$"
+  "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
+  "io.7mind.izumi" %% "distage-testkit" % "$izumi.version$" % Test,
+  "io.7mind.izumi" %% "distage-static" % "$izumi.version$",
+  "io.7mind.izumi" %% "distage-config" % "$izumi.version$",
+  "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$",
+  "io.7mind.izumi" %% "distage-roles" % "$izumi.version$",
+
+  "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
+  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
+  "io.7mind.izumi" %% "logstage-di" % "$izumi.version$",
+  "io.7mind.izumi" %% "logstage-adapter-slf4j " % "$izumi.version$",
+  "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
+  "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$",
   
-  , "io.7mind.izumi" %% "logstage-core" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-adapter-slf4j " % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-config" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-config-di" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-cats" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-zio" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-api" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-di" % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$"
-  , "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$"
-  
-  , "io.7mind.izumi" %% "idealingua-v1-model" % "$izumi.version$"
-  , "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-scala" % "$izumi.version$"
-  , "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$"
+  "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$",
 )
 ```
 @@@
@@ -96,10 +97,12 @@ You can find ScalaDoc API docs @scaladoc[here](izumi.index)
 
 You can find Izumi on github [here](https://github.com/7mind/izumi)
 
+Latest SNAPSHOT documentation [here](https://izumi.7mind.io/latest/snapshot/doc/)
+
 @@@ index
 
 * [Idealingua](idealingua/00_idealingua.md)
-* [DiStage](distage/00_distage.md)
+* [distage](distage/00_distage.md)
 * [LogStage](logstage/00_logstage.md)
 * [SBT Plugins](sbt/00_sbt.md)
 * [Productivity and challenges](manifesto/00_manifesto.md)
