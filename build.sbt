@@ -229,20 +229,23 @@ lazy val WithFundamentalsX = new SettingsGroup {
 // --------------------------------------------
 
 lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
-  .depends(fundamentalsReflection)
+  .depends(fundamentalsReflectionJvm)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
     )
   )
 
-lazy val fundamentalsReflection = inFundamentals.as.module
-  .depends(fundamentalsPlatformJvm)
+lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
+  .depends(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value
     )
   )
+
+lazy val fundamentalsReflectionJvm = fundamentalsReflection.jvm.remember
+lazy val fundamentalsReflectionJs = fundamentalsReflection.js.remember
 
 lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
@@ -256,7 +259,7 @@ lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
 //-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
   .depends(
-    fundamentalsReflection,
+    fundamentalsReflectionJvm,
     fundamentalsBioJvm, // all deps there are optional
   )
   .settings(
@@ -326,7 +329,7 @@ lazy val distageTestkit = inDiStage.as.module
 //-----------------------------------------------------------------------------
 
 lazy val logstageApi = inLogStage.as.module
-  .depends(fundamentalsReflection)
+  .depends(fundamentalsReflectionJvm)
 
 lazy val logstageCore = inLogStage.as.module
   .depends(logstageApi, fundamentalsBioJvm)
@@ -516,6 +519,7 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
   fundamentalsPlatformJs,
   fundamentalsBioJs,
   fundamentalsJsonCirceJs,
+  fundamentalsReflectionJs,
 )
 
 lazy val allJsProjects = fundamentalsJs ++
