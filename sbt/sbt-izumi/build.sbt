@@ -9,7 +9,7 @@ sbtPlugin := true
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")
 
 // https://github.com/scoverage/sbt-scoverage
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
 
 // http://www.scala-sbt.org/sbt-pgp/
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
