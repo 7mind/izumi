@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
 
+import com.github.pshirshov.izumi.fundamentals.reflection.ProjectAttributeMacro
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
 import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
 import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
@@ -11,6 +12,7 @@ case class RawExpr(e: String)
 
 class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter {
   private val naming = new ScalaNamingConvention(options.manifest.sbt.projectNaming)
+  private val idlcGroupId = ProjectAttributeMacro.extractSbtProjectGroupId().getOrElse("UNSET-GROUP-ID")
 
   override def layout(outputs: Seq[Translated]): Layouted = {
     val modules = options.manifest.layout match {
@@ -26,7 +28,7 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
               .map(m => ExtendedModule.DomainModule(did, m))
         }
 
-        val rtid = DomainId("com.github.pshirshov.izumi.idealingua.runtime".split('.'), "irt")
+        val rtid = DomainId(idlcGroupId.split('.'), "irt")
 
         val runtimeModules = asSbtModule(toRuntimeModules(options).map(_.module), rtid)
           .map(m => ExtendedModule.RuntimeModule(m))
@@ -84,8 +86,8 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val idlVersion = options.manifest.common.izumiVersion
         val deps = Seq("libraryDependencies" -> Append(
           Seq(
-            RawExpr(s""" "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-scala" % "$idlVersion" """),
-            RawExpr(s""" "io.7mind.izumi" %% "idealingua-v1-model" % "$idlVersion" """),
+            RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-runtime-rpc-scala" % "$idlVersion" """),
+            RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-model" % "$idlVersion" """),
 
           )
         ))

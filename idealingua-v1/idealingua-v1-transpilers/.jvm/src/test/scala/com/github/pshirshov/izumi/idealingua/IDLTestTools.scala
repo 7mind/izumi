@@ -25,7 +25,9 @@ import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.Scala
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
 import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpNamingConvention
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
 
 import scala.sys.process._
 
@@ -86,19 +88,84 @@ object IDLTestTools {
 
     val cmd = layout match {
       case ScalaProjectLayout.PLAIN =>
-        Seq(
-          "scalac"
-          , "-deprecation"
-          , "-opt-warnings:_"
-          , "-d", out.phase2Relative.toString
-          , "-classpath", classpath
-        ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
+        if (IzFiles.haveExecutables("docker")) {
+          dockerRun(out, classpath)
+        } else {
+          directRun(out, classpath)
+        }
+
       case ScalaProjectLayout.SBT =>
         Seq("sbt", "clean", "compile")
     }
 
     val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
     exitCode == 0
+  }
+
+  private def mapF(v: Iterable[String], prefix: String) = {
+    v.map {
+      cpe =>
+        val p = Paths.get(cpe)
+        val target = s"/$prefix/${p.getParent.toString.hashCode().toLong + Int.MaxValue}/${p.getFileName.toString}"
+        (Seq("-v", s"'$cpe:$target:ro'"), target)
+    }
+  }
+
+  private def dockerRun(out: CompilerOutput, classpath: String) = {
+    val v = classpath.split(':')
+    val cp = mapF(v, "cp")
+
+    val cpe = cp.flatMap(_._1)
+    val scp = cp.map(_._2).mkString(":")
+
+    val flags = if (false) {
+      Seq(
+        "-Wunused:_",
+        "-Werror",
+      )
+    } else {
+      Seq(
+        "-Ywarn-unused:_",
+        "-Xfatal-warnings",
+      )
+    }
+
+    val dcp = Seq(
+      "docker",
+      "run",
+      "--rm"
+    ) ++ cpe ++
+      Seq(
+        "-v", s"'${out.absoluteTargetDir}:/work:Z'",
+        "septimalmind/izumi-env",
+
+        "scalac",
+        "-J-Xmx2g",
+        "-language:higherKinds",
+
+
+        "-unchecked",
+        "-feature",
+        "-deprecation",
+
+        "-Xlint:_",
+      ) ++
+      flags ++
+      Seq(
+        "-classpath", scp,
+      ) ++ out.relativeOutputs.filter(_.endsWith(".scala")).map(t => s"'$t'")
+
+    dcp
+  }
+
+  private def directRun(out: CompilerOutput, classpath: String) = {
+    Seq(
+      "scalac"
+      , "-deprecation"
+      , "-opt-warnings:_"
+      , "-d", out.phase2Relative.toString
+      , "-classpath", classpath
+    ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
   }
 
   def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], layout: TypeScriptProjectLayout, extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
@@ -251,26 +318,40 @@ object IDLTestTools {
       }
   }
 
-  private def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
-    val cmdlog = workDir.getParent.resolve(s"$cname.sh")
-    val commands = Seq(s"cd ${workDir.toAbsolutePath}") ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq(cmd.mkString(" "))
+  protected def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
+    val cmdscript = workDir.getParent.resolve(s"$cname.sh").toAbsolutePath
+    val commands = Seq(
+      "#!/bin/bash -xe",
+      s"cd ${workDir.toAbsolutePath}",
+    ) ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq("env") ++ Seq(cmd.mkString("", " \\\n  ", "\n"))
+
     val cmdSh = commands.mkString("\n")
-    Files.write(cmdlog, cmdSh.getBytes)
+
+    Files.write(cmdscript, cmdSh.getBytes)
 
     val log = workDir.getParent.resolve(s"$cname.log").toFile
     val logger = ProcessLogger(log)
-    val exitCode = try {
-      Process(cmd, Some(workDir.toFile), env.toSeq: _*)
-        .run(logger)
-        .exitValue()
-    } finally {
-      logger.close()
+    val exitCode = Timed {
+      try {
+        Process(Seq("/bin/bash", cmdscript.toString), Some(workDir.toFile), env.toSeq: _*)
+          .run(logger)
+          .exitValue()
+      } finally {
+        logger.close()
+      }
     }
 
-    if (exitCode != 0) {
+    System.out.println(s"Done in ${exitCode.duration} ${exitCode.duration.readable}")
+
+    if (exitCode.value != 0) {
+      System.out.flush()
+      System.err.flush()
+      System.out.println(cmdSh)
+      System.out.flush()
       System.err.println(s"Process failed for $cname: $exitCode")
-      println(cmdSh)
-      System.err.println(IzFiles.readString(log))
+      System.err.flush()
+      System.out.println(IzFiles.readString(log))
+      System.out.flush()
     }
     exitCode
   }

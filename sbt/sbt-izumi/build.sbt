@@ -9,7 +9,7 @@ sbtPlugin := true
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.1.0-M8")
 
 // https://github.com/scoverage/sbt-scoverage
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
 
 // http://www.scala-sbt.org/sbt-pgp/
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
@@ -27,7 +27,7 @@ addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.5")
 
 // https://github.com/sbt/sbt-release
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.9")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.11")
 
 // https://github.com/jrudolph/sbt-dependency-graph
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
@@ -35,14 +35,11 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 // https://github.com/laughedelic/sbt-publish-more // TODO: signed publishers: https://github.com/laughedelic/sbt-publish-more/issues/7
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
-//https://github.com/aiyanbo/sbt-dependency-updates
-addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.0")
-
 // https://github.com/portable-scala/sbt-crossproject
-addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")
-
-// https://github.com/sksamuel/sbt-scapegoat
-addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.9")
+addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.1")
 
 // https://github.com/sbt/sbt-duplicates-finder
 addSbtPlugin("org.scala-sbt" % "sbt-duplicates-finder" % "0.8.1")
+
+////https://github.com/aiyanbo/sbt-dependency-updates
+//addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.0")

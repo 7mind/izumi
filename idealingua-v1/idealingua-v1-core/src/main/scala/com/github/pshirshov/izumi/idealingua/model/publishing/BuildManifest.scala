@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.model.publishing
 
+import com.github.pshirshov.izumi.fundamentals.reflection.ProjectAttributeMacro
 import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest._
 
 trait BuildManifest {
@@ -66,7 +67,7 @@ object BuildManifest {
       licenses = List(License("MIT", MFUrl("https://opensource.org/licenses/MIT"))),
       website = MFUrl("http://project.website"),
       copyright = "Copyright (C) Test Inc.",
-      izumiVersion = "UNSET-IZUMI-VERSION"
+      izumiVersion = ProjectAttributeMacro.extractSbtProjectVersion().getOrElse("UNSET-IZUMI-VERSION"),
     )
   }
 

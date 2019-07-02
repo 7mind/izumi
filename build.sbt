@@ -19,8 +19,6 @@ developers in ThisBuild := List(
 )
 scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
 
-scapegoatVersion in ThisBuild := "1.3.8"
-
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies, // : ReleaseStep
   inquireVersions, // : ReleaseStep
@@ -48,7 +46,11 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
     testOptions in Test += Tests.Argument("-oDF"),
-    addCompilerPlugin(R.kind_projector)
+    addCompilerPlugin(R.kind_projector),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+    ),    
   )
 }
 
@@ -231,20 +233,23 @@ lazy val WithFundamentalsX = new SettingsGroup {
 // --------------------------------------------
 
 lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
-  .depends(fundamentalsReflection)
+  .depends(fundamentalsReflectionJvm)
   .settings(
     libraryDependencies ++= Seq(
       R.typesafe_config
     )
   )
 
-lazy val fundamentalsReflection = inFundamentals.as.module
-  .depends(fundamentalsPlatformJvm)
+lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
+  .depends(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value
     )
   )
+
+lazy val fundamentalsReflectionJvm = fundamentalsReflection.jvm.remember
+lazy val fundamentalsReflectionJs = fundamentalsReflection.js.remember
 
 lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
@@ -258,7 +263,7 @@ lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
 //-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
   .depends(
-    fundamentalsReflection,
+    fundamentalsReflectionJvm,
     fundamentalsBioJvm, // all deps there are optional
   )
   .settings(
@@ -328,7 +333,7 @@ lazy val distageTestkit = inDiStage.as.module
 //-----------------------------------------------------------------------------
 
 lazy val logstageApi = inLogStage.as.module
-  .depends(fundamentalsReflection)
+  .depends(fundamentalsReflectionJvm)
 
 lazy val logstageCore = inLogStage.as.module
   .depends(logstageApi, fundamentalsBioJvm)
@@ -377,7 +382,7 @@ lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
 
 lazy val idealinguaV1Core = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
-  .depends(idealinguaV1Model)
+  .depends(idealinguaV1Model, fundamentalsReflection)
 lazy val idealinguaV1CoreJvm = idealinguaV1Core.jvm.remember
 lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
 
@@ -518,6 +523,7 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
   fundamentalsPlatformJs,
   fundamentalsBioJs,
   fundamentalsJsonCirceJs,
+  fundamentalsReflectionJs,
 )
 
 lazy val allJsProjects = fundamentalsJs ++

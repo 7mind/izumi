@@ -129,7 +129,7 @@ class JsonFlattener {
             case Right(_) =>
           }
         }
-        Right((buf.to[Vector], rtpe))
+        Right((buf.toVector, rtpe))
       }
 
     }

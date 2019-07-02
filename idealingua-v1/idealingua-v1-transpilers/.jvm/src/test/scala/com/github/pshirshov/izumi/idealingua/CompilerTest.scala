@@ -18,10 +18,17 @@ class CompilerTest extends WordSpec {
       assert(compilesScala(s"$id-plain-nonportable", loadDefs("/defs/scala"), ScalaProjectLayout.PLAIN))
     }
 
+    "be able to compile into scala with SBT" ignore {
+      require("sbt")
+      // we can't test sbt build: it depends on artifacts which may not exist yet
+      assert(compilesScala(s"$id-sbt", loadDefs(), ScalaProjectLayout.SBT))
+    }
+
     "be able to compile into typescript" in {
       require("tsc", "npm", "yarn")
       assert(compilesTypeScript(s"$id-plain", loadDefs(), TypeScriptProjectLayout.PLAIN))
     }
+
 
     "be able to compile into golang" in {
       require("go")
@@ -40,13 +47,6 @@ class CompilerTest extends WordSpec {
       require("tsc", "npm", "yarn")
       assert(compilesTypeScript(s"$id-yarn", loadDefs(), TypeScriptProjectLayout.YARN))
     }
-
-    "be able to compile into scala with SBT" ignore {
-      require("sbt")
-      // we can't test sbt build: it depends on artifacts which may not exist yet
-      assert(compilesScala(s"$id-sbt", loadDefs(), ScalaProjectLayout.SBT))
-    }
-
   }
 
   private def require(tools: String*) = {

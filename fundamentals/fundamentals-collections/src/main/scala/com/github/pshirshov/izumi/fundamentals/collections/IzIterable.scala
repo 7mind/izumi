@@ -10,13 +10,13 @@ class IzIterable[A, Repr[_] <: Iterable[_]](xs: Repr[A]) {
     val i = xs.iterator.asInstanceOf[Iterator[A]] // 2.13 compat, dirty
     val set = mutable.Set[B]()
     while (i.hasNext) {
-      val o = i.next
+      val o = i.next()
       val b = f(o)
       if (!set(b)) {
         set += b
         builder += o
       }
     }
-    builder.result
+    builder.result()
   }
 }

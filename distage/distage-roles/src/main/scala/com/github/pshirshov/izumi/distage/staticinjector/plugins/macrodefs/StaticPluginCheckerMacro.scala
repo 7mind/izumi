@@ -18,6 +18,7 @@ import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
 import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
+import com.github.pshirshov.izumi.fundamentals.reflection.TreeTools
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.typesafe.config.ConfigFactory
 import distage._
@@ -25,7 +26,6 @@ import io.github.classgraph.ClassGraph
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.currentMirror
 
@@ -71,7 +71,7 @@ object StaticPluginCheckerMacro {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
 
-    val pluginPath = stringLiteral(c)(c.universe)(pluginsPackage.tree)
+    val pluginPath = TreeTools.stringLiteral(c)(c.universe)(pluginsPackage.tree)
 
     val loadedPlugins = if (pluginPath == "") {
       Seq.empty
@@ -85,7 +85,7 @@ object StaticPluginCheckerMacro {
       pluginLoader.load()
     }
 
-    val configRegex = stringLiteral(c)(c.universe)(configFileRegex.tree)
+    val configRegex = TreeTools.stringLiteral(c)(c.universe)(configFileRegex.tree)
 
     val configModule = if (configRegex == "") {
       None
@@ -103,7 +103,7 @@ object StaticPluginCheckerMacro {
       Some(new ConfigModule(AppConfig(referenceConfig)))
     }
 
-    val gcRootPath = stringLiteral(c)(c.universe)(gcRoot.tree)
+    val gcRootPath = TreeTools.stringLiteral(c)(c.universe)(gcRoot.tree)
 
     val gcRootModule = if (gcRootPath == "") {
       None
@@ -111,7 +111,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[PluginBase](gcRootPath, abort))
     }
 
-    val requirementsPath = stringLiteral(c)(c.universe)(requirements.tree)
+    val requirementsPath = TreeTools.stringLiteral(c)(c.universe)(requirements.tree)
 
     val requirementsModule = if (requirementsPath == "") {
       None
@@ -119,7 +119,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val activationsVals = stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
+    val activationsVals = TreeTools.stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
 
     check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
 
@@ -197,10 +197,6 @@ object StaticPluginCheckerMacro {
     }.asInstanceOf[T]
   }
 
-  private[this] def stringLiteral(c: blackbox.Context)(u: Universe)(tree: u.Tree): String =
-    tree.collect {
-      case l: u.Literal @unchecked if l.value.value.isInstanceOf[String] => l.value.value.asInstanceOf[String] // avoid unchecked warning
-    }.headOption.getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
 
   // FIXME: move to distage-model
   // blockers: AbstractConfId

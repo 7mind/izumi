@@ -3,13 +3,12 @@ out: index.html
 ---
 
 distage: Staged Dependency Injection
-===================================
+====================================
 
 `distage` is a pragmatic module system for Scala that combines simplicity and reliability of pure FP with extreme late-binding
 and flexibility of runtime dependency injection frameworks such as Guice.
 
-`distage` is unopinionated, it's good for structuring applications written in either imperative Scala as in Akka/Play,
-or in pure FP @ref[Tagless Final Style](basics.md#tagless-final-style)
+`distage` is unopinionated, it's good for structuring applications written in either imperative Scala style or in pure FP @ref[Tagless Final Style](basics.md#tagless-final-style)
 
 ```scala mdoc:invisible
 // or with [ZIO Environment](#zio).
@@ -40,7 +39,7 @@ Why use distage?
 9. **No pressure**: 
     `distage` is non-invasive and designed to not impact the way your Scala code is written. 
     It just removes all the initialization boilerplate.
-    You don't need to learn magic tricks to write components in a distage application. 
+    You don't need to learn magic tricks to write components in a distage application.
 
 `distage` is recommended by industry leaders:
 
@@ -51,15 +50,15 @@ Why use distage?
 FAQ
 ---
 
+**Q**: how to pronounce "distage" ?
+
+**A**: 'Dee-stage'! Although, you may pronounce it however you like.
+
 **Q**: isn't it unsafe to use a runtime dependency injection framework?
 
 **A**: `distage` has static verification mechanisms allowing to achieve same level of guarantees as hand-written static code.
         Full compile-time DI support is under development.
  
-**Q**: how to pronounce "distage" ?
-
-**A**: 'Dee-stage', but you can pronounce it however you like!
-
 Further reading
 ---------------
 
