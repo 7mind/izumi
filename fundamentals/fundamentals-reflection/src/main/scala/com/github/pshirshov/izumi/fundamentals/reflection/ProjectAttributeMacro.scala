@@ -3,11 +3,28 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-
+/*
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(",")}",
+      s"-Xmacro-settings:scaltest-version=${V.scalatest}",
+    ),
+ */
 object ProjectAttributeMacro {
   def extractSbtProjectGroupId(): Option[String] = macro extractProjectGroupIdMacro
 
   def extractSbtProjectVersion(): Option[String] = macro extractProjectVersionMacro
+
+  def extractSbtVersion(): Option[String] = macro extractSbtVersionMacro
+  def extractScalatestVersion(): Option[String] = macro extractScalatestVersionMacro
+
+  def extractScalaVersions(): Option[Seq[String]] = {
+    extractScalaVersionsPrivate().map(_.split(','))
+  }
+
+  private def extractScalaVersionsPrivate(): Option[String] = macro extractScalaVersionsMacro
 
   def extract(name: String): Option[String] = macro extractAttrMacro
 
@@ -18,6 +35,18 @@ object ProjectAttributeMacro {
 
   def extractProjectGroupIdMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
     extractAttr(c, "product-group")
+  }
+
+  def extractSbtVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extractAttr(c, "sbt-version")
+  }
+
+  def extractScalatestVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extractAttr(c, "scaltest-version")
+  }
+
+  private def extractScalaVersionsMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extractAttr(c, "scala-versions")
   }
 
   def extractProjectVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
