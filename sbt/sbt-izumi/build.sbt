@@ -36,7 +36,7 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.2")
 addSbtPlugin("laughedelic" % "sbt-publish-more" % "0.1.0")
 
 // https://github.com/portable-scala/sbt-crossproject
-addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.0")
+addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "0.6.1")
 
 // https://github.com/sbt/sbt-duplicates-finder
 addSbtPlugin("org.scala-sbt" % "sbt-duplicates-finder" % "0.8.1")
