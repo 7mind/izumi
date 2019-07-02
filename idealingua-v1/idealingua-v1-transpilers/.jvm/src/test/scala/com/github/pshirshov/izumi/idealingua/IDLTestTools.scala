@@ -107,7 +107,7 @@ object IDLTestTools {
       cpe =>
         val p = Paths.get(cpe)
         val target = s"/$prefix/${p.getParent.toString.hashCode().toLong + Int.MaxValue}/${p.getFileName.toString}"
-        (Seq("-v", s"'$cpe:$target:ro'"), target)
+        (Seq("-v", s"'$cpe:$target:Z'"), target)
     }
   }
 
