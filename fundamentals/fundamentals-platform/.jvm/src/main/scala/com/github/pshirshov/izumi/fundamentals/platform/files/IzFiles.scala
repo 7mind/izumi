@@ -16,6 +16,10 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 
 object IzFiles {
+  def homedir(): String = {
+    Paths.get(System.getProperty("user.home")).toFile.getCanonicalPath
+  }
+
   def getFs(uri: URI): Try[FileSystem] = synchronized {
     Try(FileSystems.getFileSystem(uri))
       .recover {
