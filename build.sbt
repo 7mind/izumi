@@ -46,7 +46,11 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
     testOptions in Test += Tests.Argument("-oDF"),
-    addCompilerPlugin(R.kind_projector)
+    addCompilerPlugin(R.kind_projector),
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+    ),    
   )
 }
 
@@ -378,7 +382,7 @@ lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
 
 lazy val idealinguaV1Core = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
-  .depends(idealinguaV1Model)
+  .depends(idealinguaV1Model, fundamentalsReflection)
 lazy val idealinguaV1CoreJvm = idealinguaV1Core.jvm.remember
 lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
 
