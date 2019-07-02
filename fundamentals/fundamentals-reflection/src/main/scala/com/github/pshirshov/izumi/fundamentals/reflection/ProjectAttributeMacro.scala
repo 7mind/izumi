@@ -25,10 +25,10 @@ object ProjectAttributeMacro {
   }
 
   private def extractAttr(c: blackbox.Context, name: String): c.Expr[Option[String]] = {
-    val prefix = s"$name-"
+    val prefix = s"$name="
     val value = c.settings.find(_.startsWith(prefix)).map(_.stripPrefix(prefix))
     if (value.isEmpty) {
-      c.warning(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$name=<value>` into `scalac` options")
+      c.warning(c.enclosingPosition, s"Undefined macro parameter $name, add `-Xmacro-settings:$prefix<value>` into `scalac` options")
     }
 
     import c.universe._
