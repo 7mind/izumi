@@ -1,5 +1,8 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
+import java.nio.file.{Path, Paths}
+import java.time.LocalDateTime
+
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
@@ -13,18 +16,32 @@ import scala.reflect.macros.blackbox
     ),
  */
 object ProjectAttributeMacro {
+  def buildTimestamp(): LocalDateTime = macro buildTimestampMacro
+
+  def projectRoot(): Option[String] = macro findProjectRootMacro
+
   def extractSbtProjectGroupId(): Option[String] = macro extractProjectGroupIdMacro
 
   def extractSbtProjectVersion(): Option[String] = macro extractProjectVersionMacro
 
   def extractSbtVersion(): Option[String] = macro extractSbtVersionMacro
+
   def extractScalatestVersion(): Option[String] = macro extractScalatestVersionMacro
 
   def extractScalaVersions(): Option[String] = macro extractScalaVersionsMacro
 
   def extract(name: String): Option[String] = macro extractAttrMacro
 
-  def extractAttrMacro(c: blackbox.Context)(name:  c.Expr[String]): c.Expr[Option[String]] = {
+  def buildTimestampMacro(c: blackbox.Context)(): c.Expr[LocalDateTime] = {
+    import c.universe._
+
+    reify {
+      LocalDateTime.now()
+    }
+  }
+
+
+  def extractAttrMacro(c: blackbox.Context)(name: c.Expr[String]): c.Expr[Option[String]] = {
     val nameStr = TreeTools.stringLiteral(c)(c.universe)(name.tree)
     extractAttr(c, nameStr)
   }
@@ -58,6 +75,30 @@ object ProjectAttributeMacro {
 
     import c.universe._
     c.Expr[Option[String]](q"$value")
+  }
+
+  def findProjectRootMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    val srcPath = Paths.get(c.enclosingPosition.source.path)
+    import c.universe._
+
+    val result = projectRoot(srcPath).map(_.toFile.getCanonicalPath)
+
+    c.Expr[Option[String]](q"$result")
+  }
+
+  private def projectRoot(cp: Path): Option[Path] = {
+    if (cp.resolve("build.sbt").toFile.exists()) {
+      Some(cp)
+    } else {
+      val parent = cp.getParent
+
+      if (parent == null || parent == cp.getRoot) {
+        None
+      } else {
+        projectRoot(parent)
+      }
+    }
+
   }
 
 }

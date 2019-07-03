@@ -5,14 +5,16 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
+import java.util
+import java.util.{Comparator, Date}
 import java.util.stream.Collectors
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 object IzFiles {
