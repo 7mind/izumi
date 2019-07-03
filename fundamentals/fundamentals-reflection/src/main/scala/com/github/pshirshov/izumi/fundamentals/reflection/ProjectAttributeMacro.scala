@@ -8,7 +8,7 @@ import scala.reflect.macros.blackbox
       s"-Xmacro-settings:product-version=${version.value}",
       s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(",")}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
       s"-Xmacro-settings:scaltest-version=${V.scalatest}",
     ),
  */
