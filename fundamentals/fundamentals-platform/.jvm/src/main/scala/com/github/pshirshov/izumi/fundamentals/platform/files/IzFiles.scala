@@ -5,9 +5,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.time.{Instant, LocalDateTime}
-import java.util
-import java.util.{Comparator, Date}
+import java.time.LocalDateTime
 import java.util.stream.Collectors
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
