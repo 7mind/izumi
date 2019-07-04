@@ -26,17 +26,20 @@ Why use distage?
 4. **Simpler development workflows**: 
     `distage` allows you to develop Role-Based Applications -- a fusion of Microservices and Monoliths.
      You may run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
-5. **Simpler deployments**:
+5. **Faster compile times and low mental overhead**:
+    Unlike fully compile-time DIs, `distage` does not impose a compile time penalty for medium/large projects.
+    `distage` extensions are simple to write and do not require type-level programming.
+6. **Simpler deployments**:
     `distage` allows you to simplify deployments and reduce your running costs by leveraging Role-Based Applications Architecture.
-6. **Simpler debugging**:
+7. **Simpler debugging**:
     `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
     before any instantiations happen.
-7. **Higher Correctness**: 
+8. **Higher Correctness**: 
     `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
-8. **Cheaper integration tests**:
-    `distage` provides you great memoization support for your tests so you may reuse heavy resources (like database connections) in multiple
-    integration tests not sacrificing correctness.
-9. **No pressure**: 
+9. **Cheaper integration tests**:
+    `distage` provides you great memoization support for your tests so you may reuse expensive resources (like database connections) across multiple
+    integration tests, gaining performance and without sacrificing correctness.
+10. **No pressure**: 
     `distage` is non-invasive and designed to not impact the way your Scala code is written. 
     It just removes all the initialization boilerplate.
     You don't need to learn magic tricks to write components in a distage application.
