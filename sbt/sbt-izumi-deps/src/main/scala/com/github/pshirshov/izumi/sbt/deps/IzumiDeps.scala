@@ -19,7 +19,7 @@ object IzumiDeps {
     val cats = "2.0.0-M4"
     val zio = "1.0.0-RC8-12"
 
-    val circe = "0.12.0-M3"
+    val circe = "0.12.0-M4"
     val jawn = "0.14.2"
 
     val http4s = "0.21.0-M1"
