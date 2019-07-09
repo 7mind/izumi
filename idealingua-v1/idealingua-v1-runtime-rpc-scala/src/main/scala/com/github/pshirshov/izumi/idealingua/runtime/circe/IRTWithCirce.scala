@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.circe
 
-import io.circe.{Decoder, Encoder, ObjectEncoder, derivation}
+import io.circe.{Decoder, Encoder, derivation}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
@@ -35,7 +35,7 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
     }
 }
 
-final case class DerivationDerivedEncoder[A](value: ObjectEncoder[A])
+final case class DerivationDerivedEncoder[A](value: Encoder.AsObject[A])
 object DerivationDerivedEncoder {
   implicit def materialize[A]: DerivationDerivedEncoder[A] = macro MaterializeDerivationMacros.materializeEncoderImpl[A]
 }

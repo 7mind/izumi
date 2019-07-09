@@ -1,14 +1,17 @@
 package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
+import com.github.pshirshov.izumi.idealingua.model.common.Generic.TMap
+import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
+import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, TypeDef}
+import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
 import com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances
 import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
 import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
 import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ClassSource, FullServiceContext, StructContext, runtime}
 
+import scala.annotation.tailrec
 import scala.meta._
 
 trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
@@ -18,7 +21,6 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
   protected case class CirceTrait(name: String, defn: Defn.Trait)
 
   protected def classDeriverImports: List[Import]
-
 
   private val circeRuntimePkg = runtime.Pkg.of[IRTTimeInstances]
 
@@ -47,7 +49,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${t.within(c.typename).typeFull} => Map(${Lit.String(c.wireId)} -> v.value).asJson"""
+        p"""case v: ${t.within(c.typename).typeFull} => Map(${Lit.String(c.wireId)} -> v.value).asJsonObject"""
 
     }
 
@@ -72,7 +74,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
              import _root_.io.circe.syntax._
              import _root_.io.circe.{Encoder, Decoder, DecodingFailure}
 
-             implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder[$tpe] = Encoder.instance {
+             implicit val ${Pat.Var(Term.Name(s"encode${id.name}"))}: Encoder.AsObject[$tpe] = Encoder.AsObject.instance {
                  ..case $enc
              }
 
@@ -110,7 +112,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
     val enc = implementors.map {
       c =>
-        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.wireId)} -> v).asJson"""
+        p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.wireId)} -> v).asJsonObject"""
 
     }
 
@@ -135,7 +137,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
              import _root_.io.circe.syntax._
              import _root_.io.circe.{Encoder, Decoder, DecodingFailure}
 
-             implicit val ${Pat.Var(Term.Name(s"encode${interface.id.name}"))}: Encoder[$tpe] = Encoder.instance {
+             implicit val ${Pat.Var(Term.Name(s"encode${interface.id.name}"))}: Encoder.AsObject[$tpe] = Encoder.AsObject.instance {
                ..case $enc
              }
 
@@ -204,16 +206,46 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
       val singleField = struct.all.head.field
       val ftpe = ctx.conv.toScala(singleField.typeId)
 
+      @tailrec
+      def isObjectEncoder(tpe: TypeId): Boolean = {
+        tpe match {
+          case _: TMap => true
+          case a: TypeId.AliasId =>
+            ctx.typespace(a) match {
+              case TypeDef.Alias(_, target, _) =>
+                isObjectEncoder(target)
+              case v =>
+                throw new IDLException(s"Impossible case: $v cannot be anything but alias")
+            }
+          case _: Builtin => false
+          case _ => true
+        }
+      }
+
+      val encoder = {
+        val encoderName = Pat.Var(Term.Name(s"encodeUnwrapped$name"))
+
+        if (isObjectEncoder(singleField.typeId)) {
+          q"""
+           implicit val $encoderName: Encoder.AsObject[$tpe] = Encoder.AsObject.instance {
+             v => v.${Term.Name(singleField.name)}.asJsonObject
+           }
+         """
+        } else {
+          q"""
+           implicit val $encoderName: Encoder[$tpe] = Encoder.instance {
+             v => v.${Term.Name(singleField.name)}.asJson
+           }
+         """
+        }
+      }
       CirceTrait(
         s"${name}Circe",
         q"""trait ${Type.Name(s"${name}Circe")} extends $base {
             import _root_.io.circe._
             import _root_.io.circe.syntax._
 
-            implicit val ${Pat.Var(Term.Name(s"encodeUnwrapped$name"))}: Encoder[$tpe] = Encoder.instance {
-              v =>
-                v.${Term.Name(singleField.name)}.asJson
-            }
+            $encoder;
 
             implicit val ${Pat.Var(Term.Name(s"decodeUnwrapped$name"))}: Decoder[$tpe] = Decoder.instance {
               v => v.as[${ftpe.typeFull}].map(d => ${stype.termName}(d))
@@ -226,7 +258,8 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
         q"""trait ${Type.Name(s"${name}Circe")} extends $base {
             ..$classDeriverImports
             import _root_.io.circe.{Encoder, Decoder}
-            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder[$tpe] = deriveEncoder[$tpe]
+
+            implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder.AsObject[$tpe] = deriveEncoder[$tpe]
             implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
           }
       """)
