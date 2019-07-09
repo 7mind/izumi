@@ -9,21 +9,15 @@ trait BIOCatsConversions extends BIOCatsConversions1 {
 }
 
 trait BIOCatsConversions1 extends BIOCatsConversions2 {
-  @inline implicit final def BIOToBracket[F[+_, +_]](implicit F0: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F] {
-    override val F: BIOPanic[F] = F0
-  }
+  @inline implicit final def BIOToBracket[F[+_, +_]](implicit F: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F](F)
 }
 
 trait BIOCatsConversions2 extends BIOCatsConversions3 {
-  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F0: BIOBracket[F]): BIOCatsMonadError[F, E] = new BIOCatsMonadError[F, E] {
-    override val F: BIOBracket[F] = F0
-  }
+  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F: BIOBracket[F]): BIOCatsMonadError[F, E] = new BIOCatsMonadError[F, E](F)
 }
 
 trait BIOCatsConversions3 extends BIOCatsConversions4 {
-  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit F0: BIOMonad[F]): BIOCatsMonad[F, E] = new BIOCatsMonad[F, E] {
-    override val F: BIOMonad[F] = F0
-  }
+  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit F: BIOMonad[F]): BIOCatsMonad[F, E] = new BIOCatsMonad[F, E](F)
 }
 trait BIOCatsConversions4 extends BIOCatsConversions5 {
   @inline implicit final def BIOToApplicativeError[F[+_, +_], E](implicit F0: BIOError[F]): BIOCatsApplicativeError[F, E] = new BIOCatsApplicativeError[F, E] {
@@ -88,9 +82,7 @@ object BIOCatsConversions {
     @inline override final def fromEither[A](x: Either[E, A]): F[E, A] = F.fromEither(x)
   }
 
-  abstract class BIOCatsMonad[F[+_, +_], E] extends cats.Monad[F[E, ?]] with BIOCatsApplicative[F, E] {
-    override def F: BIOMonad[F]
-
+  class BIOCatsMonad[F[+_, +_], E](override val F: BIOMonad[F]) extends cats.Monad[F[E, ?]] with BIOCatsApplicative[F, E] {
     @inline override final def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
     @inline override final def flatten[A](ffa: F[E, F[E, A]]): F[E, A] = F.flatten(ffa)
     @inline override final def tailRecM[A, B](a: A)(f: A => F[E, Either[A, B]]): F[E, B] = {
@@ -101,12 +93,9 @@ object BIOCatsConversions {
     }
   }
 
-  abstract class BIOCatsMonadError[F[+_, +_], E] extends BIOCatsMonad[F, E] with BIOCatsApplicativeError[F, E] with cats.MonadError[F[E, ?], E] {
-    override def F: BIOMonad[F] with BIOError[F]
-  }
+  class BIOCatsMonadError[F[+_, +_], E](override val F: BIOMonad[F] with BIOError[F]) extends BIOCatsMonad[F, E](F) with BIOCatsApplicativeError[F, E] with cats.MonadError[F[E, ?], E]
 
-  abstract class BIOCatsBracket[F[+_, +_]] extends BIOCatsMonadError[F, Throwable] with cats.effect.Bracket[F[Throwable, ?], Throwable] {
-    override def F: BIOPanic[F]
+  class BIOCatsBracket[F[+_, +_]](override val F: BIOPanic[F]) extends BIOCatsMonadError[F, Throwable](F) with cats.effect.Bracket[F[Throwable, ?], Throwable] {
 
     @inline override final def bracketCase[A, B](acquire: F[Throwable, A])(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
       F.bracketCase[Throwable, A, B](acquire)(
@@ -123,7 +112,7 @@ object BIOCatsConversions {
     }
   }
 
-  class BIOCatsSync[F[+_, +_]](override val F: BIO[F]) extends BIOCatsBracket[F] with cats.effect.Sync[F[Throwable, ?]] {
+  class BIOCatsSync[F[+_, +_]](override val F: BIO[F]) extends BIOCatsBracket[F](F) with cats.effect.Sync[F[Throwable, ?]] {
     @inline override final def suspend[A](thunk: => F[Throwable, A]): F[Throwable, A] = F.flatten(F.syncThrowable(thunk))
     @inline override final def delay[A](thunk: => A): F[Throwable, A] = F.syncThrowable(thunk)
   }
