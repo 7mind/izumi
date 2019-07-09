@@ -16,7 +16,7 @@ import scala.reflect.macros.blackbox
  * For sealed traits use [[IRTWithCirceGeneric]]. It's not as efficient wrt compile time, but will cache during a single compilation run.
  */
 abstract class IRTWithCirce[A: DerivationDerivedEncoder: DerivationDerivedDecoder] {
-  implicit val enc: Encoder[A] = implicitly[DerivationDerivedEncoder[A]].value
+  implicit val enc: Encoder.AsObject[A] = implicitly[DerivationDerivedEncoder[A]].value
   implicit val dec: Decoder[A] = implicitly[DerivationDerivedDecoder[A]].value
 }
 

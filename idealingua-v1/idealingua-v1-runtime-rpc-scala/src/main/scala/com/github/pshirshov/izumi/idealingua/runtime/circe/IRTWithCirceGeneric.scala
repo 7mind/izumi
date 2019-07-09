@@ -37,6 +37,6 @@ import shapeless.{Cached, Lazy}
  *   }}}
  */
 trait IRTWithCirceGeneric[A] {
-  implicit def enc(implicit ev: Cached[Lazy[DerivedAsObjectEncoder[A]]]): Encoder[A] = ev.value.value
+  implicit def enc(implicit ev: Cached[Lazy[DerivedAsObjectEncoder[A]]]): Encoder.AsObject[A] = ev.value.value
   implicit def dec(implicit ev: Cached[Lazy[DerivedDecoder[A]]]): Decoder[A] = ev.value.value
 }
