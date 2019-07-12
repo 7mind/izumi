@@ -61,7 +61,7 @@ class HttpServer[C <: Http4sContext]
   }
 
   def service: HttpRoutes[MonoIO] = {
-    val svc = AuthedService(handler())
+    val svc = AuthedRoutes.of(handler())
     val aservice: HttpRoutes[MonoIO] = contextProvider(svc)
     loggingMiddle(aservice)
   }

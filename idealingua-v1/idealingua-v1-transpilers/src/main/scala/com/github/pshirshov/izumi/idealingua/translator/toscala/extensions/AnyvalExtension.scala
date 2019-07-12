@@ -57,7 +57,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
   }
 
   @scala.annotation.tailrec
-  private def canBeAnyValField(ctx: STContext, typeId: TypeId, seen: mutable.HashSet[TypeId]): Boolean = {
+  private def canBeAnyValField(ctx: STContext, typeId: TypeId, /* unused */ seen: mutable.HashSet[TypeId]): Boolean = {
     typeId match {
       case _: Generic =>
         false // https://github.com/scala/bug/issues/11170
@@ -78,7 +78,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
             canBeAnyValField(ctx, alias.target, seen + alias.target)
 
           case v =>
-            throw new IDLException(s"Impossible case: $v cannot be an alias")
+            throw new IDLException(s"Impossible case: $v cannot be anything but alias")
         }
 
       case t: StructureId =>

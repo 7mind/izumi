@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.runtime.circe
 
 import io.circe.JsonObject
+import io.circe.generic.encoding.DerivedObjectEncoder
 import io.circe.syntax._
 import org.scalatest.WordSpec
 import shapeless.{Cached, Lazy}
@@ -45,10 +46,10 @@ object WithCirceTest {
     object Abc extends IRTWithCirceGeneric[Abc]
 
     object Alt {
-      import io.circe.generic.encoding.DerivedObjectEncoder
+      import io.circe.generic.encoding.DerivedAsObjectEncoder
       // Not DerivedObjectEncoder directly because DerivedObjectEncoder <: Encoder, so when it's in scope it gets picked up
       // instead of implicit def instance in WithCirceGeneric
-      implicit val enc: Lazy[DerivedObjectEncoder[Abc]] = Lazy(new DerivedObjectEncoder[Abc] {
+      implicit val enc: Lazy[DerivedAsObjectEncoder[Abc]] = Lazy(new DerivedAsObjectEncoder[Abc] {
         override def encodeObject(a: Abc): JsonObject = throw new NotImplementedError("testError")
       })
     }
