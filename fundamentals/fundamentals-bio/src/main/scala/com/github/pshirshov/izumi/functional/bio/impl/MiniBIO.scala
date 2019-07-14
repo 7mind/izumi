@@ -112,7 +112,6 @@ object MiniBIO {
 
   implicit val BIOMiniBIO: BIO[MiniBIO] = new BIO[MiniBIO] {
     override def pure[A](a: A): MiniBIO[Nothing, A] = sync(a)
-    override def point[V](v: => V): MiniBIO[Nothing, V] = Sync(() => BIOExit.Success(v))
     override def flatMap[E, A, E1 >: E, B](r: MiniBIO[E, A])(f: A => MiniBIO[E1, B]): MiniBIO[E1, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIO[E, Nothing] = Fail(() => BIOExit.Error(v, Trace.empty))
     override def terminate(v: => Throwable): MiniBIO[Nothing, Nothing] = Fail.terminate(v)

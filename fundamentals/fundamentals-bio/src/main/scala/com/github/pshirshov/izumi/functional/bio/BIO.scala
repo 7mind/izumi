@@ -158,12 +158,6 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
   @inline def sync[A](effect: => A): F[Nothing, A]
   @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
-  @deprecated("use .pure", "29.04.2019")
-  @inline def now[A](v: A): F[Nothing, A] = pure(v)
-
-  @deprecated("use .pure for pure values, .sync for effects or delayed computations", "29.04.2019")
-  @inline def point[A](v: => A): F[Nothing, A]
-
   @inline override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
     case Left(e) => fail(e): F[E, A]
     case Right(v) => pure(v): F[E, A]
