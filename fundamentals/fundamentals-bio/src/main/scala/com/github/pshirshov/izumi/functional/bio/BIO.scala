@@ -182,6 +182,13 @@ object BIO
   extends BIOSyntax {
   @inline final def apply[F[+_, +_]: BIO]: BIO[F] = implicitly
 
+  /**
+   * Shorthand for [[BIO.syncThrowable]]
+   *
+   * {{{
+   *   BIO(println("Hello world!"))
+   * }}}
+   * */
   @inline final def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
 }
 

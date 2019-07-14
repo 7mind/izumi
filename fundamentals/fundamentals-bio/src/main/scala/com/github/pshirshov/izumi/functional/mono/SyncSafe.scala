@@ -29,12 +29,12 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
 
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
-    implicit val _sync: _Sync[Sync] = new _Sync[Sync] {}
+    implicit val _sync: _Sync[Sync] = null
   }
 }
 
 trait LowPrioritySyncSafeInstances0 extends LowPrioritySyncSafeInstances1 {
-  implicit def fromBIO[F[+_, +_]: BIO]: SyncSafe[F[Nothing, ?]] =
+  implicit final def fromBIO[F[+_, +_]: BIO]: SyncSafe[F[Nothing, ?]] =
     new SyncSafe[F[Nothing, ?]] {
       override def syncSafe[A](f: => A): F[Nothing, A] = BIO[F].sync(f)
     }
@@ -50,6 +50,6 @@ trait LowPrioritySyncSafeInstances1 {
     *
     * @see https://github.com/scala/bug/issues/11427
     */
-  implicit def limitedCovariance[F[+_, _], E](implicit F: SyncSafe2[F]): SyncSafe[F[E, ?]] = F.asInstanceOf[SyncSafe[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: SyncSafe[F])(implicit ev: F[_] <:< G[_]): SyncSafe[G] = { val _ = ev; log.asInstanceOf[SyncSafe[G]] }
+  @inline implicit final def limitedCovariance[F[+_, _], E](implicit F: SyncSafe2[F]): SyncSafe[F[E, ?]] = F.asInstanceOf[SyncSafe[F[E, ?]]]
+  @inline implicit final def covarianceConversion[G[_], F[_]](log: SyncSafe[F])(implicit ev: F[_] <:< G[_]): SyncSafe[G] = { val _ = ev; log.asInstanceOf[SyncSafe[G]] }
 }
