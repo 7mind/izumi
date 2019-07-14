@@ -118,7 +118,8 @@ object IDLTestTools {
     val cpe = cp.flatMap(_._1)
     val scp = cp.map(_._2).mkString(":")
 
-    val flags = if (false) {
+    val scala213 = false
+    val flags = if (scala213) {
       Seq(
         "-Wunused:_",
         "-Werror",

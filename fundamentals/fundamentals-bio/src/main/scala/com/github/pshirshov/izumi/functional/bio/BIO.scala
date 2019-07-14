@@ -118,15 +118,21 @@ object BIOMonad {
   @inline final def apply[F[+_, +_]: BIOMonad]: BIOMonad[F] = implicitly
 }
 
-trait BIOBracket[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
+trait BIOMonadError[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
+  @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
+    redeem(r)(e => flatMap(f(e))(fail(_)), pure)
+  }
+}
+
+object BIOMonadError {
+  @inline final def apply[F[+_, +_]: BIOMonadError]: BIOMonadError[F] = implicitly
+}
+
+trait BIOBracket[F[+_, +_]] extends BIOMonadError[F] {
   def bracketCase[E, A, B](acquire: F[E, A])(release: (A, BIOExit[E, B]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B]
 
   @inline def bracket[E, A, B](acquire: F[E, A])(release: A => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
     bracketCase[E, A, B](acquire)((a, _) => release(a))(use)
-  }
-
-  @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
-    redeem(r)(e => flatMap(f(e))(fail(_)), pure)
   }
 
   // defaults
