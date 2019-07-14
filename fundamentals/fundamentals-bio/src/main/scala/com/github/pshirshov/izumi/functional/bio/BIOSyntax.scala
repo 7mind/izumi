@@ -18,6 +18,11 @@ trait BIOSyntax {
    * */
   @inline final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 
+  /**
+   * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
+   */
+  final object catz extends BIOCatsConversions
+
   @inline implicit final def ToFunctorOps[F[_, + _] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
   @inline implicit final def ToBifunctorOps[F[+ _, + _] : BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
   @inline implicit final def ToApplicativeOps[F[+ _, + _] : BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
@@ -35,7 +40,6 @@ trait BIOSyntax {
 
   @inline implicit final def ToForkOps[R[_, _] : BIOFork, E, A](self: R[E, A]): BIOSyntax.BIOForkOps[R, E, A] = new BIOSyntax.BIOForkOps[R, E, A](self)
 
-  final object catz extends BIOCatsConversions
 }
 
 object BIOSyntax {

@@ -20,7 +20,6 @@ trait DIEffect[F[_]] {
     * suspension of side-effects, because DIEffect[Identity] is allowed */
   def maybeSuspend[A](eff: => A): F[A]
 
-
   /** A stronger version of `handleErrorWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
   def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
@@ -124,6 +123,8 @@ trait FromCats {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
     * */
   implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: _Sync[R], F0: R[F]): DIEffect[F] = {
     l.discard()
@@ -158,8 +159,11 @@ trait FromCats {
 }
 
 object FromCats {
-  // 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
-  // _still_ provide _non-orphan_ instances if it's on classpath
+  /**
+   * 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
+   * _still_ provide _non-orphan_ instances if it's on classpath
+   * @see https://blog.7mind.io/no-more-orphans.html
+   */
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
     implicit val catsEffectSync: _Sync[cats.effect.Sync] = new _Sync[cats.effect.Sync] {}
