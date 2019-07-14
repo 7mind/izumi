@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.idealingua.runtime.circe
 
 import io.circe.JsonObject
-import io.circe.generic.encoding.DerivedObjectEncoder
 import io.circe.syntax._
 import org.scalatest.WordSpec
 import shapeless.{Cached, Lazy}
