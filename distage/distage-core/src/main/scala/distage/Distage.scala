@@ -1,8 +1,8 @@
 package distage
 
-import com.github.pshirshov.izumi.distage.model
-import com.github.pshirshov.izumi.distage.planning
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import com.github.pshirshov.izumi.distage.{model, planning}
 
 trait Distage {
 
@@ -24,6 +24,14 @@ trait Distage {
 
   type GCMode = model.GCMode
   val GCMode: model.GCMode.type = model.GCMode
+
+  val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
+
+  type Axis[+MM <: AxisValue] = model.definition.Axis[MM]
+  val Axis: model.definition.Axis.type = model.definition.Axis
+
+  type BindingTag = model.definition.BindingTag
+  val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
 
   type PlannerInput = model.PlannerInput
   val PlannerInput: model.PlannerInput.type = model.PlannerInput

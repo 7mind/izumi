@@ -1,3 +1,4 @@
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import com.github.pshirshov.izumi.distage.{model, planning}
 
@@ -21,6 +22,14 @@ package object distage extends Distage {
 
   override type GCMode = model.GCMode
   override val GCMode: model.GCMode.type = model.GCMode
+
+  override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
+
+  override type Axis[+MM <: AxisValue] = model.definition.Axis[MM]
+  override val Axis: model.definition.Axis.type = model.definition.Axis
+
+  override type BindingTag = model.definition.BindingTag
+  override val BindingTag: model.definition.BindingTag.type = model.definition.BindingTag
 
   override type PlannerInput = model.PlannerInput
   override val PlannerInput: model.PlannerInput.type = model.PlannerInput
