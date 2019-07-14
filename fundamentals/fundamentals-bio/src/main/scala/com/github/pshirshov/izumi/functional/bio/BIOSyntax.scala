@@ -27,6 +27,7 @@ trait BIOSyntax {
   @inline implicit final def ToBifunctorOps[F[+ _, + _] : BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
   @inline implicit final def ToApplicativeOps[F[+ _, + _] : BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
   @inline implicit final def ToGuaranteeOps[F[+ _, + _] : BIOGuarantee, E, A](self: F[E, A]): BIOSyntax.BIOGuaranteeOps[F, E, A] = new BIOSyntax.BIOGuaranteeOps[F, E, A](self)
+  @inline implicit final def ToMonadErrorOps[F[+ _, + _] : BIOMonadError, E, A](self: F[E, A]): BIOSyntax.BIOMonadErrorOps[F, E, A] = new BIOSyntax.BIOMonadErrorOps[F, E, A](self)
   @inline implicit final def ToMonadOps[F[+ _, + _] : BIOMonad, E, A](self: F[E, A]): BIOSyntax.BIOMonadOps[F, E, A] = new BIOSyntax.BIOMonadOps[F, E, A](self)
   @inline implicit final def ToErrorOps[F[+ _, + _] : BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] = new BIOSyntax.BIOErrorOps[F, E, A](self)
   @inline implicit final def ToBracketOps[F[+ _, + _] : BIOBracket, E, A](self: F[E, A]): BIOSyntax.BIOBracketOps[F, E, A] = new BIOSyntax.BIOBracketOps[F, E, A](self)
@@ -72,6 +73,9 @@ object BIOSyntax {
     /** execute two operations in order, same as `*>`, but return result of first operation */
     @inline def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*[E, A, E1, B](r, f0)
 
+    /** execute two operations in order, return result of both operations */
+    @inline def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)
+
     @inline def forever: F[E, Nothing] = F.forever(r)
   }
 
@@ -86,7 +90,6 @@ object BIOSyntax {
   }
 
   final class BIOErrorOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOError[F]) {
-
     @inline def flip: F[A, E] = F.flip(r)
 
     @inline def redeem[E2, B](err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B] = F.redeem[E, A, E2, B](r)(err, succ)
@@ -102,8 +105,7 @@ object BIOSyntax {
     @inline def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
   }
 
-  final class BIOBracketOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOBracket[F]) {
-
+  final class BIOMonadErrorOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOBracket[F]) {
     @inline def leftFlatMap[E2](f: E => F[Nothing, E2]): F[E2, A] = F.leftFlatMap(r)(f)
 
     @inline def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
@@ -118,6 +120,11 @@ object BIOSyntax {
     @inline def fromOption[E1 >: E, A1](errorOnNone: E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
 
     @inline def fromOption[A1](implicit ev: E =:= Nothing, ev1: A <:< Option[A1]): F[Unit, A1] = F.flatMap(F.redeemPure(r)(ev, identity))(F.fromOption(_))
+  }
+
+  final class BIOBracketOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOBracket[F]) {
+    @inline def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
+      F.bracket(r: F[E1, A])(release)(use)
   }
 
   final class BIOPanicOps[F[+ _, + _], E, A](private val r: F[E, A])(implicit private val F: BIOPanic[F]) {
@@ -137,7 +144,7 @@ object BIOSyntax {
      * }}}
      *
      * */
-    @inline def sandboxThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
+    @inline def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.catchAll(F.sandbox(r))(failure => F.fail(failure.toThrowable))
   }
 
