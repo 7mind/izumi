@@ -45,6 +45,9 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 
 @ExposedTestScope
 object IDLTestTools {
+  def hasDocker: Boolean = IzFiles.haveExecutables("docker")
+  def isCI: Boolean = System.getenv().containsKey("CI_BRANCH")
+
   def loadDefs(): Seq[LoadedDomain.Success] = loadDefs("/defs/any")
 
   def loadDefs(base: String): Seq[LoadedDomain.Success] = loadDefs(makeLoader(base), makeResolver(base))
@@ -88,7 +91,8 @@ object IDLTestTools {
 
     val cmd = layout match {
       case ScalaProjectLayout.PLAIN =>
-        if (IzFiles.haveExecutables("docker")) {
+        // it's hard to map volumes on CI agent bcs our build runs in docker but all the mounts happens on the docker host
+        if (hasDocker && !isCI) {
           dockerRun(out, classpath)
         } else {
           directRun(out, classpath)
@@ -102,7 +106,7 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  private def mapF(v: Iterable[String], prefix: String) = {
+  private def virtualiseFs(v: Iterable[String], prefix: String): Iterable[(Seq[String], String)] = {
     v.map {
       cpe =>
         val p = Paths.get(cpe)
@@ -113,7 +117,7 @@ object IDLTestTools {
 
   private def dockerRun(out: CompilerOutput, classpath: String) = {
     val v = classpath.split(':')
-    val cp = mapF(v, "cp")
+    val cp = virtualiseFs(v, "cp")
 
     val cpe = cp.flatMap(_._1)
     val scp = cp.map(_._2).mkString(":")
