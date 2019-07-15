@@ -29,6 +29,7 @@ import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
 import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpNamingConvention
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
 
+import scala.collection.mutable
 import scala.sys.process._
 
 @ExposedTestScope
@@ -85,38 +86,33 @@ object IDLTestTools {
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
 
+    val tmpdir = Files.createTempDirectory("docker-run")
 
-    val cmd = layout match {
-      case ScalaProjectLayout.PLAIN =>
-        if (IzFiles.haveExecutables("docker")) {
-          dockerRun(out, classpath)
-        } else {
-          directRun(out, classpath)
-        }
+    try {
+      val cmd = layout match {
+        case ScalaProjectLayout.PLAIN =>
+          if (IzFiles.haveExecutables("docker")) {
+            dockerRun(tmpdir, out, classpath)
+          } else {
+            directRun(out, classpath)
+          }
 
-      case ScalaProjectLayout.SBT =>
-        Seq("sbt", "clean", "compile")
-    }
+        case ScalaProjectLayout.SBT =>
+          Seq("sbt", "clean", "compile")
+      }
 
-    val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
-    exitCode == 0
-  }
-
-  private def mapF(v: Iterable[String], prefix: String) = {
-    v.map {
-      cpe =>
-        val p = Paths.get(cpe)
-        val target = s"/$prefix/${p.getParent.toString.hashCode().toLong + Int.MaxValue}/${p.getFileName.toString}"
-        (Seq("-v", s"'$cpe:$target:ro'"), target)
+      val exitCode = run(out.absoluteTargetDir, cmd, Map.empty, "scalac")
+      exitCode == 0
+    } finally {
+      IzFiles.removeDir(tmpdir)
     }
   }
 
-  private def dockerRun(out: CompilerOutput, classpath: String) = {
+  private def dockerRun(tmpdir: Path, out: CompilerOutput, classpath: String) = {
     val v = classpath.split(':')
-    val cp = mapF(v, "cp")
+    val (cp, virtualCpEntries) = virtualiseClasspath(tmpdir, v, "cp")
 
-    val cpe = cp.flatMap(_._1)
-    val scp = cp.map(_._2).mkString(":")
+    val virtualCp = virtualCpEntries.mkString(":")
 
     val scala213 = false
     val flags = if (scala213) {
@@ -135,7 +131,7 @@ object IDLTestTools {
       "docker",
       "run",
       "--rm"
-    ) ++ cpe ++
+    ) ++ cp ++
       Seq(
         "-v", s"'${out.absoluteTargetDir}:/work:Z'",
         "septimalmind/izumi-env",
@@ -153,10 +149,37 @@ object IDLTestTools {
       ) ++
       flags ++
       Seq(
-        "-classpath", scp,
+        "-classpath", virtualCp,
       ) ++ out.relativeOutputs.filter(_.endsWith(".scala")).map(t => s"'$t'")
 
     dcp
+  }
+
+  private def virtualiseClasspath(tmpdir: Path, v: Iterable[String], prefix: String): (Seq[String], Seq[String]) = {
+    val hostDirs = mutable.HashSet[String]()
+    val virtualDirs = mutable.HashSet[String]()
+
+    hostDirs.add(s"-v ${tmpdir.resolve(prefix).resolve("files").toFile.getCanonicalPath}:/$prefix/files:ro")
+
+    v.foreach {
+      cpe =>
+        val p = Paths.get(cpe)
+        val target = s"${p.getParent.toString.hashCode().toLong + Int.MaxValue}/${p.getFileName.toString}"
+
+        if (p.toFile.isDirectory) {
+          val virtual = Paths.get("/", prefix).resolve(target)
+          hostDirs.add(s"-v '${p.toFile.getCanonicalPath}:${virtual.toFile.getCanonicalPath}:ro'")
+          virtualDirs.add(virtual.toFile.getCanonicalPath)
+        } else {
+          val host = tmpdir.resolve(prefix).resolve("files").resolve(target)
+          host.toFile.getParentFile.mkdirs()
+          Files.copy(p, host)
+          val virtual = Paths.get("/", prefix, "files").resolve(target)
+          virtualDirs.add(virtual.toFile.getCanonicalPath)
+        }
+    }
+
+    (hostDirs.toSeq, virtualDirs.toSeq)
   }
 
   private def directRun(out: CompilerOutput, classpath: String) = {
