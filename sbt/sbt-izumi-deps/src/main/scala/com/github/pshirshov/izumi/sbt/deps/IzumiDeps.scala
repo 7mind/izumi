@@ -17,7 +17,7 @@ object IzumiDeps {
     val shapeless = "2.3.3"
 
     val cats = "2.0.0-M4"
-    val zio = "1.0.0-RC8-12"
+    val zio = "1.0.0-RC10-1"
 
     val circe = "0.12.0-M4"
     val jawn = "0.14.2"
