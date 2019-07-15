@@ -114,6 +114,95 @@ object CircularCases {
     class RealDependency(val dep: RefinedCircular) extends Dependency
   }
 
+  object CircularCase7 {
+
+    // AutoSets
+    trait RoleService extends RoleComponent
+    trait RoleComponent
+    trait IntegrationComponent
+
+    class K8ProbesHttpRoutes
+    (
+      healthCheckService: HealthCheckService
+    )
+
+    class TGLegacyRestService
+    class HealthChecker
+
+    class HealthCheckHttpRoutes(healthCheckService: HealthCheckService)
+    class HealthCheckService(healthCheckers: Set[HealthChecker])
+
+    class IRTMultiplexorWithRateLimiter
+    (
+       list: Set[IRTWrappedService]
+    )
+
+    class WsSessionListener[A]
+
+    class IRTWrappedClient
+    class IRTWrappedService
+
+
+    class DynamoClient(dynamoComponent: DynamoComponent)
+
+    class DynamoComponent(
+                           val dynamoDDLService: DynamoDDLService
+                         )
+      extends RoleComponent
+      with IntegrationComponent
+
+    class DynamoDDLService(
+                          groups: Set[DynamoDDLGroup]
+                          , dynamoClient: DynamoClient
+                          )
+
+    class DynamoQueryExecutorService(
+                                    client: DynamoClient
+                                    )
+
+    case class DynamoDDLGroup(a: Set[DynamoTable])
+    case class DynamoTable()
+
+
+    class ConfigurationRepository
+    (
+      dynamoQueryExecutorService: DynamoQueryExecutorService
+    )
+
+    class IRTClientMultiplexor(clients: Set[IRTWrappedClient])
+    class IRTServerBindings(
+                             codec: IRTClientMultiplexor
+                              , listeners: Set[WsSessionListener[String]]
+                            , limiter: IRTMultiplexorWithRateLimiter
+                           )
+
+    class HttpServerLauncher(
+                              bindings: IRTServerBindings
+                            , healthCheck: HealthCheckHttpRoutes
+                            , restServices: Set[TGLegacyRestService]
+                            , k8Probes: K8ProbesHttpRoutes
+                            ) extends AutoCloseable {
+      override def close(): Unit = ()
+    }
+
+    class TgHttpComponent(
+                           server: HttpServerLauncher
+                         ) extends RoleComponent
+
+    class RoleStarter(
+                      services: Set[RoleService]
+                     , closeables: Set[AutoCloseable]
+                     , lifecycleManager: ComponentsLifecycleManager
+                     )
+
+    class ComponentsLifecycleManager(components: Set[RoleComponent])
+
+    class Sonar(
+                TgHttpComponent: TgHttpComponent
+               , dynamoDDL: DynamoDDLService
+               ) extends RoleService
+  }
+
   object ByNameCycle {
     class Circular1(arg: => Circular2) {
       def test: Object = arg
