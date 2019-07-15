@@ -297,7 +297,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
   "Regression test 1: isolated cycles causing spooky action at a distance" in {
     import CircularCase7._
 
-    val definition = PlannerInput(new ModuleDef {
+    val definition = PlannerInput.noGc(new ModuleDef {
       // cycle
       make[DynamoDDLService]
       make[DynamoComponent]
@@ -334,7 +334,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     )
 
     val plan = injector.plan(definition)
-    println(plan.render())
+    //println(plan.render())
     injector.produce(plan)
   }
 
