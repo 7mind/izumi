@@ -40,32 +40,37 @@ class PruningPlanMergingPolicy(
     val ops = resolved.values.flatten.toVector
     val index = ops.map(op => op.target -> op).toMap
     val roots = plan.gcMode.toSet
-    assert(roots.nonEmpty)
-    val collected = new TracingDIGC(roots, index, ignoreMissing = true).gc(ops)
 
-    val lastTry = issues.map {
-      case (k, v) =>
-        val filtered = v.candidates.filter(op => collected.reachable.contains(op.target))
-        if (filtered.size == 1) {
-          k -> DIKeyConflictResolution.Successful(filtered)
-        } else if (filtered.isEmpty) {
-          k -> DIKeyConflictResolution.Successful(Set.empty)
-        } else {
-          k -> v
-        }
-    }
+    if (roots.nonEmpty && roots.diff(index.keySet).isEmpty) {
+      val collected = new TracingDIGC(roots, index, ignoreMissingDeps = true).gc(ops)
 
-    val failed = lastTry.collect({ case (k, f: DIKeyConflictResolution.Failed) => k -> f })
+      val lastTry = issues.map {
+        case (k, v) =>
+          val reachableCandidates = v.candidates.filter(op => collected.reachable.contains(op.target))
 
-    if (failed.nonEmpty) {
-      throwOnIssues(failed)
+          if (reachableCandidates.size == 1) {
+            k -> DIKeyConflictResolution.Successful(reachableCandidates)
+          } else if (reachableCandidates.isEmpty) {
+            k -> DIKeyConflictResolution.Successful(Set.empty)
+          } else {
+            k -> v
+          }
+      }
+
+      val failed = lastTry.collect({ case (k, f: DIKeyConflictResolution.Failed) => k -> f })
+
+      if (failed.nonEmpty) {
+        throwOnIssues(failed)
+      } else {
+        val good = lastTry.collect({ case (k, DIKeyConflictResolution.Successful(s)) => k -> s })
+        val erased = good.filter(_._2.isEmpty)
+        logger.info(s"Erased conflicts: ${erased.keys.niceList() -> "erased conflicts"}")
+        logger.warn(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
+        val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
+        SemiPlan(plan.definition, allResolved, plan.gcMode)
+      }
     } else {
-      val good = lastTry.collect({ case (k, DIKeyConflictResolution.Successful(s)) => k -> s })
-      val erased = good.filter(_._2.isEmpty)
-      logger.debug(s"Erased conflicts: ${erased.keys.niceList() -> "erased conflicts"}")
-      logger.info(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
-      val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
-      SemiPlan(plan.definition, allResolved, plan.gcMode)
+      throwOnIssues(issues)
     }
   }
 

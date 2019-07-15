@@ -58,7 +58,7 @@ object AbstractDIGcTest {
   case class Node(id: NodeId, deps: Set[NodeId])
 
 
-  class TestGCTracer(override val ignoreMissing: Boolean) extends AbstractGCTracer[NodeId, Node]{
+  class TestGCTracer(override val ignoreMissingDeps: Boolean) extends AbstractGCTracer[NodeId, Node]{
 
 
     override protected def prePrune(pruned: Pruned): Pruned = {

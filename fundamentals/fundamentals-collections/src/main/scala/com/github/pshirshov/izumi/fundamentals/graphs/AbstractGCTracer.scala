@@ -14,7 +14,6 @@ trait AbstractGCTracer[NodeId, Node] {
     reachable ++= roots
 
     trace(mapping, roots, reachable)
-
     prune(prePrune(Pruned(elements, reachable.toSet)))
   }
 
@@ -30,7 +29,7 @@ trait AbstractGCTracer[NodeId, Node] {
     val newDeps = toTrace
       .flatMap {
         id =>
-          if (ignoreMissing) {
+          if (ignoreMissingDeps) {
             index.get(id).toSeq
           } else {
             Seq(index(id))
@@ -45,7 +44,7 @@ trait AbstractGCTracer[NodeId, Node] {
     }
   }
 
-  protected def ignoreMissing: Boolean
+  protected def ignoreMissingDeps: Boolean
 
   protected def prePrune(pruned: Pruned): Pruned
 

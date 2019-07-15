@@ -10,15 +10,13 @@ import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, Si
 import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
+import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, IntegrationCheckerImpl, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
 import com.github.pshirshov.izumi.distage.testkit.DistagePluginTestSupport.{CacheKey, CacheValue}
 import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner._
-import com.github.pshirshov.izumi.distage.testkit.fixtures.TestService1
+import com.github.pshirshov.izumi.distage.testkit.fixtures2.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.WordSpec
-
-import scala.collection.immutable
 
 
 
@@ -33,7 +31,7 @@ class DistageTestRunnerTest extends WordSpec {
       // a lambda into a whitebox entity which can be introspected at runtime
       val discoveredTests: Seq[DistageTest[IO]] = List(
         DistageTest(TestId("Test1"), {
-          service: TestService1 =>
+          service: MockCachedUserService[IO] =>
             for {
               _ <- IO.delay(assert(service != null))
               _ <- IO.delay(println("test1"))
@@ -43,7 +41,7 @@ class DistageTestRunnerTest extends WordSpec {
 
         }, env),
         DistageTest(TestId("Test2"), {
-          service: TestService1 =>
+          service: MockUserRepository[IO] =>
             for {
               _ <- IO.delay(assert(service != null))
               _ <- IO.delay(println("test2"))
@@ -53,7 +51,11 @@ class DistageTestRunnerTest extends WordSpec {
 
         }, env),
         DistageTest(TestId("Test3"), {
-          service: TestService1 =>
+          service: MockCachedUserService[IO] =>
+            ???
+        }, env),
+        DistageTest(TestId("Test4"), {
+          service: ApplePaymentProvider[IO] =>
             ???
         }, env),
       )
@@ -68,8 +70,8 @@ class DistageTestRunnerTest extends WordSpec {
 
 
       // control gets back to custom logic
-
-      val runner = new DistageTestRunner[IO](reporter)
+      val checker = new IntegrationCheckerImpl(logger)
+      val runner = new DistageTestRunner[IO](reporter, checker)
 
       // we add all the collected tests into our custom runner
       discoveredTests.foreach {
