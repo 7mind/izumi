@@ -16,6 +16,8 @@ import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import zio.Task
 import zio.interop.catz._
 
+import scala.concurrent.duration.FiniteDuration
+
 object Http4sTestContext {
   //
   final val addr = IzSockets.temporaryServerAddress()
@@ -134,6 +136,10 @@ object Http4sTestContext {
   final def wsClientDispatcher(): ClientWsDispatcher[rt.type] with TestDispatcher =
     new ClientWsDispatcher[rt.type](rt.self, wsUri, demo.Client.codec, demo.Client.buzzerMultiplexor, wsClientContextProvider, RT.logger, RT.printer)
       with TestDispatcher {
+
+      import scala.concurrent.duration._
+      override protected val timeout: FiniteDuration = 5.seconds
+
       override protected def transformRequest(request: RpcPacket): RpcPacket = {
         Option(creds.get()) match {
           case Some(value) =>
