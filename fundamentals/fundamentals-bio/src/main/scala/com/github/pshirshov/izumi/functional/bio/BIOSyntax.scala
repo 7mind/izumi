@@ -106,11 +106,8 @@ object BIOSyntax {
     @inline def attempt: F[Nothing, Either[E, A]] = F.attempt(r)
   }
 
-  final class BIOMonadErrorOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOBracket[F]) {
+  final class BIOMonadErrorOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOMonadError[F]) {
     @inline def leftFlatMap[E2](f: E => F[Nothing, E2]): F[E2, A] = F.leftFlatMap(r)(f)
-
-    @inline def bracket[E1 >: E, B](release: A => F[Nothing, Unit])(use: A => F[E1, B]): F[E1, B] =
-      F.bracket(r: F[E1, A])(release)(use)
 
     @inline def tapBoth[E1 >: E, E2 >: E1](err: E => F[E1, Unit])(succ: A => F[E2, Unit]): F[E2, A] = {
       new BIOMonadOps(new BIOErrorOps(r).tapError(err)).tap(succ)
