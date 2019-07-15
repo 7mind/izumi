@@ -86,9 +86,7 @@ class TestPlugin01 extends PluginDef {
 }
 
 object TestPlugin00
-  extends PluginDef
-    with CatsDIEffectModule
-    with ZioDIEffectModule {
+  extends PluginDef {
   make[TestService1]
   make[TestService2]
   make[TestResource1]

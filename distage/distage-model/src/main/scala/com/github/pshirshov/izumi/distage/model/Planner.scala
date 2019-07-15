@@ -56,6 +56,9 @@ object PlannerInput {
   }
 }
 
+case class SplittedPlan(subplan: OrderedPlan, subRoots: Set[DIKey], primary: OrderedPlan, reducedModule: ModuleBase)
+
+
 trait Planner {
   def plan(input: PlannerInput): OrderedPlan
 
@@ -69,4 +72,43 @@ trait Planner {
   def finish(semiPlan: SemiPlan): OrderedPlan
 
   final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = plan(PlannerInput(input, gcMode))
+
+  final def splitExistingPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
+    assert(primaryRoots.diff(primaryPlan.keys).isEmpty)
+    // here we extract integration checks out of our shared components plan and build it
+    val extractedRoots = extractSubRoots(primaryPlan)
+
+    val extractedSubplan = if (extractedRoots.nonEmpty) {
+      // exclude runtime
+      plan(PlannerInput(appModule, extractedRoots))
+    } else {
+      OrderedPlan.empty
+    }
+
+    val reduced = appModule.drop(extractedSubplan.keys)
+
+    // and here we build our final plan for shared components, with integration components excluded
+    val primaryPlanWithoutExtractedPart = if (extractedRoots.nonEmpty) {
+      val partsLeft = primaryRoots -- extractedRoots
+      if (partsLeft.isEmpty) {
+        OrderedPlan.empty
+      } else {
+        plan(PlannerInput(reduced, partsLeft))
+      }
+    } else {
+      primaryPlan
+    }
+
+    SplittedPlan(extractedSubplan, extractedRoots, primaryPlanWithoutExtractedPart, reduced)
+  }
+
+  final def splitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
+    val primaryPlan = if (primaryRoots.nonEmpty) {
+      plan(PlannerInput(appModule, primaryRoots))
+    } else {
+      OrderedPlan.empty
+    }
+
+    splitExistingPlan(appModule, primaryRoots, primaryPlan)(extractSubRoots)
+  }
 }

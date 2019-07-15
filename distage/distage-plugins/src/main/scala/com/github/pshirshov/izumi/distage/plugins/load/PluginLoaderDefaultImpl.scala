@@ -35,21 +35,16 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginLoader.PluginConfig) extends P
           classInfo =>
             val constructors = classInfo.getConstructorInfo.asScala
 
-            if (constructors.isEmpty) {
-              val clz = classInfo.loadClass()
-              val runtimeMirror = universe.runtimeMirror(clz.getClassLoader)
-              val symbol = runtimeMirror.classSymbol(clz)
-              if (symbol.isModuleClass) {
-                Seq(runtimeMirror.reflectModule(symbol.thisPrefix.termSymbol.asModule).instance.asInstanceOf[PluginBase])
-              } else {
-                Seq.empty
-              }
-            } else if (constructors.exists(_.getParameterInfo.isEmpty)) {
+            val clz = classInfo.loadClass()
+            val runtimeMirror = universe.runtimeMirror(clz.getClassLoader)
+            val symbol = runtimeMirror.classSymbol(clz)
+            if (symbol.isModuleClass) {
+              Seq(runtimeMirror.reflectModule(symbol.thisPrefix.termSymbol.asModule).instance.asInstanceOf[PluginBase])
+            } else {
               val clz = classInfo.loadClass()
               clz.getDeclaredConstructors.find(_.getParameterCount == 0).map(_.newInstance().asInstanceOf[PluginBase]).toSeq
-            } else {
-              Seq.empty
             }
+
 
         }
         .toSeq // 2.13 compat
