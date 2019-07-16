@@ -1,11 +1,10 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import org.scalatest.{ScalatestSuite, WordSpecLike}
+import distage.TagK
+import org.scalatest.DistageScalatestTestSuite
 
-abstract class DistageSpec[F[_] : TagK] extends DistageTestSupport[F] with WordSpecLike {
-  override def toString: String = ScalatestSuite.suiteToString(None, this)
-}
+abstract class DistageSpec[F[_]]()(implicit val tagMonoIO: TagK[F]) extends DistageTestSuiteSyntax[F]
 
+abstract class DistageSpecScalatest[F[_]]()(implicit val tagMonoIO: TagK[F]) extends DistageTestSuiteSyntax[F] with DistageScalatestTestSuite[F]
 
 

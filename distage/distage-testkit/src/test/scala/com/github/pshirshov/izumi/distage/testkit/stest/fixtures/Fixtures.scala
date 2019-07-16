@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.fixtures
+package com.github.pshirshov.izumi.distage.testkit.stest.fixtures
 
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
 import com.github.pshirshov.izumi.distage.model.definition.DIResource
 import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck

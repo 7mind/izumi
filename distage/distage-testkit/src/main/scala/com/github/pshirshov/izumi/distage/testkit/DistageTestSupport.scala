@@ -16,11 +16,14 @@ import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.Cont
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.distage.testkit.services._
+import com.github.pshirshov.izumi.distage.testkit.services.stest.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
+import com.github.pshirshov.izumi.distage.testkit.services.stest.{ExternalResourceProvider, IgnoreSupport, MemoizationContextId, SuppressionSupport}
 import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import com.github.pshirshov.izumi.logstage.api.Log.Level
 import distage.config.AppConfig
@@ -51,7 +54,8 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
       }
   }
 
-  protected final def dio(function: ProviderMagnet[F[_]]): Unit = {
+  override def dio(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
+    Quirks.discard(pos)
     verifyTotalSuppression()
 
     val logger = makeLogger()

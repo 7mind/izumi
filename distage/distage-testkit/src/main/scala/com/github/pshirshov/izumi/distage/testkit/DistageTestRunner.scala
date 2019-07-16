@@ -1,62 +1,51 @@
 package com.github.pshirshov.izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.{Locator, SplittedPlan}
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
+import java.util.concurrent.TimeUnit
+
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.distage.roles.services.{ConfigLoader, ConfigLoaderLocalFSImpl, IntegrationChecker, ModuleProvider, ModuleProviderImpl}
-import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.TestReporter
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import com.github.pshirshov.izumi.distage.model.{Locator, SplittedPlan}
+import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker
+import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, TestReporter}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.Level
-import distage.config.AppConfig
-import distage.{DIKey, Injector, ModuleBase, PlannerInput}
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
+import distage.{DIKey, Injector, PlannerInput}
 
-import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.FiniteDuration
 
 // a marker trait just for our demo purposes. All the entities inheriting this trait will be shared between tests contexts
 trait TODOMemoizeMe {}
 
-class DistageTestRunner[F[_]](
-                               reporter: TestReporter,
-                               integrationChecker: IntegrationChecker,
-                             )(implicit val tagK: TagK[F]) {
+
+
+class DistageTestRunner[F[_] : TagK](
+                                      reporter: TestReporter,
+                                      integrationChecker: IntegrationChecker,
+                                      runnerEnvironment: DistageTestEnvironmentImpl[F],
+                                      tests: Seq[DistageTest[F]]
+                                    ) {
 
   import DistageTestRunner._
-
-  private val tests = scala.collection.mutable.ArrayBuffer[DistageTest[F]]()
-
-  def register(test: DistageTest[F]): Unit = {
-    reporter.testStatus(test.id, TestStatus.Scheduled)
-    tests += test
-  }
 
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
 
     groups.foreach {
       case (env, group) =>
-        val logger = makeLogger()
-        val options = contextOptions()
-        val loader = makeConfigLoader(logger)
+        val logger = runnerEnvironment.makeLogger()
+        val options = runnerEnvironment.contextOptions()
+        val loader = runnerEnvironment.makeConfigLoader(logger)
         val config = loader.buildConfig()
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-        val provider = makeModuleProvider(options, config, logger, env.roles, env.activation)
-        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule
+        val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
+        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverride
+        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.appOverride
 
         val injector = Injector.Standard(bsModule)
 
@@ -73,7 +62,7 @@ class DistageTestRunner[F[_]](
         val testplans = group.map {
           pm =>
             val keys = pm.test.get.diKeys.toSet
-            val withUnboundParametersAsRoots = addUnboundParametersAsRoots(keys, appModule)
+            val withUnboundParametersAsRoots = runnerEnvironment.addUnboundParametersAsRoots(keys, appModule)
             pm -> injector.plan(PlannerInput(withUnboundParametersAsRoots, keys))
         }
 
@@ -88,10 +77,10 @@ class DistageTestRunner[F[_]](
             merged.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
-//        println(shared.primary.render())
-//        println("===")
-//        println(shared.subplan.render())
-//        println("===")
+        //        println(shared.primary.render())
+        //        println("===")
+        //        println(shared.subplan.render())
+        //        println("===")
 
         // first we produce our Monad's runtime
         injector.produceF[Identity](runtimePlan).use {
@@ -118,7 +107,7 @@ class DistageTestRunner[F[_]](
         effect.traverse_(testplans) {
           test =>
 
-            effect.maybeSuspend(reporter.testStatus(test.id, TestStatus.Ignored(value)))
+            effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
         }
 
       case None =>
@@ -126,7 +115,7 @@ class DistageTestRunner[F[_]](
     }
   }
 
-  private def proceed(testplans: ArrayBuffer[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  private def proceed(testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
     // here we produce our shared plan
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
       sharedLocator =>
@@ -155,25 +144,29 @@ class DistageTestRunner[F[_]](
     }
   }
 
-  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit effect: DIEffect[F]) = {
+  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
     Injector.inherit(integLocator).produceF[F](newtestplan.primary).use {
       testLocator =>
-        def doRun = for {
+        def doRun(before: Long): F[Unit] = for {
+
           _ <- testLocator.run(test.test)
-          _ <- effect.maybeSuspend(reporter.testStatus(test.id, TestStatus.Succeed))
+          after <- effect.maybeSuspend(System.nanoTime())
+          _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS))))
         } yield {
         }
 
-        val doRecover: PartialFunction[Throwable, F[Unit]] = {
+        def doRecover(before: Long): PartialFunction[Throwable, F[Unit]] = {
           // TODO: here we may also ignore individual tests
           case t: Throwable =>
-            reporter.testStatus(test.id, TestStatus.Failed(t))
+            val after = System.nanoTime()
+            reporter.testStatus(test.meta, TestStatus.Failed(t, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
             effect.pure(())
         }
 
         for {
-          _ <- effect.maybeSuspend(reporter.testStatus(test.id, TestStatus.Running))
-          _ <- effect.definitelyRecover(doRun, doRecover)
+          before <- effect.maybeSuspend(System.nanoTime())
+          _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
+          _ <- effect.definitelyRecover(doRun(before), doRecover(before))
         } yield {
 
         }
@@ -181,68 +174,16 @@ class DistageTestRunner[F[_]](
     }
   }
 
-  /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
-  protected def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    val paramsModule = Module.make {
-      (roots - DIKey.get[LocatorRef])
-        .filterNot(_.tpe.tpe.typeSymbol.isAbstract)
-        .map {
-          key =>
-            SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
-        }
-    }
 
-    paramsModule overridenBy primaryModule
-  }
-
-
-  protected def bootstrapOverride: BootstrapModule = BootstrapModule.empty
-
-  protected def bootstrapLogLevel: Level = IzLogger.Level.Warn
-
-  protected def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
-
-  protected def contextOptions(): ContextOptions = {
-    ContextOptions(
-      addGvDump = false,
-      warnOnCircularDeps = true,
-      RewriteRules(),
-      ConfigInjectionOptions(),
-    )
-  }
-
-  protected def makeConfigLoader(logger: IzLogger): ConfigLoader = {
-    val thisClass = this.getClass
-    val pname = s"${thisClass.getPackage.getName}"
-    val lastPackage = pname.split('.').last
-    val classname = thisClass.getName
-
-    val moreConfigs = Map(
-      s"$lastPackage-test" -> None,
-      s"$classname-test" -> None,
-    )
-    new ConfigLoaderLocalFSImpl(logger, None, moreConfigs)
-  }
-
-
-  protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F] = {
-    // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-    new ModuleProviderImpl[F](
-      lateLogger,
-      config,
-      roles,
-      options,
-      RawAppArgs.empty,
-      activation,
-    )
-  }
 }
 
 object DistageTestRunner {
 
-  case class TestId(string: String)
+  case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
 
-  case class DistageTest[F[_]](id: TestId, test: ProviderMagnet[F[_]], environment: TestEnvironment)
+  case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
+
+  case class TestMeta(id: TestId, pos: CodePosition)
 
   sealed trait TestStatus
 
@@ -252,18 +193,15 @@ object DistageTestRunner {
 
     case object Running extends TestStatus
 
-    case object Succeed extends TestStatus
+    case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends TestStatus
 
-    case object Cancelled extends TestStatus
+    case class Succeed(duration: FiniteDuration) extends TestStatus
 
-    case class Failed(t: Throwable) extends TestStatus
-
-    case class Ignored(checks: Seq[ResourceCheck.Failure]) extends TestStatus
-
+    case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
   }
 
   trait TestReporter {
-    def testStatus(test: DistageTestRunner.TestId, testStatus: TestStatus): Unit
+    def testStatus(test: TestMeta, testStatus: TestStatus): Unit
   }
 
 }
