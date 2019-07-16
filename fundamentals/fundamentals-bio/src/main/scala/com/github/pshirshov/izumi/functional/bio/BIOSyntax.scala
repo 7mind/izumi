@@ -1,10 +1,12 @@
 package com.github.pshirshov.izumi.functional.bio
 
+import com.github.pshirshov.izumi.functional.bio.BIOSyntax.FSummoner
+import com.github.pshirshov.izumi.functional.bio.BIOSyntax.FSummoner.FSummoner1
+
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 
-trait BIOSyntax {
-
+trait BIOSyntax extends BIOImplicitPuns {
   /**
    * A convenient dependent summoner for BIO* hierarchy.
    * Auto-narrows to the most powerful available class:
@@ -16,34 +18,48 @@ trait BIOSyntax {
    * }}}
    *
    * */
-  @inline final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
+  val F: FSummoner = new FSummoner {}
 
   /**
    * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
    */
-  final object catz extends BIOCatsConversions
-
-  @inline implicit final def ToFunctorOps[F[_, +_] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
-  @inline implicit final def ToBifunctorOps[F[+_, +_] : BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
-  @inline implicit final def ToApplicativeOps[F[+_, +_] : BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
-  @inline implicit final def ToGuaranteeOps[F[+_, +_] : BIOGuarantee, E, A](self: F[E, A]): BIOSyntax.BIOGuaranteeOps[F, E, A] = new BIOSyntax.BIOGuaranteeOps[F, E, A](self)
-  @inline implicit final def ToMonadErrorOps[F[+_, +_] : BIOMonadError, E, A](self: F[E, A]): BIOSyntax.BIOMonadErrorOps[F, E, A] = new BIOSyntax.BIOMonadErrorOps[F, E, A](self)
-  @inline implicit final def ToMonadOps[F[+_, +_] : BIOMonad, E, A](self: F[E, A]): BIOSyntax.BIOMonadOps[F, E, A] = new BIOSyntax.BIOMonadOps[F, E, A](self)
-  @inline implicit final def ToErrorOps[F[+_, +_] : BIOError, E, A](self: F[E, A]): BIOSyntax.BIOErrorOps[F, E, A] = new BIOSyntax.BIOErrorOps[F, E, A](self)
-  @inline implicit final def ToBracketOps[F[+_, +_] : BIOBracket, E, A](self: F[E, A]): BIOSyntax.BIOBracketOps[F, E, A] = new BIOSyntax.BIOBracketOps[F, E, A](self)
-  @inline implicit final def ToPanicOps[F[+_, +_] : BIOPanic, E, A](self: F[E, A]): BIOSyntax.BIOPanicOps[F, E, A] = new BIOSyntax.BIOPanicOps[F, E, A](self)
-
-  @inline implicit final def ToOps[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
-
-  @inline implicit final def ToAsyncOps[R[+_, +_]: BIOAsync, E, A](self: R[E, A]): BIOSyntax.BIOAsyncOps[R, E, A] = new BIOSyntax.BIOAsyncOps[R, E, A](self)
-
-  @inline implicit final def ToFlattenOps[R[+_, +_]: BIOMonad, E, A](self: R[E, R[E, A]]): BIOSyntax.BIOFlattenOps[R, E, A] = new BIOSyntax.BIOFlattenOps[R, E, A](self)
-
-  @inline implicit final def ToForkOps[R[_, _]: BIOFork, E, A](self: R[E, A]): BIOSyntax.BIOForkOps[R, E, A] = new BIOSyntax.BIOForkOps[R, E, A](self)
-
+  val catz: BIOCatsConversions = new BIOCatsConversions {}
 }
 
 object BIOSyntax {
+
+  trait FSummoner extends FSummoner1 {
+    @inline implicit final def F0[F[+_, +_]](F: this.type)(implicit F0: BIOFunctor[F]): BIOFunctor[F] = F0
+  }
+  object FSummoner {
+    trait FSummoner1 extends FSummoner2 {
+      @inline implicit final def FSummoner1[F[+ _, + _]](F: this.type)(implicit F0: BIOBifunctor[F]): BIOBifunctor[F] = F0
+    }
+    trait FSummoner2 extends FSummoner3 {
+      @inline implicit final def FSummoner2[F[+ _, + _]](F: this.type)(implicit F0: BIOApplicative[F]): BIOApplicative[F] = F0
+    }
+    trait FSummoner3 extends FSummoner4 {
+      @inline implicit final def FSummoner3[F[+ _, + _]](F: this.type)(implicit F0: BIOGuarantee[F]): BIOGuarantee[F] = F0
+    }
+    trait FSummoner4 extends FSummoner5 {
+      @inline implicit final def FSummoner4[F[+ _, + _]](F: this.type)(implicit F0: BIOError[F]): BIOError[F] = F0
+    }
+    trait FSummoner5 extends FSummoner6 {
+      @inline implicit final def FSummoner5[F[+ _, + _]](F: this.type)(implicit F0: BIOMonad[F]): BIOMonad[F] = F0
+    }
+    trait FSummoner6 extends FSummoner7 {
+      @inline implicit final def FSummoner6[F[+ _, + _]](F: this.type)(implicit F0: BIOMonadError[F]): BIOMonadError[F] = F0
+    }
+    trait FSummoner7 extends FSummoner8 {
+      @inline implicit final def FSummoner7[F[+ _, + _]](F: this.type)(implicit F0: BIOBracket[F]): BIOBracket[F] = F0
+    }
+    trait FSummoner8 extends FSummoner9 {
+      @inline implicit final def FSummoner8[F[+ _, + _]](F: this.type)(implicit F0: BIO[F]): BIO[F] = F0
+    }
+    trait FSummoner9 {
+      @inline implicit final def FSummoner9[F[+ _, + _]](F: this.type)(implicit F0: BIOAsync[F]): BIOAsync[F] = F0
+    }
+  }
 
   final class BIOFunctorOps[F[_, + _], E, A](private val r: F[E, A])(implicit private val F: BIOFunctor[F]) {
     @inline def map[B](f: A => B): F[E, B] = F.map(r)(f)
@@ -147,10 +163,8 @@ object BIOSyntax {
   }
 
   final class BIOOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIO[F]) {
-
     @inline def bracketAuto[E1 >: E, B](use: A => F[E1, B])(implicit ev: A <:< AutoCloseable): F[E1, B] =
       F.bracket[E1, A, B](r)(c => F.sync(c.close()))(use)
-
   }
 
   final class BIOAsyncOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOAsync[F]) {

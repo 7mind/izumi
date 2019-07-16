@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.bio
 
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad}
+import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, F}
 import org.scalatest.WordSpec
 
 import scala.concurrent.duration._

@@ -79,23 +79,23 @@ object Http4sTestContext {
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
-          None -> BIO.pure(None)
+          None -> F.pure(None)
 
         case Some(_) =>
           toId(initial, id, packet) match {
             case id@Some(_) =>
               // here we may set internal state
-              id -> BIO.pure(packet.ref.map {
+              id -> F.pure(packet.ref.map {
                 ref =>
                   RpcPacket.rpcResponse(ref, Json.obj())
               })
 
             case None =>
-              None -> BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
+              None -> F.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
           }
 
         case None =>
-          None -> BIO.pure(None)
+          None -> F.pure(None)
       }
     }
   }

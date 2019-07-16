@@ -85,10 +85,9 @@ object DIEffect
     override def fail[A](t: => Throwable): Identity[A] = throw t
   }
 
-  implicit def fromBIO[F[+_, +_]: BIO]: DIEffect[F[Throwable, ?]] = {
+  implicit def fromBIO[F[+_, +_]](implicit F: BIO[F]): DIEffect[F[Throwable, ?]] = {
     type E = Throwable
     new DIEffect[F[Throwable, ?]] {
-      import BIO._
       override def pure[A](a: A): F[E, A] = F.pure(a)
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)

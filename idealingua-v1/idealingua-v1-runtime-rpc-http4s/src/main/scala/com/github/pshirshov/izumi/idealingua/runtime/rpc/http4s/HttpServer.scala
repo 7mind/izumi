@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 import java.util.concurrent.RejectedExecutionException
 
 import _root_.io.circe.parser._
-import com.github.pshirshov.izumi.functional.bio.BIO._
+import com.github.pshirshov.izumi.functional.bio.BIO
 import com.github.pshirshov.izumi.functional.bio.BIOExit
 import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
@@ -130,7 +130,7 @@ class HttpServer[C <: Http4sContext]
       WebSocketBuilder[MonoIO].build(
         send = dequeueStream.merge(context.outStream).merge(context.pingStream)
       , receive = enqueueSink
-      , onClose = BIO.syncThrowable(handleWsClose(context))
+      , onClose = F.syncThrowable(handleWsClose(context))
       )
     }
   }
@@ -143,22 +143,22 @@ class HttpServer[C <: Http4sContext]
         .map(handleResult(context, _))
 
     case Close(_) =>
-      BIO.pure(None)
+      F.pure(None)
 
     case v: Binary =>
-      BIO.pure(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
+      F.pure(Some(handleWsError(context, List.empty, Some(v.toString.take(100) + "..."), "badframe")))
 
     case _: Pong =>
       onHeartbeat(requestTime).map(_ => None)
 
     case unknownMessage =>
       logger.error(s"Cannot handle unknown websocket message $unknownMessage")
-      BIO.pure(None)
+      F.pure(None)
   }
 
   def onHeartbeat(requestTime: ZonedDateTime): C#MonoIO[Unit] = {
     requestTime.discard()
-    BIO.unit
+    F.unit
   }
 
   protected def handleResult(context: WebsocketClientContextImpl[C], result: BIOExit[Throwable, Option[RpcPacket]]): Option[String] = {
@@ -176,17 +176,17 @@ class HttpServer[C <: Http4sContext]
 
   protected def makeResponse(context: WebsocketClientContextImpl[C], message: String): BiIO[Throwable, Option[RpcPacket]] = {
     for {
-      parsed <- BIO.fromEither(parse(message))
-      unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
-      id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
-      _ <- BIO.syncThrowable(context.updateId(id))
+      parsed <- F.fromEither(parse(message))
+      unmarshalled <- F.fromEither(parsed.as[RpcPacket])
+      id <- F.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
+      _ <- F.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandbox.catchAll {
         case BIOExit.Termination(exception, allExceptions, trace) =>
           logger.error(s"${context -> null}: WS processing terminated, $message, $exception, $allExceptions, $trace")
-          BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+          F.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
         case BIOExit.Error(exception, trace) =>
           logger.error(s"${context -> null}: WS processing failed, $message, $exception $trace")
-          BIO.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
+          F.pure(Some(rpc.RpcPacket.rpcFail(unmarshalled.id, exception.getMessage)))
       }
     } yield response
   }
@@ -195,19 +195,19 @@ class HttpServer[C <: Http4sContext]
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
         val (newId, response) = wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
-        BIO.syncThrowable(context.updateId(newId)) *> response
+        F.syncThrowable(context.updateId(newId)) *> response
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         for {
-          userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
-          _ <- BIO.sync(logger.debug(s"${context -> null}: $id, $userCtx"))
+          userCtx <- F.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
+          _ <- F.sync(logger.debug(s"${context -> null}: $id, $userCtx"))
           result <- muxer.doInvoke(data, userCtx, methodId)
           packet <- result match {
             case None =>
-              BIO.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
+              F.fail(new IRTMissingHandlerException(s"${context -> null}: No rpc handler for $methodId", input))
             case Some(resp) =>
-              BIO.pure(rpc.RpcPacket.rpcResponse(id, resp))
+              F.pure(rpc.RpcPacket.rpcResponse(id, resp))
           }
         } yield {
           Some(packet)
@@ -218,10 +218,10 @@ class HttpServer[C <: Http4sContext]
 
       case RpcPacket(RPCPacketKind.BuzzFailure, Some(data), _, Some(id), _, _, _) =>
         context.requestState.respond(id, RawResponse.BadRawResponse())
-        BIO.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
+        F.fail(new IRTGenericFailure(s"Buzzer has returned failure: $data"))
 
       case k =>
-        BIO.fail(new IRTMissingHandlerException(s"Can't handle $k", k))
+        F.fail(new IRTMissingHandlerException(s"Can't handle $k", k))
     }
   }
 
@@ -240,7 +240,7 @@ class HttpServer[C <: Http4sContext]
 
   protected def run(context: HttpRequestContext[MonoIO, RequestContext], body: String, method: IRTMethodId): MonoIO[Response[MonoIO]] = {
     val ioR = for {
-      parsed <- BIO.fromEither(parse(body))
+      parsed <- F.fromEither(parse(body))
       maybeResult <- muxer.doInvoke(parsed, context.context, method)
     } yield {
       maybeResult
@@ -285,7 +285,7 @@ class HttpServer[C <: Http4sContext]
 
       case Termination(_, (cause: IRTHttpFailureException) :: _, trace) =>
         logger.debug(s"${context -> null}: Request rejected, $method, ${context.request}, $cause, $trace")
-        BIO.pure(Response(status = cause.status))
+        F.pure(Response(status = cause.status))
 
       case Termination(_, (cause: RejectedExecutionException) :: _, trace) =>
         logger.warn(s"${context -> null}: Not enough capacity to handle $method: $cause $trace")

@@ -4,6 +4,7 @@ import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit, TimeoutException}
 
+import com.github.pshirshov.izumi.functional.bio._
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
 import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
@@ -73,7 +74,7 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
 
   override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
     Quirks.discard(id, initial, packet)
-    (None, BIO.pure(None))
+    (None, F.pure(None))
   }
 
   override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#RequestContext = {
@@ -95,7 +96,7 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 ) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
-  import com.github.pshirshov.izumi.functional.bio.BIO._
+  import com.github.pshirshov.izumi.functional.bio.BIO
 
   type WSC = WebsocketClientContext[BiIO, ClientId, RequestContext]
 
@@ -130,11 +131,11 @@ class WsSessionsStorageImpl[C <: Http4sContext]
             override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
               for {
                 json <- codec.encode(request)
-                id <- BIO.sync(session.enqueue(request.method, json))
-                resp <- BIO.bracket(BIO.pure(id)) {
+                id <- F.sync(session.enqueue(request.method, json))
+                resp <- F.bracket(F.pure(id)) {
                   id =>
                     logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                    BIO.sync(session.requestState.forget(id))
+                    F.sync(session.requestState.forget(id))
                 } {
                   id =>
                     session.requestState.poll(id, pollingInterval, timeout).flatMap {
@@ -144,10 +145,10 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 
                       case Some(value: RawResponse.BadRawResponse) =>
                         logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
-                        BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                        F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                       case None =>
-                        BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                        F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                     }
                 }
               } yield {

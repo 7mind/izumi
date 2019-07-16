@@ -9,14 +9,13 @@ import scala.util.Try
  * because [[BIOFunctor]] does not yet expose any operations
  * on it.
  * */
-trait BIOFunctor[F[_, +_]] {
+trait BIOFunctor[F[_, +_]] extends BIOFunctorInstances {
   def map[E, A, B](r: F[E, A])(f: A => B): F[E, B]
   def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
 }
 
-object BIOFunctor {
-  @inline final def apply[F[_, +_]: BIOFunctor]: BIOFunctor[F] = implicitly
-
+sealed trait BIOFunctorInstances
+object BIOFunctorInstances {
   // place ZIO instance at the root of hierarchy, so that it's visible when summoning any class in hierarchy
   @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
 }
@@ -24,10 +23,6 @@ object BIOFunctor {
 trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
   def bimap[E, A, E2, A2](r: F[E, A])(f: E => E2, g: A => A2): F[E2, A2]
   @inline def leftMap[E, A, E2](r: F[E, A])(f: E => E2): F[E2, A] = bimap(r)(f, identity)
-}
-
-object BIOBifunctor {
-  @inline final def apply[F[+_, +_]: BIOBifunctor]: BIOBifunctor[F] = implicitly
 }
 
 trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
@@ -53,16 +48,8 @@ trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
   @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
 }
 
-object BIOApplicative {
-  @inline final def apply[F[+_, +_]: BIOApplicative]: BIOApplicative[F] = implicitly
-}
-
 trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
   def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A]
-}
-
-object BIOGuarantee {
-  @inline final def apply[F[+_, +_]: BIOGuarantee]: BIOGuarantee[F] = implicitly
 }
 
 trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
@@ -84,14 +71,9 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))
 }
 
-object BIOError {
-  @inline final def apply[F[+_, +_]: BIOError]: BIOError[F] = implicitly
-}
-
 trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
   def flatMap[E, A, E2 >: E, B](r: F[E, A])(f: A => F[E2, B]): F[E2, B]
   def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
-
 
   // defaults
   @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
@@ -114,18 +96,10 @@ trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
   }
 }
 
-object BIOMonad {
-  @inline final def apply[F[+_, +_]: BIOMonad]: BIOMonad[F] = implicitly
-}
-
 trait BIOMonadError[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
   @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
     redeem(r)(e => flatMap(f(e))(fail(_)), pure)
   }
-}
-
-object BIOMonadError {
-  @inline final def apply[F[+_, +_]: BIOMonadError]: BIOMonadError[F] = implicitly
 }
 
 trait BIOBracket[F[+_, +_]] extends BIOMonadError[F] {
@@ -141,19 +115,11 @@ trait BIOBracket[F[+_, +_]] extends BIOMonadError[F] {
   }
 }
 
-object BIOBracket {
-  @inline final def apply[F[+_, +_]: BIOBracket]: BIOBracket[F] = implicitly
-}
-
 trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
   def terminate(v: => Throwable): F[Nothing, Nothing]
   def sandbox[E, A](r: F[E, A]): F[BIOExit.Failure[E], A]
 
   @inline final def orTerminate[E <: Throwable, A](r: F[E, A]): F[Nothing, A] = catchAll(r)(terminate(_))
-}
-
-object BIOPanic {
-  @inline final def apply[F[+_, +_]: BIOPanic]: BIOPanic[F] = implicitly
 }
 
 trait BIO[F[+_, +_]] extends BIOPanic[F] {
@@ -177,18 +143,3 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
     syncThrowable(effect.get)
   }
 }
-
-object BIO
-  extends BIOSyntax {
-  @inline final def apply[F[+_, +_]: BIO]: BIO[F] = implicitly
-
-  /**
-   * Shorthand for [[BIO.syncThrowable]]
-   *
-   * {{{
-   *   BIO(println("Hello world!"))
-   * }}}
-   * */
-  @inline final def apply[F[+_, +_], A](effect: => A)(implicit BIO: BIO[F]): F[Throwable, A] = BIO.syncThrowable(effect)
-}
-
