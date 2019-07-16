@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.stest
 
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.testkit.fixtures._
-import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider
+import com.github.pshirshov.izumi.distage.testkit.services.stest.ExternalResourceProvider
+import com.github.pshirshov.izumi.distage.testkit.stest.fixtures._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 

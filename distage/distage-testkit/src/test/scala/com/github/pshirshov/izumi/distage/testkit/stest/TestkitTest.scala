@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.stest
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.config.annotations.ConfPathId
@@ -7,8 +7,8 @@ import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.distage.testkit.TestkitTest.NotAddedClass
-import com.github.pshirshov.izumi.distage.testkit.fixtures._
+import com.github.pshirshov.izumi.distage.testkit.stest.TestkitTest.NotAddedClass
+import com.github.pshirshov.izumi.distage.testkit.stest.fixtures._
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, ModuleBase, TagK}
 

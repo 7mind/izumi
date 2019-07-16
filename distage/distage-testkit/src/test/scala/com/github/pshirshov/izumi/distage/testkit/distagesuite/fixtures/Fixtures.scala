@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.fixtures2
+package com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}

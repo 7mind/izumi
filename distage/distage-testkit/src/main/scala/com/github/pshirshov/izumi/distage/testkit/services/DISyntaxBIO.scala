@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.services
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.testkit.DistageBioSpecBIOSyntax.BIOBadBranch
+import com.github.pshirshov.izumi.distage.testkit.services.DISyntaxBIO.BIOBadBranch
 import com.github.pshirshov.izumi.functional.bio.BIOError
 import distage.{Tag, TagKK}
 
-trait DistageBioSpecBIOSyntax[F[+_, +_]] { this: DistageTestSupport[F[Throwable, ?]] =>
+trait DISyntaxBIO[F[+_, +_]] {
 
-  implicit def tagKK: TagKK[F]
+  implicit def tagBIO: TagKK[F]
 
-  protected final def dio(function: ProviderMagnet[F[_, _]])(implicit dummy: DummyImplicit): Unit = {
+  final def dio(function: ProviderMagnet[F[_, _]])(implicit dummy: DummyImplicit): Unit = {
     val fAsThrowable: ProviderMagnet[F[Throwable, _]] = function
       .zip(ProviderMagnet.identity[BIOError[F]])
       .map[F[Throwable, _]] {
@@ -23,7 +23,7 @@ trait DistageBioSpecBIOSyntax[F[+_, +_]] { this: DistageTestSupport[F[Throwable,
     dio(fAsThrowable)
   }
 
-  protected final def dio[T: Tag](function: T => F[_, _])(implicit dummy: DummyImplicit): Unit = {
+  final def dio[T: Tag](function: T => F[_, _])(implicit dummy: DummyImplicit): Unit = {
     val providerMagnet: ProviderMagnet[F[_, _]] = {
       x: T =>
         function(x)
@@ -33,7 +33,7 @@ trait DistageBioSpecBIOSyntax[F[+_, +_]] { this: DistageTestSupport[F[Throwable,
 
 }
 
-object DistageBioSpecBIOSyntax {
+object DISyntaxBIO {
   final case class BIOBadBranch[A](error: A)
     extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error")
 }

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.stest
 
 import org.scalatest.exceptions.TestCanceledException
 
@@ -21,5 +21,3 @@ private[testkit] trait IgnoreSupport {
 
 
 }
-
-

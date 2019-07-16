@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.stest
 
 import java.util.concurrent.atomic.AtomicBoolean
 

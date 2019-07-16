@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.stest
 
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.definition.AxisBase

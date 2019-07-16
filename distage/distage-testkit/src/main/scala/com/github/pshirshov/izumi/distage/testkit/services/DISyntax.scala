@@ -2,31 +2,32 @@ package com.github.pshirshov.izumi.distage.testkit.services
 
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import distage.Tag
+import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import distage.{Tag, TagK}
 
 
-abstract class DISyntax[F[_] : TagK] {
+trait DISyntax[F[_]] {
+  implicit def tagMonoIO: TagK[F]
 
-  protected def dio(function: ProviderMagnet[F[_]]): Unit
+  def dio(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit
 
-  protected final def dio[T: Tag](function: T => F[_]): Unit = {
+  final def dio[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
     val providerMagnet: ProviderMagnet[F[_]] = {
       x: T =>
         function(x)
     }
-    dio(providerMagnet)
+    dio(providerMagnet)(pos)
   }
 
-  protected final def di[T: Tag](function: T => Any): Unit = {
+  final def di[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer): Unit = {
     val providerMagnet: ProviderMagnet[Any] = {
       x: T =>
         function(x)
     }
-    di(providerMagnet)
+    di(providerMagnet)(pos)
   }
 
-  protected final def di(function: ProviderMagnet[Any]): Unit = {
+  final def di(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer): Unit = {
     val providerMagnet: ProviderMagnet[DIEffect[F]] = {
       eff: DIEffect[F] =>
         eff
@@ -37,7 +38,7 @@ abstract class DISyntax[F[_] : TagK] {
         e.pure(u)
     }
 
-    dio(f)
+    dio(f)(pos)
   }
 
 }
