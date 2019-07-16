@@ -9,8 +9,16 @@ class SafeType0[U <: SingletonUniverse](
                                          private val u: U // Needed just for the corner case in TagTest."work with odd type prefixes" ._.
                                          , val tpe: U#Type) {
 
-  private final val dealiased: U#Type = {
+  private final val dealiased: U#Type = SafeType0.synchronized {
     deannotate(tpe.dealias)
+  }
+
+  /**
+    * Workaround for Type's hashcode being unstable with sbt fork := false and version of scala other than 2.12.4
+    * (two different scala-reflect libraries end up on the classpath leading to undefined hashcode)
+    **/
+  override final val hashCode: Int = SafeType0.synchronized {
+    dealiased.typeSymbol.name.toString.hashCode
   }
 
   override final lazy val toString: String = {
@@ -42,14 +50,6 @@ class SafeType0[U <: SingletonUniverse](
         new SafeType0(u, tpe.pre.asInstanceOf[U#Type]) == new SafeType0(u, other.pre.asInstanceOf[U#Type]) && tpe.sym.name.toString == other.sym.name.toString
       case _ =>
         false
-  }
-
-  /**
-    * Workaround for Type's hashcode being unstable with sbt fork := false and version of scala other than 2.12.4
-    * (two different scala-reflect libraries end up on the classpath leading to undefined hashcode)
-    **/
-  override final val hashCode: Int = {
-    dealiased.typeSymbol.name.toString.hashCode
   }
 
   // Criteria for heuristic:
