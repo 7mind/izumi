@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
 
 import com.github.pshirshov.izumi.idealingua.model.common.DomainId
+import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLPostTyper
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
@@ -17,7 +18,7 @@ final case class DomainDefinition(
                                    , services: Seq[Service]
                                    , buzzers: Seq[Buzzer]
                                    , streams: Seq[Streams]
-                                   , referenced: Map[DomainId, DomainDefinition] // there may be a referential loop
+                                   , referenced: Map[DomainId, IDLPostTyper] // there may be a referential loop
                                  ) {
   def nonEmpty: Boolean = types.nonEmpty || services.nonEmpty || buzzers.nonEmpty || streams.nonEmpty
 

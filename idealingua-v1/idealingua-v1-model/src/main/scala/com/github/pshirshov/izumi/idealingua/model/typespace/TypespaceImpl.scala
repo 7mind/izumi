@@ -19,7 +19,7 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
   }
 
   private def collectReferenced(d: DomainDefinition, all: mutable.HashSet[DomainDefinition]): Unit = {
-    val r = d.referenced.values.toSet
+    val r = d.referenced.values.map(_.perform()).toSet
     val newR = r.diff(all)
     all ++= newR
     newR.foreach(rd => collectReferenced(rd, all))

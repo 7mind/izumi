@@ -19,5 +19,5 @@ final case class DomainMeshLoaded(
                                    streams: Seq[RawStreams],
                                    consts: Seq[RawConstBlock],
                                    imports: Seq[SingleImport],
-                                   referenced: immutable.Seq[(DomainId, DomainMeshLoaded)],
+                                   defn: DomainMeshResolved,
                                  )
