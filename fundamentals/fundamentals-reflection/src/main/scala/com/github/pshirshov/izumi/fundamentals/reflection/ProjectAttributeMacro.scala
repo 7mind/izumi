@@ -28,6 +28,8 @@ object ProjectAttributeMacro {
 
   def extractScalatestVersion(): Option[String] = macro extractScalatestVersionMacro
 
+  def extractScalaVersion(): Option[String] = macro extractScalaVersionMacro
+
   def extractScalaVersions(): Option[String] = macro extractScalaVersionsMacro
 
   def extract(name: String): Option[String] = macro extractAttrMacro
@@ -60,6 +62,10 @@ object ProjectAttributeMacro {
 
   def extractScalaVersionsMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
     extractAttr(c, "scala-versions")
+  }
+
+  def extractScalaVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
+    extractAttr(c, "scala-version")
   }
 
   def extractProjectVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
