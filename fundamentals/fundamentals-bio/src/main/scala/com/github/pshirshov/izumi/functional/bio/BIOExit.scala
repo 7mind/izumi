@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.functional.bio
 
-import zio.{Exit, FiberFailure}
+import zio.{Exit, Cause, FiberFailure}
 
 sealed trait BIOExit[+E, +A]
 
@@ -12,10 +12,10 @@ object BIOExit {
   }
 
   object Trace {
-    def zioTrace(cause: Exit.Cause[_]): Trace = ZIOTrace(cause)
+    def zioTrace(cause: Cause[_]): Trace = ZIOTrace(cause)
     def empty: Trace = new Trace { val asString = "<empty trace>" }
 
-    final case class ZIOTrace(cause: Exit.Cause[_]) extends Trace {
+    final case class ZIOTrace(cause: Cause[_]) extends Trace {
       override def asString: String = cause.prettyPrint
     }
   }
@@ -54,7 +54,7 @@ object BIOExit {
         toBIOExit(cause)
     }
 
-    @inline def toBIOExit[E](result: Exit.Cause[E]): BIOExit.Failure[E] = {
+    @inline def toBIOExit[E](result: Cause[E]): BIOExit.Failure[E] = {
       val trace = Trace.zioTrace(result)
 
       result.failureOrCause match {

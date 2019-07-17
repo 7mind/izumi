@@ -232,7 +232,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
             ConstValue.CBool(value)
         }
       case RawVal.CMap(value) =>
-        ConstValue.CMap(value.view.mapValues(translateValue).toMap)
+        ConstValue.CMap(value.mapValues(translateValue).toMap)
 
       case RawVal.CList(value) =>
         ConstValue.CList(value.map(translateValue))
@@ -249,14 +249,14 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         ConstValue.CTyped(tpe, typedValue)
       case RawVal.CTypedObject(typeId, value) =>
         val tpe = makeDefinite(typeId)
-        val obj = ConstValue.CMap(value.view.mapValues(translateValue).toMap)
+        val obj = ConstValue.CMap(value.mapValues(translateValue).toMap)
         // TODO: verify structure
         ConstValue.CTypedObject(tpe, obj)
     }
   }
 
   protected def fixAnno(v: RawAnno): Anno = {
-    Anno(v.name, v.values.value.view.mapValues(translateValue).toMap, v.position)
+    Anno(v.name, v.values.value.mapValues(translateValue).toMap, v.position)
   }
 
   protected def fixMeta(meta: RawNodeMeta): NodeMeta = {

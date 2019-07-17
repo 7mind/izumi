@@ -23,7 +23,7 @@ object LogMessageMacro {
 
       case other =>
         c.warning(other.pos,
-          s"""Complex expression found as an input for a logger: ${other.toString()}.
+          s"""Complex expression found as an input for a logger: ${other.toString()} ; ${showRaw(other)}.
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |${ArgumentNameExtractionMacro.example}

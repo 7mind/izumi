@@ -22,7 +22,6 @@ case class ResolvedConfig(
 
     ConfigFactory.parseMap {
       source.config.root().unwrapped().asScala
-        .view
         .filterKeys(key => paths.exists(_.startsWith(key)))
         .toMap
         .asJava
