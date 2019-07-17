@@ -6,17 +6,28 @@ import com.github.pshirshov.izumi.distage.testkit.services.DISyntax
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import distage.{Tag, TagK}
+import distage.{SafeType, Tag, TagK}
 import org.scalactic.source
 import org.scalatest.words.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 trait AbstractDistageSpec[F[_]] {
   implicit def tagMonoIO: TagK[F]
-  def registeredTests: ArrayBuffer[DistageTest[F]]
+}
+
+object DistageTestsRegistrySingleton {
+  private type Fake[T] = T
+  private val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
+
+  def list[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
+    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]])
+  }
+
+  def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
+    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]])
+  }
 }
 
 trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ShouldVerb with MustVerb with CanVerb {
@@ -25,7 +36,7 @@ trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ShouldVer
   protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
   protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
 
-  val registeredTests: ArrayBuffer[DistageTest[F]] = mutable.ArrayBuffer[DistageTest[F]]()
+  //val registeredTests: ArrayBuffer[DistageTest[F]] = mutable.ArrayBuffer[DistageTest[F]]()
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
 
@@ -42,7 +53,7 @@ trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ShouldVer
         distageSuiteId,
         distageSuiteName,
       )
-      registeredTests.append(DistageTest(function, env, TestMeta(id, pos.get)))
+      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos.get)))
     }
 
     def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = di(function)(pos)

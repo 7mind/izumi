@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.distage.testkit.distagesuite
 
 import cats.effect.IO
 import com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
-import com.github.pshirshov.izumi.distage.testkit.{DistageSpec, DistageSpecScalatest}
+import com.github.pshirshov.izumi.distage.testkit.DistageSpecScalatest
 
 
 class DistageTestExample extends DistageSpecScalatest[IO]  {
@@ -41,7 +41,7 @@ class DistageTestExample extends DistageSpecScalatest[IO]  {
 
 }
 
-class DistageTestExample1 extends DistageSpec[IO] {
+class DistageTestExample1 extends DistageSpecScalatest[IO] {
 
   "distage test custom runner" should {
     "test 1" in {

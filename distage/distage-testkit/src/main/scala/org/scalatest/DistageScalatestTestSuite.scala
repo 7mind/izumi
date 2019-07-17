@@ -1,26 +1,26 @@
 package org.scalatest
 
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationCheckerImpl
 import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, TestMeta, TestReporter, TestStatus}
-import com.github.pshirshov.izumi.distage.testkit.{AbstractDistageSpec, DistageSpec, DistageTestEnvironmentImpl, DistageTestRunner}
+import com.github.pshirshov.izumi.distage.testkit.{DistageTestEnvironmentImpl, DistageTestRunner, DistageTestsRegistrySingleton}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.TagK
 import org.scalatest.events._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+
 import scala.collection.immutable.TreeSet
-import scala.collection.mutable.ArrayBuffer
 
 trait DistageScalatestTestSuite[F[_]] extends Suite {
   thisSuite =>
   implicit def tagMonoIO: TagK[F]
 
-  private val otherSuites = PluginLoaderDefaultImpl.load[AbstractDistageSpec[F]](classOf[AbstractDistageSpec[F]], Seq(classOf[AbstractDistageSpec[F]].getCanonicalName, classOf[DistageSpec[F]].getCanonicalName), Seq(this.getClass.getPackage.getName), Seq.empty, false)
+//  private val otherSuites = {
+//
+//    PluginLoaderDefaultImpl.load[AbstractDistageSpec[F]](classOf[AbstractDistageSpec[F]], Seq(classOf[AbstractDistageSpec[F]].getCanonicalName, classOf[DistageSpec[F]].getCanonicalName), Seq(this.getClass.getPackage.getName), Seq.empty, false)
+//  }
+//
+//  private val filtered: Seq[AbstractDistageSpec[F]] = otherSuites.filter(s => SafeType.getK[F](s.tagMonoIO)== SafeType.getK[F](tagMonoIO))
+//  registeredTests ++= filtered.flatMap(_.registeredTests)
 
-  private val filtered: Seq[AbstractDistageSpec[F]] = otherSuites.filter(s => SafeType.getK[F](s.tagMonoIO)== SafeType.getK[F](tagMonoIO))
-  registeredTests ++= filtered.flatMap(_.registeredTests)
-
-  def registeredTests: ArrayBuffer[DistageTest[F]]
 
   override final protected def runNestedSuites(args: Args): Status = {
     throw new UnsupportedOperationException
@@ -51,7 +51,15 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
     //    val testNameArray =
     //      for (m <- getClass.getMethods; if isTestMethod(m))
     //        yield m.getName
-    TreeSet[String]() ++ registeredTests.map(_.meta.id.name)
+    TreeSet[String]() ++ ownTests.map(_.meta.id.name) // registeredTests.map(_.meta.id.name)
+  }
+
+  private def ownTests: Seq[DistageTest[F]] = {
+    monadTests.filter(_.meta.id.suiteId == suiteId)
+  }
+
+  private def monadTests: Seq[DistageTest[F]] = {
+    DistageTestsRegistrySingleton.list[F]
   }
 
   override def expectedTestCount(filter: Filter): Int = {
@@ -130,7 +138,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
 
       val tracker = args.tracker
 
-      val trackers = registeredTests.map {
+      val trackers = monadTests.map {
         t =>
           t.meta.id -> tracker.nextTracker()
       }.toMap
@@ -196,12 +204,13 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
       }
 
       val toRun = testName match {
-        case None => registeredTests
+        case None =>
+          monadTests
         case Some(tn) =>
           if (!testNames.contains(tn)) {
             throw new IllegalArgumentException(Resources.testNotFound(testName))
           } else {
-            registeredTests.filter(_.meta.id.name == tn)
+            monadTests.filter(_.meta.id.name == tn)
           }
       }
 
