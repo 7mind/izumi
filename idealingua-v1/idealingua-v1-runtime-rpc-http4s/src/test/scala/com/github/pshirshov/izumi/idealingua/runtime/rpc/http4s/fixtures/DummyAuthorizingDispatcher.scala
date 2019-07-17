@@ -9,7 +9,7 @@ import org.http4s.{BasicCredentials, Status}
 final class DummyAuthorizingDispatcher[R[+ _, + _] : BIO, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {
   override def serviceId: IRTServiceId = proxied.serviceId
 
-  override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.mapValues {
+  override def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, Ctx]] = proxied.allMethods.view.mapValues {
     method =>
       new IRTMethodWrapper[R, Ctx] {
         val R: BIO[R] = implicitly
@@ -31,5 +31,5 @@ final class DummyAuthorizingDispatcher[R[+ _, + _] : BIO, Ctx](proxied: IRTWrapp
           }
         }
       }
-  }
+  }.toMap
 }

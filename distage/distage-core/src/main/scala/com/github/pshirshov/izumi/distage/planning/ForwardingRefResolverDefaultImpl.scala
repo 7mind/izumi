@@ -50,9 +50,9 @@ class ForwardingRefResolverDefaultImpl
       }
 
     val proxyOps = if (initProxiesAsap) {
-      iniProxiesJustInTime(proxies.to, resolvedSteps)
+      iniProxiesJustInTime(mutable.HashSet.newBuilder.++=(proxies).result(), resolvedSteps)
     } else {
-      initProxiesAtTheEnd(proxies.to, resolvedSteps)
+      initProxiesAtTheEnd(proxies.toList, resolvedSteps)
     }
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })

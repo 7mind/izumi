@@ -69,7 +69,7 @@ object LogFormat {
       }
     }
 
-    @inline private[this] def process(occurences: mutable.HashMap[String, Int], templateBuilder: mutable.StringBuilder, messageBuilder: mutable.StringBuilder, acc: mutable.ArrayBuffer[RenderedParameter], withColors: Boolean)(balanced: Seq[(String, LogArg)]): Unit = {
+    @inline private[this] def process(occurences: mutable.HashMap[String, Int], templateBuilder: mutable.StringBuilder, messageBuilder: mutable.StringBuilder, acc: mutable.ArrayBuffer[RenderedParameter], withColors: Boolean)(balanced: collection.Seq[(String, LogArg)]): Unit = {
       balanced.foreach {
         case (part, arg) =>
           val uncoloredRepr = formatArg(arg, withColors = false)

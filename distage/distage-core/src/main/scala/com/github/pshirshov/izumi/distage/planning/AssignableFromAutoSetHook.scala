@@ -108,14 +108,14 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
         }
     }
 
-    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet(newMembers: _*)
+    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet.newBuilder.++=(newMembers).result()
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
 
     plan.copy(steps = newSteps :+ newSetOp)
   }
 
   override def phase90AfterForwarding(plan: OrderedPlan): OrderedPlan = {
-    val allKeys = plan.steps.map(_.target).to[ListSet]
+    val allKeys = ListSet.newBuilder.++=(plan.steps.map(_.target)).result()
 
     val withReorderedSetElements = plan.steps.map {
       case op@ExecutableOp.CreateSet(`setKey`, _, newSetKeys, _) =>

@@ -40,8 +40,8 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
-      V.scala_212,
       V.scala_213,
+      V.scala_212,
     ),
     scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
@@ -50,7 +50,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-version=${version.value}",
       s"-Xmacro-settings:product-group=${organization.value}",
-    ),    
+    ),
   )
 }
 
@@ -104,7 +104,6 @@ val WithoutBadPluginsSbt = new SettingsGroup {
 
 }
 
-
 val SbtScriptedSettings = new SettingsGroup {
   override val id = SettingsGroupId("SbtScriptedSettings")
 
@@ -117,6 +116,18 @@ val SbtScriptedSettings = new SettingsGroup {
           Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
       },
       scriptedBufferLog := false
+    )
+  ).flatten
+}
+
+val MicrositeSettings = new SettingsGroup {
+  override val id = SettingsGroupId("MicrositeSettings")
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      crossScalaVersions := Seq(
+        V.scala_212
+      ),
     )
   ).flatten
 }
@@ -447,7 +458,6 @@ lazy val idealinguaV1CompilerDeps = Seq[ProjectReferenceEx](
 lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .depends(idealinguaV1CompilerDeps: _*)
   .settings(AppSettings)
-  .enablePlugins(ScriptedPlugin)
   .settings(
     libraryDependencies ++= Seq(R.typesafe_config),
     mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler"),
@@ -551,6 +561,8 @@ lazy val microsite = inDoc.as.module
     PreprocessPlugin,
     MdocPlugin
   )
+  .settings(MicrositeSettings)
+  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
     skip in publish := true,
     DocKeys.prefix := {
@@ -592,7 +604,6 @@ lazy val microsite = inDoc.as.module
         }
       }
   )
-  .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
     paradoxMaterialTheme in Paradox ~= {
       _.withCopyright("7mind.io")

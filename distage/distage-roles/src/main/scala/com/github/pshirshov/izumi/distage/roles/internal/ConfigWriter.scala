@@ -167,7 +167,7 @@ class ConfigWriter[F[_] : DIEffect]
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
     import scala.collection.JavaConverters._
 
-    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.filterKeys(reference.hasPath).asJava)
+    ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.view.filterKeys(reference.hasPath).toMap.asJava)
   }
 
   private[this] def outputFileName(service: String, version: Option[ArtifactVersion], asJson: Boolean, suffix: Option[String]): String = {

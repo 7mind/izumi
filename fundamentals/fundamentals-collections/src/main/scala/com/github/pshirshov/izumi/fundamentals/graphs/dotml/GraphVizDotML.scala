@@ -51,10 +51,10 @@ abstract class GraphVizDotML(
     val tmpAttr = if (attrs == null) mutable.Map[String, String]() else attrs
     if (label != null) {
       s"""[label=${quote(label)} """ +
-        s"""${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
+        s"""${(tmpAttr foldLeft ""){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
     }
     else {
-      s"""[${("" /: tmpAttr){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
+      s"""[${(tmpAttr foldLeft ""){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
     }
   }
 

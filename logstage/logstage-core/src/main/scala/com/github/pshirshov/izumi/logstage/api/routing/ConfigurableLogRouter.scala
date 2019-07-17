@@ -50,7 +50,7 @@ object ConfigurableLogRouter {
   }
 
   final def apply(threshold: Log.Level, sinks: Seq[LogSink], levels: Map[String, Log.Level]): ConfigurableLogRouter = {
-    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks))
+    val levelConfigs = levels.mapValues(lvl => LoggerPathConfig(lvl, sinks)).toMap
     val rootConfig = LoggerPathConfig(threshold, sinks)
     val configService = new LogConfigServiceImpl(LoggerConfig(rootConfig, levelConfigs))
     val router = new ConfigurableLogRouter(configService)

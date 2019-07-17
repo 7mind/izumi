@@ -25,6 +25,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
     .groupBy(_._1)
     .mapValues(_.map(_._2).toSet.size)
+    .toMap
 
   private val trFull = new TypeRenderer(getName)
 

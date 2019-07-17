@@ -4,8 +4,6 @@ package com.github.pshirshov.izumi.fundamentals.platform
 import com.github.pshirshov.izumi.fundamentals.platform.crypto.{IzMurmur32Hash, IzSha256Hash}
 import org.scalatest.WordSpec
 
-
-
 class IzHashTest extends WordSpec {
 
   "murmur32 hash" should {

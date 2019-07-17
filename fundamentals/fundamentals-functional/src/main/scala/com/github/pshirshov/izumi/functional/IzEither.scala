@@ -14,7 +14,7 @@ trait IzEither {
     }
   }
 
-  implicit class EitherFolderExt2[L, R](result: Seq[Either[List[L], Traversable[R]]]) {
+  implicit class EitherFolderExt2[L, R](result: Seq[Either[List[L], Iterable[R]]]) {
     def biFlatAggregate: Either[List[L], List[R]] = {
       val bad = result.collect({ case Left(e) => e })
       if (bad.isEmpty) {

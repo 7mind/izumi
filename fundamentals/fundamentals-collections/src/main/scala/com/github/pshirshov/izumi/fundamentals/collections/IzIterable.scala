@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.collections
 import scala.collection.compat._
 import scala.collection.mutable
 
-class IzIterable[A, Repr[_] <: Iterable[_]](xs: Repr[A]) {
+final class IzIterable[A, Repr[_] <: Iterable[_]](private val xs: Repr[A]) extends AnyVal {
 
   def distinctBy[B, That](f: A => B)(implicit cbf: BuildFrom[Repr[A], A, That]): That = {
     val builder = cbf.newBuilder(xs)

@@ -7,6 +7,8 @@ object ImplicitCases {
 
   object ImplicitCase1 {
 
+    class DummyImplicit
+
     class MyDummyImplicit extends DummyImplicit {
       def imADummy: Boolean = true
     }

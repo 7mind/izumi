@@ -1,16 +1,18 @@
 package com.github.pshirshov.izumi.fundamentals.collections
 
-class IzTraversables[A](list: TraversableOnce[A]) {
+final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal {
   def maxOr(default: A)(implicit cmp: Ordering[A]): A = {
-    if (list.nonEmpty) {
-      list.max(cmp)
+    val iterator = list.iterator
+    if (iterator.nonEmpty) {
+      iterator.max(cmp)
     } else {
       default
     }
   }
   def minOr(default: A)(implicit cmp: Ordering[A]): A = {
-    if (list.nonEmpty) {
-      list.min(cmp)
+    val iterator = list.iterator
+    if (iterator.nonEmpty) {
+      iterator.min(cmp)
     } else {
       default
     }

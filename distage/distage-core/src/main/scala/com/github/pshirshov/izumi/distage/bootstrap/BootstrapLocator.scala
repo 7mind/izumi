@@ -37,11 +37,11 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
     resource.extract(resource.acquire).throwOnFailure()
   }
 
-  private val _instances = new AtomicReference[Seq[IdentifiedRef]](bootstrappedContext.instances)
+  private val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
 
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
-  override def instances: Seq[IdentifiedRef] = {
+  override def instances: collection.Seq[IdentifiedRef] = {
     Option(_instances.get()) match {
       case Some(value) =>
         value
@@ -50,7 +50,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
     }
   }
 
-  override protected[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override protected[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
 
   override protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = {
     Option(_instances.get()) match {
