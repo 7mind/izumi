@@ -45,3 +45,5 @@ abstract class MockAppPlugin[F[_] : TagK]
 }
 
 object MockAppCatsIOPlugin extends MockAppPlugin[IO]
+
+object MockAppZioPlugin extends MockAppPlugin[zio.IO[Throwable, ?]]

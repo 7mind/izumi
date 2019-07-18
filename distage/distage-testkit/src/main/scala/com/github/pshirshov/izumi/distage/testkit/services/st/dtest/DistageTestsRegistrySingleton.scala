@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.distage.testkit.services.st.dtest
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentHashMap
 
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import distage.{SafeType, TagK}
@@ -19,5 +19,11 @@ object DistageTestsRegistrySingleton {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]])
   }
 
-  val firstRun = new AtomicBoolean(true)
+
+  private def runTracker = new ConcurrentHashMap[SafeType, Boolean]()
+
+  def ticketToProceed[F[_]: TagK](): Boolean = {
+    val tpe = SafeType.getK[F]
+    !runTracker.putIfAbsent(tpe, true)
+  }
 }
