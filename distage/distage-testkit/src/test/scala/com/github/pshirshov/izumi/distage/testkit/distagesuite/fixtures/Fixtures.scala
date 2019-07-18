@@ -4,7 +4,7 @@ import cats.effect.IO
 import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
 import com.github.pshirshov.izumi.distage.plugins.PluginDef
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.testkit.TODOMemoizeMe
+import com.github.pshirshov.izumi.distage.testkit.services.dstest.TODOMemoizeMe
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
 import distage.TagK
 
