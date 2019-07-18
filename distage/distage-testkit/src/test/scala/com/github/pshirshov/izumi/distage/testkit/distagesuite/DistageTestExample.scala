@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.distage.testkit.distagesuite
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
 import com.github.pshirshov.izumi.distage.testkit.DistageSpecScalatest
+import com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
 
 
-class DistageTestExample extends DistageSpecScalatest[IO]  {
+class DistageTestExample extends DistageSpecScalatest[IO] {
 
   "distage test runner" should {
     "test 1" in {

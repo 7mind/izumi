@@ -1,7 +1,7 @@
 package org.scalatest
 
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationCheckerImpl
-import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, TestMeta, TestReporter, TestStatus}
+import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, SuiteData, TestMeta, TestReporter, TestStatus}
 import com.github.pshirshov.izumi.distage.testkit.{DistageTestEnvironmentImpl, DistageTestRunner, DistageTestsRegistrySingleton}
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.TagK
@@ -12,15 +12,6 @@ import scala.collection.immutable.TreeSet
 trait DistageScalatestTestSuite[F[_]] extends Suite {
   thisSuite =>
   implicit def tagMonoIO: TagK[F]
-
-//  private val otherSuites = {
-//
-//    PluginLoaderDefaultImpl.load[AbstractDistageSpec[F]](classOf[AbstractDistageSpec[F]], Seq(classOf[AbstractDistageSpec[F]].getCanonicalName, classOf[DistageSpec[F]].getCanonicalName), Seq(this.getClass.getPackage.getName), Seq.empty, false)
-//  }
-//
-//  private val filtered: Seq[AbstractDistageSpec[F]] = otherSuites.filter(s => SafeType.getK[F](s.tagMonoIO)== SafeType.getK[F](tagMonoIO))
-//  registeredTests ++= filtered.flatMap(_.registeredTests)
-
 
   override final protected def runNestedSuites(args: Args): Status = {
     throw new UnsupportedOperationException
@@ -35,23 +26,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
   }
 
   override def testNames: Set[String] = {
-    //    def isTestMethod(m: Method) = {
-    //
-    //      val isInstanceMethod = !Modifier.isStatic(m.getModifiers())
-    //
-    //      val paramTypes = m.getParameterTypes
-    //      val hasNoParams = paramTypes.length == 0
-    //      // val hasVoidReturnType = m.getReturnType == Void.TYPE
-    ////      val hasTestAnnotation = m.getAnnotation(classOf[org.junit.Test]) != null
-    //
-    ////      isInstanceMethod && hasNoParams && hasTestAnnotation
-    //      false
-    //    }
-    //
-    //    val testNameArray =
-    //      for (m <- getClass.getMethods; if isTestMethod(m))
-    //        yield m.getName
-    TreeSet[String]() ++ ownTests.map(_.meta.id.name) // registeredTests.map(_.meta.id.name)
+    TreeSet[String]() ++ ownTests.map(_.meta.id.name)
   }
 
   private def ownTests: Seq[DistageTest[F]] = {
@@ -72,21 +47,8 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
 
 
   override def tags: Map[String, Set[String]] = {
-    //    val elements =
-    //      for (testName <- testNames; if hasIgnoreTag(testName))
-    //        yield testName -> Set("org.scalatest.Ignore")
-    //    autoTagClassAnnotations(Map() ++ elements, this)
-
     Map.empty
   }
-
-  //  private def getMethodForJUnitTestName(testName: String): Method = {
-  //    getClass.getMethod(testName, new Array[Class[_]](0): _*)
-  //  }
-  //  private def hasIgnoreTag(testName: String) = {
-  //    false
-  //    //getMethodForJUnitTestName(testName).getAnnotation(classOf[org.junit.Ignore]) != null
-  //  }
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap = ConfigMap.empty): TestData = {
     val suiteTags = for {
@@ -98,15 +60,6 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
     }
 
     val testTags: Set[String] = Set.empty
-    //      try {
-    //        if (hasIgnoreTag(testName))
-    //          Set("org.scalatest.Ignore")
-    //        else
-    //          Set.empty[String]
-    //      }
-    //      catch {
-    //        case e: IllegalArgumentException => Set.empty[String]
-    //      }
 
     new TestData {
       val configMap: ConfigMap = theConfigMap
@@ -129,8 +82,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
     */
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
-
-    if (args.filter.tagsToInclude.isEmpty) {
+    if (DistageTestsRegistrySingleton.firstRun.compareAndSet(true, false)) {
       val logger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
 
       val checker = new IntegrationCheckerImpl(logger)
@@ -138,12 +90,9 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
 
       val tracker = args.tracker
 
-      val trackers = monadTests.map {
-        t =>
-          t.meta.id -> tracker.nextTracker()
-      }.toMap
-
-      def ord(testId: TestMeta) = trackers(testId.id).nextOrdinal()
+      def ord(testId: TestMeta) = {
+        tracker.nextOrdinal()
+      }
 
       def recordStart(test: TestMeta): Unit = {
         args.reporter.apply(TestStarting(
@@ -156,6 +105,26 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
       }
 
       val dreporter = new TestReporter {
+
+        override def beginSuite(id: SuiteData): Unit = {
+          args.reporter.apply(TestStarting(
+            tracker.nextOrdinal(),
+            suiteName, suiteId, Some(suiteId),
+            id.suiteName,
+            id.suiteName,
+          ))
+        }
+
+        override def endSuite(id: SuiteData): Unit = {
+          args.reporter.apply(TestSucceeded(
+            tracker.nextOrdinal(),
+            suiteName, suiteId, Some(suiteId),
+            id.suiteName,
+            id.suiteName,
+            scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
+          ))
+        }
+
         override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
           testStatus match {
             case TestStatus.Scheduled =>
@@ -172,6 +141,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
                 scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
                 location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
                 duration = Some(duration.toMillis),
+                rerunner = Some(test.id.suiteClassName),
               ))
             case TestStatus.Failed(t, duration) =>
               args.reporter.apply(TestFailed(
@@ -184,6 +154,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
                 location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
                 throwable = Some(t),
                 duration = Some(duration.toMillis),
+                rerunner = Some(test.id.suiteClassName),
               ))
             case TestStatus.Cancelled(checks) =>
               recordStart(test)
@@ -195,17 +166,29 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
                 test.id.name,
                 scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
                 location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+                rerunner = Some(test.id.suiteClassName),
               ))
           }
 
-
-          ///println(s"Test ${test.string} is $testStatus")
         }
       }
 
       val toRun = testName match {
         case None =>
-          monadTests
+
+          val enabled = args.filter.dynaTags.testTags.toSeq.flatMap {
+            case (suiteId, tests) =>
+              tests.filter(_._2.contains(Suite.SELECTED_TAG)).map {
+                case (testname, _) =>
+                  (suiteId, testname)
+              }
+          }.toSet
+
+          if (enabled.isEmpty) {
+            monadTests
+          } else {
+            monadTests.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
+          }
         case Some(tn) =>
           if (!testNames.contains(tn)) {
             throw new IllegalArgumentException(Resources.testNotFound(testName))
