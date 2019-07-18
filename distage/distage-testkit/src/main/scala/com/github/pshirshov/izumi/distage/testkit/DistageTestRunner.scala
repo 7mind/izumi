@@ -9,7 +9,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
 import com.github.pshirshov.izumi.distage.model.{Locator, SplittedPlan}
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker
+import com.github.pshirshov.izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, TestReporter}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
@@ -41,6 +41,7 @@ class DistageTestRunner[F[_] : TagK](
         val options = runnerEnvironment.contextOptions()
         val loader = runnerEnvironment.makeConfigLoader(logger)
         val config = loader.buildConfig()
+        val checker = new PlanCircularDependencyCheck(options, logger)
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
@@ -82,6 +83,8 @@ class DistageTestRunner[F[_] : TagK](
         //        println(shared.subplan.render())
         //        println("===")
 
+        checker.verify(runtimePlan)
+
         // first we produce our Monad's runtime
         injector.produceF[Identity](runtimePlan).use {
           runtimeLocator =>
@@ -93,7 +96,7 @@ class DistageTestRunner[F[_] : TagK](
               Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
                 sharedIntegrationLocator =>
                   check(testplans.map(_._1), shared, effect, sharedIntegrationLocator) {
-                    proceed(testplans, shared, sharedIntegrationLocator)
+                    proceed(checker, testplans, shared, sharedIntegrationLocator)
                   }
               }
             }
@@ -101,7 +104,7 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, effect: DIEffect[F], integLocator: Locator)(f: => F[Unit]) = {
+  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, effect: DIEffect[F], integLocator: Locator)(f: => F[Unit]): F[Unit] = {
     integrationChecker.check(plans.subRoots, integLocator) match {
       case Some(value) =>
         effect.traverse_(testplans) {
@@ -115,8 +118,10 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def proceed(testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
     // here we produce our shared plan
+    checker.verify(shared.primary)
+    checker.verify(shared.subplan)
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
       sharedLocator =>
         val testInjector = Injector.inherit(sharedLocator)
@@ -139,6 +144,8 @@ class DistageTestRunner[F[_] : TagK](
                     _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   }
 
+                  checker.verify(newtestplan.subplan)
+                  checker.verify(newtestplan.primary)
                   // we are ready to run the test, finally
                   testInjector.produceF[F](newtestplan.subplan).use {
                     integLocator =>
@@ -152,24 +159,6 @@ class DistageTestRunner[F[_] : TagK](
             }
 
         }
-//        effect.traverse_(testplans) {
-//          case (test, testplan) =>
-//            val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
-//
-//            val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
-//              _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-//            }
-//
-//            // we are ready to run the test, finally
-//            testInjector.produceF[F](newtestplan.subplan).use {
-//              integLocator =>
-//                check(Seq(test), newtestplan, effect, integLocator) {
-//                  proceedIndividual(test, newtestplan, integLocator)
-//                }
-//            }
-//
-//        }
-
     }
   }
 

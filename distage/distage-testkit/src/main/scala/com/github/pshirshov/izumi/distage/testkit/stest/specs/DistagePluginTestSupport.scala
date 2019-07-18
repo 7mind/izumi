@@ -14,7 +14,7 @@ import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, Plug
 import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache
 import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import com.github.pshirshov.izumi.distage.testkit.services.stest.MemoizationContextId
-import com.github.pshirshov.izumi.distage.testkit.{DistageTestSupport, TestEnvironment}
+import com.github.pshirshov.izumi.distage.testkit.TestEnvironment
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.SafeType

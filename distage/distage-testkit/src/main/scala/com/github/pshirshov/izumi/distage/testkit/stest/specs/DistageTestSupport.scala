@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.stest.specs
 
 import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
 import com.github.pshirshov.izumi.distage.model.Locator
@@ -16,6 +16,7 @@ import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.Cont
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
 import com.github.pshirshov.izumi.distage.roles.services._
+import com.github.pshirshov.izumi.distage.testkit.TestEnvironment
 import com.github.pshirshov.izumi.distage.testkit.services._
 import com.github.pshirshov.izumi.distage.testkit.services.stest.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.distage.testkit.services.stest.{ExternalResourceProvider, IgnoreSupport, MemoizationContextId, SuppressionSupport}

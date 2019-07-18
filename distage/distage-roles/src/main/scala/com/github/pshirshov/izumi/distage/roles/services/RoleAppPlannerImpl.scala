@@ -2,7 +2,6 @@ package com.github.pshirshov.izumi.distage.roles.services
 
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
 import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
@@ -40,9 +39,10 @@ class RoleAppPlannerImpl[F[_] : TagK](
       _.collectChildren[IntegrationCheck].map(_.target).toSet
     }
 
-    verify(runtimePlan)
-    verify(appPlan.subplan)
-    verify(appPlan.primary)
+    val check = new PlanCircularDependencyCheck(options, logger)
+    check.verify(runtimePlan)
+    check.verify(appPlan.subplan)
+    check.verify(appPlan.primary)
 
     AppStartupPlans(
       runtimePlan,
@@ -52,21 +52,5 @@ class RoleAppPlannerImpl[F[_] : TagK](
       injector
     )
   }
-
-  private def verify(plan: OrderedPlan): Unit = {
-    if (options.warnOnCircularDeps) {
-      val allProxies = plan.steps.collect {
-        case s: ExecutableOp.ProxyOp.MakeProxy =>
-          s
-      }
-
-      allProxies.foreach {
-        s =>
-          val deptree = plan.topology.dependencies.tree(s.target)
-          val tree = s"\n${plan.renderDeps(deptree)}"
-          logger.warn(s"Circular dependency has been resolved with proxy for ${s.target -> "key"}, $tree")
-      }
-    }
-  }
-
 }
+
