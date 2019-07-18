@@ -1,56 +1,44 @@
 package com.github.pshirshov.izumi.distage.testkit.services.st.dtest
 
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.testkit.services.DISyntax
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.{DistageTestEnvironmentProviderImpl, TestEnvironment}
+import com.github.pshirshov.izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
+import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import distage.{Tag, TagK}
+import distage.{Tag, TagK, TagKK}
 import org.scalactic.source
 import org.scalatest.words.StringVerbBlockRegistration
 
 import scala.language.implicitConversions
 
-trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ScalatestWords {
+trait TestRegistration[F[_]] {
+  protected[dtest] def registerTest(function: ProviderMagnet[F[_]], pos: CodePosition, id: TestId): Unit
+}
+
+trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with TestRegistration[F] {
+  this: AbstractDistageSpec[F] =>
+
+  import DistageTestSuiteSyntax._
 
   protected lazy val tenv = new DistageTestEnvironmentProviderImpl(this.getClass)
   protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
   protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
 
-  //val registeredTests: ArrayBuffer[DistageTest[F]] = mutable.ArrayBuffer[DistageTest[F]]()
-
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
 
   protected def distageSuiteId: String = this.getClass.getName
 
-  protected final class WordSpecStringWrapper(string: String) extends DISyntax[F] {
-
-    override implicit def tagMonoIO: TagK[F] = DistageTestSuiteSyntax.this.tagMonoIO
-
-    override def dio(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      val id = TestId(
-        Seq(left, verb, string).mkString(" "),
-        distageSuiteName,
-        distageSuiteId,
-        distageSuiteName,
-      )
-      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos.get)))
-    }
-
-    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = di(function)(pos)
-
-    def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = dio(function)(pos)
-
-    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = dio(function)(implicitly[Tag[T]], pos)
-
-    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = di(function)(implicitly[Tag[T]], pos)
-
+  protected[dtest] def registerTest(function: ProviderMagnet[F[_]], pos: CodePosition, id: TestId): Unit = {
+    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos)))
   }
+
 
   private var left: String = ""
   private var verb: String = ""
+
   protected implicit val subjectRegistrationFunction: StringVerbBlockRegistration = new StringVerbBlockRegistration {
     def apply(left: String, verb: String, pos: source.Position, f: () => Unit): Unit = registerBranch(left, Some(verb), verb, "apply", 6, -2, pos, f)
   }
@@ -62,7 +50,89 @@ trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with Scalatest
     fun()
   }
 
-  protected implicit def convertToWordSpecStringWrapper(s: String): WordSpecStringWrapper = new WordSpecStringWrapper(s)
+  protected implicit def convertToWordSpecStringWrapper(s: String): WordSpecStringWrapper[F] = {
+    new WordSpecStringWrapper(left, verb, distageSuiteName, distageSuiteId, s, this)
+  }
+}
+
+object DistageTestSuiteSyntax {
+
+  class WordSpecStringWrapper[F[_]](left: String, verb: String, suiteName: String, suiteId: String, string: String, reg: TestRegistration[F])(implicit val tagMonoIO: TagK[F]) extends DISyntaxBase[F] {
+    override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
+      val id = TestId(
+        Seq(left, verb, string).mkString(" "),
+        suiteName,
+        suiteId,
+        suiteName,
+      )
+      reg.registerTest(function, pos, id)
+    }
+
+    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
+      takeIO(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+      takeFunIO(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeFunAny(function, pos.get)
+    }
+  }
+
+  class WordSpecStringWrapper2[F[+_, +_]](
+                                         left: String,
+                                         verb: String,
+                                         suiteName: String,
+                                         suiteId: String,
+                                         string: String,
+                                         reg: TestRegistration[F[Throwable, ?]]
+                                       )
+                                       (
+                                         implicit val tagMonoIO: TagK[F[Throwable, ?]],
+                                         val tagBIO: TagKK[F],
+                                       ) extends DISyntaxBIOBase[F] {
+
+    override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
+      val id = TestId(
+        Seq(left, verb, string).mkString(" "),
+        suiteName,
+        suiteId,
+        suiteName,
+      )
+      reg.registerTest(fAsThrowable, pos, id)
+    }
+
+    def in(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
+      take2(function, pos.get)
+    }
+
+
+    final def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      take2(function, pos.get)
+    }
+  }
+
+
+  def getSimpleNameOfAnObjectsClass(o: AnyRef): String = stripDollars(parseSimpleName(o.getClass.getName))
+
+  // [bv: this is a good example of the expression type refactor. I moved this from SuiteClassNameListCellRenderer]
+  // this will be needed by the GUI classes, etc.
+  def parseSimpleName(fullyQualifiedName: String): String = {
+
+    val dotPos = fullyQualifiedName.lastIndexOf('.')
+
+    // [bv: need to check the dotPos != fullyQualifiedName.length]
+    if (dotPos != -1 && dotPos != fullyQualifiedName.length)
+      fullyQualifiedName.substring(dotPos + 1)
+    else
+      fullyQualifiedName
+  }
 
   // This attempts to strip dollar signs that happen when using the interpreter. It is quite fragile
   // and already broke once. In the early days, all funky dollar sign encrusted names coming out of
@@ -85,20 +155,5 @@ trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with Scalatest
         }
       }
     }
-  }
-
-  def getSimpleNameOfAnObjectsClass(o: AnyRef): String = stripDollars(parseSimpleName(o.getClass.getName))
-
-  // [bv: this is a good example of the expression type refactor. I moved this from SuiteClassNameListCellRenderer]
-  // this will be needed by the GUI classes, etc.
-  def parseSimpleName(fullyQualifiedName: String): String = {
-
-    val dotPos = fullyQualifiedName.lastIndexOf('.')
-
-    // [bv: need to check the dotPos != fullyQualifiedName.length]
-    if (dotPos != -1 && dotPos != fullyQualifiedName.length)
-      fullyQualifiedName.substring(dotPos + 1)
-    else
-      fullyQualifiedName
   }
 }
