@@ -5,7 +5,7 @@ import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter
-import com.github.pshirshov.izumi.functional.bio.{BIORunner, BlockingIO}
+import com.github.pshirshov.izumi.functional.bio.{BIOError, BIORunner, BlockingIO}
 import distage.Id
 import logstage.IzLogger
 
@@ -30,6 +30,8 @@ trait ZioDIEffectModule extends ModuleDef {
     blockingPool: ThreadPoolExecutor @Id("zio.pool.io") =>
       BlockingIO.BlockingZIOFromThreadPool(blockingPool)
   }
+
+  addImplicit[BIOError[zio.IO]]
 
   make[BIORunner[zio.IO]].from {
     (
