@@ -123,23 +123,52 @@ class DistageTestRunner[F[_] : TagK](
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        effect.traverse_(testplans) {
-          case (test, testplan) =>
-            val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
+        effect.traverse_(testplans.groupBy {
+          t =>
+            val id = t._1.meta.id
+            SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
+        }) {
+          case (id, plans) =>
+            for {
+              _ <- effect.maybeSuspend(reporter.beginSuite(id))
+              _ <- effect.traverse_(plans) {
+                case (test, testplan) =>
+                  val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
 
-            val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
-              _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-            }
+                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
+                    _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
+                  }
 
-            // we are ready to run the test, finally
-            testInjector.produceF[F](newtestplan.subplan).use {
-              integLocator =>
-                check(Seq(test), newtestplan, effect, integLocator) {
-                  proceedIndividual(test, newtestplan, integLocator)
-                }
+                  // we are ready to run the test, finally
+                  testInjector.produceF[F](newtestplan.subplan).use {
+                    integLocator =>
+                      check(Seq(test), newtestplan, effect, integLocator) {
+                        proceedIndividual(test, newtestplan, integLocator)
+                      }
+                  }
+              }
+              _ <- effect.maybeSuspend(reporter.endSuite(id))
+            } yield {
             }
 
         }
+//        effect.traverse_(testplans) {
+//          case (test, testplan) =>
+//            val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
+//
+//            val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
+//              _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
+//            }
+//
+//            // we are ready to run the test, finally
+//            testInjector.produceF[F](newtestplan.subplan).use {
+//              integLocator =>
+//                check(Seq(test), newtestplan, effect, integLocator) {
+//                  proceedIndividual(test, newtestplan, integLocator)
+//                }
+//            }
+//
+//        }
 
     }
   }
@@ -200,7 +229,11 @@ object DistageTestRunner {
     case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
   }
 
+  case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
+
   trait TestReporter {
+    def beginSuite(id: SuiteData): Unit
+    def endSuite(id: SuiteData): Unit
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
   }
 

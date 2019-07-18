@@ -1,5 +1,7 @@
 package com.github.pshirshov.izumi.distage.testkit
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import com.github.pshirshov.izumi.distage.testkit.services.DISyntax
@@ -8,7 +10,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.{SafeType, Tag, TagK}
 import org.scalactic.source
-import org.scalatest.words.{CanVerb, MustVerb, ShouldVerb, StringVerbBlockRegistration}
+import org.scalatest.words.StringVerbBlockRegistration
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -28,9 +30,19 @@ object DistageTestsRegistrySingleton {
   def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]])
   }
+
+  val firstRun = new AtomicBoolean(true)
 }
 
-trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ShouldVerb with MustVerb with CanVerb {
+import org.scalatest.words.{CanVerb, MustVerb, ShouldVerb}
+
+@org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
+trait ScalatestWords extends ShouldVerb with MustVerb with CanVerb {
+
+}
+
+
+trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ScalatestWords {
 
   protected lazy val tenv = new DistageTestEnvironmentProviderImpl()
   protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
@@ -48,7 +60,7 @@ trait DistageTestSuiteSyntax[F[_]] extends AbstractDistageSpec[F] with ShouldVer
 
     override def dio(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       val id = TestId(
-        Seq(left, verb, string, s"(${pos.get.position.line})").mkString(" "),
+        Seq(left, verb, string).mkString(" "),
         distageSuiteName,
         distageSuiteId,
         distageSuiteName,
