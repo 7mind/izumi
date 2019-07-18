@@ -3,7 +3,7 @@ package org.scalatest
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationCheckerImpl
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner._
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.{DistageTestEnvironmentImpl, DistageTestRunner}
-import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
+import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.{AbstractDistageSpec, DistageTestsRegistrySingleton}
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.TagK
@@ -11,7 +11,7 @@ import org.scalatest.events._
 
 import scala.collection.immutable.TreeSet
 
-trait DistageScalatestTestSuite[F[_]] extends Suite {
+trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] {
   thisSuite =>
   implicit def tagMonoIO: TagK[F]
 
