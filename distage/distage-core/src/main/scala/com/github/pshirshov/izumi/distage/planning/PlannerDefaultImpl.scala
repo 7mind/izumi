@@ -6,10 +6,12 @@ import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDepende
 import com.github.pshirshov.izumi.distage.model.plan._
 import com.github.pshirshov.izumi.distage.model.planning._
 import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.{Planner, PlannerInput}
+import com.github.pshirshov.izumi.distage.model.{GCMode, Planner, PlannerInput}
 import com.github.pshirshov.izumi.functional.Value
 import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
 import distage.DIKey
+
+import scala.collection.immutable
 
 final class PlannerDefaultImpl
 (
@@ -98,7 +100,14 @@ final class PlannerDefaultImpl
       }
       .toMap
 
-    SemiPlan(plan.definition, (imports.values ++ plan.steps).toVector, plan.gcMode)
+    val allOps = (imports.values ++ plan.steps).toVector
+    val roots = plan.gcMode.toSet
+    val missingRoots: Vector[ExecutableOp] = roots.diff(allOps.map(_.target).toSet).map {
+      root =>
+        ImportDependency(root, Set.empty, None)
+    }.toVector
+
+    SemiPlan(plan.definition, missingRoots ++ allOps, plan.gcMode)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {

@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.distage.testkit.services.DISyntaxBIO.BIOBadBra
 import com.github.pshirshov.izumi.functional.bio.BIOError
 import distage.{Tag, TagKK}
 
-trait DISyntaxBIO[F[+_, +_]] {
+trait DISyntaxBIO[F[+_, +_]] { this: DISyntax[F[Throwable, ?]] =>
 
   implicit def tagBIO: TagKK[F]
 
