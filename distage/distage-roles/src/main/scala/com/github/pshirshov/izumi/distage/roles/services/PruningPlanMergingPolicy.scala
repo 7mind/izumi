@@ -41,7 +41,7 @@ class PruningPlanMergingPolicy(
     val index = ops.map(op => op.target -> op).toMap
     val roots = plan.gcMode.toSet
 
-    if (roots.nonEmpty && roots.diff(index.keySet).isEmpty) {
+    if (roots.nonEmpty && roots.intersect(issues.keySet).isEmpty) {
       val collected = new TracingDIGC(roots, index, ignoreMissingDeps = true).gc(ops)
 
       val lastTry = issues.map {
