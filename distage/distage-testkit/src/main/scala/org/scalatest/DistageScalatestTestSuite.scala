@@ -75,28 +75,30 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
+    val tracker = args.tracker
+
+    def ord(testId: TestMeta) = {
+      Quirks.discard(testId)
+      tracker.nextOrdinal()
+    }
+
+    def recordStart(test: TestMeta): Unit = {
+      args.reporter.apply(TestStarting(
+        ord(test),
+        suiteName, suiteId, Some(suiteId),
+        test.id.name,
+        test.id.name,
+        location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+      ))
+    }
     if (DistageTestsRegistrySingleton.firstRun.compareAndSet(true, false)) {
       val logger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
 
       val checker = new IntegrationCheckerImpl(logger)
       val ruenv = new DistageTestEnvironmentImpl[F]
 
-      val tracker = args.tracker
 
-      def ord(testId: TestMeta) = {
-        Quirks.discard(testId)
-        tracker.nextOrdinal()
-      }
 
-      def recordStart(test: TestMeta): Unit = {
-        args.reporter.apply(TestStarting(
-          ord(test),
-          suiteName, suiteId, Some(suiteId),
-          test.id.name,
-          test.id.name,
-          location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-        ))
-      }
 
       val dreporter = new TestReporter {
 
@@ -197,6 +199,21 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
 
 
       runner.run()
+    } else {
+      args.reporter.apply(TestStarting(
+        tracker.nextOrdinal(),
+        suiteName, suiteId, Some(suiteId),
+        "Scalatest is not good for your health",
+        "Scalatest is not good for your health",
+      ))
+      args.reporter.apply(TestCanceled(
+        tracker.nextOrdinal(),
+        s"ignored",
+        suiteName, suiteId, Some(suiteId),
+        "Scalatest is not good for your health",
+        "Scalatest is not good for your health",
+        scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
+      ))
     }
 
     status.setCompleted()
