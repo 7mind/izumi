@@ -1,8 +1,8 @@
 package com.github.pshirshov.izumi.distage.testkit.distagesuite
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.testkit.DistageSpecScalatest
 import com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
+import com.github.pshirshov.izumi.distage.testkit.st.specs.DistageSpecScalatest
 
 
 class DistageTestExample extends DistageSpecScalatest[IO] {

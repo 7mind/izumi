@@ -1,8 +1,10 @@
 package org.scalatest
 
 import com.github.pshirshov.izumi.distage.roles.services.IntegrationCheckerImpl
-import com.github.pshirshov.izumi.distage.testkit.DistageTestRunner.{DistageTest, SuiteData, TestMeta, TestReporter, TestStatus}
-import com.github.pshirshov.izumi.distage.testkit.{DistageTestEnvironmentImpl, DistageTestRunner, DistageTestsRegistrySingleton}
+import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner._
+import com.github.pshirshov.izumi.distage.testkit.services.dstest.{DistageTestEnvironmentImpl, DistageTestRunner}
+import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.TagK
 import org.scalatest.events._
@@ -71,15 +73,6 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
     }
   }
 
-  /**
-    * Overrides to use JUnit 4 to run the test(s).
-    *
-    * @param testName an optional name of one test to run. If <code>None</code>, all relevant tests should be run.
-    *                 I.e., <code>None</code> acts like a wildcard that means run all relevant tests in this <code>Suite</code>.
-    * @param args     the <code>Args</code> for this run
-    * @return a <code>Status</code> object that indicates when all tests and nested suites started by this method have completed, and whether or not a failure occurred.
-    *
-    */
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
     if (DistageTestsRegistrySingleton.firstRun.compareAndSet(true, false)) {
@@ -91,6 +84,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
       val tracker = args.tracker
 
       def ord(testId: TestMeta) = {
+        Quirks.discard(testId)
         tracker.nextOrdinal()
       }
 
@@ -158,9 +152,10 @@ trait DistageScalatestTestSuite[F[_]] extends Suite {
               ))
             case TestStatus.Cancelled(checks) =>
               recordStart(test)
+              import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
               args.reporter.apply(TestCanceled(
                 ord(test),
-                "ignored",
+                s"ignored: ${checks.niceList()}",
                 suiteName, suiteId, Some(suiteId),
                 test.id.name,
                 test.id.name,
