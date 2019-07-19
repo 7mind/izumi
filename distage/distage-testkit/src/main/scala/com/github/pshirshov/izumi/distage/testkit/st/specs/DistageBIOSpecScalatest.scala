@@ -1,15 +1,16 @@
 package com.github.pshirshov.izumi.distage.testkit.st.specs
 
 import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax
-import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax.WordSpecStringWrapper2
+import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax.DSWordSpecStringWrapper2
 import distage.{TagK, TagKK}
-import org.scalatest.{DistageScalatestTestSuite, Finders}
+import org.scalatest.DistageScalatestTestSuite
 
-@Finders(Array("org.scalatest.finders.WordSpecFinder"))
+import scala.language.implicitConversions
+
 abstract class DistageBIOSpecScalatest[F[+_, +_]](implicit val tagMonoIO: TagK[F[Throwable, ?]], implicit val tagBIO: TagKK[F])
   extends  DistageScalatestTestSuite[F[Throwable, ?]] with DistageTestSuiteSyntax[F[Throwable, ?]] {
 
-  protected implicit def convertToWordSpecStringWrapper2(s: String): WordSpecStringWrapper2[F] = {
-    new WordSpecStringWrapper2(left, verb, distageSuiteName, distageSuiteId, s, this, env)
+  protected implicit def convertToWordSpecStringWrapper2(s: String): DSWordSpecStringWrapper2[F] = {
+    new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, s, this, env)
   }
 }

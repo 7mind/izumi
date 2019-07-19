@@ -10,7 +10,7 @@ import scala.reflect.macros.blackbox
 final case class CodePositionMaterializer(get: CodePosition) extends AnyVal
 
 object CodePositionMaterializer {
-  implicit def materialize: CodePositionMaterializer = macro getEnclosingPosition
+  implicit def izCodePos: CodePositionMaterializer = macro getEnclosingPosition
 
   def apply()(implicit ev: CodePositionMaterializer, dummy: DummyImplicit): CodePositionMaterializer = ev
 
