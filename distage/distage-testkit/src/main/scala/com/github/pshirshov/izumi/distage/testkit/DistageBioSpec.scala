@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.st.adapter.specs
+package com.github.pshirshov.izumi.distage.testkit
 
 import distage.{TagK, TagKK}
 

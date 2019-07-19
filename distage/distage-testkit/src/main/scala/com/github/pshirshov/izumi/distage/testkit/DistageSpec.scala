@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.st.adapter.specs
+package com.github.pshirshov.izumi.distage.testkit
 
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.testkit.services.st.adapter.DistageTestSupport
