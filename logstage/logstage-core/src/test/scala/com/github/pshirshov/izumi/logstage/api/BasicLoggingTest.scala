@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
+import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala
+import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import org.scalatest.WordSpec
@@ -15,16 +17,29 @@ class BasicLoggingTest extends WordSpec {
       val arg2 = "argument 2"
 
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
-      assert(message.args ==
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false)
-        )
+      val expectation = List(
+        LogArg(Seq("arg1"), 1, hiddenName = false),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false)
       )
-      assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
+
+      IzScala.scalaRelease match {
+        case _: ScalaRelease.`2_12` =>
+          assert(message.args == expectation)
+          val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
+          assert(message.template.parts == expectedParts)
+        case _: ScalaRelease.`2_13` =>
+          assert(message.args == expectation.take(3))
+          val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", expression 4", ", expression 4, ", ", expression 4, 4")
+          assert(message.template.parts == expectedParts)
+        case _: ScalaRelease.Unsupported =>
+          fail("unsupported scala")
+        case _: ScalaRelease.Unknown =>
+          fail("unknown scala")
+      }
+
 
       val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
