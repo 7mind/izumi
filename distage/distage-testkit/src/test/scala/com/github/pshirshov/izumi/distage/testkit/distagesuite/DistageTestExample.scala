@@ -21,7 +21,6 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] {
 }
 
 class DistageTestExample extends DistageSpecScalatest[CIO] {
-
   "distage test runner" should {
     "test 1" in {
       service: MockUserRepository[CIO] =>

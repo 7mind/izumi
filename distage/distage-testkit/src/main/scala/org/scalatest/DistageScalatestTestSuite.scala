@@ -95,8 +95,6 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
     val ruenv = new DistageTestEnvironmentImpl[F]
 
 
-
-
     val dreporter = new TestReporter {
 
       override def beginSuite(id: SuiteData): Unit = {
@@ -169,14 +167,17 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
 
     val toRun = testName match {
       case None =>
+        val enabled = args.filter.dynaTags.testTags.toSeq
+          .flatMap {
+            case (suiteId, tests) =>
 
-        val enabled = args.filter.dynaTags.testTags.toSeq.flatMap {
-          case (suiteId, tests) =>
-            tests.filter(_._2.contains(Suite.SELECTED_TAG)).map {
-              case (testname, _) =>
-                (suiteId, testname)
-            }
-        }.toSet
+              tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys
+                .map {
+                  testname =>
+                    (suiteId, testname)
+                }
+          }
+          .toSet
 
         if (enabled.isEmpty) {
           monadTests

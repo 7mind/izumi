@@ -10,7 +10,6 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
 import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
 import distage.{Tag, TagK, TagKK}
 import org.scalactic.source
-import org.scalatest.words.StringVerbBlockRegistration
 
 import scala.language.implicitConversions
 
@@ -20,6 +19,7 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
     DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos)))
   }
 }
+
 
 trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
@@ -35,33 +35,33 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   protected def distageSuiteId: String = this.getClass.getName
 
 
-  protected[dtest] var left: String = ""
-  protected[dtest] var verb: String = ""
+  protected[dtest] var context: Option[SuiteContext] = None
 
-  protected implicit val subjectRegistrationFunction: StringVerbBlockRegistration = new StringVerbBlockRegistration {
-    def apply(left: String, verb: String, pos: source.Position, f: () => Unit): Unit = registerBranch(left, Some(verb), verb, "apply", 6, -2, pos, f)
-  }
 
-  private def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
+
+  protected[testkit] def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
     Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
-    this.left = description
-    this.verb = verb
+    this.context = Some(SuiteContext(description, verb))
     fun()
+    this.context = None
   }
 
-  protected implicit def convertToWordSpecStringWrapper(s: String): WordSpecStringWrapper[F] = {
-    new WordSpecStringWrapper(left, verb, distageSuiteName, distageSuiteId, s, this, env)
+  protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
+    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, env)
   }
 }
 
 object DistageTestSuiteSyntax {
-
-  class WordSpecStringWrapper[F[_]](
-                                     left: String,
-                                     verb: String,
+  case class SuiteContext(left: String, verb: String) {
+    def toName(name: String): String = {
+      Seq(left, verb, name).mkString(" ")
+    }
+  }
+  class DSWordSpecStringWrapper[F[_]](
+                                     context: Option[SuiteContext],
                                      suiteName: String,
                                      suiteId: String,
-                                     string: String,
+                                     testname: String,
                                      reg: TestRegistration[F],
                                      env: TestEnvironment,
                                    )
@@ -70,7 +70,7 @@ object DistageTestSuiteSyntax {
                                    ) extends DISyntaxBase[F] {
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
-        Seq(left, verb, string).mkString(" "),
+        context.map(_.toName(testname)).getOrElse(testname),
         suiteName,
         suiteId,
         suiteName,
@@ -95,12 +95,11 @@ object DistageTestSuiteSyntax {
     }
   }
 
-  class WordSpecStringWrapper2[F[+ _, + _]](
-                                             left: String,
-                                             verb: String,
+  class DSWordSpecStringWrapper2[F[+ _, + _]](
+                                             context: Option[SuiteContext],
                                              suiteName: String,
                                              suiteId: String,
-                                             string: String,
+                                             testname: String,
                                              reg: TestRegistration[F[Throwable, ?]],
                                              env: TestEnvironment,
                                            )
@@ -111,7 +110,7 @@ object DistageTestSuiteSyntax {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
-        Seq(left, verb, string).mkString(" "),
+        context.map(_.toName(testname)).getOrElse(testname),
         suiteName,
         suiteId,
         suiteName,
