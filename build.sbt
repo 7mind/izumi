@@ -301,7 +301,9 @@ lazy val distageConfig = inDiStage.as.module
     distageCore.testOnlyRef,
   )
   .settings(
-    libraryDependencies += R.typesafe_config
+    libraryDependencies += R.typesafe_config,
+//    classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
+    fork in Test := true,
   )
 
 lazy val distagePlugins = inDiStage.as.module

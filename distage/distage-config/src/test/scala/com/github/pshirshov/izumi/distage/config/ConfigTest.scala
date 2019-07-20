@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.config
 
+import com.github.pshirshov.configapp.SealedTrait.CaseClass2
 import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.{SealedTrait, _}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
@@ -151,6 +152,8 @@ class ConfigTest extends WordSpec {
           .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
+      assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 == No)
+      assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
       assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
     }
 

@@ -5,9 +5,7 @@ import com.typesafe.config._
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-//import scala.collection.generic.{GenMapFactory, GenericCompanion}
 import scala.collection.immutable.Queue
-import scala.collection.{GenMap, GenTraversable}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{currentMirror, universe => ru}
 import scala.util.{Failure, Try}
@@ -22,6 +20,8 @@ class RuntimeConfigReaderDefaultImpl
 
   /**
     * Opinionated on purpose: Will work ONLY for case classes. Not for sealed traits or other types.
+    *
+    * Use `readValue` for sealed traits, enums & other types
     */
   override def readConfigAsCaseClass(config: Config, tpe: SafeType0[ru.type]): Any = {
     val typesafeConfigRawTypes = Set(
@@ -55,9 +55,9 @@ class RuntimeConfigReaderDefaultImpl
 
         ConfigReaderInstances.javaEnumReader(ClassTag(clazz))
       case _ if tpe <:< SafeType0.get[collection.Map[String, Any]] =>
-        objectMapReader(tpe.tpe.dealias)
+        Compat.objectMapReader(mirror, anyReader)(tpe.tpe.dealias)
       case _ if tpe <:< SafeType0.get[Iterable[Any]] =>
-        listReader(tpe.tpe.dealias)(configListReader)
+        listReader(tpe.tpe.dealias)(Compat.configListReader(mirror, anyReader))
       case _ if key.tpe =:= ru.typeOf[Option[_]].dealias.erasure =>
         optionReader(tpe.tpe.dealias)
       case _ if tupleTypes.exists(_ =:= key.tpe) =>
@@ -134,7 +134,10 @@ class RuntimeConfigReaderDefaultImpl
           val classesWithNames = subclasses zip names
 
           val objects = classesWithNames.collect {
-            case (o, n) if o.typeSymbol.asClass.isModuleClass => o.typeSymbol.asClass.module.asModule -> n
+            case (o, n) if o.typeSymbol.asClass.isModuleClass =>
+              println(s"AAAAA: $o is a ModuleClass")
+              o.typeSymbol.asClass.module.asModule -> n
+            case (o, _) if { println(s"OOOOO: $o is NOT a ModuleClass") ; false } => ???
           }
 
           cv match {
@@ -142,7 +145,10 @@ class RuntimeConfigReaderDefaultImpl
               val str = anyReader(SafeType0.get[String])(cv).get
               objects.find(_._2 == str) match {
                 case Some((o, _)) =>
-                  mirror.reflectModule(o).instance
+                  val x1 = mirror.reflectModule(o).instance
+                  val x2 = mirror.reflectModule(o).instance
+                  if (x1 != x2) throw new RuntimeException("incoherence (not the error in test)")
+                  x2
                 case None =>
                   throw new ConfigReadException(
                     s"""
@@ -190,54 +196,6 @@ class RuntimeConfigReaderDefaultImpl
       }
     }
 
-  def objectMapReader(mapType: ru.Type): ConfigReader[GenMap[String, _]] = {
-    case co: ConfigObject => Try {
-      val tyParam = SafeType0(mapType.dealias.typeArgs.last)
-
-      ???
-//      mirror.reflectModule(mapType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
-//        case companionFactory: GenMapFactory[GenMap] @unchecked =>
-//
-//          val map = co.asScala
-//
-//          val parsedResult = map.foldLeft[Either[Queue[String], Queue[(String, Any)]]](Right(Queue.empty)) {
-//            (e, kv) => kv match {
-//              case (key, value) =>
-//                val res = anyReader(tyParam)(value).fold(
-//                  exc => Left(s"Couldn't parse key `$key` because of exception: ${exc.getMessage}")
-//                  , Right(_)
-//                )
-//
-//                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ (key -> v)))
-//            }
-//          }
-//
-//          val parsedArgs = parsedResult.fold(
-//            errors => throw new ConfigReadException(
-//              s"""Couldn't read config object as Map type $mapType, there were errors when trying to parse it's fields from value: $co
-//                 |The errors were:
-//                 |  ${errors.niceList()}
-//               """.stripMargin
-//            )
-//            , identity
-//          )
-//
-//          val res = companionFactory.newBuilder.++=(parsedArgs).result()
-//          res
-//        case c =>
-//          throw new ConfigReadException(
-//            s"""When trying to read a Map type $mapType: can't instantiate class. Expected a companion object of type
-//               | scala.collection.generic.GenMapFactory to be present, but $mapType companion object has type: ${c.getClass}.
-//               |
-//               | ConfigValue was: $co""".stripMargin)
-//      }
-    }
-    case cv =>
-      Failure(new ConfigReadException(
-        s"""Can't read config value as a map $mapType, config value is not an object.
-           | ConfigValue was: $cv""".stripMargin))
-  }
-
   def listReader[T](listType: ru.Type)(reader: (ru.Type, ConfigList) => Try[T]): ConfigReader[T] = {
     case cl: ConfigList =>
       reader(listType, cl)
@@ -250,48 +208,6 @@ class RuntimeConfigReaderDefaultImpl
       Failure(new ConfigReadException(
         s"""Can't read config value as a list $listType, config value is not a list.
            | ConfigValue was: $cv""".stripMargin))
-  }
-
-  private[this] def configListReader(listType: ru.Type, cl: ConfigList): Try[GenTraversable[_]] = {
-    Try {
-      val tyParam = SafeType0(listType.dealias.typeArgs.last)
-
-      ???
-//      mirror.reflectModule(listType.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
-//        case companionFactory: GenericCompanion[GenTraversable]@unchecked =>
-//          val list = cl.asScala
-//
-//          val parsedResult = list.zipWithIndex.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-//            (e, configValue) => configValue match {
-//              case (value, idx) =>
-//                val res = anyReader(tyParam)(value).fold(
-//                  exc => Left(s"Couldn't parse value at index `${idx+1}` of a list $listType because of exception: ${exc.getMessage}")
-//                  , Right(_)
-//                )
-//
-//                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
-//            }
-//          }
-//
-//          val parsedArgs = parsedResult.fold(
-//            errors => throw new ConfigReadException(
-//              s"""Couldn't read config list as a collectionType $listType, there were errors when trying to parse it's fields from value: $cl
-//                 |The errors were:
-//                 |  ${errors.niceList()}
-//               """.stripMargin
-//            )
-//            , identity
-//          )
-//
-//          companionFactory(parsedArgs: _*)
-//        case c =>
-//          throw new ConfigReadException(
-//            s"""When trying to read a collection type $listType: can't instantiate class. Expected a companion object of type
-//               | scala.collection.generic.GenericCompanion to be present, but $listType companion object has type: ${c.getClass}.
-//               |
-//               | ConfigValue was: $cl""".stripMargin)
-//      }
-    }
   }
 
   def isList(configObject: ConfigObject): Boolean = {

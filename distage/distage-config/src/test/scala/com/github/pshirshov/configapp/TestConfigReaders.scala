@@ -28,7 +28,17 @@ object SealedTrait {
 sealed trait SealedTrait2
 object SealedTrait2 {
   case object Yes extends SealedTrait2
-  case object No extends SealedTrait2
+  case object No extends SealedTrait2 {
+    override def equals(obj: Any): Boolean = {
+      println(s"CLASSLOADER: `${this.getClass.getClassLoader}`")
+      println(s"CLASSLOADER: `${obj.getClass.getClassLoader}`")
+      println(s"CLASS: `${this.getClass}(${System.identityHashCode(this.getClass)})`")
+      println(s"CLASS: `${obj.getClass}(${System.identityHashCode(obj.getClass)})`")
+      println(s"Identity: `${System.identityHashCode(this)}`")
+      println(s"Identity: `${System.identityHashCode(obj)}`")
+      this eq obj.asInstanceOf[AnyRef]
+    }
+  }
 }
 
 case class Wrapper[A](wrap: A)
