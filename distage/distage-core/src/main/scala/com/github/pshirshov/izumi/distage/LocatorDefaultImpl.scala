@@ -17,12 +17,12 @@ final class LocatorDefaultImpl[F[_]]
   override protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] =
     dependencyMap.get(key)
 
-  override protected[distage] def finalizers[F1[_]: TagK]: Seq[PlanInterpreter.Finalizer[F1]] = {
+  override protected[distage] def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
     dependencyMap.finalizers
       .filter(_.fType == SafeType.getK[F1])
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])
   }
 
-  override def instances: Seq[IdentifiedRef] =
+  override def instances: collection.Seq[IdentifiedRef] =
     dependencyMap.enumerate
 }

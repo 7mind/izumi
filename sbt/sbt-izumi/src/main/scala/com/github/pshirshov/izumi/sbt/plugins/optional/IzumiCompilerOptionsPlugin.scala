@@ -10,7 +10,6 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
       "-encoding", "UTF-8",
       "-target:jvm-1.8",
 
-      "-Xfuture",
       "-language:higherKinds",
 
       "-feature",
@@ -43,8 +42,9 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, 12)) if optimizerEnabled(scalaVersion, isSnapshot) =>
         Seq(
-          "-opt:l:inline"
-          , "-opt-inline-from"
+          "-opt:l:inline",
+          "-opt-inline-from:**",
+          "-opt-warnings:_"
         )
       case _ =>
         Seq()
@@ -86,7 +86,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
         , "-Xlint:type-parameter-shadow" // A local type parameter shadows a type already in scope.
         , "-Xlint:unsound-match" // Pattern match may not be typesafe.
 
-        // , "-opt-warnings:_" //2.12 only
+        , "-opt-warnings:_" //2.12 only
         , "-Ywarn-extra-implicit"        // Warn when more than one implicit parameter section is defined.
         , "-Ywarn-unused:_"              // Enable or disable specific `unused' warnings: `_' for all, `-Ywarn-unused:help' to list choices.
         , "-Ywarn-adapted-args" // Warn if an argument list is modified to match the receiver.
@@ -102,15 +102,21 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
 
       )
       case Some((2, 13)) => Seq(
-        "-Xsource:2.14",
+//        "-Xsource:2.14", // Delay -Xsource:2.14 due to spurious warnings https://github.com/scala/bug/issues/11639
+        "-Xsource:2.13",
+        "-explaintypes",
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+//        "-Wself-implicit", // Spurious warnings for any top-level implicit, including scala.language._
+        "-Wvalue-discard",
         "-Wunused:_",
         "-Xlint:_",
         "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString,
-
-
       )
       case _ =>
-        Seq()
+        ???
     }
     val orgSettings =
       if (scalaOrganization == "org.typelevel") {

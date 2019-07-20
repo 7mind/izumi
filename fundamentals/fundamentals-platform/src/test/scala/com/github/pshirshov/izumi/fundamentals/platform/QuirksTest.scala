@@ -26,3 +26,5 @@ class QuirksTest extends WordSpec {
     }
   }
 }
+
+

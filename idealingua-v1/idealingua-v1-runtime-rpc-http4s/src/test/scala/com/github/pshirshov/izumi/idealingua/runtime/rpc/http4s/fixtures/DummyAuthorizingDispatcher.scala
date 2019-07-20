@@ -31,5 +31,5 @@ final class DummyAuthorizingDispatcher[R[+ _, + _] : BIO, Ctx](proxied: IRTWrapp
           }
         }
       }
-  }
+  }.toMap
 }

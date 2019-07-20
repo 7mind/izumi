@@ -19,11 +19,11 @@ trait PlanInterpreter {
 
 object PlanInterpreter {
   trait FinalizersFilter[F[_]] {
-    def filter(finalizers: Seq[Finalizer[F]]): Seq[Finalizer[F]]
+    def filter(finalizers: collection.Seq[Finalizer[F]]): collection.Seq[Finalizer[F]]
   }
 
   object FinalizersFilter {
-    def all[F[_]]: FinalizersFilter[F] = (finalizers: Seq[Finalizer[F]]) => finalizers
+    def all[F[_]]: FinalizersFilter[F] = finalizers => finalizers
   }
 
   final case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], fType: SafeType)

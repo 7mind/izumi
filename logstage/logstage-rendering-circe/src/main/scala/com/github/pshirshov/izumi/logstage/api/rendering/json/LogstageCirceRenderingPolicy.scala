@@ -8,6 +8,7 @@ import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, Ren
 import io.circe._
 import io.circe.syntax._
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.runtime.RichInt
 
@@ -20,7 +21,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     val result = mutable.ArrayBuffer[(String, Json)]()
 
     val formatted = Format.formatMessage(entry, withColors = false)
-    val params = parametersToJson[RenderedParameter](formatted.parameters ++ formatted.unbalanced, _.normalizedName, repr)
+    val params = parametersToJson[RenderedParameter](ArraySeq.empty ++ (formatted.parameters ++ formatted.unbalanced), _.normalizedName, repr)
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }

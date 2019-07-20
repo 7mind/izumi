@@ -17,7 +17,8 @@ object IzumiDeps {
     val shapeless = "2.3.3"
 
     val cats = "2.0.0-M4"
-    val zio = "1.0.0-RC8-12"
+    val zio = "1.0.0-RC10-1"
+    val zio_interop_cats = "2.0.0.0-RC1"
 
     val circe = "0.12.0-M4"
     val jawn = "0.14.2"
@@ -53,7 +54,7 @@ object IzumiDeps {
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
     val zio_core: ModuleID = "dev.zio" %% "zio" % V.zio
-    val zio_interop: ModuleID = "dev.zio" %% "zio-interop-cats" % V.zio
+    val zio_interop: ModuleID = "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
 

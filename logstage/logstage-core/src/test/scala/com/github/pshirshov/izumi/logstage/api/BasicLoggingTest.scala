@@ -1,6 +1,8 @@
 package com.github.pshirshov.izumi.logstage.api
 
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
+import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala
+import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import com.github.pshirshov.izumi.logstage.api.Log._
 import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import org.scalatest.WordSpec
@@ -15,16 +17,18 @@ class BasicLoggingTest extends WordSpec {
       val arg2 = "argument 2"
 
       val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
-      assert(message.args ==
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false)
-        )
+      val expectation = List(
+        LogArg(Seq("arg1"), 1, hiddenName = false),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
       )
-      assert(message.template.parts == List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", ""))
+
+      val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
+
+      assert(message.args == expectation)
+      assert(message.template.parts == expectedParts)
 
       val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")

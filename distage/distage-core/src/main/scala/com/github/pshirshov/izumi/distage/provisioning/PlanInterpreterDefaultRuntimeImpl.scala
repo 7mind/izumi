@@ -18,7 +18,6 @@ import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUni
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-
 // TODO: add introspection capabilities
 class PlanInterpreterDefaultRuntimeImpl
 (

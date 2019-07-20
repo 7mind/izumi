@@ -23,7 +23,7 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
 
   private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
 
-  private[definition] def frozenState: Seq[Binding] = {
+  private[definition] def frozenState: collection.Seq[Binding] = {
     mutableState.flatMap(_.interpret)
   }
 
@@ -112,11 +112,11 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
 object AbstractBindingDefDSL {
 
   trait BindingRef {
-    def interpret: Seq[Binding]
+    def interpret: collection.Seq[Binding]
   }
 
   final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
-    override def interpret: Seq[ImplBinding] = Seq(
+    override def interpret: collection.Seq[ImplBinding] = Seq(
       ops.foldLeft(initial: ImplBinding) {
         (b, instr) =>
           instr match {
@@ -147,7 +147,7 @@ object AbstractBindingDefDSL {
     , elems: mutable.Queue[SetElementRef] = mutable.Queue.empty
     , multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty
   ) extends BindingRef {
-    override def interpret: Seq[Binding] = {
+    override def interpret: collection.Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {

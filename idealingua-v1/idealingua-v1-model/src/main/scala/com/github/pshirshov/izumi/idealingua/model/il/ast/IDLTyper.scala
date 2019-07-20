@@ -12,6 +12,7 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMes
 import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
 import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 
+import scala.collection.mutable
 import scala.reflect._
 
 
@@ -69,7 +70,7 @@ class IDLPretyper(defn: DomainMeshResolved) {
       streams,
       consts,
       imports,
-      defn.referenced.mapValues(r => new IDLPretyper(r).perform())
+      defn
     )
   }
 }
@@ -78,14 +79,21 @@ class IDLPretyper(defn: DomainMeshResolved) {
 class IDLPostTyper(defn: DomainMeshLoaded) {
   final val domainId: DomainId = defn.id
 
-  protected def refs: Map[DomainId, IDLPostTyper] = defn.referenced.map(d => d._1 -> new IDLPostTyper(d._2))
+  private val domainCache = mutable.HashMap[DomainId, IDLPostTyper]()
+
+  def getDomain(id: DomainId): IDLPostTyper = {
+    val m = defn.defn.referenced(id)
+    val typer = new IDLPostTyper(new IDLPretyper(m).perform())
+    domainCache.put(id, typer)
+    typer
+  }
 
   protected val imported: Map[IndefiniteId, TypeId] = defn.imports
     .map {
       i =>
         val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedAs)
         val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
-        toIndefinite(importedId) -> refs(i.domain).makeDefinite(originalId)
+        toIndefinite(importedId) -> getDomain(i.domain).makeDefinite(originalId)
     }
     .toMap
 
@@ -124,7 +132,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       services = mappedServices,
       buzzers = mappedBuzzers,
       streams = mappedStreams,
-      referenced = refs.mapValues(_.perform())
+      referenced = domainCache.toMap //.mapValues(_.perform()).toMap
     )
   }
 
@@ -224,7 +232,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
             ConstValue.CBool(value)
         }
       case RawVal.CMap(value) =>
-        ConstValue.CMap(value.mapValues(translateValue))
+        ConstValue.CMap(value.mapValues(translateValue).toMap)
 
       case RawVal.CList(value) =>
         ConstValue.CList(value.map(translateValue))
@@ -241,14 +249,14 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         ConstValue.CTyped(tpe, typedValue)
       case RawVal.CTypedObject(typeId, value) =>
         val tpe = makeDefinite(typeId)
-        val obj = ConstValue.CMap(value.mapValues(translateValue))
+        val obj = ConstValue.CMap(value.mapValues(translateValue).toMap)
         // TODO: verify structure
         ConstValue.CTypedObject(tpe, obj)
     }
   }
 
   protected def fixAnno(v: RawAnno): Anno = {
-    Anno(v.name, v.values.value.mapValues(translateValue), v.position)
+    Anno(v.name, v.values.value.mapValues(translateValue).toMap, v.position)
   }
 
   protected def fixMeta(meta: RawNodeMeta): NodeMeta = {
@@ -399,12 +407,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
   private def lookupAnother(v: AbstractIndefiniteId) = {
     val referencedDomain = domainId(v.pkg)
-    refs.get(referencedDomain) match {
-      case Some(typer) =>
-        typer.makeDefinite(v)
-      case None =>
-        throw new IDLException(s"[$domainId] Type $v references domain $referencedDomain but that domain wasn't imported. Imported domains: ${defn.referenced.keySet.mkString("\n  ")}")
-    }
+    getDomain(referencedDomain).makeDefinite(v)
   }
 
   protected def domainId(v: Package): DomainId = {
@@ -553,7 +556,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
           throw new IDLException(s"[$domainId]: failed to resolve id $t == $out: expected to find $idType or an alias but got $o")
       }
     } else {
-      refs(domainId(out.path.toPackage)).fixSimpleId(out)
+      getDomain(domainId(out.path.toPackage)).fixSimpleId(out)
     }
   }
 

@@ -187,7 +187,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
       }
       .map(_.target.tpe)
     val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes: Seq[SafeType] = context.instances.map(_.key.tpe)
+    val instanceTypes = context.instances.map(_.key.tpe)
       .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
 
     assert(instanceTypes == planTypes)

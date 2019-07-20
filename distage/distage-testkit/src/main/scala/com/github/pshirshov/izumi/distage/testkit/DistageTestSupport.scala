@@ -8,7 +8,6 @@ import com.github.pshirshov.izumi.distage.model.definition.{Binding, BootstrapMo
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
@@ -78,8 +77,8 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     ))
 
     val filters = Filters[F](
-      (finalizers: Seq[PlanInterpreter.Finalizer[F]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
-      (finalizers: Seq[PlanInterpreter.Finalizer[Identity]]) => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
+      finalizers => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
+      finalizers => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),
     )
 
     verifyTotalSuppression()
@@ -90,10 +89,10 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
           implicit val F: DIEffect[F] = effect
 
           for {
-            _ <- DIEffect[F].maybeSuspend(doMemoize(locator))
-            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
-            _ <- DIEffect[F].maybeSuspend(beforeRun(locator))
-            _ <- DIEffect[F].maybeSuspend(verifyTotalSuppression())
+            _ <- F.maybeSuspend(doMemoize(locator))
+            _ <- F.maybeSuspend(verifyTotalSuppression())
+            _ <- F.maybeSuspend(beforeRun(locator))
+            _ <- F.maybeSuspend(verifyTotalSuppression())
             _ <- locator.run(function)
           } yield ()
       }

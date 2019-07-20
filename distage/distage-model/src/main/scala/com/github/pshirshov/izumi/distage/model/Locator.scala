@@ -22,14 +22,14 @@ trait Locator {
     *
     * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators. All the keys must be unique
     */
-  def instances: Seq[IdentifiedRef]
+  def instances: collection.Seq[IdentifiedRef]
 
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Keys may be not unique.
     *
     * @see [[com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator]]
     */
-  final def allInstances: Seq[IdentifiedRef] =
+  final def allInstances: collection.Seq[IdentifiedRef] =
     parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances
 
   def index: Map[RuntimeDIUniverse.DIKey, Any] = instances.map(i => i.key -> i.value).toMap
@@ -50,7 +50,7 @@ trait Locator {
 
   def get[T: Tag](id: String): T
 
-  protected[distage] def finalizers[F[_]: TagK]: Seq[Finalizer[F]]
+  protected[distage] def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
 
   protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
 
