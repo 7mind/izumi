@@ -135,9 +135,7 @@ class RuntimeConfigReaderDefaultImpl
 
           val objects = classesWithNames.collect {
             case (o, n) if o.typeSymbol.asClass.isModuleClass =>
-              println(s"AAAAA: $o is a ModuleClass")
               o.typeSymbol.asClass.module.asModule -> n
-            case (o, _) if { println(s"OOOOO: $o is NOT a ModuleClass") ; false } => ???
           }
 
           cv match {

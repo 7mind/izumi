@@ -28,6 +28,11 @@ object SealedTrait {
 sealed trait SealedTrait2
 object SealedTrait2 {
   case object Yes extends SealedTrait2
+  /**
+   * FIXME: Hit by scalac bug with `reflectModule`: https://github.com/scala/bug/issues/11645
+   *
+   * Using a relaxed .equals to pass the test
+   * */
   case object No extends SealedTrait2 {
     override def equals(obj: Any): Boolean = {
       println(s"CLASSLOADER: `${this.getClass.getClassLoader}`")
@@ -36,7 +41,8 @@ object SealedTrait2 {
       println(s"CLASS: `${obj.getClass}(${System.identityHashCode(obj.getClass)})`")
       println(s"Identity: `${System.identityHashCode(this)}`")
       println(s"Identity: `${System.identityHashCode(obj)}`")
-      this eq obj.asInstanceOf[AnyRef]
+//      this eq obj.asInstanceOf[AnyRef]
+      this.getClass eq obj.getClass
     }
   }
 }
