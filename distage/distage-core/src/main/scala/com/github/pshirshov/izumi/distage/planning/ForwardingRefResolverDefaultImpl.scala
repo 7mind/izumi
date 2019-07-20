@@ -31,12 +31,9 @@ class ForwardingRefResolverDefaultImpl
       .flatMap {
         case step if reftable.dependencies.contains(step.target) =>
           val target = step.target
-
-          val fwdDependees = reftable.dependees.direct(target)
           val allDependees = usagesTable.dependees.direct(target)
-          val followingDependees = allDependees.diff(fwdDependees)
 
-          val onlyByNameUsages = allUsagesAreByName(index, target, followingDependees)
+          val onlyByNameUsages = allUsagesAreByName(index, target, allDependees)
           val byNameAllowed = onlyByNameUsages
 
           val missingDeps = reftable.dependencies.direct(target)
