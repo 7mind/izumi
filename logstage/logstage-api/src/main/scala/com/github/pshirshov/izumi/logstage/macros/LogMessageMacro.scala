@@ -3,29 +3,7 @@ package com.github.pshirshov.izumi.logstage.macros
 import com.github.pshirshov.izumi.logstage.api.Log.{LogArg, Message}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.macros.blackbox
-
-/*
-Warning:(17, 29) Complex expression found as an input for a logger: ("argument1: ".+(arg1).+(", argument2: ").+(arg2).+(", argument2 again: ").+(arg2).+(", expression ").+(4).+(", ").+(4): String) ;
-
-Typed(Apply(Select(
-  Apply(Select(Apply(Select(Apply(Select(Apply(Select(Apply(Select(Apply(Select(Apply(Select(Apply(Select(Literal(Constant("argument1: ")), TermName("$plus")), List(Ident(TermName("arg1")))), TermName("$plus")), List(Literal(Constant(", argument2: ")))), TermName("$plus")), List(Ident(TermName("arg2")))), TermName("$plus")), List(Literal(Constant(", argument2 again: ")))), TermName("$plus")), List(Ident(TermName("arg2")))), TermName("$plus")), List(Literal(Constant(", expression ")))), TermName("$plus")), List(Literal(Constant(4)))), TermName("$plus")), List(Literal(Constant(", ")))), TermName("$plus")), List(Literal(Constant(4))
-)), TypeTree()).
-But Logstage expects you to use string interpolations instead, such as:
-1) Simple variable:
-   logger.info(s"My message: $argument")
-2) Chain:
-   logger.info(s"My message: ${call.method} ${access.value}")
-3) Named expression:
-   logger.info(s"My message: ${Some.expression -> "argname"}")
-4) Invisible name expression:
-   logger.info(s"My message: ${Some.expression -> "argname" -> null}")
-5) De-camelcased name:
-   logger.info(${camelCaseName-> ' '})
-      val message = Message(s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}")
- */
-
 
 object LogMessageMacro {
 
@@ -38,10 +16,7 @@ object LogMessageMacro {
         processExpr(c)(tree)
       case tree =>
         processExpr(c)(tree)
-
-
     }
-
   }
 
   private[this] def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
@@ -67,7 +42,6 @@ object LogMessageMacro {
     }
 
     case class Out(parts: Seq[Part]) {
-      c.warning(c.enclosingPosition, s"PARTS: $parts")
       def arguments: Seq[c.Tree] = {
         balanced.collect { case Part.Argument(expr) => expr }
       }
@@ -83,6 +57,7 @@ object LogMessageMacro {
         sc
       }
 
+      // we need to build StringContext compatible list of chunks and arguments where elements of the same type cannot occur consequently
       private lazy val balanced = {
         val balancedParts = mutable.ArrayBuffer[Part]()
 
@@ -133,11 +108,16 @@ object LogMessageMacro {
                 Out(Seq(Part.Argument(o)))
             }
 
-            args.headOption match {
-              case Some(t@Literal(Constant(_))) =>
-                Some(sub.copy(parts = sub.parts :+ Part.Element(t)))
-              case Some(argexpr) =>
-                Some(sub.copy(parts = sub.parts :+ Part.Argument(argexpr)))
+            // in sequence of string concatenations ("" + "" + "") we expect only one argument to be at the right side
+            args match {
+              case head :: Nil =>
+                head match {
+                  case t@Literal(Constant(_)) =>
+                    Some(sub.copy(parts = sub.parts :+ Part.Element(t)))
+                  case argexpr =>
+                    Some(sub.copy(parts = sub.parts :+ Part.Argument(argexpr)))
+                }
+
               case _ =>
                 c.warning(c.enclosingPosition, s"Something is wrong with this expression, please report this as a bug: $applyselect, ${c.universe.showRaw(applyselect)}")
                 Some(sub)
@@ -151,13 +131,12 @@ object LogMessageMacro {
     message match {
       case PlusExtractor(lst) =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(lst.arguments.map(p => c.Expr(p)))
-        c.warning(c.enclosingPosition, s"ARGS: $namedArgs")
         val sc = lst.makeStringContext
-        c.warning(c.enclosingPosition, s"CTX: $sc")
         reifyContext(c)(sc, namedArgs)
-      // qq causes a weird warning here
-      //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
+
       case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
+        // qq causes a weird warning here
+        //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
