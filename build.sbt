@@ -40,8 +40,8 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
-      V.scala_213,
       V.scala_212,
+      V.scala_213,
     ),
     scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
@@ -467,6 +467,13 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .settings(
     libraryDependencies ++= Seq(R.typesafe_config),
     mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler"),
+    // FIXME: workaround for https://github.com/zio/interop-cats/issues/16
+    assemblyMergeStrategy in assembly := {
+      case path if path.contains("zio/BuildInfo$.class") =>
+        MergeStrategy.last
+      case p =>
+        (assemblyMergeStrategy in assembly).value(p)
+    }
   )
   .settings(
     artifact in(Compile, assembly) := {

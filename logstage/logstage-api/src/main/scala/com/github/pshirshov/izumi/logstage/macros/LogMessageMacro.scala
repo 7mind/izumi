@@ -7,10 +7,6 @@ import scala.reflect.macros.blackbox
 
 object LogMessageMacro {
 
-  class Impl(c: blackbox.Context) {
-
-  }
-
   def logMessageMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Message] = {
     import c.universe._
 

@@ -4,7 +4,7 @@ import java.util
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import zio.Exit.Cause
+import zio.Cause
 import zio._
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, PlatformLive, Tracing}

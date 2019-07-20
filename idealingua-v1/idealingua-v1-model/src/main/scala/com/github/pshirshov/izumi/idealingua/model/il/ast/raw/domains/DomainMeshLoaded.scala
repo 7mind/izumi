@@ -5,8 +5,6 @@ import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
 import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
 import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
 
-import scala.collection.immutable
-
 final case class DomainMeshLoaded(
                                    id: DomainId,
                                    origin: FSPath,
