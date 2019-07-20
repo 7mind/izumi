@@ -7,6 +7,9 @@ import scala.reflect.macros.blackbox
 
 object LogMessageMacro {
 
+  class Impl(c: blackbox.Context) {
+
+  }
 
   def logMessageMacro(c: blackbox.Context)(message: c.Expr[String]): c.Expr[Message] = {
     import c.universe._
@@ -19,35 +22,37 @@ object LogMessageMacro {
     }
   }
 
-  private[this] def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
-    import c.universe._
-    reify {
-      Message(
-        c.Expr[StringContext](stringContext).splice
-        , namedArgs.splice
-      )
-    }
-  }
-
   private[this] def processExpr(c: blackbox.Context)(message: c.Tree): c.Expr[Message] = {
     import c.universe._
 
-    sealed trait Part
-    object Part {
+    sealed trait Chunk {
+      def tree: c.Tree
+    }
 
-      case class Element(v: c.Tree) extends Part
+    object Chunk {
 
-      case class Argument(v: c.Tree) extends Part
+      sealed trait Primary extends Chunk
+
+      sealed trait AbstractElement extends Chunk
+
+
+      case class Element(lit: c.universe.Literal) extends Primary with AbstractElement {
+        override def tree: c.Tree = lit
+      }
+
+      case class Argument(tree: c.Tree) extends Primary
+
+      case class ExprElement(tree: c.Tree) extends Chunk with AbstractElement
 
     }
 
-    case class Out(parts: Seq[Part]) {
+    case class Out(parts: Seq[Chunk.Primary]) {
       def arguments: Seq[c.Tree] = {
-        balanced.collect { case Part.Argument(expr) => expr }
+        balanced.collect { case Chunk.Argument(expr) => expr }
       }
 
       def makeStringContext: c.Tree = {
-        val elements = balanced.collect { case Part.Element(lit) => lit }
+        val elements = balanced.collect { case e: Chunk.AbstractElement => e.tree }
         val listExpr = c.Expr[Seq[String]](q"Seq(..$elements)")
 
         val scParts = reify {
@@ -58,23 +63,24 @@ object LogMessageMacro {
       }
 
       // we need to build StringContext compatible list of chunks and arguments where elements of the same type cannot occur consequently
-      private lazy val balanced = {
-        val balancedParts = mutable.ArrayBuffer[Part]()
+      private lazy val balanced: Seq[Chunk] = {
+        val balancedParts = mutable.ArrayBuffer[Chunk]()
 
-        val emptystring = Part.Element(Literal(Constant("")))
+        val emptystring = Chunk.Element(Literal(Constant("")))
 
         parts.foreach {
-          case e: Part.Element =>
+          case e: Chunk.Element =>
             balancedParts.lastOption match {
-              case Some(value: Part.Element) =>
-                balancedParts.append(Part.Element(q"${value.v} + ${e.v}"))
+              case Some(value: Chunk.Element) =>
+                balancedParts.remove(balancedParts.size - 1)
+                balancedParts.append(Chunk.ExprElement(q"${value.tree} + ${e.tree}"))
               case _ =>
                 balancedParts.append(e)
             }
 
-          case a: Part.Argument =>
+          case a: Chunk.Argument =>
             balancedParts.lastOption match {
-              case Some(_: Part.Argument) =>
+              case Some(_: Chunk.Argument) =>
                 balancedParts.append(emptystring)
               case None =>
                 balancedParts.append(emptystring)
@@ -85,7 +91,7 @@ object LogMessageMacro {
         }
 
         balancedParts.lastOption match {
-          case Some(_: Part.Argument) =>
+          case Some(_: Chunk.Argument) =>
             balancedParts.append(emptystring)
           case _ =>
         }
@@ -101,22 +107,16 @@ object LogMessageMacro {
               case PlusExtractor(out) =>
                 out
 
-              case const@Literal(Constant(_)) =>
-                Out(Seq(Part.Element(const)))
-
               case o =>
-                Out(Seq(Part.Argument(o)))
+                val chunk = toChunk(o)
+                Out(Seq(chunk))
             }
 
             // in sequence of string concatenations ("" + "" + "") we expect only one argument to be at the right side
             args match {
               case head :: Nil =>
-                head match {
-                  case t@Literal(Constant(_)) =>
-                    Some(sub.copy(parts = sub.parts :+ Part.Element(t)))
-                  case argexpr =>
-                    Some(sub.copy(parts = sub.parts :+ Part.Argument(argexpr)))
-                }
+                val chunk = toChunk(head)
+                Some(sub.copy(parts = sub.parts :+ chunk))
 
               case _ =>
                 c.warning(c.enclosingPosition, s"Something is wrong with this expression, please report this as a bug: $applyselect, ${c.universe.showRaw(applyselect)}")
@@ -125,6 +125,18 @@ object LogMessageMacro {
 
           case _ => None
         }
+      }
+
+      private def toChunk(head: c.universe.Tree): Chunk.Primary = {
+        val chunk = head match {
+          case t@Literal(Constant(_: String)) =>
+            Chunk.Element(t)
+          case t@Literal(Constant(_)) =>
+            Chunk.Argument(t)
+          case argexpr =>
+            Chunk.Argument(argexpr)
+        }
+        chunk
       }
     }
 
@@ -160,6 +172,16 @@ object LogMessageMacro {
         */
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
+    }
+  }
+
+  private[this] def reifyContext(c: blackbox.Context)(stringContext: c.universe.Tree, namedArgs: c.Expr[List[LogArg]]): c.Expr[Message] = {
+    import c.universe._
+    reify {
+      Message(
+        c.Expr[StringContext](stringContext).splice
+        , namedArgs.splice
+      )
     }
   }
 

@@ -22,24 +22,13 @@ class BasicLoggingTest extends WordSpec {
         LogArg(Seq("arg2"), "argument 2", hiddenName = false),
         LogArg(Seq("arg2"), "argument 2", hiddenName = false),
         LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
-        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false)
+        LogArg(Seq("UNNAMED:4"), 4, hiddenName = false),
       )
 
-      IzScala.scalaRelease match {
-        case _: ScalaRelease.`2_12` =>
-          assert(message.args == expectation)
-          val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
-          assert(message.template.parts == expectedParts)
-        case _: ScalaRelease.`2_13` =>
-          assert(message.args == expectation.take(3))
-          val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", expression 4", ", expression 4, ", ", expression 4, 4")
-          assert(message.template.parts == expectedParts)
-        case _: ScalaRelease.Unsupported =>
-          fail("unsupported scala")
-        case _: ScalaRelease.Unknown =>
-          fail("unknown scala")
-      }
+      val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
 
+      assert(message.args == expectation)
+      assert(message.template.parts == expectedParts)
 
       val message1 = Message(s"expression: ${Random.self.nextInt() + 1}")
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
