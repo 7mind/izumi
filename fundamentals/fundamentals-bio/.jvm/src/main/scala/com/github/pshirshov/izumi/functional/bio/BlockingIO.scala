@@ -2,9 +2,9 @@ package com.github.pshirshov.izumi.functional.bio
 
 import java.util.concurrent.ThreadPoolExecutor
 
-import zio.{IO, UIO, ZIO}
 import zio.blocking.Blocking
 import zio.internal.{Executor, PlatformLive}
+import zio.{IO, UIO, ZIO}
 
 trait BlockingIO[F[_, _]] {
 

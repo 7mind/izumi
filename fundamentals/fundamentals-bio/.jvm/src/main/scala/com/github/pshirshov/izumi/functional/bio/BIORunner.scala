@@ -4,10 +4,9 @@ import java.util
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import zio.Cause
-import zio._
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, PlatformLive, Tracing}
+import zio.{Cause, FiberFailure, IO, Runtime}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
@@ -88,7 +87,7 @@ object BIORunner {
 
     override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
 
-    override def reportFailure(cause: Exit.Cause[_]): Unit = {
+    override def reportFailure(cause: Cause[_]): Unit = {
       handler match {
         case FailureHandler.Default =>
           // do not log interruptions
