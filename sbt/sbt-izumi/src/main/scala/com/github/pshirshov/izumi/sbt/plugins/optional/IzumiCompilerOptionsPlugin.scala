@@ -40,7 +40,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
 
   protected def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
-      case Some((2, 12)) if optimizerEnabled(scalaVersion, isSnapshot) =>
+      case Some((2, 12|13)) if optimizerEnabled(scalaVersion, isSnapshot) =>
         Seq(
           "-opt:l:inline",
           "-opt-inline-from:**",
