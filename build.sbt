@@ -160,6 +160,9 @@ lazy val inDiStage = In("distage")
 lazy val inLogStage = In("logstage")
   .settingsSeq(base)
   .settings(WithFundamentals)
+lazy val inLogStageX = In("logstage")
+  .settingsSeq(base)
+  .settings(WithFundamentalsX)
 
 lazy val inIdealinguaBase = In("idealingua")
   .settings(GlobalSettings, WithFundamentals)
@@ -311,7 +314,7 @@ lazy val distagePlugins = inDiStage.as.module
     distageModel,
     distageCore.testOnlyRef,
     distageConfig.testOnlyRef,
-    logstageCore.testOnlyRef,
+    logstageCoreJvm.testOnlyRef,
   )
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
@@ -326,7 +329,7 @@ lazy val distageRoles = inDiStage.as.module
     distageCore,
     distagePlugins,
     distageConfig,
-    logstageRenderingCirce,
+    logstageRenderingCirceJvm,
     logstageAdapterSlf4j,
     logstageDi,
   )
@@ -349,22 +352,34 @@ lazy val distageTestkit = inDiStage.as.module
   )
 //-----------------------------------------------------------------------------
 
-lazy val logstageApi = inLogStage.as.module
-  .depends(fundamentalsReflectionJvm)
-
-lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApi, fundamentalsBioJvm)
+lazy val logstageApi = inLogStageX.as.cross(platforms)
+  .depends(fundamentalsReflection)
   .settings(
-    libraryDependencies ++= T.zio_core +: T.cats_all,
+    libraryDependencies ++= Seq(R.scala_java_time).map(_.cross(platformDepsCrossVersion.value)),
+  )
+lazy val logstageApiJvm = logstageApi.jvm.remember
+lazy val logstageApiJs = logstageApi.js.remember
+
+lazy val logstageCore = inLogStageX.as.cross(platforms)
+  .depends(logstageApi.ets, fundamentalsBio)
+  .settings(
+    libraryDependencies ++= (T.zio_core +: T.cats_all).map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= Seq(
       R.zio_core % Optional,
       R.cats_core % Optional
-    )
+    ).map(_.cross(platformDepsCrossVersion.value))
   )
+lazy val logstageCoreJvm = logstageCore.jvm.remember
+lazy val logstageCoreJs = logstageCore.js.remember
+
+lazy val logstageRenderingCirce = inLogStageX.as.cross(platforms)
+  .depends(logstageCore.ets, fundamentalsJsonCirce)
+lazy val logstageRenderingCirceJvm = logstageRenderingCirce.jvm.remember
+lazy val logstageRenderingCirceJs = logstageRenderingCirce.js.remember
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
-    logstageCore,
+    logstageCoreJvm,
     logstageConfig,
     distageConfig,
     distageModel,
@@ -372,10 +387,10 @@ lazy val logstageDi = inLogStage.as.module
   )
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(fundamentalsTypesafeConfig, logstageCore)
+  .depends(fundamentalsTypesafeConfig, logstageCoreJvm)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageCore)
+  .depends(logstageCoreJvm)
   .settings(
     libraryDependencies += R.slf4j_api,
     compileOrder in Compile := CompileOrder.Mixed,
@@ -383,13 +398,10 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
     classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
   )
 
-lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstageCore, fundamentalsJsonCirceJvm)
-
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
-    logstageApi,
-    logstageCore.testOnlyRef
+    logstageApiJvm,
+    logstageCoreJvm.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -439,7 +451,7 @@ lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
 
 
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
-  .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
+  .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCoreJvm, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaV1TestDefs).map(_.testOnlyRef))
   .settings(
     libraryDependencies ++= R.http4s_all,
@@ -498,13 +510,21 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageCore,
+  logstageApiJvm,
+  logstageCoreJvm,
+  logstageRenderingCirceJvm,
   logstageDi,
   logstageSinkSlf4j,
   logstageAdapterSlf4j,
-  logstageRenderingCirce,
   logstageConfig
 )
+
+lazy val logstageJs: Seq[ProjectReference] = Seq(
+  logstageApiJs,
+  logstageCoreJs,
+  logstageRenderingCirceJs,
+)
+
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles,
   distageStatic,
@@ -550,6 +570,7 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
 )
 
 lazy val allJsProjects = fundamentalsJs ++
+  logstageJs ++
   idealinguaV1Js
 
 lazy val allProjects = fundamentalsJvm ++
@@ -627,6 +648,8 @@ lazy val microsite = inDoc.as.module
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
 
+lazy val `logstage-agg` = In(".agg/logstage").as.just
+  .settings(GlobalSettings).aggregate((logstage ++ logstageJs):_*)
 
 lazy val `izumi-r2` = inRoot.as
   .root

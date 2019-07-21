@@ -4,10 +4,10 @@ import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
 import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.logstage.api.{Log, rendering}
+import com.github.pshirshov.izumi.fundamentals.platform.time.IzTimeSafe
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
+import com.github.pshirshov.izumi.logstage.api.{Log, rendering}
 
 class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer.Aggregate] = None) extends RenderingPolicy {
   protected val context: RenderingOptions = {
@@ -70,7 +70,7 @@ object StringRenderingPolicy {
     new Styler.LevelColor(Seq(
       new Extractor.Level(1),
       Extractor.Space,
-      new Extractor.Timestamp(IzTime.ISO_LOCAL_DATE_TIME_3NANO)
+      new Extractor.Timestamp(IzTimeSafe.ISO_LOCAL_DATE_TIME_3NANO)
     )),
     Extractor.Space,
     new Styler.Colored(

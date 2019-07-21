@@ -6,6 +6,7 @@ import java.util.function
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 
+
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {
   override def threshold(e: Log.LoggerId): Log.Level = {
     configFor(e).threshold

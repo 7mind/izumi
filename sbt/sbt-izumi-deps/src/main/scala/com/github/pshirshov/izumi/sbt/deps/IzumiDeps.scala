@@ -41,6 +41,7 @@ object IzumiDeps {
     // good to drop - java
     val cglib_nodep = "3.2.12"
 
+    val scala_java_time = "2.0.0-RC3"
   }
 
   object R {
@@ -107,6 +108,9 @@ object IzumiDeps {
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % V.slf4j
 
     val scalatest = "org.scalatest" %% "scalatest" % V.scalatest
+
+    val scala_java_time = "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
+
   }
 
   object C {
