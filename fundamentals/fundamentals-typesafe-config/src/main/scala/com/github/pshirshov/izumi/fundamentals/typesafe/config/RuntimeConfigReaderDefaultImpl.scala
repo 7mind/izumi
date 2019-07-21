@@ -120,70 +120,59 @@ class RuntimeConfigReaderDefaultImpl
       }
     }
 
-  def deriveSealedTraitReader(targetType: SafeType0[ru.type]): ConfigReader[_] =
+  def deriveSealedTraitReader(targetType: SafeType0[ru.type]): ConfigReader[_] = {
     cv => Try {
       cv.valueType() match {
         case ConfigValueType.OBJECT | ConfigValueType.STRING =>
           import RuntimeConfigReaderDefaultImpl._
 
-          val tpe = targetType.tpe
           val (subclasses, names) = {
+            val tpe = targetType.tpe
             val ctors = ctorsOf(tpe)
             ctors -> ctors.map(c => nameAsString(nameOf(c)))
           }
-          val classesWithNames = subclasses zip names
+          val namedSubclasses = subclasses zip names
 
-          val objects = classesWithNames.collect {
-            case (o, n) if o.typeSymbol.asClass.isModuleClass =>
-              o.typeSymbol.asClass.module.asModule -> n
+          val maybeObj = if (cv.valueType() == ConfigValueType.OBJECT) {
+            val obj = cv.asInstanceOf[ConfigObject]
+            if (obj.size() != 1) throw new ConfigReadException(
+              s"""
+                 |Can't read config value as a sealed trait $targetType, config object does not contain a constructor of $targetType!
+                 | Expected exactly one key that is one of: ${names.mkString(", ")}
+                 | Config value was: $cv
+                """.stripMargin)
+
+            Some(obj)
+          } else None
+
+          val str = if (cv.valueType() == ConfigValueType.STRING) {
+            anyReader(SafeType0.get[String])(cv).get
+          } else {
+            cv.asInstanceOf[ConfigObject].keySet().iterator().next()
           }
 
-          cv match {
-            case _ if cv.valueType() == ConfigValueType.STRING && objects.nonEmpty =>
-              val str = anyReader(SafeType0.get[String])(cv).get
-              objects.find(_._2 == str) match {
-                case Some((o, _)) =>
-                  val x1 = mirror.reflectModule(o).instance
-                  val x2 = mirror.reflectModule(o).instance
-                  if (x1 != x2) throw new RuntimeException("incoherence (not the error in test)")
-                  x2
-                case None =>
-                  throw new ConfigReadException(
-                    s"""
-                       |Can't read config value as a sealed trait $targetType, string does not match any case object in sealed trait
-                       | Expected a string which is a member of enumeration: ${objects.map(_._2).mkString(", ")}
-                       | ${if(objects.size == subclasses.size) "" else
-                          s"Or an object representing one of case class children of $targetType: ${names.diff(objects.map(_._2)).mkString(", ")}"}
-                       | Config value was: $cv
-                     """.stripMargin
-                  )
+          val res = namedSubclasses.collectFirst{
+            case (tpe, name) if name == str =>
+              maybeObj match {
+                case Some(obj) => Right((tpe, obj.get(str)))
+                case None => Left(tpe)
               }
-            case obj: ConfigObject =>
-              if (obj.size() != 1) {
-                throw new ConfigReadException(
-                  s"""
-                     |Can't read config value as a sealed trait $targetType, config object does not have exactly one key!
-                     | Expected exactly one key that is one of: ${names.mkString(", ")}
-                     | Config value was: $cv
-                   """.stripMargin)
-              }
-
-              classesWithNames.find {
-                case (_, name) => obj.computeIfAbsent(name, _ => null) != null
-              } match {
-                case Some((typ, name)) =>
-                  val value = obj.get(name)
-
-                  anyReader(SafeType0(typ))(value).get
-                case None =>
-                  throw new ConfigReadException(
-                    s"""
-                       |Can't read config value as a sealed trait $targetType, config object does not contain a constructor of $targetType!
-                       | Expected exactly one key that is one of: ${names.mkString(", ")}
-                       | Config value was: $cv
-                     """.stripMargin
-                  )
-              }
+          }
+          res match {
+            case Some(Left(tpe)) if tpe.typeSymbol.asClass.isModuleClass =>
+              mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
+            case Some(Right((tpe, _))) if tpe.typeSymbol.asClass.isModuleClass =>
+              mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
+            case Some(Right((tpe, value))) =>
+              deriveCaseClassReader(SafeType0(tpe))(value).get
+            case None =>
+              throw new ConfigReadException(
+                s"""
+                   |Can't read config value as a sealed trait $targetType, string does not match any case object in sealed trait
+                   | Expected a string or an object representing one of case children of $targetType: ${names.mkString(", ")}"}
+                   | Config value was: $cv
+                 """.stripMargin
+              )
           }
 
         case _ =>
@@ -193,6 +182,7 @@ class RuntimeConfigReaderDefaultImpl
                | ConfigValue was: $cv""".stripMargin)
       }
     }
+  }
 
   def listReader[T](listType: ru.Type)(reader: (ru.Type, ConfigList) => Try[T]): ConfigReader[T] = {
     case cl: ConfigList =>

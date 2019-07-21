@@ -34,6 +34,8 @@ object SealedTrait2 {
    * Using a relaxed .equals to pass the test
    * */
   case object No extends SealedTrait2 {
+    Thread.dumpStack()
+
     override def equals(obj: Any): Boolean = {
       println(s"CLASSLOADER: `${this.getClass.getClassLoader}`")
       println(s"CLASSLOADER: `${obj.getClass.getClassLoader}`")
