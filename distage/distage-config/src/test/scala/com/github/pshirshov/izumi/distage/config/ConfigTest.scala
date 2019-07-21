@@ -5,8 +5,6 @@ import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.{SealedTrait, _}
 import com.github.pshirshov.izumi.distage.config.model.AppConfig
 import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala
-import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import com.typesafe.config._
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
@@ -154,15 +152,9 @@ class ConfigTest extends WordSpec {
           .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
-      assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
 
-      IzScala.scalaRelease match {
-        case ScalaRelease.`2_13`(_) =>
-          /** progression test for bug https://github.com/scala/bug/issues/11645 */
-          assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 ne No)
-        case _ =>
-          assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
-      }
+      assert(context2.get[Service[SealedCaseClass]].conf.sealedTrait1.asInstanceOf[CaseClass2].sealedTrait2 eq No)
+      assert(context2.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass2(2, false, No)))
     }
 
     "Inject config works for trait methods" in {
