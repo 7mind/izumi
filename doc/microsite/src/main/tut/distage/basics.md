@@ -621,7 +621,7 @@ Brief introduction to tagless final:
 Advantages of `distage` as a driver for TF compared to implicits:
 
 - easy explicit overrides
-- easy @ref[effectful instantiation](#effect-bindings) and @ref[resource management](#resource-bindings--lifecycle)
+- easy @ref[effectful instantiation](#effect-bindings) and @ref[resource management](#resource-bindings-lifecycle)
 - extremely easy & scalable [test](#testkit) context setup due to the above
 - multiple different implementations via `@Id` annotation
 

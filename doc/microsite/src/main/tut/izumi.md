@@ -38,12 +38,12 @@ You can use izumi's `BOM` definitions to import (from @ref[`sbt-izumi-deps` plug
 
 ```scala
 libraryDependencies ++= Seq(
-  Izumi.R.distage_core, // Core DIStage library
-  Izumi.T.distage_testkit,  // Testkit for ScalaTest
-  Izumi.R.distage_static, // Compile-time checks & reflection-less mode
-  Izumi.R.distage_config, // Typesafe Config support
+  Izumi.R.distage_core,    // Core DIStage library
+  Izumi.T.distage_testkit, // Testkit for ScalaTest
+  Izumi.R.distage_static,  // Compile-time checks & reflection-less mode
+  Izumi.R.distage_config,  // Typesafe Config support
   Izumi.R.distage_plugins, // Classpath discovery support
-  Izumi.R.distage_roles,  // Roles & Application entrypoint framework
+  Izumi.R.distage_roles,   // Roles & Application entrypoint framework
 )
 ```
 
@@ -51,12 +51,12 @@ libraryDependencies ++= Seq(
 
 ```scala
 libraryDependencies ++= Seq(
-  Izumi.R.logstage_core, // Core LogStage library
+  Izumi.R.logstage_core,   // Core LogStage library
   Izumi.R.logstage_config, // Configure LogStage with Typesafe Config
-  Izumi.R.logstage_di, // LogStage integration with DIStage
-  Izumi.R.logstage_adapter_slf4j, // Route Slf4J logs to LogStage
-  Izumi.R.logstage_sink_slf4j, // Route LogStage logs to Slf4J
+  Izumi.R.logstage_di,     // LogStage integration with DIStage
   Izumi.R.logstage_rendering_circe, // Write logs as JSON
+  Izumi.R.logstage_adapter_slf4j,   // Route Slf4J logs to LogStage
+  Izumi.R.logstage_sink_slf4j,      // Route LogStage logs to Slf4J
 )
 ```
 
