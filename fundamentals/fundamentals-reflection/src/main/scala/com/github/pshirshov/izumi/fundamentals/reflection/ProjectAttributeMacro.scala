@@ -12,7 +12,7 @@ import scala.reflect.macros.blackbox
       s"-Xmacro-settings:product-group=${organization.value}",
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
-      s"-Xmacro-settings:scaltest-version=${V.scalatest}",
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
  */
 object ProjectAttributeMacro {
@@ -57,7 +57,7 @@ object ProjectAttributeMacro {
   }
 
   def extractScalatestVersionMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {
-    extractAttr(c, "scaltest-version")
+    extractAttr(c, "scalatest-version")
   }
 
   def extractScalaVersionsMacro(c: blackbox.Context)(): c.Expr[Option[String]] = {

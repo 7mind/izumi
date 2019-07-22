@@ -53,7 +53,7 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scaltest-version=${V.scalatest}",
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
   )
 }
