@@ -240,6 +240,5 @@ StaticLogRouter.instance.setup(myLogger.router)
 * [Rendering policy](policy.md)
 * [Configuration](config.md)
 * [Logging contexts](custom_ctx.md)
-* [Syntax reference](syntax.md)
 
 @@@

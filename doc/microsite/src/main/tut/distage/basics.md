@@ -350,70 +350,89 @@ Fantastic!
 
 consult [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings) for more details about the concept.
 
-### Injecting Implicits
+### Effect Bindings
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
+Sometimes we need to effectfully create a component or fetch some data and inject it into the object graph during startup (e.g. read a configuration file),
+but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limits the parallelism of an
+entire application based on configuration value or a `dummy`/`test double` implementation of some external service made for testing using simple `Ref`s.
 
-Relevant ticket: https://github.com/7mind/izumi/issues/230
-@@@
+In these cases we can use `.fromEffect` to simply bind a value created effectfully.
 
-Implicits are managed like any other class. To make them available for summoning, declare them in a module:
+Example with `ZIO` `Semaphore`:
 
-```scala
-import cats.Monad
+```scala mdoc:reset-class
 import distage._
-import zio.IO
-import zio.interop.catz._
+import distage.config._
+import zio._
 
-object IOMonad extends ModuleDef {
-  addImplicit[Monad[IO[Throwable, ?]]]
-  // same as make[Monad[IO[Throwable, ?]]].from(implicitly[Monad[IO[Throwable, ?]]])
+case class Content(bytes: Array[Byte])
+
+case class UploadConfig(maxParallelUploads: Long)
+
+class UploaderModule extends ModuleDef {
+  make[Semaphore].named("upload-limit").fromEffect {
+    conf: UploadConfig @ConfPath("myapp.uploads") =>
+      Semaphore.make(conf.maxParallelUploads)
+  }
+  
+  make[Uploader]
+}
+
+class Uploader(limit: Semaphore @Id("upload-limit")) {
+  def upload(content: Content): IO[Throwable, Unit] =
+    limit.withPermit(upload(content))
 }
 ```
 
-Implicits for managed classes are injected from the object graph, NOT from the surrounding lexical scope.
-If they were captured from lexical scope inside `ModuleDef`, then classes would effectively depend on specific 
-*implementations* of implicits available in scope at `ModuleDef` definition point.
-Depending on implementations is unmodular! We want to late-bind implicit dependencies same as any other dependencies,
-therefore you must specify implementations for implicits in `ModuleDef`.
+Example with a `Dummy` `KVStore`:
 
-```scala
-import cats._
-import distage._
-
-trait KVStore[F[_]] {
-  def fetch(key: String): F[String]
+```scala mdoc
+trait KVStore[F[_, _]] {
+  def put(key: String, value: String): F[Nothing, Unit]
+  def get(key: String): F[NoSuchElementException, String]
 }
 
-final class KVStoreEitherImpl(implicit F: MonadError[Either[Error, ?], Error]) extends KVStore[Either[Error, ?]] {
-  def fetch(key: String) = F.raiseError(new Error(s"no value for key $key!"))
+object KVStore {
+  def dummy: IO[Nothing, KVStore[IO]] = for {
+    ref <- Ref.make(Map.empty[String, String])
+    kvStore = new KVStore[IO] {
+      def put(key: String, value: String): IO[Nothing, Unit] =
+        ref.update(_ + (key -> value)).unit
+      
+      def get(key: String): IO[NoSuchElementException, String] = 
+        for {
+          map <- ref.get
+          maybeValue = map.get(key)
+          res <- maybeValue match {
+            case None => 
+              IO.fail(new NoSuchElementException(key))
+            case Some(value) => 
+              IO.succeed(value)
+          }
+        } yield res
+    }
+  } yield kvStore
 }
 
-val kvstoreModuleBad = new ModuleDef {
-  // We DON'T want this import to be necessary here
-  // import cats.instances.either._
-
-  make[KVStore[Either[Error, ?]]].from[KVStoreEitherImpl]
+val kvStoreModule = new ModuleDef {
+  make[KVStore[IO]].fromEffect(KVStore.dummy)
 }
 
-// Instead, wire implicits explicitly
-val kvstoreModuleGood = new ModuleDef {
-
-  make[KVStore[Either[Error, ?]]].from[KVStoreEitherImpl]
-  
-  // Ok to import here
-  import cats.instances.either._
-  
-  // add the implicit dependency into the object graph
-  addImplicit[MonadError[Either[Error, ?], Error]]
-  
+new DefaultRuntime{}.unsafeRun {
+  Injector().produceF[IO[Throwable, ?]](kvStoreModule, GCMode.NoGC)
+    .use {
+      objects =>
+        val kv = objects.get[KVStore[IO]]
+        
+        for {
+          _ <- kv.put("apple", "pie")
+          res <- kv.get("apple")
+        } yield res
+    }
 }
 ```
 
-Implicits obey the usual lexical scope in user code.
-
-You can participate in this ticket at https://github.com/7mind/izumi/issues/230
+You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
 
 ### Resource Bindings & Lifecycle
 
@@ -525,89 +544,70 @@ println(closedInit.initialized)
 
 You need to use resource-aware `Injector.produce`/`Injector.produceF` methods to control lifecycle of the object graph.
 
-### Effect Bindings
+### Injecting Implicits
 
-Sometimes we need to effectfully create a component or fetch some data and inject it into the object graph during startup (e.g. read a configuration file),
-but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limits the parallelism of an
-entire application based on configuration value or a `dummy`/`test double` implementation of some external service made for testing using simple `Ref`s.
+@@@ warning { title='TODO' }
+Sorry, this page is not ready yet
 
-In these cases we can use `.fromEffect` to simply bind a value created effectfully.
+Relevant ticket: https://github.com/7mind/izumi/issues/230
+@@@
 
-Example with `ZIO` `Semaphore`:
+Implicits are managed like any other class. To make them available for summoning, declare them in a module:
 
-```scala mdoc:reset-class
+```scala
+import cats.Monad
 import distage._
-import distage.config._
-import zio._
+import zio.IO
+import zio.interop.catz._
 
-case class Content(bytes: Array[Byte])
+object IOMonad extends ModuleDef {
+  addImplicit[Monad[IO[Throwable, ?]]]
+  // same as make[Monad[IO[Throwable, ?]]].from(implicitly[Monad[IO[Throwable, ?]]])
+}
+```
 
-case class UploadConfig(maxParallelUploads: Long)
+Implicits for managed classes are injected from the object graph, NOT from the surrounding lexical scope.
+If they were captured from lexical scope inside `ModuleDef`, then classes would effectively depend on specific 
+*implementations* of implicits available in scope at `ModuleDef` definition point.
+Depending on implementations is unmodular! We want to late-bind implicit dependencies same as any other dependencies,
+therefore you must specify implementations for implicits in `ModuleDef`.
 
-class UploaderModule extends ModuleDef {
-  make[Semaphore].named("upload-limit").fromEffect {
-    conf: UploadConfig @ConfPath("myapp.uploads") =>
-      Semaphore.make(conf.maxParallelUploads)
-  }
+```scala
+import cats._
+import distage._
+
+trait KVStore[F[_]] {
+  def fetch(key: String): F[String]
+}
+
+final class KVStoreEitherImpl(implicit F: MonadError[Either[Error, ?], Error]) extends KVStore[Either[Error, ?]] {
+  def fetch(key: String) = F.raiseError(new Error(s"no value for key $key!"))
+}
+
+val kvstoreModuleBad = new ModuleDef {
+  // We DON'T want this import to be necessary here
+  // import cats.instances.either._
+
+  make[KVStore[Either[Error, ?]]].from[KVStoreEitherImpl]
+}
+
+// Instead, wire implicits explicitly
+val kvstoreModuleGood = new ModuleDef {
+
+  make[KVStore[Either[Error, ?]]].from[KVStoreEitherImpl]
   
-  make[Uploader]
-}
-
-class Uploader(limit: Semaphore @Id("upload-limit")) {
-  def upload(content: Content): IO[Throwable, Unit] =
-    limit.withPermit(upload(content))
-}
-```
-
-Example with a `Dummy` `KVStore`:
-
-```scala mdoc
-trait KVStore[F[_, _]] {
-  def put(key: String, value: String): F[Nothing, Unit]
-  def get(key: String): F[NoSuchElementException, String]
-}
-
-object KVStore {
-  def dummy: IO[Nothing, KVStore[IO]] = for {
-    ref <- Ref.make(Map.empty[String, String])
-    kvStore = new KVStore[IO] {
-      def put(key: String, value: String): IO[Nothing, Unit] =
-        ref.update(_ + (key -> value)).unit
-      
-      def get(key: String): IO[NoSuchElementException, String] = 
-        for {
-          map <- ref.get
-          maybeValue = map.get(key)
-          res <- maybeValue match {
-            case None => 
-              IO.fail(new NoSuchElementException(key))
-            case Some(value) => 
-              IO.succeed(value)
-          }
-        } yield res
-    }
-  } yield kvStore
-}
-
-val kvStoreModule = new ModuleDef {
-  make[KVStore[IO]].fromEffect(KVStore.dummy)
-}
-
-new DefaultRuntime{}.unsafeRun {
-  Injector().produceF[IO[Throwable, ?]](kvStoreModule, GCMode.NoGC)
-    .use {
-      objects =>
-        val kv = objects.get[KVStore[IO]]
-        
-        for {
-          _ <- kv.put("apple", "pie")
-          res <- kv.get("apple")
-        } yield res
-    }
+  // Ok to import here
+  import cats.instances.either._
+  
+  // add the implicit dependency into the object graph
+  addImplicit[MonadError[Either[Error, ?], Error]]
+  
 }
 ```
 
-You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
+Implicits obey the usual lexical scope in user code.
+
+You can participate in this ticket at https://github.com/7mind/izumi/issues/230
 
 ### Tagless Final Style
 
