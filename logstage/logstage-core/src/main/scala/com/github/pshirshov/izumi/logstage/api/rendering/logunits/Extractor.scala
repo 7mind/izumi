@@ -1,12 +1,11 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneId}
 
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.RenderingOptions
-
+import com.github.pshirshov.izumi.logstage.api.rendering.TimeOps
 
 trait Extractor extends Renderer {
   def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode
@@ -40,7 +39,8 @@ object Extractor {
   class Timestamp(format: DateTimeFormatter) extends Extractor {
     override def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode = {
       Quirks.discard(context)
-      val ts = Instant.ofEpochMilli(entry.context.dynamic.tsMillis).atZone(ZoneId.systemDefault())
+
+      val ts = TimeOps.convertToLocalTime(entry.context.dynamic.tsMillis)
       LETree.TextNode(format.format(ts))
     }
   }
