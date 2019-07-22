@@ -8,7 +8,7 @@ import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 enablePlugins(IzumiGitEnvironmentPlugin)
 disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
-name := "izumi-r2"
+name := "izumi"
 organization in ThisBuild := "io.7mind.izumi"
 defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
 publishMavenStyle in ThisBuild := true
