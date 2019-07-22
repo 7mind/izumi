@@ -116,7 +116,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
         "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString,
       )
       case _ =>
-        ???
+        Seq.empty
     }
     val orgSettings =
       if (scalaOrganization == "org.typelevel") {
