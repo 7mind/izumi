@@ -7,6 +7,26 @@ import distage._
 import org.scalatest.WordSpec
 
 
+class XXX extends WordSpec {
+  "xxx" should {
+    "xxx" in {
+      type F[T] = T
+      type L[P] = List[P]
+      type LN[P <: Number] = List[P]
+      trait T1[_[_]] {}
+      import com.github.pshirshov.izumi.fundamentals.reflection._
+      println(LTT[Int])
+      println(LTT[List[Int]])
+      println(LTT[F[Int]])
+      println(LTT[F[Int]])
+      println(`LTT[_]`[L])
+      //println(`LTT[_]`[LN])
+      println(`LTT[A, _ <: A]`[Integer, LN])
+      println(`LTT[_]`[Either[Unit, ?]])
+      println(`LTT[_[_]]`[T1])
+    }
+  }
+}
 
 
 
