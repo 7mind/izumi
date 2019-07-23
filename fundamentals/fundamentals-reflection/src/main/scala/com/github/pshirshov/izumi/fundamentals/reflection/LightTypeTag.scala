@@ -22,7 +22,7 @@ object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_]`[T, A]]
+  implicit def apply[T[_]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_]`[T]]
 }
 
 case class `LTT[A, _ <: A]`[A, T[_ <: A]](t: LightTypeTag) extends ALTT
@@ -70,10 +70,9 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     import c._
     val wtt = implicitly[WeakTypeTag[T]]
     val tpe = wtt.tpe
-    //println(s"*** $wtt")
 
     val w = implicitly[WeakTypeTag[TT]]
-
+    
     val out = makeRef(tpe)
     val t = q"new ${w.tpe}($out)"
     c.Expr[ALTT](t)
