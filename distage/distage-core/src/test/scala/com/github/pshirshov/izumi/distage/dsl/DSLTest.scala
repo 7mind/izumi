@@ -11,6 +11,7 @@ class XXX extends WordSpec {
   "xxx" should {
     "xxx" in {
       type F[T] = T
+      type FP[+T] = List[T]
       type L[P] = List[P]
       type LN[P <: Number] = List[P]
       trait T1[_[_]] {}
@@ -19,6 +20,7 @@ class XXX extends WordSpec {
       println(LTT[List[Int]])
       println(LTT[F[Int]])
       println(LTT[F[Int]])
+      println(`LTT[+_]`[FP])
       println(`LTT[_]`[L])
       //println(`LTT[_]`[LN])
       println(`LTT[A, _ <: A]`[Integer, LN])

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Hole, Kind, NameReference}
+import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Hole, Kind, NameReference, Variance}
 
 import scala.language.experimental.macros
 import scala.language.higherKinds
@@ -25,6 +25,16 @@ object `LTT[_]` {
   implicit def apply[T[_]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_]`[T]]
 }
 
+case class `LTT[+_]`[T[+ _]](t: LightTypeTag) extends ALTT
+
+object `LTT[+_]` {
+
+  trait Fake
+
+  implicit def apply[T[+ _]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[+_]`[T]]
+}
+
+
 case class `LTT[A, _ <: A]`[A, T[_ <: A]](t: LightTypeTag) extends ALTT
 
 object `LTT[A, _ <: A]` {
@@ -44,15 +54,27 @@ sealed trait LightTypeTag
 
 object LightTypeTag {
 
+  sealed trait Variance
+
+  object Variance {
+
+    case object Invariant extends Variance
+
+    case object Contravariant extends Variance
+
+    case object Covariant extends Variance
+
+  }
+
   case class Boundaries(top: LightTypeTag, bottom: LightTypeTag)
 
   sealed trait AbstractKind extends LightTypeTag {
     def boundaries: Boundaries
   }
 
-  case class Hole(boundaries: Boundaries) extends AbstractKind
+  case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind
 
-  case class Kind(parameters: List[AbstractKind], boundaries: Boundaries) extends AbstractKind
+  case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind
 
   sealed trait AbstractReference extends LightTypeTag
 
@@ -72,7 +94,7 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     val tpe = wtt.tpe
 
     val w = implicitly[WeakTypeTag[TT]]
-    
+
     val out = makeRef(tpe)
     val t = q"new ${w.tpe}($out)"
     c.Expr[ALTT](t)
@@ -82,13 +104,22 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     val tpef = tpe.dealias.resultType
     val typeSymbol = tpef.typeSymbol
 
+    val typeSymbolTpe = typeSymbol.asType
+    val variance = if (typeSymbolTpe.isCovariant) {
+      Variance.Covariant
+    } else if (typeSymbolTpe.isContravariant) {
+      Variance.Contravariant
+    } else {
+      Variance.Invariant
+    }
+
     val out = if (!tpef.takesTypeArgs) {
       assert(tpef.typeParams.isEmpty)
       tpef.typeArgs match {
         case Nil =>
           typeSymbol.typeSignature match {
             case TypeBounds(lo, hi) =>
-              Hole(Boundaries(makeRef(lo), makeRef(hi)))
+              Hole(Boundaries(makeRef(lo), makeRef(hi)), variance)
             case _ =>
               NameReference(typeSymbol.fullName)
           }
@@ -99,7 +130,7 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
               val sub = params.map(_.asType.toType).map(makeRef)
               val kinds = sub.collect({ case a: AbstractKind => a })
               if (kinds.size == sub.size) {
-                Kind(kinds, Boundaries(makeRef(lo), makeRef(hi)))
+                Kind(kinds, Boundaries(makeRef(lo), makeRef(hi)), variance)
               } else {
                 c.warning(c.enclosingPosition, s"Unexpected state: $tpe has unexpected shape, will try to fallback but it may not be correct")
                 FullReference(typeSymbol.fullName, args.map(makeRef))
@@ -115,12 +146,24 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
     } else {
       assert(tpef.typeArgs.isEmpty)
+
+      //      println((tpef.typeParams, tpef.typeParams.map(_.asInstanceOf[{def variance: Variance}].variance)))
+
       FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef))
     }
     out
   }
 
   protected implicit val liftable_Ns: Liftable[LightTypeTag.type] = { _: LightTypeTag.type => q"${symbolOf[LightTypeTag.type].asClass.module}" }
+  protected implicit val liftable_Invariant: Liftable[Variance.Invariant.type] = { _: Variance.Invariant.type => q"${symbolOf[Variance.Invariant.type].asClass.module}" }
+  protected implicit val liftable_Covariant: Liftable[Variance.Covariant.type] = { _: Variance.Covariant.type => q"${symbolOf[Variance.Covariant.type].asClass.module}" }
+  protected implicit val liftable_Contravariant: Liftable[Variance.Contravariant.type] = { _: Variance.Contravariant.type => q"${symbolOf[Variance.Contravariant.type].asClass.module}" }
+
+  protected implicit def lifted_Variance: Liftable[Variance] = Liftable[Variance] {
+    case Variance.Invariant => q"${Variance.Invariant}"
+    case Variance.Contravariant => q"${Variance.Contravariant}"
+    case Variance.Covariant => q"${Variance.Covariant}"
+  }
 
   protected implicit def lifted_Boundaries: Liftable[Boundaries] = Liftable[Boundaries] {
     b =>
@@ -128,10 +171,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
   }
 
   protected implicit def lifted_AbstractKind: Liftable[AbstractKind] = Liftable[AbstractKind] {
-    case LightTypeTag.Hole(b) =>
-      q"$LightTypeTag.Hole($b)"
-    case Kind(parameters, b) =>
-      q"$LightTypeTag.Kind($parameters, $b)"
+    case LightTypeTag.Hole(b, v) =>
+      q"$LightTypeTag.Hole($b, $v)"
+    case Kind(parameters, b, v) =>
+      q"$LightTypeTag.Kind($parameters, $b, $v)"
   }
 
   protected implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {
