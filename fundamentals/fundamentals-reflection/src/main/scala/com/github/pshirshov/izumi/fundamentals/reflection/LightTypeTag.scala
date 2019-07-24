@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Hole, Kind, NameReference, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Hole, Kind, NameReference, ShortFullReference, ShortNameReference, ShortReference, Variance}
 
 import scala.language.experimental.macros
 import scala.language.higherKinds
@@ -84,11 +84,25 @@ object LightTypeTag {
 
   case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind
 
-  sealed trait AbstractReference extends LightTypeTag
+  sealed trait AbstractReference extends LightTypeTag {
+    def toShort: ShortReference
+  }
 
-  case class NameReference(ref: String) extends AbstractReference
+  case class NameReference(ref: String, bases: Set[ShortReference]) extends AbstractReference {
+    override def toShort: ShortNameReference = ShortNameReference(ref)
+  }
 
-  case class FullReference(ref: String, parameters: List[LightTypeTag]) extends AbstractReference
+  case class FullReference(ref: String, parameters: List[LightTypeTag], bases: Set[ShortReference]) extends AbstractReference {
+    override def toShort: ShortFullReference = ShortFullReference(ref, parameters)
+  }
+
+  sealed trait ShortReference {
+    def ref: String
+  }
+
+  case class ShortNameReference(ref: String) extends ShortReference
+
+  case class ShortFullReference(ref: String, parameters: List[LightTypeTag]) extends ShortReference
 
 }
 
@@ -103,7 +117,7 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
     val w = implicitly[WeakTypeTag[TT]]
 
-    val out = makeRef(tpe, Set(tpe))
+    val out = makeRef(tpe, Set(tpe), recurseBases = true)
     val t = q"new ${w.tpe}($out)"
     c.Expr[ALTT](t)
   }
@@ -111,9 +125,9 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
   private val any: c.WeakTypeTag[Any] = c.weakTypeTag[Any]
   private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
 
-  private def makeRef(tpe: c.universe.Type, path: Set[Type]): LightTypeTag = {
+  private def makeRef(tpe: c.universe.Type, path: Set[Type], recurseBases: Boolean): LightTypeTag = {
     def makeRef(tpe: Type): LightTypeTag = {
-      TypeTagExampleImpl.this.makeRef(tpe, path + tpe)
+      TypeTagExampleImpl.this.makeRef(tpe, path + tpe, recurseBases = false)
     }
 
     def makeBoundaries(b: TypeBoundsApi): Boundaries = {
@@ -130,10 +144,22 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     val typeSymbolTpe = typeSymbol.asType
     val variance = toVariance(typeSymbolTpe)
 
+    val bases: Set[ShortReference] = if (recurseBases) {
+      val higherBases = tpe.baseClasses
+      val parameterizedBases = higherBases.filterNot(s => s.asType.toType.erasure =:= tpe.erasure).map(s => tpef.baseType(s))
+      val hollowBases = higherBases.map(s => s.asType.toType)
+
+      val out = (parameterizedBases ++ hollowBases).map(b => makeRef(b)).collect { case r: AbstractReference => r.toShort }.toSet
+      out
+    } else {
+      Set.empty
+    }
+
+
     val out = if (tpef.takesTypeArgs) {
       assert(tpef.typeArgs.isEmpty)
       //      println((tpef.typeParams, tpef.typeParams.map(_.asInstanceOf[{def variance: Variance}].variance)))
-      FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef))
+      FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef), bases)
     } else {
       assert(tpef.typeParams.isEmpty)
       tpef.typeArgs match {
@@ -143,7 +169,7 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
               val boundaries = makeBoundaries(b)
               Hole(boundaries, variance)
             case _ =>
-              NameReference(typeSymbol.fullName)
+              NameReference(typeSymbol.fullName, bases)
           }
 
         case args =>
@@ -157,12 +183,12 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
                 Kind(kinds, boundaries, variance)
               } else {
                 c.warning(c.enclosingPosition, s"Unexpected state: $tpe has unexpected shape, will try to fallback but it may not be correct")
-                FullReference(typeSymbol.fullName, args.map(makeRef))
+                FullReference(typeSymbol.fullName, args.map(makeRef), bases)
               }
 
 
             case _ =>
-              FullReference(typeSymbol.fullName, args.map(makeRef))
+              FullReference(typeSymbol.fullName, args.map(makeRef), bases)
 
           }
 
@@ -207,10 +233,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
   }
 
   protected implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {
-    case NameReference(ref) =>
-      q"$LightTypeTag.NameReference($ref)"
-    case FullReference(ref, parameters) =>
-      q"$LightTypeTag.FullReference($ref, $parameters)"
+    case NameReference(ref, b) =>
+      q"$LightTypeTag.NameReference($ref, $b)"
+    case FullReference(ref, parameters, b) =>
+      q"$LightTypeTag.FullReference($ref, $parameters, $b)"
   }
 
   protected implicit def lifted_LightTypeTag: Liftable[LightTypeTag] = Liftable[LightTypeTag] {
@@ -220,4 +246,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
       implicitly[Liftable[AbstractKind]].apply(k)
   }
 
+  protected implicit def lifted_ShortReference: Liftable[ShortReference] = Liftable[ShortReference] {
+    case ShortNameReference(ref) =>
+      q"$LightTypeTag.ShortNameReference($ref)"
+    case ShortFullReference(ref, parameters) =>
+      q"$LightTypeTag.ShortFullReference($ref, $parameters)"
+  }
 }
