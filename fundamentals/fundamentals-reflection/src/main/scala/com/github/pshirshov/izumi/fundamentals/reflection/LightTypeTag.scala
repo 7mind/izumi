@@ -105,32 +105,31 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     val typeSymbol = tpef.typeSymbol
 
     val typeSymbolTpe = typeSymbol.asType
-    val variance = if (typeSymbolTpe.isCovariant) {
-      Variance.Covariant
-    } else if (typeSymbolTpe.isContravariant) {
-      Variance.Contravariant
-    } else {
-      Variance.Invariant
-    }
+    val variance = toVariance(typeSymbolTpe)
 
-    val out = if (!tpef.takesTypeArgs) {
+    val out = if (tpef.takesTypeArgs) {
+      assert(tpef.typeArgs.isEmpty)
+      //      println((tpef.typeParams, tpef.typeParams.map(_.asInstanceOf[{def variance: Variance}].variance)))
+      FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef))
+    } else {
       assert(tpef.typeParams.isEmpty)
       tpef.typeArgs match {
         case Nil =>
           typeSymbol.typeSignature match {
-            case TypeBounds(lo, hi) =>
-              Hole(Boundaries(makeRef(lo), makeRef(hi)), variance)
+            case b: TypeBoundsApi =>
+              Hole(Boundaries(makeRef(b.lo), makeRef(b.hi)), variance)
             case _ =>
               NameReference(typeSymbol.fullName)
           }
 
         case args =>
           typeSymbol.typeSignature match {
-            case PolyType(params, TypeBounds(lo, hi)) =>
+            case PolyType(params, b: TypeBoundsApi) =>
               val sub = params.map(_.asType.toType).map(makeRef)
               val kinds = sub.collect({ case a: AbstractKind => a })
+              
               if (kinds.size == sub.size) {
-                Kind(kinds, Boundaries(makeRef(lo), makeRef(hi)), variance)
+                Kind(kinds, Boundaries(makeRef(b.lo), makeRef(b.hi)), variance)
               } else {
                 c.warning(c.enclosingPosition, s"Unexpected state: $tpe has unexpected shape, will try to fallback but it may not be correct")
                 FullReference(typeSymbol.fullName, args.map(makeRef))
@@ -143,15 +142,18 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
           }
 
       }
-
-    } else {
-      assert(tpef.typeArgs.isEmpty)
-
-      //      println((tpef.typeParams, tpef.typeParams.map(_.asInstanceOf[{def variance: Variance}].variance)))
-
-      FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef))
     }
     out
+  }
+
+  private def toVariance(typeSymbolTpe: c.universe.TypeSymbol) = {
+    if (typeSymbolTpe.isCovariant) {
+      Variance.Covariant
+    } else if (typeSymbolTpe.isContravariant) {
+      Variance.Contravariant
+    } else {
+      Variance.Invariant
+    }
   }
 
   protected implicit val liftable_Ns: Liftable[LightTypeTag.type] = { _: LightTypeTag.type => q"${symbolOf[LightTypeTag.type].asClass.module}" }

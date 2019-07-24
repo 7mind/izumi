@@ -15,6 +15,10 @@ class LightTypeTagTest extends WordSpec {
     type A
   }
 
+  trait R[K, A <: R[K, A]]
+  trait R1[K] extends R[K, R1[K]]
+
+
   trait W1
   trait W2
   trait W3[_]
@@ -24,8 +28,9 @@ class LightTypeTagTest extends WordSpec {
     "xxx" in {
 
 
+      println(`LTT[_]`[R1])
 //      println(LTT[Int])
-      println(LTT[List[Int]])
+//      println(LTT[List[Int]])
 //      println(LTT[F[Int]])
 //      println(LTT[FP[Int]])
 //
