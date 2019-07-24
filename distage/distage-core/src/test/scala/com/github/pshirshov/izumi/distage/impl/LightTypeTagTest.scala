@@ -42,14 +42,17 @@ class LightTypeTagTest extends WordSpec {
 //      //println(`LTT[_]`[LN])
 //
 //      println(`LTT[A, _ <: A]`[Integer, LN])
-      println(`LTT[_]`[Either[Unit, ?]])
-      println(`LTT[_]`[S[Unit, ?]])
+//      println(`LTT[_]`[Either[Unit, ?]])
+//      println(`LTT[_]`[S[Unit, ?]])
 //      println(`LTT[_[_]]`[T1])
     }
 
     "support subtype checks" in {
 //      assert(LTT[Int].t <:< LTT[AnyVal].t)
 //      assert(LTT[List[Int]].t <:< `LTT[_]`[List].t)
+      println(LTT[List[I2]])
+
+      //println(LTT[List[I1]])
       //assert(LTT[List[I2]].t <:< LTT[List[I1]].t)
     }
 
