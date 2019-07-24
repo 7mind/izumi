@@ -1,11 +1,32 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Hole, Kind, NameReference, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag._
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
+
+class FLTT(val t: ALTT, db: () => Map[AbstractReference, Set[AbstractReference]]) {
+  lazy val idb: Map[AbstractReference, Set[AbstractReference]] = db()
+
+  override def toString: String = t.toString
+
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: FLTT =>
+      (that canEqual this) &&
+        t == that.t
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(t)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
+}
 
 trait ALTT {
   def t: LightTypeTag
@@ -14,7 +35,7 @@ trait ALTT {
 case class LTT[T](t: LightTypeTag) extends ALTT
 
 object LTT {
-  implicit def apply[T]: ALTT = macro TypeTagExampleImpl.makeTag[T, LTT[T]]
+  implicit def apply[T]: FLTT = macro TypeTagExampleImpl.makeTag[T, LTT[T]]
 }
 
 case class `LTT[_]`[T[_]](t: LightTypeTag) extends ALTT
@@ -23,7 +44,7 @@ object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_]`[T]]
+  implicit def apply[T[_]]: FLTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_]`[T]]
 }
 
 case class `LTT[+_]`[T[+ _]](t: LightTypeTag) extends ALTT
@@ -32,14 +53,14 @@ object `LTT[+_]` {
 
   trait Fake
 
-  implicit def apply[T[+ _]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[+_]`[T]]
+  implicit def apply[T[+ _]]: FLTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[+_]`[T]]
 }
 
 
 case class `LTT[A, _ <: A]`[A, T[_ <: A]](t: LightTypeTag) extends ALTT
 
 object `LTT[A, _ <: A]` {
-  implicit def apply[A, T[_ <: A]]: ALTT = macro TypeTagExampleImpl.makeTag[T[A], `LTT[A, _ <: A]`[A, T]]
+  implicit def apply[A, T[_ <: A]]: FLTT = macro TypeTagExampleImpl.makeTag[T[A], `LTT[A, _ <: A]`[A, T]]
 }
 
 case class `LTT[_[_]]`[T[_[_]]](t: LightTypeTag) extends ALTT
@@ -48,7 +69,7 @@ object `LTT[_[_]]` {
 
   trait Fake[F[_[_]]]
 
-  implicit def apply[T[_[_]]]: ALTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_[_]]`[T]]
+  implicit def apply[T[_[_]]]: FLTT = macro TypeTagExampleImpl.makeTag[T[Fake], `LTT[_[_]]`[T]]
 }
 
 sealed trait LightTypeTag
@@ -90,13 +111,14 @@ object LightTypeTag {
   case class NameReference(ref: String) extends AbstractReference
 
   case class FullReference(ref: String, parameters: List[LightTypeTag]) extends AbstractReference
+
 }
 
 class TypeTagExampleImpl(val c: blackbox.Context) {
 
   import c.universe._
 
-  def makeTag[T: c.WeakTypeTag, TT: c.WeakTypeTag]: c.Expr[ALTT] = {
+  def makeTag[T: c.WeakTypeTag, TT: c.WeakTypeTag]: c.Expr[FLTT] = {
     import c._
     val wtt = implicitly[WeakTypeTag[T]]
     val tpe = wtt.tpe
@@ -107,7 +129,8 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
     val inh = mutable.HashSet[c.Type]()
     extract(tpe, inh)
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val inhdb = inh.flatMap {
       i =>
         val iref = makeRef(i, Set(i))
@@ -119,14 +142,13 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
               i -> b
           }
 
-        out.groupBy(_._1).mapValues(_.toSet)
+        out
 
-    }
+    }.toMultimap
 
-    println(s"inheritance db for ${tpe} ${inhdb.toSeq.niceList()}")
 
-    val t = q"new ${w.tpe}($out)"
-    c.Expr[ALTT](t)
+    val t = q"new FLTT(new ${w.tpe}($out), () => $inhdb)"
+    c.Expr[FLTT](t)
   }
 
   private val any: c.WeakTypeTag[Any] = c.weakTypeTag[Any]
@@ -140,16 +162,17 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
         extract(a, inh)
     }
   }
-/*
 
-    val bases: Set[ShortReference] = if (recurseBases) {
+  /*
 
-      out
-    } else {
-      Set.empty
-    }
-  *
- */
+      val bases: Set[ShortReference] = if (recurseBases) {
+
+        out
+      } else {
+        Set.empty
+      }
+    *
+   */
   private def makeRef(tpe: c.universe.Type, path: Set[Type]): LightTypeTag = {
     def makeRef(tpe: Type): LightTypeTag = {
       TypeTagExampleImpl.this.makeRef(tpe, path + tpe)
@@ -168,7 +191,6 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
     val typeSymbolTpe = typeSymbol.asType
     val variance = toVariance(typeSymbolTpe)
-
 
 
     val out = if (tpef.takesTypeArgs) {
@@ -218,7 +240,7 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
   private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type): Seq[c.universe.Type] = {
     val higherBases = tpe.baseClasses
-    val parameterizedBases = higherBases.filterNot{
+    val parameterizedBases = higherBases.filterNot {
       s =>
         val btype = s.asType.toType
         btype =:= any.tpe || btype =:= obj.tpe || btype.erasure =:= tpe.erasure
@@ -277,10 +299,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
       implicitly[Liftable[AbstractKind]].apply(k)
   }
 
-//  protected implicit def lifted_ShortReference: Liftable[ShortReference] = Liftable[ShortReference] {
-//    case ShortNameReference(ref) =>
-//      q"$LightTypeTag.ShortNameReference($ref)"
-//    case ShortFullReference(ref, parameters) =>
-//      q"$LightTypeTag.ShortFullReference($ref, $parameters)"
-//  }
+  //  protected implicit def lifted_ShortReference: Liftable[ShortReference] = Liftable[ShortReference] {
+  //    case ShortNameReference(ref) =>
+  //      q"$LightTypeTag.ShortNameReference($ref)"
+  //    case ShortFullReference(ref, parameters) =>
+  //      q"$LightTypeTag.ShortFullReference($ref, $parameters)"
+  //  }
 }
