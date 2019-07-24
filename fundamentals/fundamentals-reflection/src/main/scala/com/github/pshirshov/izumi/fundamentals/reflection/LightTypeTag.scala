@@ -66,7 +66,15 @@ object LightTypeTag {
 
   }
 
-  case class Boundaries(top: LightTypeTag, bottom: LightTypeTag)
+  sealed trait Boundaries
+
+  object Boundaries {
+
+    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries
+
+    case object Empty extends Boundaries
+
+  }
 
   sealed trait AbstractKind extends LightTypeTag {
     def boundaries: Boundaries
@@ -95,12 +103,27 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
 
     val w = implicitly[WeakTypeTag[TT]]
 
-    val out = makeRef(tpe)
+    val out = makeRef(tpe, Set(tpe))
     val t = q"new ${w.tpe}($out)"
     c.Expr[ALTT](t)
   }
 
-  private def makeRef(tpe: c.universe.Type): LightTypeTag = {
+  private val any: c.WeakTypeTag[Any] = c.weakTypeTag[Any]
+  private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
+
+  private def makeRef(tpe: c.universe.Type, path: Set[Type]): LightTypeTag = {
+    def makeRef(tpe: Type): LightTypeTag = {
+      TypeTagExampleImpl.this.makeRef(tpe, path + tpe)
+    }
+
+    def makeBoundaries(b: TypeBoundsApi): Boundaries = {
+      if ((b.lo =:= nothing.tpe && b.hi =:= any.tpe) || (path.contains(b.lo) || path.contains(b.hi))) {
+        Boundaries.Empty
+      } else {
+        Boundaries.Defined(makeRef(b.lo), makeRef(b.hi))
+      }
+    }
+
     val tpef = tpe.dealias.resultType
     val typeSymbol = tpef.typeSymbol
 
@@ -117,7 +140,8 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
         case Nil =>
           typeSymbol.typeSignature match {
             case b: TypeBoundsApi =>
-              Hole(Boundaries(makeRef(b.lo), makeRef(b.hi)), variance)
+              val boundaries = makeBoundaries(b)
+              Hole(boundaries, variance)
             case _ =>
               NameReference(typeSymbol.fullName)
           }
@@ -127,9 +151,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
             case PolyType(params, b: TypeBoundsApi) =>
               val sub = params.map(_.asType.toType).map(makeRef)
               val kinds = sub.collect({ case a: AbstractKind => a })
-              
+
               if (kinds.size == sub.size) {
-                Kind(kinds, Boundaries(makeRef(b.lo), makeRef(b.hi)), variance)
+                val boundaries = makeBoundaries(b)
+                Kind(kinds, boundaries, variance)
               } else {
                 c.warning(c.enclosingPosition, s"Unexpected state: $tpe has unexpected shape, will try to fallback but it may not be correct")
                 FullReference(typeSymbol.fullName, args.map(makeRef))
@@ -168,8 +193,10 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
   }
 
   protected implicit def lifted_Boundaries: Liftable[Boundaries] = Liftable[Boundaries] {
-    b =>
-      q"$LightTypeTag.Boundaries(${b.bottom}, ${b.top})"
+    case Boundaries.Defined(bottom, top) =>
+      q"$LightTypeTag.Boundaries.Defined($bottom, $top)"
+    case Boundaries.Empty =>
+      q"$LightTypeTag.Boundaries.Empty"
   }
 
   protected implicit def lifted_AbstractKind: Liftable[AbstractKind] = Liftable[AbstractKind] {

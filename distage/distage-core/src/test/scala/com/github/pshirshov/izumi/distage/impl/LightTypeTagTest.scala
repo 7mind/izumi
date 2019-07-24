@@ -17,18 +17,21 @@ class LightTypeTagTest extends WordSpec {
 
   trait R[K, A <: R[K, A]]
   trait R1[K] extends R[K, R1[K]]
-
+  type S[A, B] = Either[B, A]
 
   trait W1
   trait W2
   trait W3[_]
+
+  trait I1
+  trait I2 extends I1
 
   def  println(o: Any) = info(o.toString)
   "lightweight type tags" should {
     "xxx" in {
 
 
-      println(`LTT[_]`[R1])
+//      println(`LTT[_]`[R1])
 //      println(LTT[Int])
 //      println(LTT[List[Int]])
 //      println(LTT[F[Int]])
@@ -39,8 +42,15 @@ class LightTypeTagTest extends WordSpec {
 //      //println(`LTT[_]`[LN])
 //
 //      println(`LTT[A, _ <: A]`[Integer, LN])
-//      println(`LTT[_]`[Either[Unit, ?]])
+      println(`LTT[_]`[Either[Unit, ?]])
+      println(`LTT[_]`[S[Unit, ?]])
 //      println(`LTT[_[_]]`[T1])
+    }
+
+    "support subtype checks" in {
+//      assert(LTT[Int].t <:< LTT[AnyVal].t)
+//      assert(LTT[List[Int]].t <:< `LTT[_]`[List].t)
+      //assert(LTT[List[I2]].t <:< LTT[List[I1]].t)
     }
 
 //    "support structural types" in {
