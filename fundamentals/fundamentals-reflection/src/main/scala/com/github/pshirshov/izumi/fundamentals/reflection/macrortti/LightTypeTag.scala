@@ -6,7 +6,7 @@ sealed trait LightTypeTag {
   def combine(o: Seq[LightTypeTag]): AbstractReference = {
     this match {
       case l: Lambda =>
-        if (l.input.size > o.size) {
+        if (l.input.size < o.size) {
           throw new IllegalArgumentException(s"$this expects no more than ${l.input.size} parameters: ${l.input} but got $o")
         }
 

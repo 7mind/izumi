@@ -61,6 +61,12 @@ object `LTT[_[_]]` {
   implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
 }
 
+object `LTT[_,_]` {
+  trait Fake
+
+  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
+}
+
 
 final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
