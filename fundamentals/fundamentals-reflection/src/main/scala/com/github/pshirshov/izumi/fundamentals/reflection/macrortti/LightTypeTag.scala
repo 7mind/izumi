@@ -12,9 +12,11 @@ sealed trait LightTypeTag {
 
         val parameters = l.input.zip(o).map {
           case (p, v: AbstractReference) =>
-            p.name -> v
+            p.idx.toString -> v
         }.toMap
-        RuntimeAPI.applyLambda(l, parameters)
+        val applied = RuntimeAPI.applyLambda(l, parameters)
+        println((l, parameters, applied))
+        applied
       case _ =>
         throw new IllegalArgumentException(s"$this is not a type lambda, it cannot be parameterized with $o")
     }
@@ -30,8 +32,8 @@ object LightTypeTag {
     override def toString: String = s"λ${input.mkString("(", ",", ")")} → $output"
   }
 
-  case class LambdaParameter(name: String, kind: AbstractKind, variance: Variance) {
-    override def toString: String = s" %($variance${name.split('.').last} : $kind) "
+  case class LambdaParameter(name: String, idx: Int, kind: AbstractKind, variance: Variance) {
+    override def toString: String = s" %($variance${name.split('.').last},$idx : $kind) "
   }
 
   sealed trait AppliedReference extends AbstractReference

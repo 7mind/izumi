@@ -62,7 +62,6 @@ object `LTT[_[_]]` {
 }
 
 
-
 final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
@@ -74,7 +73,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
     //val w = implicitly[WeakTypeTag[TT]]
 
-    val out = makeRef(tpe, Set(tpe), Set.empty)
+    val out = makeRef(tpe, Set(tpe), Map.empty)
     val inh = allTypeReferences(tpe)
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
@@ -119,9 +118,9 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
   private val obj: c.WeakTypeTag[Object] = c.weakTypeTag[Object]
   private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
 
-  private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Set[LambdaParameter]): AbstractReference = {
+  private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Map[String, LambdaParameter]): AbstractReference = {
 
-    def makeRef(tpe: Type, stop: Set[LambdaParameter] = Set.empty): AbstractReference = {
+    def makeRef(tpe: Type, stop: Map[String, LambdaParameter] = Map.empty): AbstractReference = {
       LightTypeTagImpl.this.makeRef(tpe, path + tpe, terminalNames ++ stop)
     }
 
@@ -162,13 +161,13 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       val result = asPoly.resultType.dealias
       val lamParams = t.typeParams.zipWithIndex.map {
         case (p, idx) =>
-          LambdaParameter(p.fullName, makeKind(p.asType.toType), toVariance(p.asType))
+          p.fullName -> LambdaParameter(idx.toString, idx, makeKind(p.asType.toType), toVariance(p.asType))
       }
-      val reference = makeRef(result, lamParams.toSet)
-      Lambda(lamParams, reference)
+      val reference = makeRef(result, lamParams.toMap)
+      Lambda(lamParams.map(_._2), reference)
     }
 
-    def unpack(t: c.universe.Type, rules: Set[LambdaParameter]): AppliedReference = {
+    def unpack(t: c.universe.Type, rules: Map[String, LambdaParameter]): AppliedReference = {
       val tpef = t.dealias.resultType
       val typeSymbol = tpef.typeSymbol
 
@@ -179,15 +178,15 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
       tpef.typeArgs match {
         case Nil =>
-          NameReference(typeSymbol.fullName)
 
-//          renames.get(typeSymbol.fullName) match {
-//            case Some(value) =>
-//              NameReference(value.toString)
-//
-//            case None =>
-//
-//          }
+          rules.get(typeSymbol.fullName) match {
+            case Some(value) =>
+              NameReference(value.name)
+
+            case None =>
+              NameReference(typeSymbol.fullName)
+
+          }
 
         case args =>
           val params = args.zip(t.typeConstructor.typeParams).map {
@@ -202,12 +201,18 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     val out = tpe match {
       case _: PolyTypeApi =>
         makeLambda(tpe)
-      case p if p.takesTypeArgs=>
-        if (!terminalNames.map(_.name).contains(p.typeSymbol.fullName) ) {
-          makeLambda(p)
-        } else {
-          unpack(p, terminalNames)
+      case p if p.takesTypeArgs =>
+        terminalNames.get(p.typeSymbol.fullName) match {
+          case Some(value) =>
+            unpack(p, Map(p.typeSymbol.fullName -> value))
+
+          case None =>
+            makeLambda(p)
+
         }
+//        if (!terminalNames.map(_.name).contains(p.typeSymbol.fullName)) {
+//        } else {
+//        }
       case c =>
         unpack(c, Set.empty)
     }

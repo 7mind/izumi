@@ -55,7 +55,7 @@ trait LTTLiftables {
 
   implicit def lifted_LambdaParameter: Liftable[LambdaParameter] = Liftable[LambdaParameter] {
     p =>
-      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.kind}, ${p.variance})"
+      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.idx}, ${p.kind}, ${p.variance})"
   }
 
   implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {

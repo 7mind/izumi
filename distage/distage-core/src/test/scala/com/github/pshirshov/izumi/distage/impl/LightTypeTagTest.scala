@@ -57,6 +57,7 @@ class LightTypeTagTest extends WordSpec {
       println(`LTT[_[_]]`[T1])
       println(`LTT[_]`[F])
       println(LTT[T1[F]])
+      println(`LTT[_[_]]`[T1].combine(`LTT[_]`[F]))
       assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[F]) == LTT[T1[F]])
 
 
@@ -81,8 +82,12 @@ class LightTypeTagTest extends WordSpec {
       println(LTT[T2[T0]])
 
       assert(`LTT[_[_]]`[T0[F, ?[_]]].combine(`LTT[_]`[FP]) == LTT[T0[F, FP]])
-
       assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[List]) == LTT[T1[List]])
+
+      println(`LTT[_]`[List])
+      println(`LTT[_]`[List])
+      println(LTT[Int])
+      println(LTT[List[Int]])
       assert(`LTT[_]`[List].combine(LTT[Int]) == LTT[List[Int]])
 
     }
