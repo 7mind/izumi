@@ -5,15 +5,18 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LTT, 
 import org.scalatest.WordSpec
 
 class LightTypeTagTest extends WordSpec {
+  trait T0[A[_], B[_]]
+
   type F[T] = T
   type FP[+T] = List[T]
   type L[P] = List[P]
   type LN[P <: Number] = List[P]
   trait T1[U[_]]
 
+  type FI[IGNORE] = Unit
+
   trait T2[U[_[_], _[_]]]
 
-  trait T0[A[_], B[_]]
   //  type K = T1[F]
 //  val a: K = new T1[F] {}
   trait C {
@@ -62,6 +65,14 @@ class LightTypeTagTest extends WordSpec {
       println(`LTT[_]`[FP])
       println(LTT[T1[FP]])
       assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FP]) == LTT[T1[FP]])
+
+
+      println("FI")
+      println(LTT[T1[FI]])
+      println(`LTT[_[_]]`[T1])
+      println(`LTT[_]`[FI])
+      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FI]) == LTT[T1[FI]])
+
 
 
       println("E")

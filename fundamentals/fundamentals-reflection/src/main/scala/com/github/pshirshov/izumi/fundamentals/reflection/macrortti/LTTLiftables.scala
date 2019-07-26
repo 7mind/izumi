@@ -48,19 +48,19 @@ trait LTTLiftables {
       q"$LightTypeTag.NameReference(${nr.ref})"
   }
 
-  implicit def lifted_TypeParameter: Liftable[TypeParameter] = Liftable[TypeParameter] {
-    case LightTypeTag.TypeParameter.Ref(r, v) =>
-      q"$LightTypeTag.TypeParameter.Ref($r, $v)"
+  implicit def lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {
+    r =>
+      q"$LightTypeTag.TypeParam(${r.ref}, ${r.kind}, ${r.variance})"
   }
 
   implicit def lifted_LambdaParameter: Liftable[LambdaParameter] = Liftable[LambdaParameter] {
     p =>
-      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.variance})"
+      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.kind}, ${p.variance})"
   }
 
   implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {
-    case Lambda(in, out, k) =>
-      q"$LightTypeTag.Lambda($in, $out, $k)"
+    case Lambda(in, out) =>
+      q"$LightTypeTag.Lambda($in, $out)"
     case a: AppliedReference =>
       implicitly[Liftable[AppliedReference]].apply(a)
 
