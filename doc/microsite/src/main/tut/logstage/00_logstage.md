@@ -171,7 +171,7 @@ log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
 I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
 ```
 
-`LogstageZIO.withFiberId` provides an `LogBIO` instance that always logs the current fiber ID in addition to usual logging of thread ID:
+`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
 
 Example: 
 

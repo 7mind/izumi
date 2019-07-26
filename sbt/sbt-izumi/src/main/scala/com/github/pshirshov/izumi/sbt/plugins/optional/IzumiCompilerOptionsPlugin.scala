@@ -43,7 +43,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
       case Some((2, 12|13)) if optimizerEnabled(scalaVersion, isSnapshot) =>
         Seq(
           "-opt:l:inline",
-          "-opt-inline-from:**",
+          "-opt-inline-from:com.github.pshirshov.izumi.**",
           "-opt-warnings:_"
         )
       case _ =>
