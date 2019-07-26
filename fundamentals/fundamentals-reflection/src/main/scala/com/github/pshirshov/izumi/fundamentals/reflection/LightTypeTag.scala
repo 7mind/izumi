@@ -1,6 +1,9 @@
 package com.github.pshirshov.izumi.fundamentals.reflection
 
+import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.AbstractKind.{Hole, Kind}
 import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag._
+import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.TypeParameter._
+//import com.github.pshirshov.izumi.fundamentals.reflection.LightTypeTag.TypeParameter.AbstractTypeParameter._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -76,15 +79,41 @@ sealed trait LightTypeTag
 
 object LightTypeTag {
 
+  sealed trait AbstractReference extends LightTypeTag
+
+  case class Lambda(input: List[LambdaParameter], output: AbstractReference, kind: AbstractKind) extends AbstractReference {
+    override def toString: String = s"λ${input.mkString("(", ",", ")")} → $output"
+  }
+
+  case class LambdaParameter(name: String, variance: Variance) {
+    override def toString: String = s" %($variance${name.split('.').last}) "
+  }
+
+  sealed trait AppliedReference extends AbstractReference
+
+  case class NameReference(ref: String) extends AppliedReference {
+    override def toString: String = ref.split('.').last
+  }
+
+  case class FullReference(ref: String, parameters: List[TypeParameter]) extends AppliedReference {
+    override def toString: String = s"${ref.split('.').last}${parameters.mkString("[", ",", "]")}"
+  }
+
   sealed trait Variance
 
   object Variance {
 
-    case object Invariant extends Variance
+    case object Invariant extends Variance {
+      override def toString: String = "="
+    }
 
-    case object Contravariant extends Variance
+    case object Contravariant extends Variance {
+      override def toString: String = "-"
+    }
 
-    case object Covariant extends Variance
+    case object Covariant extends Variance {
+      override def toString: String = "+"
+    }
 
   }
 
@@ -92,25 +121,48 @@ object LightTypeTag {
 
   object Boundaries {
 
-    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries
+    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries  {
+      override def toString: String = s" <: $top >: $bottom"
+    }
 
-    case object Empty extends Boundaries
+    case object Empty extends Boundaries {
+      override def toString: String = ""
+    }
 
   }
 
-  sealed trait AbstractKind extends LightTypeTag {
+  sealed trait TypeParameter {
+    def variance: Variance
+  }
+
+  object TypeParameter {
+
+    case class Ref(ref: AbstractReference, variance: Variance) extends TypeParameter {
+      override def toString: String = s" $variance$ref "
+    }
+
+  }
+
+  sealed trait AbstractKind {
     def boundaries: Boundaries
   }
 
-  case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind
+  object AbstractKind {
 
-  case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind
+    case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind {
+      override def toString: String = {
+        s"${variance}_"
+      }
+    }
 
-  sealed trait AbstractReference extends LightTypeTag
+    case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind {
+      override def toString: String = {
+        val p= parameters.mkString(", ")
+        s"${variance}_[$p]"
+      }
+    }
 
-  case class NameReference(ref: String) extends AbstractReference
-
-  case class FullReference(ref: String, parameters: List[LightTypeTag]) extends AbstractReference
+  }
 
 }
 
@@ -126,28 +178,28 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     val w = implicitly[WeakTypeTag[TT]]
 
     val out = makeRef(tpe, Set(tpe))
+    //
+    //    val inh = mutable.HashSet[c.Type]()
+    //    extract(tpe, inh)
+    //
+    //    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    //    val inhdb = inh.flatMap {
+    //      i =>
+    //        val iref = makeRef(i, Set(i))
+    //        val allbases = tpeBases(i)
+    //        val out = allbases.map(b => makeRef(b, Set(b)))
+    //          .map(b => iref -> b)
+    //          .collect {
+    //            case (i: AbstractReference, b: AbstractReference) =>
+    //              i -> b
+    //          }
+    //
+    //        out
+    //
+    //    }.toMultimap
 
-    val inh = mutable.HashSet[c.Type]()
-    extract(tpe, inh)
-
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val inhdb = inh.flatMap {
-      i =>
-        val iref = makeRef(i, Set(i))
-        val allbases = tpeBases(i)
-        val out = allbases.map(b => makeRef(b, Set(b)))
-          .map(b => iref -> b)
-          .collect {
-            case (i: AbstractReference, b: AbstractReference) =>
-              i -> b
-          }
-
-        out
-
-    }.toMultimap
-
-
-    val t = q"new FLTT(new ${w.tpe}($out), () => $inhdb)"
+    //    println(inhdb.size)
+    val t = q"new FLTT(new ${w.tpe}($out), () => ???)"
     c.Expr[FLTT](t)
   }
 
@@ -163,18 +215,27 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     }
   }
 
-  /*
+//  private def diag(tpef: c.universe.Type) = {
+//    println(s"  $tpef")
+////    println(s"  has args: ${tpef.takesTypeArgs}")
+////    println(s"  is lambda: ${isKindProjectorLambda(tpef)}")
+//    println(s"  params: ${tpef.typeParams}")
+//    println(s"  args: ${tpef.typeArgs}")
+////    println(s"  eta: ${tpef.etaExpand}")
+////    println(s"  eta: ${tpef.etaExpand.resultType.dealias}")
+////    if (tpef.isInstanceOf[PolyTypeApi]) {
+////      println("POLY")
+////    }
+////    if (tpef.typeSymbol.typeSignature.isInstanceOf[PolyTypeApi]) {
+////      val a = tpef.typeSymbol.typeSignature.asInstanceOf[PolyTypeApi]
+////      println(s"  isPoly, params: ${a.typeParams}")
+////    }
+////    println((tpef.getClass.getInterfaces.toList, tpef.getClass.getSuperclass))
+//  }
 
-      val bases: Set[ShortReference] = if (recurseBases) {
+  private def makeRef(tpe: c.universe.Type, path: Set[Type]): AbstractReference = {
 
-        out
-      } else {
-        Set.empty
-      }
-    *
-   */
-  private def makeRef(tpe: c.universe.Type, path: Set[Type]): LightTypeTag = {
-    def makeRef(tpe: Type): LightTypeTag = {
+    def makeRef(tpe: Type): AbstractReference = {
       TypeTagExampleImpl.this.makeRef(tpe, path + tpe)
     }
 
@@ -186,52 +247,185 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
       }
     }
 
-    val tpef = tpe.dealias.resultType
-    val typeSymbol = tpef.typeSymbol
+    def makeKind(kt: c.universe.Type): AbstractKind = {
+      val ts = kt.dealias.resultType.typeSymbol.typeSignature
 
-    val typeSymbolTpe = typeSymbol.asType
-    val variance = toVariance(typeSymbolTpe)
+      ts match {
+        case b: TypeBoundsApi =>
+          val boundaries = makeBoundaries(b)
+          val variance = toVariance(kt)
 
+          Hole(boundaries, variance)
+        case PolyType(params, b: TypeBoundsApi) =>
+          val boundaries = makeBoundaries(b)
+          //          assert(params.map(_.asType.typeSignature).forall(isUnbound))
 
-    val out = if (tpef.takesTypeArgs) {
-      assert(tpef.typeArgs.isEmpty)
-      //      println((tpef.typeParams, tpef.typeParams.map(_.asInstanceOf[{def variance: Variance}].variance)))
-      FullReference(typeSymbol.fullName, tpef.typeParams.map(_.asType.toType).map(makeRef))
-    } else {
-      assert(tpef.typeParams.isEmpty)
-      tpef.typeArgs match {
-        case Nil =>
-          typeSymbol.typeSignature match {
-            case b: TypeBoundsApi =>
-              val boundaries = makeBoundaries(b)
-              Hole(boundaries, variance)
-            case _ =>
-              NameReference(typeSymbol.fullName)
-          }
+          val paramsAsTypes = params.map(_.asType.toType)
+          val variance = toVariance(kt)
 
-        case args =>
-          typeSymbol.typeSignature match {
-            case PolyType(params, b: TypeBoundsApi) =>
-              val sub = params.map(_.asType.toType).map(makeRef)
-              val kinds = sub.collect({ case a: AbstractKind => a })
+          Kind(paramsAsTypes.map(makeKind), boundaries, variance)
+        case PolyType(params, _) =>
+          val paramsAsTypes = params.map(_.asType.toType)
+          val variance = toVariance(kt)
 
-              if (kinds.size == sub.size) {
-                val boundaries = makeBoundaries(b)
-                Kind(kinds, boundaries, variance)
-              } else {
-                c.warning(c.enclosingPosition, s"Unexpected state: $tpe has unexpected shape, will try to fallback but it may not be correct")
-                FullReference(typeSymbol.fullName, args.map(makeRef))
-              }
-
-
-            case _ =>
-              FullReference(typeSymbol.fullName, args.map(makeRef))
-
-          }
+          Kind(paramsAsTypes.map(makeKind), Boundaries.Empty, variance)
 
       }
     }
+
+
+//    println(s"begin")
+//    diag(tpe)
+//    println("end")
+
+    def makeLambda(t: Type, scope: Set[LambdaParameter]): AbstractReference = {
+      val asPoly = t.etaExpand
+      val result = asPoly.resultType.dealias
+//      println(s"  Polytype: $t := (${t.typeParams}) => $result; ${t.typeParams.map(p => toVariance(p.asType))}; ${t.typeParams.map(p => makeKind(p.asType.toType))}")
+      val lamParams = t.typeParams.map {
+        p =>
+          LambdaParameter(p.fullName, toVariance(p.asType))
+      }
+
+
+      val reference = if (scope.map(_.name).contains(result.typeSymbol.fullName)) {
+        unpack0(result)
+      } else {
+        makeRef(result)
+      } /*match {
+        case Lambda(input, output, kind) =>
+          output
+        case reference: AppliedReference =>
+          reference
+      }*/
+//      println((t, asPoly, result, reference, t.typeParams, t.typeParams.map(_.name), t.typeParams.forall(_.name.encodedName == "_")))
+
+//      val sub = if (t.typeParams.forall(_.name.toString.startsWith("_"))) {
+//        reference
+//      } else {
+//
+//      }
+////      println(sub)
+//      sub
+      Lambda(lamParams, reference, makeKind(t))
+
+    }
+
+     def unpack(t: c.universe.Type): AppliedReference = {
+       //assert(t.typeParams.isEmpty)
+       val tpef = t.dealias.resultType
+       val typeSymbol = tpef.typeSymbol
+
+//       diag(tpef)
+
+       tpef.typeArgs match {
+         case Nil =>
+           NameReference(typeSymbol.fullName)
+
+         case args =>
+           val params = args.map {
+             a =>
+               Ref(makeRef(a), toVariance(a))
+           }
+           FullReference(typeSymbol.fullName, params)
+       }
+     }
+
+    def unpack0(t: c.universe.Type): AppliedReference = {
+      val tpef = t.dealias.resultType
+      val typeSymbol = tpef.typeSymbol
+
+      tpef.typeArgs match {
+        case Nil =>
+          NameReference(typeSymbol.fullName)
+
+        case args =>
+          val params = args.map {
+            a =>
+              Ref(unpack(a), toVariance(a))
+          }
+          FullReference(typeSymbol.fullName, params)
+      }
+    }
+
+      val out = tpe match {
+      case _: PolyTypeApi =>
+        //println(("pta", tpe))
+
+        makeLambda(tpe)
+      case p if p.takesTypeArgs =>
+        //println(("tta", p))
+        makeLambda(p)
+//
+//        val result = p.etaExpand.resultType.dealias
+//        println(s"  W/args: $p := (${p.typeParams}) => $result; ${p.typeParams.map(p => toVariance(p.asType))}; ${p.typeParams.map(p => makeKind(p.asType.toType))}")
+      case c =>
+          unpack(c)
+    }
+
+    //    println(tpef)
+    //    println(tpef.typeArgs)
+    //    println(tpef.typeSymbol.typeSignature.getClass)
+    //    println((tpef.typeSymbol.isAbstract, tpef.typeSymbol.isSynthetic, tpef.typeSymbol.isImplementationArtifact, tpef.typeSymbol.isClass, tpef.typeSymbol.asClass.decls))
+    //
+    //    if (tpef.typeArgs.nonEmpty) {
+    //      println(tpef.typeArgs.head.typeSymbol.typeSignature)
+    //    }
+
+
+
     out
+//    val typeSymbol = tpef.typeSymbol
+//
+//    val typeSymbolTpe = typeSymbol.asType
+//    val variance = toVariance(tpef)
+//    val out = if (tpef.takesTypeArgs || isKindProjectorLambda(tpef)) {
+//      val args = if (tpef.typeArgs.isEmpty) {
+//        tpef.typeParams.map(_.asType.toType).map {
+//          t =>
+//            val ts = t.dealias.resultType.typeSymbol
+//            ts.typeSignature match {
+//              case _: TypeBoundsApi =>
+//                makeKind(t)
+//              case PolyType(_, _: TypeBoundsApi) =>
+//                makeKind(t)
+//              case _ =>
+//                Ref(makeRef(t), variance)
+//            }
+//
+//        }
+//      } else {
+//        tpef.typeArgs.map {
+//          t =>
+//            Ref(makeRef(t), variance)
+//
+//        }
+//      }
+//
+//      val params = args
+//
+//      FullReference(typeSymbol.fullName, params)
+//    } else {
+//
+//    }
+//    out
+  }
+
+  //  private def isUnbound(tpef: c.universe.Type): Boolean = {
+  //    tpef match {
+  //      case _: TypeBoundsApi =>
+  //        true
+  //      case PolyType(_, _: TypeBoundsApi) =>
+  //        true
+  //      case _ =>
+  //        false
+  //    }
+  //  }
+
+
+
+  private def isKindProjectorLambda(tpef: c.universe.Type) = {
+    tpef.typeSymbol.typeSignature.isInstanceOf[PolyTypeApi] && tpef.typeArgs.exists(p => p.typeSymbol.isParameter)
   }
 
   private def tpeBases(tpe: c.universe.Type): Seq[c.universe.Type] = {
@@ -250,10 +444,15 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
     allbases
   }
 
-  private def toVariance(typeSymbolTpe: c.universe.TypeSymbol) = {
-    if (typeSymbolTpe.isCovariant) {
+  private def toVariance(tpe: c.universe.Type): Variance = {
+    val typeSymbolTpe = tpe.typeSymbol.asType
+    toVariance(typeSymbolTpe)
+  }
+
+  private def toVariance(tpes: TypeSymbol): Variance = {
+    if (tpes.isCovariant) {
       Variance.Covariant
-    } else if (typeSymbolTpe.isContravariant) {
+    } else if (tpes.isContravariant) {
       Variance.Contravariant
     } else {
       Variance.Invariant
@@ -279,30 +478,52 @@ class TypeTagExampleImpl(val c: blackbox.Context) {
   }
 
   protected implicit def lifted_AbstractKind: Liftable[AbstractKind] = Liftable[AbstractKind] {
-    case LightTypeTag.Hole(b, v) =>
-      q"$LightTypeTag.Hole($b, $v)"
-    case Kind(parameters, b, v) =>
-      q"$LightTypeTag.Kind($parameters, $b, $v)"
+    case LightTypeTag.AbstractKind.Hole(b, v) =>
+      q"$LightTypeTag.AbstractKind.Hole($b, $v)"
+
+    case LightTypeTag.AbstractKind.Kind(parameters, b, v) =>
+      q"$LightTypeTag.AbstractKind.Kind($parameters, $b, $v)"
+
   }
 
-  protected implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {
+  protected implicit def lifted_AppliedReference: Liftable[AppliedReference] = Liftable[AppliedReference] {
     case NameReference(ref) =>
       q"$LightTypeTag.NameReference($ref)"
     case FullReference(ref, parameters) =>
       q"$LightTypeTag.FullReference($ref, $parameters)"
   }
 
+  protected implicit def lifted_TypeParameter: Liftable[TypeParameter] = Liftable[TypeParameter] {
+//    case a: LightTypeTag.TypeParameter.AbstractTypeParameter =>
+//      implicitly[Liftable[AbstractTypeParameter]].apply(a)
+    case LightTypeTag.TypeParameter.Ref(r, v) =>
+      q"$LightTypeTag.TypeParameter.Ref($r, $v)"
+  }
+
+  protected implicit def lifted_LambdaParameter: Liftable[LambdaParameter] = Liftable[LambdaParameter] {
+    p =>
+      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.variance})"
+  }
+  protected implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {
+    case Lambda(in, out, k) =>
+      q"$LightTypeTag.Lambda($in, $out, $k)"
+    case a: AppliedReference =>
+      implicitly[Liftable[AppliedReference]].apply(a)
+
+
+  }
+
   protected implicit def lifted_LightTypeTag: Liftable[LightTypeTag] = Liftable[LightTypeTag] {
     case r: AbstractReference =>
       implicitly[Liftable[AbstractReference]].apply(r)
-    case k: AbstractKind =>
-      implicitly[Liftable[AbstractKind]].apply(k)
+    case k: TypeParameter =>
+      implicitly[Liftable[TypeParameter]].apply(k)
   }
 
-  //  protected implicit def lifted_ShortReference: Liftable[ShortReference] = Liftable[ShortReference] {
-  //    case ShortNameReference(ref) =>
-  //      q"$LightTypeTag.ShortNameReference($ref)"
-  //    case ShortFullReference(ref, parameters) =>
-  //      q"$LightTypeTag.ShortFullReference($ref, $parameters)"
-  //  }
+  //    protected implicit def lifted_ShortReference: Liftable[ShortReference] = Liftable[ShortReference] {
+  //      case ShortNameReference(ref) =>
+  //        q"$LightTypeTag.ShortNameReference($ref)"
+  //      case ShortFullReference(ref, parameters) =>
+  //        q"$LightTypeTag.ShortFullReference($ref, $parameters)"
+  //    }
 }
