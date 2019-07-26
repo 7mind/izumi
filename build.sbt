@@ -648,9 +648,6 @@ lazy val microsite = inDoc.as.module
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
 
-lazy val `logstage-agg` = In(".agg/logstage").as.just
-  .settings(GlobalSettings).aggregate((logstage ++ logstageJs):_*)
-
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
