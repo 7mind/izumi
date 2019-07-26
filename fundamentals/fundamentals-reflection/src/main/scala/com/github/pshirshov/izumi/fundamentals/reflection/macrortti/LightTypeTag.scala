@@ -34,28 +34,9 @@ class FLTT(val t: LightTypeTag, db: () => Map[AbstractReference, Set[AbstractRef
   }
 }
 
-//trait ALTT {
-//  def t: LightTypeTag
-//
-//  override def hashCode(): Int = t.hashCode()
-//
-//  override def equals(obj: Any): Boolean = obj match {
-//    case a: ALTT =>
-//      t.equals(a.t)
-//    case _ =>
-//      false
-//  }
-//}
-//
-//case class LTTUnknown(t: LightTypeTag) extends ALTT
-//
-//case class LTT[T](t: LightTypeTag) extends ALTT
-
 object LTT {
   implicit def apply[T]: FLTT = macro LightTypeTagImpl.makeTag[T]
 }
-
-//case class `LTT[_]`[T[_]](t: LightTypeTag) extends ALTT
 
 object `LTT[_]` {
 
@@ -64,8 +45,6 @@ object `LTT[_]` {
   implicit def apply[T[_]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
 }
 
-//case class `LTT[+_]`[T[+ _]](t: LightTypeTag) extends ALTT
-
 object `LTT[+_]` {
 
   trait Fake
@@ -73,14 +52,9 @@ object `LTT[+_]` {
   implicit def apply[T[+ _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
 }
 
-
-//case class `LTT[A, _ <: A]`[A, T[_ <: A]](t: LightTypeTag) extends ALTT
-
 object `LTT[A, _ <: A]` {
   implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagImpl.makeTag[T[A]]
 }
-
-//case class `LTT[_[_]]`[T[_[_]]](t: LightTypeTag) extends ALTT
 
 object `LTT[_[_]]` {
 
@@ -356,9 +330,9 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables{
           NameReference(typeSymbol.fullName)
 
         case args =>
-          val params = args.map {
-            a =>
-              Ref(makeRef(a), toVariance(a))
+          val params = args.zip(t.typeConstructor.typeParams).map {
+            case (a, pa) =>
+              Ref(makeRef(a), toVariance(pa.asType))
           }
           FullReference(typeSymbol.fullName, params)
       }
