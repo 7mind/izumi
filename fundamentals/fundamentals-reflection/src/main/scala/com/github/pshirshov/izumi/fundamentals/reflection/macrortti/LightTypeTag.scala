@@ -3,21 +3,20 @@ package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.TypeParameter._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
-//import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.TypeParameter.AbstractTypeParameter._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
-class FLTT(val t: LightTypeTag, db: () => Map[AbstractReference, Set[AbstractReference]]) {
-  lazy val idb: Map[AbstractReference, Set[AbstractReference]] = db()
+class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[NameReference]]) {
+  lazy val idb: Map[NameReference, Set[NameReference]] = db()
 
   def combine(o: FLTT*): FLTT = {
     new FLTT(t.combine(o.map(_.t)), () => Map.empty)
   }
 
-    override def toString: String = t.toString
+  override def toString: String = t.toString
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]
 
@@ -204,9 +203,8 @@ object LightTypeTag {
 }
 
 
+final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
-
-final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables{
   import c.universe._
 
   def makeTag[T: c.WeakTypeTag]: c.Expr[FLTT] = {
@@ -217,60 +215,49 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables{
     //val w = implicitly[WeakTypeTag[TT]]
 
     val out = makeRef(tpe, Set(tpe), Set.empty)
-    //
-    //    val inh = mutable.HashSet[c.Type]()
-    //    extract(tpe, inh)
-    //
-    //    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    //    val inhdb = inh.flatMap {
-    //      i =>
-    //        val iref = makeRef(i, Set(i))
-    //        val allbases = tpeBases(i)
-    //        val out = allbases.map(b => makeRef(b, Set(b)))
-    //          .map(b => iref -> b)
-    //          .collect {
-    //            case (i: AbstractReference, b: AbstractReference) =>
-    //              i -> b
-    //          }
-    //
-    //        out
-    //
-    //    }.toMultimap
+    val inh = allTypeReferences(tpe)
 
-    //    println(inhdb.size)
-    val t = q"new FLTT($out, () => ???)"
+    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    val inhdb = inh
+      .filterNot(p => p.takesTypeArgs || p.typeArgs.nonEmpty || p.typeParams.nonEmpty)
+      .flatMap {
+        i =>
+          val iref = NameReference(i.dealias.resultType.typeSymbol.fullName)
+          val allbases = tpeBases(i)
+          allbases.map(b => iref -> NameReference(b.dealias.resultType.typeSymbol.fullName))
+      }
+      .toMultimap
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    println(inhdb.toSeq.niceList())
+    println(inhdb.size)
+    val t = q"new FLTT($out, () => $inhdb)"
     c.Expr[FLTT](t)
+  }
+
+
+  private def tpeBases(tpe: c.universe.Type): Seq[c.universe.Type] = {
+    tpeBases(tpe, tpe.dealias.resultType)
+  }
+
+  private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type): Seq[c.universe.Type] = {
+    val higherBases = tpe.baseClasses
+    val parameterizedBases = higherBases
+      .filterNot {
+        s =>
+          val btype = s.asType.toType
+          btype =:= any.tpe || btype =:= obj.tpe || btype.erasure =:= tpe.erasure
+      }
+      .map(s => tpef.baseType(s))
+
+    val hollowBases = higherBases.map(s => s.asType.toType)
+
+    val allbases = parameterizedBases ++ hollowBases
+    allbases
   }
 
   private val any: c.WeakTypeTag[Any] = c.weakTypeTag[Any]
   private val obj: c.WeakTypeTag[Object] = c.weakTypeTag[Object]
   private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
-
-  private def extract(tpe: c.universe.Type, inh: mutable.HashSet[c.Type]): Unit = {
-    inh ++= tpeBases(tpe)
-    tpe.typeArgs.filterNot(inh.contains).foreach {
-      a =>
-        extract(a, inh)
-    }
-  }
-
-  //  private def diag(tpef: c.universe.Type) = {
-  //    println(s"  $tpef")
-  ////    println(s"  has args: ${tpef.takesTypeArgs}")
-  ////    println(s"  is lambda: ${isKindProjectorLambda(tpef)}")
-  //    println(s"  params: ${tpef.typeParams}")
-  //    println(s"  args: ${tpef.typeArgs}")
-  ////    println(s"  eta: ${tpef.etaExpand}")
-  ////    println(s"  eta: ${tpef.etaExpand.resultType.dealias}")
-  ////    if (tpef.isInstanceOf[PolyTypeApi]) {
-  ////      println("POLY")
-  ////    }
-  ////    if (tpef.typeSymbol.typeSignature.isInstanceOf[PolyTypeApi]) {
-  ////      val a = tpef.typeSymbol.typeSignature.asInstanceOf[PolyTypeApi]
-  ////      println(s"  isPoly, params: ${a.typeParams}")
-  ////    }
-  ////    println((tpef.getClass.getInterfaces.toList, tpef.getClass.getSuperclass))
-  //  }
 
   private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Set[String]): AbstractReference = {
 
@@ -349,23 +336,6 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables{
     }
 
     out
-
-  }
-
-  private def tpeBases(tpe: c.universe.Type): Seq[c.universe.Type] = {
-    tpeBases(tpe, tpe.dealias.resultType)
-  }
-
-  private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type): Seq[c.universe.Type] = {
-    val higherBases = tpe.baseClasses
-    val parameterizedBases = higherBases.filterNot {
-      s =>
-        val btype = s.asType.toType
-        btype =:= any.tpe || btype =:= obj.tpe || btype.erasure =:= tpe.erasure
-    }.map(s => tpef.baseType(s))
-    val hollowBases = higherBases.map(s => s.asType.toType)
-    val allbases = parameterizedBases ++ hollowBases
-    allbases
   }
 
   private def toVariance(tpe: c.universe.Type): Variance = {
@@ -380,6 +350,20 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables{
       Variance.Contravariant
     } else {
       Variance.Invariant
+    }
+  }
+
+  private def allTypeReferences(tpe: c.universe.Type): Set[c.Type] = {
+    val inh = mutable.HashSet[c.Type]()
+    extract(tpe, inh)
+    inh.toSet
+  }
+
+  private def extract(tpe: c.universe.Type, inh: mutable.HashSet[c.Type]): Unit = {
+    inh ++= tpeBases(tpe)
+    tpe.typeArgs.filterNot(inh.contains).foreach {
+      a =>
+        extract(a, inh)
     }
   }
 }
