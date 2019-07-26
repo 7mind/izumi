@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 object RuntimeAPI {
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
-    val newParams = lambda.input.filterNot(p => parameters.contains(p.idx.toString))
+    val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
     val replaced = replace(lambda.output, parameters)
 
     if (newParams.isEmpty) {

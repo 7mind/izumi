@@ -39,20 +39,20 @@ class LightTypeTagTest extends WordSpec {
   def  println(o: FLTT) = info(o.t.toString)
   "lightweight type tags" should {
     "xxx" in {
-//      println(`LTT[_]`[R1])
-//      println(LTT[Int])
-//      println(LTT[List[Int]])
-//      println(LTT[F[Int]])
-//      println(LTT[FP[Int]])
-//
+      println(`LTT[_]`[R1])
+      println(LTT[Int])
+      println(LTT[List[Int]])
+      println(LTT[F[Int]])
+      println(LTT[FP[Int]])
+
 //      println(`LTT[+_]`[FP])
-//      println(`LTT[_]`[L])
-//      //println(`LTT[_]`[LN])
-//
+      println(`LTT[_]`[L])
+      //println(`LTT[_]`[LN])
+
 //      println(`LTT[A, _ <: A]`[Integer, LN])
-//      println(`LTT[_]`[Either[Unit, ?]])
-//      println("lambda:")
-//      println(`LTT[_]`[S[Unit, ?]])
+      println(`LTT[_]`[Either[Unit, ?]])
+      println("lambda:")
+      println(`LTT[_]`[S[Unit, ?]])
       println("F")
       println(`LTT[_[_]]`[T1])
       println(`LTT[_]`[F])
@@ -93,8 +93,8 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtype checks" in {
-      println(LTT[List[I2]])
-      println(LTT[List[I1]])
+//      println(LTT[List[I2]])
+//      println(LTT[List[I1]])
 
 //      assert(LTT[Int].t <:< LTT[AnyVal].t)
 //      assert(LTT[List[Int]].t <:< `LTT[_]`[List].t)

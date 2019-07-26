@@ -87,8 +87,8 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       }
       .toMultimap
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    println(inhdb.toSeq.niceList())
-    println(inhdb.size)
+//    println(inhdb.toSeq.niceList())
+//    println(inhdb.size)
     val t = q"new FLTT($out, () => $inhdb)"
     c.Expr[FLTT](t)
   }
@@ -161,7 +161,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       val result = asPoly.resultType.dealias
       val lamParams = t.typeParams.zipWithIndex.map {
         case (p, idx) =>
-          p.fullName -> LambdaParameter(idx.toString, idx, makeKind(p.asType.toType), toVariance(p.asType))
+          p.fullName -> LambdaParameter(idx.toString, makeKind(p.asType.toType), toVariance(p.asType))
       }
       val reference = makeRef(result, lamParams.toMap)
       Lambda(lamParams.map(_._2), reference)
@@ -171,14 +171,8 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       val tpef = t.dealias.resultType
       val typeSymbol = tpef.typeSymbol
 
-//      val renames = rules.map {
-//        r =>
-//          r.name -> r.idx
-//      }.toMap
-
       tpef.typeArgs match {
         case Nil =>
-
           rules.get(typeSymbol.fullName) match {
             case Some(value) =>
               NameReference(value.name)
@@ -202,19 +196,14 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       case _: PolyTypeApi =>
         makeLambda(tpe)
       case p if p.takesTypeArgs =>
-        terminalNames.get(p.typeSymbol.fullName) match {
-          case Some(value) =>
-            unpack(p, Map(p.typeSymbol.fullName -> value))
-
-          case None =>
-            makeLambda(p)
-
+        if (terminalNames.contains(p.typeSymbol.fullName)) {
+          unpack(p, terminalNames)
+        } else {
+          makeLambda(p)
         }
-//        if (!terminalNames.map(_.name).contains(p.typeSymbol.fullName)) {
-//        } else {
-//        }
+
       case c =>
-        unpack(c, Set.empty)
+        unpack(c, terminalNames)
     }
 
     out
