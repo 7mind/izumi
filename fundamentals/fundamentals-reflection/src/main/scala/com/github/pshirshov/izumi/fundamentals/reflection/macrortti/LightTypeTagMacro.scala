@@ -8,8 +8,8 @@ import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
-class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[NameReference]]) {
-  lazy val idb: Map[NameReference, Set[NameReference]] = db()
+class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[AppliedReference]]) {
+  lazy val idb: Map[NameReference, Set[AppliedReference]] = db()
 
   def combine(o: FLTT*): FLTT = {
     new FLTT(t.combine(o.map(_.t)), () => Map.empty)
@@ -62,6 +62,7 @@ object `LTT[_[_]]` {
 }
 
 object `LTT[_,_]` {
+
   trait Fake
 
   implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
@@ -84,21 +85,53 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val inhdb = inh
-      .filterNot(p => p.takesTypeArgs || p.typeArgs.nonEmpty || p.typeParams.nonEmpty)
       .flatMap {
         i =>
-          val iref = NameReference(i.dealias.resultType.typeSymbol.fullName)
+          val targetNameRef = i.dealias.resultType.typeSymbol.fullName
+          val srcname = i match {
+            case a: TypeRefApi =>
+              val srcname = a.sym.fullName
+              if (srcname != targetNameRef) {
+                Seq((NameReference(srcname), NameReference(targetNameRef)))
+              } else {
+                Seq.empty
+              }
+
+            case _ =>
+              Seq.empty
+          }
+
+
           val allbases = tpeBases(i)
-          allbases.map(b => iref -> NameReference(b.dealias.resultType.typeSymbol.fullName))
+          srcname ++ allbases.map {
+            b =>
+//              (NameReference(targetNameRef), NameReference(b.dealias.resultType.typeSymbol.fullName))
+              (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
+          }
       }
       .toMultimap
+
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-//    println(inhdb.toSeq.niceList())
-//    println(inhdb.size)
+    println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
+    println(inhdb.size)
+
     val t = q"new FLTT($out, () => $inhdb)"
     c.Expr[FLTT](t)
   }
 
+  private def allTypeReferences(tpe: c.universe.Type): Set[c.Type] = {
+    val inh = mutable.HashSet[c.Type]()
+    extract(tpe, inh)
+    inh.toSet
+  }
+
+  private def extract(tpe: c.universe.Type, inh: mutable.HashSet[c.Type]): Unit = {
+    inh ++= Seq(tpe, tpe.dealias.resultType)
+    tpe.typeArgs.filterNot(inh.contains).foreach {
+      a =>
+        extract(a, inh)
+    }
+  }
 
   private def tpeBases(tpe: c.universe.Type): Seq[c.universe.Type] = {
     tpeBases(tpe, tpe.dealias.resultType)
@@ -140,26 +173,22 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
     def makeKind(kt: c.universe.Type): AbstractKind = {
       val ts = kt.dealias.resultType.typeSymbol.typeSignature
+      val variance = toVariance(kt)
 
       if (ts.takesTypeArgs) {
         ts match {
           case b: TypeBoundsApi =>
             val boundaries = makeBoundaries(b)
-            val variance = toVariance(kt)
             Hole(boundaries, variance)
 
           case PolyType(params, b: TypeBoundsApi) =>
             val boundaries = makeBoundaries(b)
             val paramsAsTypes = params.map(_.asType.toType)
-            val variance = toVariance(kt)
-
             Kind(paramsAsTypes.map(makeKind), boundaries, variance)
+
           case PolyType(params, _) =>
             val paramsAsTypes = params.map(_.asType.toType)
-            val variance = toVariance(kt)
-
             Kind(paramsAsTypes.map(makeKind), Boundaries.Empty, variance)
-
         }
       } else {
         Proper
@@ -231,20 +260,6 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       Variance.Contravariant
     } else {
       Variance.Invariant
-    }
-  }
-
-  private def allTypeReferences(tpe: c.universe.Type): Set[c.Type] = {
-    val inh = mutable.HashSet[c.Type]()
-    extract(tpe, inh)
-    inh.toSet
-  }
-
-  private def extract(tpe: c.universe.Type, inh: mutable.HashSet[c.Type]): Unit = {
-    inh ++= tpeBases(tpe)
-    tpe.typeArgs.filterNot(inh.contains).foreach {
-      a =>
-        extract(a, inh)
     }
   }
 }
