@@ -13,6 +13,7 @@ trait LTTLiftables {
   implicit val liftable_Invariant: Liftable[Variance.Invariant.type] = { _: Variance.Invariant.type => q"${symbolOf[Variance.Invariant.type].asClass.module}" }
   implicit val liftable_Covariant: Liftable[Variance.Covariant.type] = { _: Variance.Covariant.type => q"${symbolOf[Variance.Covariant.type].asClass.module}" }
   implicit val liftable_Contravariant: Liftable[Variance.Contravariant.type] = { _: Variance.Contravariant.type => q"${symbolOf[Variance.Contravariant.type].asClass.module}" }
+  implicit val liftable_Proper: Liftable[LightTypeTag.AbstractKind.Proper.type] = { _: LightTypeTag.AbstractKind.Proper.type => q"${symbolOf[LightTypeTag.AbstractKind.Proper.type].asClass.module}" }
 
   implicit def lifted_Variance: Liftable[Variance] = Liftable[Variance] {
     case Variance.Invariant => q"${Variance.Invariant}"
@@ -33,6 +34,9 @@ trait LTTLiftables {
 
     case LightTypeTag.AbstractKind.Kind(parameters, b, v) =>
       q"$LightTypeTag.AbstractKind.Kind($parameters, $b, $v)"
+
+    case LightTypeTag.AbstractKind.Proper => q"${LightTypeTag.AbstractKind.Proper}"
+
 
   }
 
@@ -55,7 +59,7 @@ trait LTTLiftables {
 
   implicit def lifted_LambdaParameter: Liftable[LambdaParameter] = Liftable[LambdaParameter] {
     p =>
-      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.kind}, ${p.variance})"
+      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.kind})"
   }
 
   implicit def lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {

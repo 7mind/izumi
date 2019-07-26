@@ -28,11 +28,19 @@ object LightTypeTag {
   sealed trait AbstractReference extends LightTypeTag
 
   case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
-    override def toString: String = s"λ${input.mkString("(", ",", ")")} → $output"
+    override def toString: String = s"λ ${input.mkString(",")} → $output"
   }
 
-  case class LambdaParameter(name: String, kind: AbstractKind, variance: Variance) {
-    override def toString: String = s" %($variance${name.split('.').last}: $kind) "
+  case class LambdaParameter(name: String, kind: AbstractKind) {
+    override def toString: String = {
+      kind match {
+        case AbstractKind.Proper =>
+          s"%$name"
+
+        case k =>
+          s"%($name: $k)"
+      }
+    }
   }
 
   sealed trait AppliedReference extends AbstractReference
@@ -46,7 +54,16 @@ object LightTypeTag {
   }
 
   case class TypeParam(ref: AbstractReference, kind: AbstractKind, variance: Variance) {
-    override def toString: String = s" ($variance$ref : $kind) "
+    override def toString: String = {
+      kind match {
+        case AbstractKind.Proper =>
+          s"$variance$ref"
+
+        case k =>
+          s"$variance$ref:$k"
+
+      }
+    }
   }
 
 
@@ -85,7 +102,9 @@ object LightTypeTag {
   sealed trait AbstractKind
 
   object AbstractKind {
-    case object Proper extends AbstractKind 
+    case object Proper extends AbstractKind {
+      override def toString: String = "*"
+    }
 
     case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind {
       override def toString: String = {
@@ -96,7 +115,7 @@ object LightTypeTag {
     case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind {
       override def toString: String = {
         val p = parameters.mkString(", ")
-        s"${variance}_[$p]"
+        s"_[$p]"
       }
     }
 

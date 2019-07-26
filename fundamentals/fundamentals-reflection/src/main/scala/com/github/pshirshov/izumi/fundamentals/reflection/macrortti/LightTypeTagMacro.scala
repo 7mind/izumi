@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.collection.mutable
@@ -135,24 +135,28 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     def makeKind(kt: c.universe.Type): AbstractKind = {
       val ts = kt.dealias.resultType.typeSymbol.typeSignature
 
-      ts match {
-        case b: TypeBoundsApi =>
-          val boundaries = makeBoundaries(b)
-          val variance = toVariance(kt)
+      if (ts.takesTypeArgs) {
+        ts match {
+          case b: TypeBoundsApi =>
+            val boundaries = makeBoundaries(b)
+            val variance = toVariance(kt)
+            Hole(boundaries, variance)
 
-          Hole(boundaries, variance)
-        case PolyType(params, b: TypeBoundsApi) =>
-          val boundaries = makeBoundaries(b)
-          val paramsAsTypes = params.map(_.asType.toType)
-          val variance = toVariance(kt)
+          case PolyType(params, b: TypeBoundsApi) =>
+            val boundaries = makeBoundaries(b)
+            val paramsAsTypes = params.map(_.asType.toType)
+            val variance = toVariance(kt)
 
-          Kind(paramsAsTypes.map(makeKind), boundaries, variance)
-        case PolyType(params, _) =>
-          val paramsAsTypes = params.map(_.asType.toType)
-          val variance = toVariance(kt)
+            Kind(paramsAsTypes.map(makeKind), boundaries, variance)
+          case PolyType(params, _) =>
+            val paramsAsTypes = params.map(_.asType.toType)
+            val variance = toVariance(kt)
 
-          Kind(paramsAsTypes.map(makeKind), Boundaries.Empty, variance)
+            Kind(paramsAsTypes.map(makeKind), Boundaries.Empty, variance)
 
+        }
+      } else {
+        Proper
       }
     }
 
@@ -161,7 +165,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       val result = asPoly.resultType.dealias
       val lamParams = t.typeParams.zipWithIndex.map {
         case (p, idx) =>
-          p.fullName -> LambdaParameter(idx.toString, makeKind(p.asType.toType), toVariance(p.asType))
+          p.fullName -> LambdaParameter(idx.toString, makeKind(p.asType.toType))
       }
       val reference = makeRef(result, lamParams.toMap)
       Lambda(lamParams.map(_._2), reference)
