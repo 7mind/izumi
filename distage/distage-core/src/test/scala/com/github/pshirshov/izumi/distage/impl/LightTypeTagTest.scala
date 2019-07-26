@@ -1,8 +1,7 @@
 package com.github.pshirshov.izumi.distage.impl
 
-import com.github.pshirshov.izumi.fundamentals.reflection.LTT
 import com.github.pshirshov.izumi.fundamentals.reflection._
-
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LTT, `LTT[_[_]]`, `LTT[_]`}
 import org.scalatest.WordSpec
 
 class LightTypeTagTest extends WordSpec {
@@ -34,7 +33,7 @@ class LightTypeTagTest extends WordSpec {
 
 
   def  println(o: Any) = info(o.toString)
-  def  println(o: FLTT) = info(o.t.t.toString)
+  def  println(o: FLTT) = info(o.t.toString)
   "lightweight type tags" should {
     "xxx" in {
 //      println(`LTT[_]`[R1])
@@ -55,21 +54,26 @@ class LightTypeTagTest extends WordSpec {
       println(`LTT[_[_]]`[T1])
       println(`LTT[_]`[F])
       println(LTT[T1[F]])
+      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[F]) == LTT[T1[F]])
+
 
       println("FP")
       println(`LTT[_[_]]`[T1])
       println(`LTT[_]`[FP])
       println(LTT[T1[FP]])
+      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FP]) == LTT[T1[FP]])
+
 
       println("E")
       println(`LTT[_[_]]`[T0[F, ?[_]]])
-      //println(`LTT[_]`[Either[Unit, ?]])
-      println(LTT[T0[F, FP]])
+      println(`LTT[_]`[FP])
       println(LTT[T2[T0]])
 
-//      println("List")
-//      println(`LTT[_]`[List])
-//      println(LTT[T1[List]])
+      assert(`LTT[_[_]]`[T0[F, ?[_]]].combine(`LTT[_]`[FP]) == LTT[T0[F, FP]])
+
+      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[List]) == LTT[T1[List]])
+      println(LTT[List[Int]])
+      assert(`LTT[_]`[List].combine(LTT[Int]) == LTT[List[Int]])
 
     }
 
@@ -82,18 +86,19 @@ class LightTypeTagTest extends WordSpec {
       //assert(LTT[List[I2]].t <:< LTT[List[I1]].t)
     }
 
-//    "support structural types" in {
+    "support PDTs" in {
+      val a: C = new C {
+        override type A = Int
+      }
+
+      println(LTT[a.A])
+    }
+
+
+    //    "support structural types" in {
 //
 //      println(LTT[{def a: Int}])
 //
-//    }
-//
-//    "support PDTs" in {
-//      val a: C = new C {
-//        override type A = Int
-//      }
-//
-//      println(LTT[a.A])
 //    }
 //
 //    "support refinements" in {
