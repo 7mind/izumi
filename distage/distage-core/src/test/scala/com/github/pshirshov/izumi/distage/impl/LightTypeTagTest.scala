@@ -57,6 +57,12 @@ class LightTypeTagTest extends WordSpec {
 
   trait FM2[+A] extends FM1[A, Unit]
 
+  type NestedTL[G[_, _], A, B] = FM2[G[A, (B, A)]]
+
+  type NestedTL2[A, B, G[_]] = FM2[G[S[B, A]]]
+
+  type Const[A, B] = B
+
   def println(o: Any) = info(o.toString)
 
   def println(o: FLTT) = info(o.t.toString)
@@ -152,6 +158,13 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[a1.A] == LTT[a2.A])
     }
 
+    "support complex type lambdas" in {
+      assert(`LTT[_,_]`[NestedTL[Const, ?, ?]] == `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
+      assert(`LTT[_,_]`[NestedTL[Const, ?, ?]] <:< `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
+
+      println(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]])
+      assert(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]] == `LTT[_[_]]`[Lambda[G[_] => FM2[G[S[W2, W1]]]]])
+    }
 
     //    "support structural types" in {
     //
