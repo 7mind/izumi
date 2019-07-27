@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.distage.impl
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
@@ -183,8 +184,13 @@ class LightTypeTagTest extends WordSpec {
     "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
       assert(LTT[{def a: Int}] == LTT[{def a: Int}])
       assert(LTT[C {def a: Int}] == LTT[C {def a: Int}])
+      assert(LTT[C {def a: Int}] != LTT[{ def a: Int }])
       assert(LTT[C {def a: Int}] != LTT[C])
       assert(LTT[C {def a: Int}] != LTT[C {def a: Int; def b: Int}])
+    }
+
+    "support TagK* family summoners" in {
+      assert(LTagK[List].fullLightTypeTag == `LTT[_]`[List])
     }
 
     "progression test: DON'T support intersection type equality" in intercept[TestFailedException] {
@@ -202,8 +208,10 @@ class LightTypeTagTest extends WordSpec {
       object Z {
         type X <: {type A = Int}
       }
+      Z.discard()
 
       assert(LTT[a1.A] == LTT[Z.X#A])
     }
+
   }
 }

@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
@@ -9,55 +8,54 @@ import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
-
 object LTT {
-  implicit def apply[T]: FLTT = macro LightTypeTagImpl.makeTag[T]
+  implicit def apply[T]: FLTT = macro LightTypeTagImpl.makeFLTT[T]
 }
 
 object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[_]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
 }
 
 object `LTT[+_]` {
 
   trait Fake
 
-  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
 }
 
 object `LTT[A, _ <: A]` {
-  implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagImpl.makeTag[T[A]]
+  implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[A]]
 }
 
 object `LTT[_[_]]` {
 
   trait Fake[F[_[_]]]
 
-  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
 }
 
 object `LTT[_[_[_]]]` {
 
   trait Fake[F[_[_[_]]]]
 
-  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
 }
 
 object `LTT[_,_]` {
 
   trait Fake
 
-  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
+  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake, Fake]]
 }
 
 object `LTT[_[_],_[_]]` {
 
   trait Fake[_[_]]
 
-  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
+  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake, Fake]]
 }
 
 
@@ -65,19 +63,40 @@ object `LTT[_[_[_],_[_]]]` {
 
   trait Fake[K[_], V[_]]
 
-  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
 }
 
-protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
+final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
 
+  def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LHKTag[ArgStruct]] = {
+    def badShapeError(t: TypeApi) = {
+      c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LightTagK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
+    }
 
-  def makeTag[T: c.WeakTypeTag]: c.Expr[FLTT] = {
-    import c._
-    val wtt = implicitly[WeakTypeTag[T]]
-    val tpe = wtt.tpe
+    weakTypeOf[ArgStruct] match {
+      case r: RefinedTypeApi =>
+        r.decl(TypeName("Arg")) match {
+          case sym: TypeSymbolApi =>
+            val res = makeTagImpl(sym.info.typeConstructor)
+            c.Expr[LHKTag[ArgStruct]](q"new ${weakTypeOf[LHKTag[ArgStruct]]}($res)")
+          case _ => badShapeError(r)
+        }
+      case other => badShapeError(other)
+    }
+  }
 
+  def makeFLTT[T: c.WeakTypeTag]: c.Expr[FLTT] = {
+    makeTagImpl(weakTypeOf[T])
+  }
+
+  def makeTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
+    val res = makeTagImpl(weakTypeOf[T])
+    c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
+  }
+
+  protected def makeTagImpl(tpe: Type): c.Expr[FLTT] = {
     val out = makeRef(tpe, Set(tpe), Map.empty)
     val inh = allTypeReferences(tpe)
 
@@ -125,7 +144,7 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
     // println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")
     // println(basesdb.size)
 
-    val t = q"new FLTT($out, () => $basesdb, () => $inhdb)"
+    val t = q"new ${typeOf[FLTT]}($out, () => $basesdb, () => $inhdb)"
     c.Expr[FLTT](t)
   }
 

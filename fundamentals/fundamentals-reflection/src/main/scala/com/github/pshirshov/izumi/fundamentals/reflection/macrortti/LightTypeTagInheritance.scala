@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 
 import scala.collection.mutable
 
-protected[macrortti] final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
+final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   final val nothing = NameReference("scala.Nothing")
   final val any = NameReference("scala.Any")
   final val anyRef = NameReference("scala.AnyRef")
@@ -98,7 +98,6 @@ protected[macrortti] final class LightTypeTagInheritance(self: FLTT, other: FLTT
     def parameterShapeCompatible: Boolean = {
       s.parameters.zip(o.parameters).forall {
         case (sp, op) =>
-
           sp.variance match {
             case Variance.Invariant =>
               sp.ref == op.ref
