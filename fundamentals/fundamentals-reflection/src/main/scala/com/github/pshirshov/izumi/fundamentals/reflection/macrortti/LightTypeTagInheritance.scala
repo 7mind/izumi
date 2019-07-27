@@ -60,10 +60,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           if (parentsOf(s.asName).contains(o)) {
             true
           } else {
-            s.parameters.size == o.parameters.size && isChild(s.asName, o.asName) && s.parameters.zip(o.parameters).forall {
-              case (sp, op) =>
-                isChild(sp.ref, op.ref)
-            }
+            shapeHeuristic(s, o)
           }
         case (s: FullReference, o: NameReference) =>
           parentsOf(s.asName).contains(o)
@@ -77,8 +74,15 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           false
         case (s: Lambda, o: Lambda) =>
           // TODO:
-          s == o
+          s.input == o.input && isChild(s.output, o.output)
       }
+    }
+  }
+
+  private def shapeHeuristic(s: FullReference, o: FullReference): Boolean = {
+    s.parameters.size == o.parameters.size && isChild(s.asName, o.asName) && s.parameters.zip(o.parameters).forall {
+      case (sp, op) =>
+        isChild(sp.ref, op.ref)
     }
   }
 }
