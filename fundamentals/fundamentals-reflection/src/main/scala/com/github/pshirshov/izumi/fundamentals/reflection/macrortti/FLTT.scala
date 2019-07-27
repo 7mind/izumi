@@ -33,6 +33,25 @@ class FLTT(
     new FLTT(t.combine(o.map(_.t)), mergedBases, mergedInhDb)
   }
 
+  def combineNonPos(o: Option[FLTT]*): FLTT = {
+
+    val mergedInhDb: () => Map[NameReference, Set[NameReference]] = () => {
+      o.foldLeft(idb) {
+        case (acc, v) =>
+          FLTT.mergeIDBs(acc, v.map(_.idb).getOrElse(Map.empty))
+      }
+    }
+
+    val mergedBases: () => Map[AbstractReference, Set[AbstractReference]] = () => {
+      o.foldLeft(basesdb) {
+        case (acc, v) =>
+          FLTT.mergeIDBs(acc, v.map(_.basesdb).getOrElse(Map.empty))
+      }
+    }
+
+    new FLTT(t.combineNonPos(o.map(_.map(_.t))), mergedBases, mergedInhDb)
+  }
+
   override def toString: String = t.toString
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]

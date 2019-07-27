@@ -77,6 +77,10 @@ class LightTypeTagTest extends WordSpec {
       println(`LTT[_]`[Either[Unit, ?]])
       println("lambda:")
       println(`LTT[_]`[S[Unit, ?]])
+
+    }
+
+    "support typetag combination" in {
       println("F")
       println(`LTT[_[_]]`[T1])
       println(`LTT[_]`[F])
@@ -110,6 +114,11 @@ class LightTypeTagTest extends WordSpec {
 
       println(`LTT[_,_]`[Either])
       assert(`LTT[_,_]`[Either].combine(LTT[Unit]) == `LTT[_]`[Either[Unit, ?]])
+    }
+
+    "support non-positional typetag combination" in {
+      assert(`LTT[_,_]`[Either].combineNonPos(None, Some(LTT[Unit])) == `LTT[_]`[Either[?, Unit]])
+
     }
 
     "support subtype checks" in {

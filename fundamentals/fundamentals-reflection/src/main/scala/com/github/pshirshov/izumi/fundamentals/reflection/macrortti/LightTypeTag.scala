@@ -4,20 +4,57 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 
 sealed trait LightTypeTag {
   def combine(o: Seq[LightTypeTag]): AbstractReference = {
-    this match {
-      case l: Lambda =>
-        if (l.input.size < o.size) {
-          throw new IllegalArgumentException(s"$this expects no more than ${l.input.size} parameters: ${l.input} but got $o")
-        }
-
-        val parameters = l.input.zip(o).map {
+    applyParameters {
+      l =>
+        l.input.zip(o).map {
           case (p, v: AbstractReference) =>
             p.name -> v
         }.toMap
+    }
+  }
+
+  def combineNonPos(o: Seq[Option[LightTypeTag]]): AbstractReference = {
+    applyParameters {
+      l =>
+        l.input.zip(o).flatMap {
+          case (p, v) =>
+            v match {
+              case Some(value: AbstractReference) =>
+                Seq(p.name -> value)
+              case None =>
+                Seq.empty
+            }
+        }.toMap
+    }
+  }
+
+  def combine(o: Map[String, LightTypeTag]): AbstractReference = {
+    val parameters = o.map {
+      case (p, v: AbstractReference) =>
+        p -> v
+    }
+
+    applyParameters(_ => parameters)
+  }
+
+  private def applyParameters(p: Lambda => Map[String, AbstractReference]) = {
+    this match {
+      case l: Lambda =>
+        val parameters = p(l)
+        if (l.input.size < parameters.size) {
+          throw new IllegalArgumentException(s"$this expects no more than ${l.input.size} parameters: ${l.input} but got $parameters")
+        }
+        val expected = l.input.map(_.name).toSet
+        val unknownKeys = parameters.keySet.diff(expected)
+        if (unknownKeys.nonEmpty) {
+          throw new IllegalArgumentException(s"$this takes parameters: $expected but got unexpected ones: $unknownKeys")
+        }
+
+
         val applied = RuntimeAPI.applyLambda(l, parameters)
         applied
       case _ =>
-        throw new IllegalArgumentException(s"$this is not a type lambda, it cannot be parameterized with $o")
+        throw new IllegalArgumentException(s"$this is not a type lambda, it cannot be parameterized")
     }
   }
 }
