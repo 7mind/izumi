@@ -79,6 +79,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
 
+
   def makeTag[T: c.WeakTypeTag]: c.Expr[FLTT] = {
     import c._
     val wtt = implicitly[WeakTypeTag[T]]

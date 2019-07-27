@@ -37,6 +37,12 @@ class LightTypeTagTest extends WordSpec {
   trait F1[A]
   trait F2[A] extends F1[A]
 
+  trait FT1[A[_]]
+  trait FT2[A[_]] extends FT1[A]
+
+  trait IT1[K[_]]
+  trait IT2[K[_]] extends IT1[K]
+
   def  println(o: Any) = info(o.toString)
   def  println(o: FLTT) = info(o.t.toString)
   "lightweight type tags" should {
@@ -99,8 +105,11 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[Int] <:< LTT[Int])
       assert(LTT[List[Int]] <:< LTT[List[Int]])
       assert(LTT[List[I2]] <:< LTT[List[I1]])
-      assert(LTT[F2[I2]] <:< LTT[F1[I1]])
       assert(LTT[Either[Nothing, Int]] <:< LTT[Either[Throwable, Int]])
+
+      assert(LTT[F2[I2]] <:< LTT[F1[I1]])
+
+      assert(LTT[FT2[IT2]] <:< LTT[FT1[IT1]])
 
 //      assert(LTT[List[Int]] <:< `LTT[_]`[List])
     }
