@@ -69,24 +69,28 @@ class LightTypeTagTest extends WordSpec {
 
   def assertRepr(t: FLTT, expected: String): Unit = {
     assert(t.toString == expected)
+    ()
   }
 
   def assertCombine(outer: FLTT, inner: Seq[FLTT], expected: FLTT): Unit = {
     val combined = outer.combine(inner :_*)
     info(s"($outer)(${inner.mkString(",")}) => $combined ≈?≈ $expected")
     assert(combined == expected)
+    ()
   }
 
   def assertCombine(outer: FLTT, inner: FLTT, expected: FLTT): Unit = {
     val combined = outer.combine(inner)
     info(s"($outer)($inner) => $combined ≈?≈ $expected")
     assert(combined == expected)
+    ()
   }
 
   def assertCombineNonPos(outer: FLTT, inner: Seq[Option[FLTT]], expected: FLTT): Unit = {
     val combined = outer.combineNonPos(inner :_*)
     info(s"($outer)(${inner.mkString(",")}) => $combined ≈?≈ $expected")
     assert(combined == expected)
+    ()
   }
 
   "lightweight type tags" should {
@@ -111,12 +115,7 @@ class LightTypeTagTest extends WordSpec {
       assertCombine(`LTT[_]`[List], LTT[Int], LTT[List[Int]])
       assertCombine(`LTT[_,_]`[Either], LTT[Unit], `LTT[_]`[Either[Unit, ?]])
 
-
-      println("E")
-      println(`LTT[_[_]]`[T0[F, ?[_]]])
-      println(`LTT[_]`[FP])
-      println(LTT[T2[T0]])
-
+      assertCombine(`LTT[_[_[_],_[_]]]`[T2], `LTT[_[_],_[_]]`[T0], LTT[T2[T0]])
     }
 
     "support non-positional typetag combination" in {
