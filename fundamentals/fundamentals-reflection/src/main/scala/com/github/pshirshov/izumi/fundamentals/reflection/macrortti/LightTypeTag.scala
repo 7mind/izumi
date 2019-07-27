@@ -51,7 +51,7 @@ object LightTypeTag {
 
     override def asName: NameReference = this
 
-    override def toString: String = ref //.split('.').last
+    override def toString: String = ref.split('.').last
   }
 
   case class FullReference(ref: String, parameters: List[TypeParam]) extends AppliedReference {

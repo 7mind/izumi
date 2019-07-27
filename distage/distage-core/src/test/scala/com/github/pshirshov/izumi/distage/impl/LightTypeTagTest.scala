@@ -37,8 +37,8 @@ class LightTypeTagTest extends WordSpec {
   trait F1[A]
   trait F2[A] extends F1[A]
 
-  trait FT1[A[_]]
-  trait FT2[A[_]] extends FT1[A]
+  trait FT1[A[_[_]]]
+  trait FT2[A[_[_]]] extends FT1[A]
 
   trait IT1[K[_]]
   trait IT2[K[_]] extends IT1[K]
@@ -109,6 +109,7 @@ class LightTypeTagTest extends WordSpec {
 
       assert(LTT[F2[I2]] <:< LTT[F1[I1]])
       assert(LTT[FT2[IT2]] <:< LTT[FT1[IT1]])
+      assert(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]) <:< LTT[FT1[IT1]])
 
 //      assert(LTT[List[Int]] <:< `LTT[_]`[List])
     }

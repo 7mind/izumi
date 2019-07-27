@@ -1,7 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.collection.mutable
@@ -11,10 +10,10 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   final val any = NameReference("scala.Any")
   final val anyRef = NameReference("scala.AnyRef")
 
-  lazy val ib: ImmutableMultiMap[NameReference, NameReference] = {
-    val both = self.idb.toSeq ++ other.idb.toSeq
-    both.toMultimap.mapValues(_.flatten)
-  }
+  lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
+  lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
+
+
 
   def parentsOf(t: NameReference): Set[AppliedReference] = {
     val out = mutable.HashSet[NameReference]()
@@ -60,7 +59,18 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           if (parentsOf(s.asName).contains(o)) {
             true
           } else {
-            shapeHeuristic(s, o)
+            bdb.get(s) match {
+              case Some(value) =>
+                if (value.contains(o)) {
+                  println("STRONG-MATCH")
+                  true
+                } else {
+                  shapeHeuristic(s, o)
+                }
+
+              case None =>
+                shapeHeuristic(s, o)
+            }
           }
         case (s: FullReference, o: NameReference) =>
           parentsOf(s.asName).contains(o)

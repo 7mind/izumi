@@ -8,33 +8,6 @@ import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
-class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[NameReference]]) {
-  lazy val idb: Map[NameReference, Set[NameReference]] = db()
-
-  def <:<(maybeParent: FLTT): Boolean = {
-    new LightTypeTagInheritance(this, maybeParent).isChild()
-  }
-
-  def combine(o: FLTT*): FLTT = {
-    new FLTT(t.combine(o.map(_.t)), () => Map.empty)
-  }
-
-  override def toString: String = t.toString
-
-  def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]
-
-  override def equals(other: Any): Boolean = other match {
-    case that: FLTT =>
-      (that canEqual this) &&
-        t == that.t
-    case _ => false
-  }
-
-  override def hashCode(): Int = {
-    val state = Seq(t)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
-}
 
 object LTT {
   implicit def apply[T]: FLTT = macro LightTypeTagImpl.makeTag[T]
@@ -65,14 +38,19 @@ object `LTT[_[_]]` {
   implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
 }
 
+object `LTT[_[_[_]]]` {
+
+  trait Fake[F[_[_[_]]]]
+
+  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+}
+
 object `LTT[_,_]` {
 
   trait Fake
 
   implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
 }
-
-
 
 
 final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
@@ -112,7 +90,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
           val allbases = tpeBases(i)
           srcname ++ allbases.map {
             b =>
-//              (NameReference(targetNameRef), NameReference(b.dealias.resultType.typeSymbol.fullName))
+              //              (NameReference(targetNameRef), NameReference(b.dealias.resultType.typeSymbol.fullName))
               (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
           }
       }
@@ -124,11 +102,18 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
         }
     }
 
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
-    println(inhdb.size)
 
-    val t = q"new FLTT($out, () => $inhdb)"
+    val basesdb: Map[AbstractReference, Set[AbstractReference]] = Map(
+      out -> tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).toSet
+    )
+
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    //    println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
+    //    println(inhdb.size)
+    println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")
+    println(basesdb.size)
+
+    val t = q"new FLTT($out, () => $basesdb, () => $inhdb)"
     c.Expr[FLTT](t)
   }
 
@@ -150,7 +135,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     tpeBases(tpe, tpe.dealias.resultType)
   }
 
-  private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type): Seq[c.universe.Type] = {
+  private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type, withHollow: Boolean = false): Seq[c.universe.Type] = {
     val higherBases = tpe.baseClasses
     val parameterizedBases = higherBases
       .filterNot {
@@ -160,7 +145,11 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       }
       .map(s => tpef.baseType(s))
 
-    val hollowBases = higherBases.map(s => s.asType.toType)
+    val hollowBases = if (withHollow) {
+      higherBases.map(s => s.asType.toType)
+    } else {
+      Seq.empty
+    }
 
     val allbases = parameterizedBases ++ hollowBases
     allbases

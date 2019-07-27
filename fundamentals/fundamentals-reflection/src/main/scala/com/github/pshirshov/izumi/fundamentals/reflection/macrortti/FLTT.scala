@@ -1,0 +1,63 @@
+package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedReference, NameReference}
+
+class FLTT(
+            val t: LightTypeTag,
+            bases: () => Map[AbstractReference, Set[AbstractReference]],
+            db: () => Map[NameReference, Set[NameReference]],
+          ) {
+  lazy val idb: Map[NameReference, Set[NameReference]] = db()
+  lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
+
+  def <:<(maybeParent: FLTT): Boolean = {
+    new LightTypeTagInheritance(this, maybeParent).isChild()
+  }
+
+  def combine(o: FLTT*): FLTT = {
+
+    val mergedInhDb: () => Map[NameReference, Set[NameReference]] = () => {
+      o.foldLeft(idb) {
+        case (acc, v) =>
+          FLTT.mergeIDBs(acc, v.idb)
+      }
+    }
+
+    val mergedBases: () => Map[AbstractReference, Set[AbstractReference]] = () => {
+      o.foldLeft(basesdb) {
+        case (acc, v) =>
+          FLTT.mergeIDBs(acc, v.basesdb)
+      }
+    }
+
+    new FLTT(t.combine(o.map(_.t)), mergedBases, mergedInhDb)
+  }
+
+  override def toString: String = t.toString
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: FLTT =>
+      (that canEqual this) &&
+        t == that.t
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(t)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
+}
+
+object FLTT {
+  import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+
+  def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
+
+    val both = self.toSeq ++ other.toSeq
+    both.toMultimap.mapValues(_.flatten)
+
+  }
+
+}
