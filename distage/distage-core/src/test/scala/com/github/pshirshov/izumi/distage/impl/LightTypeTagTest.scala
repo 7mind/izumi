@@ -100,6 +100,7 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[List[Int]] <:< LTT[List[Int]])
       assert(LTT[List[I2]] <:< LTT[List[I1]])
       assert(LTT[F2[I2]] <:< LTT[F1[I1]])
+      assert(LTT[Either[Nothing, Int]] <:< LTT[Either[Throwable, Int]])
 
 //      assert(LTT[List[Int]] <:< `LTT[_]`[List])
     }

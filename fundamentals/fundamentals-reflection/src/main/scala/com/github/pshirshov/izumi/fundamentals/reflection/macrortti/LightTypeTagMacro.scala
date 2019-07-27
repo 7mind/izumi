@@ -8,8 +8,8 @@ import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.macros.blackbox
 
-class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[AppliedReference]]) {
-  lazy val idb: Map[NameReference, Set[AppliedReference]] = db()
+class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[NameReference]]) {
+  lazy val idb: Map[NameReference, Set[NameReference]] = db()
 
   def <:<(maybeParent: FLTT): Boolean = {
     new LightTypeTagInheritance(this, maybeParent).isChild()
@@ -115,7 +115,13 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
               (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
           }
       }
-      .toMultimap
+      .toMultimap.mapValues {
+      parents =>
+        parents.collect {
+          case r: AppliedReference =>
+            r.asName
+        }
+    }
 
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")

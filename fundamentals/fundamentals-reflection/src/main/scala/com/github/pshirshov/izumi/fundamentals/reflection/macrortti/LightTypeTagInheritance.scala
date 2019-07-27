@@ -7,19 +7,19 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 import scala.collection.mutable
 
 final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
-  lazy val ib: ImmutableMultiMap[NameReference, AppliedReference] = {
+  lazy val ib: ImmutableMultiMap[NameReference, NameReference] = {
     val both = self.idb.toSeq ++ other.idb.toSeq
     both.toMultimap.mapValues(_.flatten)
   }
 
   def parentsOf(t: NameReference): Set[AppliedReference] = {
-    val out = mutable.HashSet[AppliedReference]()
+    val out = mutable.HashSet[NameReference]()
     val tested = mutable.HashSet[NameReference]()
     parentsOf(t, out, tested)
     out.toSet
   }
 
-  def parentsOf(t: NameReference, out: mutable.HashSet[AppliedReference],  tested: mutable.HashSet[NameReference]): Unit = {
+  def parentsOf(t: NameReference, out: mutable.HashSet[NameReference],  tested: mutable.HashSet[NameReference]): Unit = {
     val direct = ib.get(t).toSet.flatten
     tested += t
     out ++= direct
