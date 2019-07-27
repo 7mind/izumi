@@ -9,7 +9,8 @@ class LightTypeTagTest extends WordSpec {
   trait T0[A[_], B[_]]
 
   type F[T] = T
-  type FP[+T] = List[T]
+  type FP1[+T] = List[T]
+  type FP[+T] = FP1[T]
   type L[P] = List[P]
   type LN[P <: Number] = List[P]
 
