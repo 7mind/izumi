@@ -72,8 +72,20 @@ class LightTypeTagTest extends WordSpec {
     ()
   }
 
+  def assertSame(t: FLTT, expected: FLTT): Unit = {
+    info(s"$t ≈?≈ $expected")
+    assert(t =:= expected)
+    ()
+  }
+
+  def assertChild(t: FLTT, expected: FLTT): Unit = {
+    info(s"$t <?M $expected")
+    assert(t <:< expected)
+    ()
+  }
+
   def assertCombine(outer: FLTT, inner: Seq[FLTT], expected: FLTT): Unit = {
-    val combined = outer.combine(inner :_*)
+    val combined = outer.combine(inner: _*)
     info(s"($outer)(${inner.mkString(",")}) => $combined ≈?≈ $expected")
     assert(combined == expected)
     ()
@@ -87,7 +99,7 @@ class LightTypeTagTest extends WordSpec {
   }
 
   def assertCombineNonPos(outer: FLTT, inner: Seq[Option[FLTT]], expected: FLTT): Unit = {
-    val combined = outer.combineNonPos(inner :_*)
+    val combined = outer.combineNonPos(inner: _*)
     info(s"($outer)(${inner.mkString(",")}) => $combined ≈?≈ $expected")
     assert(combined == expected)
     ()
@@ -123,23 +135,23 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtype checks" in {
-      assert(LTT[Int] <:< LTT[AnyVal])
-      assert(LTT[Int] <:< LTT[Int])
-      assert(LTT[List[Int]] <:< LTT[List[Int]])
-      assert(LTT[List[I2]] <:< LTT[List[I1]])
-      assert(LTT[Either[Nothing, Int]] <:< LTT[Either[Throwable, Int]])
+      assertChild(LTT[Int], LTT[AnyVal])
+      assertChild(LTT[Int], LTT[Int])
+      assertChild(LTT[List[Int]], LTT[List[Int]])
+      assertChild(LTT[List[I2]], LTT[List[I1]])
+      assertChild(LTT[Either[Nothing, Int]], LTT[Either[Throwable, Int]])
 
-      assert(LTT[F2[I2]] <:< LTT[F1[I1]])
-      assert(LTT[FT2[IT2]] <:< LTT[FT1[IT1]])
-      assert(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]) <:< LTT[FT1[IT1]])
+      assertChild(LTT[F2[I2]], LTT[F1[I1]])
+      assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
 
-      assert(LTT[FT2[IT2]] <:< LTT[FT1[IT2]])
+      assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
-      assert(LTT[List[Int]] <:< `LTT[_]`[List])
+      assertChild(LTT[List[Int]], `LTT[_]`[List])
       assert(!(LTT[Set[Int]] <:< `LTT[_]`[Set]))
 
-      assert(LTT[FM2[I2]] <:< LTT[FM1[I1, Unit]])
-      assert(LTT[FM2[I2]] <:< `LTT[_,_]`[FM1])
+      assertChild(LTT[FM2[I2]], LTT[FM1[I1, Unit]])
+      assertChild(LTT[FM2[I2]], `LTT[_,_]`[FM1])
 
     }
 
@@ -157,16 +169,14 @@ class LightTypeTagTest extends WordSpec {
         override type A = String
       }
 
-      assert(LTT[a1.A] != LTT[Int])
-      assert(LTT[a1.A] == LTT[a2.A])
+      assert(!(LTT[a1.A] =:= LTT[Int]))
+      assertSame(LTT[a1.A], LTT[a2.A])
     }
 
     "support complex type lambdas" in {
-      assert(`LTT[_,_]`[NestedTL[Const, ?, ?]] == `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
-      assert(`LTT[_,_]`[NestedTL[Const, ?, ?]] <:< `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
-
-      println(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]])
-      assert(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]] == `LTT[_[_]]`[Lambda[G[_] => FM2[G[S[W2, W1]]]]])
+      assertSame(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
+      assertSame(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]], `LTT[_[_]]`[Lambda[G[_] => FM2[G[S[W2, W1]]]]])
+      assertChild(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
     }
 
     //    "support structural types" in {
