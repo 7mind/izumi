@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.distage.impl
 
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 class LightTypeTagTest extends WordSpec {
 
@@ -179,27 +180,30 @@ class LightTypeTagTest extends WordSpec {
       assertChild(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
     }
 
-    //    "support structural types" in {
-    //
-    //      println(LTT[{def a: Int}])
-    //
-    //    }
-    //
-    //    "support refinements" in {
-    //      println(LTT[W1 with W2])
-    //      type T[A] = W3[A] with W2
-    //      println(`LTT[_]`[T])
-    //    }
+    "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
+      assert(LTT[{def a: Int}] == LTT[{def a: Int}])
+      assert(LTT[C {def a: Int}] == LTT[C {def a: Int}])
+      assert(LTT[C {def a: Int}] != LTT[C])
+      assert(LTT[C {def a: Int}] != LTT[C {def a: Int; def b: Int}])
+    }
 
-    //    "resolve concrete types through PDTs and projections" in {
-    //      val a1 = new C {
-    //        override type A = Int
-    //      }
-    //      type X = {type A = Int}
-    //
-    //      assert(LTT[a1.A] == LTT[X#A])
-    //
-    //
-    //    }
+    "progression test: DON'T support intersection type equality" in intercept[TestFailedException] {
+      type T1[A] = W3[A] with W2
+      type T2[A] = W3[A] with W1
+
+      assert(`LTT[_]`[T1] == `LTT[_]`[T1])
+      assert(`LTT[_]`[T1] != `LTT[_]`[T2])
+    }
+
+    "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {
+      val a1 = new C {
+        override type A <: Int
+      }
+      object Z {
+        type X <: {type A = Int}
+      }
+
+      assert(LTT[a1.A] == LTT[Z.X#A])
+    }
   }
 }
