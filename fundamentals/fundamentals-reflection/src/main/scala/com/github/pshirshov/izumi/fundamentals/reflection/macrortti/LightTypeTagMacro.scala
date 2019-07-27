@@ -1,5 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
+import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
@@ -56,15 +57,15 @@ object `LTT[_[_],_[_]]` {
 
   trait Fake[_[_]]
 
-  implicit def apply[T[_[_],_[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
+  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
 }
 
 
 object `LTT[_[_[_],_[_]]]` {
 
-  trait Fake[K[_],V[_]]
+  trait Fake[K[_], V[_]]
 
-  implicit def apply[T[_[_[_],_[_]]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
+  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake]]
 }
 
 protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
@@ -170,10 +171,17 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
   private val obj: c.WeakTypeTag[Object] = c.weakTypeTag[Object]
   private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
 
-  private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Map[String, LambdaParameter]): AbstractReference = {
+  private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Map[String, LambdaParameter], level: Int = 0): AbstractReference = {
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    val debug = false
+    def xprintln(s: => String): Unit = {
+      if (debug) {
+        println(s.shift(level, "  "))
+      }
+    }
 
     def makeRef(tpe: Type, stop: Map[String, LambdaParameter] = Map.empty): AbstractReference = {
-      LightTypeTagImpl.this.makeRef(tpe, path + tpe, terminalNames ++ stop)
+      LightTypeTagImpl.this.makeRef(tpe, path + tpe, terminalNames ++ stop, level + 1)
     }
 
     def makeBoundaries(b: TypeBoundsApi): Boundaries = {
@@ -215,7 +223,14 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
         case (p, idx) =>
           p.fullName -> LambdaParameter(idx.toString, makeKind(p.asType.toType))
       }
+
+      xprintln(s"working on lambda $t")
+      xprintln(s" => Current parameters: $lamParams")
+      xprintln(s" => Terminal names: $terminalNames")
       val reference = makeRef(result, lamParams.toMap)
+      xprintln(s"   result: $reference")
+
+
       Lambda(lamParams.map(_._2), reference)
     }
 
@@ -223,23 +238,24 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
       val tpef = t.dealias.resultType
       val typeSymbol = tpef.typeSymbol
 
+      val nameref = rules.get(typeSymbol.fullName) match {
+        case Some(value) =>
+          NameReference(value.name)
+
+        case None =>
+          NameReference(typeSymbol.fullName)
+      }
+
       tpef.typeArgs match {
         case Nil =>
-          rules.get(typeSymbol.fullName) match {
-            case Some(value) =>
-              NameReference(value.name)
-
-            case None =>
-              NameReference(typeSymbol.fullName)
-
-          }
+          nameref
 
         case args =>
           val params = args.zip(t.typeConstructor.typeParams).map {
             case (a, pa) =>
               TypeParam(makeRef(a), makeKind(pa.asType.toType), toVariance(pa.asType))
           }
-          FullReference(typeSymbol.fullName, params)
+          FullReference(nameref.ref, params)
       }
     }
 
@@ -248,6 +264,8 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
       case _: PolyTypeApi =>
         makeLambda(tpe)
       case p if p.takesTypeArgs =>
+
+        xprintln(s"typearg type $p, context: $terminalNames")
         if (terminalNames.contains(p.typeSymbol.fullName)) {
           unpack(p, terminalNames)
         } else {
@@ -255,6 +273,8 @@ protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) exten
         }
 
       case c =>
+        xprintln(s"applied type $c, context: $terminalNames")
+
         unpack(c, terminalNames)
     }
 
