@@ -54,6 +54,9 @@ class LightTypeTagTest extends WordSpec {
 
   trait IT2[+K[+ _]] extends IT1[K]
 
+  trait FM1[+A, +B]
+  trait FM2[+A] extends FM1[A, Unit]
+
   def println(o: Any) = info(o.toString)
 
   def println(o: FLTT) = info(o.t.toString)
@@ -110,9 +113,6 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtype checks" in {
-      //      println(LTT[List[I2]])
-      //      println(LTT[List[I1]])
-
       assert(LTT[Int] <:< LTT[AnyVal])
       assert(LTT[Int] <:< LTT[Int])
       assert(LTT[List[Int]] <:< LTT[List[Int]])
@@ -125,15 +125,30 @@ class LightTypeTagTest extends WordSpec {
 
       assert(LTT[FT2[IT2]] <:< LTT[FT1[IT2]])
 
-      //assert(LTT[List[Int]] <:< `LTT[_]`[List])
+      assert(LTT[List[Int]] <:< `LTT[_]`[List])
+      assert(!(LTT[Set[Int]] <:< `LTT[_]`[Set]))
+
+      assert(LTT[FM2[I2]] <:< LTT[FM1[I1, Unit]])
+      assert(LTT[FM2[I2]] <:< `LTT[_,_]`[FM1])
+
     }
 
     "support PDTs" in {
-      val a: C = new C {
+      val a = new C {
         override type A = Int
       }
 
-      println(LTT[a.A])
+      assert(LTT[a.A] == LTT[Int])
+
+      val a1: C = new C {
+        override type A = Int
+      }
+      val a2: C = new C {
+        override type A = String
+      }
+
+      assert(LTT[a1.A] != LTT[Int])
+      assert(LTT[a1.A] == LTT[a2.A])
     }
 
 
