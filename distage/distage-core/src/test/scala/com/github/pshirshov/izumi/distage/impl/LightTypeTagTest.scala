@@ -34,6 +34,8 @@ class LightTypeTagTest extends WordSpec {
   trait I1
   trait I2 extends I1
 
+  trait F1[A]
+  trait F2[A] extends F1[A]
 
   def  println(o: Any) = info(o.toString)
   def  println(o: FLTT) = info(o.t.toString)
@@ -93,9 +95,13 @@ class LightTypeTagTest extends WordSpec {
 //      println(LTT[List[I2]])
 //      println(LTT[List[I1]])
 
-//      assert(LTT[Int].t <:< LTT[AnyVal].t)
-//      assert(LTT[List[Int]].t <:< `LTT[_]`[List].t)
-      //assert(LTT[List[I2]].t <:< LTT[List[I1]].t)
+      assert(LTT[Int] <:< LTT[AnyVal])
+      assert(LTT[Int] <:< LTT[Int])
+      assert(LTT[List[Int]] <:< LTT[List[Int]])
+      assert(LTT[List[I2]] <:< LTT[List[I1]])
+      assert(LTT[F2[I2]] <:< LTT[F1[I1]])
+
+//      assert(LTT[List[Int]] <:< `LTT[_]`[List])
     }
 
     "support PDTs" in {

@@ -43,13 +43,21 @@ object LightTypeTag {
     }
   }
 
-  sealed trait AppliedReference extends AbstractReference
+  sealed trait AppliedReference extends AbstractReference {
+    def asName: NameReference
+  }
 
   case class NameReference(ref: String) extends AppliedReference {
+
+    override def asName: NameReference = this
+
     override def toString: String = ref.split('.').last
   }
 
   case class FullReference(ref: String, parameters: List[TypeParam]) extends AppliedReference {
+
+    override def asName: NameReference = NameReference(ref)
+
     override def toString: String = s"${ref.split('.').last}${parameters.mkString("[", ",", "]")}"
   }
 

@@ -11,6 +11,10 @@ import scala.reflect.macros.blackbox
 class FLTT(val t: LightTypeTag, db: () => Map[NameReference, Set[AppliedReference]]) {
   lazy val idb: Map[NameReference, Set[AppliedReference]] = db()
 
+  def <:<(maybeParent: FLTT): Boolean = {
+    new LightTypeTagInheritance(this, maybeParent).isChild()
+  }
+
   def combine(o: FLTT*): FLTT = {
     new FLTT(t.combine(o.map(_.t)), () => Map.empty)
   }
@@ -67,6 +71,8 @@ object `LTT[_,_]` {
 
   implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeTag[T[Fake, Fake]]
 }
+
+
 
 
 final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
