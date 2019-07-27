@@ -5,7 +5,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 
 import scala.collection.mutable
 
-final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
+protected[macrortti] final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   final val nothing = NameReference("scala.Nothing")
   final val any = NameReference("scala.Any")
   final val anyRef = NameReference("scala.AnyRef")
@@ -82,10 +82,11 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           parentsOf(s).contains(o)
         case (s: NameReference, o: NameReference) =>
           parentsOf(s).contains(o) || ctx.map(_.name).contains(o.ref)
-        case (s: AppliedReference, o: Lambda) =>
+        case (_: AppliedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
         case (s: Lambda, o: AppliedReference) =>
           // TODO: this may be useful in case we consider boundaries
+
           false
         case (s: Lambda, o: Lambda) =>
           s.input == o.input && isChild(s.output, o.output, ctx)

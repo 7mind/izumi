@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.distage.impl
 
-import com.github.pshirshov.izumi.fundamentals.reflection._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
@@ -55,52 +54,45 @@ class LightTypeTagTest extends WordSpec {
   trait IT2[+K[+ _]] extends IT1[K]
 
   trait FM1[+A, +B]
+
   trait FM2[+A] extends FM1[A, Unit]
 
   def println(o: Any) = info(o.toString)
 
   def println(o: FLTT) = info(o.t.toString)
 
+  def assertRepr(t: FLTT, expected: String): Unit = {
+    assert(t.toString == expected)
+  }
+
+  def assertCombine(outer: FLTT, inner: FLTT, expected: FLTT): Unit = {
+    val combined = outer.combine(inner)
+    info(s"($outer)($inner) => $combined ≈?≈ $expected")
+    assert(combined == expected)
+  }
+
+
   "lightweight type tags" should {
-    "xxx" in {
-      println(`LTT[_]`[R1])
-      println(LTT[Int])
-      println(LTT[List[Int]])
-      println(LTT[F[Int]])
-      println(LTT[FP[Int]])
-
-      //      println(`LTT[+_]`[FP])
-      println(`LTT[_]`[L])
-      //println(`LTT[_]`[LN])
-
-      //      println(`LTT[A, _ <: A]`[Integer, LN])
-      println(`LTT[_]`[Either[Unit, ?]])
-      println("lambda:")
-      println(`LTT[_]`[S[Unit, ?]])
-
+    "support human-readable representation" in {
+      assertRepr(`LTT[_]`[R1], "λ %0 → R1[=0]")
+      assertRepr(LTT[Int], "Int")
+      assertRepr(LTT[List[Int]], "List[+Int]")
+      assertRepr(LTT[F[Int]], "Int")
+      assertRepr(LTT[FP[Int]], "List[+Int]")
+      assertRepr(`LTT[_]`[L], "λ %0 → List[+0]")
+      assertRepr(`LTT[_]`[Either[Unit, ?]], "λ %0 → Either[+Unit,+0]")
+      assertRepr(`LTT[_]`[S[Unit, ?]], "λ %0 → Either[+0,+Unit]")
     }
 
     "support typetag combination" in {
-      println("F")
-      println(`LTT[_[_]]`[T1])
-      println(`LTT[_]`[F])
-      println(LTT[T1[F]])
-      println(`LTT[_[_]]`[T1].combine(`LTT[_]`[F]))
-      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[F]) == LTT[T1[F]])
+      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[F], LTT[T1[F]])
+      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[FP], LTT[T1[FP]])
+      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[FI], LTT[T1[FI]])
 
-
-      println("FP")
-      println(`LTT[_[_]]`[T1])
-      println(`LTT[_]`[FP])
-      println(LTT[T1[FP]])
-      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FP]) == LTT[T1[FP]])
-
-
-      println("FI")
-      println(LTT[T1[FI]])
-      println(`LTT[_[_]]`[T1])
-      println(`LTT[_]`[FI])
-      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FI]) == LTT[T1[FI]])
+      assertCombine(`LTT[_[_]]`[T0[F, ?[_]]], `LTT[_]`[FP], LTT[T0[F, FP]])
+      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[List], LTT[T1[List]])
+      assertCombine(`LTT[_]`[List], LTT[Int], LTT[List[Int]])
+      assertCombine(`LTT[_,_]`[Either], LTT[Unit], `LTT[_]`[Either[Unit, ?]])
 
 
       println("E")
@@ -108,12 +100,12 @@ class LightTypeTagTest extends WordSpec {
       println(`LTT[_]`[FP])
       println(LTT[T2[T0]])
 
-      assert(`LTT[_[_]]`[T0[F, ?[_]]].combine(`LTT[_]`[FP]) == LTT[T0[F, FP]])
-      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[List]) == LTT[T1[List]])
-      assert(`LTT[_]`[List].combine(LTT[Int]) == LTT[List[Int]])
+//      assert(`LTT[_[_]]`[T0[F, ?[_]]].combine(`LTT[_]`[FP]) == LTT[T0[F, FP]])
+//      assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[List]) == LTT[T1[List]])
+//      assert(`LTT[_]`[List].combine(LTT[Int]) == LTT[List[Int]])
 
-      println(`LTT[_,_]`[Either])
-      assert(`LTT[_,_]`[Either].combine(LTT[Unit]) == `LTT[_]`[Either[Unit, ?]])
+//      println(`LTT[_,_]`[Either])
+//      assert(`LTT[_,_]`[Either].combine(LTT[Unit]) == `LTT[_]`[Either[Unit, ?]])
     }
 
     "support non-positional typetag combination" in {

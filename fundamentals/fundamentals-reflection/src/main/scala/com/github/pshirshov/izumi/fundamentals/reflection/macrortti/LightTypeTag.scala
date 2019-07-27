@@ -37,7 +37,7 @@ sealed trait LightTypeTag {
     applyParameters(_ => parameters)
   }
 
-  private def applyParameters(p: Lambda => Map[String, AbstractReference]) = {
+  private def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
     this match {
       case l: Lambda =>
         val parameters = p(l)

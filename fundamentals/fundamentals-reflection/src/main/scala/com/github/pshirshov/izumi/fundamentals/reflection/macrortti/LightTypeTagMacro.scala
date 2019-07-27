@@ -53,7 +53,7 @@ object `LTT[_,_]` {
 }
 
 
-final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
+protected[macrortti] final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
 
@@ -62,8 +62,6 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     import c._
     val wtt = implicitly[WeakTypeTag[T]]
     val tpe = wtt.tpe
-
-    //val w = implicitly[WeakTypeTag[TT]]
 
     val out = makeRef(tpe, Set(tpe), Map.empty)
     val inh = allTypeReferences(tpe)
@@ -90,7 +88,6 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
           val allbases = tpeBases(i)
           srcname ++ allbases.map {
             b =>
-              //              (NameReference(targetNameRef), NameReference(b.dealias.resultType.typeSymbol.fullName))
               (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
           }
       }
@@ -107,7 +104,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       out -> tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).toSet
     )
 
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     // println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
     // println(inhdb.size)
     // println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")

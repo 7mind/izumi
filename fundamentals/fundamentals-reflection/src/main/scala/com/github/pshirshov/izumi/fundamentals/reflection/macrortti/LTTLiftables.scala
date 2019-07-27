@@ -4,7 +4,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 
 import scala.reflect.macros.blackbox
 
-trait LTTLiftables {
+protected[macrortti] trait LTTLiftables {
   val c: blackbox.Context
 
   import c.universe._

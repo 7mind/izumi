@@ -1,18 +1,23 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedReference, NameReference}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, NameReference}
 
 class FLTT(
             val t: LightTypeTag,
             bases: () => Map[AbstractReference, Set[AbstractReference]],
             db: () => Map[NameReference, Set[NameReference]],
           ) {
-  lazy val idb: Map[NameReference, Set[NameReference]] = db()
-  lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
+  protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
+  protected[macrortti]lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
 
   def <:<(maybeParent: FLTT): Boolean = {
     new LightTypeTagInheritance(this, maybeParent).isChild()
   }
+
+  def =:=(other: FLTT): Boolean = {
+    this == other
+  }
+
 
   def combine(o: FLTT*): FLTT = {
 
@@ -72,7 +77,7 @@ class FLTT(
 object FLTT {
   import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
-  def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
+  protected[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
 
     val both = self.toSeq ++ other.toSeq
     both.toMultimap.mapValues(_.flatten)

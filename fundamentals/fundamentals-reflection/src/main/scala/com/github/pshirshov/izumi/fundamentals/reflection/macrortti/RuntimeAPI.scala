@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, FullReference, Lambda, LambdaParameter, NameReference, TypeParam}
 
-object RuntimeAPI {
+protected[macrortti] object RuntimeAPI {
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
