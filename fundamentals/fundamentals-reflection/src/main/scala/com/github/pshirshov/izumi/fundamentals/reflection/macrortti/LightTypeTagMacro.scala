@@ -108,10 +108,10 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     )
 
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-    //    println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
-    //    println(inhdb.size)
-    println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")
-    println(basesdb.size)
+    // println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
+    // println(inhdb.size)
+    // println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")
+    // println(basesdb.size)
 
     val t = q"new FLTT($out, () => $basesdb, () => $inhdb)"
     c.Expr[FLTT](t)

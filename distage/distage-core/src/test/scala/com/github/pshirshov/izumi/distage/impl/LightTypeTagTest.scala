@@ -5,12 +5,14 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
 class LightTypeTagTest extends WordSpec {
+
   trait T0[A[_], B[_]]
 
   type F[T] = T
   type FP[+T] = List[T]
   type L[P] = List[P]
   type LN[P <: Number] = List[P]
+
   trait T1[U[_]]
 
   type FI[IGNORE] = Unit
@@ -18,33 +20,43 @@ class LightTypeTagTest extends WordSpec {
   trait T2[U[_[_], _[_]]]
 
   //  type K = T1[F]
-//  val a: K = new T1[F] {}
+  //  val a: K = new T1[F] {}
   trait C {
     type A
   }
 
   trait R[K, A <: R[K, A]]
+
   trait R1[K] extends R[K, R1[K]]
+
   type S[A, B] = Either[B, A]
 
   trait W1
+
   trait W2
+
   trait W3[_]
 
   trait I1
+
   trait I2 extends I1
 
-  trait F1[A]
-  trait F2[A] extends F1[A]
+  trait F1[+A]
 
-  trait FT1[A[_[_]]]
-  trait FT2[A[_[_]]] extends FT1[A]
+  trait F2[+A] extends F1[A]
 
-  trait IT1[K[_]]
-  trait IT2[K[_]] extends IT1[K]
+  trait FT1[+A[+ _[+ _]]]
 
-  def  println(o: Any) = info(o.toString)
-  def  println(o: FLTT) = info(o.t.toString)
+  trait FT2[+A[+ _[+ _]]] extends FT1[A]
+
+  trait IT1[+K[+ _]]
+
+  trait IT2[+K[+ _]] extends IT1[K]
+
+  def println(o: Any) = info(o.toString)
+
+  def println(o: FLTT) = info(o.t.toString)
+
   "lightweight type tags" should {
     "xxx" in {
       println(`LTT[_]`[R1])
@@ -53,11 +65,11 @@ class LightTypeTagTest extends WordSpec {
       println(LTT[F[Int]])
       println(LTT[FP[Int]])
 
-//      println(`LTT[+_]`[FP])
+      //      println(`LTT[+_]`[FP])
       println(`LTT[_]`[L])
       //println(`LTT[_]`[LN])
 
-//      println(`LTT[A, _ <: A]`[Integer, LN])
+      //      println(`LTT[A, _ <: A]`[Integer, LN])
       println(`LTT[_]`[Either[Unit, ?]])
       println("lambda:")
       println(`LTT[_]`[S[Unit, ?]])
@@ -83,7 +95,6 @@ class LightTypeTagTest extends WordSpec {
       assert(`LTT[_[_]]`[T1].combine(`LTT[_]`[FI]) == LTT[T1[FI]])
 
 
-
       println("E")
       println(`LTT[_[_]]`[T0[F, ?[_]]])
       println(`LTT[_]`[FP])
@@ -98,8 +109,8 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtype checks" in {
-//      println(LTT[List[I2]])
-//      println(LTT[List[I1]])
+      //      println(LTT[List[I2]])
+      //      println(LTT[List[I1]])
 
       assert(LTT[Int] <:< LTT[AnyVal])
       assert(LTT[Int] <:< LTT[Int])
@@ -111,7 +122,9 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[FT2[IT2]] <:< LTT[FT1[IT1]])
       assert(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]) <:< LTT[FT1[IT1]])
 
-//      assert(LTT[List[Int]] <:< `LTT[_]`[List])
+      assert(LTT[FT2[IT2]] <:< LTT[FT1[IT2]])
+
+      //assert(LTT[List[Int]] <:< `LTT[_]`[List])
     }
 
     "support PDTs" in {
@@ -124,26 +137,26 @@ class LightTypeTagTest extends WordSpec {
 
 
     //    "support structural types" in {
-//
-//      println(LTT[{def a: Int}])
-//
-//    }
-//
-//    "support refinements" in {
-//      println(LTT[W1 with W2])
-//      type T[A] = W3[A] with W2
-//      println(`LTT[_]`[T])
-//    }
+    //
+    //      println(LTT[{def a: Int}])
+    //
+    //    }
+    //
+    //    "support refinements" in {
+    //      println(LTT[W1 with W2])
+    //      type T[A] = W3[A] with W2
+    //      println(`LTT[_]`[T])
+    //    }
 
-//    "resolve concrete types through PDTs and projections" in {
-//      val a1 = new C {
-//        override type A = Int
-//      }
-//      type X = {type A = Int}
-//
-//      assert(LTT[a1.A] == LTT[X#A])
-//
-//
-//    }
+    //    "resolve concrete types through PDTs and projections" in {
+    //      val a1 = new C {
+    //        override type A = Int
+    //      }
+    //      type X = {type A = Int}
+    //
+    //      assert(LTT[a1.A] == LTT[X#A])
+    //
+    //
+    //    }
   }
 }

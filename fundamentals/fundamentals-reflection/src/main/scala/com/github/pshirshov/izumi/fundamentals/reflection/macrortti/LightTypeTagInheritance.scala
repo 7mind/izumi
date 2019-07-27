@@ -62,7 +62,8 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
             bdb.get(s) match {
               case Some(value) =>
                 if (value.contains(o)) {
-                  println("STRONG-MATCH")
+                  // TODO: decide if we need this (definitely safe) policy for the price of overhead
+                  // F2[_] <: F1[_] => F2[Int] <: F1[Int]
                   true
                 } else {
                   shapeHeuristic(s, o)
@@ -79,6 +80,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: NameReference, o: NameReference) =>
           parentsOf(s).contains(o)
         case (s: AppliedReference, o: Lambda) =>
+          println(("test", s, o))
           false
         case (s: Lambda, o: AppliedReference) =>
           false
@@ -92,7 +94,15 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   private def shapeHeuristic(s: FullReference, o: FullReference): Boolean = {
     s.parameters.size == o.parameters.size && isChild(s.asName, o.asName) && s.parameters.zip(o.parameters).forall {
       case (sp, op) =>
-        isChild(sp.ref, op.ref)
+
+        sp.variance match {
+          case Variance.Invariant =>
+            sp.ref == op.ref
+          case Variance.Contravariant =>
+            isChild(op.ref, sp.ref)
+          case Variance.Covariant =>
+            isChild(sp.ref, op.ref)
+        }
     }
   }
 }
