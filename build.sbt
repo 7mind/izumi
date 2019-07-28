@@ -626,8 +626,10 @@ lazy val microsite = inDoc.as.module
     addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
+  .settings(skip in publish := true)
 
 
 lazy val `izumi-r2` = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
+  .settings(skip in publish := true)
