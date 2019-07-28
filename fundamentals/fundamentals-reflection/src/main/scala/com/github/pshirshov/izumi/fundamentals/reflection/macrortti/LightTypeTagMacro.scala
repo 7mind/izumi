@@ -1,61 +1,63 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
+import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
+import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 object LTT {
-  implicit def apply[T]: FLTT = macro LightTypeTagImpl.makeFLTT[T]
+  implicit def apply[T]: FLTT = macro LightTypeTagMacro.makeFLTT[T]
 }
 
 object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
+  implicit def apply[T[_]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
 }
 
 object `LTT[+_]` {
 
   trait Fake
 
-  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
+  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
 }
 
 object `LTT[A, _ <: A]` {
-  implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[A]]
+  implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[A]]
 }
 
 object `LTT[_[_]]` {
 
   trait Fake[F[_[_]]]
 
-  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
 }
 
 object `LTT[_[_[_]]]` {
 
   trait Fake[F[_[_[_]]]]
 
-  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
 }
 
 object `LTT[_,_]` {
 
   trait Fake
 
-  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake, Fake]]
+  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake, Fake]]
 }
 
 object `LTT[_[_],_[_]]` {
 
   trait Fake[_[_]]
 
-  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake, Fake]]
+  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake, Fake]]
 }
 
 
@@ -63,40 +65,80 @@ object `LTT[_[_[_],_[_]]]` {
 
   trait Fake[K[_], V[_]]
 
-  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagImpl.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
 }
 
-final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
+final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
 
-  def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LHKTag[ArgStruct]] = {
+  protected val impl = new LightTypeTagImpl[c.universe.type](c.universe)
+
+  @inline def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LHKTag[ArgStruct]] = {
+    makeHKTagRaw[ArgStruct](weakTypeOf[ArgStruct])
+  }
+
+  @inline def makeTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
+    val res = makeFLTTImpl(weakTypeOf[T])
+    c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
+  }
+
+  @inline def makeWeakTag[T: c.WeakTypeTag]: c.Expr[LWeakTag[T]] = {
+    val res = makeFLTTImpl(weakTypeOf[T])
+    c.Expr[LWeakTag[T]](q"new ${weakTypeOf[LWeakTag[T]]}($res)")
+  }
+
+  @inline def makeFLTT[T: c.WeakTypeTag]: c.Expr[FLTT] = {
+    makeFLTTImpl(weakTypeOf[T])
+  }
+
+  def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LHKTag[ArgStruct]] = {
     def badShapeError(t: TypeApi) = {
       c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LightTagK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
     }
 
-    weakTypeOf[ArgStruct] match {
-      case r: RefinedTypeApi =>
-        r.decl(TypeName("Arg")) match {
-          case sym: TypeSymbolApi =>
-            val res = makeTagImpl(sym.info.typeConstructor)
-            c.Expr[LHKTag[ArgStruct]](q"new ${weakTypeOf[LHKTag[ArgStruct]]}($res)")
-          case _ => badShapeError(r)
-        }
-      case other => badShapeError(other)
-    }
+    argStruct match {
+       case r: RefinedTypeApi =>
+         r.decl(TypeName("Arg")) match {
+           case sym: TypeSymbolApi =>
+             val res = makeFLTTImpl(sym.info.typeConstructor)
+             // FIXME: `appliedType` doesn't work here for some reason; have to write down the entire name
+             c.Expr[LHKTag[ArgStruct]](q"new _root_.com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LHKTag[$argStruct]($res)")
+           case _ => badShapeError(r)
+         }
+       case other => badShapeError(other)
+     }
   }
 
-  def makeFLTT[T: c.WeakTypeTag]: c.Expr[FLTT] = {
-    makeTagImpl(weakTypeOf[T])
-  }
+  protected def makeFLTTImpl(tpe: Type): c.Expr[FLTT] = {
+    // FIXME: Try to summon Tags from environment for all found type parameters instead of failing immediately [replicate TagMacro]
+    // FIXME: makeWeakTag should disable this check
 
-  def makeTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
-    val res = makeTagImpl(weakTypeOf[T])
-    c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
-  }
+    // FIXME: summon LTag[Nothing] fails
+//    if (tpe.typeSymbol.isParameter) {
+//      c.abort(c.enclosingPosition, s"Can't assemble Light Type Tag for $tpe – it's an abstract type parameter")
+//    }
 
-  protected def makeTagImpl(tpe: Type): c.Expr[FLTT] = {
+    c.Expr[FLTT](lifted_FLLT(impl.makeFLTT(tpe)))
+  }
+}
+
+// FIXME: Object makes this impossible to override ...
+object LightTypeTagImpl {
+  def makeFLTT(u: Universe)(typeTag: u.Type): FLTT = {
+    new LightTypeTagImpl[u.type](u).makeFLTT(typeTag)
+  }
+}
+
+// FIXME: AnyVal makes this impossible to override ...
+final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends AnyVal {
+  import u._
+
+  @inline private[this] def any: Type = definitions.AnyTpe
+  @inline private[this] def obj: Type = definitions.ObjectTpe
+  @inline private[this] def nothing: Type = definitions.NothingTpe
+
+  def makeFLTT(tpe: Type): FLTT = {
     val out = makeRef(tpe, Set(tpe), Map.empty)
     val inh = allTypeReferences(tpe)
 
@@ -144,17 +186,16 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     // println(s"$tpe (${basesdb.size}):${basesdb.toSeq.niceList()}")
     // println(basesdb.size)
 
-    val t = q"new ${typeOf[FLTT]}($out, () => $basesdb, () => $inhdb)"
-    c.Expr[FLTT](t)
+    new FLTT(out, () => basesdb, () => inhdb)
   }
 
-  private def allTypeReferences(tpe: c.universe.Type): Set[c.Type] = {
-    val inh = mutable.HashSet[c.Type]()
+  private def allTypeReferences(tpe: Type): Set[Type] = {
+    val inh = mutable.HashSet[Type]()
     extract(tpe, inh)
     inh.toSet
   }
 
-  private def extract(tpe: c.universe.Type, inh: mutable.HashSet[c.Type]): Unit = {
+  private def extract(tpe: Type, inh: mutable.HashSet[Type]): Unit = {
     inh ++= Seq(tpe, tpe.dealias.resultType)
     tpe.typeArgs.filterNot(inh.contains).foreach {
       a =>
@@ -162,17 +203,17 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     }
   }
 
-  private def tpeBases(tpe: c.universe.Type): Seq[c.universe.Type] = {
+  private def tpeBases(tpe: Type): Seq[Type] = {
     tpeBases(tpe, tpe.dealias.resultType)
   }
 
-  private def tpeBases(tpe: c.universe.Type, tpef: c.universe.Type, withHollow: Boolean = false): Seq[c.universe.Type] = {
+  private def tpeBases(tpe: Type, tpef: Type, withHollow: Boolean = false): Seq[Type] = {
     val higherBases = tpe.baseClasses
     val parameterizedBases = higherBases
       .filterNot {
         s =>
           val btype = s.asType.toType
-          btype =:= any.tpe || btype =:= obj.tpe || btype.erasure =:= tpe.erasure
+          btype =:= any || btype =:= obj || btype.erasure =:= tpe.erasure
       }
       .map(s => tpef.baseType(s))
 
@@ -186,11 +227,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     allbases
   }
 
-  private val any: c.WeakTypeTag[Any] = c.weakTypeTag[Any]
-  private val obj: c.WeakTypeTag[Object] = c.weakTypeTag[Object]
-  private val nothing: c.WeakTypeTag[Nothing] = c.weakTypeTag[Nothing]
-
-  private def makeRef(tpe: c.universe.Type, path: Set[Type], terminalNames: Map[String, LambdaParameter], level: Int = 0): AbstractReference = {
+  private def makeRef(tpe: Type, path: Set[Type], terminalNames: Map[String, LambdaParameter], level: Int = 0): AbstractReference = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     val debug = false
     def xprintln(s: => String): Unit = {
@@ -200,18 +237,18 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     }
 
     def makeRef(tpe: Type, stop: Map[String, LambdaParameter] = Map.empty): AbstractReference = {
-      LightTypeTagImpl.this.makeRef(tpe, path + tpe, terminalNames ++ stop, level + 1)
+      this.makeRef(tpe, path + tpe, terminalNames ++ stop, level + 1)
     }
 
     def makeBoundaries(b: TypeBoundsApi): Boundaries = {
-      if ((b.lo =:= nothing.tpe && b.hi =:= any.tpe) || (path.contains(b.lo) || path.contains(b.hi))) {
+      if ((b.lo =:= nothing && b.hi =:= any) || (path.contains(b.lo) || path.contains(b.hi))) {
         Boundaries.Empty
       } else {
         Boundaries.Defined(makeRef(b.lo), makeRef(b.hi))
       }
     }
 
-    def makeKind(kt: c.universe.Type): AbstractKind = {
+    def makeKind(kt: Type): AbstractKind = {
       val ts = kt.dealias.resultType.typeSymbol.typeSignature
       val variance = toVariance(kt)
 
@@ -253,7 +290,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       Lambda(lamParams.map(_._2), reference)
     }
 
-    def unpack(t: c.universe.Type, rules: Map[String, LambdaParameter]): AppliedReference = {
+    def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
       val tpef = t.dealias.resultType
       val typeSymbol = tpef.typeSymbol
 
@@ -278,7 +315,6 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
       }
     }
 
-
     val out = tpe match {
       case _: PolyTypeApi =>
         makeLambda(tpe)
@@ -300,7 +336,7 @@ final class LightTypeTagImpl(val c: blackbox.Context) extends LTTLiftables {
     out
   }
 
-  private def toVariance(tpe: c.universe.Type): Variance = {
+  private def toVariance(tpe: Type): Variance = {
     val typeSymbolTpe = tpe.typeSymbol.asType
     toVariance(typeSymbolTpe)
   }

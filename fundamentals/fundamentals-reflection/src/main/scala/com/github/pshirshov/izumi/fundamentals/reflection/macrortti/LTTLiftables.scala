@@ -41,7 +41,7 @@ protected[macrortti] trait LTTLiftables {
 
   implicit val lifted_AppliedReference: Liftable[AppliedReference] = Liftable[AppliedReference] {
     case nr: NameReference =>
-      implicitly[Liftable[NameReference]].apply(nr)
+      lifted_NameReference.apply(nr)
     case FullReference(ref, parameters) =>
       q"$LightTypeTag.FullReference($ref, $parameters)"
   }
@@ -65,11 +65,16 @@ protected[macrortti] trait LTTLiftables {
     case Lambda(in, out) =>
       q"$LightTypeTag.Lambda($in, $out)"
     case a: AppliedReference =>
-      implicitly[Liftable[AppliedReference]].apply(a)
+      lifted_AppliedReference.apply(a)
   }
 
   implicit val lifted_LightTypeTag: Liftable[LightTypeTag] = Liftable[LightTypeTag] {
     case r: AbstractReference =>
-      implicitly[Liftable[AbstractReference]].apply(r)
+      lifted_AbstractReference.apply(r)
+  }
+
+  implicit val lifted_FLLT: Liftable[FLTT] = Liftable[FLTT] {
+    f =>
+      q"new ${typeOf[FLTT]}(${f.t}, () => ${f.basesdb}, () => ${f.idb})"
   }
 }

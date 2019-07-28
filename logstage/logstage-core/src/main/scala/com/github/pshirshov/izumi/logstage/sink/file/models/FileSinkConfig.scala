@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.logstage.sink.file.models
 
 import LogPayloadSize._
 
-case class FileSinkConfig private (fileSizeInBytes: Option[Int] = None, fileSizeSoft: Option[Int] = None) {
+final case class FileSinkConfig private (fileSizeInBytes: Option[Int] = None, fileSizeSoft: Option[Int] = None) {
 
   val (maxAllowedSize, calculateMessageSize) = {
     (fileSizeSoft, fileSizeInBytes) match {

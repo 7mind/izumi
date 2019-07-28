@@ -7,8 +7,9 @@ class FLTT(
             bases: () => Map[AbstractReference, Set[AbstractReference]],
             db: () => Map[NameReference, Set[NameReference]],
           ) {
+
+  protected[macrortti] lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
   protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
-  protected[macrortti]lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
 
   def <:<(maybeParent: FLTT): Boolean = {
     new LightTypeTagInheritance(this, maybeParent).isChild()

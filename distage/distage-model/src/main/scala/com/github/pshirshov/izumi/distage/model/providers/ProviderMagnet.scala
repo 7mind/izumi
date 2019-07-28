@@ -84,8 +84,8 @@ final case class ProviderMagnet[+R](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
-    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R](Tag[B].tag.mirror)
-    rTag.discard() // scalac can't detect usage in macro
+    implicit val rTag: Tag[R] = get.ret.unsafeToTag[R]
+    rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
 
     copy[(R, B)](get = get.unsafeZip(SafeType.get[(R, B)], that.get))
   }
