@@ -13,6 +13,10 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
+//  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+//  println("")
+//  println(ib.niceList())
+//  println(bdb.niceList())
 
   def parentsOf(t: NameReference): Set[AppliedReference] = {
     val out = mutable.HashSet[NameReference]()
@@ -44,8 +48,6 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   }
 
   private def isChild(st: LightTypeTag, ot: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
-
-
     if (st == ot) {
       true
     } else if (st == nothing || ot == any || ot == anyRef) {
@@ -79,9 +81,9 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: FullReference, o: NameReference) =>
           parentsOf(s.asName).contains(o)
         case (s: NameReference, o: FullReference) =>
-          parentsOf(s).contains(o)
+          parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
         case (s: NameReference, o: NameReference) =>
-          parentsOf(s).contains(o) || ctx.map(_.name).contains(o.ref)
+          parentsOf(s).exists(p => isChild(p, ot, ctx)) || ctx.map(_.name).contains(o.ref)
         case (_: AppliedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
         case (s: Lambda, o: AppliedReference) =>

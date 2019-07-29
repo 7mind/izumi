@@ -110,6 +110,7 @@ class LightTypeTagTest extends WordSpec {
   "lightweight type tags" should {
     "support human-readable representation" in {
       assertRepr(`LTT[_]`[R1], "λ %0 → R1[=0]")
+      assertRepr(`LTT[_]`[Nothing], "Nothing")
       assertRepr(LTT[Int], "Int")
       assertRepr(LTT[List[Int]], "List[+Int]")
       assertRepr(LTT[F[Int]], "Int")
@@ -154,6 +155,8 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[FM2[I2]], LTT[FM1[I1, Unit]])
       assertChild(LTT[FM2[I2]], `LTT[_,_]`[FM1])
+      assertChild(LTT[Option[Nothing]], LTT[Option[Int]])
+      assertChild(LTT[None.type], LTT[Option[Int]])
 
     }
 
@@ -182,9 +185,9 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
-      assert(LTT[{def a: Int}] == LTT[{def a: Int}])
+      assert(LTT[ {def a: Int}] == LTT[ {def a: Int}])
       assert(LTT[C {def a: Int}] == LTT[C {def a: Int}])
-      assert(LTT[C {def a: Int}] != LTT[{ def a: Int }])
+      assert(LTT[C {def a: Int}] != LTT[ {def a: Int}])
       assert(LTT[C {def a: Int}] != LTT[C])
       assert(LTT[C {def a: Int}] != LTT[C {def a: Int; def b: Int}])
     }

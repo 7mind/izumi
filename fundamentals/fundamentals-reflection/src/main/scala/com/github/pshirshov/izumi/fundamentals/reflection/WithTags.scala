@@ -2,7 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 
 import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import com.github.pshirshov.izumi.fundamentals.reflection.WithTags.hktagFormat
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LHKTag, LTag, LWeakTag, LightTypeTagImpl}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LHKTag, LWeakTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
@@ -11,8 +11,8 @@ import scala.reflect.api.{TypeCreator, Universe}
 
 trait WithTags extends UniverseGeneric { self =>
 
-  import u._
   import ReflectionUtil._
+  import u._
 
   /**
   * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
