@@ -42,13 +42,13 @@ protected[macrortti] trait LTTLiftables {
   implicit val lifted_AppliedReference: Liftable[AppliedReference] = Liftable[AppliedReference] {
     case nr: NameReference =>
       lifted_NameReference.apply(nr)
-    case FullReference(ref, parameters) =>
-      q"$LightTypeTag.FullReference($ref, $parameters)"
+    case FullReference(ref, prefix, parameters) =>
+      q"$LightTypeTag.FullReference($ref, $prefix, $parameters)"
   }
 
   implicit val lifted_NameReference: Liftable[NameReference] = Liftable[NameReference] {
     nr =>
-      q"$LightTypeTag.NameReference(${nr.ref})"
+      q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
   }
 
   implicit val lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {

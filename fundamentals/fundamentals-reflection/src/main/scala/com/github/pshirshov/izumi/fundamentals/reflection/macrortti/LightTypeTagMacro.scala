@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, SingletonUniverse}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
@@ -8,6 +7,7 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api.Universe
+import scala.reflect.internal.Types
 import scala.reflect.macros.blackbox
 
 object LTT {
@@ -152,12 +152,15 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
     val inhdb = inh
       .flatMap {
         i =>
-          val targetNameRef = i.dealias.resultType.typeSymbol.fullName
+          val tpef = i.dealias.resultType
+          val targetNameRef = tpef.typeSymbol.fullName
+          val prefix = toPrefix(tpef)
+
           val srcname = i match {
             case a: TypeRefApi =>
               val srcname = a.sym.fullName
               if (srcname != targetNameRef) {
-                Seq((NameReference(srcname), NameReference(targetNameRef)))
+                Seq((NameReference(srcname, toPrefix(i)), NameReference(targetNameRef, prefix)))
               } else {
                 Seq.empty
               }
@@ -170,7 +173,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
           val allbases = tpeBases(i)
           srcname ++ allbases.map {
             b =>
-              (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
+              (NameReference(targetNameRef, prefix), makeRef(b, Set(b), Map.empty))
           }
       }
       .toMultimap
@@ -306,14 +309,15 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
 
     def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
       val tpef = t.dealias.resultType
+      val prefix = toPrefix(tpef)
       val typeSymbol = tpef.typeSymbol
 
       val nameref = rules.get(typeSymbol.fullName) match {
         case Some(value) =>
-          NameReference(value.name)
+          NameReference(value.name, prefix)
 
         case None =>
-          NameReference(typeSymbol.fullName)
+          NameReference(typeSymbol.fullName, prefix)
       }
 
       tpef.typeArgs match {
@@ -325,7 +329,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
             case (a, pa) =>
               TypeParam(makeRef(a), makeKind(pa.asType.toType), toVariance(pa.asType))
           }
-          FullReference(nameref.ref, params)
+          FullReference(nameref.ref, prefix, params)
       }
     }
 
@@ -348,6 +352,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
     }
 
     out
+  }
+
+  private def toPrefix(tpef: u.Type) = {
+    tpef match {
+      case t: TypeRefApi =>
+        val np = u.asInstanceOf[Types].NoPrefix
+        if (!t.pre.typeSymbol.isPackage && !(t.pre == np)) {
+          Some(makeRef(t.pre, Set(t.pre), Map.empty).asInstanceOf[AppliedReference])
+        } else {
+          None
+        }
+      case _ =>
+        None
+    }
   }
 
   private def toVariance(tpe: Type): Variance = {

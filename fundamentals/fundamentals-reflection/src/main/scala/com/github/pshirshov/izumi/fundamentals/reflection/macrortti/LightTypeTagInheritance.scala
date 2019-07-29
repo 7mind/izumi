@@ -6,9 +6,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 import scala.collection.mutable
 
 final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
-  final val nothing = NameReference("scala.Nothing")
-  final val any = NameReference("scala.Any")
-  final val anyRef = NameReference("scala.AnyRef")
+  final val nothing = NameReference("scala.Nothing", None)
+  final val any = NameReference("scala.Any", None)
+  final val anyRef = NameReference("scala.AnyRef", None)
 
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
@@ -83,13 +83,13 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           }
         case (s: FullReference, o: NameReference) =>
           parentsOf(s.asName).contains(o)
-        case (s: NameReference, o: FullReference) =>
+        case (s: NameReference, _: FullReference) =>
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
         case (s: NameReference, o: NameReference) =>
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || ctx.map(_.name).contains(o.ref)
         case (_: AppliedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
-        case (s: Lambda, o: AppliedReference) =>
+        case (_: Lambda, _: AppliedReference) =>
           // TODO: this may be useful in case we consider boundaries
 
           false

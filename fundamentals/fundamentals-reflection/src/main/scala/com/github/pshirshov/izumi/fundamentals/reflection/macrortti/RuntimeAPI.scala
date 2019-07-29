@@ -6,7 +6,7 @@ protected[macrortti] object RuntimeAPI {
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
-    val replaced = replace(lambda.output, parameters)
+    val replaced = replaceRefs(lambda.output, parameters)
 
     if (newParams.isEmpty) {
       replaced
@@ -19,15 +19,15 @@ protected[macrortti] object RuntimeAPI {
         case (p, idx) =>
           LambdaParameter(idx.toString, p.kind)
       }
-      Lambda(nr, replace1(replaced, renamed.toMap))
+      Lambda(nr, replaceRefNames(replaced, renamed.toMap))
     }
   }
 
-  private def replace(ref: AbstractReference, xparameters: Map[String, AbstractReference]): AbstractReference = {
+  private def replaceRefs(ref: AbstractReference, xparameters: Map[String, AbstractReference]): AbstractReference = {
     ref match {
       case l: Lambda =>
         l
-      case n@NameReference(ref) =>
+      case n@NameReference(ref, _) =>
         xparameters.get(ref) match {
           case Some(value) =>
             value
@@ -35,33 +35,33 @@ protected[macrortti] object RuntimeAPI {
             n
         }
 
-      case FullReference(ref, parameters) =>
+      case FullReference(ref, prefix, parameters) =>
         val p = parameters.map {
           case TypeParam(ref, kind, variance) =>
-            TypeParam(replace(ref, xparameters), kind, variance)
+            TypeParam(replaceRefs(ref, xparameters), kind, variance)
         }
-        FullReference(ref, p)
+        FullReference(ref, prefix, p)
     }
   }
 
-  private def replace1(ref: AbstractReference, xparameters: Map[String, String]): AbstractReference = {
+  private def replaceRefNames(ref: AbstractReference, xparameters: Map[String, String]): AbstractReference = {
     ref match {
       case l: Lambda =>
         l
-      case n@NameReference(ref) =>
+      case n@NameReference(ref, prefix) =>
         xparameters.get(ref) match {
           case Some(value) =>
-            NameReference(value)
+            NameReference(value, prefix)
           case None =>
             n
         }
 
-      case FullReference(ref, parameters) =>
+      case FullReference(ref, prefix, parameters) =>
         val p = parameters.map {
           case TypeParam(ref, kind, variance) =>
-            TypeParam(replace1(ref, xparameters), kind, variance)
+            TypeParam(replaceRefNames(ref, xparameters), kind, variance)
         }
-        FullReference(ref, p)
+        FullReference(ref, prefix, p)
     }
   }
 
