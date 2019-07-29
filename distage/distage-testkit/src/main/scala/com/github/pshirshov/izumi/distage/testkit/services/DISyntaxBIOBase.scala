@@ -6,13 +6,13 @@ import com.github.pshirshov.izumi.functional.bio.BIOError
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
 import distage.{Tag, TagKK}
 
-trait DISyntaxBIOBase[F[+ _, + _]] {
+trait DISyntaxBIOBase[F[+ _, + _], A] {
 
   implicit def tagBIO: TagKK[F]
 
-  protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit
+  protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): A
 
-  protected final def take2(function: ProviderMagnet[F[_, _]], pos: CodePosition): Unit = {
+  protected final def take2(function: ProviderMagnet[F[_, _]], pos: CodePosition): A = {
     val fAsThrowable: ProviderMagnet[F[Throwable, _]] = function
       .zip(ProviderMagnet.identity[BIOError[F]])
       .map[F[Throwable, _]] {
@@ -26,7 +26,7 @@ trait DISyntaxBIOBase[F[+ _, + _]] {
     takeAs1(fAsThrowable, pos)
   }
 
-  protected final def take2[T: Tag](function: T => F[_, _], pos: CodePosition): Unit = {
+  protected final def take2[T: Tag](function: T => F[_, _], pos: CodePosition): A = {
     val providerMagnet: ProviderMagnet[F[_, _]] = {
       x: T =>
         function(x)
@@ -39,6 +39,6 @@ trait DISyntaxBIOBase[F[+ _, + _]] {
 object DISyntaxBIOBase {
 
   final case class BIOBadBranch[A](error: A)
-    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error")
+    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error", null, false, false)
 
 }

@@ -2,6 +2,9 @@ package com.github.pshirshov.izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.TimeUnit
 
+import cats.~>
+import com.github.pshirshov.izumi.distage.model.definition.DIResource
+import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
 import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
@@ -9,6 +12,7 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
 import com.github.pshirshov.izumi.distage.model.{Locator, SplittedPlan}
 import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
+import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import com.github.pshirshov.izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
@@ -23,19 +27,27 @@ trait TODOMemoizeMe {}
 
 
 
-class DistageTestRunner[F[_] : TagK](
+class DistageTestRunner[F[_]: TagK](
                                       reporter: TestReporter,
                                       integrationChecker: IntegrationChecker,
-                                      runnerEnvironment: DistageTestEnvironmentImpl[F],
+                                      runnerEnvironment: DistageTestEnvironment[F],
                                       tests: Seq[DistageTest[F]]
                                     ) {
 
   import DistageTestRunner._
 
   def run(): Unit = {
-    val groups = tests.groupBy(_.environment)
+    resource().foreach(_._2.use {
+      case GroupExecutionEnvironmentResource(runner, effect, groupContinuation) =>
+        implicit val F: DIEffect[F] = effect
+        runner.run(groupContinuation.use(proceedGroup(_)(F.traverse_(_)(identity))))
+    })
+  }
 
-    groups.foreach {
+  def resource(): List[(TestEnvironment, DIResourceBase[Identity, GroupExecutionEnvironmentResource[F]])] = {
+    val groups = tests.groupBy(_.environment).toList
+
+    groups.map {
       case (env, group) =>
         val logger = runnerEnvironment.makeLogger()
         val options = runnerEnvironment.contextOptions()
@@ -46,7 +58,7 @@ class DistageTestRunner[F[_] : TagK](
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverride
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.appOverride
+        val appModule = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.appOverride
 
         val injector = Injector.Standard(bsModule)
 
@@ -61,10 +73,10 @@ class DistageTestRunner[F[_] : TagK](
         assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
         // here we plan all the job for each individual test
         val testplans = group.map {
-          pm =>
-            val keys = pm.test.get.diKeys.toSet
+          test =>
+            val keys = test.fn.get.diKeys.toSet
             val withUnboundParametersAsRoots = runnerEnvironment.addUnboundParametersAsRoots(keys, appModule)
-            pm -> injector.plan(PlannerInput(withUnboundParametersAsRoots, keys))
+            test -> injector.plan(PlannerInput(withUnboundParametersAsRoots, keys))
         }
 
         // here we find all the shared components in each of our individual tests
@@ -86,88 +98,102 @@ class DistageTestRunner[F[_] : TagK](
         checker.verify(runtimePlan)
 
         // first we produce our Monad's runtime
-        injector.produceF[Identity](runtimePlan).use {
+        env -> injector.produceF[Identity](runtimePlan).map {
           runtimeLocator =>
             val runner = runtimeLocator.get[DIEffectRunner[F]]
             implicit val effect: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
 
-            runner.run {
-              // now we produce integration components for our shared plan
-              Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
-                sharedIntegrationLocator =>
-                  check(testplans.map(_._1), shared, effect, sharedIntegrationLocator) {
-                    proceed(checker, testplans, shared, sharedIntegrationLocator)
+            // now we produce integration components for our shared plan
+            GroupExecutionEnvironmentResource(runner, effect, Injector.inherit(runtimeLocator).produceF[F](shared.subplan).flatMap {
+              sharedIntegrationLocator =>
+                DIResource.liftF {
+                  check(testplans.map(_._1), shared, sharedIntegrationLocator)(
+                    fail = effect.fail[DIResourceBase[F, GroupContinuation[F]]](new IntegrationCheckException("Integration check failed", Nil))
+                  ) {
+                    effect.maybeSuspend(groupContinuationResource(checker, testplans, shared, sharedIntegrationLocator))
                   }
-              }
-            }
+                }.flatMap(identity)
+            })
         }
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, effect: DIEffect[F], integLocator: Locator)(f: => F[Unit]): F[Unit] = {
+  def check[F[_], A](testplans: Seq[DistageTest[F]], plans: SplittedPlan, integLocator: Locator)
+                    (fail: => F[A])(succ: => F[A])
+                    (implicit effect: DIEffect[F]): F[A] = {
     integrationChecker.check(plans.subRoots, integLocator) match {
       case Some(value) =>
         effect.traverse_(testplans) {
           test =>
-
             effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
-        }
+        }.flatMap(_ => fail)
 
       case None =>
-        f
+        succ
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  def groupContinuationResource(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)
+                               (implicit effect: DIEffect[F]): DIResourceBase[F, GroupContinuation[F]] = {
+    groupLocatorResource(checker, shared, sharedIntegrationLocator)
+      .map(GroupContinuation(checker, testplans, shared, _))
+  }
+
+  private def groupLocatorResource(checker: PlanCircularDependencyCheck, shared: SplittedPlan, sharedIntegrationLocator: Locator)
+                                  (implicit effect: DIEffect[F]): DIResourceBase[F, Locator] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
     checker.verify(shared.subplan)
-    Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
-      sharedLocator =>
-        val testInjector = Injector.inherit(sharedLocator)
-
-        // now we are ready to run each individual test
-        // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        effect.traverse_(testplans.groupBy {
-          t =>
-            val id = t._1.meta.id
-            SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
-        }) {
-          case (id, plans) =>
-            for {
-              _ <- effect.maybeSuspend(reporter.beginSuite(id))
-              _ <- effect.traverse_(plans) {
-                case (test, testplan) =>
-                  val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
-
-                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
-                    _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-                  }
-
-                  checker.verify(newtestplan.subplan)
-                  checker.verify(newtestplan.primary)
-                  // we are ready to run the test, finally
-                  testInjector.produceF[F](newtestplan.subplan).use {
-                    integLocator =>
-                      check(Seq(test), newtestplan, effect, integLocator) {
-                        proceedIndividual(test, newtestplan, integLocator)
-                      }
-                  }
-              }
-              _ <- effect.maybeSuspend(reporter.endSuite(id))
-            } yield {
-            }
-
-        }
-    }
+    Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary)
   }
 
-  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  def proceedGroup[F[_]: TagK](groupContinuation: GroupContinuation[F])
+                              (sequence: Iterable[F[Unit]] => F[Unit])
+                              (implicit effect: DIEffect[F]): F[Unit] = {
+    val GroupContinuation(checker, testplans, shared, sharedLocator) = groupContinuation
+
+    val testInjector = Injector.inherit(sharedLocator)
+
+    // now we are ready to run each individual suite of tests
+    // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
+    sequence(testplans.groupBy {
+      case (test, _) =>
+        val id = test.meta.id
+        SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
+    }.map {
+      case (id, plans) =>
+        for {
+          _ <- effect.maybeSuspend(reporter.beginSuite(id))
+          _ <- sequence(plans.map {
+            case (test, testplan) =>
+              val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
+
+              val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
+                _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
+              }
+
+              checker.verify(newtestplan.subplan)
+              checker.verify(newtestplan.primary)
+              // we are ready to run the test, finally
+              testInjector.produceF[F](newtestplan.subplan).use {
+                integLocator =>
+                  check(Seq(test), newtestplan, integLocator)(fail = effect.unit) {
+                    proceedIndividual(test, newtestplan, integLocator)
+                  }
+              }
+          })
+          _ <- effect.maybeSuspend(reporter.endSuite(id))
+        } yield ()
+    })
+  }
+
+  def proceedIndividual[F[_]: TagK](test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)
+                                   (implicit effect: DIEffect[F]): F[Unit] = {
     Injector.inherit(integLocator).produceF[F](newtestplan.primary).use {
       testLocator =>
         def doRun(before: Long): F[Unit] = for {
 
-          _ <- testLocator.run(test.test)
+          _ <- testLocator.run(test.fn)
           after <- effect.maybeSuspend(System.nanoTime())
           _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS))))
         } yield {
@@ -197,9 +223,35 @@ class DistageTestRunner[F[_] : TagK](
 
 object DistageTestRunner {
 
+  case class GroupExecutionEnvironment[F[_]](
+                                              effectRunner: DIEffectRunner[F],
+                                              effect: DIEffect[F],
+                                              groupContinuation: GroupContinuation[F],
+                                            )
+
+  case class GroupExecutionEnvironmentResource[F[_]](
+                                                      effectRunner: DIEffectRunner[F],
+                                                      effect: DIEffect[F],
+                                                      groupContinuationResource: DIResourceBase[F, GroupContinuation[F]],
+                                                    )
+
+  case class GroupContinuation[F[_]](
+                                      checker: PlanCircularDependencyCheck,
+                                      testplans: Seq[(DistageTest[F], OrderedPlan)],
+                                      shared: SplittedPlan,
+                                      sharedLocator: Locator,
+                                    ) {
+    def mapK[G[_]: TagK](t: F ~> G): GroupContinuation[G] = {
+      copy(testplans = testplans.map {
+        case (test, plan) =>
+          test.copy(fn = test.fn.map(t(_))) -> plan
+      })
+    }
+  }
+
   case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
 
-  case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
+  case class DistageTest[F[_]](fn: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
 
   case class TestMeta(id: TestId, pos: CodePosition)
 

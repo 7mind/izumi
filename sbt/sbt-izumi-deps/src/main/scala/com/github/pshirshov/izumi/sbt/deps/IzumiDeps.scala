@@ -17,7 +17,7 @@ object IzumiDeps {
     val shapeless = "2.3.3"
 
     val cats = "2.0.0-M4"
-    val zio = "1.0.0-RC10-1"
+    val zio = "1.0.0-SNAPSHOT"
     val zio_interop_cats = "2.0.0.0-RC1"
 
     val circe = "0.12.0-M4"
@@ -53,8 +53,9 @@ object IzumiDeps {
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
-    val zio_core: ModuleID = "dev.zio" %% "zio" % V.zio
-    val zio_interop: ModuleID = "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats
+    val zio_core = "dev.zio" %% "zio" % V.zio
+    val zio_test = "dev.zio" %% "zio-test" % V.zio
+    val zio_interop = "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
 
@@ -67,8 +68,8 @@ object IzumiDeps {
     val cats_core = "org.typelevel" %% "cats-core" % V.cats
     val cats_effect = "org.typelevel" %% "cats-effect" % V.cats
     val cats_all: Seq[ModuleID] = Seq(
-      cats_core
-      , cats_effect
+      cats_core,
+      cats_effect,
     )
 
     // TODO: can't shade scalameta https://github.com/coursier/coursier/issues/801
@@ -90,13 +91,13 @@ object IzumiDeps {
     ).map(_ % V.circe)
 
     val http4s_client: Seq[ModuleID] = Seq(
-      "org.http4s" %% "http4s-blaze-client"
+      "org.http4s" %% "http4s-blaze-client",
     ).map(_ % V.http4s)
 
     val http4s_server: Seq[ModuleID] = Seq(
-      "org.http4s" %% "http4s-dsl"
-      , "org.http4s" %% "http4s-circe"
-      , "org.http4s" %% "http4s-blaze-server"
+      "org.http4s" %% "http4s-dsl",
+      "org.http4s" %% "http4s-circe",
+      "org.http4s" %% "http4s-blaze-server",
     ).map(_ % V.http4s)
 
     val http4s_all: Seq[ModuleID] = http4s_server ++ http4s_client

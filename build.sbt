@@ -345,7 +345,11 @@ lazy val distageStatic = inDiStage.as.module
 lazy val distageTestkit = inDiStage.as.module
   .depends(distageCore, distagePlugins, distageConfig, distageRoles, logstageDi)
   .settings(
-    libraryDependencies ++= Seq(R.scalatest)
+    libraryDependencies ++= Seq(
+      R.scalatest,
+      R.zio_test,
+      R.cats_effect,
+    )
   )
 //-----------------------------------------------------------------------------
 

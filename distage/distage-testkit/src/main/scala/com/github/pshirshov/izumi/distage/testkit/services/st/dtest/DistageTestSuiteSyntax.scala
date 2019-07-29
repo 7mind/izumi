@@ -57,6 +57,25 @@ object DistageTestSuiteSyntax {
       Seq(left, verb, name).mkString(" ")
     }
   }
+
+  trait ScalatestLikeInWord[F[_], A] extends DISyntaxBase[F, A] {
+    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): A = {
+      takeAny(function, pos.get)
+    }
+
+    def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): A = {
+      takeIO(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): A = {
+      takeFunIO(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): A = {
+      takeFunAny(function, pos.get)
+    }
+  }
+
   class DSWordSpecStringWrapper[F[_]](
                                      context: Option[SuiteContext],
                                      suiteName: String,
@@ -67,7 +86,7 @@ object DistageTestSuiteSyntax {
                                    )
                                    (
                                      implicit val tagMonoIO: TagK[F]
-                                   ) extends DISyntaxBase[F] {
+                                   ) extends DISyntaxBase[F, Unit] {
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -106,7 +125,7 @@ object DistageTestSuiteSyntax {
                                            (
                                              implicit val tagMonoIO: TagK[F[Throwable, ?]],
                                              val tagBIO: TagKK[F],
-                                           ) extends DISyntaxBIOBase[F] {
+                                           ) extends DISyntaxBIOBase[F, Unit] {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(

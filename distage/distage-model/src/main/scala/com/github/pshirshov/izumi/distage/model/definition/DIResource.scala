@@ -195,6 +195,17 @@ object DIResource {
     }
   }
 
+  implicit final class DIResourceIdentityToEffect[A](private val resource: DIResourceBase[Identity, A]) extends AnyVal {
+    def toEffect[F[_]](implicit F: DIEffect[F]): DIResourceBase[F, A] = {
+      new DIResourceBase[F, A] {
+        override type InnerResource = resource.InnerResource
+        override def acquire: F[InnerResource] = F.maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): F[Unit] = F.maybeSuspend(resource.release(res))
+        override def extract(res: InnerResource): A = resource.extract(res)
+      }
+    }
+  }
+
   trait Simple[A] extends DIResource[Identity, A]
 
   trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
