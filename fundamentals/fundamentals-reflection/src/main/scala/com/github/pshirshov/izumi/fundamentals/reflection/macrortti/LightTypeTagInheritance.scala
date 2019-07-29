@@ -48,6 +48,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   }
 
   private def isChild(st: LightTypeTag, ot: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
+
     if (st == ot) {
       true
     } else if (st == nothing || ot == any || ot == anyRef) {
@@ -67,6 +68,8 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
                   // - F2[_] <: F1[_] => F2[Int] <: F1[Int]
                   // - shape-changing parents
                   // though it comes with a price of additional tree overhead/runtime overhead.
+                  //println(s"$st vs $ot, $parents")
+
                   parents.exists {
                     knownParent =>
                       isChild(knownParent, o, ctx)

@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
+import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, SingletonUniverse}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
@@ -98,16 +98,16 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
     }
 
     argStruct match {
-       case r: RefinedTypeApi =>
-         r.decl(TypeName("Arg")) match {
-           case sym: TypeSymbolApi =>
-             val res = makeFLTTImpl(sym.info.typeConstructor)
-             // FIXME: `appliedType` doesn't work here for some reason; have to write down the entire name
-             c.Expr[LHKTag[ArgStruct]](q"new _root_.com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LHKTag[$argStruct]($res)")
-           case _ => badShapeError(r)
-         }
-       case other => badShapeError(other)
-     }
+      case r: RefinedTypeApi =>
+        r.decl(TypeName("Arg")) match {
+          case sym: TypeSymbolApi =>
+            val res = makeFLTTImpl(sym.info.typeConstructor)
+            // FIXME: `appliedType` doesn't work here for some reason; have to write down the entire name
+            c.Expr[LHKTag[ArgStruct]](q"new _root_.com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LHKTag[$argStruct]($res)")
+          case _ => badShapeError(r)
+        }
+      case other => badShapeError(other)
+    }
   }
 
   protected def makeFLTTImpl(tpe: Type): c.Expr[FLTT] = {
@@ -115,9 +115,9 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
     // FIXME: makeWeakTag should disable this check
 
     // FIXME: summon LTag[Nothing] fails
-//    if (tpe.typeSymbol.isParameter) {
-//      c.abort(c.enclosingPosition, s"Can't assemble Light Type Tag for $tpe – it's an abstract type parameter")
-//    }
+    //    if (tpe.typeSymbol.isParameter) {
+    //      c.abort(c.enclosingPosition, s"Can't assemble Light Type Tag for $tpe – it's an abstract type parameter")
+    //    }
 
     c.Expr[FLTT](lifted_FLLT(impl.makeFLTT(tpe)))
   }
@@ -132,11 +132,17 @@ object LightTypeTagImpl {
 
 // FIXME: AnyVal makes this impossible to override ...
 final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends AnyVal {
+
   import u._
 
   @inline private[this] def any: Type = definitions.AnyTpe
+
   @inline private[this] def obj: Type = definitions.ObjectTpe
+
   @inline private[this] def nothing: Type = definitions.NothingTpe
+
+  @inline private[this] def ignored: Set[Type] = Set(any, obj, nothing)
+
 
   def makeFLTT(tpe: Type): FLTT = {
     val out = makeRef(tpe, Set(tpe), Map.empty)
@@ -167,17 +173,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
               (NameReference(targetNameRef), makeRef(b, Set(b), Map.empty))
           }
       }
-      .toMultimap.mapValues {
-      parents =>
-        parents.collect {
-          case r: AppliedReference =>
-            r.asName
-        }
-    }
+      .toMultimap
+      .map {
+        case (t, parents) =>
+          t -> parents
+            .collect {
+              case r: AppliedReference =>
+                r.asName
+            }
+            .filterNot(_ == t)
+      }
 
 
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Map(
-      out -> tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).toSet
+      out -> tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out).toSet
     )
 
     //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -213,7 +222,11 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
       .filterNot {
         s =>
           val btype = s.asType.toType
-          btype =:= any || btype =:= obj || btype.erasure =:= tpe.erasure
+          //          println(s"${btype} vs ${tpe}")
+          //          println(btype.erasure)
+          //          println(tpe.erasure)
+
+          ignored.exists(_ =:= btype) || btype =:= tpe /*|| btype.erasure =:= norm(ReflectionUtil.deannotate(tpe)).erasure.asInstanceOf[Type]*/
       }
       .map(s => tpef.baseType(s))
 
@@ -230,6 +243,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
   private def makeRef(tpe: Type, path: Set[Type], terminalNames: Map[String, LambdaParameter], level: Int = 0): AbstractReference = {
     import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     val debug = false
+
     def xprintln(s: => String): Unit = {
       if (debug) {
         println(s.shift(level, "  "))
@@ -307,7 +321,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
           nameref
 
         case args =>
-          val params = args.zip(t.typeConstructor.typeParams).map {
+          val params = args.zip(t.dealias.typeConstructor.typeParams).map {
             case (a, pa) =>
               TypeParam(makeRef(a), makeKind(pa.asType.toType), toVariance(pa.asType))
           }
