@@ -81,8 +81,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
 
       val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
 
-      assert(context.get[Int]("1") == 1)
-      assert(context.get[Int]("2") == 2)
+      assert(context.get[Int]("1") != context.get[Int]("2"))
       assert(context.get[Ref[Fn, Int]].get.unsafeRun() == 2)
     }
 
