@@ -136,6 +136,16 @@ val MicrositeSettings = new SettingsGroup {
   ).flatten
 }
 
+val JSSettings = new SettingsGroup {
+  override val id = SettingsGroupId("JSSettings")
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      coverageEnabled := false
+    )
+  ).flatten
+}
+
 // --------------------------------------------
 
 lazy val inRoot = In(".")
@@ -207,6 +217,7 @@ lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
 lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm.remember
 lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
   .enablePlugins(ScalaJSBundlerPlugin)
+  .settings(JSSettings)
   .settings(
     scalaJSModuleKind := ModuleKind.CommonJSModule,
     npmDependencies in Compile ++= Seq(
@@ -217,6 +228,7 @@ lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
 lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
 lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
 lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
+  .settings(JSSettings)
 
 
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
@@ -227,6 +239,7 @@ lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   )
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
+  .settings(JSSettings)
 
 
 lazy val WithFundamentals = new SettingsGroup {
@@ -268,6 +281,7 @@ lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
 
 lazy val fundamentalsReflectionJvm = fundamentalsReflection.jvm.remember
 lazy val fundamentalsReflectionJs = fundamentalsReflection.js.remember
+  .settings(JSSettings)
 
 lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
@@ -277,6 +291,7 @@ lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
 lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
 lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
   .settings(libraryDependencies += C.jawn)
+  .settings(JSSettings)
 
 //-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
@@ -359,6 +374,7 @@ lazy val logstageApi = inLogStageX.as.cross(platforms)
   )
 lazy val logstageApiJvm = logstageApi.jvm.remember
 lazy val logstageApiJs = logstageApi.js.remember
+  .settings(JSSettings)
 
 lazy val logstageCore = inLogStageX.as.cross(platforms)
   .depends(logstageApi.ets, fundamentalsBio)
@@ -371,11 +387,13 @@ lazy val logstageCore = inLogStageX.as.cross(platforms)
   )
 lazy val logstageCoreJvm = logstageCore.jvm.remember
 lazy val logstageCoreJs = logstageCore.js.remember
+  .settings(JSSettings)
 
 lazy val logstageRenderingCirce = inLogStageX.as.cross(platforms)
   .depends(logstageCore.ets, fundamentalsJsonCirce)
 lazy val logstageRenderingCirceJvm = logstageRenderingCirce.jvm.remember
 lazy val logstageRenderingCirceJs = logstageRenderingCirce.js.remember
+  .settings(JSSettings)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
@@ -404,16 +422,21 @@ lazy val logstageSinkSlf4j = inLogStage.as.module
     logstageCoreJvm.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 lazy val idealinguaV1Model = inIdealinguaV1X.as.cross(platforms)
 lazy val idealinguaV1ModelJvm = idealinguaV1Model.jvm.remember
 lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
+  .settings(JSSettings)
+
 
 lazy val idealinguaV1Core = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
   .depends(idealinguaV1Model, fundamentalsReflection)
 lazy val idealinguaV1CoreJvm = idealinguaV1Core.jvm.remember
 lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
+  .settings(JSSettings)
 
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
@@ -424,8 +447,11 @@ lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
 
 lazy val idealinguaV1RuntimeRpcScalaJvm = idealinguaV1RuntimeRpcScala.jvm.remember
 lazy val idealinguaV1RuntimeRpcScalaJs = idealinguaV1RuntimeRpcScala.js.remember
+  .settings(JSSettings)
+
 
 lazy val idealinguaV1TestDefs = inIdealinguaV1.as.module.dependsOn(idealinguaV1RuntimeRpcScalaJvm)
+
 
 lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
@@ -446,8 +472,8 @@ lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
     idealinguaV1RuntimeRpcGo,
     idealinguaV1RuntimeRpcCSharp,
   ).map(_.testOnlyRef))
-
 lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
+  .settings(JSSettings)
 
 
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
