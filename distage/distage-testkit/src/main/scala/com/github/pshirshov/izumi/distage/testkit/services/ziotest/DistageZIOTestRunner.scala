@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
 import com.github.pshirshov.izumi.distage.roles.services.{IntegrationChecker, IntegrationCheckerImpl}
 import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.{TestReporter, _}
 import com.github.pshirshov.izumi.distage.testkit.services.dstest._
-import com.github.pshirshov.izumi.distage.testkit.services.st.adapter.DISyntax0
 import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax
 import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax.ScalatestLikeInWord
 import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition

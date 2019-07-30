@@ -86,7 +86,7 @@ object DistageTestSuiteSyntax {
                                    )
                                    (
                                      implicit val tagMonoIO: TagK[F]
-                                   ) extends DISyntaxBase[F, Unit] {
+                                   ) extends ScalatestLikeInWord[F, Unit] {
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -95,22 +95,6 @@ object DistageTestSuiteSyntax {
         suiteName,
       )
       reg.registerTest(function, env, pos, id)
-    }
-
-    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
-    }
-
-    def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      takeIO(function, pos.get)
-    }
-
-    def in[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      takeFunIO(function, pos.get)
-    }
-
-    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeFunAny(function, pos.get)
     }
   }
 
