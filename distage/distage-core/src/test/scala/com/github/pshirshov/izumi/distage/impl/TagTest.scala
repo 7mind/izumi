@@ -266,10 +266,15 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "scalac bug: can't find HKTag when obscured by type lambda" in {
-      assertCompiles("HKTag.fromTypeTag[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.fromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
-//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
-//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
+      assertCompiles("HKTag.hktagFromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.hktagFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+      // The error produced above is:
+      //   Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+      //   HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
+      // That means that result of applying lambda:
+      //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
+      //  != HKTag[{ type Arg[C] = F[C] }]
+      // For Scalac. which necessitates another macro call for fixup ._.
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {
