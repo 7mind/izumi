@@ -109,7 +109,7 @@ class LightTypeTagTest extends WordSpec {
 
   "lightweight type tags" should {
     "support human-readable representation" in {
-      assertRepr(`LTT[_]`[R1], "λ %0 → R1[=0]")
+      assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
       assertRepr(`LTT[_]`[Nothing], "Nothing")
       assertRepr(LTT[Int], "Int")
       assertRepr(LTT[List[Int]], "List[+Int]")

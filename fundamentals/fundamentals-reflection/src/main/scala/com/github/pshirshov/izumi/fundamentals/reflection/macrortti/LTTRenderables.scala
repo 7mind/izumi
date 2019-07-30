@@ -81,11 +81,34 @@ trait LTTRenderables extends WithRenderableSyntax {
 object LTTRenderables {
 
   object Short extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] = _.ref.split('.').last
+    override protected def nameRefRenderer: Renderable[NameReference] = new Renderable[NameReference] {
+      override def render(value: NameReference): String = {
+        val r = value.ref.split('.').last
+        value.prefix match {
+          case Some(p) =>
+
+            s"${(p:LightTypeTag).render()}::${r}"
+          case None =>
+            r
+        }
+      }
+    }
+
   }
 
   object Long extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] = _.ref
+    override protected def nameRefRenderer: Renderable[NameReference] =  new Renderable[NameReference] {
+      override def render(value: NameReference): String = {
+        val r = value.ref
+        value.prefix match {
+          case Some(p) =>
+
+            s"${(p:LightTypeTag).render()}::${r}"
+          case None =>
+            r
+        }
+      }
+    }
   }
 
 }
