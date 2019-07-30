@@ -7,7 +7,7 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api.Universe
-import scala.reflect.internal.Types
+import scala.reflect.internal
 import scala.reflect.macros.blackbox
 
 object LTT {
@@ -130,19 +130,59 @@ object LightTypeTagImpl {
   }
 }
 
+sealed trait Broken[T] {
+  def toSet: Set[T]
+
+}
+
+object Broken {
+
+  case class Single[T](t: T) extends Broken[T] {
+    override def toSet: Set[T] = Set(t)
+  }
+
+  case class Compound[T](tpes: Set[T]) extends Broken[T] {
+    override def toSet: Set[T] = tpes
+  }
+
+}
+
 // FIXME: AnyVal makes this impossible to override ...
-final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends AnyVal {
+final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
   import u._
 
-  @inline private[this] def any: Type = definitions.AnyTpe
+  @inline private[this] final val any: Type = definitions.AnyTpe
 
-  @inline private[this] def obj: Type = definitions.ObjectTpe
+  @inline private[this] final val obj: Type = definitions.ObjectTpe
 
-  @inline private[this] def nothing: Type = definitions.NothingTpe
+  @inline private[this] final val nothing: Type = definitions.NothingTpe
 
-  @inline private[this] def ignored: Set[Type] = Set(any, obj, nothing)
+  @inline private[this] final val ignored: Set[Type] = Set(any, obj, nothing)
 
+  @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
+  @inline private[this] final val is = u.asInstanceOf[scala.reflect.internal.Symbols]
+
+  def breakRefinement(t: Type): Broken[Type] = {
+    val tpef = if (t.takesTypeArgs) {
+      t.etaExpand.dealias.resultType.dealias.resultType
+    } else {
+      t.dealias.resultType
+    }
+
+    val out = if (tpef.isInstanceOf[it.RefinementTypeRef]) {
+      val x = tpef.asInstanceOf[it.RefinementTypeRef]
+      Broken.Compound(x.parents.map(_.asInstanceOf[Type]).toSet)
+    } else {
+      tpef match {
+        case r: RefinedTypeApi =>
+          Broken.Compound(r.parents.toSet)
+        case o =>
+          Broken.Single(o)
+      }
+    }
+    out
+  }
 
   def makeFLTT(tpe: Type): FLTT = {
     val out = makeRef(tpe, Set(tpe), Map.empty)
@@ -151,16 +191,21 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val inhdb = inh
       .flatMap {
+        t =>
+          breakRefinement(t).toSet
+      }
+      .flatMap {
         i =>
           val tpef = i.dealias.resultType
           val targetNameRef = tpef.typeSymbol.fullName
           val prefix = toPrefix(tpef)
+          val targetRef = NameReference(targetNameRef, prefix)
 
           val srcname = i match {
             case a: TypeRefApi =>
               val srcname = a.sym.fullName
               if (srcname != targetNameRef) {
-                Seq((NameReference(srcname, toPrefix(i)), NameReference(targetNameRef, prefix)))
+                Seq((NameReference(srcname, toPrefix(i)), targetRef))
               } else {
                 Seq.empty
               }
@@ -169,11 +214,17 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
               Seq.empty
           }
 
-
           val allbases = tpeBases(i)
+
+          if (targetRef.toString.contains("refine")) {
+            println(("!!!", i, tpef, tpef.getClass, showRaw(tpef.typeConstructor), targetRef, prefix, allbases, i.typeSymbol.isParameter))
+            new Throwable().printStackTrace()
+          }
+
+
           srcname ++ allbases.map {
             b =>
-              (NameReference(targetNameRef, prefix), makeRef(b, Set(b), Map.empty))
+              (targetRef, makeRef(b, Set(b), Map.empty))
           }
       }
       .toMultimap
@@ -181,7 +232,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
         case (t, parents) =>
           t -> parents
             .collect {
-              case r: AppliedReference =>
+              case r: AppliedNamedReference =>
                 r.asName
             }
             .filterNot(_ == t)
@@ -216,11 +267,12 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
   }
 
   private def tpeBases(tpe: Type): Seq[Type] = {
-    tpeBases(tpe, tpe.dealias.resultType)
+    tpeBases(tpe, withHollow = false)
   }
 
-  private def tpeBases(tpe: Type, tpef: Type, withHollow: Boolean = false): Seq[Type] = {
-    val higherBases = tpe.baseClasses
+  private def tpeBases(tpe: Type, withHollow: Boolean): Seq[Type] = {
+    val tpef = tpe.dealias.resultType
+    val higherBases = tpef.baseClasses
     val parameterizedBases = higherBases
       .filterNot {
         s =>
@@ -229,7 +281,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
           //          println(btype.erasure)
           //          println(tpe.erasure)
 
-          ignored.exists(_ =:= btype) || btype =:= tpe /*|| btype.erasure =:= norm(ReflectionUtil.deannotate(tpe)).erasure.asInstanceOf[Type]*/
+          ignored.exists(_ =:= btype) || btype =:= tpef /*|| btype.erasure =:= norm(ReflectionUtil.deannotate(tpe)).erasure.asInstanceOf[Type]*/
       }
       .map(s => tpef.baseType(s))
 
@@ -307,7 +359,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
       Lambda(lamParams.map(_._2), reference)
     }
 
-    def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
+    def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedNamedReference = {
       val tpef = t.dealias.resultType
       val prefix = toPrefix(tpef)
       val typeSymbol = tpef.typeSymbol
@@ -333,6 +385,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
       }
     }
 
+
+    def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
+      val tpef = t.dealias.resultType
+
+      breakRefinement(t) match {
+        case Broken.Single(t) =>
+          unpack(tpef, rules)
+
+        case Broken.Compound(tpes) =>
+          val parts = tpes.map(p => unpack(p, rules))
+          IntersectionReference(parts)
+      }
+    }
+
     val out = tpe match {
       case _: PolyTypeApi =>
         makeLambda(tpe)
@@ -340,7 +406,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
 
         xprintln(s"typearg type $p, context: $terminalNames")
         if (terminalNames.contains(p.typeSymbol.fullName)) {
-          unpack(p, terminalNames)
+          unpackRefined(p, terminalNames)
         } else {
           makeLambda(p)
         }
@@ -348,21 +414,33 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) extends Any
       case c =>
         xprintln(s"applied type $c, context: $terminalNames")
 
-        unpack(c, terminalNames)
+        unpackRefined(c, terminalNames)
     }
 
     out
   }
 
-  private def toPrefix(tpef: u.Type) = {
+
+  private def toPrefix(tpef: u.Type): Option[AppliedNamedReference] = {
+
     tpef match {
       case t: TypeRefApi =>
-        val np = u.asInstanceOf[Types].NoPrefix
-        if (!t.pre.typeSymbol.isPackage && !(t.pre == np)) {
-          Some(makeRef(t.pre, Set(t.pre), Map.empty).asInstanceOf[AppliedReference])
-        } else {
-          None
+        t.pre match {
+          case i if i.typeSymbol.isPackage =>
+            None
+          case k if k == it.NoPrefix =>
+            None
+          case o =>
+            o.termSymbol match {
+              case k if k == is.NoSymbol =>
+                Some(makeRef(o, Set(o), Map.empty).asInstanceOf[AppliedNamedReference])
+
+              case s =>
+                Some(NameReference(s.fullName, None))
+
+            }
         }
+
       case _ =>
         None
     }

@@ -79,18 +79,24 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  sealed trait AppliedReference extends AbstractReference {
+  sealed trait AppliedReference extends AbstractReference
+
+  sealed trait AppliedNamedReference extends AppliedReference {
     def asName: NameReference
   }
 
-  case class NameReference(ref: String, prefix: Option[AppliedReference]) extends AppliedReference {
+  case class IntersectionReference(refs: Set[AppliedNamedReference]) extends AppliedReference {
+    override def toString: String = this.render()
+  }
+
+  case class NameReference(ref: String, prefix: Option[AppliedNamedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = this
 
     override def toString: String = this.render()
   }
 
-  case class FullReference(ref: String, prefix: Option[AppliedReference], parameters: List[TypeParam]) extends AppliedReference {
+  case class FullReference(ref: String, prefix: Option[AppliedNamedReference], parameters: List[TypeParam]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix)
 

@@ -14,11 +14,12 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
 //  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-//  println("")
-//  println(ib.niceList())
-//  println(bdb.niceList())
+//
+//  println(s"${self} vs ${other}")
+//  println(s"inheritance: ${ib.niceList()}")
+//  println(s"bases: ${bdb.niceList()}")
 
-  def parentsOf(t: NameReference): Set[AppliedReference] = {
+  def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
     val out = mutable.HashSet[NameReference]()
     val tested = mutable.HashSet[NameReference]()
     parentsOf(t, out, tested)
@@ -76,6 +77,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
                   }
                 }
+
                 oneOfKnownParentsIsInherited(o, parents) || shapeHeuristic(s, o, ctx)
               case _ =>
                 shapeHeuristic(s, o, ctx)
@@ -87,14 +89,29 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
         case (s: NameReference, o: NameReference) =>
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || ctx.map(_.name).contains(o.ref)
-        case (_: AppliedReference, o: Lambda) =>
+        case (_: AppliedNamedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
-        case (_: Lambda, _: AppliedReference) =>
-          // TODO: this may be useful in case we consider boundaries
-
-          false
+        case (s: Lambda, o: AppliedNamedReference) =>
+          isChild(s.output, o, s.input)
         case (s: Lambda, o: Lambda) =>
-          s.input == o.input && isChild(s.output, o.output, ctx)
+          s.input == o.input && isChild(s.output, o.output, s.input)
+        case (s: IntersectionReference, o: IntersectionReference) =>
+          s.refs.forall {
+            c =>
+              o.refs.exists {
+                p =>
+                  isChild(c, p, ctx)
+              }
+          }
+        case (s: IntersectionReference, o: LightTypeTag) =>
+          s.refs.exists(c => isChild(c, o, ctx))
+        case (s: LightTypeTag, o: IntersectionReference) =>
+          s match {
+            case _: Lambda =>
+              false
+            case sn: AppliedNamedReference =>
+              o.refs.forall(o => isChild(sn, o, ctx))
+          }
       }
     }
   }

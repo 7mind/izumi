@@ -35,9 +35,11 @@ class LightTypeTagTest extends WordSpec {
 
   trait W1
 
-  trait W2
+  trait W2 extends W1
 
   trait W3[_]
+
+  trait W4[A] extends W3[A]
 
   trait I1
 
@@ -80,11 +82,24 @@ class LightTypeTagTest extends WordSpec {
     ()
   }
 
-  def assertChild(t: FLTT, expected: FLTT): Unit = {
-    info(s"$t <?< $expected")
-    assert(t <:< expected)
+  def assertDifferent(t: FLTT, expected: FLTT): Unit = {
+    info(s"$t =!= $expected")
+    assert(!(t =:= expected))
     ()
   }
+
+  def assertChild(child: FLTT, parent: FLTT): Unit = {
+    info(s"$child <?< $parent")
+    assert(child <:< parent)
+    ()
+  }
+
+  def assertNotChild(child: FLTT, parent: FLTT): Unit = {
+    info(s"$child <!< $parent")
+    assert(!(child <:< parent))
+    ()
+  }
+
 
   def assertCombine(outer: FLTT, inner: Seq[FLTT], expected: FLTT): Unit = {
     val combined = outer.combine(inner: _*)
@@ -151,7 +166,7 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
       assertChild(LTT[List[Int]], `LTT[_]`[List])
-      assert(!(LTT[Set[Int]] <:< `LTT[_]`[Set]))
+      assertNotChild(LTT[Set[Int]], `LTT[_]`[Set])
 
       assertChild(LTT[FM2[I2]], LTT[FM1[I1, Unit]])
       assertChild(LTT[FM2[I2]], `LTT[_,_]`[FM1])
@@ -165,7 +180,7 @@ class LightTypeTagTest extends WordSpec {
         override type A = Int
       }
 
-      assert(LTT[a.A] == LTT[Int])
+      assertSame(LTT[a.A], LTT[Int])
 
       val a1: C = new C {
         override type A = Int
@@ -174,8 +189,8 @@ class LightTypeTagTest extends WordSpec {
         override type A = String
       }
 
-      assert(!(LTT[a1.A] =:= LTT[Int]))
-      assertSame(LTT[a1.A], LTT[a2.A])
+      assertDifferent(LTT[a1.A], LTT[Int])
+      assertDifferent(LTT[a1.A], LTT[a2.A])
     }
 
     "support complex type lambdas" in {
@@ -185,24 +200,43 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
-      assert(LTT[ {def a: Int}] == LTT[ {def a: Int}])
-      assert(LTT[C {def a: Int}] == LTT[C {def a: Int}])
-      assert(LTT[C {def a: Int}] != LTT[ {def a: Int}])
-      assert(LTT[C {def a: Int}] != LTT[C])
-      assert(LTT[C {def a: Int}] != LTT[C {def a: Int; def b: Int}])
+      assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
+      assertSame(LTT[C {def a: Int}], LTT[C {def a: Int}])
+      assertDifferent(LTT[C {def a: Int}], LTT[ {def a: Int}])
+      assertDifferent(LTT[C {def a: Int}], LTT[C])
+      assertDifferent(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
     }
 
     "support TagK* family summoners" in {
-      assert(LTagK[List].fullLightTypeTag == `LTT[_]`[List])
+      assertSame(LTagK[List].fullLightTypeTag, `LTT[_]`[List])
     }
 
-    "progression test: DON'T support intersection type equality" in intercept[TestFailedException] {
-      type T1[A] = W3[A] with W2
-      type T2[A] = W3[A] with W1
+    "support intersection type equality" in {
+      type T1[A] = W3[A] with W1
+      type T2[A] = W4[A] with W2
 
-      assert(`LTT[_]`[T1] == `LTT[_]`[T1])
-      assert(`LTT[_]`[T1] != `LTT[_]`[T2])
+      assertSame(`LTT[_]`[T1], `LTT[_]`[T1])
+      assertDifferent(`LTT[_]`[T1], `LTT[_]`[T2])
     }
+
+    "support intersection type subtype checks" in {
+      type F1 = W3[Int] with W1
+      type F2 = W4[Int] with W2
+
+      type T1[A] = W3[A] with W1
+      type T2[A] = W4[A] with W2
+
+      assertChild(LTT[F1], LTT[W3[Int]])
+      assertChild(LTT[F1], LTT[W1])
+      assertChild(LTT[F2], LTT[F1])
+
+
+      assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
+      assertChild(`LTT[_]`[T1], `LTT[_]`[W3])
+      assertChild(`LTT[_]`[T1], LTT[W1])
+      assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
+    }
+
 
     "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {
       val a1 = new C {
@@ -213,7 +247,7 @@ class LightTypeTagTest extends WordSpec {
       }
       Z.discard()
 
-      assert(LTT[a1.A] == LTT[Z.X#A])
+      assertSame(LTT[a1.A], LTT[Z.X#A])
     }
 
   }

@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.functional.{Renderable, WithRenderableSyntax}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, Boundaries, FullReference, Lambda, LambdaParameter, NameReference, TypeParam, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, TypeParam, Variance}
 
 trait LTTRenderables extends WithRenderableSyntax {
 
@@ -11,15 +11,21 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit def r_AbstractReference: Renderable[AbstractReference] = {
+    case a: AppliedNamedReference =>
+      a.render()
     case l: Lambda =>
       l.render()
+    case i: IntersectionReference =>
+      i.render()
+
+  }
+
+  implicit def r_AppliedNamedReference: Renderable[AppliedNamedReference] = {
     case n: NameReference =>
       n.render()
     case f: FullReference =>
       f.render()
-
   }
-
 
   implicit def r_Lambda: Renderable[Lambda] = (value: Lambda) => {
     s"λ ${value.input.map(_.render()).mkString(",")} → ${value.output.render()}"
@@ -41,6 +47,10 @@ trait LTTRenderables extends WithRenderableSyntax {
 
   implicit def r_FullReference: Renderable[FullReference] = (value: FullReference) => {
     s"${value.asName.render()}${value.parameters.map(_.render()).mkString("[", ",", "]")}"
+  }
+
+  implicit def r_IntersectionReference: Renderable[IntersectionReference] = (value: IntersectionReference) => {
+    value.refs.map(_.render()).mkString("(", " & ", ")")
   }
 
   implicit def r_TypeParam: Renderable[TypeParam] = (value: TypeParam) => {

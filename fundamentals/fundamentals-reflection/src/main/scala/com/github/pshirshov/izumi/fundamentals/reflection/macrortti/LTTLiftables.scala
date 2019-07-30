@@ -40,6 +40,14 @@ protected[macrortti] trait LTTLiftables {
   }
 
   implicit val lifted_AppliedReference: Liftable[AppliedReference] = Liftable[AppliedReference] {
+    case nr: AppliedNamedReference =>
+      lifted_AppliedNamedReference.apply(nr)
+    case IntersectionReference(p) =>
+      q"$LightTypeTag.IntersectionReference($p)"
+
+  }
+
+  implicit val lifted_AppliedNamedReference: Liftable[AppliedNamedReference] = Liftable[AppliedNamedReference] {
     case nr: NameReference =>
       lifted_NameReference.apply(nr)
     case FullReference(ref, prefix, parameters) =>

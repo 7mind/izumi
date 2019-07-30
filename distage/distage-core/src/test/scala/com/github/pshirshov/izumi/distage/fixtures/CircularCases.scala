@@ -123,18 +123,18 @@ object CircularCases {
 
     class K8ProbesHttpRoutes
     (
-      healthCheckService: HealthCheckService
+      val healthCheckService: HealthCheckService
     )
 
     class TGLegacyRestService
     class HealthChecker
 
-    class HealthCheckHttpRoutes(healthCheckService: HealthCheckService)
-    class HealthCheckService(healthCheckers: Set[HealthChecker])
+    class HealthCheckHttpRoutes(val healthCheckService: HealthCheckService)
+    class HealthCheckService(val healthCheckers: Set[HealthChecker])
 
     class IRTMultiplexorWithRateLimiter
     (
-       list: Set[IRTWrappedService]
+      val list: Set[IRTWrappedService]
     )
 
     class WsSessionListener[A]
@@ -143,7 +143,7 @@ object CircularCases {
     class IRTWrappedService
 
 
-    class DynamoClient(dynamoComponent: DynamoComponent)
+    class DynamoClient(val dynamoComponent: DynamoComponent)
 
     class DynamoComponent(
                            val dynamoDDLService: DynamoDDLService
@@ -152,12 +152,12 @@ object CircularCases {
       with IntegrationComponent
 
     class DynamoDDLService(
-                          groups: Set[DynamoDDLGroup]
-                          , dynamoClient: DynamoClient
+                            val groups: Set[DynamoDDLGroup]
+                          , val dynamoClient: DynamoClient
                           )
 
     class DynamoQueryExecutorService(
-                                    client: DynamoClient
+                                      val client: DynamoClient
                                     )
 
     case class DynamoDDLGroup(a: Set[DynamoTable])
@@ -166,40 +166,40 @@ object CircularCases {
 
     class ConfigurationRepository
     (
-      dynamoQueryExecutorService: DynamoQueryExecutorService
+      val dynamoQueryExecutorService: DynamoQueryExecutorService
     )
 
-    class IRTClientMultiplexor(clients: Set[IRTWrappedClient])
+    class IRTClientMultiplexor(val clients: Set[IRTWrappedClient])
     class IRTServerBindings(
-                             codec: IRTClientMultiplexor
-                              , listeners: Set[WsSessionListener[String]]
-                            , limiter: IRTMultiplexorWithRateLimiter
+                             val codec: IRTClientMultiplexor
+                              , val listeners: Set[WsSessionListener[String]]
+                            , val limiter: IRTMultiplexorWithRateLimiter
                            )
 
     class HttpServerLauncher(
-                              bindings: IRTServerBindings
-                            , healthCheck: HealthCheckHttpRoutes
-                            , restServices: Set[TGLegacyRestService]
-                            , k8Probes: K8ProbesHttpRoutes
+                              val bindings: IRTServerBindings
+                            , val healthCheck: HealthCheckHttpRoutes
+                            , val restServices: Set[TGLegacyRestService]
+                            , val k8Probes: K8ProbesHttpRoutes
                             ) extends AutoCloseable {
       override def close(): Unit = ()
     }
 
     class TgHttpComponent(
-                           server: HttpServerLauncher
+                           val server: HttpServerLauncher
                          ) extends RoleComponent
 
     class RoleStarter(
-                      services: Set[RoleService]
-                     , closeables: Set[AutoCloseable]
-                     , lifecycleManager: ComponentsLifecycleManager
+                       val services: Set[RoleService]
+                     , val closeables: Set[AutoCloseable]
+                     , val lifecycleManager: ComponentsLifecycleManager
                      )
 
-    class ComponentsLifecycleManager(components: Set[RoleComponent])
+    class ComponentsLifecycleManager(val components: Set[RoleComponent])
 
     class Sonar(
-                TgHttpComponent: TgHttpComponent
-               , dynamoDDL: DynamoDDLService
+                 val TgHttpComponent: TgHttpComponent
+               , val dynamoDDL: DynamoDDLService
                ) extends RoleService
   }
 
