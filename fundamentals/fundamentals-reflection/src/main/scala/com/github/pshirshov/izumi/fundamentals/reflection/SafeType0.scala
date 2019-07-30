@@ -21,7 +21,7 @@ class SafeType0[U <: SingletonUniverse] protected (
 
   override final lazy val toString: String = {
 //    if (gotLTag)
-      fullLightTypeTag.toString
+      fullLightTypeTag.repr
 //    else
 //      ScalaReflect_toString
   }

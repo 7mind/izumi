@@ -256,7 +256,7 @@ lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
   )
 
 lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
-  .depends(fundamentalsPlatform)
+  .depends(fundamentalsPlatform, fundamentalsFunctional)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value

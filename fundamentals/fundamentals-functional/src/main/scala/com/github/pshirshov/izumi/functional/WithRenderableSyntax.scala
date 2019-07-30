@@ -8,3 +8,4 @@ trait WithRenderableSyntax {
   }
 
 }
+

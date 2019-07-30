@@ -58,7 +58,17 @@ class FLTT(
     new FLTT(t.combineNonPos(o.map(_.map(_.t))), mergedBases, mergedInhDb)
   }
 
-  override def toString: String = t.toString
+  override def toString: String = {
+    //    import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
+    //    t.render()
+    t.toString
+  }
+
+
+  def repr: String = {
+    import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
+    t.render()
+  }
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[FLTT]
 
@@ -76,6 +86,7 @@ class FLTT(
 }
 
 object FLTT {
+
   import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
 
   protected[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {

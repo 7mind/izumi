@@ -266,8 +266,8 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "scalac bug: can't find HKTag when obscured by type lambda" in {
-      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+      assertCompiles("HKTag.fromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.fromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
 //      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
 //        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
     }

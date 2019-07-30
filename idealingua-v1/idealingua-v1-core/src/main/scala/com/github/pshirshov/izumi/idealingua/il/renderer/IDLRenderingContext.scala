@@ -24,7 +24,7 @@ class IDLRenderingContext(val domain: DomainDefinition, val options: IDLRenderin
   implicit val meta: MetaRenderer = new MetaRenderer(this)
   implicit val methods: MethodRenderer = new MethodRenderer(this)
 
-  implicit def typeid[T <: TypeId]: Renderable[T] = new RTypeId(this)
+  implicit def typeid[T <: TypeId]: Renderable[T] = (value: T) => new RTypeId(IDLRenderingContext.this).render(value)
 
 }
 

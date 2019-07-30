@@ -59,25 +59,24 @@ sealed trait LightTypeTag {
   }
 }
 
+
+
+
+
 object LightTypeTag {
+
+
+  import LTTRenderables.Short._
 
 
   sealed trait AbstractReference extends LightTypeTag
 
   case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
-    override def toString: String = s"λ ${input.mkString(",")} → $output"
+    override def toString: String = this.render()
   }
 
   case class LambdaParameter(name: String, kind: AbstractKind) {
-    override def toString: String = {
-      kind match {
-        case AbstractKind.Proper =>
-          s"%$name"
-
-        case k =>
-          s"%($name: $k)"
-      }
-    }
+    override def toString: String = this.render()
   }
 
   sealed trait AppliedReference extends AbstractReference {
@@ -88,81 +87,58 @@ object LightTypeTag {
 
     override def asName: NameReference = this
 
-    override def toString: String = ref.split('.').last
+    override def toString: String = this.render()
   }
 
-  case class FullReference(ref: String, prefix: Option[AppliedReference],  parameters: List[TypeParam]) extends AppliedReference {
+  case class FullReference(ref: String, prefix: Option[AppliedReference], parameters: List[TypeParam]) extends AppliedReference {
 
     override def asName: NameReference = NameReference(ref, prefix)
 
-    override def toString: String = s"${ref.split('.').last}${parameters.mkString("[", ",", "]")}"
+    override def toString: String = this.render()
   }
 
   case class TypeParam(ref: AbstractReference, kind: AbstractKind, variance: Variance) {
-    override def toString: String = {
-      kind match {
-        case AbstractKind.Proper =>
-          s"$variance$ref"
-
-        case k =>
-          s"$variance$ref:$k"
-
-      }
-    }
+    override def toString: String = this.render()
   }
 
 
-  sealed trait Variance
+  sealed trait Variance {
+    override def toString: String = this.render()
+  }
 
   object Variance {
 
-    case object Invariant extends Variance {
-      override def toString: String = "="
-    }
+    case object Invariant extends Variance
 
-    case object Contravariant extends Variance {
-      override def toString: String = "-"
-    }
+    case object Contravariant extends Variance
 
-    case object Covariant extends Variance {
-      override def toString: String = "+"
-    }
+    case object Covariant extends Variance
 
   }
 
-  sealed trait Boundaries
+  sealed trait Boundaries {
+    override def toString: String = this.render()
+  }
 
   object Boundaries {
 
-    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries {
-      override def toString: String = s" <: $top >: $bottom"
-    }
+    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries
 
-    case object Empty extends Boundaries {
-      override def toString: String = ""
-    }
+    case object Empty extends Boundaries
 
   }
 
-  sealed trait AbstractKind
+  sealed trait AbstractKind {
+    override def toString: String = this.render()
+  }
 
   object AbstractKind {
-    case object Proper extends AbstractKind {
-      override def toString: String = "*"
-    }
 
-    case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind {
-      override def toString: String = {
-        s"${variance}_"
-      }
-    }
+    case object Proper extends AbstractKind
 
-    case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind {
-      override def toString: String = {
-        val p = parameters.mkString(", ")
-        s"_[$p]"
-      }
-    }
+    case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind
+
+    case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind
 
   }
 
