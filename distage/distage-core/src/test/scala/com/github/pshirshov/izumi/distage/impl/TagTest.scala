@@ -70,10 +70,13 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Int { def a: Int }].tpe == safe[Int { def a: Int} ])
 
       assert(Tag[str.type].tpe == safe[str.type])
-      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
       assert(Tag[this.Z].tpe == safe[this.Z])
       assert(Tag[this.Z].tpe.tpe == typeOf[this.Z])
       assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
+    }
+
+    "Work for any advanced concrete type" in {
+      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
     }
 
     "Work with odd type prefixes" in {

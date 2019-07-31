@@ -7,7 +7,6 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api.Universe
-import scala.reflect.internal
 import scala.reflect.macros.blackbox
 
 object LTT {
@@ -217,8 +216,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           val allbases = tpeBases(i)
 
           if (targetRef.toString.contains("refine")) {
-            println(("!!!", i, tpef, tpef.getClass, showRaw(tpef.typeConstructor), targetRef, prefix, allbases, i.typeSymbol.isParameter))
-            new Throwable().printStackTrace()
+            //            println(("!!!", i, tpef, tpef.getClass, showRaw(tpef.typeConstructor), targetRef, prefix, allbases, i.typeSymbol.isParameter))
+            //            new Throwable().printStackTrace()
+            ???
           }
 
 
@@ -387,11 +387,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
 
     def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
-      val tpef = t.dealias.resultType
-
       breakRefinement(t) match {
-        case Broken.Single(t) =>
-          unpack(tpef, rules)
+        case Broken.Single(_) =>
+          // we intentionally ignore breakRefinement result here, it breaks lambdas
+          unpack(t.dealias.resultType, rules)
 
         case Broken.Compound(tpes) =>
           val parts = tpes.map(p => unpack(p, rules))
@@ -421,7 +420,17 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
   }
 
 
-  private def toPrefix(tpef: u.Type): Option[AppliedNamedReference] = {
+  private def toPrefix(tpef: u.Type): Option[AppliedReference] = {
+
+    def fromRef(o: Type) = {
+      makeRef(o, Set(o), Map.empty) match {
+        case a: AppliedReference =>
+          Some(a)
+        case o =>
+          throw new IllegalStateException(s"Cannot extract prefix from $tpef: expected applied reference, but got $o")
+      }
+
+    }
 
     tpef match {
       case t: TypeRefApi =>
@@ -433,11 +442,14 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           case o =>
             o.termSymbol match {
               case k if k == is.NoSymbol =>
-                Some(makeRef(o, Set(o), Map.empty).asInstanceOf[AppliedNamedReference])
-
+                fromRef(o)
               case s =>
-                Some(NameReference(s.fullName, None))
-
+                val u = o.termSymbol.typeSignature
+                if (u.typeSymbol.isAbstract) {
+                  Some(NameReference(o.termSymbol.fullName, None))
+                } else {
+                  fromRef(u)
+                }
             }
         }
 

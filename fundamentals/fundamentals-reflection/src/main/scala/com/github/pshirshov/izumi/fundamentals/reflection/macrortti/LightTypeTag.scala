@@ -89,14 +89,14 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  case class NameReference(ref: String, prefix: Option[AppliedNamedReference]) extends AppliedNamedReference {
+  case class NameReference(ref: String, prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = this
 
     override def toString: String = this.render()
   }
 
-  case class FullReference(ref: String, prefix: Option[AppliedNamedReference], parameters: List[TypeParam]) extends AppliedNamedReference {
+  case class FullReference(ref: String, prefix: Option[AppliedReference], parameters: List[TypeParam]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix)
 

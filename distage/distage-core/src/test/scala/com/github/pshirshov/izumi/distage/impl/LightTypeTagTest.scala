@@ -199,14 +199,6 @@ class LightTypeTagTest extends WordSpec {
       assertChild(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
     }
 
-    "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
-      assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
-      assertSame(LTT[C {def a: Int}], LTT[C {def a: Int}])
-      assertDifferent(LTT[C {def a: Int}], LTT[ {def a: Int}])
-      assertDifferent(LTT[C {def a: Int}], LTT[C])
-      assertDifferent(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
-    }
-
     "support TagK* family summoners" in {
       assertSame(LTagK[List].fullLightTypeTag, `LTT[_]`[List])
     }
@@ -237,6 +229,13 @@ class LightTypeTagTest extends WordSpec {
       assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
     }
 
+    "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
+      assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
+      assertSame(LTT[C {def a: Int}], LTT[C {def a: Int}])
+      assertDifferent(LTT[C {def a: Int}], LTT[ {def a: Int}])
+      assertDifferent(LTT[C {def a: Int}], LTT[C])
+      assertDifferent(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
+    }
 
     "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {
       val a1 = new C {

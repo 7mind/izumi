@@ -165,7 +165,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
     }
   }
 
-  "progression test: runtime cogen can't handle path-dependent factories (macros can't?)" in {
+  "progression test: runtime cogen can't handle path-dependent factories (macros can't?)" in intercept[UnsupportedDefinitionException] {
     import InnerClassUnstablePathsCase._
     val testProviderModule = new TestModule
 
