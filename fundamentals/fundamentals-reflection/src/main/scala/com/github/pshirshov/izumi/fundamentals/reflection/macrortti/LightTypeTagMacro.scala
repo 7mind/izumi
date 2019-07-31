@@ -215,10 +215,8 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
           val allbases = tpeBases(i)
 
-          if (targetRef.toString.contains("refine")) {
-            //            println(("!!!", i, tpef, tpef.getClass, showRaw(tpef.typeConstructor), targetRef, prefix, allbases, i.typeSymbol.isParameter))
-            //            new Throwable().printStackTrace()
-            ???
+          if (targetRef.toString.contains("<refinement>")) {
+            throw new IllegalStateException(s"Unexpected refinement for $i, ${showRaw(tpef.typeConstructor)}")
           }
 
 
@@ -422,7 +420,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
   private def toPrefix(tpef: u.Type): Option[AppliedReference] = {
 
-    def fromRef(o: Type) = {
+    def fromRef(o: Type): Option[AppliedReference] = {
       makeRef(o, Set(o), Map.empty) match {
         case a: AppliedReference =>
           Some(a)
@@ -444,7 +442,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
               case k if k == is.NoSymbol =>
                 fromRef(o)
               case s =>
-                val u = o.termSymbol.typeSignature
+                val u = s.typeSignature
                 if (u.typeSymbol.isAbstract) {
                   Some(NameReference(o.termSymbol.fullName, None))
                 } else {
