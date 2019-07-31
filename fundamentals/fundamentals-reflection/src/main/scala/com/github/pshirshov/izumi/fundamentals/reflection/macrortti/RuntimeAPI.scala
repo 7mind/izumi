@@ -1,6 +1,6 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, FullReference, Lambda, LambdaParameter, NameReference, TypeParam}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedNamedReference, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, TypeParam}
 
 protected[macrortti] object RuntimeAPI {
 
@@ -23,10 +23,12 @@ protected[macrortti] object RuntimeAPI {
     }
   }
 
-  private def replaceRefs(ref: AbstractReference, xparameters: Map[String, AbstractReference]): AbstractReference = {
-    ref match {
+  private def replaceRefs(reference: AbstractReference, xparameters: Map[String, AbstractReference]): AbstractReference = {
+    reference match {
       case l: Lambda =>
         l
+      case IntersectionReference(refs) =>
+        IntersectionReference(refs.map(replaceRefs(_, xparameters).asInstanceOf[AppliedNamedReference]))
       case n@NameReference(ref, _) =>
         xparameters.get(ref) match {
           case Some(value) =>
@@ -37,17 +39,20 @@ protected[macrortti] object RuntimeAPI {
 
       case FullReference(ref, prefix, parameters) =>
         val p = parameters.map {
-          case TypeParam(ref, kind, variance) =>
-            TypeParam(replaceRefs(ref, xparameters), kind, variance)
+          case TypeParam(pref, kind, variance) =>
+            TypeParam(replaceRefs(pref, xparameters), kind, variance)
         }
         FullReference(ref, prefix, p)
     }
   }
 
-  private def replaceRefNames(ref: AbstractReference, xparameters: Map[String, String]): AbstractReference = {
-    ref match {
+  private def replaceRefNames(reference: AbstractReference, xparameters: Map[String, String]): AbstractReference = {
+
+    reference match {
       case l: Lambda =>
         l
+      case IntersectionReference(refs) =>
+        IntersectionReference(refs.map(replaceRefNames(_, xparameters).asInstanceOf[AppliedNamedReference]))
       case n@NameReference(ref, prefix) =>
         xparameters.get(ref) match {
           case Some(value) =>
@@ -58,8 +63,8 @@ protected[macrortti] object RuntimeAPI {
 
       case FullReference(ref, prefix, parameters) =>
         val p = parameters.map {
-          case TypeParam(ref, kind, variance) =>
-            TypeParam(replaceRefNames(ref, xparameters), kind, variance)
+          case TypeParam(pref, kind, variance) =>
+            TypeParam(replaceRefNames(pref, xparameters), kind, variance)
         }
         FullReference(ref, prefix, p)
     }

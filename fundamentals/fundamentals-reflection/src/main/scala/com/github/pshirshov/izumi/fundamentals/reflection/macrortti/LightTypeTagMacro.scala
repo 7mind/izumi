@@ -171,11 +171,21 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     val out = if (tpef.isInstanceOf[it.RefinementTypeRef]) {
       val x = tpef.asInstanceOf[it.RefinementTypeRef]
-      Broken.Compound(x.parents.map(_.asInstanceOf[Type]).toSet)
+      val parts = x.parents.map(_.asInstanceOf[Type]).map(breakRefinement).flatMap {
+        b =>
+          b.toSet
+      }
+
+      Broken.Compound(parts.toSet)
+
     } else {
       tpef match {
         case r: RefinedTypeApi =>
-          Broken.Compound(r.parents.toSet)
+          val parts = r.parents.map(breakRefinement).flatMap {
+            b =>
+              b.toSet
+          }
+          Broken.Compound(parts.toSet)
         case o =>
           Broken.Single(o)
       }
@@ -216,7 +226,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           val allbases = tpeBases(i)
 
           if (targetRef.toString.contains("<refinement>")) {
-            throw new IllegalStateException(s"Unexpected refinement for $i, ${showRaw(tpef.typeConstructor)}")
+            throw new IllegalStateException(s"Unexpected refinement for $i, $targetRef, ${showRaw(tpef.typeConstructor)}")
           }
 
 
