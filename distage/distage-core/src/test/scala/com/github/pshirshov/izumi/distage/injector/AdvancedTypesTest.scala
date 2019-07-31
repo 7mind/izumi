@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.distage.injector
 import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
 import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
 import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
+import com.github.pshirshov.izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedWiringException}
 import distage._
 import org.scalatest.WordSpec
 
@@ -97,25 +97,30 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated.dep == context.get[Dep])
   }
 
-  "handle refinement & structural types" in {
+  "progression test: light type tags lost ability to handle refinement & structural types" in {
     import TypesCase3._
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
+      make[Trait1 { def dep: Dep }].from[Trait3[Dep]]
       make[{def dep: Dep}].from[Trait6]
     })
 
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+    intercept[ConflictingDIKeyBindingsException] {
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceUnsafe(plan)
 
-    val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
-    val instantiated2 = context.get[{def dep: Dep}]
+      val instantiated1 = context.get[Trait1 {def dep: Dep2}]
+      val instantiated2 = context.get[ {def dep: Dep}]
+      val instantiated3 = context.get[Trait1 {def dep: Dep}]
 
-    assert(instantiated1.dep == context.get[Dep2])
-    assert(instantiated2.dep == context.get[Dep])
+      assert(instantiated1.dep == context.get[Dep2])
+      assert(instantiated2.dep == context.get[Dep])
+      assert(instantiated3.dep == context.get[Dep])
+    }
   }
 
   "handle function local type aliases" in {
@@ -140,42 +145,53 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated.b == context.get[Dep2])
   }
 
-  "handle abstract structural refinement types" in {
+  "progression test: light type tags lost ability to handle abstract structural refinement types" in {
     import TypesCase3._
 
-    class Definition[T: Tag, G <: T { def dep: Dep }: Tag] extends ModuleDef {
+    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag] extends ModuleDef {
       make[Dep]
+      make[T { def dep2: Dep }].from(() => null: T { def dep2: Dep })
       make[T { def dep: Dep }].from[G]
     }
 
-    val definition = PlannerInput.noGc(new Definition[Trait1, Trait1])
+    intercept[ConflictingDIKeyBindingsException] {
+      val definition = PlannerInput.noGc(new Definition[Trait1, Trait1])
 
-    val injector = mkInjector()
-    val plan = injector.plan(definition)
-    val context = injector.produceUnsafe(plan)
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+      val context = injector.produceUnsafe(plan)
 
-    val instantiated = context.get[Trait1 { def dep: Dep }]
+      val instantiated = context.get[Trait1 {def dep: Dep}]
 
-    assert(instantiated.dep == context.get[Dep])
+      assert(instantiated.dep == context.get[Dep])
+    }
   }
 
   "handle abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T: Tag, G <: T with Trait1: Tag] extends ModuleDef {
+    class Definition[T: Tag, G <: T with Trait1: Tag, C <: T with Trait4: Tag] extends ModuleDef {
       make[Dep]
+      make[T with Trait4].from[C]
       make[T with Trait1].from[G]
     }
 
-    val definition = PlannerInput.noGc(new Definition[Trait3[Dep], Trait3[Dep]])
+    val definition = PlannerInput.noGc(new Definition[Trait3[Dep], Trait3[Dep], Trait5[Dep]])
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Trait3[Dep] with Trait1]
+    val instantiated2 = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])
+    assert(instantiated.isInstanceOf[Trait1])
+    assert(!instantiated.isInstanceOf[Trait4])
+
+    assert(instantiated2.dep == context.get[Dep])
+    assert(instantiated2.isInstanceOf[Trait1])
+    assert(instantiated2.isInstanceOf[Trait4])
   }
 
   "handle generic parameters in abstract `with` types" in {
