@@ -126,7 +126,9 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference
+  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference {
+    override def toString: String = this.render()
+  }
 
   sealed trait Variance {
     override def toString: String = this.render()

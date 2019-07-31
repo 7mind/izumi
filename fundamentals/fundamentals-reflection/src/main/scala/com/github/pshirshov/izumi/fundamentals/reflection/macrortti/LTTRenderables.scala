@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.functional.{Renderable, WithRenderableSyntax}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, Contract, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam, Variance}
 
 trait LTTRenderables extends WithRenderableSyntax {
 
@@ -24,11 +24,17 @@ trait LTTRenderables extends WithRenderableSyntax {
       i.render()
     case r: Refinement =>
       r.render()
+    case r: Contract =>
+      r.render()
   }
 
 
   implicit def r_Refinement: Renderable[Refinement] = (value: Refinement) => {
     s"(${value.reference.render()} & ${value.decls.map(_.render()).toSeq.sorted.mkString("{", ", ", "}")})"
+  }
+
+  implicit def r_Contract: Renderable[Contract] = (value: Contract) => {
+    s"(${value.ref.render()} | ${value.boundaries})"
   }
 
   implicit def r_RefinementDecl: Renderable[RefinementDecl] = {
@@ -68,7 +74,7 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit def r_IntersectionReference: Renderable[IntersectionReference] = (value: IntersectionReference) => {
-    value.refs.map(_.render()).mkString("(", " & ", ")")
+    value.refs.map(_.render()).mkString("{", " & ", "}")
   }
 
   implicit def r_TypeParam: Renderable[TypeParam] = (value: TypeParam) => {
@@ -90,7 +96,7 @@ trait LTTRenderables extends WithRenderableSyntax {
 
   implicit def r_Boundaries: Renderable[Boundaries] = {
     case Boundaries.Defined(bottom, top) =>
-      s"(${bottom.render()}..${top.render()})"
+      s"<${bottom.render()}..${top.render()}>"
 
     case Boundaries.Empty =>
       ""

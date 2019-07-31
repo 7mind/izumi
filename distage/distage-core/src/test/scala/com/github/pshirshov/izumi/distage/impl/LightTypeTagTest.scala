@@ -125,7 +125,7 @@ class LightTypeTagTest extends WordSpec {
   "lightweight type tags" should {
     "support human-readable representation" in {
       println(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}])
-      assertRepr(LTT[I1 with (I1 with (I1 with W1))], "(LightTypeTagTest::I1 & LightTypeTagTest::W1)")
+      assertRepr(LTT[I1 with (I1 with (I1 with W1))], "{LightTypeTagTest::I1 & LightTypeTagTest::W1}")
       assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
       assertRepr(`LTT[_]`[Nothing], "Nothing")
       assertRepr(LTT[Int], "Int")

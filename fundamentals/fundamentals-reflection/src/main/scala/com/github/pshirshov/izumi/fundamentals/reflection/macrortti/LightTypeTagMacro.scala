@@ -289,7 +289,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     }
 
     def makeBoundaries(t: Type): Boundaries = {
-      t match {
+      t.typeSymbol.typeSignature match {
         case b: TypeBoundsApi =>
           if ((b.lo =:= nothing && b.hi =:= any) || (path.contains(b.lo) || path.contains(b.hi))) {
             Boundaries.Empty
@@ -364,9 +364,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           }
           FullReference(nameref.ref, params, prefix)
       }
-
-
-
     }
 
 
@@ -393,9 +390,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           out
       }
 
-
-      if (t.toString.contains("M2"))
-      println((level, t))
       makeBoundaries(t) match {
         case b: Boundaries.Defined =>
           Contract(withRef, b)
@@ -460,13 +454,11 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
             } else if (decl.isType) {
 
               val tpe = if (decl.isAbstract) {
-                println((decl.asType.toType, decl.typeSignature))
-                decl.typeSignature
+                decl.asType.toType
               } else {
                 decl.typeSignature
               }
               val ref = makeRef(tpe, Set(tpe), terminalNames)
-              println((decl, decl.getClass, tpe, decl.typeSignature, "=>", ref))
               Seq(TypeMember(decl.name.decoded, ref))
             } else {
               None
@@ -474,7 +466,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         }
 
         if (d.nonEmpty) {
-          println((">>>", d))
           Some(d.toSet)
         } else {
           None
