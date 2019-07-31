@@ -75,7 +75,7 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
     }
 
-    "Work for any advanced concrete type" in {
+    "progression: DON'T Work for structural concrete types" in intercept[IllegalStateException] {
       assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
     }
 
