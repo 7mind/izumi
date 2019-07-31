@@ -51,12 +51,24 @@ protected[macrortti] trait LTTLiftables {
     case nr: NameReference =>
       lifted_NameReference.apply(nr)
     case FullReference(ref, prefix, parameters) =>
-      q"$LightTypeTag.FullReference($ref, $prefix, $parameters)"
+      prefix match {
+        case Some(_) =>
+          q"$LightTypeTag.FullReference($ref, $prefix, $parameters)"
+        case None =>
+          q"$LightTypeTag.FullReference($ref, $parameters)"
+
+      }
   }
 
   implicit val lifted_NameReference: Liftable[NameReference] = Liftable[NameReference] {
     nr =>
-      q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
+      nr.prefix match {
+        case Some(_) =>
+          q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
+
+        case None =>
+          q"$LightTypeTag.NameReference(${nr.ref})"
+      }
   }
 
   implicit val lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {

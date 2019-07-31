@@ -96,11 +96,19 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
+  object NameReference {
+    def apply(ref: String): NameReference = new NameReference(ref, None)
+  }
+
   case class FullReference(ref: String, prefix: Option[AppliedReference], parameters: List[TypeParam]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix)
 
     override def toString: String = this.render()
+  }
+
+  object FullReference {
+    def apply(ref: String, parameters: List[TypeParam]): FullReference = new FullReference(ref, None, parameters)
   }
 
   case class TypeParam(ref: AbstractReference, kind: AbstractKind, variance: Variance) {
