@@ -90,7 +90,7 @@ trait LTTRenderables extends WithRenderableSyntax {
 
   implicit def r_Boundaries: Renderable[Boundaries] = {
     case Boundaries.Defined(bottom, top) =>
-      s" <: ${top.render()} >: ${bottom.render()}"
+      s"(${bottom.render()}..${top.render()})"
 
     case Boundaries.Empty =>
       ""
