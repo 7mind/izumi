@@ -18,14 +18,14 @@ object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
+  implicit def apply[T[_]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 object `LTT[+_]` {
 
   trait Fake
 
-  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
+  implicit def apply[T[+ _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 object `LTT[A, _ <: A]` {
@@ -36,28 +36,28 @@ object `LTT[_[_]]` {
 
   trait Fake[F[_[_]]]
 
-  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 object `LTT[_[_[_]]]` {
 
   trait Fake[F[_[_[_]]]]
 
-  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 object `LTT[_,_]` {
 
   trait Fake
 
-  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake, Fake]]
+  implicit def apply[T[_, _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing, Nothing]]
 }
 
 object `LTT[_[_],_[_]]` {
 
   trait Fake[_[_]]
 
-  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake, Fake]]
+  implicit def apply[T[_[_], _[_]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing, Nothing]]
 }
 
 
@@ -65,7 +65,7 @@ object `LTT[_[_[_],_[_]]]` {
 
   trait Fake[K[_], V[_]]
 
-  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Fake]]
+  implicit def apply[T[_[_[_], _[_]]]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
