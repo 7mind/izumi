@@ -60,9 +60,6 @@ sealed trait LightTypeTag {
 }
 
 
-
-
-
 object LightTypeTag {
 
 
@@ -97,10 +94,10 @@ object LightTypeTag {
   }
 
   object NameReference {
-    def apply(ref: String): NameReference = new NameReference(ref, None)
+    def apply(ref: String, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, prefix)
   }
 
-  case class FullReference(ref: String, prefix: Option[AppliedReference], parameters: List[TypeParam]) extends AppliedNamedReference {
+  case class FullReference(ref: String, parameters: List[TypeParam],  prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix)
 
@@ -108,13 +105,28 @@ object LightTypeTag {
   }
 
   object FullReference {
-    def apply(ref: String, parameters: List[TypeParam]): FullReference = new FullReference(ref, None, parameters)
+    def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
 
   case class TypeParam(ref: AbstractReference, kind: AbstractKind, variance: Variance) {
     override def toString: String = this.render()
   }
 
+  sealed trait RefinementDecl
+
+  object RefinementDecl {
+
+    case class Signature(name: String, input: List[AppliedReference], output: AppliedReference) extends RefinementDecl
+
+    case class TypeMember(name: String, ref: AbstractReference) extends RefinementDecl
+
+  }
+
+  case class Refinement(reference: AppliedReference, decls: Set[RefinementDecl]) extends AppliedReference {
+    override def toString: String = this.render()
+  }
+
+  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference
 
   sealed trait Variance {
     override def toString: String = this.render()

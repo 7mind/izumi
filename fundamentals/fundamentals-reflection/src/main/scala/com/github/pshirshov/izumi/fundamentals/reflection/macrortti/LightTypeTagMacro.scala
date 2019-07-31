@@ -1,6 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.RefinementDecl.TypeMember
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.collection.mutable
@@ -162,36 +163,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
   @inline private[this] final val is = u.asInstanceOf[scala.reflect.internal.Symbols]
 
-  def breakRefinement(t: Type): Broken[Type] = {
-    val tpef = if (t.takesTypeArgs) {
-      t.etaExpand.dealias.resultType.dealias.resultType
-    } else {
-      t.dealias.resultType
-    }
-
-    val out = if (tpef.isInstanceOf[it.RefinementTypeRef]) {
-      val x = tpef.asInstanceOf[it.RefinementTypeRef]
-      val parts = x.parents.map(_.asInstanceOf[Type]).map(breakRefinement).flatMap {
-        b =>
-          b.toSet
-      }
-
-      Broken.Compound(parts.toSet)
-
-    } else {
-      tpef match {
-        case r: RefinedTypeApi =>
-          val parts = r.parents.map(breakRefinement).flatMap {
-            b =>
-              b.toSet
-          }
-          Broken.Compound(parts.toSet)
-        case o =>
-          Broken.Single(o)
-      }
-    }
-    out
-  }
 
   def makeFLTT(tpe: Type): FLTT = {
     val out = makeRef(tpe, Set(tpe), Map.empty)
@@ -225,9 +196,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
           val allbases = tpeBases(i)
 
-          if (targetRef.toString.contains("<refinement>")) {
-            throw new IllegalStateException(s"Unexpected refinement for $i, $targetRef, ${showRaw(tpef.typeConstructor)}")
-          }
+          //          if (targetRef.toString.contains("<refinement>")) {
+          //            throw new IllegalStateException(s"Unexpected refinement for $i, $targetRef, ${showRaw(tpef.typeConstructor)}")
+          //          }
 
 
           srcname ++ allbases.map {
@@ -317,12 +288,18 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       this.makeRef(tpe, path + tpe, terminalNames ++ stop, level + 1)
     }
 
-    def makeBoundaries(b: TypeBoundsApi): Boundaries = {
-      if ((b.lo =:= nothing && b.hi =:= any) || (path.contains(b.lo) || path.contains(b.hi))) {
-        Boundaries.Empty
-      } else {
-        Boundaries.Defined(makeRef(b.lo), makeRef(b.hi))
+    def makeBoundaries(t: Type): Boundaries = {
+      t match {
+        case b: TypeBoundsApi =>
+          if ((b.lo =:= nothing && b.hi =:= any) || (path.contains(b.lo) || path.contains(b.hi))) {
+            Boundaries.Empty
+          } else {
+            Boundaries.Defined(makeRef(b.lo), makeRef(b.hi))
+          }
+        case _ =>
+          Boundaries.Empty
       }
+
     }
 
     def makeKind(kt: Type): AbstractKind = {
@@ -332,17 +309,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       if (ts.takesTypeArgs) {
         ts match {
           case b: TypeBoundsApi =>
-            val boundaries = makeBoundaries(b)
+            val boundaries = makeBoundaries(ts)
             Hole(boundaries, variance)
 
-          case PolyType(params, b: TypeBoundsApi) =>
-            val boundaries = makeBoundaries(b)
+          case PolyType(params, result) =>
+            val boundaries = makeBoundaries(result)
             val paramsAsTypes = params.map(_.asType.toType)
             Kind(paramsAsTypes.map(makeKind), boundaries, variance)
-
-          case PolyType(params, _) =>
-            val paramsAsTypes = params.map(_.asType.toType)
-            Kind(paramsAsTypes.map(makeKind), Boundaries.Empty, variance)
         }
       } else {
         Proper
@@ -389,20 +362,45 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
             case (a, pa) =>
               TypeParam(makeRef(a), makeKind(pa.asType.toType), toVariance(pa.asType))
           }
-          FullReference(nameref.ref, prefix, params)
+          FullReference(nameref.ref, params, prefix)
       }
+
+
+
     }
 
 
     def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
-      breakRefinement(t) match {
-        case Broken.Single(_) =>
-          // we intentionally ignore breakRefinement result here, it breaks lambdas
-          unpack(t.dealias.resultType, rules)
+      val decls = extractDecls(t, terminalNames)
 
-        case Broken.Compound(tpes) =>
+      val out = breakRefinement(t) match {
+        case Broken.Compound(tpes) if tpes.size > 1 =>
           val parts = tpes.map(p => unpack(p, rules))
           IntersectionReference(parts)
+
+        case Broken.Compound(tpes) if tpes.size == 1 =>
+          unpack(tpes.head, rules)
+
+        case _ =>
+          // we intentionally ignore breakRefinement result here, it breaks lambdas
+          unpack(t.dealias.resultType, rules)
+      }
+
+      val withRef = decls match {
+        case Some(value) =>
+          Refinement(out, value)
+        case None =>
+          out
+      }
+
+
+      if (t.toString.contains("M2"))
+      println((level, t))
+      makeBoundaries(t) match {
+        case b: Boundaries.Defined =>
+          Contract(withRef, b)
+        case Boundaries.Empty =>
+          withRef
       }
     }
 
@@ -427,6 +425,105 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     out
   }
 
+  def extractDecls(t: Type, terminalNames: Map[String, LambdaParameter]): Option[Set[RefinementDecl]] = {
+    val tpef = fullDealias(t)
+
+    tpef match {
+      case UniRefinement(_, Nil) =>
+        None
+      case UniRefinement(_, decls) =>
+        val d = decls.flatMap {
+          decl =>
+            if (decl.isMethod) {
+              val m = decl.asMethod
+              val ret = m.returnType
+
+              val params = m.paramLists.map {
+                paramlist =>
+                  paramlist.map {
+                    p =>
+                      val pt = p.typeSignature
+                      makeRef(pt, Set(pt), terminalNames).asInstanceOf[AppliedReference]
+                  }
+              }
+
+              val inputs = if (params.nonEmpty) {
+                params
+              } else {
+                Seq(Seq.empty)
+              }
+
+              inputs.map {
+                pl =>
+                  RefinementDecl.Signature(m.name.decodedName.decoded, pl.toList, makeRef(ret, Set(ret), terminalNames).asInstanceOf[AppliedReference])
+              }
+            } else if (decl.isType) {
+
+              val tpe = if (decl.isAbstract) {
+                println((decl.asType.toType, decl.typeSignature))
+                decl.typeSignature
+              } else {
+                decl.typeSignature
+              }
+              val ref = makeRef(tpe, Set(tpe), terminalNames)
+              println((decl, decl.getClass, tpe, decl.typeSignature, "=>", ref))
+              Seq(TypeMember(decl.name.decoded, ref))
+            } else {
+              None
+            }
+        }
+
+        if (d.nonEmpty) {
+          println((">>>", d))
+          Some(d.toSet)
+        } else {
+          None
+        }
+      case _ =>
+        None
+    }
+  }
+
+  object UniRefinement {
+    def unapply(tpef: Type): Option[(List[Type], List[SymbolApi])] = {
+      if (tpef.isInstanceOf[it.RefinementTypeRef]) {
+        val x = tpef.asInstanceOf[it.RefinementTypeRef]
+        Some((x.parents.map(_.asInstanceOf[Type]), x.decls.map(_.asInstanceOf[SymbolApi]).toList))
+      } else {
+        tpef match {
+          case r: RefinedTypeApi =>
+            Some((r.parents, r.decls.toList))
+          case _ =>
+            None
+        }
+      }
+    }
+  }
+
+  def breakRefinement(t: Type): Broken[Type] = {
+    val tpef = fullDealias(t)
+
+    tpef match {
+      case UniRefinement(parents, _) =>
+        val parts = parents.map(breakRefinement).flatMap {
+          b =>
+            b.toSet
+        }
+        Broken.Compound(parts.toSet)
+      case _ =>
+        Broken.Single(tpef)
+
+    }
+
+  }
+
+  private def fullDealias(t: u.Type) = {
+    if (t.takesTypeArgs) {
+      t.etaExpand.dealias.resultType.dealias.resultType
+    } else {
+      t.dealias.resultType
+    }
+  }
 
   private def toPrefix(tpef: u.Type): Option[AppliedReference] = {
 
@@ -440,13 +537,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     }
 
-    tpef match {
+    val out = tpef match {
       case t: TypeRefApi =>
         t.pre match {
           case i if i.typeSymbol.isPackage =>
             None
           case k if k == it.NoPrefix =>
             None
+          case k: ThisTypeApi =>
+            k.sym.asType.toType match {
+              case UniRefinement(_, _) =>
+                None
+              case o =>
+                fromRef(o)
+            }
           case o =>
             o.termSymbol match {
               case k if k == is.NoSymbol =>
@@ -454,6 +558,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
               case s =>
                 val u = s.typeSignature
                 if (u.typeSymbol.isAbstract) {
+
                   Some(NameReference(o.termSymbol.fullName, None))
                 } else {
                   fromRef(u)
@@ -464,6 +569,8 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       case _ =>
         None
     }
+
+    out
   }
 
   private def toVariance(tpe: Type): Variance = {

@@ -44,31 +44,29 @@ protected[macrortti] trait LTTLiftables {
       lifted_AppliedNamedReference.apply(nr)
     case IntersectionReference(p) =>
       q"$LightTypeTag.IntersectionReference($p)"
+    case Refinement(ref, decls) =>
+      q"$LightTypeTag.Refinement($ref, $decls)"
+    case Contract(ref, boundaries) =>
+      q"$LightTypeTag.Contract($ref, $boundaries)"
+  }
 
+  implicit val lifted_RefinementDecl: Liftable[RefinementDecl] = Liftable[RefinementDecl] {
+    case RefinementDecl.Signature(name, input, output) =>
+      q"$LightTypeTag.RefinementDecl.Signature($name, $input, $output)"
+    case RefinementDecl.TypeMember(name, t) =>
+      q"$LightTypeTag.RefinementDecl.TypeMember($name, $t)"
   }
 
   implicit val lifted_AppliedNamedReference: Liftable[AppliedNamedReference] = Liftable[AppliedNamedReference] {
     case nr: NameReference =>
       lifted_NameReference.apply(nr)
-    case FullReference(ref, prefix, parameters) =>
-      prefix match {
-        case Some(_) =>
-          q"$LightTypeTag.FullReference($ref, $prefix, $parameters)"
-        case None =>
-          q"$LightTypeTag.FullReference($ref, $parameters)"
-
-      }
+    case FullReference(ref, params, prefix) =>
+      q"$LightTypeTag.FullReference($ref, $params, $prefix)"
   }
 
   implicit val lifted_NameReference: Liftable[NameReference] = Liftable[NameReference] {
     nr =>
-      nr.prefix match {
-        case Some(_) =>
-          q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
-
-        case None =>
-          q"$LightTypeTag.NameReference(${nr.ref})"
-      }
+      q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
   }
 
   implicit val lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {

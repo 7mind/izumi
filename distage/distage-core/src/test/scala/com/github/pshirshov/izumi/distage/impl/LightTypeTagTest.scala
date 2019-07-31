@@ -124,8 +124,8 @@ class LightTypeTagTest extends WordSpec {
 
   "lightweight type tags" should {
     "support human-readable representation" in {
-      println(LTT[Int { def a: Int }])
-      println(LTT[I1 with (I1 with (I1 with W1))])
+      println(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}])
+      assertRepr(LTT[I1 with (I1 with (I1 with W1))], "(LightTypeTagTest::I1 & LightTypeTagTest::W1)")
       assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
       assertRepr(`LTT[_]`[Nothing], "Nothing")
       assertRepr(LTT[Int], "Int")
@@ -231,12 +231,25 @@ class LightTypeTagTest extends WordSpec {
       assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
     }
 
-    "progression test: DON'T support structural & refinement type equality" in intercept[TestFailedException] {
+    "support structural & refinement type equality" in {
+      type C1 = C
       assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
-      assertSame(LTT[C {def a: Int}], LTT[C {def a: Int}])
+      assertSame(LTT[C {def a: Int}], LTT[C1 {def a: Int}])
+
       assertDifferent(LTT[C {def a: Int}], LTT[ {def a: Int}])
       assertDifferent(LTT[C {def a: Int}], LTT[C])
+
       assertDifferent(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
+
+      val a1 = new C {
+        override type A = Int
+      }
+      object Z {
+        type X <: {type A = Int}
+      }
+      Z.discard()
+
+      assertSame(LTT[a1.A], LTT[Z.X#A])
     }
 
     "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {

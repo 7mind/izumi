@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.functional.{Renderable, WithRenderableSyntax}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, TypeParam, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam, Variance}
 
 trait LTTRenderables extends WithRenderableSyntax {
 
@@ -11,13 +11,31 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit def r_AbstractReference: Renderable[AbstractReference] = {
-    case a: AppliedNamedReference =>
+    case a: AppliedReference =>
       a.render()
     case l: Lambda =>
       l.render()
+  }
+
+  implicit def r_AppliedReference: Renderable[AppliedReference] = {
+    case a: AppliedNamedReference =>
+      a.render()
     case i: IntersectionReference =>
       i.render()
+    case r: Refinement =>
+      r.render()
+  }
 
+
+  implicit def r_Refinement: Renderable[Refinement] = (value: Refinement) => {
+    s"(${value.reference.render()} & ${value.decls.map(_.render()).toSeq.sorted.mkString("{", ", ", "}")})"
+  }
+
+  implicit def r_RefinementDecl: Renderable[RefinementDecl] = {
+    case RefinementDecl.Signature(name, input, output) =>
+      s"def $name${input.map(_.render()).mkString("(", ", ", ")")}: ${output.render()}"
+    case RefinementDecl.TypeMember(name, tpe) =>
+      s"type $name = $tpe"
   }
 
   implicit def r_AppliedNamedReference: Renderable[AppliedNamedReference] = {

@@ -37,12 +37,12 @@ protected[macrortti] object RuntimeAPI {
             n
         }
 
-      case FullReference(ref, prefix, parameters) =>
+      case FullReference(ref, parameters, prefix) =>
         val p = parameters.map {
           case TypeParam(pref, kind, variance) =>
             TypeParam(replaceRefs(pref, xparameters), kind, variance)
         }
-        FullReference(ref, prefix, p)
+        FullReference(ref, p, prefix)
     }
   }
 
@@ -61,12 +61,12 @@ protected[macrortti] object RuntimeAPI {
             n
         }
 
-      case FullReference(ref, prefix, parameters) =>
+      case FullReference(ref, parameters, prefix) =>
         val p = parameters.map {
           case TypeParam(pref, kind, variance) =>
             TypeParam(replaceRefNames(pref, xparameters), kind, variance)
         }
-        FullReference(ref, prefix, p)
+        FullReference(ref, p, prefix)
     }
   }
 
