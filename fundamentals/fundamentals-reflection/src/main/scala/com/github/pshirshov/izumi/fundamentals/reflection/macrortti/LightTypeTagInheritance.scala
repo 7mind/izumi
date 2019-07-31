@@ -96,6 +96,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: Lambda, o: Lambda) =>
           s.input == o.input && isChild(s.output, o.output, s.input)
         case (s: IntersectionReference, o: IntersectionReference) =>
+          // yeah, this shit is quadratic
           s.refs.forall {
             c =>
               o.refs.exists {
@@ -106,12 +107,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: IntersectionReference, o: LightTypeTag) =>
           s.refs.exists(c => isChild(c, o, ctx))
         case (s: LightTypeTag, o: IntersectionReference) =>
-          s match {
-            case _: Lambda =>
-              false
-            case sn: AppliedNamedReference =>
-              o.refs.forall(o => isChild(sn, o, ctx))
-          }
+          o.refs.forall(o => isChild(s, o, ctx))
       }
     }
   }
