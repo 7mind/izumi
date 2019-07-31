@@ -7,7 +7,6 @@ import scala.collection.mutable
 import scala.language.experimental.macros
 import scala.language.higherKinds
 import scala.reflect.api.Universe
-import scala.reflect.internal
 import scala.reflect.macros.blackbox
 
 object LTT {
@@ -390,7 +389,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       val tpef = t.dealias.resultType
 
       breakRefinement(t) match {
-        case Broken.Single(t) =>
+        case Broken.Single(_) =>
           unpack(tpef, rules)
 
         case Broken.Compound(tpes) =>
