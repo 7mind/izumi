@@ -109,32 +109,6 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     assert(ex.getSuppressed.exists(_.isInstanceOf[MethodMirrorException]))
   }
 
-  "progression test: light type tags lost ability to handle refinement & structural types" in {
-    import TypesCase3._
-
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[Dep]
-      make[Dep2]
-      make[Trait1 {def dep: Dep2}].from[Trait3[Dep2]]
-      make[Trait1 {def dep: Dep}].from[Trait3[Dep2]]
-      make[{def dep: Dep}].from[Trait6]
-    })
-
-    intercept[ConflictingDIKeyBindingsException] {
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
-
-      val instantiated1: Trait1 {def dep: Dep2} = context.get[Trait1 {def dep: Dep2}]
-      val instantiated2 = context.get[ {def dep: Dep}]
-      val instantiated3 = context.get[Trait1 {def dep: Dep}]
-
-      assert(instantiated1.dep == context.get[Dep2])
-      assert(instantiated2.dep == context.get[Dep])
-      assert(instantiated3.dep == context.get[Dep])
-    }
-  }
-
   "progression test: can't handle AnyVals" in {
     intercept[ClassCastException] {
       import TraitCase6._
