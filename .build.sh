@@ -1,8 +1,18 @@
 #!/bin/bash -xe
 
+function scala213() {
+  echo "Using Scala 2.13..."
+  export CI_SCALA_VERSION="2.13.0"
+}
+
 function csbt {
-    COMMAND="time sbt -batch -no-colors -v $*"
-    eval $COMMAND
+  if [ -z "$CI_SCALA_VERSION" ]; then
+      VERSION_COMMAND=""
+  else
+      VERSION_COMMAND="++$CI_SCALA_VERSION"
+  fi
+  COMMAND="time sbt -batch -no-colors -v $VERSION_COMMAND $*"
+  eval $COMMAND
 }
 
 function versionate {
@@ -40,7 +50,7 @@ function site {
   fi
 }
 
-function publish {
+function publishCheck {
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
@@ -53,12 +63,22 @@ function publish {
     return 0
   fi
 
-  echo "PUBLISH..."
+}
+
+function publishIDL {
+  publishCheck
+  echo "PUBLISH IDL RUNTIMES..."
+
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
   export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
   ./idealingua/idealingua-runtime-rpc-typescript/src/npmjs/publish.sh
   ./idealingua/idealingua-runtime-rpc-c-sharp/src/main/nuget/publish.sh
+}
+
+function publishScala {
+  publishCheck
+  echo "PUBLISH SCALA LIBRARIES..."
 
   csbt clean package publishSigned || exit 1
 
@@ -125,6 +145,10 @@ case $i in
         echo "Doing nothing..."
     ;;
 
+    2.13)
+        scala213
+    ;;
+
     versionate)
         versionate
     ;;
@@ -137,8 +161,12 @@ case $i in
         scripted
     ;;
 
-    publish)
-        publish
+    publishIDL)
+        publishIDL
+    ;;
+
+    publishScala)
+        publishScala
     ;;
 
     site)

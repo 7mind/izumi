@@ -1,7 +1,6 @@
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.{R, _}
 import com.github.pshirshov.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
 import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
-import com.typesafe.sbt.pgp.PgpSettings
 import sbt.Keys.{publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -43,7 +42,6 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
       V.scala_212,
       V.scala_213,
     ),
-    scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
     testOptions in Test += Tests.Argument("-oDF"),
     addCompilerPlugin(R.kind_projector),
@@ -83,9 +81,6 @@ val SbtSettings = new SettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
       target ~= { t => t.toPath.resolve("primary").toFile },
-      crossScalaVersions := Seq(
-        V.scala_212
-      ),
       libraryDependencies ++= Seq(
         "org.scala-sbt" % "sbt" % sbtVersion.value
       ),
@@ -108,6 +103,7 @@ val WithoutBadPluginsSbt = new SettingsGroup {
 
 }
 
+
 val SbtScriptedSettings = new SettingsGroup {
   override val id = SettingsGroupId("SbtScriptedSettings")
 
@@ -119,22 +115,11 @@ val SbtScriptedSettings = new SettingsGroup {
         scriptedLaunchOpts.value ++
           Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
       },
-      scriptedBufferLog := false
+      scriptedBufferLog := false,
     )
   ).flatten
 }
 
-val MicrositeSettings = new SettingsGroup {
-  override val id = SettingsGroupId("MicrositeSettings")
-
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    Seq(
-      crossScalaVersions := Seq(
-        V.scala_212
-      ),
-    )
-  ).flatten
-}
 
 val JSSettings = new SettingsGroup {
   override val id = SettingsGroupId("JSSettings")
@@ -162,6 +147,7 @@ lazy val inFundamentals = In("fundamentals")
 lazy val inSbt = In("sbt")
   .settings(GlobalSettings, WithoutBadPluginsSbt)
   .settings(SbtSettings, SbtScriptedSettings)
+  .settings(Scala212OnlySettings)
 
 lazy val inDiStage = In("distage")
   .settingsSeq(base)
@@ -523,6 +509,21 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   )
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+val Scala212OnlySettings = new SettingsGroup {
+  override val id = SettingsGroupId("Scala212Only")
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      crossScalaVersions := Seq(V.scala_212),
+      skip in publish := {
+        // super dirty horizontal reference, but don't know how else to
+        // detect that we're cross compiling for a different version and skip double publish ._.
+        (fundamentalsCollectionsJvm / scalaVersion).value != V.scala_212
+      },
+    )
+  ).flatten
+}
+
 lazy val sbtIzumi = inSbt.as
   .module
 
@@ -621,7 +622,7 @@ lazy val microsite = inDoc.as.module
     PreprocessPlugin,
     MdocPlugin
   )
-  .settings(MicrositeSettings)
+  .settings(Scala212OnlySettings)
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
     skip in publish := true,
@@ -674,6 +675,7 @@ lazy val microsite = inDoc.as.module
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
 
-lazy val `izumi-r2` = inRoot.as
+lazy val `izumi-r2`: Project = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
+  .settings(skip in publish := true)

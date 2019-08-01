@@ -15,11 +15,21 @@ jobs:
   - template: .azure-dockerstep.yml
     parameters:
       jobs:
-        - job: build
-          displayName: 'Tests and Coverage'
+        - job: build_212
+          displayName: 'Tests and Coverage 2.12'
           steps:
             - script: |
                   bash .build.sh coverage
+            - task: PublishTestResults@2
+            - task: PublishCodeCoverageResults@1
+              inputs:
+                codeCoverageTool: 'Cobertura'
+                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
+        - job: build_213
+          displayName: 'Tests and Coverage 2.13'
+          steps:
+            - script: |
+                bash .build.sh 2.13 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -32,20 +42,29 @@ jobs:
                 bash .build.sh scripted
         - job: site
           dependsOn:
-          - build
+          - build_212
+          - build_213
           - sbt
           displayName: 'Publish Site'
           steps:
             - script: |
                 bash .build.sh secrets site
-        - job: publish
-          displayName: 'Publish to Maven Central'
+        - job: publish_212
+          displayName: 'Publish to Maven Central 2.12'
           dependsOn:
-          - build
+          - build_212
           - sbt
           steps:
             - script: |
-                bash .build.sh secrets publish
+                bash .build.sh secrets publishIDL publishScala
+        - job: publish_213
+          displayName: 'Publish to Maven Central 2.13'
+          dependsOn:
+          - build_213
+          - sbt
+          steps:
+            - script: |
+                bash .build.sh 2.13 secrets publishScala
 
 #cache:
 #  directories:
