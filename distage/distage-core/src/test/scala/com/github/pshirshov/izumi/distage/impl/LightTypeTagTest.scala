@@ -288,7 +288,7 @@ class LightTypeTagTest extends WordSpec {
     }
 
 
-    "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {
+    "resolve concrete types through PDTs and projections" in {
       val a1 = new C {
         override type A <: Int
       }
@@ -297,7 +297,7 @@ class LightTypeTagTest extends WordSpec {
       }
       Z.discard()
 
-      assertSame(LTT[a1.A], LTT[Z.X#A])
+      assertChild(LTT[Z.X#A], LTT[a1.A])
     }
 
   }

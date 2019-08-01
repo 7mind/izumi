@@ -91,18 +91,20 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: NameReference, _: FullReference) =>
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
         case (s: NameReference, o: NameReference) =>
-          all(
+          def boundIsOk(default: Boolean) =             o.boundaries match {
+            case Boundaries.Defined(bottom, top) =>
+              isChild(s, top, ctx) && isChild(bottom, s, ctx)
+            case Boundaries.Empty =>
+              default
+          }
+
             any(
-              parentsOf(s).exists(p => isChild(p, ot, ctx)),
-              ctx.map(_.name).contains(o.ref), // lambda parameter may accept anything. TODO: boundary check
-            ),
-            o.boundaries match {
-              case Boundaries.Defined(bottom, top) =>
-                isChild(s, top, ctx) && isChild(bottom, s, ctx)
-              case Boundaries.Empty =>
-                true
-            }
-          )
+              all(boundIsOk(true), parentsOf(s).exists(p => isChild(p, ot, ctx))),
+              all(boundIsOk(true), ctx.map(_.name).contains(o.ref)), // lambda parameter may accept anything. TODO: boundary check
+              boundIsOk(false)
+            )
+
+
         case (_: AppliedNamedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
         case (s: Lambda, o: AppliedNamedReference) =>
