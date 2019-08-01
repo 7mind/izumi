@@ -297,7 +297,8 @@ class LightTypeTagTest extends WordSpec {
       }
       Z.discard()
 
-      assertChild(LTT[Z.X#A], LTT[a1.A])
+      assertChild(LTT[a1.A], LTT[Z.X#A])
+      assertNotChild(LTT[Z.X#A], LTT[a1.A])
     }
 
   }
