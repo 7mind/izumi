@@ -82,15 +82,7 @@ trait LTTRenderables extends WithRenderableSyntax {
     case Boundaries.Empty =>
       ""
   }
-
-  implicit def r_AbstractKind: Renderable[AbstractKind] = {
-    case AbstractKind.Proper => "*"
-    case AbstractKind.Hole(_, variance) => s"${variance.render()}_"
-    case AbstractKind.Kind(parameters, _, _) => {
-      val p = parameters.map(p => p.render()).mkString(", ")
-      s"_[$p]"
-    }
-  }
+  
 }
 
 object LTTRenderables {
