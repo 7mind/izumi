@@ -154,6 +154,9 @@ class LightTypeTagTest extends WordSpec {
       assertCombine(`LTT[_,_]`[Either], LTT[Unit], `LTT[_]`[Either[Unit, ?]])
 
       assertCombine(`LTT[_[_[_],_[_]]]`[T2], `LTT[_[_],_[_]]`[T0], LTT[T2[T0]])
+
+      type ComplexRef[T] = W1 with T {def a(p: T): T ; type M = T}
+      assertCombine(`LTT[_]`[ComplexRef], LTT[Int], LTT[W1 with Int {def a(p: Int): Int ; type M = Int}])
     }
 
     "support non-positional typetag combination" in {
