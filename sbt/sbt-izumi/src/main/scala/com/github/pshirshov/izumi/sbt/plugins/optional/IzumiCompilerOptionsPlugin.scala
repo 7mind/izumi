@@ -5,38 +5,37 @@ import sbt.Keys.{isSnapshot, scalaOrganization, _}
 import sbt.{Def, _}
 
 object IzumiCompilerOptionsPlugin extends AutoPlugin {
-  override lazy val globalSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions := Seq(
-      "-encoding", "UTF-8",
-      "-target:jvm-1.8",
-
-      "-language:higherKinds",
-
-      "-feature",
-      "-unchecked",
-      "-deprecation",
-      "-Xlint:_",
-    )
-
-    , javacOptions ++= Seq(
-      "-encoding", "UTF-8",
-      "-source", "1.8",
-      "-target", "1.8",
-      "-deprecation",
-      "-parameters",
-      "-Xlint:all",
-      "-XDignore.symbol.file"
-      //, "-Xdoclint:all" // causes hard to track NPEs
-    )
-  )
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    scalacOptions ++= dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value)
+    scalacOptions ++=
+      generalScalaSettings ++
+      dynamicSettings(scalaOrganization.value, scalaVersion.value, isSnapshot.value),
+    javacOptions ++= generalJavaSettings,
   )
 
   protected def dynamicSettings(scalaOrganization: String, scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     scalacOptionsVersion(scalaOrganization, scalaVersion) ++ releaseSettings(scalaVersion, isSnapshot)
   }
+
+  def generalScalaSettings: Seq[String] = Seq(
+    "-encoding", "UTF-8",
+    "-target:jvm-1.8",
+    "-language:higherKinds",
+    "-feature",
+    "-unchecked",
+    "-deprecation",
+  )
+
+  def generalJavaSettings: Seq[String] = Seq(
+    "-encoding", "UTF-8",
+    "-source", "1.8",
+    "-target", "1.8",
+    "-deprecation",
+    "-parameters",
+    "-Xlint:all",
+    "-XDignore.symbol.file"
+    //, "-Xdoclint:all" // causes hard to track NPEs
+  )
 
   protected def releaseSettings(scalaVersion: String, isSnapshot: Boolean): Seq[String] = {
     CrossVersion.partialVersion(scalaVersion) match {
