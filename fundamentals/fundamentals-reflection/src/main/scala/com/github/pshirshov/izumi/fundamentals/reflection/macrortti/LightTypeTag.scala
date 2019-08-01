@@ -150,7 +150,7 @@ object LightTypeTag {
 
   object Boundaries {
 
-    case class Defined(bottom: LightTypeTag, top: LightTypeTag) extends Boundaries
+    case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
 
     case object Empty extends Boundaries
 

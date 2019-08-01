@@ -1,12 +1,14 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedNamedReference, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, TypeParam}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam}
 
 protected[macrortti] object RuntimeAPI {
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
-    val replaced = replaceRefs(lambda.output, parameters)
+
+    val rewriter = new Rewriter(parameters)((_, _, v) => v)
+    val replaced = rewriter.replaceRefs(lambda.output)
 
     if (newParams.isEmpty) {
       replaced
@@ -19,54 +21,94 @@ protected[macrortti] object RuntimeAPI {
         case (_, idx) =>
           LambdaParameter(idx.toString)
       }
-      Lambda(nr, replaceRefNames(replaced, renamed.toMap))
+      val rewriter = new Rewriter(renamed.toMap)((self, n, v) => {
+        NameReference(v, self.replaceBoundaries(n.boundaries), self.replacePrefix(n.prefix))
+      })
+
+      Lambda(nr, rewriter.replaceRefs(replaced))
     }
   }
 
-  private def replaceRefs(reference: AbstractReference, xparameters: Map[String, AbstractReference]): AbstractReference = {
-    reference match {
-      case l: Lambda =>
-        l
-      case IntersectionReference(refs) =>
-        IntersectionReference(refs.map(replaceRefs(_, xparameters).asInstanceOf[AppliedNamedReference]))
-      case n@NameReference(ref, _, _) =>
-        xparameters.get(ref) match {
-          case Some(value) =>
-            value
-          case None =>
-            n
-        }
-
-      case FullReference(ref, parameters, prefix) =>
-        val p = parameters.map {
-          case TypeParam(pref, variance) =>
-            TypeParam(replaceRefs(pref, xparameters), variance)
-        }
-        FullReference(ref, p, prefix)
+  class Rewriter[T](rules: Map[String, T])(complete: (Rewriter[T], NameReference, T) => AbstractReference) {
+    def replaceRefs(reference: AbstractReference): AbstractReference = {
+      reference match {
+        case l: Lambda =>
+          l
+        case o: AppliedReference =>
+          replaceApplied(o)
+      }
     }
-  }
 
-  private def replaceRefNames(reference: AbstractReference, xparameters: Map[String, String]): AbstractReference = {
+    def replacePrefix(prefix: Option[AppliedReference]): Option[AppliedReference] = {
+      prefix.map(p => ensureApplied(p, replaceApplied(p)))
+    }
 
-    reference match {
-      case l: Lambda =>
-        l
-      case IntersectionReference(refs) =>
-        IntersectionReference(refs.map(replaceRefNames(_, xparameters).asInstanceOf[AppliedNamedReference]))
-      case n@NameReference(ref, b, prefix) =>
-        xparameters.get(ref) match {
-          case Some(value) =>
-            NameReference(value, b, prefix)
-          case None =>
-            n
-        }
 
-      case FullReference(ref, parameters, prefix) =>
-        val p = parameters.map {
-          case TypeParam(pref, variance) =>
-            TypeParam(replaceRefNames(pref, xparameters), variance)
-        }
-        FullReference(ref, p, prefix)
+    def replaceBoundaries(boundaries: Boundaries): Boundaries = {
+      boundaries match {
+        case Boundaries.Defined(bottom, top) =>
+          Boundaries.Defined(replaceRefs(bottom), replaceRefs(top))
+        case Boundaries.Empty =>
+          boundaries
+      }
+    }
+
+    private def replaceApplied(reference: AppliedReference): AbstractReference = {
+      reference match {
+        case IntersectionReference(refs) =>
+          val replaced = refs.map(replaceNamed).map(r => ensureAppliedNamed(reference, r))
+          IntersectionReference(replaced)
+        case Refinement(base, decls) =>
+
+          val rdecls = decls.map {
+            case RefinementDecl.Signature(name, input, output) =>
+              RefinementDecl.Signature(name, input.map(p => ensureApplied(reference, replaceRefs(p))), ensureApplied(reference, replaceRefs(output)))
+            case RefinementDecl.TypeMember(name, ref) =>
+              RefinementDecl.TypeMember(name, replaceRefs(ref))
+          }
+
+          Refinement(ensureApplied(base, replaceApplied(base)), rdecls.toSet)
+        case n: AppliedNamedReference =>
+          replaceNamed(n)
+      }
+    }
+
+    private def replaceNamed(reference: AppliedNamedReference): AbstractReference = {
+      reference match {
+
+        case n@NameReference(ref, boundaries, prefix) =>
+          rules.get(ref) match {
+            case Some(value) =>
+              complete(this, n, value)
+            case None =>
+              NameReference(ref, replaceBoundaries(boundaries), replacePrefix(prefix))
+          }
+
+        case FullReference(ref, parameters, prefix) =>
+          val p = parameters.map {
+            case TypeParam(pref, variance) =>
+              TypeParam(replaceRefs(pref), variance)
+          }
+          FullReference(ref, p, prefix)
+      }
+    }
+
+    private def ensureApplied(context: AbstractReference, ref: AbstractReference): AppliedReference = {
+      ref match {
+        case reference: AppliedReference =>
+          reference
+        case o =>
+          throw new IllegalStateException(s"Expected applied reference but got $o while processing $context")
+      }
+    }
+
+    private def ensureAppliedNamed(context: AbstractReference, ref: AbstractReference): AppliedNamedReference = {
+      ref match {
+        case reference: AppliedNamedReference =>
+          reference
+        case o =>
+          throw new IllegalStateException(s"Expected named applied reference but got $o while processing $context")
+      }
     }
   }
 
