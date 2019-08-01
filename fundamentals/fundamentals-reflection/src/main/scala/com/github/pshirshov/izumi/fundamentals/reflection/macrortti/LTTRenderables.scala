@@ -24,18 +24,12 @@ trait LTTRenderables extends WithRenderableSyntax {
       i.render()
     case r: Refinement =>
       r.render()
-//    case r: Contract =>
-//      r.render()
   }
-
 
   implicit def r_Refinement: Renderable[Refinement] = (value: Refinement) => {
     s"(${value.reference.render()} & ${value.decls.map(_.render()).toSeq.sorted.mkString("{", ", ", "}")})"
   }
 
-//  implicit def r_Contract: Renderable[Contract] = (value: Contract) => {
-//    s"(${value.ref.render()} | ${value.boundaries})"
-//  }
 
   implicit def r_RefinementDecl: Renderable[RefinementDecl] = {
     case RefinementDecl.Signature(name, input, output) =>
@@ -102,47 +96,43 @@ trait LTTRenderables extends WithRenderableSyntax {
 object LTTRenderables {
 
   object Short extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] = new Renderable[NameReference] {
-      override def render(value: NameReference): String = {
-        val r = value.ref.split('.').last
+    override protected def nameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
+      val r = value.ref.split('.').last
 
-        val rr = value.boundaries match {
-          case _: Boundaries.Defined =>
-            s"$r|${value.boundaries.render()}"
-          case Boundaries.Empty =>
-            r
-        }
+      val rr = value.boundaries match {
+        case _: Boundaries.Defined =>
+          s"$r|${value.boundaries.render()}"
+        case Boundaries.Empty =>
+          r
+      }
 
-        value.prefix match {
-          case Some(p) =>
+      value.prefix match {
+        case Some(p) =>
 
-            s"${(p:LightTypeTag).render()}::$rr"
-          case None =>
-            rr
-        }
+          s"${(p: LightTypeTag).render()}::$rr"
+        case None =>
+          rr
       }
     }
 
   }
 
   object Long extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] =  new Renderable[NameReference] {
-      override def render(value: NameReference): String = {
-        val r = value.ref
-        val rr = value.boundaries match {
-          case _: Boundaries.Defined =>
-            s"$r|${value.boundaries.render()}"
-          case Boundaries.Empty =>
-            r
-        }
+    override protected def nameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
+      val r = value.ref
+      val rr = value.boundaries match {
+        case _: Boundaries.Defined =>
+          s"$r|${value.boundaries.render()}"
+        case Boundaries.Empty =>
+          r
+      }
 
-        value.prefix match {
-          case Some(p) =>
+      value.prefix match {
+        case Some(p) =>
 
-            s"${(p:LightTypeTag).render()}::$rr"
-          case None =>
-            rr
-        }
+          s"${(p: LightTypeTag).render()}::$rr"
+        case None =>
+          rr
       }
     }
   }

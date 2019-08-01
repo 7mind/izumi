@@ -100,7 +100,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
           any(
             all(boundIsOk, parentsOf(s).exists(p => isChild(p, ot, ctx))),
-            all(boundIsOk, ctx.map(_.name).contains(o.ref)), // lambda parameter may accept anything. TODO: boundary check
+            all(boundIsOk, ctx.map(_.name).contains(o.ref)), // lambda parameter may accept anything
             s.boundaries match {
               case Boundaries.Defined(bottom, top) =>
                 isChild(top, o, ctx)

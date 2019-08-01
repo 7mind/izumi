@@ -126,10 +126,6 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-//  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference {
-//    override def toString: String = this.render()
-//  }
-
   sealed trait Variance {
     override def toString: String = this.render()
   }
@@ -153,20 +149,6 @@ object LightTypeTag {
     case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
 
     case object Empty extends Boundaries
-
-  }
-
-  sealed trait AbstractKind {
-    override def toString: String = this.render()
-  }
-
-  object AbstractKind {
-
-    case object Proper extends AbstractKind
-
-    case class Hole(boundaries: Boundaries, variance: Variance) extends AbstractKind
-
-    case class Kind(parameters: List[AbstractKind], boundaries: Boundaries, variance: Variance) extends AbstractKind
 
   }
 

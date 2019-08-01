@@ -46,8 +46,6 @@ protected[macrortti] trait LTTLiftables {
       q"$LightTypeTag.IntersectionReference($p)"
     case Refinement(ref, decls) =>
       q"$LightTypeTag.Refinement($ref, $decls)"
-//    case Contract(ref, boundaries) =>
-//      q"$LightTypeTag.Contract($ref, $boundaries)"
   }
 
   implicit val lifted_RefinementDecl: Liftable[RefinementDecl] = Liftable[RefinementDecl] {

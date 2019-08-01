@@ -195,9 +195,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
           val allbases = tpeBases(i)
 
-          //          if (targetRef.toString.contains("<refinement>")) {
-          //            throw new IllegalStateException(s"Unexpected refinement for $i, $targetRef, ${showRaw(tpef.typeConstructor)}")
-          //          }
 
 
           srcname ++ allbases.map {
@@ -265,11 +262,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       .filterNot {
         s =>
           val btype = s.asType.toType
-          //          println(s"${btype} vs ${tpe}")
-          //          println(btype.erasure)
-          //          println(tpe.erasure)
-
-          ignored.exists(_ =:= btype) || btype =:= tpef /*|| btype.erasure =:= norm(ReflectionUtil.deannotate(tpe)).erasure.asInstanceOf[Type]*/
+          ignored.exists(_ =:= btype) || btype =:= tpef
       }
       .map(s => tpef.baseType(s))
 
@@ -311,26 +304,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     }
 
-    //    def makeKind(kt: Type): AbstractKind = {
-    //      val ts = kt.dealias.resultType.typeSymbol.typeSignature
-    //      val variance = toVariance(kt)
-    //
-    //      if (ts.takesTypeArgs) {
-    //        ts match {
-    //          case _: TypeBoundsApi =>
-    //            val boundaries = makeBoundaries(ts)
-    //            Hole(boundaries, variance)
-    //
-    //          case PolyType(params, result) =>
-    //            val boundaries = makeBoundaries(result)
-    //            val paramsAsTypes = params.map(_.asType.toType)
-    //            Kind(paramsAsTypes.map(makeKind), boundaries, variance)
-    //        }
-    //      } else {
-    //        Proper
-    //      }
-    //    }
-
     def makeLambda(t: Type): AbstractReference = {
       val asPoly = t.etaExpand
       val result = asPoly.resultType.dealias
@@ -369,7 +342,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         case args =>
           val params = args.zip(t.dealias.typeConstructor.typeParams).map {
             case (a, pa) =>
-              TypeParam(makeRef(a), /*makeKind(pa.asType.toType),*/ toVariance(pa.asType))
+              TypeParam(makeRef(a),toVariance(pa.asType))
           }
           FullReference(nameref.ref, params, prefix)
       }
@@ -400,12 +373,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
 
       withRef
-      //      makeBoundaries(t) match {
-      //        case b: Boundaries.Defined =>
-      //          Contract(withRef, b)
-      //        case Boundaries.Empty =>
-      //          withRef
-      //      }
     }
 
     val out = tpe match {
@@ -413,7 +380,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         makeLambda(tpe)
       case p if p.takesTypeArgs =>
 
-        xprintln(s"typearg type $p, context: $terminalNames")
         if (terminalNames.contains(p.typeSymbol.fullName)) {
           unpackRefined(p, terminalNames)
         } else {
@@ -421,8 +387,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         }
 
       case c =>
-        xprintln(s"applied type $c, context: $terminalNames")
-
         unpackRefined(c, terminalNames)
     }
 
@@ -518,7 +482,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
   }
 
-  private def fullDealias(t: u.Type) = {
+  private def fullDealias(t: u.Type): u.Type = {
     if (t.takesTypeArgs) {
       t.etaExpand.dealias.resultType.dealias.resultType
     } else {
@@ -573,11 +537,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     out
   }
-
-  //  private def toVariance(tpe: Type): Variance = {
-  //    val typeSymbolTpe = tpe.typeSymbol.asType
-  //    toVariance(typeSymbolTpe)
-  //  }
 
   private def toVariance(tpes: TypeSymbol): Variance = {
     if (tpes.isCovariant) {
