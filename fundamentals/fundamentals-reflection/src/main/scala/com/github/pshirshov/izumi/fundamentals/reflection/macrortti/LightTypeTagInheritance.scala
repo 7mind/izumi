@@ -6,18 +6,19 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 import scala.collection.mutable
 
 final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
-  final val nothing = NameReference("scala.Nothing")
-  final val any = NameReference("scala.Any")
-  final val anyRef = NameReference("scala.AnyRef")
+  final val tpeNothing = NameReference("scala.Nothing")
+  final val tpeAny = NameReference("scala.Any")
+  final val tpeAnyRef = NameReference("scala.AnyRef")
+  final val tpeObject = NameReference("java.lang.Object")
 
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
-//  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-//
-//  println(s"${self} vs ${other}")
-//  println(s"inheritance: ${ib.niceList()}")
-//  println(s"bases: ${bdb.niceList()}")
+  //  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+  //
+  //  println(s"${self} vs ${other}")
+  //  println(s"inheritance: ${ib.niceList()}")
+  //  println(s"bases: ${bdb.niceList()}")
 
   def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
     val out = mutable.HashSet[NameReference]()
@@ -48,11 +49,13 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     isChild(st, ot, List.empty)
   }
 
+  import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
+
   private def isChild(st: LightTypeTag, ot: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
 
     if (st == ot) {
       true
-    } else if (st == nothing || ot == any || ot == anyRef) {
+    } else if (st == tpeNothing || ot == tpeAny || ot == tpeAnyRef || ot == tpeObject) {
       // TODO: we may want to check that in case of anyref target type is not a primitve (though why?)
       true
     }
@@ -88,7 +91,18 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         case (s: NameReference, _: FullReference) =>
           parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
         case (s: NameReference, o: NameReference) =>
-          parentsOf(s).exists(p => isChild(p, ot, ctx)) || ctx.map(_.name).contains(o.ref)
+          all(
+            any(
+              parentsOf(s).exists(p => isChild(p, ot, ctx)),
+              ctx.map(_.name).contains(o.ref), // lambda parameter may accept anything. TODO: boundary check
+            ),
+            o.boundaries match {
+              case Boundaries.Defined(bottom, top) =>
+                isChild(s, top, ctx) && isChild(bottom, s, ctx)
+              case Boundaries.Empty =>
+                true
+            }
+          )
         case (_: AppliedNamedReference, o: Lambda) =>
           isChild(st, o.output, o.input)
         case (s: Lambda, o: AppliedNamedReference) =>

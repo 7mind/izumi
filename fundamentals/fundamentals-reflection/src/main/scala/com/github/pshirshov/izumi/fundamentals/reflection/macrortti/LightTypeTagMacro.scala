@@ -27,8 +27,8 @@ object `LTT[+_]` {
   implicit def apply[T[+ _]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
-object `LTT[A, _ <: A]` {
-  implicit def apply[A, T[_ <: A]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[A]]
+object `LTT[A,B,_>:B<:A]` {
+  implicit def apply[A, B <: A, T[_ >: B <: A]]: FLTT = macro LightTypeTagMacro.makeFLTT[T[Nothing]]
 }
 
 object `LTT[_[_]]` {
@@ -237,8 +237,18 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
   }
 
   private def extract(tpe: Type, inh: mutable.HashSet[Type]): Unit = {
-    inh ++= Seq(tpe, tpe.dealias.resultType)
-    tpe.typeArgs.filterNot(inh.contains).foreach {
+    val current = Seq(tpe, tpe.dealias.resultType)
+    inh ++= current
+
+    val more = tpe.etaExpand.resultType.dealias.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
+      case t: TypeBoundsApi =>
+        Seq(t.hi, t.lo)
+      case _ =>
+        Seq.empty
+    })
+
+    val next = (tpe.typeArgs ++ more).filterNot(inh.contains)
+    next.foreach {
       a =>
         extract(a, inh)
     }
@@ -564,10 +574,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     out
   }
 
-//  private def toVariance(tpe: Type): Variance = {
-//    val typeSymbolTpe = tpe.typeSymbol.asType
-//    toVariance(typeSymbolTpe)
-//  }
+  //  private def toVariance(tpe: Type): Variance = {
+  //    val typeSymbolTpe = tpe.typeSymbol.asType
+  //    toVariance(typeSymbolTpe)
+  //  }
 
   private def toVariance(tpes: TypeSymbol): Variance = {
     if (tpes.isCovariant) {

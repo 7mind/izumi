@@ -67,6 +67,12 @@ class LightTypeTagTest extends WordSpec {
 
   type Const[A, B] = B
 
+  trait H1
+  trait H2 extends H1
+  trait H3 extends H2
+  trait H4 extends H3
+  trait H5 extends H4
+
   def println(o: Any) = info(o.toString)
 
   def println(o: FLTT) = info(o.t.toString)
@@ -175,6 +181,20 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[Option[Nothing]], LTT[Option[Int]])
       assertChild(LTT[None.type], LTT[Option[Int]])
 
+      assertChild(LTT[Option[W2]], LTT[Option[_ <: W1]])
+      assertNotChild(LTT[Option[W2]], LTT[Option[_ <: I1]])
+
+
+      assertChild(LTT[Option[H3]], LTT[Option[_ >: H4 <: H2 ]])
+      assertNotChild(LTT[Option[H1]], LTT[Option[_ >: H4 <: H2 ]])
+
+      // bottom boundary is weird!
+      assertChild(LTT[Option[H5]], LTT[Option[_ >: H4 <: H2 ]])
+
+      // I consider this stuff practically useless
+      type X[A >: H4 <: H2 ] = Option[A]
+      assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
+      assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
     }
 
     "support PDTs" in {
