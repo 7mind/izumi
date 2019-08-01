@@ -1,7 +1,7 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.functional.{Renderable, WithRenderableSyntax}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractKind, AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, Contract, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam, Variance}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 trait LTTRenderables extends WithRenderableSyntax {
 
@@ -24,8 +24,8 @@ trait LTTRenderables extends WithRenderableSyntax {
       i.render()
     case r: Refinement =>
       r.render()
-    case r: Contract =>
-      r.render()
+//    case r: Contract =>
+//      r.render()
   }
 
 
@@ -33,9 +33,9 @@ trait LTTRenderables extends WithRenderableSyntax {
     s"(${value.reference.render()} & ${value.decls.map(_.render()).toSeq.sorted.mkString("{", ", ", "}")})"
   }
 
-  implicit def r_Contract: Renderable[Contract] = (value: Contract) => {
-    s"(${value.ref.render()} | ${value.boundaries})"
-  }
+//  implicit def r_Contract: Renderable[Contract] = (value: Contract) => {
+//    s"(${value.ref.render()} | ${value.boundaries})"
+//  }
 
   implicit def r_RefinementDecl: Renderable[RefinementDecl] = {
     case RefinementDecl.Signature(name, input, output) =>
@@ -56,13 +56,7 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit def r_LambdaParameter: Renderable[LambdaParameter] = (value: LambdaParameter) => {
-    value.kind match {
-      case AbstractKind.Proper =>
-        s"%${value.name}"
-
-      case k =>
-        s"%(${value.name}: ${k.render()})"
-    }
+    s"%${value.name}"
   }
 
   implicit def r_NameReference: Renderable[NameReference] = nameRefRenderer
@@ -78,14 +72,7 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit def r_TypeParam: Renderable[TypeParam] = (value: TypeParam) => {
-    value.kind match {
-      case AbstractKind.Proper =>
-        s"${value.variance.render()}${value.ref}"
-
-      case k =>
-        s"${value.variance.render()}${value.ref}:${k.render()}"
-
-    }
+    s"${value.variance.render()}${value.ref}"
   }
 
   implicit def r_Variance: Renderable[Variance] = {

@@ -46,8 +46,8 @@ protected[macrortti] trait LTTLiftables {
       q"$LightTypeTag.IntersectionReference($p)"
     case Refinement(ref, decls) =>
       q"$LightTypeTag.Refinement($ref, $decls)"
-    case Contract(ref, boundaries) =>
-      q"$LightTypeTag.Contract($ref, $boundaries)"
+//    case Contract(ref, boundaries) =>
+//      q"$LightTypeTag.Contract($ref, $boundaries)"
   }
 
   implicit val lifted_RefinementDecl: Liftable[RefinementDecl] = Liftable[RefinementDecl] {
@@ -71,12 +71,12 @@ protected[macrortti] trait LTTLiftables {
 
   implicit val lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {
     r =>
-      q"$LightTypeTag.TypeParam(${r.ref}, ${r.kind}, ${r.variance})"
+      q"$LightTypeTag.TypeParam(${r.ref}, ${r.variance})"
   }
 
   implicit val lifted_LambdaParameter: Liftable[LambdaParameter] = Liftable[LambdaParameter] {
     p =>
-      q"$LightTypeTag.LambdaParameter(${p.name}, ${p.kind})"
+      q"$LightTypeTag.LambdaParameter(${p.name})"
   }
 
   implicit val lifted_AbstractReference: Liftable[AbstractReference] = Liftable[AbstractReference] {

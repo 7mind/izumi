@@ -308,7 +308,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
       if (ts.takesTypeArgs) {
         ts match {
-          case b: TypeBoundsApi =>
+          case _: TypeBoundsApi =>
             val boundaries = makeBoundaries(ts)
             Hole(boundaries, variance)
 
@@ -327,7 +327,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       val result = asPoly.resultType.dealias
       val lamParams = t.typeParams.zipWithIndex.map {
         case (p, idx) =>
-          p.fullName -> LambdaParameter(idx.toString, makeKind(p.asType.toType))
+          p.fullName -> LambdaParameter(idx.toString) //, makeKind(p.asType.toType))
       }
 
       xprintln(s"working on lambda $t")
@@ -360,7 +360,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         case args =>
           val params = args.zip(t.dealias.typeConstructor.typeParams).map {
             case (a, pa) =>
-              TypeParam(makeRef(a), makeKind(pa.asType.toType), toVariance(pa.asType))
+              TypeParam(makeRef(a), /*makeKind(pa.asType.toType),*/ toVariance(pa.asType))
           }
           FullReference(nameref.ref, params, prefix)
       }
@@ -390,12 +390,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           out
       }
 
-      makeBoundaries(t) match {
-        case b: Boundaries.Defined =>
-          Contract(withRef, b)
-        case Boundaries.Empty =>
-          withRef
-      }
+      withRef
+//      makeBoundaries(t) match {
+//        case b: Boundaries.Defined =>
+//          Contract(withRef, b)
+//        case Boundaries.Empty =>
+//          withRef
+//      }
     }
 
     val out = tpe match {
@@ -449,7 +450,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
               inputs.map {
                 pl =>
-                  RefinementDecl.Signature(m.name.decodedName.decoded, pl.toList, makeRef(ret, Set(ret), terminalNames).asInstanceOf[AppliedReference])
+                  RefinementDecl.Signature(m.name.decodedName.toString, pl.toList, makeRef(ret, Set(ret), terminalNames).asInstanceOf[AppliedReference])
               }
             } else if (decl.isType) {
 
@@ -459,7 +460,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
                 decl.typeSignature
               }
               val ref = makeRef(tpe, Set(tpe), terminalNames)
-              Seq(TypeMember(decl.name.decoded, ref))
+              Seq(TypeMember(decl.name.decodedName.toString, ref))
             } else {
               None
             }

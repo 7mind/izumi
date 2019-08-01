@@ -72,7 +72,7 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  case class LambdaParameter(name: String, kind: AbstractKind) {
+  case class LambdaParameter(name: String) {
     override def toString: String = this.render()
   }
 
@@ -108,7 +108,7 @@ object LightTypeTag {
     def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
 
-  case class TypeParam(ref: AbstractReference, kind: AbstractKind, variance: Variance) {
+  case class TypeParam(ref: AbstractReference, variance: Variance) {
     override def toString: String = this.render()
   }
 
@@ -126,9 +126,9 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference {
-    override def toString: String = this.render()
-  }
+//  case class Contract(ref: AppliedReference, boundaries: Boundaries) extends AppliedReference {
+//    override def toString: String = this.render()
+//  }
 
   sealed trait Variance {
     override def toString: String = this.render()

@@ -16,8 +16,8 @@ protected[macrortti] object RuntimeAPI {
           p.name -> idx.toString
       }
       val nr = newParams.zipWithIndex.map {
-        case (p, idx) =>
-          LambdaParameter(idx.toString, p.kind)
+        case (_, idx) =>
+          LambdaParameter(idx.toString)
       }
       Lambda(nr, replaceRefNames(replaced, renamed.toMap))
     }
@@ -39,8 +39,8 @@ protected[macrortti] object RuntimeAPI {
 
       case FullReference(ref, parameters, prefix) =>
         val p = parameters.map {
-          case TypeParam(pref, kind, variance) =>
-            TypeParam(replaceRefs(pref, xparameters), kind, variance)
+          case TypeParam(pref, variance) =>
+            TypeParam(replaceRefs(pref, xparameters), variance)
         }
         FullReference(ref, p, prefix)
     }
@@ -63,8 +63,8 @@ protected[macrortti] object RuntimeAPI {
 
       case FullReference(ref, parameters, prefix) =>
         val p = parameters.map {
-          case TypeParam(pref, kind, variance) =>
-            TypeParam(replaceRefNames(pref, xparameters), kind, variance)
+          case TypeParam(pref, variance) =>
+            TypeParam(replaceRefNames(pref, xparameters), variance)
         }
         FullReference(ref, p, prefix)
     }
