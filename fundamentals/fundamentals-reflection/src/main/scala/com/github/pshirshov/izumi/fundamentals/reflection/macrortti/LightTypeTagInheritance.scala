@@ -108,6 +108,13 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           s.refs.exists(c => isChild(c, o, ctx))
         case (s: LightTypeTag, o: IntersectionReference) =>
           o.refs.forall(o => isChild(s, o, ctx))
+
+        case (s: Refinement, o: Refinement) =>
+          isChild(s.reference, o.reference, ctx) && o.decls.diff(s.decls).isEmpty
+        case (s: Refinement, o: LightTypeTag) =>
+          isChild(s.reference, o, ctx)
+        case (s: LightTypeTag, o: Refinement) =>
+          false
       }
     }
   }

@@ -252,6 +252,22 @@ class LightTypeTagTest extends WordSpec {
       assertSame(LTT[a1.A], LTT[Z.X#A])
     }
 
+    "support structural & refinement type subtype checks" in {
+      type C1 = C
+      assertChild(LTT[ {def a: Int}], LTT[ {def a: Int}])
+      assertChild(LTT[C {def a: Int}], LTT[C1 {def a: Int}])
+
+
+      assertChild(LTT[C {def a: Int}], LTT[C])
+      assertNotChild(LTT[C], LTT[C {def a: Int}])
+
+      assertChild(LTT[C {def a: Int; def b: Int}], LTT[C {def a: Int}])
+      assertNotChild(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
+
+      assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
+    }
+
+
     "progression test: DON'T resolve concrete types through PDTs and projections" in intercept[TestFailedException] {
       val a1 = new C {
         override type A <: Int
