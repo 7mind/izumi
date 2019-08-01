@@ -16,7 +16,7 @@ object ExtendedProjectMacro {
     }
   }
 
-  private def extractName(c: blackbox.Context) = {
+  private def extractName(c: blackbox.Context): c.Expr[String] = {
     import c.universe._
     val enclosingValName = std.KeyMacro.definingValName(
       c,

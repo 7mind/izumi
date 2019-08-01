@@ -9,7 +9,6 @@ import xsbti.compile.CompileAnalysis
 
 import scala.util.control.NonFatal
 
-
 // TODO: does not support SJS yet - it needs to run after ScalaJSPlugin.autoImport.scalaJSIR which is not so trivial
 object IzumiExposedTestScopesPlugin extends AutoPlugin {
   //override def trigger = allRequirements

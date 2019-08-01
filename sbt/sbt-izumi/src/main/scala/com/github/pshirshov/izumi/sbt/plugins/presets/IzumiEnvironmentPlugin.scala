@@ -14,9 +14,4 @@ trait IzumiEnvironmentBase extends AutoPlugin {
     plugins.IzumiInheritedTestScopesPlugin
 }
 
-
-
-
-object IzumiEnvironmentPlugin extends IzumiEnvironmentBase {
-
-}
+object IzumiEnvironmentPlugin extends IzumiEnvironmentBase

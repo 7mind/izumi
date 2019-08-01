@@ -9,7 +9,6 @@ import sbt.Keys._
 import sbt.{Def, _}
 import sbt.internal.util.ConsoleLogger
 
-
 object IzumiGitStampPlugin extends AutoPlugin {
   protected val logger: ConsoleLogger = ConsoleLogger()
 

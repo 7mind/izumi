@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Renderer.Aggregate

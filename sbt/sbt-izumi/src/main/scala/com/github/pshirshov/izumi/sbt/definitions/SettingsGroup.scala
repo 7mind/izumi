@@ -44,6 +44,7 @@ trait AbstractSettingsGroup {
   def applyTo(p: Project): Project = {
     p
       .enablePlugins(plugins.toSeq: _*)
+      .enablePlugins(pluginsJvmOnly.toSeq: _*)
       .disablePlugins(disabledPlugins.toSeq: _*)
       .depends(sharedLibs: _*)
       .settings(
