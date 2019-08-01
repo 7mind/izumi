@@ -103,21 +103,21 @@ class LightTypeTagTest extends WordSpec {
 
   def assertCombine(outer: FLTT, inner: Seq[FLTT], expected: FLTT): Unit = {
     val combined = outer.combine(inner: _*)
-    info(s"($outer)(${inner.mkString(",")}) => $combined =?= $expected")
+    info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
     assert(combined == expected)
     ()
   }
 
   def assertCombine(outer: FLTT, inner: FLTT, expected: FLTT): Unit = {
     val combined = outer.combine(inner)
-    info(s"($outer)($inner) => $combined =?= $expected")
+    info(s"($outer)•($inner) => $combined =?= $expected")
     assert(combined == expected)
     ()
   }
 
   def assertCombineNonPos(outer: FLTT, inner: Seq[Option[FLTT]], expected: FLTT): Unit = {
     val combined = outer.combineNonPos(inner: _*)
-    info(s"($outer)(${inner.mkString(",")}) => $combined =?= $expected")
+    info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
     assert(combined == expected)
     ()
   }

@@ -6,9 +6,9 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 import scala.collection.mutable
 
 final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
-  final val nothing = NameReference("scala.Nothing", None)
-  final val any = NameReference("scala.Any", None)
-  final val anyRef = NameReference("scala.AnyRef", None)
+  final val nothing = NameReference("scala.Nothing")
+  final val any = NameReference("scala.Any")
+  final val anyRef = NameReference("scala.AnyRef")
 
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)

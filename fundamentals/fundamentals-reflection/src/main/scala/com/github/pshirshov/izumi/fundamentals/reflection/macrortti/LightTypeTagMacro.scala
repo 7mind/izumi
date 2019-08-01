@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.AbstractKind.{Hole, Kind, Proper}
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.RefinementDecl.TypeMember
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
@@ -179,13 +178,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           val tpef = i.dealias.resultType
           val targetNameRef = tpef.typeSymbol.fullName
           val prefix = toPrefix(tpef)
-          val targetRef = NameReference(targetNameRef, prefix)
+          val targetRef = NameReference(targetNameRef, prefix = prefix)
 
           val srcname = i match {
             case a: TypeRefApi =>
               val srcname = a.sym.fullName
               if (srcname != targetNameRef) {
-                Seq((NameReference(srcname, toPrefix(i)), targetRef))
+                Seq((NameReference(srcname, prefix = toPrefix(i)), targetRef))
               } else {
                 Seq.empty
               }
@@ -302,25 +301,25 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     }
 
-    def makeKind(kt: Type): AbstractKind = {
-      val ts = kt.dealias.resultType.typeSymbol.typeSignature
-      val variance = toVariance(kt)
-
-      if (ts.takesTypeArgs) {
-        ts match {
-          case _: TypeBoundsApi =>
-            val boundaries = makeBoundaries(ts)
-            Hole(boundaries, variance)
-
-          case PolyType(params, result) =>
-            val boundaries = makeBoundaries(result)
-            val paramsAsTypes = params.map(_.asType.toType)
-            Kind(paramsAsTypes.map(makeKind), boundaries, variance)
-        }
-      } else {
-        Proper
-      }
-    }
+    //    def makeKind(kt: Type): AbstractKind = {
+    //      val ts = kt.dealias.resultType.typeSymbol.typeSignature
+    //      val variance = toVariance(kt)
+    //
+    //      if (ts.takesTypeArgs) {
+    //        ts match {
+    //          case _: TypeBoundsApi =>
+    //            val boundaries = makeBoundaries(ts)
+    //            Hole(boundaries, variance)
+    //
+    //          case PolyType(params, result) =>
+    //            val boundaries = makeBoundaries(result)
+    //            val paramsAsTypes = params.map(_.asType.toType)
+    //            Kind(paramsAsTypes.map(makeKind), boundaries, variance)
+    //        }
+    //      } else {
+    //        Proper
+    //      }
+    //    }
 
     def makeLambda(t: Type): AbstractReference = {
       val asPoly = t.etaExpand
@@ -344,13 +343,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       val tpef = t.dealias.resultType
       val prefix = toPrefix(tpef)
       val typeSymbol = tpef.typeSymbol
-
+      val b = makeBoundaries(tpef)
       val nameref = rules.get(typeSymbol.fullName) match {
         case Some(value) =>
-          NameReference(value.name, prefix)
+          NameReference(value.name, b, prefix)
 
         case None =>
-          NameReference(typeSymbol.fullName, prefix)
+          NameReference(typeSymbol.fullName, b, prefix)
       }
 
       tpef.typeArgs match {
@@ -391,12 +390,12 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
 
       withRef
-//      makeBoundaries(t) match {
-//        case b: Boundaries.Defined =>
-//          Contract(withRef, b)
-//        case Boundaries.Empty =>
-//          withRef
-//      }
+      //      makeBoundaries(t) match {
+      //        case b: Boundaries.Defined =>
+      //          Contract(withRef, b)
+      //        case Boundaries.Empty =>
+      //          withRef
+      //      }
     }
 
     val out = tpe match {
@@ -551,7 +550,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
                 val u = s.typeSignature
                 if (u.typeSymbol.isAbstract) {
 
-                  Some(NameReference(o.termSymbol.fullName, None))
+                  Some(NameReference(o.termSymbol.fullName))
                 } else {
                   fromRef(u)
                 }
@@ -565,10 +564,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     out
   }
 
-  private def toVariance(tpe: Type): Variance = {
-    val typeSymbolTpe = tpe.typeSymbol.asType
-    toVariance(typeSymbolTpe)
-  }
+//  private def toVariance(tpe: Type): Variance = {
+//    val typeSymbolTpe = tpe.typeSymbol.asType
+//    toVariance(typeSymbolTpe)
+//  }
 
   private def toVariance(tpes: TypeSymbol): Variance = {
     if (tpes.isCovariant) {

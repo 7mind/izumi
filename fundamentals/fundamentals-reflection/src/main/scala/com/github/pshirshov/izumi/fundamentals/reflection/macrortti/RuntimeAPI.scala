@@ -29,7 +29,7 @@ protected[macrortti] object RuntimeAPI {
         l
       case IntersectionReference(refs) =>
         IntersectionReference(refs.map(replaceRefs(_, xparameters).asInstanceOf[AppliedNamedReference]))
-      case n@NameReference(ref, _) =>
+      case n@NameReference(ref, _, _) =>
         xparameters.get(ref) match {
           case Some(value) =>
             value
@@ -53,10 +53,10 @@ protected[macrortti] object RuntimeAPI {
         l
       case IntersectionReference(refs) =>
         IntersectionReference(refs.map(replaceRefNames(_, xparameters).asInstanceOf[AppliedNamedReference]))
-      case n@NameReference(ref, prefix) =>
+      case n@NameReference(ref, b, prefix) =>
         xparameters.get(ref) match {
           case Some(value) =>
-            NameReference(value, prefix)
+            NameReference(value, b, prefix)
           case None =>
             n
         }

@@ -105,12 +105,20 @@ object LTTRenderables {
     override protected def nameRefRenderer: Renderable[NameReference] = new Renderable[NameReference] {
       override def render(value: NameReference): String = {
         val r = value.ref.split('.').last
+
+        val rr = value.boundaries match {
+          case _: Boundaries.Defined =>
+            s"$r|${value.boundaries.render()}"
+          case Boundaries.Empty =>
+            r
+        }
+
         value.prefix match {
           case Some(p) =>
 
-            s"${(p:LightTypeTag).render()}::${r}"
+            s"${(p:LightTypeTag).render()}::$rr"
           case None =>
-            r
+            rr
         }
       }
     }
@@ -121,12 +129,19 @@ object LTTRenderables {
     override protected def nameRefRenderer: Renderable[NameReference] =  new Renderable[NameReference] {
       override def render(value: NameReference): String = {
         val r = value.ref
+        val rr = value.boundaries match {
+          case _: Boundaries.Defined =>
+            s"$r|${value.boundaries.render()}"
+          case Boundaries.Empty =>
+            r
+        }
+
         value.prefix match {
           case Some(p) =>
 
-            s"${(p:LightTypeTag).render()}::${r}"
+            s"${(p:LightTypeTag).render()}::$rr"
           case None =>
-            r
+            rr
         }
       }
     }

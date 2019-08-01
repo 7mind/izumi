@@ -86,7 +86,7 @@ object LightTypeTag {
     override def toString: String = this.render()
   }
 
-  case class NameReference(ref: String, prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  case class NameReference(ref: String, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = this
 
@@ -94,12 +94,12 @@ object LightTypeTag {
   }
 
   object NameReference {
-    def apply(ref: String, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, prefix)
+    def apply(ref: String, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
   }
 
   case class FullReference(ref: String, parameters: List[TypeParam],  prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
-    override def asName: NameReference = NameReference(ref, prefix)
+    override def asName: NameReference = NameReference(ref, prefix = prefix)
 
     override def toString: String = this.render()
   }

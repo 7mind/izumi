@@ -66,7 +66,7 @@ protected[macrortti] trait LTTLiftables {
 
   implicit val lifted_NameReference: Liftable[NameReference] = Liftable[NameReference] {
     nr =>
-      q"$LightTypeTag.NameReference(${nr.ref}, ${nr.prefix})"
+      q"$LightTypeTag.NameReference(${nr.ref}, ${nr.boundaries}, ${nr.prefix})"
   }
 
   implicit val lifted_TypeParameter: Liftable[TypeParam] = Liftable[TypeParam] {
