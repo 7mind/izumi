@@ -15,20 +15,23 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
-//  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-//
-//  println(s"${self} vs ${other}")
-//  println(s"inheritance: ${ib.niceList()}")
-//  println(s"bases: ${bdb.niceList()}")
 
-  def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
+  private def debug() = {
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+
+    println(s"${self} vs ${other}")
+    println(s"inheritance: ${ib.niceList()}")
+    println(s"bases: ${bdb.niceList()}")
+  }
+
+  private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
     val out = mutable.HashSet[NameReference]()
     val tested = mutable.HashSet[NameReference]()
     parentsOf(t, out, tested)
     out.toSet
   }
 
-  def parentsOf(t: NameReference, out: mutable.HashSet[NameReference], tested: mutable.HashSet[NameReference]): Unit = {
+  private def parentsOf(t: NameReference, out: mutable.HashSet[NameReference], tested: mutable.HashSet[NameReference]): Unit = {
     val direct = ib.get(t).toSet.flatten
     tested += t
     out ++= direct
@@ -50,48 +53,36 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     isChild(st, ot, List.empty)
   }
 
-
-  private def oneOfKnownParentsIsInherited(ctx: List[LambdaParameter], o: FullReference, parents: Set[AbstractReference]): Boolean = {
-    // this (definitely safe) policy allows us to support the following cases:
-    // - F2[_] <: F1[_] => F2[Int] <: F1[Int]
-    // - shape-changing parents
-    // though it comes with a price of additional tree overhead/runtime overhead.
-    //println(s"$st vs $ot, $parents")
-
-    parents.exists {
-      knownParent =>
-        isChild(knownParent, o, ctx)
-
-    }
+  private def safeParentsOf(t: AbstractReference): Seq[AbstractReference] = {
+    bdb.get(t).toSeq.flatten
+  }
+  
+  private def oneOfKnownParentsIsInheritedFrom(ctx: List[LambdaParameter], child: AbstractReference, parent: AbstractReference) = {
+    safeParentsOf(child).exists(p => isChild(p, parent, ctx))
   }
 
-  private def isChild(st: LightTypeTag, ot: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
+  private def isChild(selfT: LightTypeTag, thatT: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
 
-    if (st == ot) {
+    if (selfT == thatT) {
       true
-    } else if (st == tpeNothing || ot == tpeAny || ot == tpeAnyRef || ot == tpeObject) {
+    } else if (selfT == tpeNothing || thatT == tpeAny || thatT == tpeAnyRef || thatT == tpeObject) {
       // TODO: we may want to check that in case of anyref target type is not a primitve (though why?)
       true
     }
     else {
-      (st, ot) match {
-        case (s: FullReference, o: FullReference) =>
-          if (parentsOf(s.asName).contains(o)) {
+      (selfT, thatT) match {
+        case (s: FullReference, t: FullReference) =>
+          if (parentsOf(s.asName).contains(t)) {
             true
           } else {
-            bdb.get(s) match {
-              case Some(parents) =>
-                oneOfKnownParentsIsInherited(ctx, o, parents) || shapeHeuristic(s, o, ctx)
-              case _ =>
-                shapeHeuristic(s, o, ctx)
-            }
+            oneOfKnownParentsIsInheritedFrom(ctx, s, t) || shapeHeuristic(s, t, ctx)
           }
-        case (s: FullReference, o: NameReference) =>
-          parentsOf(s.asName).contains(o)
-        case (s: NameReference, _: FullReference) =>
-          parentsOf(s).exists(p => isChild(p, ot, ctx)) || bdb.get(s).toSeq.flatten.exists(p => isChild(p, ot, ctx))
-        case (s: NameReference, o: NameReference) =>
-          val boundIsOk = o.boundaries match {
+        case (s: FullReference, t: NameReference) =>
+          oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+        case (s: NameReference, t: FullReference) =>
+          oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+        case (s: NameReference, t: NameReference) =>
+          val boundIsOk = t.boundaries match {
             case Boundaries.Defined(bottom, top) =>
               isChild(s, top, ctx) && isChild(bottom, s, ctx)
             case Boundaries.Empty =>
@@ -99,66 +90,66 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           }
 
           any(
-            all(boundIsOk, parentsOf(s).exists(p => isChild(p, ot, ctx))),
-            all(boundIsOk, ctx.map(_.name).contains(o.ref)), // lambda parameter may accept anything
+            all(boundIsOk, parentsOf(s).exists(p => isChild(p, thatT, ctx))),
+            all(boundIsOk, ctx.map(_.name).contains(t.ref)), // lambda parameter may accept anything
             s.boundaries match {
-              case Boundaries.Defined(bottom, top) =>
-                isChild(top, o, ctx)
+              case Boundaries.Defined(_, top) =>
+                isChild(top, t, ctx)
               case Boundaries.Empty =>
                 false
             }
           )
 
 
-        case (_: AppliedNamedReference, o: Lambda) =>
-          isChild(st, o.output, o.input)
-        case (s: Lambda, o: AppliedNamedReference) =>
-          isChild(s.output, o, s.input)
+        case (_: AppliedNamedReference, t: Lambda) =>
+          isChild(selfT, t.output, t.input)
+        case (s: Lambda, t: AppliedNamedReference) =>
+          isChild(s.output, t, s.input)
         case (s: Lambda, o: Lambda) =>
           s.input == o.input && isChild(s.output, o.output, s.input)
-        case (s: IntersectionReference, o: IntersectionReference) =>
+        case (s: IntersectionReference, t: IntersectionReference) =>
           // yeah, this shit is quadratic
           s.refs.forall {
             c =>
-              o.refs.exists {
+              t.refs.exists {
                 p =>
                   isChild(c, p, ctx)
               }
           }
-        case (s: IntersectionReference, o: LightTypeTag) =>
-          s.refs.exists(c => isChild(c, o, ctx))
+        case (s: IntersectionReference, t: LightTypeTag) =>
+          s.refs.exists(c => isChild(c, t, ctx))
         case (s: LightTypeTag, o: IntersectionReference) =>
-          o.refs.forall(o => isChild(s, o, ctx))
+          o.refs.forall(t => isChild(s, t, ctx))
 
-        case (s: Refinement, o: Refinement) =>
-          isChild(s.reference, o.reference, ctx) && o.decls.diff(s.decls).isEmpty
-        case (s: Refinement, o: LightTypeTag) =>
-          isChild(s.reference, o, ctx)
-        case (s: LightTypeTag, o: Refinement) =>
+        case (s: Refinement, t: Refinement) =>
+          isChild(s.reference, t.reference, ctx) && t.decls.diff(s.decls).isEmpty
+        case (s: Refinement, t: LightTypeTag) =>
+          isChild(s.reference, t, ctx)
+        case (_: LightTypeTag, _: Refinement) =>
           false
       }
     }
   }
 
-  private def shapeHeuristic(s: FullReference, o: FullReference, ctx: List[LambdaParameter]): Boolean = {
+  private def shapeHeuristic(self: FullReference, that: FullReference, ctx: List[LambdaParameter]): Boolean = {
     def parameterShapeCompatible: Boolean = {
-      s.parameters.zip(o.parameters).forall {
-        case (sp, op) =>
-          sp.variance match {
+      self.parameters.zip(that.parameters).forall {
+        case (ps, pt) =>
+          ps.variance match {
             case Variance.Invariant =>
-              sp.ref == op.ref
+              ps.ref == pt.ref
             case Variance.Contravariant =>
-              isChild(op.ref, sp.ref, ctx)
+              isChild(pt.ref, ps.ref, ctx)
             case Variance.Covariant =>
-              isChild(sp.ref, op.ref, ctx)
+              isChild(ps.ref, pt.ref, ctx)
           }
       }
     }
 
     def sameArity: Boolean = {
-      s.parameters.size == o.parameters.size
+      self.parameters.size == that.parameters.size
     }
 
-    sameArity && isChild(s.asName, o.asName, ctx) && parameterShapeCompatible
+    sameArity && isChild(self.asName, that.asName, ctx) && parameterShapeCompatible
   }
 }
