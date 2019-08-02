@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.bytes
 
 import java.io.{ByteArrayInputStream, ObjectInputStream}
 
-
-class IzByteArray(bytes: Array[Byte]) {
+final class IzByteArray(private val bytes: Array[Byte]) extends AnyVal {
   def readObject[T]: T = {
     val byteArrayInputStream = new ByteArrayInputStream(bytes)
     val objectInputStream = new ObjectInputStream(byteArrayInputStream)

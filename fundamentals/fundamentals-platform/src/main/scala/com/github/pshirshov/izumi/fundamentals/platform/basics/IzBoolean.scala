@@ -1,9 +1,12 @@
 package com.github.pshirshov.izumi.fundamentals.platform.basics
 
+import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean.LazyBool
+
+import scala.language.implicitConversions
+
 trait IzBoolean {
-  final implicit class LazyBool(b: => Boolean) {
-    @inline def value: Boolean = b
-  }
+  @inline implicit final def LazyBool(b: => Boolean): LazyBool = new LazyBool(() => b)
+
   @inline final def all(b1: Boolean, b: LazyBool*): Boolean = {
     b1 && b.forall(_.value)
   }
@@ -14,5 +17,7 @@ trait IzBoolean {
 }
 
 object IzBoolean extends IzBoolean {
-
+  @inline final implicit class LazyBool(private val b: () => Boolean) extends AnyVal {
+    @inline def value: Boolean = b()
+  }
 }

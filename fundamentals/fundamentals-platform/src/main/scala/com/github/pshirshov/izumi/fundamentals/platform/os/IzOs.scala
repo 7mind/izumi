@@ -5,7 +5,6 @@ import java.util.regex.Pattern
 
 sealed trait OsType
 
-
 object OsType {
   sealed trait Nix {
     this: OsType =>

@@ -2,8 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.bytes
 
 import java.nio.ByteBuffer
 
-
-class IzByteBuffer(bytes: ByteBuffer) {
+final class IzByteBuffer(private val bytes: ByteBuffer) extends AnyVal {
   def toByteArray: Array[Byte] = {
     val b = new Array[Byte](bytes.remaining())
     bytes.get(b)

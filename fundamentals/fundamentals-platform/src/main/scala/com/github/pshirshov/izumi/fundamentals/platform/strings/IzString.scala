@@ -5,8 +5,7 @@ import java.nio.charset.StandardCharsets
 import scala.language.implicitConversions
 import scala.util.Try
 
-
-class IzString(s: String) {
+final class IzString(private val s: String) extends AnyVal {
   @inline final def utf8: Array[Byte] = {
     s.getBytes(StandardCharsets.UTF_8)
   }
@@ -70,7 +69,7 @@ class IzString(s: String) {
     }
   }
 
-  @inline def centerEllipsed(maxLength: Int, ellipsis: Option[String]): String = {
+  @inline final def centerEllipsed(maxLength: Int, ellipsis: Option[String]): String = {
     if (s.length <= maxLength) {
       s
     } else {
@@ -169,7 +168,7 @@ class IzString(s: String) {
   }
 }
 
-class IzIterable[A](s: Iterable[A]) {
+final class IzIterable[A](private val s: Iterable[A]) extends AnyVal {
   def niceList(shift: String = " ", prefix: String = "- "): String = {
     if (s.nonEmpty) {
       val fullPrefix = s"\n$shift$prefix"
@@ -182,6 +181,5 @@ class IzIterable[A](s: Iterable[A]) {
 
 object IzString {
   implicit def toRichString(s: String): IzString = new IzString(s)
-
   implicit def toRichIterable[A](s: Iterable[A]): IzIterable[A] = new IzIterable(s)
 }

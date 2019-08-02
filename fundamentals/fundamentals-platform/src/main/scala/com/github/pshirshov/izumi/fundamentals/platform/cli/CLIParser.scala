@@ -6,7 +6,6 @@ import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw._
 
 import scala.collection.mutable
 
-
 class CLIParser {
   def parse(args: Array[String]): Either[ParserError, RawAppArgs] = {
     var state: CLIParserState = new CLIParserState.Initial()

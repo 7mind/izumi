@@ -4,7 +4,7 @@ import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
 
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime.TZ_UTC
 
-class IzLongParsers(t: Long) {
+final class IzLongParsers(private val t: Long) extends AnyVal {
   def asEpochSecondsLocal: LocalDateTime = {
     val instant = Instant.ofEpochSecond(t)
     LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
