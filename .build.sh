@@ -50,7 +50,7 @@ function site {
   fi
 }
 
-function publishCheck {
+function publishIDL {
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
@@ -59,25 +59,32 @@ function publishCheck {
     return 0
   fi
 
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$) ]] ; then
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
 
-}
-
-function publishIDL {
-  publishCheck
   echo "PUBLISH IDL RUNTIMES..."
 
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
   export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
-  ./idealingua/idealingua-runtime-rpc-typescript/src/npmjs/publish.sh
-  ./idealingua/idealingua-runtime-rpc-c-sharp/src/main/nuget/publish.sh
+  ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh
+  ./idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/nuget/publish.sh
 }
 
 function publishScala {
-  publishCheck
+  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
+    return 0
+  fi
+
+  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+    return 0
+  fi
+
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+    return 0
+  fi
+
   echo "PUBLISH SCALA LIBRARIES..."
 
   csbt clean package publishSigned || exit 1
