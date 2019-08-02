@@ -429,23 +429,12 @@ object DIResource {
     /**
       * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
       * a workaround for highlighting in Intellij IDEA
-     *
-     * (it's also used to display error trace from TagK @implicitNotFound)
-     *
+      *
+      * (it's also used to display error trace from TagK @implicitNotFound)
+      *
       * TODO: include link to IJ bug tracker
       */
     implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
-
-////    ^ the above should just work as an implicit but unfortunately doesn't, this macro does the same thing scala typer should've done, but manually...
-//    def resourceTagMacroImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
-//      import c.universe._
-//
-//      val full = weakTypeOf[R].widen
-//      val base = weakTypeOf[R].baseType(symbolOf[DIResourceBase[Any, Any]])
-//      val List(f, a) = base.typeArgs
-//
-//      c.Expr[ResourceTag[R]](q"${reify(ResourceTag)}.resourceTag[$full, $f, $a]")
-//    }
   }
 
 }

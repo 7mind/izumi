@@ -1,7 +1,6 @@
 import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.{R, _}
 import com.github.pshirshov.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
 import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
-import com.typesafe.sbt.pgp.PgpSettings
 import sbt.Keys.{publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -43,7 +42,6 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
       V.scala_212,
       V.scala_213,
     ),
-    scalaVersion := crossScalaVersions.value.head,
     sonatypeProfileName := "io.7mind",
     testOptions in Test += Tests.Argument("-oDF"),
     addCompilerPlugin(R.kind_projector),
@@ -83,9 +81,6 @@ val SbtSettings = new SettingsGroup {
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
       target ~= { t => t.toPath.resolve("primary").toFile },
-      crossScalaVersions := Seq(
-        V.scala_212
-      ),
       libraryDependencies ++= Seq(
         "org.scala-sbt" % "sbt" % sbtVersion.value
       ),
@@ -108,6 +103,7 @@ val WithoutBadPluginsSbt = new SettingsGroup {
 
 }
 
+
 val SbtScriptedSettings = new SettingsGroup {
   override val id = SettingsGroupId("SbtScriptedSettings")
 
@@ -119,19 +115,18 @@ val SbtScriptedSettings = new SettingsGroup {
         scriptedLaunchOpts.value ++
           Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
       },
-      scriptedBufferLog := false
+      scriptedBufferLog := false,
     )
   ).flatten
 }
 
-val MicrositeSettings = new SettingsGroup {
-  override val id = SettingsGroupId("MicrositeSettings")
+
+val JSSettings = new SettingsGroup {
+  override val id = SettingsGroupId("JSSettings")
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
-      crossScalaVersions := Seq(
-        V.scala_212
-      ),
+      coverageEnabled := false
     )
   ).flatten
 }
@@ -152,6 +147,7 @@ lazy val inFundamentals = In("fundamentals")
 lazy val inSbt = In("sbt")
   .settings(GlobalSettings, WithoutBadPluginsSbt)
   .settings(SbtSettings, SbtScriptedSettings)
+  .settings(Scala212OnlySettings)
 
 lazy val inDiStage = In("distage")
   .settingsSeq(base)
@@ -160,6 +156,9 @@ lazy val inDiStage = In("distage")
 lazy val inLogStage = In("logstage")
   .settingsSeq(base)
   .settings(WithFundamentals)
+lazy val inLogStageX = In("logstage")
+  .settingsSeq(base)
+  .settings(WithFundamentalsX)
 
 lazy val inIdealinguaBase = In("idealingua")
   .settings(GlobalSettings, WithFundamentals)
@@ -204,6 +203,7 @@ lazy val fundamentalsPlatform = inFundamentals.as.cross(platforms)
 lazy val fundamentalsPlatformJvm = fundamentalsPlatform.jvm.remember
 lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
   .enablePlugins(ScalaJSBundlerPlugin)
+  .settings(JSSettings)
   .settings(
     scalaJSModuleKind := ModuleKind.CommonJSModule,
     npmDependencies in Compile ++= Seq(
@@ -214,6 +214,7 @@ lazy val fundamentalsPlatformJs = fundamentalsPlatform.js.remember
 lazy val fundamentalsFunctional = inFundamentals.as.cross(platforms)
 lazy val fundamentalsFunctionalJvm = fundamentalsFunctional.jvm.remember
 lazy val fundamentalsFunctionalJs = fundamentalsFunctional.js.remember
+  .settings(JSSettings)
 
 
 lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
@@ -224,6 +225,7 @@ lazy val fundamentalsBio = inFundamentals.as.cross(platforms)
   )
 lazy val fundamentalsBioJvm = fundamentalsBio.jvm.remember
 lazy val fundamentalsBioJs = fundamentalsBio.js.remember
+  .settings(JSSettings)
 
 
 lazy val WithFundamentals = new SettingsGroup {
@@ -265,6 +267,7 @@ lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
 
 lazy val fundamentalsReflectionJvm = fundamentalsReflection.jvm.remember
 lazy val fundamentalsReflectionJs = fundamentalsReflection.js.remember
+  .settings(JSSettings)
 
 lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
   .dependsOn(fundamentalsPlatform, fundamentalsFunctional)
@@ -274,6 +277,7 @@ lazy val fundamentalsJsonCirce = inFundamentals.as.cross(platforms)
 lazy val fundamentalsJsonCirceJvm = fundamentalsJsonCirce.jvm.remember
 lazy val fundamentalsJsonCirceJs = fundamentalsJsonCirce.js.remember
   .settings(libraryDependencies += C.jawn)
+  .settings(JSSettings)
 
 //-----------------------------------------------------------------------------
 lazy val distageModel = inDiStage.as.module
@@ -311,7 +315,7 @@ lazy val distagePlugins = inDiStage.as.module
     distageModel,
     distageCore.testOnlyRef,
     distageConfig.testOnlyRef,
-    logstageCore.testOnlyRef,
+    logstageCoreJvm.testOnlyRef,
   )
   .settings(
     libraryDependencies ++= Seq(R.fast_classpath_scanner)
@@ -326,7 +330,7 @@ lazy val distageRoles = inDiStage.as.module
     distageCore,
     distagePlugins,
     distageConfig,
-    logstageRenderingCirce,
+    logstageRenderingCirceJvm,
     logstageAdapterSlf4j,
     logstageDi,
   )
@@ -349,22 +353,37 @@ lazy val distageTestkit = inDiStage.as.module
   )
 //-----------------------------------------------------------------------------
 
-lazy val logstageApi = inLogStage.as.module
-  .depends(fundamentalsReflectionJvm)
-
-lazy val logstageCore = inLogStage.as.module
-  .depends(logstageApi, fundamentalsBioJvm)
+lazy val logstageApi = inLogStageX.as.cross(platforms)
+  .depends(fundamentalsReflection)
   .settings(
-    libraryDependencies ++= T.zio_core +: T.cats_all,
+    libraryDependencies ++= Seq(R.scala_java_time).map(_.cross(platformDepsCrossVersion.value)),
+  )
+lazy val logstageApiJvm = logstageApi.jvm.remember
+lazy val logstageApiJs = logstageApi.js.remember
+  .settings(JSSettings)
+
+lazy val logstageCore = inLogStageX.as.cross(platforms)
+  .depends(logstageApi.ets, fundamentalsBio)
+  .settings(
+    libraryDependencies ++= (T.zio_core +: T.cats_all).map(_.cross(platformDepsCrossVersion.value)),
     libraryDependencies ++= Seq(
       R.zio_core % Optional,
       R.cats_core % Optional
-    )
+    ).map(_.cross(platformDepsCrossVersion.value))
   )
+lazy val logstageCoreJvm = logstageCore.jvm.remember
+lazy val logstageCoreJs = logstageCore.js.remember
+  .settings(JSSettings)
+
+lazy val logstageRenderingCirce = inLogStageX.as.cross(platforms)
+  .depends(logstageCore.ets, fundamentalsJsonCirce)
+lazy val logstageRenderingCirceJvm = logstageRenderingCirce.jvm.remember
+lazy val logstageRenderingCirceJs = logstageRenderingCirce.js.remember
+  .settings(JSSettings)
 
 lazy val logstageDi = inLogStage.as.module
   .depends(
-    logstageCore,
+    logstageCoreJvm,
     logstageConfig,
     distageConfig,
     distageModel,
@@ -372,10 +391,10 @@ lazy val logstageDi = inLogStage.as.module
   )
 
 lazy val logstageConfig = inLogStage.as.module
-  .depends(fundamentalsTypesafeConfig, logstageCore)
+  .depends(fundamentalsTypesafeConfig, logstageCoreJvm)
 
 lazy val logstageAdapterSlf4j = inLogStage.as.module
-  .depends(logstageCore)
+  .depends(logstageCoreJvm)
   .settings(
     libraryDependencies += R.slf4j_api,
     compileOrder in Compile := CompileOrder.Mixed,
@@ -383,25 +402,27 @@ lazy val logstageAdapterSlf4j = inLogStage.as.module
     classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
   )
 
-lazy val logstageRenderingCirce = inLogStage.as.module
-  .depends(logstageCore, fundamentalsJsonCirceJvm)
-
 lazy val logstageSinkSlf4j = inLogStage.as.module
   .depends(
-    logstageApi,
-    logstageCore.testOnlyRef
+    logstageApiJvm,
+    logstageCoreJvm.testOnlyRef
   )
   .settings(libraryDependencies ++= Seq(R.slf4j_api, T.slf4j_simple))
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 lazy val idealinguaV1Model = inIdealinguaV1X.as.cross(platforms)
 lazy val idealinguaV1ModelJvm = idealinguaV1Model.jvm.remember
 lazy val idealinguaV1ModelJs = idealinguaV1Model.js.remember
+  .settings(JSSettings)
+
 
 lazy val idealinguaV1Core = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies ++= Seq(R.fastparse).map(_.cross(platformDepsCrossVersion.value)))
   .depends(idealinguaV1Model, fundamentalsReflection)
 lazy val idealinguaV1CoreJvm = idealinguaV1Core.jvm.remember
 lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
+  .settings(JSSettings)
 
 
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
@@ -412,8 +433,11 @@ lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
 
 lazy val idealinguaV1RuntimeRpcScalaJvm = idealinguaV1RuntimeRpcScala.jvm.remember
 lazy val idealinguaV1RuntimeRpcScalaJs = idealinguaV1RuntimeRpcScala.js.remember
+  .settings(JSSettings)
+
 
 lazy val idealinguaV1TestDefs = inIdealinguaV1.as.module.dependsOn(idealinguaV1RuntimeRpcScalaJvm)
+
 
 lazy val idealinguaV1Transpilers = inIdealinguaV1X.as.cross(platforms)
   .settings(libraryDependencies += R.scala_xml)
@@ -434,12 +458,12 @@ lazy val idealinguaV1TranspilersJvm = idealinguaV1Transpilers.jvm.remember
     idealinguaV1RuntimeRpcGo,
     idealinguaV1RuntimeRpcCSharp,
   ).map(_.testOnlyRef))
-
 lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
+  .settings(JSSettings)
 
 
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
-  .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCore, logstageAdapterSlf4j)
+  .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCoreJvm, logstageAdapterSlf4j)
   .dependsSeq(Seq(idealinguaV1TestDefs).map(_.testOnlyRef))
   .settings(
     libraryDependencies ++= R.http4s_all,
@@ -485,6 +509,21 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   )
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+val Scala212OnlySettings = new SettingsGroup {
+  override val id = SettingsGroupId("Scala212Only")
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      crossScalaVersions := Seq(V.scala_212),
+      skip in publish := {
+        // super dirty horizontal reference, but don't know how else to
+        // detect that we're cross compiling for a different version and skip double publish ._.
+        (fundamentalsCollectionsJvm / scalaVersion).value != V.scala_212
+      },
+    )
+  ).flatten
+}
+
 lazy val sbtIzumi = inSbt.as
   .module
 
@@ -498,13 +537,21 @@ lazy val sbtTests = inSbt.as
   .depends(sbtIzumiDeps, sbtIzumi)
 
 lazy val logstage: Seq[ProjectReference] = Seq(
-  logstageCore,
+  logstageApiJvm,
+  logstageCoreJvm,
+  logstageRenderingCirceJvm,
   logstageDi,
   logstageSinkSlf4j,
   logstageAdapterSlf4j,
-  logstageRenderingCirce,
   logstageConfig
 )
+
+lazy val logstageJs: Seq[ProjectReference] = Seq(
+  logstageApiJs,
+  logstageCoreJs,
+  logstageRenderingCirceJs,
+)
+
 lazy val distage: Seq[ProjectReference] = Seq(
   distageRoles,
   distageStatic,
@@ -550,6 +597,7 @@ lazy val fundamentalsJs: Seq[ProjectReference] = Seq(
 )
 
 lazy val allJsProjects = fundamentalsJs ++
+  logstageJs ++
   idealinguaV1Js
 
 lazy val allProjects = fundamentalsJvm ++
@@ -574,7 +622,7 @@ lazy val microsite = inDoc.as.module
     PreprocessPlugin,
     MdocPlugin
   )
-  .settings(MicrositeSettings)
+  .settings(Scala212OnlySettings)
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
     skip in publish := true,
@@ -628,8 +676,7 @@ lazy val microsite = inDoc.as.module
   )
   .settings(skip in publish := true)
 
-
-lazy val `izumi-r2` = inRoot.as
+lazy val `izumi-r2`: Project = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
   .settings(skip in publish := true)

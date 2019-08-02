@@ -9,9 +9,9 @@ import xsbti.compile.CompileAnalysis
 
 import scala.util.control.NonFatal
 
-
+// TODO: does not support SJS yet - it needs to run after ScalaJSPlugin.autoImport.scalaJSIR which is not so trivial
 object IzumiExposedTestScopesPlugin extends AutoPlugin {
-  override def trigger = allRequirements
+  //override def trigger = allRequirements
 
   import Keys._
 
@@ -30,6 +30,7 @@ object IzumiExposedTestScopesPlugin extends AutoPlugin {
         streams.value
         , (dependencyClasspath in Test).value
         , "test-classes"
+        , projectID.value.name
       )
     }.value
   )
@@ -47,6 +48,7 @@ object IzumiExposedTestScopesPlugin extends AutoPlugin {
         streams.value
         , (dependencyClasspath in IntegrationTest).value
         , "it-classes"
+        , projectID.value.name
       )
     }.value
   )
@@ -57,15 +59,16 @@ object IzumiExposedTestScopesPlugin extends AutoPlugin {
                                          streams: TaskStreams
                                          , classpath: Classpath
                                          , directoryNameToModify: String
+                                         , project: String
                                        ): Seq[Attributed[File]] = {
     val logger = streams.log
     classpath.flatMap {
       case f if f.data.getName.equals(directoryNameToModify) =>
         val modified = modifyPath(f.data).toFile
-        logger.debug(s"Classpath entry modified: ${f.data} => $modified")
+        logger.debug(s"Classpath entry modified in $project: ${f.data} => $modified")
         Seq(Attributed.blank(modified))
       case f =>
-        logger.debug(s"Classpath entry NOT modified: $f")
+        logger.debug(s"Classpath entry NOT modified in $project: $f")
         Seq(f)
     }
   }

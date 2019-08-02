@@ -27,8 +27,15 @@ object IzumiInheritedTestScopesPlugin extends AutoPlugin {
     implicit def toClasspathRef(ref: ClasspathDep[ProjectReference]): ClasspathRef = ClasspathRef(ref)
     implicit def toImprovedProjectRef(ref: Project): ImprovedProjectRef = ImprovedProjectRef(ref)
     implicit def toImprovedProjectXRef(ref: CrossProject): DefaultProjectXRef = DefaultProjectXRef(ref)
+    implicit def toCrossRef(ref: CrossClasspathDependency): ClasspathXRef = ClasspathXRef(ref)
 
-
+    implicit class  CrossClasspathDependencyExt(ref: CrossProject) {
+      import CrossPlugin.autoImport._
+      def testOnlyRef: CrossClasspathDependency = ref % "test->compile,test"
+      def testOnlyRefIt: CrossClasspathDependency = ref % "test->compile,test;it->compile,test,it"
+      def ets: CrossClasspathDependency = ref %  "test->test;compile->compile"
+      def etsIt: CrossClasspathDependency = ref %  "test->test;compile->compile;it->it;it->test"
+    }
 
     implicit class ProjectReferenceExtensions(project: Project) {
       private val haveIntegrationTests = project.configurations.contains(syntax.IntegrationTest)

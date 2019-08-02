@@ -3,9 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.time
 import java.time._
 import java.util.Date
 
-trait IzTimeOrdering {
-  implicit def zonedDateTimeOrdering: Ordering[ZonedDateTime] = Ordering.fromLessThan(_ isBefore _)
-
+trait IzTimeOrderingSafe {
   implicit def offsetDateTimeOrdering: Ordering[OffsetDateTime] = Ordering.fromLessThan(_ isBefore _)
 
   implicit def localDateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isBefore _)
@@ -19,4 +17,10 @@ trait IzTimeOrdering {
   implicit def localTimeOrdering: Ordering[LocalTime] = Ordering.fromLessThan(_ isBefore _)
 
   implicit def offsetTimeOrdering: Ordering[OffsetTime] = Ordering.fromLessThan(_ isBefore _)
+
+}
+
+trait IzTimeOrdering extends IzTimeOrderingSafe {
+  implicit def zonedDateTimeOrdering: Ordering[ZonedDateTime] = Ordering.fromLessThan(_ isBefore _)
+
 }

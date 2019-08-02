@@ -37,11 +37,14 @@ trait AbstractSettingsGroup {
 
   def plugins: Set[Plugins] = Set.empty
 
+  def pluginsJvmOnly: Set[Plugins] = Set.empty
+
   def disabledPlugins: Set[AutoPlugin] = Set.empty
 
   def applyTo(p: Project): Project = {
     p
       .enablePlugins(plugins.toSeq: _*)
+      .enablePlugins(pluginsJvmOnly.toSeq: _*)
       .disablePlugins(disabledPlugins.toSeq: _*)
       .depends(sharedLibs: _*)
       .settings(
@@ -55,6 +58,7 @@ trait AbstractSettingsGroup {
     p
       .enablePlugins(plugins.toSeq: _*)
       .disablePlugins(disabledPlugins.toSeq: _*)
+      .configurePlatform(sbtcrossproject.JVMPlatform)(p => p.enablePlugins(pluginsJvmOnly.toSeq :_*))
       .dependsSeq(sharedLibs)
       .settings(
         libraryDependencies ++= sharedDeps.toSeq
@@ -94,5 +98,13 @@ trait SettingsGroup extends AbstractSettingsGroup {
 }
 
 trait DefaultGlobalSettingsGroup extends SettingsGroup {
-  override def plugins: Set[Plugins] = Set(IzumiCompilerOptionsPlugin, IzumiPublishingPlugin, IzumiExposedTestScopesPlugin)
+
+  override def pluginsJvmOnly: Set[Plugins] = Set(
+    IzumiExposedTestScopesPlugin,
+  )
+
+  override def plugins: Set[Plugins] = Set(
+    IzumiCompilerOptionsPlugin,
+    IzumiPublishingPlugin,
+  )
 }

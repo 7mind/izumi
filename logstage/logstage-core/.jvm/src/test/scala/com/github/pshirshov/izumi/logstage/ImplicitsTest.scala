@@ -1,11 +1,12 @@
-package com.github.pshirshov.izumi.logstage.api
+package com.github.pshirshov.izumi.logstage
 
 import cats.effect.Sync
 import com.github.pshirshov.izumi.functional.bio.{BIO, SyncSafe2}
 import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala
 import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.api.ImplicitsTest.Suspend2
+import com.github.pshirshov.izumi.logstage.ImplicitsTest.Suspend2
+import com.github.pshirshov.izumi.logstage.api.IzLogger
 import logstage.{LogBIO, LogIO}
 import org.scalatest.WordSpec
 

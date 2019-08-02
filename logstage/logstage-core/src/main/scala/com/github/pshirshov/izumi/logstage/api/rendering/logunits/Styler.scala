@@ -1,7 +1,5 @@
 package com.github.pshirshov.izumi.logstage.api.rendering.logunits
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 import com.github.pshirshov.izumi.logstage.api.Log
 import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Renderer.Aggregate
@@ -56,14 +54,19 @@ object Styler {
   }
 
   class AdaptivePad(sub: Seq[Renderer], initialLength: Int, pad: PadType, symbol: Char) extends Transformer(sub) {
-    val maxSize = new AtomicInteger(initialLength)
+    // atomics are not supported on sjs
+    @volatile var maxSize: Int = initialLength
 
     override protected def transform(out: String): String = {
       val size = out.length
 
-      val newSize = maxSize.updateAndGet((operand: Int) => {
-        math.max(operand, size)
-      })
+      val newSize = {
+        // not perfect and there is a race, though that's not critical
+        val current = maxSize
+        val updated = math.max(current, size)
+        maxSize = updated
+        updated
+      }
 
       pad match {
         case PadType.Left =>

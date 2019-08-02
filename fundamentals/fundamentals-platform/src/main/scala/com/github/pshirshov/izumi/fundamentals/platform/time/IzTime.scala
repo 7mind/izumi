@@ -8,46 +8,13 @@ import java.util.Date
 import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
-
-trait IzTime {
-  final val TZ_UTC: ZoneId = ZoneId.of("UTC")
-
-  final val EPOCH_OFFSET = OffsetDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
-  final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
-
-  // extended operators
-  implicit def toRichZonedDateTime(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
-
+// safe to run on sjs with shims
+trait IzTimeSafe {
   implicit def toRichOffsetDateTime(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
 
   implicit def toRichLocalDateTime(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
 
   implicit def toRichDate(value: Date): IzDate = new IzDate(value)
-
-  // parsers
-  implicit def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
-
-  implicit def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
-
-  implicit def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
-
-  // current time
-  def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
-
-  def utcNowOffset: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
-
-  def isoNow: String = utcNow.isoFormat
-
-  implicit class RichDuration(duration: Duration) {
-    def readable: String = {
-      val days = duration.toDays
-      val hours = duration.toHours % 24
-      val minutes = duration.toMinutes % 60
-      val seconds = duration.toSeconds % 60
-      s"${days}d, ${hours}h, ${minutes}m, ${seconds}s"
-    }
-  }
-
 
   // formatters with 3 decimal positions for nanos
   final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
@@ -58,26 +25,6 @@ trait IzTime {
       .append(ISO_LOCAL_TIME_3NANO)
       .toFormatter()
   }
-  final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder()
-      .append(ISO_OFFSET_DATE_TIME_3NANO)
-      .optionalStart
-      .appendLiteral('[')
-      .parseCaseSensitive
-      .appendZoneRegionId
-      .appendLiteral(']')
-      .toFormatter
-  }
-  final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder()
-      .parseCaseInsensitive
-      .append(ISO_LOCAL_DATE_TIME_3NANO)
-      .parseLenient
-      .appendOffsetId
-      .parseStrict
-      .toFormatter
-  }
-
   final lazy val ISO_LOCAL_DATE: DateTimeFormatter = {
     DateTimeFormatter.ISO_LOCAL_DATE
   }
@@ -126,6 +73,68 @@ trait IzTime {
       .appendOffsetId
       .toFormatter
   }
+}
+
+object IzTimeSafe extends IzTimeSafe with IzTimeOrderingSafe {
+
+}
+
+trait IzTime extends IzTimeSafe {
+  final val TZ_UTC: ZoneId = ZoneId.of("UTC")
+
+  final val EPOCH_OFFSET = OffsetDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
+  final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
+
+  // extended operators
+  implicit def toRichZonedDateTime(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
+
+
+  // parsers
+  implicit def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
+
+  implicit def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
+
+  implicit def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
+
+  // current time
+  def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
+
+  def utcNowOffset: ZonedDateTime = ZonedDateTime.now(TZ_UTC)
+
+  def isoNow: String = utcNow.isoFormat
+
+  implicit class RichDuration(duration: Duration) {
+    def readable: String = {
+      val days = duration.toDays
+      val hours = duration.toHours % 24
+      val minutes = duration.toMinutes % 60
+      val seconds = duration.toSeconds % 60
+      s"${days}d, ${hours}h, ${minutes}m, ${seconds}s"
+    }
+  }
+
+
+  final lazy val ISO_ZONED_DATE_TIME_3NANO: DateTimeFormatter = {
+    new DateTimeFormatterBuilder()
+      .append(ISO_OFFSET_DATE_TIME_3NANO)
+      .optionalStart
+      .appendLiteral('[')
+      .parseCaseSensitive
+      .appendZoneRegionId
+      .appendLiteral(']')
+      .toFormatter
+  }
+  final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter = {
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive
+      .append(ISO_LOCAL_DATE_TIME_3NANO)
+      .parseLenient
+      .appendOffsetId
+      .parseStrict
+      .toFormatter
+  }
+
+
 }
 
 object IzTime extends IzTime with IzTimeOrdering {
