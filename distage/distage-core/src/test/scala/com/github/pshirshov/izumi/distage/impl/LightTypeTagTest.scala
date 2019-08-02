@@ -200,6 +200,16 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
     }
 
+
+    "progression: support swapped parents" in {
+      trait KT1[+A, +B]
+      trait KT2[+A, +B] extends KT1[B, A]
+
+      assertChild(LTT[KT2[H2, I2]], LTT[KT1[I1, H1]]) // correct
+      assertChild(LTT[KT2[H2, I2]], LTT[KT1[H1, I1]]) // this must not be true!
+    }
+
+
     "support PDTs" in {
       val a = new C {
         override type A = Int
