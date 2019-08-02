@@ -520,6 +520,14 @@ val Scala212OnlySettings = new SettingsGroup {
         // detect that we're cross compiling for a different version and skip double publish ._.
         (fundamentalsCollectionsJvm / scalaVersion).value != V.scala_212
       },
+      Keys.`package` := Def.taskDyn {
+        // super dirty horizontal reference, but don't know how else to
+        // detect that we're cross compiling for a different version and skip double publish ._.
+        if ((fundamentalsCollectionsJvm / scalaVersion).value != V.scala_212)
+          Def.task(file("."))
+        else
+          Def.task(Keys.`package`.value)
+      }.value,
     )
   ).flatten
 }
