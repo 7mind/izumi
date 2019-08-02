@@ -16,49 +16,18 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
 
-  private def debug() = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-
-    println(s"${self} vs ${other}")
-    println(s"inheritance: ${ib.niceList()}")
-    println(s"bases: ${bdb.niceList()}")
-  }
-
-  private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
-    val out = mutable.HashSet[NameReference]()
-    val tested = mutable.HashSet[NameReference]()
-    parentsOf(t, out, tested)
-    out.toSet
-  }
-
-  private def parentsOf(t: NameReference, out: mutable.HashSet[NameReference], tested: mutable.HashSet[NameReference]): Unit = {
-    val direct = ib.get(t).toSet.flatten
-    tested += t
-    out ++= direct
-
-    val nextNames = direct.map(_.asName)
-    nextNames
-      .filterNot(tested.contains)
-      .foreach {
-        b =>
-          parentsOf(b.asName, out, tested)
-      }
-
-  }
-
-
   def isChild(): Boolean = {
     val st = self.t
     val ot = other.t
     isChild(st, ot, List.empty)
   }
 
-  private def safeParentsOf(t: AbstractReference): Seq[AbstractReference] = {
-    bdb.get(t).toSeq.flatten
-  }
+  private def debug() = {
+    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
 
-  private def oneOfKnownParentsIsInheritedFrom(ctx: List[LambdaParameter], child: AbstractReference, parent: AbstractReference) = {
-    safeParentsOf(child).exists(p => isChild(p, parent, ctx))
+    println(s"${self} vs ${other}")
+    println(s"inheritance: ${ib.niceList()}")
+    println(s"bases: ${bdb.niceList()}")
   }
 
   private def isChild(selfT: LightTypeTag, thatT: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
@@ -150,4 +119,36 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
     sameArity && isChild(self.asName, that.asName, ctx) && parameterShapeCompatible
   }
+
+  private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
+    val out = mutable.HashSet[NameReference]()
+    val tested = mutable.HashSet[NameReference]()
+    parentsOf(t, out, tested)
+    out.toSet
+  }
+
+
+  private def parentsOf(t: NameReference, out: mutable.HashSet[NameReference], tested: mutable.HashSet[NameReference]): Unit = {
+    val direct = ib.get(t).toSet.flatten
+    tested += t
+    out ++= direct
+
+    val nextNames = direct.map(_.asName)
+    nextNames
+      .filterNot(tested.contains)
+      .foreach {
+        b =>
+          parentsOf(b.asName, out, tested)
+      }
+
+  }
+
+  private def safeParentsOf(t: AbstractReference): Seq[AbstractReference] = {
+    bdb.get(t).toSeq.flatten
+  }
+
+  private def oneOfKnownParentsIsInheritedFrom(ctx: List[LambdaParameter], child: AbstractReference, parent: AbstractReference) = {
+    safeParentsOf(child).exists(p => isChild(p, parent, ctx))
+  }
+
 }
