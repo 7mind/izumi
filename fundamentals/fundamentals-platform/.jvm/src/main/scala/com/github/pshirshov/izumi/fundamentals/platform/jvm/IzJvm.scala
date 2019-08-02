@@ -84,5 +84,4 @@ trait IzJvm {
   def safeClasspathSeq(): Seq[String] = safeClasspathSeq(baseClassloader)
 }
 
-object IzJvm extends IzJvm {
-}
+object IzJvm extends IzJvm

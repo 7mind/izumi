@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.time
 import java.time.temporal.TemporalAccessor
 import java.time.{Instant, LocalDateTime, OffsetDateTime, ZonedDateTime}
 
-trait TimeExt[T <: TemporalAccessor] {
+trait TimeExt[T <: TemporalAccessor] extends Any {
   def isoFormat: String
 
   def isoFormatTime: String
@@ -19,7 +19,7 @@ trait TimeExt[T <: TemporalAccessor] {
   def >(other: T): Boolean
 }
 
-class IzZonedDateTime(timestamp: ZonedDateTime) extends TimeExt[ZonedDateTime] {
+final class IzZonedDateTime(private val timestamp: ZonedDateTime) extends AnyVal with TimeExt[ZonedDateTime] {
 
   import IzTime._
 
@@ -49,7 +49,7 @@ class IzZonedDateTime(timestamp: ZonedDateTime) extends TimeExt[ZonedDateTime] {
 
 }
 
-class IzLocalDateTime(timestamp: LocalDateTime) extends TimeExt[LocalDateTime] {
+final class IzLocalDateTime(private val timestamp: LocalDateTime) extends AnyVal with TimeExt[LocalDateTime] {
 
   import IzTime._
 
@@ -77,7 +77,7 @@ class IzLocalDateTime(timestamp: LocalDateTime) extends TimeExt[LocalDateTime] {
 
 }
 
-class IzOffsetDateTime(timestamp: OffsetDateTime) extends TimeExt[OffsetDateTime] {
+final class IzOffsetDateTime(private val timestamp: OffsetDateTime) extends AnyVal with TimeExt[OffsetDateTime] {
 
   import IzTime._
 
@@ -107,7 +107,7 @@ class IzOffsetDateTime(timestamp: OffsetDateTime) extends TimeExt[OffsetDateTime
 
 }
 
-class IzInstant(timestamp: Instant) extends TimeExt[Instant] {
+final class IzInstant(private val timestamp: Instant) extends AnyVal with TimeExt[Instant] {
 
   import IzTime._
 

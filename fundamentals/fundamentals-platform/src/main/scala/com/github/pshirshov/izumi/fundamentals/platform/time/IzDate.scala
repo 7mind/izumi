@@ -5,7 +5,7 @@ import java.util.Date
 
 import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime.TZ_UTC
 
-class IzDate(value: Date) {
+final class IzDate(private val value: Date) extends AnyVal {
   def toTsAsUtc: OffsetDateTime = value.toInstant.atZone(TZ_UTC).toOffsetDateTime
 
   def <=(other: Date): Boolean = {

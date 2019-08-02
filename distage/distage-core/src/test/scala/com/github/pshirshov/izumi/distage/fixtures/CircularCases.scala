@@ -123,18 +123,18 @@ object CircularCases {
 
     class K8ProbesHttpRoutes
     (
-      healthCheckService: HealthCheckService
+      private val healthCheckService: HealthCheckService
     )
 
     class TGLegacyRestService
     class HealthChecker
 
-    class HealthCheckHttpRoutes(healthCheckService: HealthCheckService)
-    class HealthCheckService(healthCheckers: Set[HealthChecker])
+    class HealthCheckHttpRoutes(private val healthCheckService: HealthCheckService)
+    class HealthCheckService(private val healthCheckers: Set[HealthChecker])
 
     class IRTMultiplexorWithRateLimiter
     (
-       list: Set[IRTWrappedService]
+      private val list: Set[IRTWrappedService]
     )
 
     class WsSessionListener[A]
@@ -152,54 +152,54 @@ object CircularCases {
       with IntegrationComponent
 
     class DynamoDDLService(
-                          groups: Set[DynamoDDLGroup]
-                          , dynamoClient: DynamoClient
+                            private val groups: Set[DynamoDDLGroup]
+                          , private val dynamoClient: DynamoClient
                           )
 
     class DynamoQueryExecutorService(
-                                    client: DynamoClient
+                                      private val client: DynamoClient
                                     )
 
-    case class DynamoDDLGroup(a: Set[DynamoTable])
+    case class DynamoDDLGroup(private val a: Set[DynamoTable])
     case class DynamoTable()
 
 
     class ConfigurationRepository
     (
-      dynamoQueryExecutorService: DynamoQueryExecutorService
+      private val dynamoQueryExecutorService: DynamoQueryExecutorService
     )
 
-    class IRTClientMultiplexor(clients: Set[IRTWrappedClient])
+    class IRTClientMultiplexor(private val clients: Set[IRTWrappedClient])
     class IRTServerBindings(
-                             codec: IRTClientMultiplexor
-                              , listeners: Set[WsSessionListener[String]]
-                            , limiter: IRTMultiplexorWithRateLimiter
+                             private val codec: IRTClientMultiplexor
+                           , private val listeners: Set[WsSessionListener[String]]
+                           , private val limiter: IRTMultiplexorWithRateLimiter
                            )
 
     class HttpServerLauncher(
-                              bindings: IRTServerBindings
-                            , healthCheck: HealthCheckHttpRoutes
-                            , restServices: Set[TGLegacyRestService]
-                            , k8Probes: K8ProbesHttpRoutes
+                              private val bindings: IRTServerBindings
+                            , private val healthCheck: HealthCheckHttpRoutes
+                            , private val restServices: Set[TGLegacyRestService]
+                            , private val k8Probes: K8ProbesHttpRoutes
                             ) extends AutoCloseable {
       override def close(): Unit = ()
     }
 
     class TgHttpComponent(
-                           server: HttpServerLauncher
+                           private val server: HttpServerLauncher
                          ) extends RoleComponent
 
     class RoleStarter(
-                      services: Set[RoleService]
-                     , closeables: Set[AutoCloseable]
-                     , lifecycleManager: ComponentsLifecycleManager
+                       private val services: Set[RoleService]
+                     , private val closeables: Set[AutoCloseable]
+                     , private val lifecycleManager: ComponentsLifecycleManager
                      )
 
-    class ComponentsLifecycleManager(components: Set[RoleComponent])
+    class ComponentsLifecycleManager(private val components: Set[RoleComponent])
 
     class Sonar(
-                TgHttpComponent: TgHttpComponent
-               , dynamoDDL: DynamoDDLService
+                 private val TgHttpComponent: TgHttpComponent
+               , private val dynamoDDL: DynamoDDLService
                ) extends RoleService
   }
 

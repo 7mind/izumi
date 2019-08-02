@@ -1,6 +1,5 @@
 package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
 
-
 /** TODOs:
   * - default values
   * - varargs

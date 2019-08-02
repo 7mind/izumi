@@ -3,7 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.platform.time
 import java.time.ZonedDateTime
 import java.time.temporal.TemporalAccessor
 
-class IzOptionalTimeParsers(value: Option[String]) {
+final class IzOptionalTimeParsers(private val value: Option[String]) extends AnyVal {
   import IzTime._
   def mapToTemporal: Option[TemporalAccessor] = value.map(_.toTemporal)
 

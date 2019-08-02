@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.language.implicitConversions
 
+final case class Timed[U](value: U, duration: FiniteDuration)
+
 object Timed {
   implicit def toValue[U](timed: Timed[U]): U = timed.value
 
@@ -15,5 +17,3 @@ object Timed {
     Timed(out, FiniteDuration.apply(after - before, TimeUnit.NANOSECONDS))
   }
 }
-
-final case class Timed[U](value: U, duration: FiniteDuration)

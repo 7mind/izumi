@@ -2,11 +2,10 @@ package com.github.pshirshov.izumi.fundamentals.platform.strings
 
 object IzText {
 
-  case class Row(parts: Seq[String], splitter: String)
+  final case class Row(parts: Seq[String], splitter: String)
 
   def tableFormat(rows: Seq[Seq[String]], header: List[String]): String = {
     val splitChar = " | "
-
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
     val columnsCount = math.max(rows.map(_.size).maxOr(0), header.length)

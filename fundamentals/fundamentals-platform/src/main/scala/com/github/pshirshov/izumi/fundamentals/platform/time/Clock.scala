@@ -15,7 +15,7 @@ trait Clock[+F[_]] {
 }
 
 object Clock {
-  def apply[F[_] : Clock]: Clock[F] = implicitly
+  def apply[F[_]: Clock]: Clock[F] = implicitly
 
   class Standard extends Clock[Identity] {
 
