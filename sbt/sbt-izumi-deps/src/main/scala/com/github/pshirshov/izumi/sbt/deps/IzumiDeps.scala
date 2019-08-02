@@ -16,7 +16,8 @@ object IzumiDeps {
 
     val shapeless = "2.3.3"
 
-    val cats = "2.0.0-M5"
+    val cats = "2.0.0-M4"
+    val cats_effect = "2.0.0-M5"
     val zio = "1.0.0-RC10-1"
     val zio_interop_cats = "2.0.0.0-RC1"
 
@@ -66,7 +67,7 @@ object IzumiDeps {
     val typesafe_config = "com.typesafe" % "config" % V.typesafe_config
 
     val cats_core = "org.typelevel" %% "cats-core" % V.cats
-    val cats_effect = "org.typelevel" %% "cats-effect" % V.cats
+    val cats_effect = "org.typelevel" %% "cats-effect" % V.cats_effect
     val cats_all: Seq[ModuleID] = Seq(
       cats_core
       , cats_effect
