@@ -56,78 +56,76 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   private def safeParentsOf(t: AbstractReference): Seq[AbstractReference] = {
     bdb.get(t).toSeq.flatten
   }
-  
+
   private def oneOfKnownParentsIsInheritedFrom(ctx: List[LambdaParameter], child: AbstractReference, parent: AbstractReference) = {
     safeParentsOf(child).exists(p => isChild(p, parent, ctx))
   }
 
   private def isChild(selfT: LightTypeTag, thatT: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
-
-    if (selfT == thatT) {
-      true
-    } else if (selfT == tpeNothing || thatT == tpeAny || thatT == tpeAnyRef || thatT == tpeObject) {
-      // TODO: we may want to check that in case of anyref target type is not a primitve (though why?)
-      true
-    }
-    else {
-      (selfT, thatT) match {
-        case (s: FullReference, t: FullReference) =>
-          if (parentsOf(s.asName).contains(t)) {
+    (selfT, thatT) match {
+      case (s, t) if s == t =>
+        true
+      case (s, _) if s == tpeNothing =>
+        true
+      case (_, t) if t == tpeAny || t == tpeAnyRef || t == tpeObject =>
+        // TODO: we may want to check that in case of anyref target type is not a primitve (though why?)
+        true
+      case (s: FullReference, t: FullReference) =>
+        if (parentsOf(s.asName).contains(t)) {
+          true
+        } else {
+          oneOfKnownParentsIsInheritedFrom(ctx, s, t) || shapeHeuristic(s, t, ctx)
+        }
+      case (s: FullReference, t: NameReference) =>
+        oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+      case (s: NameReference, t: FullReference) =>
+        oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+      case (s: NameReference, t: NameReference) =>
+        val boundIsOk = t.boundaries match {
+          case Boundaries.Defined(bottom, top) =>
+            isChild(s, top, ctx) && isChild(bottom, s, ctx)
+          case Boundaries.Empty =>
             true
-          } else {
-            oneOfKnownParentsIsInheritedFrom(ctx, s, t) || shapeHeuristic(s, t, ctx)
-          }
-        case (s: FullReference, t: NameReference) =>
-          oneOfKnownParentsIsInheritedFrom(ctx, s, t)
-        case (s: NameReference, t: FullReference) =>
-          oneOfKnownParentsIsInheritedFrom(ctx, s, t)
-        case (s: NameReference, t: NameReference) =>
-          val boundIsOk = t.boundaries match {
-            case Boundaries.Defined(bottom, top) =>
-              isChild(s, top, ctx) && isChild(bottom, s, ctx)
+        }
+
+        any(
+          all(boundIsOk, parentsOf(s).exists(p => isChild(p, thatT, ctx))),
+          all(boundIsOk, ctx.map(_.name).contains(t.ref)), // lambda parameter may accept anything
+          s.boundaries match {
+            case Boundaries.Defined(_, top) =>
+              isChild(top, t, ctx)
             case Boundaries.Empty =>
-              true
+              false
           }
+        )
 
-          any(
-            all(boundIsOk, parentsOf(s).exists(p => isChild(p, thatT, ctx))),
-            all(boundIsOk, ctx.map(_.name).contains(t.ref)), // lambda parameter may accept anything
-            s.boundaries match {
-              case Boundaries.Defined(_, top) =>
-                isChild(top, t, ctx)
-              case Boundaries.Empty =>
-                false
+
+      case (_: AppliedNamedReference, t: Lambda) =>
+        isChild(selfT, t.output, t.input)
+      case (s: Lambda, t: AppliedNamedReference) =>
+        isChild(s.output, t, s.input)
+      case (s: Lambda, o: Lambda) =>
+        s.input == o.input && isChild(s.output, o.output, s.input)
+      case (s: IntersectionReference, t: IntersectionReference) =>
+        // yeah, this shit is quadratic
+        s.refs.forall {
+          c =>
+            t.refs.exists {
+              p =>
+                isChild(c, p, ctx)
             }
-          )
+        }
+      case (s: IntersectionReference, t: LightTypeTag) =>
+        s.refs.exists(c => isChild(c, t, ctx))
+      case (s: LightTypeTag, o: IntersectionReference) =>
+        o.refs.forall(t => isChild(s, t, ctx))
 
-
-        case (_: AppliedNamedReference, t: Lambda) =>
-          isChild(selfT, t.output, t.input)
-        case (s: Lambda, t: AppliedNamedReference) =>
-          isChild(s.output, t, s.input)
-        case (s: Lambda, o: Lambda) =>
-          s.input == o.input && isChild(s.output, o.output, s.input)
-        case (s: IntersectionReference, t: IntersectionReference) =>
-          // yeah, this shit is quadratic
-          s.refs.forall {
-            c =>
-              t.refs.exists {
-                p =>
-                  isChild(c, p, ctx)
-              }
-          }
-        case (s: IntersectionReference, t: LightTypeTag) =>
-          s.refs.exists(c => isChild(c, t, ctx))
-        case (s: LightTypeTag, o: IntersectionReference) =>
-          o.refs.forall(t => isChild(s, t, ctx))
-
-        case (s: Refinement, t: Refinement) =>
-          isChild(s.reference, t.reference, ctx) && t.decls.diff(s.decls).isEmpty
-        case (s: Refinement, t: LightTypeTag) =>
-          isChild(s.reference, t, ctx)
-        case (_: LightTypeTag, _: Refinement) =>
-          false
-      }
+      case (s: Refinement, t: Refinement) =>
+        isChild(s.reference, t.reference, ctx) && t.decls.diff(s.decls).isEmpty
+      case (s: Refinement, t: LightTypeTag) =>
+        isChild(s.reference, t, ctx)
+      case (_: LightTypeTag, _: Refinement) =>
+        false
     }
   }
 
