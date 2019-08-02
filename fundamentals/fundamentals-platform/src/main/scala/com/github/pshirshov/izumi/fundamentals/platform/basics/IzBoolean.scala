@@ -1,11 +1,11 @@
 package com.github.pshirshov.izumi.fundamentals.platform.basics
 
-import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean.LazyBool
-
 import scala.language.implicitConversions
 
 trait IzBoolean {
-  @inline implicit final def LazyBool(b: => Boolean): LazyBool = new LazyBool(() => b)
+  import IzBoolean.LazyBool
+
+  @inline implicit final def toLazyBool(b: => Boolean): LazyBool = new LazyBool(() => b)
 
   @inline final def all(b1: Boolean, b: LazyBool*): Boolean = {
     b1 && b.forall(_.value)
