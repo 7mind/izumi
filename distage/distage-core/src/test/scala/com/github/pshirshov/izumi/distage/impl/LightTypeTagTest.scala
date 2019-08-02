@@ -3,7 +3,6 @@ package com.github.pshirshov.izumi.distage.impl
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
-import org.scalatest.exceptions.TestFailedException
 
 class LightTypeTagTest extends WordSpec {
 
@@ -68,9 +67,13 @@ class LightTypeTagTest extends WordSpec {
   type Const[A, B] = B
 
   trait H1
+
   trait H2 extends H1
+
   trait H3 extends H2
+
   trait H4 extends H3
+
   trait H5 extends H4
 
   def println(o: Any) = info(o.toString)
@@ -155,8 +158,8 @@ class LightTypeTagTest extends WordSpec {
 
       assertCombine(`LTT[_[_[_],_[_]]]`[T2], `LTT[_[_],_[_]]`[T0], LTT[T2[T0]])
 
-      type ComplexRef[T] = W1 with T {def a(p: T): T ; type M = T}
-      assertCombine(`LTT[_]`[ComplexRef], LTT[Int], LTT[W1 with Int {def a(p: Int): Int ; type M = Int}])
+      type ComplexRef[T] = W1 with T {def a(p: T): T; type M = T}
+      assertCombine(`LTT[_]`[ComplexRef], LTT[Int], LTT[W1 with Int {def a(p: Int): Int; type M = Int}])
     }
 
     "support non-positional typetag combination" in {
@@ -188,14 +191,14 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(LTT[Option[W2]], LTT[Option[_ <: I1]])
 
 
-      assertChild(LTT[Option[H3]], LTT[Option[_ >: H4 <: H2 ]])
-      assertNotChild(LTT[Option[H1]], LTT[Option[_ >: H4 <: H2 ]])
+      assertChild(LTT[Option[H3]], LTT[Option[_ >: H4 <: H2]])
+      assertNotChild(LTT[Option[H1]], LTT[Option[_ >: H4 <: H2]])
 
       // bottom boundary is weird!
-      assertChild(LTT[Option[H5]], LTT[Option[_ >: H4 <: H2 ]])
+      assertChild(LTT[Option[H5]], LTT[Option[_ >: H4 <: H2]])
 
       // I consider this stuff practically useless
-      type X[A >: H4 <: H2 ] = Option[A]
+      type X[A >: H4 <: H2] = Option[A]
       assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
       assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
     }
@@ -205,8 +208,22 @@ class LightTypeTagTest extends WordSpec {
       trait KT1[+A, +B]
       trait KT2[+A, +B] extends KT1[B, A]
 
+      assertChild(LTT[KT2[H1, I1]], LTT[KT1[I1, H1]]) // correct
+      assertChild(LTT[KT2[H1, I1]], LTT[KT1[H1, I1]]) // this must not be true!
+
       assertChild(LTT[KT2[H2, I2]], LTT[KT1[I1, H1]]) // correct
       assertChild(LTT[KT2[H2, I2]], LTT[KT1[H1, I1]]) // this must not be true!
+
+      trait KK1[+A, +B, +U]
+      trait KK2[+A, +B] extends KK1[B, A, Unit]
+
+      assertChild(LTT[KK2[Int, String]], LTT[KK1[String, Int, Unit]]) // correct
+
+      assertChild(LTT[KK2[H2, I2]], LTT[KK1[I1, H1, Unit]]) // correct
+      assertNotChild(LTT[KK2[H2, I2]], LTT[KK1[H1, I1, Unit]]) // correct
+
+      assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]]) // incorrect
+      assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]]) // correct
     }
 
 

@@ -2,6 +2,7 @@ package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 
 import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
 
 import scala.collection.mutable
 
@@ -14,11 +15,11 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
   lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
-  //  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-  //
-  //  println(s"${self} vs ${other}")
-  //  println(s"inheritance: ${ib.niceList()}")
-  //  println(s"bases: ${bdb.niceList()}")
+//  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+//
+//  println(s"${self} vs ${other}")
+//  println(s"inheritance: ${ib.niceList()}")
+//  println(s"bases: ${bdb.niceList()}")
 
   def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
     val out = mutable.HashSet[NameReference]()
@@ -49,7 +50,20 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     isChild(st, ot, List.empty)
   }
 
-  import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
+
+  private def oneOfKnownParentsIsInherited(ctx: List[LambdaParameter], o: FullReference, parents: Set[AbstractReference]): Boolean = {
+    // this (definitely safe) policy allows us to support the following cases:
+    // - F2[_] <: F1[_] => F2[Int] <: F1[Int]
+    // - shape-changing parents
+    // though it comes with a price of additional tree overhead/runtime overhead.
+    //println(s"$st vs $ot, $parents")
+
+    parents.exists {
+      knownParent =>
+        isChild(knownParent, o, ctx)
+
+    }
+  }
 
   private def isChild(st: LightTypeTag, ot: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
 
@@ -67,21 +81,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           } else {
             bdb.get(s) match {
               case Some(parents) =>
-                def oneOfKnownParentsIsInherited(o: FullReference, parents: Set[AbstractReference]): Boolean = {
-                  // this (definitely safe) policy allows us to support the following cases:
-                  // - F2[_] <: F1[_] => F2[Int] <: F1[Int]
-                  // - shape-changing parents
-                  // though it comes with a price of additional tree overhead/runtime overhead.
-                  //println(s"$st vs $ot, $parents")
-
-                  parents.exists {
-                    knownParent =>
-                      isChild(knownParent, o, ctx)
-
-                  }
-                }
-
-                oneOfKnownParentsIsInherited(o, parents) || shapeHeuristic(s, o, ctx)
+                oneOfKnownParentsIsInherited(ctx, o, parents) || shapeHeuristic(s, o, ctx)
               case _ =>
                 shapeHeuristic(s, o, ctx)
             }
