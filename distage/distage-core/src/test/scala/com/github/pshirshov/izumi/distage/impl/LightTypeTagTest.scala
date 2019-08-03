@@ -222,7 +222,7 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[KK2[H2, I2]], LTT[KK1[I1, H1, Unit]]) // correct
       assertNotChild(LTT[KK2[H2, I2]], LTT[KK1[H1, I1, Unit]]) // correct
 
-      assertChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]]) // incorrect
+      assertChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]]) // incorrect (?)
       assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]]) // correct
     }
 

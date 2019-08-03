@@ -26,7 +26,14 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   private final val tpeObject = NameReference("java.lang.Object")
 
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
-  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
+  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb).flatMap {
+    case (k: Lambda, v) =>
+      Seq(
+        (k, v),
+        (k.output, v)
+      )
+    case o => Seq(o)
+  }
 
 
   def isChild(): Boolean = {
@@ -49,7 +56,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
   private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
     import ctx._
-    logger.log(s"✴️ ️$selfT <:< $thatT")
+    logger.log(s"✴️ ️$selfT <:< $thatT, context = ${ctx.params}")
 
 
     val result = (selfT, thatT) match {
