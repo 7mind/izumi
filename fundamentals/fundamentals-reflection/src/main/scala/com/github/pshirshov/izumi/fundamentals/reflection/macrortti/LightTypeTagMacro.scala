@@ -196,7 +196,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
           val allbases = tpeBases(i)
 
 
-
           srcname ++ allbases.map {
             b =>
               (targetRef, makeRef(b, Set(b), Map.empty))
@@ -214,13 +213,27 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
 
 
+    def xxx(t: Type, key: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+
+      val keyref = key.getOrElse(makeRef(t, Set(t), Map.empty))
+
+      val bases = tpeBases(t).map {
+        b =>
+          val ref = makeRef(b, Set(b), Map.empty)
+          ref
+      }.filterNot(_ == keyref)
+
+      bases.map(b => (keyref, b))
+
+    }
+
     val l = lamBases(tpe).collect {
       case l: Lambda => l
     }
     val t = tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out)
 
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Map(
-      out -> (l ++ t).toSet
+      out -> (l ++ xxx(tpe, Some(out)) ++t).toSet
     )
 
     //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -279,62 +292,21 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
   }
 
   private def lamBases(tpe: Type): Seq[AbstractReference] = {
-    val tpef = tpe.dealias.resultType
-
+    //val tpef = tpe.dealias.resultType
     val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
-    val targs  = tpe.etaExpand.typeParams
-
-
-
+    val targs = tpe.etaExpand.typeParams
     val lambdas = basetypes.map {
       base =>
         makeLambda0(targs, base)
     }
 
-    if (tpe.toString.contains("KK")) {
-      println(("🤡", tpe))
-      println(("...", tpe.typeSymbol.fullName))
-      println(("...", basetypes))
-//      println(("targs : ", tpe.etaExpand.typeParams))
-//      println(("base : ", tpe.baseClasses, tpe.baseClasses.map(b => tpe.baseType(b))))
-//      println(("base : ", tpe.baseClasses.map(b => tpe.baseType(b).typeConstructor.etaExpand)))
-//      println(("basel: ", basetypes.filter(_.takesTypeArgs)))
-//      println(("basef: ", tpef.baseClasses, tpe.baseClasses.map(b => tpe.baseType(b))))
-      println(("==>   ", lambdas))
-    }
+    //    if (tpe.toString.contains("KK")) {
+    //      println(("🤡", tpe))
+    //      println(("...", tpe.typeSymbol.fullName))
+    //      println(("...", basetypes))
+    //      println(("==>   ", lambdas))
+    //    }
     lambdas
-//    tpef.baseClasses.filterNot(_.asType.toType.takesTypeArgs).flatMap {
-//      b =>
-//        val base = tpef.typeConstructor.baseType(b.asType.toTypeConstructor.typeSymbol)
-//
-//        if (tpe.toString.contains("KK")) {
-//          //      println((" ", tpef.typeConstructor))
-//          //      println((" ", tpef.typeConstructor.etaExpand))
-//          //      println((" ", tpef.typeConstructor.etaExpand.baseClasses))
-//          //      println((" ", tpef.typeConstructor.etaExpand.baseClasses.map(_.asType.toType.etaExpand)))
-//          //println((" ", tpef.typeConstructor.etaExpand, tpef.baseClasses.map(b => tpef.typeConstructor.baseType(b.asType.toTypeConstructor.typeSymbol).resultType.dealias.getClass)))
-//          //      println((" ", tpef.typeConstructor.etaExpand, tpef.baseClasses.map(b => (b, b.getClass))))
-//          //println((" ", tpef.baseClasses.map(b => tpef.baseType(b))))
-//          println(("...", tpe.typeParams, base.resultType.dealias, base.resultType.takesTypeArgs, tpe.etaExpand.typeParams))
-//          println(("...",  base.resultType.typeParams))
-//        }
-//
-//
-//
-////        if (b.asType.toTypeConstructor.takesTypeArgs && !base.takesTypeArgs) {
-////
-////        } else {
-////          Seq.empty
-////
-////        }
-//
-//        val out = Seq(makeLambda0(tpe.etaExpand.typeParams, base.resultType.dealias))
-//        if (tpe.toString.contains("KK")) {
-//          println(("=>", out))
-//        }
-//        out
-//
-//    }
   }
 
   private def tpeBases(tpe: Type, withHollow: Boolean): Seq[Type] = {
@@ -424,7 +396,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         case args =>
           val params = args.zip(t.dealias.typeConstructor.typeParams).map {
             case (a, pa) =>
-              TypeParam(makeRef(a),toVariance(pa.asType))
+              TypeParam(makeRef(a), toVariance(pa.asType))
           }
           FullReference(nameref.ref, params, prefix)
       }

@@ -208,22 +208,22 @@ class LightTypeTagTest extends WordSpec {
       trait KT1[+A1, +B1]
       trait KT2[+A2, +B2] extends KT1[B2, A2]
 
-      assertChild(LTT[KT2[H1, I1]], LTT[KT1[I1, H1]]) // correct
-      assertNotChild(LTT[KT2[H1, I1]], LTT[KT1[H1, I1]]) // this must not be true!
+      assertChild(LTT[KT2[H1, I1]], LTT[KT1[I1, H1]])
+      assertNotChild(LTT[KT2[H1, I1]], LTT[KT1[H1, I1]])
 
-      assertChild(LTT[KT2[H2, I2]], LTT[KT1[I1, H1]]) // correct
-      assertNotChild(LTT[KT2[H2, I2]], LTT[KT1[H1, I1]]) // this must not be true!
+      assertChild(LTT[KT2[H2, I2]], LTT[KT1[I1, H1]])
+      assertNotChild(LTT[KT2[H2, I2]], LTT[KT1[H1, I1]])
 
       trait KK1[+A, +B, +U]
       trait KK2[+A, +B] extends KK1[B, A, Unit]
 
-      assertChild(LTT[KK2[Int, String]], LTT[KK1[String, Int, Unit]]) // correct
+      assertChild(LTT[KK2[Int, String]], LTT[KK1[String, Int, Unit]])
 
-      assertChild(LTT[KK2[H2, I2]], LTT[KK1[I1, H1, Unit]]) // correct
-      assertNotChild(LTT[KK2[H2, I2]], LTT[KK1[H1, I1, Unit]]) // correct
+      assertChild(LTT[KK2[H2, I2]], LTT[KK1[I1, H1, Unit]])
+      assertNotChild(LTT[KK2[H2, I2]], LTT[KK1[H1, I1, Unit]])
 
-      assertChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]]) // incorrect (?)
-      assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]]) // correct
+      assertChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]])
+      assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]])
     }
 
 
