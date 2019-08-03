@@ -10,10 +10,13 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 import scala.collection.mutable
 
 object LightTypeTagInheritance {
+
   case class Ctx(params: List[LambdaParameter], logger: TrivialLogger) {
     def next(): Ctx = Ctx(params, logger.sub())
+
     def next(newparams: List[LambdaParameter]): Ctx = Ctx(newparams, logger.sub())
   }
+
 }
 
 final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
@@ -39,16 +42,16 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     isChild(Ctx(List.empty, logger))(st, ot)
   }
 
-  implicit class CtxExt(val ctx: Ctx)  {
+  implicit class CtxExt(val ctx: Ctx) {
     def isChild(selfT0: LightTypeTag, thatT0: LightTypeTag): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
 
   }
-  
+
   private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
     import ctx._
     logger.log(s"✴️ ️$selfT <:< $thatT")
-    
-    
+
+
     val result = (selfT, thatT) match {
       case (s, t) if s == t =>
         true
@@ -139,7 +142,32 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
     ctx.logger.log(s"⚠️ Heuristic required")
 
-    sameArity && ctx.isChild(self.asName, that.asName) && parameterShapeCompatible
+    //    sameArity && ctx.isChild(self.asName, that.asName) && parameterShapeCompatible
+    if (self.asName == that.asName) {
+      sameArity && parameterShapeCompatible
+    } else if (ctx.isChild(self.asName, that.asName)) {
+      val selfParents = safeParentsOf(self)
+        .flatMap {
+          case l: Lambda if l.input.size == self.parameters.size =>
+            val applied = l.combine(self.parameters.map(_.ref))
+            ctx.logger.log(s"lambda result: $applied")
+            Seq(applied)
+          case o => Seq(o)
+        }
+      //ctx.logger.log(s"lambda result: $applied")
+
+
+      selfParents
+        .exists {
+          l =>
+            val maybeParent = l
+            ctx.isChild(maybeParent, that)
+        }
+
+    } else {
+      false
+    }
+    //ctx.isChild(self.asName, that.asName) &&
   }
 
   private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
@@ -168,7 +196,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     bdb.get(t).toSeq.flatten
   }
 
-  private def oneOfKnownParentsIsInheritedFrom(ctx: Ctx)( child: AbstractReference, parent: AbstractReference): Boolean = {
+  private def oneOfKnownParentsIsInheritedFrom(ctx: Ctx)(child: AbstractReference, parent: AbstractReference): Boolean = {
     safeParentsOf(child).exists(p => ctx.isChild(p, parent))
   }
 
