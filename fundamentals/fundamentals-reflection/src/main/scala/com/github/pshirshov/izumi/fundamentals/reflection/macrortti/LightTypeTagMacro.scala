@@ -221,20 +221,31 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         b =>
           val ref = makeRef(b, Set(b), Map.empty)
           ref
-      }.filterNot(_ == keyref)
+      }
+        .filterNot(_ == keyref)
 
       bases.map(b => (keyref, b))
 
     }
 
-    val l = lamBases(tpe).collect {
-      case l: Lambda => l
+    val l = lamBases(tpe)
+      .collect {
+      case l: Lambda =>
+        (out, l)
     }
-    val t = tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out)
+    val t = tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out).map(b => (out, b))
 
-    val basesdb: Map[AbstractReference, Set[AbstractReference]] = Map(
-      out -> (l ++ xxx(tpe, Some(out)) ++t).toSet
-    )
+    val basesdb: Map[AbstractReference, Set[AbstractReference]] = (l ++ t).toMultimap
+
+//    val basesdb: Map[AbstractReference, Set[AbstractReference]] = {
+//      (
+//        l.map(v => (out, v)) ++
+//          xxx(tpe, Some(out)) ++
+//          xxx(tpe.dealias.resultType, None) ++
+//          tpe.typeArgs.flatMap(a => xxx(a, None)) ++
+//          breakRefinement(tpe).toSet.toSeq.flatMap(a => xxx(a, None))
+//        ).toMultimap
+//    }
 
     //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     // println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
@@ -262,7 +273,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         Seq.empty
     })
 
-    val next = (tpe.typeArgs ++ more).filterNot(inh.contains)
+    val next = (tpe.typeArgs ++ tpe.dealias.resultType.typeArgs ++ more).filterNot(inh.contains)
     next.foreach {
       a =>
         extract(a, inh)
