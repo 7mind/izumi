@@ -46,7 +46,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   
   private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
     import ctx._
-    logger.log(s"️🤔 $selfT <:< $thatT")
+    logger.log(s"✴️ ️$selfT <:< $thatT")
     
     
     val result = (selfT, thatT) match {
