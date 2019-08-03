@@ -3,35 +3,54 @@ package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
 import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
 import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
+import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
+import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 
 import scala.collection.mutable
 
-final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
-  final val tpeNothing = NameReference("scala.Nothing")
-  final val tpeAny = NameReference("scala.Any")
-  final val tpeAnyRef = NameReference("scala.AnyRef")
-  final val tpeObject = NameReference("java.lang.Object")
+object LightTypeTagInheritance {
+  case class Ctx(params: List[LambdaParameter], logger: TrivialLogger) {
+    def next(): Ctx = Ctx(params, logger.sub())
+    def next(newparams: List[LambdaParameter]): Ctx = Ctx(newparams, logger.sub())
+  }
+}
 
-  lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
-  lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
+final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
+  private final val tpeNothing = NameReference("scala.Nothing")
+  private final val tpeAny = NameReference("scala.Any")
+  private final val tpeAnyRef = NameReference("scala.AnyRef")
+  private final val tpeObject = NameReference("java.lang.Object")
+
+  private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
+  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
 
   def isChild(): Boolean = {
     val st = self.t
     val ot = other.t
-    isChild(st, ot, List.empty)
+    val logger = TrivialLogger.makeOut[this.type]("izumi.distage.debug.reflection", forceLog = true)
+
+    logger.log(
+      s"""Inheritance check: $self vs $other
+         |bases: ${bdb.niceList()}
+         |inheritance: ${ib.niceList()}
+       """.stripMargin)
+
+    isChild(Ctx(List.empty, logger))(st, ot)
   }
 
-  private def debug() = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+  implicit class CtxExt(val ctx: Ctx)  {
+    def isChild(selfT0: LightTypeTag, thatT0: LightTypeTag): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
 
-    println(s"${self} vs ${other}")
-    println(s"inheritance: ${ib.niceList()}")
-    println(s"bases: ${bdb.niceList()}")
   }
-
-  private def isChild(selfT: LightTypeTag, thatT: LightTypeTag, ctx: List[LambdaParameter]): Boolean = {
-    (selfT, thatT) match {
+  
+  private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
+    import ctx._
+    logger.log(s"️👀 $selfT <:< $thatT")
+    
+    
+    val result = (selfT, thatT) match {
       case (s, t) if s == t =>
         true
       case (s, _) if s == tpeNothing =>
@@ -43,26 +62,26 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         if (parentsOf(s.asName).contains(t)) {
           true
         } else {
-          oneOfKnownParentsIsInheritedFrom(ctx, s, t) || shapeHeuristic(s, t, ctx)
+          oneOfKnownParentsIsInheritedFrom(ctx)(s, t) || shapeHeuristic(ctx)(s, t)
         }
       case (s: FullReference, t: NameReference) =>
-        oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+        oneOfKnownParentsIsInheritedFrom(ctx)(s, t)
       case (s: NameReference, t: FullReference) =>
-        oneOfKnownParentsIsInheritedFrom(ctx, s, t)
+        oneOfKnownParentsIsInheritedFrom(ctx)(s, t)
       case (s: NameReference, t: NameReference) =>
         val boundIsOk = t.boundaries match {
           case Boundaries.Defined(bottom, top) =>
-            isChild(s, top, ctx) && isChild(bottom, s, ctx)
+            ctx.isChild(s, top) && ctx.isChild(bottom, s)
           case Boundaries.Empty =>
             true
         }
 
         any(
-          all(boundIsOk, parentsOf(s).exists(p => isChild(p, thatT, ctx))),
-          all(boundIsOk, ctx.map(_.name).contains(t.ref)), // lambda parameter may accept anything
+          all(boundIsOk, parentsOf(s).exists(p => ctx.isChild(p, thatT))),
+          all(boundIsOk, params.map(_.name).contains(t.ref)), // lambda parameter may accept anything
           s.boundaries match {
             case Boundaries.Defined(_, top) =>
-              isChild(top, t, ctx)
+              ctx.isChild(top, t)
             case Boundaries.Empty =>
               false
           }
@@ -70,35 +89,37 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
 
 
       case (_: AppliedNamedReference, t: Lambda) =>
-        isChild(selfT, t.output, t.input)
+        isChild(ctx.next(t.input))(selfT, t.output)
       case (s: Lambda, t: AppliedNamedReference) =>
-        isChild(s.output, t, s.input)
+        isChild(ctx.next(s.input))(s.output, t)
       case (s: Lambda, o: Lambda) =>
-        s.input == o.input && isChild(s.output, o.output, s.input)
+        s.input == o.input && isChild(ctx.next(s.input))(s.output, o.output)
       case (s: IntersectionReference, t: IntersectionReference) =>
         // yeah, this shit is quadratic
         s.refs.forall {
           c =>
             t.refs.exists {
               p =>
-                isChild(c, p, ctx)
+                ctx.isChild(c, p)
             }
         }
       case (s: IntersectionReference, t: LightTypeTag) =>
-        s.refs.exists(c => isChild(c, t, ctx))
+        s.refs.exists(c => ctx.isChild(c, t))
       case (s: LightTypeTag, o: IntersectionReference) =>
-        o.refs.forall(t => isChild(s, t, ctx))
+        o.refs.forall(t => ctx.isChild(s, t))
 
       case (s: Refinement, t: Refinement) =>
-        isChild(s.reference, t.reference, ctx) && t.decls.diff(s.decls).isEmpty
+        ctx.isChild(s.reference, t.reference) && t.decls.diff(s.decls).isEmpty
       case (s: Refinement, t: LightTypeTag) =>
-        isChild(s.reference, t, ctx)
+        ctx.isChild(s.reference, t)
       case (_: LightTypeTag, _: Refinement) =>
         false
     }
+    logger.log(s"${if (result) "✅" else "⛔️"} $selfT <:< $thatT == $result")
+    result
   }
 
-  private def shapeHeuristic(self: FullReference, that: FullReference, ctx: List[LambdaParameter]): Boolean = {
+  private def shapeHeuristic(ctx: Ctx)(self: FullReference, that: FullReference): Boolean = {
     def parameterShapeCompatible: Boolean = {
       self.parameters.zip(that.parameters).forall {
         case (ps, pt) =>
@@ -106,9 +127,9 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
             case Variance.Invariant =>
               ps.ref == pt.ref
             case Variance.Contravariant =>
-              isChild(pt.ref, ps.ref, ctx)
+              ctx.isChild(pt.ref, ps.ref)
             case Variance.Covariant =>
-              isChild(ps.ref, pt.ref, ctx)
+              ctx.isChild(ps.ref, pt.ref)
           }
       }
     }
@@ -117,7 +138,9 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
       self.parameters.size == that.parameters.size
     }
 
-    sameArity && isChild(self.asName, that.asName, ctx) && parameterShapeCompatible
+    ctx.logger.log(s"⚠️ Heuristic required")
+
+    sameArity && ctx.isChild(self.asName, that.asName) && parameterShapeCompatible
   }
 
   private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {
@@ -134,8 +157,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     out ++= direct
 
     val nextNames = direct.map(_.asName)
-    nextNames
-      .filterNot(tested.contains)
+    nextNames.diff(tested)
       .foreach {
         b =>
           parentsOf(b.asName, out, tested)
@@ -147,8 +169,8 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     bdb.get(t).toSeq.flatten
   }
 
-  private def oneOfKnownParentsIsInheritedFrom(ctx: List[LambdaParameter], child: AbstractReference, parent: AbstractReference) = {
-    safeParentsOf(child).exists(p => isChild(p, parent, ctx))
+  private def oneOfKnownParentsIsInheritedFrom(ctx: Ctx)( child: AbstractReference, parent: AbstractReference): Boolean = {
+    safeParentsOf(child).exists(p => ctx.isChild(p, parent))
   }
 
 }
