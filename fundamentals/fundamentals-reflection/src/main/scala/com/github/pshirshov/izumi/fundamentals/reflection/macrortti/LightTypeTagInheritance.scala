@@ -32,10 +32,9 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     val logger = TrivialLogger.makeOut[this.type]("izumi.distage.debug.reflection", forceLog = true)
 
     logger.log(
-      s"""Inheritance check: $self vs $other
-         |bases: ${bdb.niceList()}
-         |inheritance: ${ib.niceList()}
-       """.stripMargin)
+      s"""⚙️ Inheritance check: $self vs $other
+         |⚡️bases: ${bdb.niceList()}
+         |⚡️inheritance: ${ib.niceList()}""".stripMargin)
 
     isChild(Ctx(List.empty, logger))(st, ot)
   }
@@ -47,7 +46,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   
   private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
     import ctx._
-    logger.log(s"️👀 $selfT <:< $thatT")
+    logger.log(s"️🤔 $selfT <:< $thatT")
     
     
     val result = (selfT, thatT) match {
