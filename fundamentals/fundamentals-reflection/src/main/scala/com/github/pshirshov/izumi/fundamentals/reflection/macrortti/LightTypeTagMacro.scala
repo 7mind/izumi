@@ -280,9 +280,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     }
   }
 
-  private def tpeBases(tpe: Type): Seq[Type] = {
-    tpeBases(tpe, withHollow = false)
-  }
+//  private def tpeBases(tpe: Type): Seq[Type] = {
+//    tpeBases(tpe, withHollow = false)
+//  }
 
   def makeLambda0(params: List[Symbol], result: Type): Seq[AbstractReference] = {
     //val asPoly = t.etaExpand
@@ -321,7 +321,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     lambdas
   }
 
-  private def tpeBases(tpe: Type, withHollow: Boolean): Seq[Type] = {
+  private def tpeBases(tpe: Type): Seq[Type] = {
     val tpef = tpe.dealias.resultType
     val higherBases = tpef.baseClasses
     val parameterizedBases = higherBases
@@ -332,13 +332,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
       .map(s => tpef.baseType(s))
 
-    val hollowBases = if (withHollow) {
-      higherBases.map(s => s.asType.toType)
-    } else {
-      Seq.empty
-    }
+//    val hollowBases = if (withHollow) {
+//      higherBases.map(s => s.asType.toType)
+//    } else {
+//      Seq.empty
+//    }
 
-    val allbases = parameterizedBases ++ hollowBases
+    val allbases = parameterizedBases /*++ hollowBases*/
     allbases
   }
 
