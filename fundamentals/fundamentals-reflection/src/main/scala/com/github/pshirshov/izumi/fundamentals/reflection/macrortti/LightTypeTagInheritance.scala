@@ -147,13 +147,13 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
       self.parameters.size == that.parameters.size
     }
 
-    ctx.logger.log(s"⚠️ Heuristic required")
+    ctx.logger.log(s"⚠️ Heuristic required, $self <:< $that, context = ${ctx.params}")
 
-    //    sameArity && ctx.isChild(self.asName, that.asName) && parameterShapeCompatible
     if (self.asName == that.asName) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
-      val selfParents = safeParentsOf(self)
+      val allParents = safeParentsOf(self)
+      val selfParents = allParents
         .flatMap {
           case l: Lambda if l.input.size == self.parameters.size =>
             val applied = l.combine(self.parameters.map(_.ref))
@@ -161,8 +161,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
             Seq(applied)
           case o => Seq(o)
         }
-      //ctx.logger.log(s"lambda result: $applied")
-
+      ctx.logger.log(s"ℹ️ all parents: $allParents ==> $selfParents")
 
       selfParents
         .exists {
@@ -174,7 +173,6 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     } else {
       false
     }
-    //ctx.isChild(self.asName, that.asName) &&
   }
 
   private def parentsOf(t: NameReference): Set[AppliedNamedReference] = {

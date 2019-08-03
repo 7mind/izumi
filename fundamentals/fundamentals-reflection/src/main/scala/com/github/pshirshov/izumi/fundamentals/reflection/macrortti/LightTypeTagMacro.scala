@@ -284,7 +284,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     tpeBases(tpe, withHollow = false)
   }
 
-  def makeLambda0(params: List[Symbol], result: Type): AbstractReference = {
+  def makeLambda0(params: List[Symbol], result: Type): Seq[AbstractReference] = {
     //val asPoly = t.etaExpand
     //val result = asPoly.resultType.dealias
     val lamParams = params.zipWithIndex.map {
@@ -296,9 +296,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     reference match {
       case l: Lambda =>
-        l
+        Seq(l)
       case reference: AppliedReference =>
-        Lambda(lamParams.map(_._2), reference)
+        Seq.empty
+        //Lambda(lamParams.map(_._2), reference)
     }
   }
 
@@ -306,7 +307,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     //val tpef = tpe.dealias.resultType
     val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
     val targs = tpe.etaExpand.typeParams
-    val lambdas = basetypes.map {
+    val lambdas = basetypes.flatMap {
       base =>
         makeLambda0(targs, base)
     }
