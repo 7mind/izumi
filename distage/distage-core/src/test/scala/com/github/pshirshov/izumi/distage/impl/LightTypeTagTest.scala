@@ -205,8 +205,8 @@ class LightTypeTagTest extends WordSpec {
 
 
     "progression: support swapped parents" in {
-      trait KT1[+A, +B]
-      trait KT2[+A, +B] extends KT1[B, A]
+      trait KT1[+A1, +B1]
+      trait KT2[+A2, +B2] extends KT1[B2, A2]
 
       assertChild(LTT[KT2[H1, I1]], LTT[KT1[I1, H1]]) // correct
       assertChild(LTT[KT2[H1, I1]], LTT[KT1[H1, I1]]) // this must not be true!

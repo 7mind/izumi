@@ -215,7 +215,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
 
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Map(
-      out -> tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out).toSet
+      out -> (lamBases(tpe) ++ tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out)).toSet
     )
 
     //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
@@ -255,8 +255,50 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     tpeBases(tpe, withHollow = false)
   }
 
+  def makeLambda0(params: List[Symbol], result: Type): AbstractReference = {
+    //val asPoly = t.etaExpand
+    //val result = asPoly.resultType.dealias
+    val lamParams = params.zipWithIndex.map {
+      case (p, idx) =>
+        p.fullName -> LambdaParameter(idx.toString) //, makeKind(p.asType.toType))
+    }
+
+    val reference = makeRef(result, Set(result), lamParams.toMap)
+
+    Lambda(lamParams.map(_._2), reference)
+  }
+
+  private def lamBases(tpe: Type): Seq[AbstractReference] = {
+    val tpef = tpe.dealias.resultType
+
+    tpef.baseClasses.filterNot(_.asType.toType.takesTypeArgs).flatMap {
+      b =>
+        val base = tpef.typeConstructor.baseType(b.asType.toTypeConstructor.typeSymbol)
+        if (b.asType.toTypeConstructor.takesTypeArgs && !base.takesTypeArgs) {
+          Seq(makeLambda0(tpef.typeConstructor.etaExpand.typeParams, base.resultType.dealias))
+
+        } else {
+          Seq.empty
+
+        }
+
+    }
+  }
+
   private def tpeBases(tpe: Type, withHollow: Boolean): Seq[Type] = {
     val tpef = tpe.dealias.resultType
+
+//    if (tpe.toString.contains("KT") || tpe.toString.contains("KK")) {
+//      println(("🤡", tpef))
+////      println((" ", tpef.typeConstructor))
+////      println((" ", tpef.typeConstructor.etaExpand))
+////      println((" ", tpef.typeConstructor.etaExpand.baseClasses))
+////      println((" ", tpef.typeConstructor.etaExpand.baseClasses.map(_.asType.toType.etaExpand)))
+//      //println((" ", tpef.typeConstructor.etaExpand, tpef.baseClasses.map(b => tpef.typeConstructor.baseType(b.asType.toTypeConstructor.typeSymbol).resultType.dealias.getClass)))
+////      println((" ", tpef.typeConstructor.etaExpand, tpef.baseClasses.map(b => (b, b.getClass))))
+//      //println((" ", tpef.baseClasses.map(b => tpef.baseType(b))))
+//      println((tpef, lamBases))
+//    }
     val higherBases = tpef.baseClasses
     val parameterizedBases = higherBases
       .filterNot {
