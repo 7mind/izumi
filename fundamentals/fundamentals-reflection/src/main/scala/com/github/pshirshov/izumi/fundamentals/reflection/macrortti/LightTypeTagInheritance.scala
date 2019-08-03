@@ -100,7 +100,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
       case (_: AppliedNamedReference, t: Lambda) =>
         isChild(ctx.next(t.input))(selfT, t.output)
       case (s: Lambda, t: AppliedNamedReference) =>
-        isChild(ctx.next(s.input))(s.output, t)
+        isChild(ctx.next(s.input))(s.output, t) || params.map(_.name).contains(t.asName.ref)
       case (s: Lambda, o: Lambda) =>
         s.input == o.input && isChild(ctx.next(s.input))(s.output, o.output)
       case (s: IntersectionReference, t: IntersectionReference) =>
@@ -147,13 +147,14 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
       self.parameters.size == that.parameters.size
     }
 
-    ctx.logger.log(s"⚠️ Heuristic required")
+    ctx.logger.log(s"⚠️ Heuristic required: $self <:< $that")
 
     //    sameArity && ctx.isChild(self.asName, that.asName) && parameterShapeCompatible
     if (self.asName == that.asName) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
-      val selfParents = safeParentsOf(self)
+      val allParents = safeParentsOf(self)
+      val selfParents = allParents
         .flatMap {
           case l: Lambda if l.input.size == self.parameters.size =>
             val applied = l.combine(self.parameters.map(_.ref))
@@ -161,7 +162,8 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
             Seq(applied)
           case o => Seq(o)
         }
-      //ctx.logger.log(s"lambda result: $applied")
+
+      ctx.logger.log(s"self parents: $allParents => $selfParents")
 
 
       selfParents
@@ -169,7 +171,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
           l =>
             val maybeParent = l
             ctx.isChild(maybeParent, that)
-        }
+        } || (self.parameters.size == 1 && sameArity && parameterShapeCompatible)
 
     } else {
       false

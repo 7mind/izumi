@@ -166,6 +166,21 @@ class LightTypeTagTest extends WordSpec {
       assertCombineNonPos(`LTT[_,_]`[Either], Seq(None, Some(LTT[Unit])), `LTT[_]`[Either[?, Unit]])
     }
 
+    "xxx" in {
+      assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      type F1 = W3[Int] with W1
+      type F2 = W4[Int] with W2
+
+      type T1[A] = W3[A] with W1
+      type T2[A] = W4[A] with W2
+
+
+      assertChild(LTT[F2], LTT[F1])
+      assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
+      assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
+    }
+
     "support subtype checks" in {
       assertChild(LTT[Int], LTT[AnyVal])
       assertChild(LTT[Int], LTT[Int])
@@ -174,8 +189,8 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[Either[Nothing, Int]], LTT[Either[Throwable, Int]])
 
       assertChild(LTT[F2[I2]], LTT[F1[I1]])
-      assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
-      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+//      assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
+//      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
 
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
@@ -272,13 +287,13 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[F1], LTT[W3[Int]])
       assertChild(LTT[F1], LTT[W1])
-      assertChild(LTT[F2], LTT[F1])
+      //assertChild(LTT[F2], LTT[F1])
 
 
-      assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
+      //assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
       assertChild(`LTT[_]`[T1], `LTT[_]`[W3])
       assertChild(`LTT[_]`[T1], LTT[W1])
-      assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
+      //assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
     }
 
     "support structural & refinement type equality" in {
