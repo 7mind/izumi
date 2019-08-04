@@ -234,8 +234,14 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         (out, l)
     }
     val t = tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out).map(b => (out, b))
+    val r = breakRefinement(tpe).toSet.flatMap{
+      b =>
+        val r = makeRef(b, Set(b), Map.empty)
+        tpeBases(b).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == r).map(b => (r, b))
+    }
 
-    val basesdb: Map[AbstractReference, Set[AbstractReference]] = (l ++ t).toMultimap
+    println(r)
+    val basesdb: Map[AbstractReference, Set[AbstractReference]] = (l ++ t ++ r).toMultimap
 
 //    val basesdb: Map[AbstractReference, Set[AbstractReference]] = {
 //      (
@@ -305,7 +311,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
   private def lamBases(tpe: Type): Seq[AbstractReference] = {
     //val tpef = tpe.dealias.resultType
-    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
+    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b).etaExpand ).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
     val targs = tpe.etaExpand.typeParams
     val lambdas = basetypes.flatMap {
       base =>
