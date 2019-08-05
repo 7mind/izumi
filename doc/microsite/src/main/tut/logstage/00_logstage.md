@@ -90,17 +90,17 @@ Dependencies
 // LogStage API, you need it to use the logger
 libraryDependencies += Izumi.R.logstage_core
 
-// optional
+// Optional
 libraryDependencies ++= Seq(
-  // json output
+  // Json output
   Izumi.R.logstage_rendering_circe,
-  // router from Slf4j to LogStage
+  // Router from Slf4j to LogStage
   Izumi.R.logstage_adapter-slf4j,
   // Configure LogStage with Typesafe Config
   Izumi.R.logstage_config,
   // LogStage integration with DIStage 
   Izumi.R.logstage_di,
-  // router from LogStage to Slf4J
+  // Router from LogStage to Slf4J
   Izumi.R.logstage_sink_slf4j,
 )
 ```
@@ -115,15 +115,15 @@ libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
 
 // optional
 libraryDependencies ++= Seq(
-  // json output
+  // Json output
   "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version,
-  // router from Slf4j to LogStage
+  // Router from Slf4j to LogStage
   "io.7mind.izumi" %% "logstage-adapter-slf4j" % izumi_version,    
   // Configure LogStage with Typesafe Config
   "io.7mind.izumi" %% "logstage-config" % izumi_version,
   // LogStage integration with DIStage 
   "io.7mind.izumi" %% "logstage-di" % izumi_version,
-  // router from LogStage to Slf4J
+  // Router from LogStage to Slf4J
   "io.7mind.izumi" %% "logstage-sink-slf4j " % izumi_version,
 )
 ```
@@ -185,7 +185,7 @@ val logger = IzLogger()
 import logstage.LogstageZIO
 import zio.{IO, DefaultRuntime}
 
-val log = LogstageZIO.withFiberId(logger)
+val log: LogBIO[IO] = LogstageZIO.withFiberId(logger)
 
 val rts = new DefaultRuntime {}
 rts.unsafeRun {
@@ -203,15 +203,16 @@ I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_lo
 import cats.effect.IO
 import cats.implicits._
 import logstage._
+import io.circe.Printer
 import io.circe.syntax._
 
 def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
   val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.pretty(Printer.spaces2))
 
-  IO(???).handleErrorWith {
+  load(entity).handleErrorWith {
     case error =>
       ctxLog.error(s"Failed to import entity: $error.").void
-      // message includes `ID` and `entityAsJSON` fields
+      // JSON message includes `ID` and `entityAsJSON` fields
   }
 }
 ```
