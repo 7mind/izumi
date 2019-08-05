@@ -213,45 +213,88 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
 
 
-    def xxx(t: Type, key: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
-
-      val keyref = key.getOrElse(makeRef(t, Set(t), Map.empty))
-
-      val bases = tpeBases(t).map {
-        b =>
-          val ref = makeRef(b, Set(b), Map.empty)
-          ref
-      }
-        .filterNot(_ == keyref)
-
-      bases.map(b => (keyref, b))
-
-    }
-
-    val l = lamBases(tpe)
-      .collect {
-      case l: Lambda =>
-        (out, l)
-    }
-    val t = tpeBases(tpe).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == out).map(b => (out, b))
-    val r = breakRefinement(tpe).toSet.flatMap{
-      b =>
-        val r = makeRef(b, Set(b), Map.empty)
-        tpeBases(b).map(b => makeRef(b, Set(b), Map.empty)).filterNot(_ == r).map(b => (r, b))
-    }
-
-    println(r)
-    val basesdb: Map[AbstractReference, Set[AbstractReference]] = (l ++ t ++ r).toMultimap
-
-//    val basesdb: Map[AbstractReference, Set[AbstractReference]] = {
-//      (
-//        l.map(v => (out, v)) ++
-//          xxx(tpe, Some(out)) ++
-//          xxx(tpe.dealias.resultType, None) ++
-//          tpe.typeArgs.flatMap(a => xxx(a, None)) ++
-//          breakRefinement(tpe).toSet.toSeq.flatMap(a => xxx(a, None))
-//        ).toMultimap
+//    def xxx(t: Type, key: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+//
+//      val keyref = key.getOrElse(makeRef(t, Set(t), Map.empty))
+//
+//      val bases = tpeBases(t).map {
+//        b =>
+//          val ref = makeRef(b, Set(b), Map.empty)
+//          ref
+//      }
+//        .filterNot(_ == keyref)
+//
+//      bases.map(b => (keyref, b))
+//
 //    }
+
+    def makeLamBases0(t: Type, tref: AbstractReference) = {
+      if (t.takesTypeArgs) {
+        lamBases(t)
+          .collect {
+            case l: Lambda =>
+              (tref, l)
+          }
+      } else {
+        Seq.empty
+      }
+    }
+    def makeLamBases(t: Type) = {
+      val tref = makeRef(t, Set(t), Map.empty)
+
+      lamBases(t)
+        .collect {
+          case l: Lambda =>
+            (tref, l)
+        }
+    }
+
+
+    val basesAsLambdas = makeLamBases0(tpe, out)
+
+    def makeBases(t: Type): Seq[(AbstractReference, AbstractReference)] = {
+      val tref = makeRef(t, Set(t), Map.empty)
+      makeBases0(t, tref)
+    }
+    def makeBases0(t: Type, tref: AbstractReference): Seq[(AbstractReference, AbstractReference)] = {
+      tpeBases(t)
+        .map(b => makeRef(b, Set(b), Map.empty))
+        .filterNot(_ == tref).map(b => (tref, b))
+    }
+
+    val typeBases = makeBases0(tpe, out)
+    val unref = breakRefinement(tpe)
+    val refinementBases = unref.toSet.flatMap(makeBases)
+
+
+    // TODO: full typearg unpack
+    val ab = tpe.typeArgs.flatMap(a => makeBases(a))
+    val al = tpe.typeArgs.flatMap(a => makeLamBases(a))
+
+    val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, typeBases, refinementBases, al).flatten.toMultimap
+
+    if (tpe.toString.contains("T1") || tpe.toString.contains("T2")) {
+
+      println((">>>", tpe, tpe.typeArgs))
+      println(("tbases", basesAsLambdas))
+      println(("tbases", typeBases))
+      println(("unref", unref))
+      println(("refbases", refinementBases))
+      println(("argbases", ab))
+      println(("arglam", al))
+      println(("all", basesdb))
+    }
+
+
+    //    val basesdb: Map[AbstractReference, Set[AbstractReference]] = {
+    //      (
+    //        l.map(v => (out, v)) ++
+    //          xxx(tpe, Some(out)) ++
+    //          xxx(tpe.dealias.resultType, None) ++
+    //          tpe.typeArgs.flatMap(a => xxx(a, None)) ++
+    //          breakRefinement(tpe).toSet.toSeq.flatMap(a => xxx(a, None))
+    //        ).toMultimap
+    //    }
 
     //import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
     // println(s"$tpe (${inhdb.size}):${inhdb.toSeq.niceList()}")
@@ -286,9 +329,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     }
   }
 
-//  private def tpeBases(tpe: Type): Seq[Type] = {
-//    tpeBases(tpe, withHollow = false)
-//  }
+  //  private def tpeBases(tpe: Type): Seq[Type] = {
+  //    tpeBases(tpe, withHollow = false)
+  //  }
 
   def makeLambda0(params: List[Symbol], result: Type): Seq[AbstractReference] = {
     //val asPoly = t.etaExpand
@@ -305,13 +348,13 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         Seq(l)
       case reference: AppliedReference =>
         Seq.empty
-        //Lambda(lamParams.map(_._2), reference)
+      //Lambda(lamParams.map(_._2), reference)
     }
   }
 
   private def lamBases(tpe: Type): Seq[AbstractReference] = {
     //val tpef = tpe.dealias.resultType
-    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b).etaExpand ).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
+    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b).etaExpand).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
     val targs = tpe.etaExpand.typeParams
     val lambdas = basetypes.flatMap {
       base =>
@@ -338,11 +381,11 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
       .map(s => tpef.baseType(s))
 
-//    val hollowBases = if (withHollow) {
-//      higherBases.map(s => s.asType.toType)
-//    } else {
-//      Seq.empty
-//    }
+    //    val hollowBases = if (withHollow) {
+    //      higherBases.map(s => s.asType.toType)
+    //    } else {
+    //      Seq.empty
+    //    }
 
     val allbases = parameterizedBases /*++ hollowBases*/
     allbases

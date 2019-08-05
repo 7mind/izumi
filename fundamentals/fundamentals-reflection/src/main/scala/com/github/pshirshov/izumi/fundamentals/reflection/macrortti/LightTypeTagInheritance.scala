@@ -161,17 +161,32 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
             Seq(applied)
           case o => Seq(o)
         }
-      ctx.logger.log(s"ℹ️ all parents: $allParents ==> $selfParents")
+      val moreParents = bdb.collect({case (l: Lambda, b) if isSame(l.output, self.asName)  => b.collect({case l: Lambda if l.input.size == self.parameters.size => l})
+        .map(l => l.combine(self.parameters.map(_.ref)))}).flatten
+      ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $selfParents;; $moreParents")
 
-      selfParents
+
+
+      (selfParents ++ moreParents)
         .exists {
           l =>
             val maybeParent = l
             ctx.isChild(maybeParent, that)
         }
 
+
+
     } else {
       false
+    }
+  }
+
+  private def  isSame(a: AbstractReference, b: AbstractReference): Boolean = {
+    (a, b) match {
+      case (an: AppliedNamedReference, ab: AppliedNamedReference) =>
+        an.asName == ab.asName
+      case _ =>
+        false
     }
   }
 
