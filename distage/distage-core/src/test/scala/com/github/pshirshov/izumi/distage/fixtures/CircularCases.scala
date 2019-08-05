@@ -143,7 +143,7 @@ object CircularCases {
     class IRTWrappedService
 
 
-    class DynamoClient(dynamoComponent: DynamoComponent)
+    class DynamoClient(private val dynamoComponent: DynamoComponent)
 
     class DynamoComponent(
                            val dynamoDDLService: DynamoDDLService
