@@ -5,6 +5,15 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 protected[macrortti] object RuntimeAPI {
 
   def unpack(ref: AbstractReference): Set[NameReference] = {
+    def unpackBoundaries(b: Boundaries): Set[NameReference] = {
+      b match {
+        case Boundaries.Defined(bottom, top) =>
+          unpack(bottom) ++ unpack(top)
+        case Boundaries.Empty =>
+          Set.empty
+      }
+    }
+
     ref match {
       case Lambda(_, output) =>
         unpack(output)
@@ -13,7 +22,7 @@ protected[macrortti] object RuntimeAPI {
           case reference: AppliedNamedReference =>
             reference match {
               case n: NameReference =>
-                Set(n) ++ n.prefix.toSet.flatMap(unpack)
+                Set(n) ++ n.prefix.toSet.flatMap(unpack) ++ unpackBoundaries(n.boundaries)
               case f: FullReference =>
                 f.parameters.map(_.ref).flatMap(unpack).toSet ++ f.prefix.toSet.flatMap(unpack) + f.asName
             }
@@ -29,6 +38,7 @@ protected[macrortti] object RuntimeAPI {
         }
     }
   }
+
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
