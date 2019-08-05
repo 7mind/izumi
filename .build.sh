@@ -56,6 +56,7 @@ function site {
 }
 
 function publishIDL {
+  #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
@@ -67,6 +68,7 @@ function publishIDL {
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
+  #copypaste
 
   echo "PUBLISH IDL RUNTIMES..."
 
@@ -78,6 +80,7 @@ function publishIDL {
 }
 
 function publishScala {
+  #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
     return 0
   fi
@@ -89,15 +92,33 @@ function publishScala {
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
+  #copypaste
 
   echo "PUBLISH SCALA LIBRARIES..."
 
   csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
+}
+
+function sonatypeRelease {
+  #copypaste
+  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
+    return 0
+  fi
+
+  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+    return 0
+  fi
+
+  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+    return 0
+  fi
+  #copypaste
+
+  echo "SONATYPE RELEASE..."
 
   if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
   fi
-
 }
 
 function init {
@@ -120,9 +141,9 @@ function init {
 
     printenv
 
-#    git config --global user.name "$USERNAME"
-#    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
-#    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    git config --global user.name "$USERNAME"
+    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
+    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
     # coursier is not required since sbt 1.3.0
     #mkdir -p ~/.sbt/1.0/plugins/
@@ -179,6 +200,10 @@ case $i in
 
     publishScala)
         publishScala
+    ;;
+
+    sonatypeRelease)
+        sonatypeRelease
     ;;
 
     site)
