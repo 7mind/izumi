@@ -166,12 +166,6 @@ class LightTypeTagTest extends WordSpec {
       assertCombineNonPos(`LTT[_,_]`[Either], Seq(None, Some(LTT[Unit])), `LTT[_]`[Either[?, Unit]])
     }
 
-    "xxx" in {
-      type XX1[A] = W3[A] with W1
-      type XX2[A] = W4[A] with W2
-      assertChild(`LTT[_]`[XX2], `LTT[_]`[XX1])
-    }
-
     "support subtype checks" in {
       assertChild(LTT[Int], LTT[AnyVal])
       assertChild(LTT[Int], LTT[Int])

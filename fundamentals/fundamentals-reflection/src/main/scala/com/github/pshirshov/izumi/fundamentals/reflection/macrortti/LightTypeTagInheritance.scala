@@ -26,14 +26,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   private final val tpeObject = NameReference("java.lang.Object")
 
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
-  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb).flatMap {
-    case (k: Lambda, v) =>
-      Seq(
-        (k, v),
-        (k.output, v)
-      )
-    case o => Seq(o)
-  }
+  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
 
 
   def isChild(): Boolean = {
@@ -147,41 +140,28 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
       self.parameters.size == that.parameters.size
     }
 
-    ctx.logger.log(s"⚠️ Heuristic required, $self <:< $that, context = ${ctx.params}")
+    ctx.logger.log(s"⚠️ comparing parameterized references, $self <:< $that, context = ${ctx.params}")
 
     if (self.asName == that.asName) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
       val allParents = safeParentsOf(self)
-      val selfParents = allParents
-        .flatMap {
-          case l: Lambda if l.input.size == self.parameters.size =>
-            val applied = l.combine(self.parameters.map(_.ref))
-            ctx.logger.log(s"lambda result: $applied")
-            Seq(applied)
-          case o => Seq(o)
-        }
-      val moreParents = bdb.collect({case (l: Lambda, b) if isSame(l.output, self.asName)  => b.collect({case l: Lambda if l.input.size == self.parameters.size => l})
-        .map(l => l.combine(self.parameters.map(_.ref)))}).flatten
-      ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $selfParents;; $moreParents")
-
-
-
-      (selfParents ++ moreParents)
+      val moreParents = bdb.collect({ case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({ case l: Lambda if l.input.size == self.parameters.size => l })
+        .map(l => l.combine(self.parameters.map(_.ref)))
+      }).flatten
+      ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
+      moreParents
         .exists {
           l =>
             val maybeParent = l
             ctx.isChild(maybeParent, that)
         }
-
-
-
     } else {
       false
     }
   }
 
-  private def  isSame(a: AbstractReference, b: AbstractReference): Boolean = {
+  private def isSame(a: AbstractReference, b: AbstractReference): Boolean = {
     (a, b) match {
       case (an: AppliedNamedReference, ab: AppliedNamedReference) =>
         an.asName == ab.asName
