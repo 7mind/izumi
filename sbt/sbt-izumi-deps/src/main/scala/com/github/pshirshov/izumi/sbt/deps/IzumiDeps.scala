@@ -18,7 +18,7 @@ object IzumiDeps {
 
     val cats = "2.0.0-M4"
     val cats_effect = "2.0.0-M5"
-    val zio = "1.0.0-RC10-1"
+    val zio = "1.0.0-RC11-1"
     val zio_interop_cats = "2.0.0.0-RC2"
 
     val circe = "0.12.0-M4"
