@@ -384,6 +384,11 @@ lazy val logstageCore = inLogStageX.as.cross(platforms)
 lazy val logstageCoreJvm = logstageCore.jvm.remember
 lazy val logstageCoreJs = logstageCore.js.remember
   .settings(JSSettings)
+  .settings(
+    // FIXME: 2.13 Scala.js dies on inlining here
+    //  https://github.com/scala/bug/issues/11663
+    scalacOptions -= "-opt-inline-from:com.github.pshirshov.izumi.**"
+  )
 
 lazy val logstageRenderingCirce = inLogStageX.as.cross(platforms)
   .depends(logstageCore.ets, fundamentalsJsonCirce)
