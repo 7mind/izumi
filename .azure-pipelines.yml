@@ -61,6 +61,7 @@ jobs:
           displayName: 'Publish to Maven Central 2.13'
           dependsOn:
           - build_213
+          - publish_212
           - sbt
           steps:
             - script: |
