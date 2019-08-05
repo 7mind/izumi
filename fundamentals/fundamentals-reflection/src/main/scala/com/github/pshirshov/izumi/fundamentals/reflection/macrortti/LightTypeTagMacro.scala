@@ -168,11 +168,12 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     val inh = allTypeReferences(tpe)
 
     import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-    val inhdb = inh
+    val inhUnrefined = inh
       .flatMap {
         t =>
           breakRefinement(t).toSet
       }
+    val inhdb = inhUnrefined
       .flatMap {
         i =>
           val tpef = i.dealias.resultType
@@ -212,7 +213,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
             .filterNot(_ == t)
       }
 
-    def makeLamBases0(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+    def makeBaseClasses0(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
       val tref = ref.getOrElse(makeRef(t, Set(t), Map.empty))
 
       if (t.takesTypeArgs) {
@@ -228,24 +229,26 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
     }
 
-    val basesAsLambdas = makeLamBases0(tpe, Some(out))
-    val unref = breakRefinement(tpe)
-    val refinementBases = unref.toSet.flatMap {
-      r =>
+    def makeBaseClasses(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+      val unref = breakRefinement(t)
+      unref.toSet.flatMap {
+        r =>
 
-        val t = if (r.takesTypeArgs) {
-          r
-        } else {
-          r.etaExpand
-        }
+          val t = if (r.takesTypeArgs) {
+            r
+          } else {
+            r.etaExpand
+          }
 
-        makeLamBases0(t, None)
+          makeBaseClasses0(t, ref)
+      }
+        .toSeq
     }
 
-
-    // TODO: full typearg unpack
-    val al = tpe.typeArgs.flatMap(a => makeLamBases0(a, None))
-    val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, refinementBases, al).flatten.toMultimap
+    val basesAsLambdas = makeBaseClasses(tpe, Some(out))
+    val al = inhUnrefined.flatMap(a => makeBaseClasses(a, None))
+    
+    val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, al).flatten.toMultimap
     new FLTT(out, () => basesdb, () => inhdb)
   }
 
