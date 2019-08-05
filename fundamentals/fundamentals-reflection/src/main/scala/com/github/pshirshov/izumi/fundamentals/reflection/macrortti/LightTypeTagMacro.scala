@@ -228,29 +228,24 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
     }
 
-
     val basesAsLambdas = makeLamBases0(tpe, Some(out))
     val unref = breakRefinement(tpe)
-    val refinementBases = unref.toSet.flatMap(r => makeLamBases0(r, None))
+    val refinementBases = unref.toSet.flatMap {
+      r =>
+
+        val t = if (r.takesTypeArgs) {
+          r
+        } else {
+          r.etaExpand
+        }
+
+        makeLamBases0(t, None)
+    }
 
 
     // TODO: full typearg unpack
     val al = tpe.typeArgs.flatMap(a => makeLamBases0(a, None))
-
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, refinementBases, al).flatten.toMultimap
-
-    if (tpe.toString.contains("XX1") || tpe.toString.contains("XX2")) {
-
-      println((">>>", tpe, tpe.typeArgs))
-      println(("tbases", basesAsLambdas))
-      //println(("tbases", typeBases))
-      println(("unref", unref))
-      println(("refbases", refinementBases))
-      //println(("argbases", ab))
-      println(("arglam", al))
-      println(("all", basesdb))
-    }
-
     new FLTT(out, () => basesdb, () => inhdb)
   }
 
@@ -278,13 +273,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
     }
   }
 
-  //  private def tpeBases(tpe: Type): Seq[Type] = {
-  //    tpeBases(tpe, withHollow = false)
-  //  }
-
   private def lamBases(tpe: Type): Seq[AbstractReference] = {
     val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
     val targs = tpe.etaExpand.typeParams
+
     val lambdas = basetypes.flatMap {
       base =>
         makeLambda0(targs, base)
