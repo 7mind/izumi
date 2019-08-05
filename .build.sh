@@ -3,15 +3,20 @@
 function scala213() {
   echo "Using Scala 2.13..."
   export CI_SCALA_VERSION="2.13.0"
-}
-
-function csbt {
+  # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
+  # Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
+  # see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
+  # and https://github.com/sbt/sbt/pull/3995/files
+  # TL;DR strict aggregation in sbt is broken; this is a workaround
   if [ -z "$CI_SCALA_VERSION" ]; then
       VERSION_COMMAND=""
   else
-      VERSION_COMMAND="++$CI_SCALA_VERSION"
+      VERSION_COMMAND="++ $CI_SCALA_VERSION"
   fi
-  COMMAND="time sbt -batch -no-colors -v $VERSION_COMMAND $*"
+}
+
+function csbt {
+  COMMAND="time sbt -batch -no-colors -v $*"
   eval $COMMAND
 }
 
@@ -25,7 +30,7 @@ function versionate {
 }
 
 function coverage {
-  csbt clean coverage test coverageReport || exit 1
+  csbt clean coverage "\"$VERSION_COMMAND test\"" "\"$VERSION_COMMAND coverageReport\"" || exit 1
   bash <(curl -s https://codecov.io/bash)
 }
 
@@ -87,7 +92,7 @@ function publishScala {
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  csbt clean package publishSigned || exit 1
+  csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
 
   if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
     csbt sonatypeRelease || exit 1
@@ -115,9 +120,9 @@ function init {
 
     printenv
 
-    git config --global user.name "$USERNAME"
-    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
-    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+#    git config --global user.name "$USERNAME"
+#    git config --global user.email "$CI_BUILD_NUMBER@$CI_COMMIT"
+#    git config --global core.sshCommand "ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
     # coursier is not required since sbt 1.3.0
     #mkdir -p ~/.sbt/1.0/plugins/

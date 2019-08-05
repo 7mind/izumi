@@ -89,6 +89,16 @@ val SbtSettings = new SettingsGroup {
   ).flatten
 }
 
+val Scala212OnlySettings = new SettingsGroup {
+  override val id = SettingsGroupId("Scala212Only")
+
+  override val settings: Seq[sbt.Setting[_]] = Seq(
+    Seq(
+      crossScalaVersions := Seq(V.scala_212),
+    )
+  ).flatten
+}
+
 val WithoutBadPlugins = new SettingsGroup {
   override val id = SettingsGroupId("WithoutBadPlugins")
 
@@ -509,22 +519,6 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   )
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-val Scala212OnlySettings = new SettingsGroup {
-  override val id = SettingsGroupId("Scala212Only")
-
-  override val settings: Seq[sbt.Setting[_]] = Seq(
-    Seq(
-      crossScalaVersions := Seq(V.scala_212),
-      skip in publish := {
-        // super dirty horizontal reference, but don't know how else to
-        // detect that we're cross compiling for a different version and skip double publish ._.
-        (fundamentalsCollectionsJvm / scalaVersion).value != V.scala_212
-      },
-      Keys.`package` := file("."),
-    )
-  ).flatten
-}
-
 lazy val sbtIzumi = inSbt.as
   .module
 
@@ -681,3 +675,4 @@ lazy val `izumi-r2`: Project = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
   .settings(skip in publish := true)
+  .settings(crossScalaVersions := Nil)
