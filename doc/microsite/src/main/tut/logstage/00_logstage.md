@@ -4,7 +4,7 @@ out: index.html
 LogStage
 ========
 
-LogStage is a zero-cost structural logging framework.
+LogStage is a zero-cost structural logging framework for Scala & Scala.js
 
 Key features:
 
