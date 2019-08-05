@@ -9,7 +9,8 @@ trait TrivialLogger {
 
   def log(s: => String, e: => Throwable): Unit
 
-  def sub(): TrivialLogger
+  def sub(): TrivialLogger =  sub(1)
+  def sub(delta: Int): TrivialLogger
 }
 
 class TrivialLoggerImpl(sink: AbstractStringTrivialSink, level: Int) extends TrivialLogger {
@@ -22,7 +23,7 @@ class TrivialLoggerImpl(sink: AbstractStringTrivialSink, level: Int) extends Tri
     log(s"$s\n${e.stackTrace}")
   }
 
-  override def sub(): TrivialLogger = new TrivialLoggerImpl(sink, level + 1)
+  override def sub(delta: Int): TrivialLogger =  new TrivialLoggerImpl(sink, level + delta)
 }
 
 class TrivialLoggerNullImpl() extends TrivialLogger {
@@ -34,9 +35,9 @@ class TrivialLoggerNullImpl() extends TrivialLogger {
     (s, e).forget
   }
 
-  override def sub(): TrivialLogger = {
-    this
-  }
+  override def sub(): TrivialLogger = this
+
+  override def sub(delta: Int): TrivialLogger = this
 }
 
 object TrivialLogger {

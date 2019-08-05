@@ -32,12 +32,12 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   def isChild(): Boolean = {
     val st = self.t
     val ot = other.t
-    val logger = TrivialLogger.makeOut[this.type]("izumi.distage.debug.reflection", forceLog = true)
+    val logger = TrivialLogger.makeOut[this.type]("izumi.distage.debug.reflection", forceLog = false)
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
-         |⚡️bases: ${bdb.niceList()}
-         |⚡️inheritance: ${ib.niceList()}""".stripMargin)
+         |⚡️bases: ${bdb.mapValues(_.niceList().shift(2)).niceList()}
+         |⚡️inheritance: ${ib.mapValues(_.niceList().shift(2)).niceList()}""".stripMargin)
 
     isChild(Ctx(List.empty, logger))(st, ot)
   }
@@ -64,7 +64,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
         if (parentsOf(s.asName).contains(t)) {
           true
         } else {
-          oneOfKnownParentsIsInheritedFrom(ctx)(s, t) || shapeHeuristic(ctx)(s, t)
+          oneOfKnownParentsIsInheritedFrom(ctx)(s, t) || compareParameterizedRefs(ctx)(s, t)
         }
       case (s: FullReference, t: NameReference) =>
         oneOfKnownParentsIsInheritedFrom(ctx)(s, t)
@@ -121,7 +121,7 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
     result
   }
 
-  private def shapeHeuristic(ctx: Ctx)(self: FullReference, that: FullReference): Boolean = {
+  private def compareParameterizedRefs(ctx: Ctx)(self: FullReference, that: FullReference): Boolean = {
     def parameterShapeCompatible: Boolean = {
       self.parameters.zip(that.parameters).forall {
         case (ps, pt) =>
