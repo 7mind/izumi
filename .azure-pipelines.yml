@@ -61,11 +61,19 @@ jobs:
           displayName: 'Publish to Maven Central 2.13'
           dependsOn:
           - build_213
-          - publish_212
           - sbt
           steps:
             - script: |
                 bash .build.sh 2.13 secrets publishScala
+        - job: sonatypeRelease
+          displayName: 'Sonatype Release'
+          dependsOn:
+          - publish_212
+          - publish_213
+          - sbt
+          steps:
+            - script: |
+                bash .build.sh secrets sonatypeRelease
 
 #cache:
 #  directories:
