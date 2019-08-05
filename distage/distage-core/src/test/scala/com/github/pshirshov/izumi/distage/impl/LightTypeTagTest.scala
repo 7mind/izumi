@@ -173,10 +173,21 @@ class LightTypeTagTest extends WordSpec {
 //      trait KT1[+A1, +B1]
 //      trait KT2[+A2, +B2] extends KT1[B2, A2]
 //      assertNotChild(LTT[KT2[H1, I1]], LTT[KT1[H1, I1]])
-      type T1[A] = W3[A] with W1
-      type T2[A] = W4[A] with W2
-      assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
+//      type T1[A] = W3[A] with W1
+//      type T2[A] = W4[A] with W2
+//      assertChild(`LTT[_]`[T2], `LTT[_]`[T1])
 
+
+      trait KK1[+A, +B, +U]
+      trait KK2[+A, +B] extends KK1[B, A, Unit]
+
+      assertChild(LTT[KK2[Int, String]], LTT[KK1[String, Int, Unit]])
+
+      assertChild(LTT[KK2[H2, I2]], LTT[KK1[I1, H1, Unit]])
+      assertNotChild(LTT[KK2[H2, I2]], LTT[KK1[H1, I1, Unit]])
+
+      assertChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[?, H1, Unit]])
+      assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]])
     }
 
     "support subtype checks" in {

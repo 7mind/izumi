@@ -4,6 +4,32 @@ import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag
 
 protected[macrortti] object RuntimeAPI {
 
+  def unpack(ref: AbstractReference): Set[NameReference] = {
+    ref match {
+      case Lambda(_, output) =>
+        unpack(output)
+      case reference: AppliedReference =>
+        reference match {
+          case reference: AppliedNamedReference =>
+            reference match {
+              case n: NameReference =>
+                Set(n) ++ n.prefix.toSet.flatMap(unpack)
+              case f: FullReference =>
+                f.parameters.map(_.ref).flatMap(unpack).toSet ++ f.prefix.toSet.flatMap(unpack) + f.asName
+            }
+          case IntersectionReference(refs) =>
+            refs.flatMap(unpack)
+          case Refinement(reference, decls) =>
+            unpack(reference) ++ decls.flatMap(d => d match {
+              case RefinementDecl.Signature(_, input, output) =>
+                unpack(output) ++ input.flatMap(unpack)
+              case RefinementDecl.TypeMember(_, ref) =>
+                unpack(ref)
+            })
+        }
+    }
+  }
+
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
 

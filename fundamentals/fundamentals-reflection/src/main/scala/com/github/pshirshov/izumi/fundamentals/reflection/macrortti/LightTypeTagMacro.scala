@@ -213,20 +213,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       }
 
 
-//    def xxx(t: Type, key: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
-//
-//      val keyref = key.getOrElse(makeRef(t, Set(t), Map.empty))
-//
-//      val bases = tpeBases(t).map {
-//        b =>
-//          val ref = makeRef(b, Set(b), Map.empty)
-//          ref
-//      }
-//        .filterNot(_ == keyref)
-//
-//      bases.map(b => (keyref, b))
-//
-//    }
+    //    def xxx(t: Type, key: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+    //
+    //      val keyref = key.getOrElse(makeRef(t, Set(t), Map.empty))
+    //
+    //      val bases = tpeBases(t).map {
+    //        b =>
+    //          val ref = makeRef(b, Set(b), Map.empty)
+    //          ref
+    //      }
+    //        .filterNot(_ == keyref)
+    //
+    //      bases.map(b => (keyref, b))
+    //
+    //    }
 
     def makeLamBases0(t: Type, tref: AbstractReference) = {
       if (t.takesTypeArgs) {
@@ -239,6 +239,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
         Seq.empty
       }
     }
+
     def makeLamBases(t: Type) = {
       val tref = makeRef(t, Set(t), Map.empty)
 
@@ -256,6 +257,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
       val tref = makeRef(t, Set(t), Map.empty)
       makeBases0(t, tref)
     }
+
     def makeBases0(t: Type, tref: AbstractReference): Seq[(AbstractReference, AbstractReference)] = {
       tpeBases(t)
         .map(b => makeRef(b, Set(b), Map.empty))
@@ -273,7 +275,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
 
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, typeBases, refinementBases, al).flatten.toMultimap
 
-    if (tpe.toString.contains("T1") || tpe.toString.contains("T2")) {
+    if (tpe.toString.contains("KK1") || tpe.toString.contains("KK2")) {
 
       println((">>>", tpe, tpe.typeArgs))
       println(("tbases", basesAsLambdas))
@@ -333,41 +335,59 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U) {
   //    tpeBases(tpe, withHollow = false)
   //  }
 
-  def makeLambda0(params: List[Symbol], result: Type): Seq[AbstractReference] = {
-    //val asPoly = t.etaExpand
-    //val result = asPoly.resultType.dealias
-    val lamParams = params.zipWithIndex.map {
-      case (p, idx) =>
-        p.fullName -> LambdaParameter(idx.toString) //, makeKind(p.asType.toType))
-    }
-
-    val reference = makeRef(result, Set(result), lamParams.toMap)
-
-    reference match {
-      case l: Lambda =>
-        Seq(l)
-      case reference: AppliedReference =>
-        Seq.empty
-      //Lambda(lamParams.map(_._2), reference)
-    }
-  }
-
   private def lamBases(tpe: Type): Seq[AbstractReference] = {
     //val tpef = tpe.dealias.resultType
-    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b).etaExpand).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
+    val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
     val targs = tpe.etaExpand.typeParams
+    if (tpe.toString.contains("KK")) {
+      println(("🤡", tpe))
+    }
     val lambdas = basetypes.flatMap {
       base =>
         makeLambda0(targs, base)
     }
 
-    //    if (tpe.toString.contains("KK")) {
-    //      println(("🤡", tpe))
-    //      println(("...", tpe.typeSymbol.fullName))
-    //      println(("...", basetypes))
-    //      println(("==>   ", lambdas))
-    //    }
+    if (tpe.toString.contains("KK")) {
+      println(("...", tpe.typeSymbol.fullName))
+      println(("...", tpe.baseClasses))
+      println(("...", tpe.baseClasses.map(b => tpe.baseType(b)))) //
+      println(("...", tpe.baseClasses.map(b => tpe.baseType(b).etaExpand)))
+      println(("...", tpe.etaExpand.baseClasses))
+      println(("...", tpe.etaExpand.baseClasses.map(b => tpe.baseType(b)))) //
+      println(("...", tpe.etaExpand.baseClasses.map(b => tpe.baseType(b).etaExpand)))
+      println(("...", basetypes))
+      println(("==>   ", lambdas))
+    }
     lambdas
+  }
+
+  def makeLambda0(params: List[Symbol], result: Type): Seq[AbstractReference] = {
+    //val asPoly = t.etaExpand
+    //val result = asPoly.resultType.dealias
+    if (params.nonEmpty) {
+      val lamParams = params.zipWithIndex.map {
+        case (p, idx) =>
+          p.fullName -> LambdaParameter(idx.toString) //, makeKind(p.asType.toType))
+      }
+
+
+      val reference = makeRef(result, Set(result), lamParams.toMap)
+
+      if (result.toString.contains("KK")) {
+        println(("====>", reference))
+      }
+
+      reference match {
+        case l: Lambda =>
+          Seq(l)
+        case reference: AppliedReference =>
+          //Seq.empty
+          Seq(Lambda(lamParams.map(_._2), reference)).filter(l => lamParams.map(_._2.name).toSet.diff(RuntimeAPI.unpack(l).map(_.ref)).isEmpty)
+      }
+    } else {
+      Seq.empty
+    }
+
   }
 
   private def tpeBases(tpe: Type): Seq[Type] = {
