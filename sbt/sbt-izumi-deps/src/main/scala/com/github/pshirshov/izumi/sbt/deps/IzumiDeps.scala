@@ -9,7 +9,7 @@ object IzumiDeps {
     val scala_212 = "2.12.8"
     val scala_213 = "2.13.0"
 
-    val collection_compat = "2.1.1"
+    val collection_compat = "2.1.2"
 
     val kind_projector = "0.10.3"
     val scalatest = "3.0.8"
