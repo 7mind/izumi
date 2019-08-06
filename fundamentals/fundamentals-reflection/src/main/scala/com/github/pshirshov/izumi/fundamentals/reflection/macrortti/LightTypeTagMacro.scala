@@ -78,18 +78,17 @@ object LightTypeTagImpl {
   }
 }
 
-sealed trait Broken[T] {
+sealed trait Broken[T, S] {
   def toSet: Set[T]
-
 }
 
 object Broken {
 
-  case class Single[T](t: T) extends Broken[T] {
+  case class Single[T, S](t: T) extends Broken[T, S] {
     override def toSet: Set[T] = Set(t)
   }
 
-  case class Compound[T](tpes: Set[T]) extends Broken[T] {
+  case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
     override def toSet: Set[T] = tpes
   }
 
@@ -337,29 +336,21 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
 
 
     def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
-      val decls = UniRefinement.extractDecls(t, terminalNames)
-
-      val out = UniRefinement.breakRefinement(t) match {
-        case Broken.Compound(tpes) if tpes.size > 1 =>
+      UniRefinement.breakRefinement(t) match {
+        case Broken.Compound(tpes, decls) =>
           val parts = tpes.map(p => unpack(p, rules))
-          IntersectionReference(parts)
+          val intersection = IntersectionReference(parts)
 
-        case Broken.Compound(tpes) if tpes.size == 1 =>
-          unpack(tpes.head, rules)
+          if (decls.nonEmpty) {
+            Refinement(intersection, UniRefinement.convertDecls(decls.toList, rules).toSet)
+          } else {
+            intersection
+          }
 
         case _ =>
           // we intentionally ignore breakRefinement result here, it breaks lambdas
           unpack(t.dealias.resultType, rules)
       }
-
-      val withRef = decls match {
-        case Some(value) =>
-          Refinement(out, value)
-        case None =>
-          out
-      }
-
-      withRef
     }
 
     val out = tpe match {
@@ -392,75 +383,68 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       }
     }
 
-    def extractDecls(t: Type, terminalNames: Map[String, LambdaParameter]): Option[Set[RefinementDecl]] = {
-      fullDealias(t) match {
-        case UniRefinement(_, Nil) =>
-          None
-        case UniRefinement(_, decls) =>
-          val d = decls.flatMap {
-            decl =>
-              if (decl.isMethod) {
-                val m = decl.asMethod
-                val ret = m.returnType
+    def convertDecls(decls: List[SymbolApi], terminalNames: Map[String, LambdaParameter]): List[RefinementDecl] = {
+      decls.flatMap {
+        decl =>
+          if (decl.isMethod) {
+            val m = decl.asMethod
+            val ret = m.returnType
 
-                val params = m.paramLists.map {
-                  paramlist =>
-                    paramlist.map {
-                      p =>
-                        val pt = p.typeSignature
-                        makeRef(pt, terminalNames).asInstanceOf[AppliedReference]
-                    }
+            val params = m.paramLists.map {
+              paramlist =>
+                paramlist.map {
+                  p =>
+                    val pt = p.typeSignature
+                    makeRef(pt, terminalNames).asInstanceOf[AppliedReference]
                 }
+            }
 
-                val inputs = if (params.nonEmpty) {
-                  params
-                } else {
-                  Seq(Seq.empty)
-                }
+            val inputs = if (params.nonEmpty) {
+              params
+            } else {
+              Seq(Seq.empty)
+            }
 
-                inputs.map {
-                  pl =>
-                    RefinementDecl.Signature(m.name.decodedName.toString, pl.toList, makeRef(ret, terminalNames).asInstanceOf[AppliedReference])
-                }
-              } else if (decl.isType) {
-
-                val tpe = if (decl.isAbstract) {
-                  decl.asType.toType
-                } else {
-                  decl.typeSignature
-                }
-                val ref = makeRef(tpe, terminalNames)
-                Seq(TypeMember(decl.name.decodedName.toString, ref))
-              } else {
-                None
-              }
-          }
-
-          if (d.nonEmpty) {
-            Some(d.toSet)
+            inputs.map {
+              pl =>
+                RefinementDecl.Signature(m.name.decodedName.toString, pl.toList, makeRef(ret, terminalNames).asInstanceOf[AppliedReference])
+            }
+          } else if (decl.isType) {
+            val tpe = if (decl.isAbstract) {
+              decl.asType.toType
+            } else {
+              decl.typeSignature
+            }
+            val ref = makeRef(tpe, terminalNames)
+            Seq(TypeMember(decl.name.decodedName.toString, ref))
           } else {
             None
           }
-        case _ =>
-          None
       }
     }
 
-    def breakRefinement(t: Type): Broken[Type] = {
+    def breakRefinement(t: Type): Broken[Type, SymbolApi] = {
+      breakRefinement0(List.empty)(t) match {
+        case (t, d) if d.isEmpty && t.size == 1 =>
+          Broken.Single(t.head)
+        case (t, d) =>
+          Broken.Compound(t, d)
+      }
+    }
+
+    private def breakRefinement0(allDecls: List[SymbolApi])(t: Type): (Set[Type], Set[SymbolApi]) = {
       fullDealias(t) match {
-        case UniRefinement(parents, _) =>
-          val parts = parents.map(breakRefinement).flatMap {
-            b =>
-              b.toSet
-          }
-          Broken.Compound(parts.toSet)
+        case UniRefinement(parents, decls) =>
+          val parts = parents.map(breakRefinement0(decls))
+          val types = parts.flatMap(_._1)
+          val d = parts.flatMap(_._2)
+          (types.toSet, (decls ++ d).toSet)
         case t =>
-          Broken.Single(t)
+          (Set(t), Set.empty)
 
       }
     }
   }
-
 
 
   private def toPrefix(tpef: u.Type): Option[AppliedReference] = {

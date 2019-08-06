@@ -1,12 +1,13 @@
 package com.github.pshirshov.izumi.distage.impl
 
+import com.github.pshirshov.izumi.distage.model.definition.With
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
 class LightTypeTagTest extends WordSpec {
-
   trait T0[A[_], B[_]]
+  final val str = "str"
 
   type F[T] = T
   type FP1[+T] = List[T]
@@ -226,6 +227,9 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]])
     }
 
+    "xxx" in {
+
+    }
 
     "support PDTs" in {
       val a = new C {
@@ -282,6 +286,8 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support structural & refinement type equality" in {
+      assertDifferent(LTT[With[str.type] with ({ type T = str.type with Int })], LTT[With[str.type] with ({ type T = str.type with Long })])
+
       type C1 = C
       assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
       assertSame(LTT[C {def a: Int}], LTT[C1 {def a: Int}])
@@ -300,6 +306,7 @@ class LightTypeTagTest extends WordSpec {
       Z.discard()
 
       assertSame(LTT[a1.A], LTT[Z.X#A])
+
     }
 
     "support structural & refinement type subtype checks" in {

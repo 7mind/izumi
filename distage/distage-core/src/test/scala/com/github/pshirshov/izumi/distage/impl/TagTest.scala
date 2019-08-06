@@ -77,7 +77,7 @@ class TagTest extends WordSpec with X[String] {
 
     "Work for structural concrete types" in {
       assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
-//      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe != safe[With[str.type] with ({ type T = str.type with Long })])
+      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe != safe[With[str.type] with ({ type T = str.type with Long })])
     }
 
     "Work with odd type prefixes" in {
