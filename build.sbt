@@ -34,8 +34,8 @@ releaseProcess := Seq[ReleaseStep](
 
 publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
-val GlobalSettings = new DefaultGlobalSettingsGroup {
-  override val id = SettingsGroupId("GlobalSettings")
+val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
+  override val id = SettingsGroupId("GlobalSettingsRoot")
 
   override val settings: Seq[sbt.Setting[_]] = Seq(
     crossScalaVersions := Seq(
@@ -53,6 +53,14 @@ val GlobalSettings = new DefaultGlobalSettingsGroup {
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
+  )
+}
+
+val GlobalSettings = new DefaultGlobalSettingsGroup {
+  override val id = SettingsGroupId("GlobalSettings")
+
+  override val settings: Seq[sbt.Setting[_]] = GlobalSettingsRoot.settings ++ Seq(
+    scalaVersion := crossScalaVersions.value.head,
   )
 }
 
@@ -144,7 +152,7 @@ val JSSettings = new SettingsGroup {
 // --------------------------------------------
 
 lazy val inRoot = In(".")
-  .settings(GlobalSettings)
+  .settings(GlobalSettingsRoot)
 
 lazy val inDoc = In("doc")
   .settings(GlobalSettings)
@@ -263,7 +271,8 @@ lazy val fundamentalsTypesafeConfig = inFundamentals.as.module
   .depends(fundamentalsReflectionJvm)
   .settings(
     libraryDependencies ++= Seq(
-      R.typesafe_config
+      R.typesafe_config,
+      R.scala_reflect % scalaVersion.value,
     )
   )
 
@@ -271,7 +280,7 @@ lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
   .depends(fundamentalsPlatform)
   .settings(
     libraryDependencies ++= Seq(
-      R.scala_reflect % scalaVersion.value
+      R.scala_reflect % scalaVersion.value % Provided
     )
   )
 
@@ -297,6 +306,8 @@ lazy val distageModel = inDiStage.as.module
   )
   .settings(
     libraryDependencies ++= R.cats_all.map(_ % Optional),
+    // FIXME: remove runtime scala-reflect
+    libraryDependencies += R.scala_reflect % scalaVersion.value,
   )
 
 lazy val distageProxyCglib = inDiStage.as.module
@@ -367,6 +378,7 @@ lazy val logstageApi = inLogStageX.as.cross(platforms)
   .depends(fundamentalsReflection)
   .settings(
     libraryDependencies ++= Seq(R.scala_java_time).map(_.cross(platformDepsCrossVersion.value)),
+    libraryDependencies += R.scala_reflect % scalaVersion.value % Provided,
   )
 lazy val logstageApiJvm = logstageApi.jvm.remember
 lazy val logstageApiJs = logstageApi.js.remember
@@ -375,11 +387,12 @@ lazy val logstageApiJs = logstageApi.js.remember
 lazy val logstageCore = inLogStageX.as.cross(platforms)
   .depends(logstageApi.ets, fundamentalsBio)
   .settings(
-    libraryDependencies ++= (T.zio_core +: T.cats_all).map(_.cross(platformDepsCrossVersion.value)),
-    libraryDependencies ++= Seq(
+    libraryDependencies += R.scala_reflect % scalaVersion.value % Provided,
+    libraryDependencies ++= (Seq(
       R.zio_core % Optional,
-      R.cats_core % Optional
-    ).map(_.cross(platformDepsCrossVersion.value))
+      R.cats_core % Optional,
+      T.zio_core,
+    ) ++ T.cats_all).map(_.cross(platformDepsCrossVersion.value)),
   )
 lazy val logstageCoreJvm = logstageCore.jvm.remember
 lazy val logstageCoreJs = logstageCore.js.remember
@@ -443,7 +456,11 @@ lazy val idealinguaV1CoreJs = idealinguaV1Core.js.remember
 lazy val idealinguaV1RuntimeRpcScala = inIdealinguaV1X.as.cross(platforms)
   .dependsOn(fundamentalsBio, fundamentalsJsonCirce)
   .settings(
-    libraryDependencies ++= (R.zio_core +: R.zio_interop +: R.cats_all).map(_.cross(platformDepsCrossVersion.value))
+    libraryDependencies += R.scala_reflect % scalaVersion.value % Provided,
+    libraryDependencies ++= (Seq(
+      R.zio_core,
+      R.zio_interop,
+    ) ++ R.cats_all).map(_.cross(platformDepsCrossVersion.value))
   )
 
 lazy val idealinguaV1RuntimeRpcScalaJvm = idealinguaV1RuntimeRpcScala.jvm.remember
@@ -478,7 +495,11 @@ lazy val idealinguaV1TranspilersJs = idealinguaV1Transpilers.js.remember
 
 
 lazy val idealinguaV1RuntimeRpcHttp4s = inIdealinguaV1.as.module
-  .depends(idealinguaV1RuntimeRpcScalaJvm, logstageCoreJvm, logstageAdapterSlf4j)
+  .depends(
+    idealinguaV1RuntimeRpcScalaJvm,
+    logstageCoreJvm,
+    logstageAdapterSlf4j,
+  )
   .dependsSeq(Seq(idealinguaV1TestDefs).map(_.testOnlyRef))
   .settings(
     libraryDependencies ++= R.http4s_all,
@@ -681,3 +702,4 @@ lazy val `izumi-r2`: Project = inRoot.as
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
   .settings(skip in publish := true)
   .settings(crossScalaVersions := Nil)
+  .settings(scalaVersion := V.scala_212)
