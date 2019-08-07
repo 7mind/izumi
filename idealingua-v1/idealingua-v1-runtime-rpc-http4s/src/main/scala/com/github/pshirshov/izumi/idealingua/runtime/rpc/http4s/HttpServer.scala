@@ -138,8 +138,7 @@ class HttpServer[C <: Http4sContext]
   protected def handleWsMessage(context: WebsocketClientContextImpl[C], requestTime: ZonedDateTime = IzTime.utcNow): WebSocketFrame => MonoIO[Option[String]] = {
     case Text(msg, _) =>
       makeResponse(context, msg)
-        .sandbox
-        .redeemPure(identity, BIOExit.Success(_))
+        .sandboxBIOExit
         .map(handleResult(context, _))
 
     case Close(_) =>
@@ -246,8 +245,7 @@ class HttpServer[C <: Http4sContext]
       maybeResult
     }
 
-    ioR.sandbox
-      .redeemPure(identity, BIOExit.Success(_))
+    ioR.sandboxBIOExit
       .flatMap(handleResult(context, method, _))
   }
 

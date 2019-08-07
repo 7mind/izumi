@@ -128,6 +128,8 @@ object BIOSyntax {
   final class BIOPanicOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOPanic[F]) {
     @inline def sandbox: F[BIOExit.Failure[E], A] = F.sandbox(r)
 
+    @inline def sandboxBIOExit: F[Nothing, BIOExit[E, A]] = F.redeemPure(F.sandbox(r))(identity, BIOExit.Success(_))
+
     @inline def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
 
     /**
