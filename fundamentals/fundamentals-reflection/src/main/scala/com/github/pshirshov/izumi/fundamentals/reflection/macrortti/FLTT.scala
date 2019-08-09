@@ -92,7 +92,7 @@ object FLTT {
   protected[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
 
     val both = self.toSeq ++ other.toSeq
-    both.toMultimap.mapValues(_.flatten)
+    both.toMultimap.mapValues(_.flatten).toMap
 
   }
 
