@@ -38,9 +38,10 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             if (excessiveSymbols.nonEmpty) {
               throw new UnsupportedDefinitionException(
                 s"""Augmentation failure.
-                   |  Type $symbl has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
-                   |  But method signature contains unrequired symbols: $excessiveSymbols
-                   |  This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
+                   |  * Type $symbl has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
+                   |  * But method signature contains unrequired symbols: $excessiveSymbols
+                   |  * Only the following symbols are requird: ${methodTypeWireable.requiredKeys}
+                   |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
             }
 
             Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)

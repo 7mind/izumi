@@ -3,6 +3,7 @@ package com.github.pshirshov.izumi.fundamentals.reflection
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
 import ReflectionUtil.{Kind, kindOf}
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{LHKTag, LightTypeTagMacro}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
@@ -20,7 +21,8 @@ class TagMacro(val c: blackbox.Context) {
 
   /**
     * Workaround for a scalac bug whereby it loses the correct type of HKTag argument
-    * Here, if implicit resolution fails, we just inspect and recreate HKTag Arg again.
+    * Here, if implicit resolution fails because scalac thinks that `ArgStruct` is a WeakType,
+    * we just inspect it and recreate HKTag Arg again.
     *
     * See: TagTest, "scalac bug: can't find HKTag when obscured by type lambda"
     *
@@ -39,8 +41,13 @@ class TagMacro(val c: blackbox.Context) {
 
     logger.log(s"resulting implicit summon $res")
 
+    val tagMacro = new LightTypeTagMacro(c)
+    val lhktag = tagMacro.makeHKTagRaw[T](newHkTag.asInstanceOf[tagMacro.c.Type]).asInstanceOf[c.Expr[LHKTag[T]]]
+
+    logger.log(s"resulting LHKTag $lhktag")
+
     reify {
-      HKTagMaterializer(universe.splice.HKTag.unsafeFromTypeTag[T](res.splice))
+      HKTagMaterializer(universe.splice.HKTag[T](res.splice, lhktag.splice))
     }
   }
 

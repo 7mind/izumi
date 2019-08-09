@@ -70,10 +70,14 @@ class TagTest extends WordSpec with X[String] {
       assert(Tag[Int { def a: Int }].tpe == safe[Int { def a: Int} ])
 
       assert(Tag[str.type].tpe == safe[str.type])
-      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
       assert(Tag[this.Z].tpe == safe[this.Z])
       assert(Tag[this.Z].tpe.tpe == typeOf[this.Z])
       assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
+    }
+
+    "Work for structural concrete types" in {
+      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe == safe[With[str.type] with ({ type T = str.type with Int })])
+      assert(Tag[With[str.type] with ({ type T = str.type with Int })].tpe != safe[With[str.type] with ({ type T = str.type with Long })])
     }
 
     "Work with odd type prefixes" in {
@@ -266,10 +270,15 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "scalac bug: can't find HKTag when obscured by type lambda" in {
-      assertCompiles("HKTag.unsafeFromTypeTag[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
-//      Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
-//        HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
+      assertCompiles("HKTag.hktagFromTypeTag[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.hktagFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+      // The error produced above is:
+      //   Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+      //   HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
+      // That means that result of applying lambda:
+      //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
+      //  != HKTag[{ type Arg[C] = F[C] }]
+      // For Scalac. which necessitates another macro call for fixup ._.
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

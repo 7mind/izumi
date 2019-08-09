@@ -7,12 +7,9 @@ import distage._
 import org.scalatest.WordSpec
 
 
-
-
-
 class DSLTest extends WordSpec {
-  import TestTagOps._
 
+  import TestTagOps._
 
 
   "Basic DSL" should {

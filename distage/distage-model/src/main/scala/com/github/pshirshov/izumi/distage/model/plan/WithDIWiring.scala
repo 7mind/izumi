@@ -117,6 +117,11 @@ trait WithDIWiring {
         factorySuppliedProductDeps ++ fieldDependencies
       }
 
+
+      override def requiredKeys: Set[DIKey] = {
+        super.requiredKeys ++factoryMethods.flatMap(_.wireWith.prefix.toSeq).toSet
+      }
+
       override final def replaceKeys(f: Association => DIKey.BasicKey): Factory =
         this.copy(
           fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a)))

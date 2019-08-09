@@ -31,8 +31,8 @@ trait WithDISymbolInfo {
 
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
-      **/
-    case class Runtime private (underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+      */
+    case class Runtime protected (underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: SafeType = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
