@@ -1,21 +1,26 @@
 package com.github.pshirshov.izumi.distage.model.reflection.universe
 
+import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LightTypeTagImpl}
 import com.github.pshirshov.izumi.fundamentals.reflection.{SafeType0, WithTags}
 
 trait WithDISafeType {
   this: DIUniverseBase with WithTags =>
 
   // TODO: hotspot, hashcode on keys is inefficient
-  case class SafeType(override val tpe: TypeNative) extends SafeType0[u.type](u, tpe)
+  case class SafeType protected (override val tpe: TypeNative, override protected[izumi] val fullLightTypeTag: FLTT) extends SafeType0[u.type](u, tpe, fullLightTypeTag)
 
   object SafeType {
-    def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe)
-    def getK[K[_]: TagK]: SafeType = SafeType(TagK[K].tag.tpe)
+    // FIXME TODO constructing SafeType from a runtime type tag
+    @deprecated("constructing SafeType from a runtime type tag", "0.9.0")
+    def apply(tpe: TypeNative): SafeType = new SafeType(tpe, LightTypeTagImpl.makeFLTT(u)(tpe))
 
-    def unsafeGetWeak[T: WeakTag]: SafeType = SafeType(WeakTag[T].tag.tpe)
+    def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe, Tag[T].fullLightTypeTag)
+    def getK[K[_]: TagK]: SafeType = SafeType(TagK[K].tag.tpe, TagK[K].fullLightTypeTag)
+
+    def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = SafeType(weakTag.tag.tpe, weakTag.fullLightTypeTag)
 
     implicit class SafeTypeUnsafeToTag(tpe: SafeType) {
-      def unsafeToTag[T](currentMirror: u.Mirror): Tag[T] = Tag.unsafeFromType[T](currentMirror)(tpe.tpe)
+      def unsafeToTag[T]: Tag[T] = Tag.unsafeFromSafeType[T](tpe)
     }
   }
 
