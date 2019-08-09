@@ -234,6 +234,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       val current = Seq(tpe, tpe.dealias.resultType)
       inh ++= current
 
+      // we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       val more = tpe.dealias.resultType.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
         case t: TypeBoundsApi =>
           Seq(t.hi, t.lo)
