@@ -21,7 +21,8 @@ object IzumiDeps {
     val zio = "1.0.0-RC11-1"
     val zio_interop_cats = "2.0.0.0-RC2"
 
-    val circe = "0.12.0-M4"
+    val circe = "0.12.0-RC1"
+    val circe_derivation = "0.12.0-M5"
     val jawn = "0.14.2"
 
     val http4s = "0.21.0-M3"
@@ -88,8 +89,9 @@ object IzumiDeps {
       "io.circe" %% "circe-generic-extras",
       "io.circe" %% "circe-parser",
       "io.circe" %% "circe-literal",
+    ).map(_ % V.circe) ++ Seq(
       "io.circe" %% "circe-derivation",
-    ).map(_ % V.circe)
+    ).map(_ % V.circe_derivation)
 
     val http4s_client: Seq[ModuleID] = Seq(
       "org.http4s" %% "http4s-blaze-client"
