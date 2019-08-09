@@ -234,7 +234,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       val current = Seq(tpe, tpe.dealias.resultType)
       inh ++= current
 
-      val more = tpe.etaExpand.resultType.dealias.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
+      val more = tpe.dealias.resultType.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
         case t: TypeBoundsApi =>
           Seq(t.hi, t.lo)
         case _ =>
