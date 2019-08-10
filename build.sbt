@@ -635,6 +635,10 @@ lazy val allProjectsExceptMicrosite = distage ++ logstage ++ idealinguaV1 ++ izs
 
 lazy val microsite = inDoc.as.module
   .dependsOn(allProjectsExceptMicrosite.map(x => x: ClasspathDep[ProjectReference]): _*)
+  .disablePlugins(
+    ScoverageSbtPlugin,
+  )
+  .settings(Scala212OnlySettings)
   .enablePlugins(
     ScalaUnidocPlugin,
     ParadoxSitePlugin,
@@ -642,11 +646,18 @@ lazy val microsite = inDoc.as.module
     GhpagesPlugin,
     ParadoxMaterialThemePlugin,
     PreprocessPlugin,
-    MdocPlugin
+    MdocPlugin,
   )
-  .settings(Scala212OnlySettings)
   .settings(ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox))
   .settings(
+    // FIXME: mdoc plays badly with 2.12.9 for some reason,
+    //  somehow Scoverage ends up enabled as a compiler plugin despite everything???
+    //  error: Caused by: java.lang.RuntimeException: Cannot invoke plugin without specifying <dataDir>
+    //        at scoverage.ScoveragePlugin.processOptions(plugin.scala:43)
+    //        at scala.tools.nsc.plugins.Plugin.init(Plugin.scala:69)
+    scalaVersion := "2.12.8",
+    coverageEnabled := false,
+
     skip in publish := true,
     DocKeys.prefix := {
       if (isSnapshot.value) {
@@ -696,11 +707,14 @@ lazy val microsite = inDoc.as.module
     addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
-  .settings(skip in publish := true)
 
 lazy val `izumi-r2`: Project = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
   .settings(skip in publish := true)
-  .settings(crossScalaVersions := Nil)
+  .settings(
+    // required for sbt to skip scala projects with a diferent scala version
+    // in "++ 2.13.0 compile"
+    crossScalaVersions := Nil
+  )
   .settings(scalaVersion := V.scala_212)
