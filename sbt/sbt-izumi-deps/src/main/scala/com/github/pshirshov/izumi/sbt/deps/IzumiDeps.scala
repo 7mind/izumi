@@ -37,7 +37,7 @@ object IzumiDeps {
     val asynchttpclient = "2.10.1"
 
     val classgraph = "4.8.43"
-    val slf4j = "1.7.27"
+    val slf4j = "1.7.28"
     val typesafe_config = "1.3.4"
 
     // good to drop - java
