@@ -41,7 +41,7 @@ object IzumiDeps {
     val typesafe_config = "1.3.4"
 
     // good to drop - java
-    val cglib_nodep = "3.2.12"
+    val cglib_nodep = "3.3.0"
 
     val scala_java_time = "2.0.0-RC3"
   }
