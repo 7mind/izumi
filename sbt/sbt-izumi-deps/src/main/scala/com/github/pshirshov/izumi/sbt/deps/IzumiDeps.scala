@@ -21,7 +21,7 @@ object IzumiDeps {
     val zio = "1.0.0-RC11-1"
     val zio_interop_cats = "2.0.0.0-RC2"
 
-    val circe = "0.12.0-RC1"
+    val circe = "0.12.0-RC2"
     val circe_derivation = "0.12.0-M5"
     val jawn = "0.14.2"
 
