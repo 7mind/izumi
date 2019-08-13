@@ -6,6 +6,8 @@ import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpExceptio
 import distage.DIKey
 import org.scalatest.WordSpec
 
+import scala.collection.immutable
+
 
 class GcBasicTests extends WordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
@@ -69,6 +71,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Ctx]
         make[S3Component]
         many[IntegrationComponent].add[S3Component]
+        make[Initiator]
       }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
 
       val result = injector.produceUnsafe(plan)
@@ -204,7 +207,7 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         many[T1]
           .ref[Circular1]
           .ref[Circular2]
-      }, GCMode(DIKey.get[Circular4], DIKey.get[Set[T1]], DIKey.get[Circular3])))
+      }, GCMode(DIKey.get[Circular4], DIKey.get[immutable.Set[T1]], DIKey.get[Circular3])))
 
       val result = injector.produceUnsafe(plan)
 
@@ -220,12 +223,13 @@ class GcBasicTests extends WordSpec with MkGcInjector {
         make[Circular2]
         make[T1]
         make[Box[T1]].from(new Box(new T1))
-      }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2], DIKey.get[Set[T1]])))
+      }, GCMode(DIKey.get[Circular1], DIKey.get[Circular2])))
 
       val result = injector.produceUnsafe(plan)
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)
+      assert(result.get[Circular1].q == result.get[Circular2].q)
     }
   }
 }

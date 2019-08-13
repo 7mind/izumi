@@ -49,7 +49,7 @@ class DistageTestExample extends DistageSpecScalatest[CIO] {
 
     "test 4" in {
       _: ApplePaymentProvider[CIO] =>
-        ???
+//        ???
     }
   }
 
@@ -85,7 +85,7 @@ class DistageTestExample1 extends DistageSpecScalatest[CIO] {
 
     "test 4" in {
       _: ApplePaymentProvider[CIO] =>
-        ???
+        //???
     }
   }
 
