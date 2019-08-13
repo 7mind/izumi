@@ -12,7 +12,7 @@ object DistageTestsRegistrySingleton {
   private val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
 
   def list[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]])
+    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 
   def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
