@@ -228,10 +228,6 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(`LTT[_]`[KK2[H2, ?]], `LTT[_]`[KK1[H1, ?, Unit]])
     }
 
-    "xxx" in {
-
-    }
-
     "support PDTs" in {
       val a = new C {
         override type A = Int
