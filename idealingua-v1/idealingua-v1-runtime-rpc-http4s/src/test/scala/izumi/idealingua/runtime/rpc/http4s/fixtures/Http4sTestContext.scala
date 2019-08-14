@@ -77,33 +77,31 @@ object Http4sTestContext {
       }
     }
 
-    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket)(idUpdate: Option[String] => Unit): zio.IO[Throwable, Option[RpcPacket]] = {
+    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, (Option[ClientId], zio.IO[Throwable, Option[RpcPacket]])] = {
       Quirks.discard(id, initial)
 
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
-          idUpdate(None)
-          BIO.pure(None)
+          BIO.pure(None -> BIO.pure(None))
 
         case Some(_) =>
-          toId(initial, id, packet).flatMap {
+          toId(initial, id, packet) flatMap {
             case id@Some(_) =>
               // here we may set internal state
-              idUpdate(id)
-              BIO.pure(packet.ref.map {
-                ref =>
-                  RpcPacket.rpcResponse(ref, Json.obj())
-              })
+              BIO.pure{
+                id -> BIO.pure(packet.ref.map {
+                  ref =>
+                    RpcPacket.rpcResponse(ref, Json.obj())
+                })
+              }
 
             case None =>
-              idUpdate(None)
-              BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
+              BIO.pure(None -> BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed"))))
           }
 
         case None =>
-          idUpdate(None)
-          BIO.pure(None)
+          BIO.pure( None -> BIO.pure(None))
       }
     }
   }

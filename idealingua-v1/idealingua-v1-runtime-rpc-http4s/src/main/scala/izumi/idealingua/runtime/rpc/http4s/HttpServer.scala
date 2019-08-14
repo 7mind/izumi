@@ -193,7 +193,11 @@ class HttpServer[C <: Http4sContext]
   protected def respond(context: WebsocketClientContextImpl[C], input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
-        wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)(context.updateId)
+        wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input).flatMap{
+          case (id, eff) =>
+          context.updateId(id)
+          eff
+        }
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
