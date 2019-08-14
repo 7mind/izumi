@@ -10,7 +10,7 @@ trait RoleService[+F[_]] extends AbstractRoleF[F] {
     * Application startup wouldn't progress until this method finishes.
     * Resource initialization must be finite
     * You may run a separate thread, a fiber, etc during resource initialization
-    * All the shutdown logic has to be implemented in resource finalizer
+    * All the shutdown logic has to be implemented in the resource finalizer
     */
   def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResourceBase[F, Unit]
 }

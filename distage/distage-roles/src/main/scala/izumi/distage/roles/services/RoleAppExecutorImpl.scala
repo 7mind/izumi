@@ -64,17 +64,25 @@ class RoleAppExecutorImpl[F[_] : TagK](
 
       val tt = rolesToRun.map {
         case (task, cfg) =>
+
           task.start(cfg.roleParameters, cfg.freeArgs)
       }
 
-      tt.foldLeft((_: Unit) => {
+      val finalizer = (_: Unit) => {
         hook.await(lateLogger)
-      }) {
-        case (acc, r) =>
-          _ => r.use(acc)
-      }(())
+      }
+      val f = tt.foldLeft(finalizer) {
+        case (acc, role) =>
+          _ => effect.definitelyRecover(role.use(acc), t => {
+            for {
+              _ <- effect.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
+              _ <- effect.fail(t)
+            } yield ()
+          })
+      }
+      f(())
     } else {
-      DIEffect[F].maybeSuspend(lateLogger.info("No services to run, exiting..."))
+      effect.maybeSuspend(lateLogger.info("No services to run, exiting..."))
     }
   }
 
@@ -96,9 +104,15 @@ class RoleAppExecutorImpl[F[_] : TagK](
 
     lateLogger.info(s"Going to run: ${tasksToRun.size -> "tasks"}")
 
-    DIEffect[F].traverse_(tasksToRun) {
+    effect.traverse_(tasksToRun) {
       case (task, cfg) =>
-        task.start(cfg.roleParameters, cfg.freeArgs)
+        effect.definitelyRecover(task.start(cfg.roleParameters, cfg.freeArgs), t => {
+          for {
+            _ <- effect.maybeSuspend(lateLogger.error(s"Task $task failed: $t"))
+            _ <- effect.fail(t)
+          } yield ()
+        })
+
     }
   }
 
