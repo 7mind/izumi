@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.roles.test.fixtures
+package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.{ExecutorService, Executors}
 
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.model.definition.StandardAxis._
+import izumi.distage.plugins.PluginDef
+import izumi.distage.roles.test.fixtures.Junk._
 
 class ResourcesPlugin extends PluginDef {
   import ResourcesPlugin._

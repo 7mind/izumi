@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
+import izumi.fundamentals.platform.os.{IzOs, OsType}
 import org.scalatest.WordSpec
 
 class IzOsTest extends WordSpec {

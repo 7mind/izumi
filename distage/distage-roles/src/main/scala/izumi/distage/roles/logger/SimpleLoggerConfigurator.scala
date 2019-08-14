@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.roles.logger
+package izumi.distage.roles.logger
 
-import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
-import com.github.pshirshov.izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
-import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, QueueingSink}
+import izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
+import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
+import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
+import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
+import izumi.logstage.api.{IzLogger, Log}
+import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import com.typesafe.config.Config
 
 import scala.util.{Failure, Success, Try}
@@ -55,7 +55,7 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
 
   private def readConfig(config: Config): SinksConfig = {
     // TODO: copypaste from di boostrap, this MUST disappear
-    import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+    import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
     val reader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
 
     val maybeConf = for {

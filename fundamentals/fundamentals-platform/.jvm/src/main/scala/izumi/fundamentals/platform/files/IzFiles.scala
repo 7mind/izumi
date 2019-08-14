@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.files
+package izumi.fundamentals.platform.files
 
 import java.io.{File, IOException}
 import java.net.URI
@@ -8,9 +8,9 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
 import java.util.stream.Collectors
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.os.{IzOs, OsType}
+import izumi.fundamentals.platform.time.IzTime
 
 import scala.collection.JavaConverters._
 import scala.util.Try

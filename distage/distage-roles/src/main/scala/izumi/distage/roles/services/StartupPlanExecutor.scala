@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.IzLogger
 import distage.{Injector, Locator, TagK}
 
 trait StartupPlanExecutor {

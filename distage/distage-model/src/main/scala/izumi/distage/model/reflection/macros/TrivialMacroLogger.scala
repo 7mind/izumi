@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.macros
+package izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.reflection.MacroTrivialSink
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.reflection.MacroTrivialSink
 
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox

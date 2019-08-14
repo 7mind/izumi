@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins.optional
+package izumi.sbt.plugins.optional
 
 import coursier.core.Version
 import sbt.Keys.{isSnapshot, scalaOrganization, _}
@@ -42,7 +42,7 @@ object IzumiCompilerOptionsPlugin extends AutoPlugin {
       case Some((2, 12|13)) if optimizerEnabled(scalaVersion, isSnapshot) =>
         Seq(
           "-opt:l:inline",
-          "-opt-inline-from:com.github.pshirshov.izumi.**",
+          "-opt-inline-from:izumi.**",
           "-opt-warnings:_"
         )
       case _ =>

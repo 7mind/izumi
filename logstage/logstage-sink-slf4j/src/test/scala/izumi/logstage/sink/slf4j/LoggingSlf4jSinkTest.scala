@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.sink.slf4j
+package izumi.logstage.sink.slf4j
 
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
+import izumi.logstage.api.IzLogger
+import izumi.logstage.sink.{ConsoleSink, ExampleService}
 import org.scalatest.WordSpec
 
 class LoggingSlf4jSinkTest extends WordSpec {

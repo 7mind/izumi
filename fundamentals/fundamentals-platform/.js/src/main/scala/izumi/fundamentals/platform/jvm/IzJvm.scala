@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.jvm
+package izumi.fundamentals.platform.jvm
 
 trait IzJvm {
 

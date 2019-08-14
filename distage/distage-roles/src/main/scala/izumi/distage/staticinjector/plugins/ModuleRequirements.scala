@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.staticinjector.plugins
+package izumi.distage.staticinjector.plugins
 
-import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import izumi.distage.model.LoggerHook
+import izumi.distage.model.planning.PlanningObserver
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.Log.CustomContext
+import izumi.logstage.api.logger.LogRouter
 import distage.DIKey
 
 class ModuleRequirements(val requiredKeys: Set[DIKey])

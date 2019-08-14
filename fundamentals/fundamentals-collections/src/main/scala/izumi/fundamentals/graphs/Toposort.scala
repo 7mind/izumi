@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.graphs
+package izumi.fundamentals.graphs
 
 import scala.annotation.tailrec
 import scala.collection.immutable

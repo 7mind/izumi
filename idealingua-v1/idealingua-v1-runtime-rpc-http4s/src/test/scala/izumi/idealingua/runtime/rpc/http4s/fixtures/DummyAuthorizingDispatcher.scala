@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
+package izumi.idealingua.runtime.rpc.http4s.fixtures
 
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.{IRTBadCredentialsException, IRTNoCredentialsException}
+import izumi.functional.bio.BIO
+import izumi.functional.bio.BIO._
+import izumi.idealingua.runtime.rpc._
+import izumi.idealingua.runtime.rpc.http4s.{IRTBadCredentialsException, IRTNoCredentialsException}
 import org.http4s.{BasicCredentials, Status}
 
 final class DummyAuthorizingDispatcher[R[+ _, + _] : BIO, Ctx](proxied: IRTWrappedService[R, Ctx]) extends IRTWrappedService[R, Ctx] {

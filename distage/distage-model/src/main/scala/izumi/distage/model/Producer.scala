@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.model
+package izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.platform.functional.Identity
 
 trait Producer {
   protected[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator]

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.logstage.api.config
+package izumi.logstage.api.config
 
-import com.github.pshirshov.izumi.logstage.api.Log
+import izumi.logstage.api.Log
 
 
 trait LogConfigService extends AutoCloseable {

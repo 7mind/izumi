@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.time
+package izumi.fundamentals.platform.time
 
 import java.time.ZonedDateTime
 
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.functional.Identity
 
 trait Clock[+F[_]] {
   /** Should return epoch time in milliseconds (UTC timezone)

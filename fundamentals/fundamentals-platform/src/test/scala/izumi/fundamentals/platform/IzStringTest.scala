@@ -1,7 +1,7 @@
 
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString._
 import org.scalatest.WordSpec
 
 class IzStringTest extends WordSpec {

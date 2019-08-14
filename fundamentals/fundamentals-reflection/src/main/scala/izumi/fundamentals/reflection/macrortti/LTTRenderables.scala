@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.functional.{Renderable, WithRenderableSyntax}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.functional.{Renderable, WithRenderableSyntax}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 trait LTTRenderables extends WithRenderableSyntax {
 

@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains
+package izumi.idealingua.model.il.ast.raw.domains
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.il.ast.raw.defns.{RawNodeMeta, RawTopLevelDefn}
+import izumi.idealingua.model.il.ast.raw.models.Inclusion
+import izumi.idealingua.model.loader.FSPath
 
 trait DomainMeshResolved {
   def id: DomainId

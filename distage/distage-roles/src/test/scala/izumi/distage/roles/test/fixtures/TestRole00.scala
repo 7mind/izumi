@@ -1,19 +1,19 @@
-package com.github.pshirshov.izumi.distage.roles.test.fixtures
+package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.ExecutorService
 
-import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.model.definition.DIResource
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestRole00.TestRole00Resource
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.config.annotations.ConfPath
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
+import izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
+import izumi.distage.roles.test.fixtures.TestRole00.TestRole00Resource
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
+import izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.api.IzLogger
 
 class TestTask00[F[_] : DIEffect](logger: IzLogger) extends RoleTask[F] {
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {

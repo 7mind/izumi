@@ -1,9 +1,9 @@
 package logstage
 
-import com.github.pshirshov.izumi.functional.bio.SyncSafe2
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.AbstractLogger
-import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, Entry, Message}
+import izumi.functional.bio.SyncSafe2
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.logstage.api.AbstractLogger
+import izumi.logstage.api.Log.{CustomContext, Entry, Message}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 import zio.IO
 

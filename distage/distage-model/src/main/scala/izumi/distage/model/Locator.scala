@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.model
+package izumi.distage.model
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.immutable.Queue
 
@@ -27,7 +27,7 @@ trait Locator {
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Keys may be not unique.
     *
-    * @see [[com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator]]
+    * @see [[izumi.distage.bootstrap.BootstrapLocator]]
     */
   final def allInstances: collection.Seq[IdentifiedRef] =
     parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances

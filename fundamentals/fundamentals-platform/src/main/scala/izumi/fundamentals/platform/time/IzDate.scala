@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.fundamentals.platform.time
+package izumi.fundamentals.platform.time
 
 import java.time.OffsetDateTime
 import java.util.Date
 
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime.TZ_UTC
+import izumi.fundamentals.platform.time.IzTime.TZ_UTC
 
 final class IzDate(private val value: Date) extends AnyVal {
   def toTsAsUtc: OffsetDateTime = value.toInstant.atZone(TZ_UTC).toOffsetDateTime

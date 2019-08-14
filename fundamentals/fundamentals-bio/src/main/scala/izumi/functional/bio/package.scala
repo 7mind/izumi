@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional
+package izumi.functional
 
-import com.github.pshirshov.izumi.functional.mono.SyncSafe
+import izumi.functional.mono.SyncSafe
 
 package object bio {
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]

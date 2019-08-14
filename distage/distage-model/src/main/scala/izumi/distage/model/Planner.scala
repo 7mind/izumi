@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.model
+package izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.plan._
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 sealed trait GCMode {
   def toSet: Set[DIKey]
@@ -32,7 +32,7 @@ object GCMode {
 /**
   * Input for [[Planner]]
   *
-  * @param bindings Bindings probably created using [[com.github.pshirshov.izumi.distage.model.definition.ModuleDef]] DSL
+  * @param bindings Bindings probably created using [[izumi.distage.model.definition.ModuleDef]] DSL
   * @param mode     Garbage collection roots.
   *
   *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies

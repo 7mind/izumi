@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Structure, Structures, Tuple}
+import izumi.functional.Renderable
+import izumi.idealingua.model.il.ast.typed.{Structure, Structures, Tuple}
 
 class RStructure(context: IDLRenderingContext) extends Renderable[Structure] {
   import context._

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.sbt.plugins
+package izumi.sbt.plugins
 
-import com.github.pshirshov.izumi.sbt.definitions._
+import izumi.sbt.definitions._
 import sbt.internal.util.ConsoleLogger
 import sbt.io.syntax.File
 import sbt.{AutoPlugin, Def, ExtendedProjectMacro, Plugins, Project, ProjectReference, settingKey}

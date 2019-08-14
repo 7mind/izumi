@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model
+package izumi.idealingua.model
 
-import com.github.pshirshov.izumi.idealingua.model
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, Package, PackageTools}
+import izumi.idealingua.model
+import izumi.idealingua.model.common.{DomainId, Package, PackageTools}
 
 import scala.reflect.{ClassTag, classTag}
 

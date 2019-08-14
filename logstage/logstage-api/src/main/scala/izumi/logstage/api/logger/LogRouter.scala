@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.api.logger
+package izumi.logstage.api.logger
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.logstage.api.Log
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.logstage.api.Log
 
 trait LogRouter extends AutoCloseable {
 

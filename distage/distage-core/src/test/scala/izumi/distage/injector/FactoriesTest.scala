@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.FactoryCases._
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedWiringException
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import izumi.distage.fixtures.FactoryCases._
+import izumi.distage.model.exceptions.UnsupportedWiringException
+import izumi.distage.model.PlannerInput
 import distage.ModuleDef
 import org.scalatest.WordSpec
 

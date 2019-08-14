@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.entropy
+package izumi.fundamentals.platform.entropy
 
 import java.util.UUID
 
-import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
+import izumi.fundamentals.platform.uuid.UUIDGen
 
 import scala.collection.generic.CanBuildFrom
 import scala.util.Random

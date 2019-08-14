@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.layout.ScalaLayouter
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.ScalaBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
+import izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
+import izumi.idealingua.translator._
+import izumi.idealingua.translator.toscala.layout.ScalaLayouter
 
 object ScalaTranslatorDescriptor extends TranslatorDescriptor[ScalaTranslatorOptions] {
   override def defaultManifest: BuildManifest = ScalaBuildManifest.example

@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.reflection.TagMacro
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.TagMacro
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -110,7 +110,7 @@ import scala.reflect.macros.blackbox
   * you can control it by controlling the scope in `.use` or you can opt-out and use
   * [[DIResourceBase.acquire]] and [[DIResourceBase.release]] manually.
   *
-  * @see ModuleDef.fromResource: [[com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
+  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
   **/
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {

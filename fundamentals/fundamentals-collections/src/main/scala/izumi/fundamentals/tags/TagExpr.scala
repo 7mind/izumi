@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.tags
+package izumi.fundamentals.tags
 
 import scala.reflect.ClassTag
 

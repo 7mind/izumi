@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 

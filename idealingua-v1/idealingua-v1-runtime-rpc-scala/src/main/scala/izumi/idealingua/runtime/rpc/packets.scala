@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
+import izumi.fundamentals.platform.uuid.UUIDGen
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}

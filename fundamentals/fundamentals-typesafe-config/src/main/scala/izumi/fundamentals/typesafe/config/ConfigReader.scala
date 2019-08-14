@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
 import com.typesafe.config.ConfigValueType._
 import com.typesafe.config._

@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{AdtMember, DefMethod, SimpleStructure}
+import izumi.functional.Renderable
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.idealingua.model.il.ast.typed.{AdtMember, DefMethod, SimpleStructure}
 
 class MethodRenderer(context: IDLRenderingContext)(
   implicit evSimpleStructure: Renderable[SimpleStructure],

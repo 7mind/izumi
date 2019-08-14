@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+package izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId
 
 case class RawEnumMember(value: String, associated: Option[RawVal], meta: RawNodeMeta) {
   override def toString: String = value

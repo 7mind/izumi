@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.r2.idealingua.test.impls
+package izumi.r2.idealingua.test.impls
 
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.r2.idealingua.test.generated._
+import izumi.functional.bio.BIO
+import izumi.r2.idealingua.test.generated._
 
 abstract class AbstractGreeterServer[R[+_, +_] : BIO, C]
   extends GreeterServiceServer[R, C] {

@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua
+package izumi.idealingua
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerator, ModelLoaderImpl}
-import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
+import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerator, ModelLoaderImpl}
+import izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import org.scalatest.WordSpec
 
 

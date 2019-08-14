@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.impl.BIOZio
+import izumi.functional.bio.impl.BIOZio
 
 import scala.util.Try
 

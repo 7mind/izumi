@@ -228,7 +228,7 @@ with the same one you use elsewhere in your application.
 
 ```scala mdoc:reset
 import logstage._
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import izumi.logstage.api.routing.StaticLogRouter
 
 val myLogger = IzLogger()
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
 import java.io.File
 import java.math.{BigInteger, MathContext, BigDecimal => JavaBigDecimal}

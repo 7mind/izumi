@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.r2.idealingua.test.generated
+package izumi.r2.idealingua.test.generated
 
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import izumi.functional.bio.BIO
+import izumi.idealingua.runtime.rpc._
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
@@ -34,7 +34,7 @@ class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R
   extends GreeterServiceClient[R] {
 
   val R: BIO[R] = implicitly
-  import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceMethods => _M}
+  import izumi.r2.idealingua.test.generated.{GreeterServiceMethods => _M}
 
   override def greet(name: String, surname: String): R.Just[String] = {
     R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))( { err => R.terminate(err) }, {

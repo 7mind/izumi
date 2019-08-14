@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.ConstValue
+import izumi.functional.Renderable
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.il.ast.typed.ConstValue
 
 class RValue(context: IDLRenderingContext) extends Renderable[ConstValue] {
   import context._

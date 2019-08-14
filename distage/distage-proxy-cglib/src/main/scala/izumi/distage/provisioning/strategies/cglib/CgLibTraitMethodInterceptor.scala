@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.exceptions.MissingRefException
-import com.github.pshirshov.izumi.distage.model.provisioning.ProvisioningKeyProvider
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
+import izumi.distage.model.exceptions.MissingRefException
+import izumi.distage.model.provisioning.ProvisioningKeyProvider
+import izumi.distage.model.provisioning.strategies.TraitIndex
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 import scala.collection.mutable

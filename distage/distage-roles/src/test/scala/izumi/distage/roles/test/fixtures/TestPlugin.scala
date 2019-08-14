@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.roles.test.fixtures
+package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.internal.{ConfigWriter, Help}
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.Junk._
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
-import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.distage.model.definition.StandardAxis._
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.plugins.PluginDef
+import izumi.distage.roles.internal.{ConfigWriter, Help}
+import izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.fundamentals.platform.resources.ArtifactVersion
 
 
 class TestPlugin extends PluginDef {

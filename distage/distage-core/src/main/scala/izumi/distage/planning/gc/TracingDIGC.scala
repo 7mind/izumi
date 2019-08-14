@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.planning.gc
+package izumi.distage.planning.gc
 
-import com.github.pshirshov.izumi.distage.model.GCMode
-import com.github.pshirshov.izumi.distage.model.definition.Module
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, ProxyOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.planning.DIGarbageCollector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.graphs.AbstractGCTracer
+import izumi.distage.model.GCMode
+import izumi.distage.model.definition.Module
+import izumi.distage.model.exceptions.UnsupportedOpException
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, ProxyOp, WiringOp}
+import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import izumi.distage.model.planning.DIGarbageCollector
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.graphs.AbstractGCTracer
 
 import scala.collection.mutable
 

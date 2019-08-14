@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
-import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{BadIdAnnotationException, ProvisioningException, UnsupportedWiringException, ConflictingDIKeyBindingsException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
+import izumi.distage.fixtures.BasicCases._
+import izumi.distage.fixtures.SetCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
+import izumi.distage.model.exceptions.{BadIdAnnotationException, ProvisioningException, UnsupportedWiringException, ConflictingDIKeyBindingsException}
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 import distage._
 import org.scalatest.WordSpec
 
@@ -74,7 +74,7 @@ class BasicTest extends WordSpec with MkInjector {
       injector.plan(definition)
     }
 
-    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @com.github.pshirshov.izumi.distage.model.definition.Id(com.github.pshirshov.izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
   }
 
   "support multiple bindings" in {
@@ -335,7 +335,7 @@ class BasicTest extends WordSpec with MkInjector {
   }
 
   "preserve tags in multi set bindings" in {
-    import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
+    import izumi.distage.dsl.TestTagOps._
     val definition = PlannerInput.noGc(new ModuleDef {
       many[Int].named("zzz")
         .add(5).tagged("t3")

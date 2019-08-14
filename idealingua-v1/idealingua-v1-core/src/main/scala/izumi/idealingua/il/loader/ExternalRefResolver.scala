@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
-import com.github.pshirshov.izumi.idealingua.model.loader._
+import izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
+import izumi.idealingua.model.loader._
 
 
 private[loader] class ExternalRefResolver(domains: UnresolvedDomains) {

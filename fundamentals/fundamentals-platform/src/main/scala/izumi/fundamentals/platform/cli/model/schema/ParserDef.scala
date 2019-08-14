@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
+package izumi.fundamentals.platform.cli.model.schema
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawValue}
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawValue}
 import ParserDef._
 
 import scala.collection.mutable

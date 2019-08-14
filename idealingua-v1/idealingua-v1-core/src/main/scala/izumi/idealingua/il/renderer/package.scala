@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il
+package izumi.idealingua.il
 
-import com.github.pshirshov.izumi.functional.Renderable
+import izumi.functional.Renderable
 
 package object renderer {
   implicit class StaticRenderer[T](value: T) {

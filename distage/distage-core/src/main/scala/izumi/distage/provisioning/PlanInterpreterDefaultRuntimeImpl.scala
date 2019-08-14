@@ -1,19 +1,19 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.LocatorDefaultImpl
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.DIResource
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.exceptions.IncompatibleEffectTypesException
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
-import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionMutable
-import com.github.pshirshov.izumi.distage.model.provisioning._
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.LocatorDefaultImpl
+import izumi.distage.model.Locator
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.exceptions.IncompatibleEffectTypesException
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
+import izumi.distage.model.provisioning.Provision.ProvisionMutable
+import izumi.distage.model.provisioning._
+import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}

@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.testkit.st
+package izumi.distage.testkit.st
 
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-import com.github.pshirshov.izumi.distage.testkit.st.fixtures.{TestService1, TestkitSelftest}
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import izumi.distage.testkit.st.fixtures.{TestService1, TestkitSelftest}
+import izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, TagK}
 
 

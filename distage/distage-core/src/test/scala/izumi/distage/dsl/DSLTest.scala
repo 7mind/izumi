@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.dsl
+package izumi.distage.dsl
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
-import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.definition.{BindingTag, Bindings, Module}
+import izumi.distage.fixtures.BasicCases._
+import izumi.distage.fixtures.SetCases._
+import izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import distage._
 import org.scalatest.WordSpec
 

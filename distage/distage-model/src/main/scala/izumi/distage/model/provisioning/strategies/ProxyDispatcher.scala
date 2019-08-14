@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.model.provisioning.strategies
+package izumi.distage.model.provisioning.strategies
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{MissingRefException, ProxyAlreadyInitializedException}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.exceptions.{MissingRefException, ProxyAlreadyInitializedException}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 trait DistageProxy {
   def _distageProxyReference: AnyRef

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, OrderedPlan, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
+import izumi.distage.model.plan.{DodgyPlan, OrderedPlan, SemiPlan}
+import izumi.distage.model.planning.PlanningObserver
 
 final class PlanningObserverAggregate(planningObservers: Set[PlanningObserver]) extends PlanningObserver {
   override def onSuccessfulStep(next: DodgyPlan): Unit = {

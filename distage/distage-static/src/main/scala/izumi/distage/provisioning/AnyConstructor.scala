@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.provisioning.strategies.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.provisioning.strategies.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
 
 import scala.language.experimental.macros
 

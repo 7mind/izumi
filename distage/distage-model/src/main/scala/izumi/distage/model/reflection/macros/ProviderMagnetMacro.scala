@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.model.reflection.macros
+package izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.macros.blackbox
 

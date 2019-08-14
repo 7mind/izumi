@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.impl.BIOAsyncZio
+import izumi.functional.bio.impl.BIOAsyncZio
 import zio.ZIO
 import zio.clock.Clock
 

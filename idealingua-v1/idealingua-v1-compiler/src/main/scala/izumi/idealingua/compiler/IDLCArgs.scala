@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{GlobalArgsSchema, ParserDef, ParserSchema, ParserSchemaFormatter, RoleParserSchema}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.schema.{GlobalArgsSchema, ParserDef, ParserSchema, ParserSchemaFormatter, RoleParserSchema}
+import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
 case class LanguageOpts(
                          id: String,

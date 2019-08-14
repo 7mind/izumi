@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.logunits
+package izumi.logstage.api.rendering.logunits
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.Log.LogArg
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedMessage, RenderedParameter}
+import izumi.fundamentals.platform.exceptions.IzThrowable
+import izumi.logstage.api.Log
+import izumi.logstage.api.Log.LogArg
+import izumi.logstage.api.rendering.{RenderedMessage, RenderedParameter}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -118,7 +118,7 @@ object LogFormat {
       if (s.forall(_.isUpper) || s.startsWith("UNNAMED:") || s.startsWith("EXPRESSION:")) {
         s
       } else {
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString._
         s.replace(' ', '_').camelToUnderscores
       }
     }

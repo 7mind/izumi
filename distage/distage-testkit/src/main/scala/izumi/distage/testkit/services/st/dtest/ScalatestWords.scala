@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.dtest
+package izumi.distage.testkit.services.st.dtest
 
-import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.ScalatestWords.{DSCanVerb, DSMustVerb, DSShouldVerb, DSStringVerbBlockRegistration}
+import izumi.distage.testkit.services.st.dtest.ScalatestWords.{DSCanVerb, DSMustVerb, DSShouldVerb, DSStringVerbBlockRegistration}
 import org.scalactic.source
 import org.scalactic.source.Position
 

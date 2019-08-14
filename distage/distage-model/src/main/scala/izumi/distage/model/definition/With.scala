@@ -1,3 +1,3 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
 final class With[T] extends DIStageAnnotation

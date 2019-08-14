@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
+package izumi.distage.testkit.services.st.adapter
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.AxisBase
-import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.AxisBase
+import izumi.distage.roles.BootstrapConfig
 import distage.SafeType
 
 @deprecated("Use dstest", "2019/Jul/18")

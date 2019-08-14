@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.reflection.ScalacSink
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.RefinementDecl.TypeMember
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.reflection.ScalacSink
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.RefinementDecl.TypeMember
+import izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
@@ -48,7 +48,7 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
           case sym: TypeSymbolApi =>
             val res = makeFLTTImpl(sym.info.typeConstructor)
             // FIXME: `appliedType` doesn't work here for some reason; have to write down the entire name
-            c.Expr[LHKTag[ArgStruct]](q"new _root_.com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LHKTag[$argStruct]($res)")
+            c.Expr[LHKTag[ArgStruct]](q"new _root_.izumi.fundamentals.reflection.macrortti.LHKTag[$argStruct]($res)")
           case _ => badShapeError(r)
         }
       case other => badShapeError(other)
@@ -116,7 +116,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
     val out = makeRef(tpe)
     val inh = allTypeReferences(tpe)
 
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    import izumi.fundamentals.collections.IzCollections._
     val inhUnrefined = inh
       .flatMap {
         t =>

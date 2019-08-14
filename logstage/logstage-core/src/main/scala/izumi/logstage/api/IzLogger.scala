@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
-import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import izumi.logstage.api.Log.CustomContext
+import izumi.logstage.api.logger.{LogRouter, LogSink}
+import izumi.logstage.api.routing.ConfigurableLogRouter
+import izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
 

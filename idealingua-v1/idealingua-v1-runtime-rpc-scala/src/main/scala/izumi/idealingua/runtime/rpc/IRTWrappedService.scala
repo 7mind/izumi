@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
 trait IRTWrappedService[R[_, _], -C] { self =>
   def serviceId: IRTServiceId

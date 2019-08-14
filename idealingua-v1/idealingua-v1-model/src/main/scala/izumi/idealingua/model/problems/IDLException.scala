@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.problems
+package izumi.idealingua.model.problems
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId
 
 class IDLException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull)
 

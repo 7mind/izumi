@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
 import io.circe.Json
 

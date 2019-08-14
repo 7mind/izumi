@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Interfaces
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ClassSource, CompositeStructure, StructContext}
+import izumi.idealingua.model.il.ast.typed.Interfaces
+import izumi.idealingua.translator.toscala.products.{CogenProduct, RenderableCogenProduct}
+import izumi.idealingua.translator.toscala.types.{ClassSource, CompositeStructure, StructContext}
 
 import scala.meta._
 

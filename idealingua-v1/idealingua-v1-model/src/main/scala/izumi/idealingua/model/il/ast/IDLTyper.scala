@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast
+package izumi.idealingua.model.il.ast
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, _}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{ForeignType, NewType}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshLoaded, DomainMeshResolved, SingleImport}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
+import izumi.fundamentals.platform.exceptions.IzThrowable
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{AbstractIndefiniteId, _}
+import izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{ForeignType, NewType}
+import izumi.idealingua.model.il.ast.raw.defns.RawVal.RawValScalar
+import izumi.idealingua.model.il.ast.raw.defns._
+import izumi.idealingua.model.il.ast.raw.domains.{DomainMeshLoaded, DomainMeshResolved, SingleImport}
+import izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError}
 
 import scala.collection.mutable
 import scala.reflect._
@@ -206,7 +206,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       case None if fieldsCount == 1 =>
         "value"
       case None =>
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString._
         val name = fixId[AbstractIndefiniteId, TypeId](f.typeId).name.uncapitalize
         if (name.startsWith("#")) {
           name.substring(1)
@@ -420,7 +420,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         Primitive.mappingId(p.name)
 
       case o =>
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString._
         throw new IDLException(s"[$domainId] Non-primitive type $o but primitive expected. Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
     }
   }

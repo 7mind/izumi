@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
 class ModelLoaderContextImpl(makeEnumerator: BaseModelLoadContext => FilesystemEnumerator) extends ModelLoaderContext {
   val domainExt: String = ".domain"

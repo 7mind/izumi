@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.commons
+package izumi.distage.commons
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
-import com.github.pshirshov.izumi.distage.model.exceptions.TraitInitializationFailedException
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.fundamentals.reflection._
+import izumi.distage.model.exceptions.TraitInitializationFailedException
+import izumi.distage.model.provisioning.strategies.{TraitField, TraitIndex}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.reflection._
 
 class TraitInitTool {
 

@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.roles._
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.Locator
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.roles._
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.distage.roles.services.StartupPlanExecutor.Filters
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.logstage.api.IzLogger
 import distage.{Injector, TagK}
 
 class RoleAppExecutorImpl[F[_] : TagK](

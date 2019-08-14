@@ -207,7 +207,7 @@ id UserId {
 ```scala
 final case class UserId(value: java.util.UUID, company: java.util.UUID) {
   override def toString: String = {
-    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    import izumi.idealingua.runtime.model.IDLIdentifier._
     val suffix = Seq(this.company, this.value).map(part => escape(part.toString)).mkString(":")
     s"UserId#$suffix"
   }
@@ -215,7 +215,7 @@ final case class UserId(value: java.util.UUID, company: java.util.UUID) {
 
 object UserId {
   def parse(s: String): UserId = {
-    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    import izumi.idealingua.runtime.model.IDLIdentifier._
     val withoutPrefix = s.substring(s.indexOf("#") + 1)
     val parts = withoutPrefix.split(":").map(part => unescape(part))
     UserId(parsePart[java.util.UUID](parts(0), classOf[java.util.UUID]), parsePart[java.util.UUID](parts(1), classOf[java.util.UUID]))
@@ -265,8 +265,8 @@ Notes:
 ### Scala output
 
 ```scala
-import _root_.com.github.pshirshov.izumi.idealingua.model._
-import _root_.com.github.pshirshov.izumi.idealingua.runtime._
+import _root_.izumi.idealingua.model._
+import _root_.izumi.idealingua.runtime._
 
 class UserServiceServerDispatcher[R[+_], S <: UserService[R]](val service: S) extends transport.AbstractServerDispatcher[R, S] {
   import UserService._
@@ -306,7 +306,7 @@ class UserServiceServerWrapper[R[+_], S <: UserService[R]](val service: UserServ
   def createUser(input: UserService.InCreateUser): Result[UserService.OutCreateUser] = service.createUser(balance = input.balance, email = input.email)
 }
 
-trait UserService[R[_]] extends com.github.pshirshov.izumi.idealingua.runtime.model.IDLService[R] {
+trait UserService[R[_]] extends izumi.idealingua.runtime.model.IDLService[R] {
   import UserService._
   override type InputType = UserService.InUserService
   override type OutputType = UserService.OutUserService

@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.logstage.sink.file
+package izumi.logstage.sink.file
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileAlreadyExistsException, Files, Paths, StandardOpenOption}
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.sink.file.FileServiceImpl.RealFile
-import com.github.pshirshov.izumi.logstage.sink.file.models.LogFile
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.sink.file.FileServiceImpl.RealFile
+import izumi.logstage.sink.file.models.LogFile
 
 import scala.io.Source
 import scala.util.Try

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins.optional
+package izumi.sbt.plugins.optional
 
 import sbt.Keys.{packageBin, packageDoc, packageSrc, publishArtifact}
 import sbt.{AutoPlugin, Test}

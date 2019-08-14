@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua
+package izumi.idealingua
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpProjectLayout, GoProjectLayout, ScalaProjectLayout, TypeScriptProjectLayout}
+import izumi.fundamentals.platform.files.IzFiles
+import izumi.idealingua.model.publishing.manifests.{CSharpProjectLayout, GoProjectLayout, ScalaProjectLayout, TypeScriptProjectLayout}
 import org.scalatest.WordSpec
 
 

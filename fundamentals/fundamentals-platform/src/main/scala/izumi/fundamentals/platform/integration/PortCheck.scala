@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.integration
+package izumi.fundamentals.platform.integration
 
 import java.net.{InetSocketAddress, Socket, URI, URL}
 

@@ -1,20 +1,20 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript
+package izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed.{DefMethod, _}
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.CompilerOptions._
+import izumi.idealingua.translator.totypescript.extensions.{EnumHelpersExtension, IntrospectionExtension}
+import izumi.idealingua.translator.totypescript.products.CogenProduct._
+import izumi.idealingua.translator.totypescript.products.RenderableCogenProduct
+import izumi.idealingua.translator.{Translated, Translator}
 
 object TypeScriptTranslator {
   final val defaultExtensions = Seq(

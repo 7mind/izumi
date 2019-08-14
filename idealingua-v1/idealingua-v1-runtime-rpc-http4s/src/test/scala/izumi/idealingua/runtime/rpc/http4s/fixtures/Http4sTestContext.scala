@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
+package izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.data.{Kleisli, OptionT}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.network.IzSockets
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
-import com.github.pshirshov.izumi.r2.idealingua.test.generated.GreeterServiceClientWrapped
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.network.IzSockets
+import izumi.idealingua.runtime.rpc.http4s._
+import izumi.idealingua.runtime.rpc.{IRTMuxRequest, IRTMuxResponse, RpcPacket}
+import izumi.r2.idealingua.test.generated.GreeterServiceClientWrapped
 import io.circe.Json
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware

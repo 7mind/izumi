@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.functional.bio.{BIO, BIOExit}
+import izumi.functional.bio.BIO._
+import izumi.fundamentals.platform.language.Quirks
 import io.circe.Json
 
 

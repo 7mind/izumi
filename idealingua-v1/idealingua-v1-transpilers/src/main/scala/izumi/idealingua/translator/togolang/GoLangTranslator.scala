@@ -1,20 +1,20 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang
+package izumi.idealingua.translator.togolang
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, _}
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, _}
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
-import com.github.pshirshov.izumi.idealingua.translator.togolang.products.CogenProduct._
-import com.github.pshirshov.izumi.idealingua.translator.togolang.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.togolang.types._
-import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId.{DTOId, _}
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed.{DefMethod, _}
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.CompilerOptions._
+import izumi.idealingua.translator.togolang.products.CogenProduct._
+import izumi.idealingua.translator.togolang.products.RenderableCogenProduct
+import izumi.idealingua.translator.togolang.types._
+import izumi.idealingua.translator.{Translated, Translator}
 
 object GoLangTranslator {
   final val defaultExtensions = Seq(

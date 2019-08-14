@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.InnerClassCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
+import izumi.distage.fixtures.InnerClassCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
 
 class InnerClassesTest extends WordSpec with MkInjector {

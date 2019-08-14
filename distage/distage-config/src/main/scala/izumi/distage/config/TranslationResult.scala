@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.typesafe.config.{ConfigOrigin, ConfigValue}
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 sealed trait TranslationResult
 
@@ -31,7 +31,7 @@ object TranslationResult {
 
   final case class MissingConfigValue(op: ExecutableOp, paths: Seq[(ConfigPath, Throwable)], configOrigin: ConfigOrigin) extends TranslationFailure {
     override def toString: String = {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      import izumi.fundamentals.platform.strings.IzString._
       val tried = paths.map {
         case (path, f) =>
           s"${path.toPath}: ${f.getMessage}"

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.uuid
+package izumi.fundamentals.platform.uuid
 
 import java.util.UUID
 

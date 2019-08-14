@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.functional.mono
+package izumi.functional.mono
 
 trait CIORunner[CIO[_]] {
   def unsafeRun[A](cio: CIO[A]): A

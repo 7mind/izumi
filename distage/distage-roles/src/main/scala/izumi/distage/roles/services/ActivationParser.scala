@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BindingTag}
-import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher.Options
-import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.{AxisBase, BindingTag}
+import izumi.distage.roles.RoleAppLauncher.Options
+import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.logstage.api.IzLogger
 import distage.ModuleBase
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString._
 
 class ActivationParser {
   def parseActivation(
@@ -50,7 +50,7 @@ class ActivationParser {
           }
       }
 
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    import izumi.fundamentals.collections.IzCollections._
     val badChoices = activeChoices.toMultimap.filter(_._2.size > 1)
     if (badChoices.nonEmpty) {
       val conflicts = badChoices

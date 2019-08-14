@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, License, MFUrl, ManifestDependency}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion, Publisher}
+import izumi.idealingua.model.publishing.BuildManifest.{Common, License, MFUrl, ManifestDependency}
+import izumi.idealingua.model.publishing.manifests._
+import izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion, Publisher}
 
 trait Codecs {
 

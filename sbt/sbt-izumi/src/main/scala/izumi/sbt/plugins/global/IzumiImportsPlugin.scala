@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.sbt.plugins.global
+package izumi.sbt.plugins.global
 
-import com.github.pshirshov.izumi.sbt.{definitions, plugins}
+import izumi.sbt.{definitions, plugins}
 import sbt.AutoPlugin
 
 object IzumiImportsPlugin extends AutoPlugin {

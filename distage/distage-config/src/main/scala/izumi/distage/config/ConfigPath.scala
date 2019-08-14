@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
+import izumi.distage.config.model.AppConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConverters._

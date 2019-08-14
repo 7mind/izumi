@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.model.monadic
+package izumi.distage.model.monadic
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.functional.bio.BIORunner
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.functional.bio.BIORunner
+import izumi.fundamentals.platform.functional.Identity
 
 trait DIEffectRunner[F[_]] {
   def run[A](f: => F[A]): A

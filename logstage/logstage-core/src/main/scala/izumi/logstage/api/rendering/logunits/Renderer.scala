@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.logunits
+package izumi.logstage.api.rendering.logunits
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingOptions
+import izumi.logstage.api.Log
+import izumi.logstage.api.rendering.RenderingOptions
 
 trait Renderer {
   def render(entry: Log.Entry, context: RenderingOptions): LETree

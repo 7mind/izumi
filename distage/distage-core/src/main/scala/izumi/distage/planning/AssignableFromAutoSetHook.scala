@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.immutable.ListSet
 

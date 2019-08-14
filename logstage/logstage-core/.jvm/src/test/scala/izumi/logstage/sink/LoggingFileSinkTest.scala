@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
-import com.github.pshirshov.izumi.dummy.{DummyFile, DummyFileServiceImpl}
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.sink.FileServiceUtils._
-import com.github.pshirshov.izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
-import com.github.pshirshov.izumi.logstage.sink.file.FileServiceImpl.RealFile
-import com.github.pshirshov.izumi.logstage.sink.file.FileSink.FileIdentity
-import com.github.pshirshov.izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
-import com.github.pshirshov.izumi.logstage.sink.file.{FileService, FileServiceImpl, FileSink}
+import izumi.dummy.{DummyFile, DummyFileServiceImpl}
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.rendering.RenderingPolicy
+import izumi.logstage.sink.FileServiceUtils._
+import izumi.logstage.sink.LoggingFileSinkTest.{FileSinkBrokenImpl, randomInt, _}
+import izumi.logstage.sink.file.FileServiceImpl.RealFile
+import izumi.logstage.sink.file.FileSink.FileIdentity
+import izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
+import izumi.logstage.sink.file.{FileService, FileServiceImpl, FileSink}
 import org.scalatest.{Assertion, GivenWhenThen, WordSpec}
 
 import scala.collection.mutable.ListBuffer

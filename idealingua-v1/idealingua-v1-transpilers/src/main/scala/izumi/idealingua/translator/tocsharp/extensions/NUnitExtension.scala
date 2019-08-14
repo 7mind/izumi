@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
+package izumi.idealingua.translator.tocsharp.extensions
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, DTO, Enumeration, Identifier}
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId.InterfaceId
+import izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, DTO, Enumeration, Identifier}
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpType}
+import izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 
 
 object NUnitExtension extends CSharpTranslatorExtension {

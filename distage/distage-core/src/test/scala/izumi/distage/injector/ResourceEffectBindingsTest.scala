@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
-import com.github.pshirshov.izumi.distage.fixtures.ResourceCases._
-import com.github.pshirshov.izumi.distage.model.GCMode
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.definition.DIResource
-import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.fixtures.BasicCases.BasicCase1
+import izumi.distage.fixtures.ResourceCases._
+import izumi.distage.model.GCMode
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.exceptions.ProvisioningException
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks._
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
@@ -87,7 +87,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     }
 
     "Support self-referencing circular effects" in {
-      import com.github.pshirshov.izumi.distage.fixtures.CircularCases.CircularCase3._
+      import izumi.distage.fixtures.CircularCases.CircularCase3._
 
       val definition = PlannerInput.noGc(new ModuleDef {
         make[Ref[Fn, Boolean]].fromEffect(Ref[Fn](false))
@@ -293,7 +293,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
     }
 
     "work with set bindings" in {
-      import com.github.pshirshov.izumi.distage.fixtures.ResourceCases.ClassResourceCase._
+      import izumi.distage.fixtures.ResourceCases.ClassResourceCase._
 
       val definition = PlannerInput.noGc(new ModuleDef {
         many[Res]

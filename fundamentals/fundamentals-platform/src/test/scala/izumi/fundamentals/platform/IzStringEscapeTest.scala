@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzEscape
+import izumi.fundamentals.platform.strings.IzEscape
 import org.scalatest.WordSpec
 
 class IzStringEscapeTest extends WordSpec {

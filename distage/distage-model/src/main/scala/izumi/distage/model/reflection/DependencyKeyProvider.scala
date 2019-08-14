@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.reflection
+package izumi.distage.model.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverse, RuntimeDIUniverse}
+import izumi.distage.model.reflection.universe.{DIUniverse, RuntimeDIUniverse}
 
 trait DependencyKeyProvider {
   val u: DIUniverse

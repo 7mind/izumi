@@ -5,7 +5,7 @@ Specification-Vendor: com.github.pshirshov
 X-Git-Head-Rev: 0000000000000000000000000000000000000000
 Specification-Title: test-artifact
 Implementation-Vendor-Id: Implementation-Vendor:
-Main-Class: com.github.pshirshov.izumi.fundamentals.platform.IzManifestTest
+Main-Class: izumi.fundamentals.platform.IzManifestTest
 Implementation-Vendor: com.github.pshirshov
 X-Built-By: root
 X-Build-JDK: 1.8.0_111

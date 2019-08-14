@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.IdField
+import izumi.functional.Renderable
+import izumi.idealingua.model.il.ast.typed.IdField
 
 class RIdField(context: IDLRenderingContext) extends Renderable[IdField] {
   import context._

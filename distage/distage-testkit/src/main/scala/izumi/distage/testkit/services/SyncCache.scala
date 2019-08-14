@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package izumi.distage.testkit.services
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, ModuleBase}
-import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
-import com.github.pshirshov.izumi.distage.roles.services.PluginSource
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.{AxisBase, ModuleBase}
+import izumi.distage.roles.BootstrapConfig
+import izumi.distage.roles.services.PluginSource
 
 import scala.collection.mutable
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks._
 
 class SyncCache[K, V] {
 

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.provisioning.strategies
+package izumi.distage.model.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.provisioning.NewObjectOp
+import izumi.distage.model.provisioning.NewObjectOp
 
 trait FactoryExecutor {
   type MethodId = Int

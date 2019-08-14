@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
 trait ModuleMake[T <: ModuleBase] {
   def make(bindings: Set[Binding]): T

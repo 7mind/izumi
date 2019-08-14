@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.sink.QueueingSink.CountingStep
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.{LogRouter, LogSink}
+import izumi.logstage.sink.QueueingSink.CountingStep
 
 import scala.concurrent.duration._
 

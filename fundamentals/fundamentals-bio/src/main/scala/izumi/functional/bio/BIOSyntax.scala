@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions

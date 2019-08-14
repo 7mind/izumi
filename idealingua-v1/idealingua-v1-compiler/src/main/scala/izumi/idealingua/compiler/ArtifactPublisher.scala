@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 import java.nio.file._
 import java.time.ZonedDateTime
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
-import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
+import izumi.fundamentals.platform.files.IzFiles
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
+import izumi.idealingua.translator.IDLLanguage
 
 import scala.sys.process._
 import scala.util.Try

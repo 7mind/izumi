@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+package izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, TypeName}
+import izumi.idealingua.model.common.{AbstractIndefiniteId, TypeName}
 
 final case class RawAdt(alternatives: List[RawAdt.Member])
 

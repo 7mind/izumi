@@ -1,30 +1,30 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
+package izumi.distage.testkit.services.st.adapter
 
-import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.roles.model.AppActivation
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.distage.roles.services.StartupPlanExecutor.Filters
-import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.TestEnvironment
-import com.github.pshirshov.izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.Level
+import izumi.distage.config.ConfigInjectionOptions
+import izumi.distage.model.Locator
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.definition.Binding.SingletonBinding
+import izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.roles.model.AppActivation
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import izumi.distage.roles.services.StartupPlanExecutor.Filters
+import izumi.distage.roles.services._
+import izumi.distage.testkit.services.dstest.TestEnvironment
+import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.jvm.CodePosition
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
 

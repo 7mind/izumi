@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime
+package izumi.idealingua.runtime
 
 trait IRTCast[From, To] {
   def convert(f: From): To

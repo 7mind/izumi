@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
+package izumi.distage.testkit.services.st.adapter
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.testkit.services.DISyntaxBIOBase
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.testkit.services.DISyntaxBIOBase
+import izumi.fundamentals.platform.jvm.CodePosition
+import izumi.fundamentals.reflection.CodePositionMaterializer
 import distage.Tag
 
 @deprecated("Use dstest", "2019/Jul/18")

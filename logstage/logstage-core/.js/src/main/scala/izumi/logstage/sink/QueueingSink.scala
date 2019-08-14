@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
 
 import scala.concurrent.duration._
 

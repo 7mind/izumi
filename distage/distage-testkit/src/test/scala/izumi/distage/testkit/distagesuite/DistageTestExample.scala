@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.testkit.distagesuite
+package izumi.distage.testkit.distagesuite
 
 import zio.{IO => ZIO}
 import cats.effect.{IO => CIO}
-import com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
-import com.github.pshirshov.izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
+import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
 
 class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] {
 

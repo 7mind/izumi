@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.functional
+package izumi.functional
 
 trait WithRenderableSyntax {
   def apply[T:Renderable]: Renderable[T] = implicitly[Renderable[T]]

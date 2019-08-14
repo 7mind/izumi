@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
-//import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil._
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LTag, LightTypeTagImpl}
+//import izumi.fundamentals.reflection.ReflectionUtil._
+import izumi.fundamentals.reflection.macrortti.{FLTT, LTag, LightTypeTagImpl}
 
 import scala.reflect.runtime.{universe => ru}
 

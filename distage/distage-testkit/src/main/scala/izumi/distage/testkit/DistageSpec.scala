@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.testkit
+package izumi.distage.testkit
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.testkit.services.st.adapter.DistageTestSupport
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.testkit.services.st.adapter.DistageTestSupport
 import org.scalatest.{ScalatestSuite, WordSpecLike}
 
 @deprecated("Use dstest", "2019/Jul/18")

@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
+package izumi.idealingua.translator.toscala.tools
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.DTOId
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, SigParam, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.ConverterDef
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.CompositeStructure
+import izumi.idealingua.model.common.TypeId.DTOId
+import izumi.idealingua.model.common.{Builtin, SigParam, StructureId, TypeId}
+import izumi.idealingua.model.typespace.structures.ConverterDef
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.types.CompositeStructure
 
 import scala.meta._
 
@@ -24,7 +24,7 @@ case class Params(params: List[Term.Param], types: List[TypeId], assertions: Lis
 
 class ScalaTranslationTools(ctx: STContext) {
 
-  import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaField._
+  import izumi.idealingua.translator.toscala.types.ScalaField._
   import ctx.conv._
 
   def mkStructure(id: StructureId): CompositeStructure = {

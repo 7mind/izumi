@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.WordSpec
 
 class QuirksTest extends WordSpec {

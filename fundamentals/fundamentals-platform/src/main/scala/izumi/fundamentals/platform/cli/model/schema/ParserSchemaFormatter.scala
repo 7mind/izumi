@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema
+package izumi.fundamentals.platform.cli.model.schema
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
+import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.strings.IzString._
 
 object ParserSchemaFormatter {
   private val withColors = IzJvm.terminalColorsEnabled

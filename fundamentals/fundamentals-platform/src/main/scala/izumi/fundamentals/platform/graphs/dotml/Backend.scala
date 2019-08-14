@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.fundamentals.platform.graphs.dotml
+package izumi.fundamentals.platform.graphs.dotml
 
 import java.io.File
 
-import com.github.pshirshov.izumi.fundamentals.graphs.dotml.GraphVizDotML
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.os.{IzOs, OsType}
+import izumi.fundamentals.graphs.dotml.GraphVizDotML
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.os.{IzOs, OsType}
 
 import scala.language.postfixOps
 

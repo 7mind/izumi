@@ -1,23 +1,23 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.AbstractLocator
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.ImplDef.InstanceImpl
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.{GCMode, Locator, definition}
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.distage.AbstractLocator
+import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.ImplDef.InstanceImpl
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.SetIdAll
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
+import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan._
+import izumi.distage.model.provisioning.PlanInterpreter
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.{GCMode, Locator, definition}
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 

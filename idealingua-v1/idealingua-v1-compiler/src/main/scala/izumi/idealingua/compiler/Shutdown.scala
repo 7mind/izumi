@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 trait Shutdown {
   def shutdown(message: String): Nothing

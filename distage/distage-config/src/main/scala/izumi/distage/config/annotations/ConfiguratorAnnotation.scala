@@ -1,5 +1,5 @@
-package com.github.pshirshov.izumi.distage.config.annotations
+package izumi.distage.config.annotations
 
-import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
+import izumi.distage.model.definition.DIStageAnnotation
 
 trait ConfiguratorAnnotation extends DIStageAnnotation

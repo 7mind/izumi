@@ -1,9 +1,9 @@
-//package com.github.pshirshov.izumi.r2.idealingua.test.impls
+//package izumi.r2.idealingua.test.impls
 //
 //import cats.MonadError
 //import cats.data.EitherT
-//import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-//import com.github.pshirshov.izumi.r2.idealingua.test.generated._
+//import izumi.idealingua.runtime.rpc._
+//import izumi.r2.idealingua.test.generated._
 //
 //import scala.language.higherKinds
 //

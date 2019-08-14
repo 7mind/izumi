@@ -1,6 +1,6 @@
-import com.github.pshirshov.izumi.sbt.deps.IzumiDeps.{R, _}
-import com.github.pshirshov.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
-import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
+import izumi.sbt.deps.IzumiDeps.{R, _}
+import izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
+import izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
 import sbt.Keys.{publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -9,7 +9,7 @@ disablePlugins(AssemblyPlugin, ScriptedPlugin)
 
 name := "izumi"
 organization in ThisBuild := "io.7mind.izumi"
-defaultStubPackage in ThisBuild := Some("com.github.pshirshov.izumi")
+defaultStubPackage in ThisBuild := Some("izumi")
 publishMavenStyle in ThisBuild := true
 homepage in ThisBuild := Some(url("https://izumi.7mind.io"))
 licenses in ThisBuild := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
@@ -401,7 +401,7 @@ lazy val logstageCoreJs = logstageCore.js.remember
   .settings(
     // FIXME: 2.13 Scala.js dies on inlining here
     //  https://github.com/scala/bug/issues/11663
-    scalacOptions -= "-opt-inline-from:com.github.pshirshov.izumi.**"
+    scalacOptions -= "-opt-inline-from:izumi.**"
   )
 
 lazy val logstageRenderingCirce = inLogStageX.as.cross(platforms)
@@ -527,7 +527,7 @@ lazy val idealinguaV1Compiler = inIdealinguaV1Base.as.module
   .settings(AppSettings)
   .settings(
     libraryDependencies ++= Seq(R.typesafe_config),
-    mainClass in assembly := Some("com.github.pshirshov.izumi.idealingua.compiler.CommandlineIDLCompiler"),
+    mainClass in assembly := Some("izumi.idealingua.compiler.CommandlineIDLCompiler"),
     // FIXME: workaround for https://github.com/zio/interop-cats/issues/16
     assemblyMergeStrategy in assembly := {
       case path if path.contains("zio/BuildInfo$.class") =>
@@ -551,7 +551,7 @@ lazy val sbtIzumi = inSbt.as
 
 lazy val sbtIzumiDeps = inSbt.as
   .module
-  .settings(withBuildInfo("com.github.pshirshov.izumi.sbt.deps", "Izumi"))
+  .settings(withBuildInfo("izumi.sbt.deps", "Izumi"))
 
 
 lazy val sbtTests = inSbt.as

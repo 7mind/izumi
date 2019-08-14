@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.publishing.manifests
+package izumi.idealingua.model.publishing.manifests
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
 
 
 sealed trait GoProjectLayout

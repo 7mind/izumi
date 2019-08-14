@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.CreateSet
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.SetStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.provisioning.ProvisionOperationVerifier
+import izumi.distage.model.exceptions.{IncompatibleTypesException, MissingRefException}
+import izumi.distage.model.plan.ExecutableOp.CreateSet
+import izumi.distage.model.provisioning.strategies.SetStrategy
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.provisioning.ProvisionOperationVerifier
 
 import scala.collection.immutable.ListSet
 

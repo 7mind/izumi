@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.structures
+package izumi.idealingua.model.typespace.structures
 
-import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
+import izumi.idealingua.model.common.ExtendedField
 
 import scala.collection.mutable
 

@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.GCMode
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.GCMode
+import izumi.distage.model.definition.{Binding, ModuleBase}
+import izumi.distage.model.plan.DodgyPlan._
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.collections.ImmutableMultiMap
+import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 

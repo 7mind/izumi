@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
+package izumi.distage.testkit.services.st.adapter
 
-import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.definition.{DIResource, LocatorDef}
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.testkit.services.SyncCache
+import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.{DIResource, LocatorDef}
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.testkit.services.SyncCache
 import ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks
 import distage.{DIKey, Locator, SafeType, TagK}
 
 import scala.annotation.unchecked.uncheckedVariance

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast
+package izumi.idealingua.model.il.ast
 
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.model.loader.FSPath
 
 sealed trait InputPosition
 

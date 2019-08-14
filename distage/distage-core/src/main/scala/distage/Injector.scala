@@ -1,8 +1,8 @@
 package distage
 
-import com.github.pshirshov.izumi.distage.InjectorDefaultImpl
-import com.github.pshirshov.izumi.distage.bootstrap.{CglibBootstrap, BootstrapLocator}
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapContextModule
+import izumi.distage.InjectorDefaultImpl
+import izumi.distage.bootstrap.{CglibBootstrap, BootstrapLocator}
+import izumi.distage.model.definition.BootstrapContextModule
 
 object Injector {
 
@@ -28,7 +28,7 @@ object Injector {
   /**
     * Create a new injector inheriting configuration, hooks and object graph from a previous Injector's run
     *
-    * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[com.github.pshirshov.izumi.distage.model.Producer#produce produce]]
+    * @param parent Instances from parent [[Locator]] will be available as imports in new Injector's [[izumi.distage.model.Producer#produce produce]]
     */
   def inherit(parent: Locator): Injector = {
     new InjectorDefaultImpl(parent)

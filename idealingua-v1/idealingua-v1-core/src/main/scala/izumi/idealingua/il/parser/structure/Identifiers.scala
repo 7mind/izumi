@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.il.parser.structure
+package izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId}
+import izumi.idealingua.model.common.{AbstractIndefiniteId, DomainId}
 import fastparse.CharPredicates.{isDigit, isLetter}
 import fastparse._
 import NoWhitespace._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.InterpContext
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import izumi.idealingua.model.il.ast.raw.defns.InterpContext
+import izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 
 trait Identifiers extends Separators {
   def symbol[_: P]: P[String] = P((CharPred(c => isLetter(c)) ~ CharPred(c => isLetter(c) | isDigit(c) | c == '_').rep).!)

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.BIOExit.ZIO
+import izumi.functional.bio.BIOExit.ZIO
 import zio.{Fiber, IO}
 
 trait BIOFiber[F[_, _], E, A] {

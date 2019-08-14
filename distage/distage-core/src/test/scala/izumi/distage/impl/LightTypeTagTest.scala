@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.impl
+package izumi.distage.impl
 
-import com.github.pshirshov.izumi.distage.model.definition.With
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti._
+import izumi.distage.model.definition.With
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
 class LightTypeTagTest extends WordSpec {

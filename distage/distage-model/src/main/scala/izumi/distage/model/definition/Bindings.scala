@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 object Bindings {
   import Binding._

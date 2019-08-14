@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
+package izumi.idealingua.translator.toscala.types.runtime
 
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.runtime.model._
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrappedService, _}
-import com.github.pshirshov.izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaType
+import izumi.functional.bio.BIO
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.runtime.model._
+import izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrappedService, _}
+import izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
+import izumi.idealingua.translator.toscala.types.ScalaType
 
 
 object IDLRuntimeTypes {

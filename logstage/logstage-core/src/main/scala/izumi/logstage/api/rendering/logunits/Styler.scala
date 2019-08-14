@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.logunits
+package izumi.logstage.api.rendering.logunits
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Renderer.Aggregate
-import com.github.pshirshov.izumi.logstage.api.rendering.{ConsoleColors, RenderingOptions}
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.Log
+import izumi.logstage.api.rendering.logunits.Renderer.Aggregate
+import izumi.logstage.api.rendering.{ConsoleColors, RenderingOptions}
 
 trait Styler extends Renderer
 

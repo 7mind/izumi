@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.distage
+package izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.distage.model.planning.PlanningObserver
+import izumi.logstage.api.IzLogger
 
 class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
   override def onSuccessfulStep(next: DodgyPlan): Unit = {

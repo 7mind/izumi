@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.collections
+package izumi.fundamentals.collections
 
-import com.github.pshirshov.izumi.fundamentals.graphs.{AbstractGCTracer, Loops}
+import izumi.fundamentals.graphs.{AbstractGCTracer, Loops}
 import org.scalatest.WordSpec
 
 class AbstractDIGcTest extends WordSpec {

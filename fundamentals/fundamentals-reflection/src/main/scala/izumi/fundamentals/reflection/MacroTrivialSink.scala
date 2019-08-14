@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.AbstractStringTrivialSink
+import izumi.fundamentals.platform.console.AbstractStringTrivialSink
 
 import scala.reflect.macros.blackbox
 

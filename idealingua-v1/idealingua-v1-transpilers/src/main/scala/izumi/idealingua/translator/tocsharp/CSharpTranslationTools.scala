@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp
+package izumi.idealingua.translator.tocsharp
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId
 
 import scala.meta._
 

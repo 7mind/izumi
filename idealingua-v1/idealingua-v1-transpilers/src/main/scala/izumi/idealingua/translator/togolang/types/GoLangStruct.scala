@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang.types
+package izumi.idealingua.translator.togolang.types
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{Generic, TypeId}
+import izumi.idealingua.model.typespace.Typespace
 
 final case class GoLangStruct(
                           name: String,

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules
+package izumi.idealingua.model.typespace.verification.rules
 
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, TypespaceError}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.problems.{IDLDiagnostics, TypespaceError}
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
 
 object BasicNamingConventionsRule extends VerificationRule {
   final val badNames = Set("Iz", "IRT", "IDL")

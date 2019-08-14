@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.parser.structure
+package izumi.idealingua.il.parser.structure
 
-import com.github.pshirshov.izumi.idealingua.il.parser.ParserTestTools
+import izumi.idealingua.il.parser.ParserTestTools
 import org.scalatest.WordSpec
 
 class CommentsAndDocstringsTest

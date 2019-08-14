@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.sbt.definitions
+package izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.plugins.optional.IzumiExposedTestScopesPlugin
+import izumi.sbt.plugins.optional.IzumiExposedTestScopesPlugin
 import sbt.librarymanagement.syntax
 import sbt.{Defaults, Project}
 

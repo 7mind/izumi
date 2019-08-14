@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
+package izumi.idealingua.translator.toscala.layout
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.BuildManifest
 
 class SbtRenderer {
   def renderOp(pair: Tuple2[String, SbtDslOp]): String = {

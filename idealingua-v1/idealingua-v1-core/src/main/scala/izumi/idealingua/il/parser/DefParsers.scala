@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{ModelMember, ParsedModel}
+import izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import izumi.idealingua.model.il.ast.raw.models.{ModelMember, ParsedModel}
 import fastparse.NoWhitespace._
 import fastparse._
 
 class DefParsers(context: IDLParserContext) {
 
-  import com.github.pshirshov.izumi.idealingua.il.parser.structure.sep._
+  import izumi.idealingua.il.parser.structure.sep._
   import context._
 
   protected[parser] def modelDef[_: P]: P[ParsedModel] = P(any ~ defMember.anyMember.rep(sep = any) ~ any ~ End)

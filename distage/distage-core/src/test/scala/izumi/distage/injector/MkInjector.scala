@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
 import distage.Injector
 

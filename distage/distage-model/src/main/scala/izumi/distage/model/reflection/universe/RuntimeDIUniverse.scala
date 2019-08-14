@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.definition.DIStageAnnotation
+import izumi.fundamentals.platform.functional.Identity
 
 trait RuntimeDIUniverse extends DIUniverse {
   override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe

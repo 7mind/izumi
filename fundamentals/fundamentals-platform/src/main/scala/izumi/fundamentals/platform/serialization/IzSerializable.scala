@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.serialization
+package izumi.fundamentals.platform.serialization
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.nio.ByteBuffer

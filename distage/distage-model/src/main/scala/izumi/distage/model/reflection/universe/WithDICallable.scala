@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.exceptions.DIException
-import com.github.pshirshov.izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
-import com.github.pshirshov.izumi.distage.model.references.{WithDIKey, WithDITypedRef}
-import com.github.pshirshov.izumi.fundamentals.reflection.WithTags
+import izumi.distage.model.exceptions.DIException
+import izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
+import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
+import izumi.fundamentals.reflection.WithTags
 
 trait WithDICallable {
   this: DIUniverseBase

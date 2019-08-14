@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.NodeMeta
+import izumi.idealingua.model.il.ast.typed.NodeMeta
 
 class MetaRenderer(context: IDLRenderingContext) {
   import context._

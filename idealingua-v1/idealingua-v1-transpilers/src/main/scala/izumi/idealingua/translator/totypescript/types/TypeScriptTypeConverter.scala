@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.types
+package izumi.idealingua.translator.totypescript.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.Generic.{TList, TMap, TSet}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Field
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.common.Generic.{TList, TMap, TSet}
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.il.ast.typed.Field
+import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
+import izumi.idealingua.model.typespace.Typespace
 
 
 class TypeScriptTypeConverter() {

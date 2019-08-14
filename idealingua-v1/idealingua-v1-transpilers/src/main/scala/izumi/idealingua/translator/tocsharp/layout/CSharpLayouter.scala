@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout
+package izumi.idealingua.translator.tocsharp.layout
 
 import java.util.UUID
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, CSharpProjectLayout}
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.output.{Module, ModuleId}
+import izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
+import izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, CSharpProjectLayout}
+import izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
+import izumi.idealingua.translator._
 
 import scala.xml.Elem
 

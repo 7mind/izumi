@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.build
+package izumi.fundamentals.platform.build
 
 /**
   * Makes a test scope class visible in ANOTHER module's test scope when IzumiInheritedTestScopesPlugin is used.

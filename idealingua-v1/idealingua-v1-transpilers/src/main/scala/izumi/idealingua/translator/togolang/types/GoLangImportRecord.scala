@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang.types
+package izumi.idealingua.translator.togolang.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.Package
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.Package
+import izumi.idealingua.model.common.TypeId
 
 final case class GoLangImportRecord(id: TypeId, importName: String, pkg: Package) {
   def renderImport(prefix: String): String = {

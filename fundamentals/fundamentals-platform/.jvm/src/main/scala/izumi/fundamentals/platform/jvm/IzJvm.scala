@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.jvm
+package izumi.fundamentals.platform.jvm
 
 import java.lang.management.ManagementFactory
 import java.net.{URLClassLoader, URLDecoder}
@@ -9,7 +9,7 @@ import scala.concurrent.duration.Duration
 
 trait IzJvm {
 
-  import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
+  import izumi.fundamentals.platform.time.IzTime._
 
   def uptime: Duration = Duration(getUptime, scala.concurrent.duration.MILLISECONDS)
 
@@ -23,7 +23,7 @@ trait IzJvm {
   }
 
   def terminalColorsEnabled: Boolean = {
-    import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
+    import izumi.fundamentals.platform.basics.IzBoolean._
 
     all(
       !isHeadless,

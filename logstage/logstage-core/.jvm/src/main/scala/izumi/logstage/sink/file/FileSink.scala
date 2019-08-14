@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.logstage.sink.file
+package izumi.logstage.sink.file
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
-import com.github.pshirshov.izumi.logstage.sink.file.models.FileRotation.{DisabledRotation, FileLimiterRotation}
-import com.github.pshirshov.izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.rendering.RenderingPolicy
+import izumi.logstage.sink.file.models.FileRotation.{DisabledRotation, FileLimiterRotation}
+import izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 
 import scala.util.{Failure, Success, Try}
 

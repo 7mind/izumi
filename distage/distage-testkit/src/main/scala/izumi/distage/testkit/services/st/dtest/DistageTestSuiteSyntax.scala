@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.dtest
+package izumi.distage.testkit.services.st.dtest
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
-import com.github.pshirshov.izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
+import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
+import izumi.fundamentals.platform.jvm.CodePosition
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.logstage.api.{IzLogger, Log}
 import distage.{Tag, TagK, TagKK}
 import org.scalactic.source
 

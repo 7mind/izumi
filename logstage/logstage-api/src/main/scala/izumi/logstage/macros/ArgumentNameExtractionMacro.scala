@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.macros
+package izumi.logstage.macros
 
-import com.github.pshirshov.izumi.logstage.api.Log.LogArg
+import izumi.logstage.api.Log.LogArg
 
 import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString._
 
 
 object ArgumentNameExtractionMacro {

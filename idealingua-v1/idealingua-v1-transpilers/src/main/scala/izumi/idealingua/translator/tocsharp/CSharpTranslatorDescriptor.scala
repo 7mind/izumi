@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp
+package izumi.idealingua.translator.tocsharp
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpLayouter
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.CSharpBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
+import izumi.idealingua.translator.CompilerOptions.CSharpTranslatorOptions
+import izumi.idealingua.translator._
+import izumi.idealingua.translator.tocsharp.layout.CSharpLayouter
 
 object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorOptions] {
 

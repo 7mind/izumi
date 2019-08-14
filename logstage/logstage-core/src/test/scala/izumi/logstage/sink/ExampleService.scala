@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
-import com.github.pshirshov.izumi.functional.mono.SyncSafe
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.sink.ExampleService.ExampleDTO
+import izumi.functional.mono.SyncSafe
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.logstage.api.IzLogger
+import izumi.logstage.sink.ExampleService.ExampleDTO
 import logstage.LogIO
 
 import scala.util.Random

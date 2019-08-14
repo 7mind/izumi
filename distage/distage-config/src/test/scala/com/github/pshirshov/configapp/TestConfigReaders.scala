@@ -1,8 +1,8 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
+import izumi.distage.config.annotations.AutoConf
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 
 import scala.collection.immutable.ListSet
 import scala.collection.mutable

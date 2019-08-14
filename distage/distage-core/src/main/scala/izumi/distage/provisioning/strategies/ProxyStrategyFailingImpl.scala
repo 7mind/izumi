@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCalled
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.plan.ExecutableOp.ProxyOp
+import izumi.distage.model.provisioning.strategies.ProxyStrategy
+import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.platform.language.Quirks
 
 class ProxyStrategyFailingImpl extends ProxyStrategy {
   override def initProxy[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy): F[Seq[NewObjectOp]] = {

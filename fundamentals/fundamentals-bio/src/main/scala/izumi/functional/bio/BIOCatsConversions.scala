@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
 import cats.Eval
 import cats.effect.ExitCase
-import com.github.pshirshov.izumi.functional.bio.BIOCatsConversions._
+import izumi.functional.bio.BIOCatsConversions._
 
 trait BIOCatsConversions extends BIOCatsConversions1 {
   @inline implicit final def BIOToSync[F[+_, +_]](implicit F: BIO[F]): BIOCatsSync[F] = new BIOCatsSync[F](F)

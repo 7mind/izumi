@@ -1,17 +1,17 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
 import java.time.ZonedDateTime
 import java.util.concurrent.RejectedExecutionException
 
 import _root_.io.circe.parser._
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.functional.bio.BIOExit
-import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.idealingua.runtime.rpc
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.functional.bio.BIO._
+import izumi.functional.bio.BIOExit
+import izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.time.IzTime
+import izumi.idealingua.runtime.rpc
+import izumi.idealingua.runtime.rpc.{IRTClientMultiplexor, RPCPacketKind, _}
+import izumi.logstage.api.IzLogger
 import io.circe
 import io.circe.syntax._
 import io.circe.{Json, Printer}

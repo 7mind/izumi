@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.bootstrap
+package izumi.distage.bootstrap
 
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, ModuleBase, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyProvider
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
+import izumi.distage.model.definition.{BootstrapContextModule, ModuleBase, ModuleDef}
+import izumi.distage.model.provisioning.strategies.ProxyProvider
+import izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 
 object CglibBootstrap {
   final lazy val cogenBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap ++ defaultCogen

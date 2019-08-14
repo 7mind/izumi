@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.gc
+package izumi.distage.gc
 
-import com.github.pshirshov.izumi.distage.model.{GCMode, PlannerInput}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.exceptions.UnsupportedOpException
+import izumi.distage.model.{GCMode, PlannerInput}
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.exceptions.UnsupportedOpException
 import distage.DIKey
 import org.scalatest.WordSpec
 

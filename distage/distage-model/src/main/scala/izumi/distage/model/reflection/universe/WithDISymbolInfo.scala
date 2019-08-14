@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.exceptions.AnnotationConflictException
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import izumi.distage.model.exceptions.AnnotationConflictException
+import izumi.fundamentals.reflection.AnnotationTools
 
 trait WithDISymbolInfo {
   this: DIUniverseBase
@@ -72,7 +72,7 @@ trait WithDISymbolInfo {
         val distageAnnos = symbolInfo.annotations.filter(t => SafeType(t.tree.tpe) <:< typeOfDistageAnnotation).toSet
 
         if (distageAnnos.size > 1) {
-          import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+          import izumi.fundamentals.platform.strings.IzString._
           throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.definingClass}: ${distageAnnos.niceList()}")
         }
 

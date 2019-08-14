@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package izumi.logstage.api.routing
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
-import com.github.pshirshov.izumi.logstage.api.logger.{LogRouter, LogSink}
-import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.logstage.api.Log
+import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
+import izumi.logstage.api.logger.{LogRouter, LogSink}
+import izumi.logstage.sink.{ConsoleSink, FallbackConsoleSink}
 
 import scala.util.control.NonFatal
 

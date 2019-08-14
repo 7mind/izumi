@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types
+package izumi.idealingua.translator.toscala.types
 
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Adt
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
+import izumi.idealingua.model.il.ast.typed.DefMethod
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.idealingua.model.il.ast.typed.TypeDef.Adt
+import izumi.idealingua.translator.toscala.STContext
 
 import scala.collection.immutable
 import scala.meta._

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.bytes
+package izumi.fundamentals.platform.bytes
 
 import java.nio.ByteBuffer
 

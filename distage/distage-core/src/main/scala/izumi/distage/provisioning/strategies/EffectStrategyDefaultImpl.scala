@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{IncompatibleEffectTypesException, UnexpectedProvisionResultException}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.EffectStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK, identityEffectType}
+import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, UnexpectedProvisionResultException}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.plan.ExecutableOp.MonadicOp
+import izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
+import izumi.distage.model.provisioning.strategies.EffectStrategy
+import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK, identityEffectType}
 
 class EffectStrategyDefaultImpl
   extends EffectStrategy {

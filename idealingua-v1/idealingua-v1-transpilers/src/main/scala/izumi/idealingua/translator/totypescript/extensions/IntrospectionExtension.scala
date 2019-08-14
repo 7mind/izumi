@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
+package izumi.idealingua.translator.totypescript.extensions
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
+import izumi.idealingua.model.il.ast.typed.{Field, TypeDef}
+import izumi.idealingua.model.publishing.manifests.TypeScriptProjectLayout
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.totypescript.TSTContext
+import izumi.idealingua.translator.totypescript.products.CogenProduct._
+import izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
 
 object IntrospectionExtension extends TypeScriptTranslatorExtension {
   private def unwindType(id: TypeId)(implicit ts: Typespace): String = id match {

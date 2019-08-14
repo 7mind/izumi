@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package izumi.distage.roles.test
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
-import com.github.pshirshov.izumi.distage.roles.test.fixtures.TestPlugin
-import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.distage.roles.test.fixtures.TestPlugin
+import izumi.fundamentals.platform.resources.ArtifactVersion
 import org.scalatest.WordSpec
 
 class RoleAppTest extends WordSpec

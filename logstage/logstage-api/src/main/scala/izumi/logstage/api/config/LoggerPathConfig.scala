@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.api.config
+package izumi.logstage.api.config
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
 
 final case class LoggerPathConfig(threshold: Log.Level, sinks: Seq[LogSink])
 

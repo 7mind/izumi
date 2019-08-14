@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.staticinjector
+package izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.fixtures.TraitCases.TraitCase4.Trait
-import com.github.pshirshov.izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
-import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
+import izumi.distage.fixtures.TraitCases.TraitCase4.Trait
+import izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
+import izumi.distage.fixtures.TypesCases.TypesCase3
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import izumi.distage.provisioning.AnyConstructor
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
 
 class MacroAutoTraitsTest extends WordSpec with MkInjector {
 
@@ -179,7 +179,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   }
 
   "handle AnyVals" in {
-    import com.github.pshirshov.izumi.distage.fixtures.TraitCases.TraitCase6._
+    import izumi.distage.fixtures.TraitCases.TraitCase6._
 
     val definition = PlannerInput.noGc(new StaticModuleDef {
       stat[Dep]

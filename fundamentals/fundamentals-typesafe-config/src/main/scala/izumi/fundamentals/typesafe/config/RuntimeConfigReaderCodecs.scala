@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
-import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
+import izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config._
 
 import scala.concurrent.duration.{Duration, FiniteDuration}

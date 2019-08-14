@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.{CSharpBuildManifest, GoLangBuildManifest, ScalaBuildManifest, TypeScriptBuildManifest}
+import izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
+import izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
+import izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
 
 import scala.reflect.ClassTag
 

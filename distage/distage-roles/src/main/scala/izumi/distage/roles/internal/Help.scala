@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.roles.internal
+package izumi.distage.roles.internal
 
 
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.roles.RoleAppLauncher
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.schema._
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.strings.IzString._
 
 class Help[F[_] : DIEffect]
 (

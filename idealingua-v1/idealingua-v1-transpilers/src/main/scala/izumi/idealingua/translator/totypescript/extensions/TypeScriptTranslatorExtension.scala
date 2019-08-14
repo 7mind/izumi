@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
+package izumi.idealingua.translator.totypescript.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
-import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct._
+import izumi.idealingua.model.il.ast.typed.TypeDef
+import izumi.idealingua.model.il.ast.typed.TypeDef.{DTO, Interface}
+import izumi.idealingua.translator.TranslatorExtension
+import izumi.idealingua.translator.totypescript.TSTContext
+import izumi.idealingua.translator.totypescript.products.CogenProduct._
 
 trait TypeScriptTranslatorExtension extends TranslatorExtension {
-  import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+  import izumi.fundamentals.platform.language.Quirks._
 
   def handleInterface(ctx: TSTContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     discard(ctx, interface, manifest)

@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, FieldDef, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.common.{ExtendedField, FieldDef, StructureId, TypeId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed._
 
 private class FieldExtractor(resolver: TypeResolver, user: TypeId) {
   def extractFields(defn: TypeDef): List[ExtendedField] = {

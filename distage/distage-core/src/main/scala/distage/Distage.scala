@@ -1,8 +1,8 @@
 package distage
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.{model, planning}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.{model, planning}
 
 trait Distage {
 

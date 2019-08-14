@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.loader
+package izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, IDLException}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.problems.{IDLDiagnostics, IDLException}
+import izumi.fundamentals.platform.strings.IzString._
 
 class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
 

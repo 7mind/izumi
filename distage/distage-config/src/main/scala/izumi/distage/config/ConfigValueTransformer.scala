@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.ConfigProvider.ConfigImport
+import izumi.distage.config.ConfigProvider.ConfigImport
 
 trait ConfigValueTransformer {
   def transform: PartialFunction[(ConfigImport, Any), Any]

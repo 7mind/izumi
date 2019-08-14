@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang
+package izumi.idealingua.translator.togolang
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.{CyclicImportsRule, ReservedKeywordRule}
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.GoTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.GoLangBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.typespace.verification.rules.{CyclicImportsRule, ReservedKeywordRule}
+import izumi.idealingua.translator.CompilerOptions.GoTranslatorOptions
+import izumi.idealingua.translator._
 
 object GoTranslatorDescriptor extends TranslatorDescriptor[GoTranslatorOptions] {
   override def defaultManifest: BuildManifest = GoLangBuildManifest.example

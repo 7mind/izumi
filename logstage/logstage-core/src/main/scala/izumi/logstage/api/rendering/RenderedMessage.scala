@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.api.rendering
+package izumi.logstage.api.rendering
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.Log.LogArg
+import izumi.logstage.api.Log
+import izumi.logstage.api.Log.LogArg
 
 final case class RenderedParameter(
                                     arg: LogArg,

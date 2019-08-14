@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.products
+package izumi.idealingua.translator.toscala.products
 
 import scala.meta.{Defn, Template}
 

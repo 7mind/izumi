@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+package izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{PrimitiveId, TypeId}
+import izumi.idealingua.model.common.TypeId.{EnumId, IdentifierId, InterfaceId}
+import izumi.idealingua.model.common.{PrimitiveId, TypeId}
 
 final case class Field(typeId: TypeId, name: String, meta: NodeMeta) {
   override def toString: String = s"$name:$typeId"

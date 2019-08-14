@@ -1,33 +1,33 @@
-package com.github.pshirshov.izumi.idealingua
+package izumi.idealingua
 
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
-import com.github.pshirshov.izumi.idealingua.il.loader._
-import com.github.pshirshov.izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
-import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests._
-import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslator
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.togolang.GoLangTranslator
-import com.github.pshirshov.izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslator
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypeScriptTranslator
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.layout.CSharpNamingConvention
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.files.IzFiles
+import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.resources.IzResources
+import izumi.idealingua.il.loader._
+import izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
+import izumi.idealingua.model.loader.LoadedDomain
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests._
+import izumi.idealingua.translator._
+import izumi.idealingua.translator.tocsharp.CSharpTranslator
+import izumi.idealingua.translator.tocsharp.extensions.CSharpTranslatorExtension
+import izumi.idealingua.translator.togolang.GoLangTranslator
+import izumi.idealingua.translator.togolang.extensions.GoLangTranslatorExtension
+import izumi.idealingua.translator.toscala.ScalaTranslator
+import izumi.idealingua.translator.toscala.extensions.ScalaTranslatorExtension
+import izumi.idealingua.translator.totypescript.TypeScriptTranslator
+import izumi.idealingua.translator.totypescript.extensions.TypeScriptTranslatorExtension
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.time.Timed
+import izumi.idealingua.translator.tocsharp.layout.CSharpNamingConvention
+import izumi.fundamentals.platform.time.IzTime._
 
 import scala.sys.process._
 

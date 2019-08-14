@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
-import com.github.pshirshov.izumi.distage.reflection.SymbolIntrospectorDefaultImpl
+import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.provisioning.AnyConstructor
+import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 
 import scala.reflect.macros.blackbox
 

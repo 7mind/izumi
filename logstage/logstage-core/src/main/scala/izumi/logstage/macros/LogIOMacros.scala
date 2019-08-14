@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.macros
+package izumi.logstage.macros
 
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer.getEnclosingPosition
-import com.github.pshirshov.izumi.logstage.macros.LogMessageMacro.logMessageMacro
+import izumi.fundamentals.reflection.CodePositionMaterializer.getEnclosingPosition
+import izumi.logstage.macros.LogMessageMacro.logMessageMacro
 import logstage.{Log, LogIO}
 
 import scala.reflect.macros.blackbox

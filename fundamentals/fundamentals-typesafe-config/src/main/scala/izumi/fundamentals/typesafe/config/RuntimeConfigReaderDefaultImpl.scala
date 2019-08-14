@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
-import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
+import izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config._
 
 import scala.annotation.tailrec
@@ -9,7 +9,7 @@ import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{currentMirror, universe => ru}
 import scala.util.{Failure, Try}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.strings.IzString._
 
 class RuntimeConfigReaderDefaultImpl
 (

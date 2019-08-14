@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 trait CompilerLog {
   def log(s: String): Unit

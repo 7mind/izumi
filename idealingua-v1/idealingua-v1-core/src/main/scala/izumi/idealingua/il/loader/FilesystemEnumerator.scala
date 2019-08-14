@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.model.loader.FSPath
 
 trait FilesystemEnumerator {
   def enumerate(): Map[FSPath, String]

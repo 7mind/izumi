@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct, StructContext}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.translator.TranslatorExtension
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct, StructContext}
 
 
 trait ScalaTranslatorExtension extends TranslatorExtension {
 
-  import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-  import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct._
+  import izumi.fundamentals.platform.language.Quirks._
+  import izumi.idealingua.translator.toscala.products.CogenProduct._
 
   def handleModules(ctx: STContext, acc: Seq[Module]): Seq[Module] = {
     discard(ctx)

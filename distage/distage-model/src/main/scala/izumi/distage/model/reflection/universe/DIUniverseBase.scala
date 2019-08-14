@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.fundamentals.reflection.UniverseGeneric
+import izumi.fundamentals.reflection.UniverseGeneric
 
 trait DIUniverseBase extends UniverseGeneric {
   this: WithDISafeType =>

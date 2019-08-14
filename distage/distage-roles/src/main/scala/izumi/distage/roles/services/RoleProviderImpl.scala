@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
 import _root_.distage._
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
-import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
-import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, RoleDescriptor, meta}
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.Binding
+import izumi.distage.model.definition.Binding.ImplBinding
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.distage.roles.model.{AbstractRoleF, RoleDescriptor, meta}
+import izumi.fundamentals.platform.resources.IzManifest
+import izumi.logstage.api.IzLogger
 
 import scala.reflect.ClassTag
 

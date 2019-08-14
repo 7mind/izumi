@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.functional.bio.BIO
+import izumi.functional.bio.BIO
 import io.circe.{DecodingFailure, Json}
 
 abstract class IRTCirceMarshaller {

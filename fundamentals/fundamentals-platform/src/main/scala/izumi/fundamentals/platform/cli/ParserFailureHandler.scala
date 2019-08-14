@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli
+package izumi.fundamentals.platform.cli
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.ParserError
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.cli.CLIParser.ParserError
+import izumi.fundamentals.platform.cli.CLIParser.ParserError.{DanglingArgument, DanglingSplitter, DuplicatedRoles}
+import izumi.fundamentals.platform.language.Quirks
 
 trait ParserFailureHandler {
   def onParserError(e: CLIParser.ParserError): Unit

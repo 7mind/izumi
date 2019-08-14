@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package izumi.distage.roles.test
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.roles.{AppShutdownStrategy, BootstrapConfig, ImmediateExitShutdownStrategy, RoleAppLauncher, RoleAppMain}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams}
-import com.github.pshirshov.izumi.fundamentals.reflection.SourcePackageMaterializer.thisPkg
+import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.roles.{AppShutdownStrategy, BootstrapConfig, ImmediateExitShutdownStrategy, RoleAppLauncher, RoleAppMain}
+import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams}
+import izumi.fundamentals.reflection.SourcePackageMaterializer.thisPkg
 
 class TestLauncherBase extends RoleAppLauncher.LauncherF[IO]() {
   protected val bootstrapConfig: BootstrapConfig = BootstrapConfig(

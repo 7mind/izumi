@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
+import izumi.distage.model.reflection.ReflectionProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import distage.Id
 
 import scala.collection.mutable

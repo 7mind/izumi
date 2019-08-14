@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.products
+package izumi.idealingua.translator.toscala.products
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeName
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.Import
+import izumi.idealingua.model.common.TypeName
+import izumi.idealingua.translator.toscala.types.runtime.Import
 
 import scala.meta.{Defn, Term}
 
@@ -14,7 +14,7 @@ final case class CogenProduct[T <: Defn](
                                           , preamble: String = ""
                                         ) extends AccompaniedCogenProduct[T] {
   override def companion: Defn.Object = {
-    import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+    import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
     val implicitClass = filterEmptyClasses(List(tools))
     companionBase.appendDefinitions(implicitClass: _*)
   }
@@ -37,7 +37,7 @@ object CogenProduct {
     , preamble: String = ""
   ) extends AccompaniedCogenProduct[Defn.Trait] {
     override def companion: Defn.Object = {
-      import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+      import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
       companionBase.appendDefinitions(elements.map(_._2))
     }
   }
@@ -64,7 +64,7 @@ object CogenProduct {
     , preamble: String = ""
   ) extends AccompaniedCogenProduct[Defn.Trait] {
     override def companion: Defn.Object = {
-      import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+      import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
       companionBase.appendDefinitions(elements.flatMap(_.render))
     }
   }
@@ -100,7 +100,7 @@ object CogenProduct {
 
     //    final case class Defs(defs: Defn.Object, in: Pair[Defn.Trait], out: Pair[Defn.Trait]) {
     //      def render: Defn = {
-    //        import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+    //        import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
     //        defs.prependDefnitions(in.render ++ out.render)
     //      }
     //    }

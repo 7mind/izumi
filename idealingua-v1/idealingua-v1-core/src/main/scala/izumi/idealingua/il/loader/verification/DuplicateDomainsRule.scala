@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.loader.verification
+package izumi.idealingua.il.loader.verification
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, LoadedDomain}
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, PostError}
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.loader.{FSPath, LoadedDomain}
+import izumi.idealingua.model.problems.{IDLDiagnostics, PostError}
 
 object DuplicateDomainsRule extends GlobalVerificationRule {
   override def check(successful: Seq[LoadedDomain.Success]): IDLDiagnostics = {

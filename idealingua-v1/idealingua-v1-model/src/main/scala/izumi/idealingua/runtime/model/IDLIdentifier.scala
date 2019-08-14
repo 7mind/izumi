@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.model
+package izumi.idealingua.runtime.model
 
 import java.net.{URLDecoder, URLEncoder}
 import java.util.UUID

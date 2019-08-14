@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.loader
+package izumi.idealingua.model.loader
 
 sealed trait FSPath {
   def name: String

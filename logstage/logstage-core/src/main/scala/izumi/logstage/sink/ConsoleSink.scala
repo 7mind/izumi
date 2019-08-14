@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.SystemOutStringTrivialSink
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Renderer
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
+import izumi.fundamentals.platform.console.SystemOutStringTrivialSink
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.rendering.logunits.Renderer
+import izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRenderingPolicy}
 
 class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {

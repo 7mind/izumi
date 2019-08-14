@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.logstage.sink.file.models
+package izumi.logstage.sink.file.models
 
-import com.github.pshirshov.izumi.logstage.sink.file.FileSink.FileIdentity
+import izumi.logstage.sink.file.FileSink.FileIdentity
 
 
 case class FileSinkState(

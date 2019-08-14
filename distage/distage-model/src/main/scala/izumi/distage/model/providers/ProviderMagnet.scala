@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.model.providers
+package izumi.distage.model.providers
 
-import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
-import com.github.pshirshov.izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, Tag, SymbolInfo}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.distage.model.exceptions.TODOBindingException
+import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, Tag, SymbolInfo}
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 
 /**
-  * A function that receives its arguments from DI object graph, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
+  * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
   *
   * The following syntaxes are supported by extractor macro:
   *
@@ -76,7 +76,7 @@ import scala.language.implicitConversions
   *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
   *   }}}
   *
-  * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
   **/
 final case class ProviderMagnet[+R](get: Provider) {
   def map[B: Tag](f: R => B): ProviderMagnet[B] = {

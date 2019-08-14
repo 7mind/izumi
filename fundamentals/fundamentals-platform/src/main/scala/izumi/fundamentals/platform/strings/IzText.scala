@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.strings
+package izumi.fundamentals.platform.strings
 
 object IzText {
 
@@ -7,7 +7,7 @@ object IzText {
   def tableFormat(rows: Seq[Seq[String]], header: List[String]): String = {
     val splitChar = " | "
 
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    import izumi.fundamentals.collections.IzCollections._
     val columnsCount = math.max(rows.map(_.size).maxOr(0), header.length)
 
     val bheader = header ++ List.fill(columnsCount - header.size)("")

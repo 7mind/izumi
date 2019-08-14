@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.definition.Binding
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait ExecutableOp {
   def target: DIKey

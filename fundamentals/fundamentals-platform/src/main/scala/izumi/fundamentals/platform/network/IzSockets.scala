@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
  */
-package com.github.pshirshov.izumi.fundamentals.platform.network
+package izumi.fundamentals.platform.network
 
 import java.net.{InetSocketAddress, NetworkInterface, StandardProtocolFamily}
 import java.nio.channels.{DatagramChannel, ServerSocketChannel}

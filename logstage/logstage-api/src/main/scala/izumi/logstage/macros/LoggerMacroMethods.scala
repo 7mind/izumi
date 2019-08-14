@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.macros
+package izumi.logstage.macros
 
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer.getEnclosingPosition
-import com.github.pshirshov.izumi.logstage.api.{AbstractLogger, Log}
-import com.github.pshirshov.izumi.logstage.macros.LogMessageMacro._
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.reflection.CodePositionMaterializer.getEnclosingPosition
+import izumi.logstage.api.{AbstractLogger, Log}
+import izumi.logstage.macros.LogMessageMacro._
 
 import scala.reflect.macros.blackbox
 

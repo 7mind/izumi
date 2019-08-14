@@ -1,26 +1,26 @@
-package com.github.pshirshov.izumi.distage.roles.internal
+package izumi.distage.roles.internal
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.{Id, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
-import com.github.pshirshov.izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
-import com.github.pshirshov.izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.resources.ArtifactVersion
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.distage.LogstageModule
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{ConfigModule, ResolvedConfig}
+import izumi.distage.model.definition.{Id, ModuleBase}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
+import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.RoleAppPlanner
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.distage.LogstageModule
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
 import scala.util._

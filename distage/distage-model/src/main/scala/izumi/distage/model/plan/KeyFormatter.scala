@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait KeyFormatter {
   def formatKey(key: DIKey): String

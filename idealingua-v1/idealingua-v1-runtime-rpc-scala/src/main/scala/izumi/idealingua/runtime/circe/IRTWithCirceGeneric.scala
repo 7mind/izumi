@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.circe
+package izumi.idealingua.runtime.circe
 
 import io.circe.generic.decoding.DerivedDecoder
 import io.circe.generic.encoding.DerivedAsObjectEncoder

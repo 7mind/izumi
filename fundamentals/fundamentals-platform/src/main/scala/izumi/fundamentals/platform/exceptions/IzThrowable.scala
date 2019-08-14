@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.exceptions
+package izumi.fundamentals.platform.exceptions
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions

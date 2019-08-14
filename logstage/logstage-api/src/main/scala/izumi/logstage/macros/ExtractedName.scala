@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.macros
+package izumi.logstage.macros
 
 sealed trait ExtractedName {
   def str: String

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua
+package izumi.idealingua
 
 import java.util._
 
-import com.github.pshirshov.izumi.idealingua.runtime.model._
+import izumi.idealingua.runtime.model._
 import org.scalatest.WordSpec
 
 class IdTest extends WordSpec {
@@ -42,7 +42,7 @@ object IdTest {
 
   final case class UserWithEnumId(value: UUID, company: UUID, dept: DepartmentEnum) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val suffix = Seq(this.company, this.dept, this.value).map(part => escape(part.toString)).mkString(":")
       s"UserWithEnumId#$suffix"
     }
@@ -50,7 +50,7 @@ object IdTest {
 
   object UserWithEnumId {
     def parse(s: String): UserWithEnumId = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
       val parts = withoutPrefix.split(':').map(part => unescape(part))
       UserWithEnumId(company = parsePart[UUID](parts(0), classOf[UUID]), dept = DepartmentEnum.parse(parts(1)), value = parsePart[UUID](parts(2), classOf[UUID]))
@@ -60,7 +60,7 @@ object IdTest {
 
   final case class BucketID(app: UUID, user: UUID, bucket: String) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val suffix = Seq(this.app, this.bucket, this.user).map(part => escape(part.toString)).mkString(":")
       s"BucketID#$suffix"
     }
@@ -68,7 +68,7 @@ object IdTest {
 
   object BucketID {
     def parse(s: String): BucketID = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
       val parts = withoutPrefix.split(':').map(part => unescape(part))
       BucketID(app = parsePart[UUID](parts(0), classOf[UUID]), bucket = parsePart[String](parts(1), classOf[String]), user = parsePart[UUID](parts(2), classOf[UUID]))
@@ -78,7 +78,7 @@ object IdTest {
 
   final case class ComplexID(bucket: BucketID, user: UserWithEnumId, uid: UUID, str: String) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val suffix = Seq(this.bucket, this.str, this.uid, this.user).map(part => escape(part.toString)).mkString(":")
       s"ComplexID#$suffix"
     }
@@ -86,7 +86,7 @@ object IdTest {
 
   object ComplexID {
     def parse(s: String): ComplexID = {
-      import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+      import izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
       val parts = withoutPrefix.split(':').map(part => unescape(part))
       ComplexID(bucket = BucketID.parse(parts(0)), str = parsePart[String](parts(1), classOf[String]), uid = parsePart[UUID](parts(2), classOf[UUID]), user = UserWithEnumId.parse(parts(3)))

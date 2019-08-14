@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.common
+package izumi.idealingua.model.common
 
 object PackageTools {
   def minimize(value: Package, in: Package): Package = {

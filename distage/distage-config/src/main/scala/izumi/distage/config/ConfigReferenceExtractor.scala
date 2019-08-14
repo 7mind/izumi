@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.annotations._
-import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.BadIdAnnotationException
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import izumi.distage.config.annotations._
+import izumi.distage.config.model.exceptions.ConfigTranslationException
+import izumi.distage.model.definition.Binding
+import izumi.distage.model.exceptions.BadIdAnnotationException
+import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.reflection.ReflectionProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.AnnotationTools
 
 /**
   * Finds parameters of bindings with @Conf, @ConfPath or @AutoConf annotations and replaces their keys with Conf IdKeys

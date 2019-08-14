@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.roles.logger.SimpleLoggerConfigurator
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.logstage.api.Log.Level
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import izumi.distage.config.model.AppConfig
+import izumi.distage.roles.logger.SimpleLoggerConfigurator
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.logstage.api.Log.Level
+import izumi.logstage.api.{IzLogger, Log}
 
 class EarlyLoggers() {
 
-  import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher._
+  import izumi.distage.roles.RoleAppLauncher._
 
   private val defaultLogLevel = Log.Level.Info
   private val defaultLogFormatJson = false

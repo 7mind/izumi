@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, ParsedDomains, ParsedModels}
+import izumi.idealingua.model.loader.{FSPath, ParsedDomains, ParsedModels}
 
 
 trait ModelParser {

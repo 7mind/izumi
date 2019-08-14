@@ -1,19 +1,19 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.TimeUnit
 
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect.syntax._
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
-import com.github.pshirshov.izumi.distage.model.{Locator, SplittedPlan}
-import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
+import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
+import izumi.distage.model.{Locator, SplittedPlan}
+import izumi.distage.roles.model.IntegrationCheck
+import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
+import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.fundamentals.platform.jvm.CodePosition
 import distage.{DIKey, Injector, PlannerInput}
 
 import scala.concurrent.duration.FiniteDuration

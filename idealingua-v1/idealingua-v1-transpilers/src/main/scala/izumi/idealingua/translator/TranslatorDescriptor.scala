@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
 
 trait TranslatorDescriptor[TypedOptions] {
   def language: IDLLanguage

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.provisioning
+package izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.Locator
+import izumi.distage.model.plan.ExecutableOp
 
 import scala.util.Try
 

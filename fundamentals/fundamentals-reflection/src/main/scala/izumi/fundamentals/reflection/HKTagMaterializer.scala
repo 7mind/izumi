@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
 import scala.language.experimental.macros
 

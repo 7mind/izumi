@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
+package izumi.idealingua.translator.toscala.types.runtime
 
 import scala.reflect._
 

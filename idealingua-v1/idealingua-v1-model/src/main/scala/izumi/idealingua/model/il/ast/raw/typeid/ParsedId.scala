@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid
+package izumi.idealingua.model.il.ast.raw.typeid
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{DomainId, _}
 
 final case class ParsedId(pkg: Seq[String], name: String) {
   private def typePath = {

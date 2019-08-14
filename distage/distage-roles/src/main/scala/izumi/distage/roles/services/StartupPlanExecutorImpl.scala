@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.Locator
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.fundamentals.platform.functional.Identity
 import distage.{Injector, TagK}
 
 class StartupPlanExecutorImpl(

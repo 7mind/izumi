@@ -1,21 +1,21 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
 import java.net.URI
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.functional.bio.BIOExit
-import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.functional.bio.BIO._
+import izumi.functional.bio.BIOExit
+import izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import izumi.idealingua.runtime.rpc
+import izumi.idealingua.runtime.rpc._
+import izumi.logstage.api.IzLogger
 import io.circe.Printer
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.asynchttpclient.netty.ws.NettyWebSocket
 import org.asynchttpclient.ws.{WebSocket, WebSocketListener, WebSocketUpgradeHandler}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.Quirks._
 
 case class PacketInfo(method: IRTMethodId, packetId: RpcPacketId)
 

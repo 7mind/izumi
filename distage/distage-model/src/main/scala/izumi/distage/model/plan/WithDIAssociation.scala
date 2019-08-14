@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.references.WithDIKey
-import com.github.pshirshov.izumi.distage.model.reflection.universe._
+import izumi.distage.model.references.WithDIKey
+import izumi.distage.model.reflection.universe._
 
 trait WithDIAssociation {
   this:  DIUniverseBase

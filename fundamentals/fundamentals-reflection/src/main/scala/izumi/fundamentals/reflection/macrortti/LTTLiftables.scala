@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.fundamentals.reflection.macrortti.LightTypeTag._
 
 import scala.reflect.macros.blackbox
 

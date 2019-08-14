@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.common
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion}
+import izumi.idealingua.model.common
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.publishing.{ProjectNamingRule, ProjectVersion}
 
 sealed trait ExtendedModule {
   def module: Module

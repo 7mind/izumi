@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, NameReference}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, NameReference}
 
 class FLTT(
             val t: LightTypeTag,
@@ -59,14 +59,14 @@ class FLTT(
   }
 
   override def toString: String = {
-    //    import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
+    //    import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     //    t.render()
     t.toString
   }
 
 
   def repr: String = {
-    import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
+    import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     t.render()
   }
 
@@ -87,7 +87,7 @@ class FLTT(
 
 object FLTT {
 
-  import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+  import izumi.fundamentals.collections.IzCollections._
 
   protected[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
 

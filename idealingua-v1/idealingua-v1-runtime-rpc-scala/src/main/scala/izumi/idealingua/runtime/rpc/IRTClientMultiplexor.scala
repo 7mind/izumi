@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.functional.bio.BIO._
+import izumi.functional.bio.BIO
+import izumi.functional.bio.BIO._
 import io.circe.Json
 
 class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {

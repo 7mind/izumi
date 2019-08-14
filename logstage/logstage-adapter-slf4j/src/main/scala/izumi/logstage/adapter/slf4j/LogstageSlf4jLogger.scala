@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.adapter.slf4j
+package izumi.logstage.adapter.slf4j
 
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
-import com.github.pshirshov.izumi.logstage.api.Log._
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.logstage.api.Log._
+import izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}
 
 class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {

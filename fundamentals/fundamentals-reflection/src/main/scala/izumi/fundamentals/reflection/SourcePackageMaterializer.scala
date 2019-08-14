@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourcePackage
+import izumi.fundamentals.platform.jvm.SourcePackage
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox

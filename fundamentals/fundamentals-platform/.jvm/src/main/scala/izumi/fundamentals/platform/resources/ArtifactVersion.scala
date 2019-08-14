@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.resources
+package izumi.fundamentals.platform.resources
 
 import java.time.ZonedDateTime
 
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
+import izumi.fundamentals.platform.time.IzTime._
 
 case class IzArtifactId(groupId: String, artifactId: String) {
   override def toString: String = s"$groupId:$artifactId"

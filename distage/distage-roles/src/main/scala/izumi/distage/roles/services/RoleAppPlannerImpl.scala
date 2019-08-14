@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.{ModuleBase, ModuleDef}
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.logstage.api.IzLogger
 import distage._
 
 class RoleAppPlannerImpl[F[_] : TagK](

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli
+package izumi.fundamentals.platform.cli
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawFlag, RawRoleParams, RawValue}
+import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawFlag, RawRoleParams, RawValue}
 import org.scalatest.WordSpec
 
 class CliParserTest extends WordSpec {

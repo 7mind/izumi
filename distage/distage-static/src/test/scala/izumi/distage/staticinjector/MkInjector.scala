@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.staticinjector
+package izumi.distage.staticinjector
 
 
 import distage.{Injector, BootstrapModule}

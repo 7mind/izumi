@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, Lambda}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, Lambda}
 
 sealed trait LightTypeTag {
   def combine(o: Seq[LightTypeTag]): AbstractReference = {

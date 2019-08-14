@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform.entropy
+package izumi.fundamentals.platform.entropy
 
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.functional.Identity
 
 import scala.collection.generic.CanBuildFrom
 

@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.logunits
+package izumi.logstage.api.rendering.logunits
 
 import java.time.format.DateTimeFormatter
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingOptions
-import com.github.pshirshov.izumi.logstage.api.rendering.TimeOps
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.Log
+import izumi.logstage.api.rendering.RenderingOptions
+import izumi.logstage.api.rendering.TimeOps
 
 trait Extractor extends Renderer {
   def render(entry: Log.Entry, context: RenderingOptions): LETree.TextNode

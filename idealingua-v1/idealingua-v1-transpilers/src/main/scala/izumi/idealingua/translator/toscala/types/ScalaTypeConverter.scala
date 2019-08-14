@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types
+package izumi.idealingua.translator.toscala.types
 
 import java.time.{LocalDate, LocalDateTime, LocalTime, ZonedDateTime}
 import java.util.UUID
 
-import com.github.pshirshov.izumi.idealingua.model
-import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, _}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
+import izumi.idealingua.model
+import izumi.idealingua.model.JavaType
+import izumi.idealingua.model.common.{DomainId, _}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}

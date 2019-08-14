@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.sbt.definitions
+package izumi.sbt.definitions
 
-import com.github.pshirshov.izumi.sbt.plugins.IzumiInheritedTestScopesPlugin.autoImport._
-import com.github.pshirshov.izumi.sbt.plugins.optional.{IzumiCompilerOptionsPlugin, IzumiExposedTestScopesPlugin, IzumiPublishingPlugin}
+import izumi.sbt.plugins.IzumiInheritedTestScopesPlugin.autoImport._
+import izumi.sbt.plugins.optional.{IzumiCompilerOptionsPlugin, IzumiExposedTestScopesPlugin, IzumiPublishingPlugin}
 import sbt.Keys._
 import sbt.librarymanagement.{InclExclRule, ModuleID}
 import sbt.{AutoPlugin, Plugins, Project}

@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
-import com.github.pshirshov.izumi.distage.fixtures.SetCases.SetCase2
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.exceptions.TODOBindingException
+import izumi.distage.fixtures.BasicCases.BasicCase1
+import izumi.distage.fixtures.SetCases.SetCase2
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.exceptions.TODOBindingException
 import distage.ModuleDef
 import org.scalatest.WordSpec
 

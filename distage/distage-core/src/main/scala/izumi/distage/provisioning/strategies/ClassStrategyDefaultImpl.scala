@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.commons.UnboxingTool
-import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ClassStrategy
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
+import izumi.distage.commons.UnboxingTool
+import izumi.distage.model.exceptions._
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.strategies.ClassStrategy
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.SymbolIntrospector
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
 
 class ClassStrategyDefaultImpl
 (
@@ -126,7 +126,7 @@ class ClassStrategyDefaultImpl
         constructor.newInstance(argValues: _*)
 
       case None =>
-        import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+        import izumi.fundamentals.platform.strings.IzString._
 
         val discrepancies = sameArityConstructors
           .map {

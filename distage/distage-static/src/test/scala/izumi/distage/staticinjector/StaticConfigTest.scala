@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.staticinjector
+package izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigFixtures, ConfigModule}
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
+import izumi.distage.config.annotations.AutoConf
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{ConfigFixtures, ConfigModule}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.StaticModuleDef
 import com.typesafe.config.ConfigFactory
 import distage.Id
 import org.scalatest.WordSpec

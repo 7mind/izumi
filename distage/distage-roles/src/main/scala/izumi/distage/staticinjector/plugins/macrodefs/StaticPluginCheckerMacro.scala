@@ -1,25 +1,25 @@
-package com.github.pshirshov.izumi.distage.staticinjector.plugins.macrodefs
+package izumi.distage.staticinjector.plugins.macrodefs
 
-import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
-import com.github.pshirshov.izumi.distage.config.annotations.AbstractConfId
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.FactoryExecutor
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
-import com.github.pshirshov.izumi.distage.plugins.PluginBase
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoaderDefaultImpl
-import com.github.pshirshov.izumi.distage.plugins.merge.SimplePluginMergeStrategy
-import com.github.pshirshov.izumi.distage.roles.RoleAppLauncher
-import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.staticinjector.plugins.ModuleRequirements
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
-import com.github.pshirshov.izumi.fundamentals.reflection.TreeTools
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.config.annotations.AbstractConfId
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
+import izumi.distage.model.provisioning.strategies.FactoryExecutor
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
+import izumi.distage.plugins.PluginBase
+import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.plugins.load.PluginLoaderDefaultImpl
+import izumi.distage.plugins.merge.SimplePluginMergeStrategy
+import izumi.distage.roles.RoleAppLauncher
+import izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
+import izumi.distage.staticinjector.plugins.ModuleRequirements
+import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
+import izumi.fundamentals.reflection.TreeTools
+import izumi.logstage.api.IzLogger
 import com.typesafe.config.ConfigFactory
 import distage._
 import io.github.classgraph.ClassGraph

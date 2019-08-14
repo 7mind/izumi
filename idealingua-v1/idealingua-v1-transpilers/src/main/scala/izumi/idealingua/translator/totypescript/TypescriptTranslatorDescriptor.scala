@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript
+package izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.layout.TypescriptLayouter
+import izumi.idealingua.model.publishing.BuildManifest
+import izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.typespace.verification.rules.ReservedKeywordRule
+import izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
+import izumi.idealingua.translator._
+import izumi.idealingua.translator.totypescript.layout.TypescriptLayouter
 
 object TypescriptTranslatorDescriptor extends TranslatorDescriptor[TypescriptTranslatorOptions] {
   override def defaultManifest: BuildManifest = TypeScriptBuildManifest.example

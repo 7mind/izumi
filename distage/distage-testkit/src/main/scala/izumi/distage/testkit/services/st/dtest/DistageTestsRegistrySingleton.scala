@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.dtest
+package izumi.distage.testkit.services.st.dtest
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
+import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
 import distage.{SafeType, TagK}
 
 import scala.collection.mutable

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.model.definition.TypeLevelDSL
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.definition.TypeLevelDSL
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.language.existentials
 
@@ -10,7 +10,7 @@ class TypeLevelDSLTest extends WordSpec {
 
   "Type-level DSL" should {
     "allow to define contexts" in {
-      import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1._
+      import izumi.distage.fixtures.BasicCases.BasicCase1._
 
       TypeLevelDSL.Bindings()
         .bind[TestClass]

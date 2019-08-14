@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.typespace.Typespace
 
 case class Translated(typespace: Typespace, modules: Seq[Module])
 

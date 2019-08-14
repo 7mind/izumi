@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
 import java.io.File
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.config.model.AppConfig
+import izumi.fundamentals.platform.resources.IzResources
+import izumi.logstage.api.IzLogger
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.util.{Failure, Success, Try}
@@ -16,7 +16,7 @@ class ConfigLoaderLocalFSImpl(
                                      ) extends ConfigLoader {
 
   import ConfigLoaderLocalFSImpl._
-  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+  import izumi.fundamentals.platform.strings.IzString._
 
   import scala.collection.JavaConverters._
 

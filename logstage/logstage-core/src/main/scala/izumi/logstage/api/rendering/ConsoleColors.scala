@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.logstage.api.rendering
+package izumi.logstage.api.rendering
 
-import com.github.pshirshov.izumi.logstage.api.Log
+import izumi.logstage.api.Log
 
 object ConsoleColors {
   def logLevelColor(lvl: Log.Level): String = lvl match {

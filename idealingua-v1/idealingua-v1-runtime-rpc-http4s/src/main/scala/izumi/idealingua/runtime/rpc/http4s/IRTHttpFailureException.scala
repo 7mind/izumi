@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.IRTTransportException
+import izumi.idealingua.runtime.rpc.IRTTransportException
 import org.http4s.Status
 
 abstract class IRTHttpFailureException(

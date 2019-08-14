@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.model.planning
+package izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, TraceableOp}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, TraceableOp}
+import izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
 

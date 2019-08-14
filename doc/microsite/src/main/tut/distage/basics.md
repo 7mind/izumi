@@ -152,7 +152,7 @@ For simple cases like this we can write implementations right inside the module.
 
 ### Function Bindings
 
-To bind to a function instead of a class constructor use `.from` method in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef) DSL:
+To bind to a function instead of a class constructor use `.from` method in @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL:
 
 ```scala mdoc:reset
 import distage._
@@ -226,14 +226,14 @@ objects.runOption { i: Int => i + 10 } match {
 }
 ```
 
-consult @scaladoc[ProviderMagnet](com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet) docs for more details.
+consult @scaladoc[ProviderMagnet](izumi.distage.model.providers.ProviderMagnet) docs for more details.
 
 ### Set Bindings
 
 Set bindings are useful for implementing event listeners, plugins, hooks, http routes, healthchecks, migrations, etc. Everywhere where
 you need to gather up a bunch of similar components is probably a good place for a Set Binding.
 
-To define a Set binding use `.many` and `.add` methods in @scaladoc[ModuleDef](com.github.pshirshov.izumi.distage.model.definition.ModuleDef)
+To define a Set binding use `.many` and `.add` methods in @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef)
 DSL.
 
 
@@ -438,7 +438,7 @@ You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` metho
 
 Lifecycle is supported via Resource bindings.
 You can inject any [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) into the object graph.
-You can also inject @scaladoc[DIResource](com.github.pshirshov.izumi.distage.model.definition.DIResource) classes.
+You can also inject @scaladoc[DIResource](izumi.distage.model.definition.DIResource) classes.
 Global resources will be deallocated when the app or the test ends.
 
 Note that lifecycle control via `DIResource` is available in non-FP applications as well via inheritance from `DIResource.Simple` and `DIResource.Mutable`.
@@ -665,10 +665,10 @@ class Program[F[_]: TagK: Monad] extends ModuleDef {
 }
 ```
 
-@scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
+@scaladoc[TagK](izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
 it allows preserving type-information at runtime for types that aren't yet known at definition.
-You'll need to add a @scaladoc[TagK](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK) context bound to create a module parameterized by an abstract `F[_]`.
-Use @scaladoc[Tag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kinded types.
+You'll need to add a @scaladoc[TagK](izumi.fundamentals.reflection.WithTags#TagK) context bound to create a module parameterized by an abstract `F[_]`.
+Use @scaladoc[Tag](izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kinded types.
 
 Interpreters:
 
@@ -772,7 +772,7 @@ class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
 class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends ModuleDef
 ```
 
-consult @scaladoc[HKTag](com.github.pshirshov.izumi.fundamentals.reflection.WithTags#HKTag) docs for more details.
+consult @scaladoc[HKTag](izumi.fundamentals.reflection.WithTags#HKTag) docs for more details.
 
 ### Testkit
 
@@ -800,7 +800,7 @@ Example usage:
 /*
 TODO: update doc
 import distage._
-import com.github.pshirshov.izumi.distage.testkit.legacy.DistageSpec
+import izumi.distage.testkit.legacy.DistageSpec
 
 class TestClass {
   def hello: String = "Hello World!"

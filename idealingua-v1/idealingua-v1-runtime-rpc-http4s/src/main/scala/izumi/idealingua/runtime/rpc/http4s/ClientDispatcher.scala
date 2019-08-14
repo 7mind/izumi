@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
-import com.github.pshirshov.izumi.functional.bio.BIO._
-import com.github.pshirshov.izumi.functional.bio.BIOExit
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.functional.bio.BIO._
+import izumi.functional.bio.BIOExit
+import izumi.idealingua.runtime.rpc._
+import izumi.logstage.api.IzLogger
 import fs2.Stream
 import io.circe
 import io.circe.parser.parse

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 object ShutdownImpl extends Shutdown {
   private val log = CompilerLog.Default

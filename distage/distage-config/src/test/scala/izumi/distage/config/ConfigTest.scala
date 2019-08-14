@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
 import com.github.pshirshov.configapp.SealedTrait.CaseClass2
 import com.github.pshirshov.configapp.SealedTrait2.{No, Yes}
 import com.github.pshirshov.configapp.{SealedTrait, _}
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import izumi.distage.config.model.AppConfig
+import izumi.distage.model.PlannerInput
 import com.typesafe.config._
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec

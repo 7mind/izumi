@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.MonadicOp._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, Wiring}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.distage.model.definition.Binding
+import izumi.distage.model.plan.ExecutableOp.ProxyOp._
+import izumi.distage.model.plan.ExecutableOp.MonadicOp._
+import izumi.distage.model.plan.ExecutableOp.WiringOp._
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, Wiring}
+import izumi.fundamentals.platform.strings.IzString._
 
 trait OpFormatter {
   def format(op: ExecutableOp): String

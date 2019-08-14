@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import distage.{BootstrapModule, DIKey, Injector}
 
 trait RoleAppPlanner[F[_]] {

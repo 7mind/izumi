@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package izumi.logstage.api.routing
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
+import izumi.logstage.api.Log
+import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 
 
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {

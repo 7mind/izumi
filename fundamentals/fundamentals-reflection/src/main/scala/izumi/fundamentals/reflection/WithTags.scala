@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
-import com.github.pshirshov.izumi.fundamentals.reflection.WithTags.hktagFormat
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LHKTag, LWeakTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
+import izumi.fundamentals.reflection.WithTags.hktagFormat
+import izumi.fundamentals.reflection.macrortti.{FLTT, LHKTag, LWeakTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros

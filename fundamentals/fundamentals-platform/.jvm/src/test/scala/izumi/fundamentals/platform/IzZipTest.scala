@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
 import java.nio.file.Paths
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzZip
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.files.IzZip
+import izumi.fundamentals.platform.jvm.IzJvm
 import org.scalatest.WordSpec
 
 class IzZipTest extends WordSpec {

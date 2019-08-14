@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.time
+package izumi.fundamentals.platform.time
 
 import java.time.temporal.TemporalAccessor
 import java.time.{Instant, LocalDateTime, OffsetDateTime, ZonedDateTime}

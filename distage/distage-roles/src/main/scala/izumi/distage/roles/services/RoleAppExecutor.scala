@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 
 
 trait RoleAppExecutor[F[_]] {

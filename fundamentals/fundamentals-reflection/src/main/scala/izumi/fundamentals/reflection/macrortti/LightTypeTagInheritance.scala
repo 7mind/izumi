@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.fundamentals.reflection.macrortti
+package izumi.fundamentals.reflection.macrortti
 
-import com.github.pshirshov.izumi.fundamentals.collections.ImmutableMultiMap
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTag._
-import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
+import izumi.fundamentals.collections.ImmutableMultiMap
+import izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.fundamentals.platform.basics.IzBoolean._
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 
 import scala.collection.mutable
 

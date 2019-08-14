@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals
+package izumi.fundamentals
 
 package object collections {
   import scala.collection.mutable

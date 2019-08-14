@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-import com.github.pshirshov.izumi.idealingua.il.loader.verification.DuplicateDomainsRule
-import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLTyper
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
-import com.github.pshirshov.izumi.idealingua.model.loader._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
-import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.VerificationException
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.{TypespaceVerifier, VerificationRule}
-import com.github.pshirshov.izumi.idealingua.model.typespace.{Typespace, TypespaceImpl}
+import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.idealingua.il.loader.verification.DuplicateDomainsRule
+import izumi.idealingua.model.il.ast.IDLTyper
+import izumi.idealingua.model.il.ast.raw.domains.DomainMeshResolved
+import izumi.idealingua.model.loader._
+import izumi.idealingua.model.problems.IDLDiagnostics
+import izumi.idealingua.model.problems.TypespaceError.VerificationException
+import izumi.idealingua.model.typespace.verification.{TypespaceVerifier, VerificationRule}
+import izumi.idealingua.model.typespace.{Typespace, TypespaceImpl}
 
 
 class ModelResolver(rules: Seq[VerificationRule]) {

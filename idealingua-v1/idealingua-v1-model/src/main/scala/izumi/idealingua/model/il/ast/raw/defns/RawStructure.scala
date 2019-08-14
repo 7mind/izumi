@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+package izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteMixin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{DTO, Interface}
+import izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
+import izumi.idealingua.model.common.{IndefiniteMixin, TypeId}
+import izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{DTO, Interface}
 
 final case class RawStructure(interfaces: RawInterfaces, concepts: RawStructures, removedConcepts: RawStructures, fields: RawTuple, removedFields: RawTuple) {
   def extend(other: RawStructure): RawStructure = {

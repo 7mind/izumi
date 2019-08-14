@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.model.definition.dsl
+package izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
-import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
+import izumi.distage.model.definition._
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.platform.language.Quirks.discard
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 /**
   * DSL for defining module Bindings.
@@ -34,7 +34,7 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *   - `make[X]` = create X using its constructor
   *   - `make[X].from[XImpl]` = bind X to its subtype XImpl using XImpl's constructor
   *   - `make[X].from(myX)` = bind X to an already existing instance `myX`
-  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
+  *   - `make[X].from { y: Y => new X(y) }` = bind X to an instance of X constructed by a given [[izumi.distage.model.providers.ProviderMagnet Provider]] function
   *   - `make[X].named("special")` = bind a named instance of X. It can then be summoned using [[Id]] annotation.
   *   - `make[X].using[X]("special")` = bind X to refer to another already bound named instance at key `[X].named("special")`
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
@@ -44,20 +44,20 @@ import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializ
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
   *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
   *   - `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`
-  *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet Provider]] function
+  *   - `many[X].add { y: Y => new X1(y).add { y: Y => X2(y) }` = add instances of X1 and X2 constructed by a given [[izumi.distage.model.providers.ProviderMagnet Provider]] function
   *   - `many[X].named("special").add[X1]` = create a named set of X, all the elements of it are added to this named set.
   *   - `many[X].ref[XImpl]` = add a reference to an already **existing** binding of XImpl to a set of X's
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
   *
   * Tags:
-  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[com.github.pshirshov.izumi.distage.roles.RoleId]]
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[izumi.distage.roles.RoleId]]
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
-  * @see [[com.github.pshirshov.izumi.fundamentals.reflection.WithTags#TagK TagK]]
+  * @see [[izumi.fundamentals.reflection.WithTags#TagK TagK]]
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */
@@ -232,7 +232,7 @@ object ModuleDefDSL {
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     /**
-      * A function that receives its arguments from DI object graph, including named instances via [[com.github.pshirshov.izumi.distage.model.definition.Id]] annotation.
+      * A function that receives its arguments from DI object graph, including named instances via [[izumi.distage.model.definition.Id]] annotation.
       *
       * The following syntaxes are supported by extractor macro:
       *
@@ -298,7 +298,7 @@ object ModuleDefDSL {
       *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
       * }}}
       *
-      * @see [[com.github.pshirshov.izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+      * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
       */
     final def from[I <: T : Tag](function: ProviderMagnet[I]): AfterBind =
       bind(ImplDef.ProviderImpl(SafeType.get[I], function.get))
@@ -383,9 +383,9 @@ object ModuleDefDSL {
     /**
       * Bind to result of acquiring a resource
       *
-      * The resource will be released when the [[com.github.pshirshov.izumi.distage.model.Locator]]
+      * The resource will be released when the [[izumi.distage.model.Locator]]
       * holding it is released. Typically, after `.use` is called on the result of
-      * [[com.github.pshirshov.izumi.distage.model.Producer.produceF]]
+      * [[izumi.distage.model.Producer.produceF]]
       *
       * You can create resources with [[DIResource.make]], by inheriting from [[DIResource]]
       * or by converting an existing [[cats.effect.Resource]]

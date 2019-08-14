@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.fixtures
+package izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
-import com.github.pshirshov.izumi.functional.bio
-import com.github.pshirshov.izumi.functional.bio.BIORunner
-import com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import izumi.functional.bio
+import izumi.functional.bio.BIORunner
+import izumi.idealingua.runtime.rpc.http4s.Http4sRuntime
+import izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
+import izumi.logstage.api.{IzLogger, Log}
 import io.circe.Printer
 import zio.Runtime
 import zio.clock.Clock
@@ -37,7 +37,7 @@ object RT {
       "org.http4s" -> Log.Level.Warn
       , "org.http4s.server.blaze" -> Log.Level.Error
       , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
-      , "com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Crit
+      , "izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Crit
     ))
 
     val out = IzLogger(router)

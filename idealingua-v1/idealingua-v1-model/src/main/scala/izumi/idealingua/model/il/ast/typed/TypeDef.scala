@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+package izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common._
 
 
 sealed trait TypeDef {

@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ByNameDispatcher
-import com.github.pshirshov.izumi.distage.model.provisioning.{Provision, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.Locator
+import izumi.distage.model.provisioning.strategies.ByNameDispatcher
+import izumi.distage.model.provisioning.{Provision, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final case class LocatorContext(
                                  provision: Provision[Any]

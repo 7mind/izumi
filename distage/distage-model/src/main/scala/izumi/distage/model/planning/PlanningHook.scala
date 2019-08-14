@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.model.planning
+package izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ModuleBase}
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.definition.{Binding, ModuleBase}
+import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.platform.language.Quirks
 
 trait PlanningHook {
   def hookWiring(binding: Binding.ImplBinding, wiring: RuntimeDIUniverse.Wiring): RuntimeDIUniverse.Wiring = {

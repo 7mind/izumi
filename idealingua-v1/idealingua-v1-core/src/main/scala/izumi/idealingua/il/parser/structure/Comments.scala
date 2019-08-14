@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.parser.structure
+package izumi.idealingua.il.parser.structure
 
 import fastparse._
 import fastparse.NoWhitespace._

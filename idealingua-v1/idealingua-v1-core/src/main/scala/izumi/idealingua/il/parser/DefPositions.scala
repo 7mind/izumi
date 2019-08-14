@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
+import izumi.idealingua.model.il.ast.InputPosition
 import fastparse.NoWhitespace._
 import fastparse._
 

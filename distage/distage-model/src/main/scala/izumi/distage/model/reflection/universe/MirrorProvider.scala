@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Option[Class[_]]

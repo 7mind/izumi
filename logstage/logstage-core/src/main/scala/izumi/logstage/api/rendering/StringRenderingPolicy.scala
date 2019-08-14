@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.logstage.api.rendering
+package izumi.logstage.api.rendering
 
-import com.github.pshirshov.izumi.fundamentals.platform.basics.IzBoolean._
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.IzJvm
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTimeSafe
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
-import com.github.pshirshov.izumi.logstage.api.{Log, rendering}
+import izumi.fundamentals.platform.basics.IzBoolean._
+import izumi.fundamentals.platform.exceptions.IzThrowable
+import izumi.fundamentals.platform.jvm.IzJvm
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.time.IzTimeSafe
+import izumi.logstage.api.rendering.logunits.Styler.{PadType, TrimType}
+import izumi.logstage.api.rendering.logunits.{Extractor, Renderer, Styler}
+import izumi.logstage.api.{Log, rendering}
 
 class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer.Aggregate] = None) extends RenderingPolicy {
   protected val context: RenderingOptions = {

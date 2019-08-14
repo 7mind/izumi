@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang.types
+package izumi.idealingua.translator.togolang.types
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
+import izumi.fundamentals.platform.language.Quirks
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
 
 final case class GoLangType (
                         id: TypeId,

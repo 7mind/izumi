@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.logstage.macros
+package izumi.logstage.macros
 
-import com.github.pshirshov.izumi.logstage.api.Log.{LogArg, Message}
+import izumi.logstage.api.Log.{LogArg, Message}
 
 import scala.collection.mutable
 import scala.reflect.macros.blackbox

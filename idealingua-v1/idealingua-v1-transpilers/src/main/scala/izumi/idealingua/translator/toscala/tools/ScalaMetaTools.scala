@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
+package izumi.idealingua.translator.toscala.tools
 
 import scala.meta.{Defn, Init, Stat}
 

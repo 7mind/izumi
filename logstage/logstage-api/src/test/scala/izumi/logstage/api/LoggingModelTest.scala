@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
 import org.scalatest.WordSpec
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc
+package izumi.idealingua.runtime.rpc
 
 abstract class IRTMethodWrapper[R[_, _], -C] { self =>
   final type Just[T] = R[Nothing, T]

@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.runtime.circe
+package izumi.idealingua.runtime.circe
 
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time._
 
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
+import izumi.fundamentals.platform.time.IzTime
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 
 trait IRTTimeInstances {
-  import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
+  import izumi.fundamentals.platform.time.IzTime._
   implicit final val decodeInstant: Decoder[Instant] =
     Decoder.instance { c =>
       c.as[String] match {

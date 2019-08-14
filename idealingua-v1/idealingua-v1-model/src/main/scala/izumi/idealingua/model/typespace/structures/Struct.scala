@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.structures
+package izumi.idealingua.model.typespace.structures
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.InterfaceId
-import com.github.pshirshov.izumi.idealingua.model.common.{ExtendedField, StructureId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Super
+import izumi.idealingua.model.common.TypeId.InterfaceId
+import izumi.idealingua.model.common.{ExtendedField, StructureId}
+import izumi.idealingua.model.il.ast.typed.Super
 
 
 class Struct

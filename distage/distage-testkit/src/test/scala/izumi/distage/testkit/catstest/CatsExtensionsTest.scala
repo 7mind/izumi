@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.testkit.catstest
+package izumi.distage.testkit.catstest
 
 import cats.Id
 import cats.effect._
 import cats.instances.option._
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
-import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.fixtures.BasicCases._
+import izumi.distage.fixtures.CircularCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import distage._
 import org.scalatest.{GivenWhenThen, WordSpec}
 

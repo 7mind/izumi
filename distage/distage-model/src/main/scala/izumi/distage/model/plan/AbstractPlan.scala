@@ -1,18 +1,18 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
 import cats.Applicative
 import cats.kernel.Monoid
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.{CallProvider, ReferenceInstance}
-import com.github.pshirshov.izumi.distage.model.plan.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl}
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.{GCMode, Locator}
-import com.github.pshirshov.izumi.functional.Renderable
+import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
+import izumi.distage.model.plan.ExecutableOp.WiringOp.{CallProvider, ReferenceInstance}
+import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl}
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.{GCMode, Locator}
+import izumi.functional.Renderable
 
 // TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semiplan
 sealed trait AbstractPlan {
@@ -36,7 +36,7 @@ sealed trait AbstractPlan {
     *
     * Note, presence of imports does not automatically mean that a plan is invalid,
     * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
-    * [[com.github.pshirshov.izumi.distage.model.provisioning.strategies.ImportStrategy]]
+    * [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
     * */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
@@ -134,7 +134,7 @@ object AbstractPlan {
 /**
   * An unordered plan.
   *
-  * You can turn into an [[OrderedPlan]] via [[com.github.pshirshov.izumi.distage.model.Planner.finish]]
+  * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode) extends AbstractPlan {
 

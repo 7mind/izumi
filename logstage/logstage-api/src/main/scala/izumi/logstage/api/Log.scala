@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.{CodePosition, SourceFilePosition}
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.macros.LogMessageMacro.logMessageMacro
+import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.platform.jvm.{CodePosition, SourceFilePosition}
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.logstage.macros.LogMessageMacro.logMessageMacro
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions

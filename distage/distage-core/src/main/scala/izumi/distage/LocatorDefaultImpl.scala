@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.plan.OrderedPlan
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
-import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
+import izumi.distage.model.Locator
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.provisioning.PlanInterpreter
+import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
 
 final class LocatorDefaultImpl[F[_]]
 (

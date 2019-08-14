@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.problems
+package izumi.idealingua.model.problems
 
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.{DomainId, TypeId}
+import izumi.fundamentals.platform.strings.IzString._
 
 sealed trait IDLWarning
 

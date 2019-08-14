@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.planning
+package izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, PlanTopology}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.plan.{ExecutableOp, PlanTopology}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 

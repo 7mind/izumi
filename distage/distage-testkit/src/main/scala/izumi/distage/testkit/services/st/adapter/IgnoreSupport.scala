@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
+package izumi.distage.testkit.services.st.adapter
 
 import org.scalatest.exceptions.TestCanceledException
 

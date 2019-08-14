@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, TypeNative}
-import com.github.pshirshov.izumi.functional.Renderable
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, TypeNative}
+import izumi.functional.Renderable
 
 trait CompactPlanFormatter extends Renderable[OrderedPlan] {
   override def render(plan: OrderedPlan): String = {

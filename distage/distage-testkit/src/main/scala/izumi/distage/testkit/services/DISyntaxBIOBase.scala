@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package izumi.distage.testkit.services
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.testkit.services.DISyntaxBIOBase.BIOBadBranch
-import com.github.pshirshov.izumi.functional.bio.BIOError
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.testkit.services.DISyntaxBIOBase.BIOBadBranch
+import izumi.functional.bio.BIOError
+import izumi.fundamentals.platform.jvm.CodePosition
 import distage.{Tag, TagKK}
 
 trait DISyntaxBIOBase[F[+ _, + _]] {

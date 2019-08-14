@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+package izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.ConstId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
+import izumi.idealingua.model.common.TypeId.ConstId
+import izumi.idealingua.model.il.ast.InputPosition
 
 final case class RawConstBlock(consts: List[RawConst])
 

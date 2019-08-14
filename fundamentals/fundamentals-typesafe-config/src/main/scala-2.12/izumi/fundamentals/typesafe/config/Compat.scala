@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.reflection.SafeType0
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config.{ConfigList, ConfigObject}
 
 import scala.collection.JavaConverters._

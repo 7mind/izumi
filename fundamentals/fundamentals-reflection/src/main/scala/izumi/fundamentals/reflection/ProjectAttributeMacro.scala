@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
 import java.nio.file.{Path, Paths}
 import java.time.LocalDateTime

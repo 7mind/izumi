@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package izumi.distage.roles.test
 
-import com.github.pshirshov.izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
+import izumi.distage.staticinjector.plugins.{LogstageModuleRequirements, StaticPluginChecker}
 import com.github.pshirshov.test.plugins.{DependingPlugin, StaticTestPlugin}
 import org.scalatest.WordSpec
 

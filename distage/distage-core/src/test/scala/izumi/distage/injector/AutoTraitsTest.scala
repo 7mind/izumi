@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
-import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.exceptions.ProvisioningException
-import com.github.pshirshov.izumi.fundamentals.reflection.MethodMirrorException
+import izumi.distage.fixtures.TraitCases._
+import izumi.distage.fixtures.TypesCases.TypesCase3
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.exceptions.ProvisioningException
+import izumi.fundamentals.reflection.MethodMirrorException
 import distage.ModuleDef
 import org.scalatest.WordSpec
 

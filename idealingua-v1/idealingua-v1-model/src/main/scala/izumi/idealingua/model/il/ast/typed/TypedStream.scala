@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+package izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.StreamDirection
+import izumi.idealingua.model.common.StreamDirection
 
 sealed trait TypedStream
 

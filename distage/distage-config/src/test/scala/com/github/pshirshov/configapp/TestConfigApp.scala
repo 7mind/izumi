@@ -1,10 +1,10 @@
 package com.github.pshirshov.configapp
 
-import com.github.pshirshov.izumi.distage.config.ResolvedConfig
-import com.github.pshirshov.izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.config.ResolvedConfig
+import izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
+import izumi.fundamentals.platform.language.Quirks
 
 // application
 trait TestAppService

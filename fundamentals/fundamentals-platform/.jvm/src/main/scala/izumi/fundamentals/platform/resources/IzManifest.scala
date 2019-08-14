@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.fundamentals.platform.resources
+package izumi.fundamentals.platform.resources
 
 import java.io.FileInputStream
 import java.util.jar
 import java.util.jar.JarFile
 
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources.ResourceLocation
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
+import izumi.fundamentals.platform.resources.IzResources.ResourceLocation
+import izumi.fundamentals.platform.time.IzTime
 
 import scala.reflect.ClassTag
 import scala.util.{Success, Try}

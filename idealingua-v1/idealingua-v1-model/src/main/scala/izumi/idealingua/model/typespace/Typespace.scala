@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
 
 trait TypeResolver {

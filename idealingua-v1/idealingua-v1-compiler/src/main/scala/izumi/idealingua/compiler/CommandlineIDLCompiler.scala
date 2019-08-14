@@ -1,18 +1,18 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 import java.nio.file._
 import java.time.{ZoneId, ZonedDateTime}
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.platform.resources.{IzManifest, IzResources}
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.fundamentals.platform.time.Timed
-import com.github.pshirshov.izumi.idealingua.compiler.Codecs._
-import com.github.pshirshov.izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
-import com.github.pshirshov.izumi.idealingua.model.loader.UnresolvedDomains
-import com.github.pshirshov.izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
-import com.github.pshirshov.izumi.idealingua.translator._
+import izumi.fundamentals.platform.files.IzFiles
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.resources.{IzManifest, IzResources}
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.time.Timed
+import izumi.idealingua.compiler.Codecs._
+import izumi.idealingua.il.loader.{LocalModelLoaderContext, ModelResolver}
+import izumi.idealingua.model.loader.UnresolvedDomains
+import izumi.idealingua.model.publishing.{BuildManifest, ProjectVersion}
+import izumi.idealingua.translator._
 import com.typesafe.config.ConfigFactory
 import io.circe
 import io.circe.parser.parse

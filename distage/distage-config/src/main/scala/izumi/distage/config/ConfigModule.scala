@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.ConfigProvider.ConfigImport
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
+import izumi.distage.config.ConfigProvider.ConfigImport
+import izumi.distage.config.model.AppConfig
+import izumi.distage.model.definition.BootstrapModuleDef
+import izumi.distage.model.planning.PlanningHook
+import izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 
 case class ConfigInjectionOptions(
                                  enableScalars: Boolean = true

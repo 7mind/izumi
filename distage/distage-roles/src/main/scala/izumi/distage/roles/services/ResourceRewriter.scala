@@ -1,18 +1,18 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.makeSimple
-import com.github.pshirshov.izumi.distage.model.definition.ImplDef.DirectImplDef
-import com.github.pshirshov.izumi.distage.model.definition._
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.DIResource.makeSimple
+import izumi.distage.model.definition.ImplDef.DirectImplDef
+import izumi.distage.model.definition._
+import izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.logstage.api.IzLogger
 
 class ResourceRewriter(
                         logger: IzLogger,

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
+package izumi.idealingua.translator.toscala.layout
 
 sealed trait Scope
 

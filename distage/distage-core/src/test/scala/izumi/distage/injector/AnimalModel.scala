@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.model.{GCMode, PlannerInput}
-import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
+import izumi.distage.model.{GCMode, PlannerInput}
+import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import distage._
 import org.scalatest.WordSpec
 

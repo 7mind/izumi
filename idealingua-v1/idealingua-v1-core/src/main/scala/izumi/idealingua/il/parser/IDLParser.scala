@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.MetaAggregates
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.ParsedModel
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.il.parser.structure.MetaAggregates
+import izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import izumi.idealingua.model.il.ast.raw.models.ParsedModel
+import izumi.idealingua.model.loader.FSPath
 import fastparse._
 
 case class IDLParserContext(

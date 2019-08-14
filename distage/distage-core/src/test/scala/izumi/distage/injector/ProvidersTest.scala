@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.{ProviderCase2, ProviderCase3}
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import izumi.distage.fixtures.ProviderCases.{ProviderCase2, ProviderCase3}
+import izumi.distage.model.PlannerInput
 import distage.{Id, ModuleDef}
 import org.scalatest.WordSpec
 
@@ -72,7 +72,7 @@ class ProvidersTest extends WordSpec with MkInjector {
     val combinedDefinition = new Definition ++ new Definition
     val valDefinition = definition ++ definition
 
-    import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
+    import izumi.distage.dsl.TestTagOps._
     assert(!(combinedDefinition === definition))
     assert(valDefinition === definition)
   }

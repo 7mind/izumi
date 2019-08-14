@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+package izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId
 
 sealed trait DefMethod {
   def meta: NodeMeta

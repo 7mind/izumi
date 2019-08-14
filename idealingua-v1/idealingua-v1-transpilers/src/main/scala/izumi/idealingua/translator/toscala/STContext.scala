@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions.{ScalaTranslatorExtension, ScalaTranslatorExtensions}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.{ModuleTools, ScalaTranslationTools}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.toscala.extensions.{ScalaTranslatorExtension, ScalaTranslatorExtensions}
+import izumi.idealingua.translator.toscala.tools.{ModuleTools, ScalaTranslationTools}
+import izumi.idealingua.translator.toscala.types.ScalaTypeConverter
+import izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
 
 class STContext(
                  val typespace: Typespace

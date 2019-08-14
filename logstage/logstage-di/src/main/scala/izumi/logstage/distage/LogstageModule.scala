@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.logstage.distage
+package izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
-import com.github.pshirshov.izumi.distage.model.planning.PlanningObserver
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.CustomContext
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import izumi.distage.model.LoggerHook
+import izumi.distage.model.definition.BootstrapModuleDef
+import izumi.distage.model.planning.PlanningObserver
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.Log.CustomContext
+import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.api.routing.StaticLogRouter
 
 class LogstageModule(router: LogRouter, setupStatic: Boolean) extends BootstrapModuleDef {
   if (setupStatic) {

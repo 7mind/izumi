@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.network
+package izumi.fundamentals.platform.network
 
 import java.net.InetSocketAddress
 import java.util.regex.{Matcher, Pattern}

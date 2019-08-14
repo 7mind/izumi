@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang.extensions
+package izumi.idealingua.translator.togolang.extensions
 
-import com.github.pshirshov.izumi.idealingua.translator.togolang.GLTContext
+import izumi.idealingua.translator.togolang.GLTContext
 
 class GoLangTranslatorExtensions(ctx: GLTContext, extensions: Seq[GoLangTranslatorExtension]) {
   def extend[S, P]

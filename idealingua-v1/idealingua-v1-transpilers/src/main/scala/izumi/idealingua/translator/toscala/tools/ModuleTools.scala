@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.tools
+package izumi.idealingua.translator.toscala.tools
 
-import com.github.pshirshov.izumi.idealingua
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{BuzzerId, ServiceId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Alias
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
+import izumi.idealingua
+import izumi.idealingua.model.common.{DomainId, TypeId}
+import izumi.idealingua.model.common.TypeId.{BuzzerId, ServiceId}
+import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
+import izumi.idealingua.model.il.ast.typed.TypeDef
+import izumi.idealingua.model.output.{Module, ModuleId}
+import izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 
 class ModuleTools() {
   def toSource(id: DomainId, moduleId: ModuleId, product: RenderableCogenProduct): Seq[Module] = {

@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, ImplDef}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.reflection.ReflectionProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
+import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.{Binding, ImplDef}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
+import izumi.distage.model.plan._
+import izumi.distage.model.planning._
+import izumi.distage.model.reflection.ReflectionProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 
 trait BindingTranslator {
   def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps

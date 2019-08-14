@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.st
+package izumi.distage.testkit.st
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.testkit.st.fixtures.{TestFailingIntegrationResource, TestkitSelftest}
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.testkit.st.fixtures.{TestFailingIntegrationResource, TestkitSelftest}
+import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
 abstract class TestkitIntegrationCheckTest[F[_] : TagK] extends TestkitSelftest[F] {

@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript
+package izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, DefMethod, Service, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.layout.TypescriptNamingConvention
+import izumi.idealingua.model.common.{Generic, Package, Primitive, TypeId}
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Algebraic, Alternative, Singular, Struct, Void}
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.idealingua.model.il.ast.typed.{Buzzer, DefMethod, Service, TypeDef}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.totypescript.layout.TypescriptNamingConvention
 
 import scala.util.Try
 import scala.util.control.Breaks._

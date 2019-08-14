@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.platform.integration
+package izumi.fundamentals.platform.integration
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 sealed trait ResourceCheck
 

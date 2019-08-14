@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
 import java.io.File
 import java.nio.file.{Files, Path}
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.fundamentals.platform.files.{IzFiles, IzZip}
+import izumi.idealingua.model.loader.FSPath
 
 class LocalFilesystemEnumerator(roots: Seq[Path], cp: Seq[File], expectedExtensions: Set[String]) extends FilesystemEnumerator {
   def enumerate(): Map[FSPath, String] = {

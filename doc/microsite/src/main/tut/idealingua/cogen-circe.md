@@ -217,7 +217,7 @@ Full example:
 ```scala
 final case class CompanyId(value: java.util.UUID) {
   override def toString: String = {
-    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    import izumi.idealingua.runtime.model.IDLIdentifier._
     val suffix = Seq(this.value).map(part => escape(part.toString)).mkString(":")
     s"CompanyId#$suffix"
   }
@@ -231,7 +231,7 @@ trait CompanyIdCirce {
 
 object CompanyId extends CompanyIdCirce {
   def parse(s: String): CompanyId = {
-    import com.github.pshirshov.izumi.idealingua.runtime.model.IDLIdentifier._
+    import izumi.idealingua.runtime.model.IDLIdentifier._
     val withoutPrefix = s.substring(s.indexOf("#") + 1)
     val parts = withoutPrefix.split(":").map(part => unescape(part))
     CompanyId(parsePart[java.util.UUID](parts(0), classOf[java.util.UUID]))

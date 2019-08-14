@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules
+package izumi.idealingua.model.typespace.verification.rules
 
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLDiagnostics
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.problems.TypespaceError.CyclicUsage
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.common.{Builtin, TypeId}
+import izumi.idealingua.model.il.ast.typed.TypeDef
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.problems.IDLDiagnostics
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.problems.TypespaceError.CyclicUsage
+import izumi.idealingua.model.typespace.verification.VerificationRule
 
 import scala.collection.mutable
 

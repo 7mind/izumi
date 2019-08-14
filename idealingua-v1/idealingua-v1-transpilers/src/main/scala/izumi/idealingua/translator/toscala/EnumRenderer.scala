@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.EnumProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
+import izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
+import izumi.idealingua.translator.toscala.products.CogenProduct.EnumProduct
+import izumi.idealingua.translator.toscala.products.RenderableCogenProduct
 
 import scala.meta._
 

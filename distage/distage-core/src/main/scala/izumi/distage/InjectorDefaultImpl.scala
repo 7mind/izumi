@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
-import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.plan.{AbstractPlan, DodgyPlan, OrderedPlan, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.model._
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.plan.{AbstractPlan, DodgyPlan, OrderedPlan, SemiPlan}
+import izumi.distage.model.provisioning.PlanInterpreter
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
 

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.platform.console
+package izumi.fundamentals.platform.console
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.strings.IzString._
 import scala.reflect.ClassTag
 
 trait TrivialLogger {
@@ -19,7 +19,7 @@ class TrivialLoggerImpl(sink: AbstractStringTrivialSink, level: Int) extends Tri
   }
 
   override def log(s: => String, e: => Throwable): Unit = {
-    import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
+    import izumi.fundamentals.platform.exceptions.IzThrowable._
     log(s"$s\n${e.stackTrace}")
   }
 
@@ -42,7 +42,7 @@ class TrivialLoggerNullImpl() extends TrivialLogger {
 
 object TrivialLogger {
   def make[T: ClassTag](id: String, sink: AbstractStringTrivialSink = SystemErrStringTrivialSink, forceLog: Boolean = false, default: Boolean = false): TrivialLogger = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    import izumi.fundamentals.platform.strings.IzString._
 
     val sink0 = if (System.getProperty(id).asBoolean().getOrElse(default) || forceLog) {
       sink

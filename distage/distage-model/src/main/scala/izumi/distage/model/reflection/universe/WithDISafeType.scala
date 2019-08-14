@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{FLTT, LightTypeTagImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.{SafeType0, WithTags}
+import izumi.fundamentals.reflection.macrortti.{FLTT, LightTypeTagImpl}
+import izumi.fundamentals.reflection.{SafeType0, WithTags}
 
 trait WithDISafeType {
   this: DIUniverseBase with WithTags =>

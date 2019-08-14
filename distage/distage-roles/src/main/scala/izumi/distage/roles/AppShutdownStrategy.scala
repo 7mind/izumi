@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.roles
+package izumi.distage.roles
 
 import java.util.concurrent.CountDownLatch
 
 import cats.effect.{ContextShift, IO, LiftIO}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.monadic.DIEffect
+import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.IzLogger
 
 import scala.concurrent.{ExecutionContext, Promise}
 

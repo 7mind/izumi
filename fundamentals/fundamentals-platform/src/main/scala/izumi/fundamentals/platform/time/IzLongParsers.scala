@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.time
+package izumi.fundamentals.platform.time
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
 
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime.TZ_UTC
+import izumi.fundamentals.platform.time.IzTime.TZ_UTC
 
 final class IzLongParsers(private val t: Long) extends AnyVal {
   def asEpochSecondsLocal: LocalDateTime = {

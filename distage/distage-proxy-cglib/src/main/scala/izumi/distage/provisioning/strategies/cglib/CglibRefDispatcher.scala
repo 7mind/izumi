@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{AtomicProxyDispatcher, DistageProxy}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.provisioning.strategies.{AtomicProxyDispatcher, DistageProxy}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu

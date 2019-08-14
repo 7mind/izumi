@@ -1,18 +1,18 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
-import com.github.pshirshov.izumi.distage.config.ConfigInjectionOptions
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.definition.Binding.SingletonBinding
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.distage.roles.model.AppActivation
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.distage.roles.services.{ConfigLoader, ConfigLoaderLocalFSImpl, ModuleProvider, ModuleProviderImpl}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.api.Log.Level
+import izumi.distage.config.ConfigInjectionOptions
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.definition.Binding.SingletonBinding
+import izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.roles.model.AppActivation
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import izumi.distage.roles.services.{ConfigLoader, ConfigLoaderLocalFSImpl, ModuleProvider, ModuleProviderImpl}
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.logstage.api.IzLogger
+import izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
 

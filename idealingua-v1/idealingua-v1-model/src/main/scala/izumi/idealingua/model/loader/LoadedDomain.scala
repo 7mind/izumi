@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.loader
+package izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.problems._
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.problems._
+import izumi.idealingua.model.typespace.Typespace
 
 
 sealed trait LoadedDomain

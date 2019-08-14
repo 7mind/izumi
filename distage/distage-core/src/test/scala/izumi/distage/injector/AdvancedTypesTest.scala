@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.TraitCases._
-import com.github.pshirshov.izumi.distage.fixtures.TypesCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedWiringException}
+import izumi.distage.fixtures.TraitCases._
+import izumi.distage.fixtures.TypesCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedWiringException}
 import distage._
 import org.scalatest.WordSpec
 

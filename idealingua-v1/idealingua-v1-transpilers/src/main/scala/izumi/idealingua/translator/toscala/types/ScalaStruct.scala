@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types
+package izumi.idealingua.translator.toscala.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.StructureId
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConstAbstractStruct, Struct}
+import izumi.idealingua.model.common.StructureId
+import izumi.idealingua.model.typespace.structures.{ConstAbstractStruct, Struct}
 
 class ScalaStruct
 (

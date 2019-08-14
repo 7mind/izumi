@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.macros.TrivialMacroLogger
-import com.github.pshirshov.izumi.distage.model.reflection.universe.StaticDIUniverse
-import com.github.pshirshov.izumi.distage.provisioning.ConcreteConstructor
-import com.github.pshirshov.izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.macros.TrivialMacroLogger
+import izumi.distage.model.reflection.universe.StaticDIUniverse
+import izumi.distage.provisioning.ConcreteConstructor
+import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.fundamentals.reflection.AnnotationTools
 
 import scala.reflect.macros.blackbox
 

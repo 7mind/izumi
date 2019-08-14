@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDBaseType
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{Inclusion, ModelMember}
+import izumi.idealingua.il.parser.structure._
+import izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
+import izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDBaseType
+import izumi.idealingua.model.il.ast.raw.models.{Inclusion, ModelMember}
 import fastparse._
 
 

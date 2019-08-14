@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.dsl
+package izumi.distage.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.{Axis, AxisBase, Binding, BindingTag}
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.{Axis, AxisBase, Binding, BindingTag}
+import izumi.fundamentals.platform.build.ExposedTestScope
 import distage.ModuleBase
 
 import scala.language.implicitConversions

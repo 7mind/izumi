@@ -1,20 +1,20 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
-import com.github.pshirshov.izumi.distage.planning.AutoSetModule
-import com.github.pshirshov.izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import com.github.pshirshov.izumi.distage.roles.model.{AbstractRoleF, AppActivation}
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.logstage.api.IzLogger
-import com.github.pshirshov.izumi.logstage.distage.LogstageModule
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{ConfigInjectionOptions, ConfigModule}
+import izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
+import izumi.distage.planning.AutoSetModule
+import izumi.distage.planning.extensions.GraphDumpBootstrapModule
+import izumi.distage.roles.model.{AbstractRoleF, AppActivation}
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.functional.Identity
+import izumi.logstage.api.IzLogger
+import izumi.logstage.distage.LogstageModule
 import distage.TagK
 
 

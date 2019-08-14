@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.{IzFiles, IzZip}
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
-import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.fundamentals.platform.files.{IzFiles, IzZip}
+import izumi.fundamentals.platform.resources.IzResources
+import izumi.idealingua.model.loader.LoadedDomain
+import izumi.idealingua.model.output.{Module, ModuleId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.fundamentals.platform.strings.IzString._
 
 class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
 
@@ -68,7 +68,7 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
       }
       .values
 
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    import izumi.fundamentals.platform.strings.IzString._
     if (conflicts.nonEmpty) {
       throw new IDLException(s"Cannot continue: conflicting files: ${conflicts.niceList()}")
     }

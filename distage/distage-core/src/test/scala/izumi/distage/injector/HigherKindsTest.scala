@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
+import izumi.distage.fixtures.HigherKindCases._
+import izumi.distage.model.PlannerInput
 import distage._
 import org.scalatest.WordSpec
 
@@ -127,7 +127,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
   }
 
   "TagKK works" in {
-    import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
+    import izumi.distage.fixtures.HigherKindCases.HigherKindsCase2._
 
     class Definition[F[+_, +_]: TagKK: TestCovariantTC, G[_]: TagK, A: Tag](v: F[String, Int]) extends ModuleDef {
       make[TestCovariantTC[F]]

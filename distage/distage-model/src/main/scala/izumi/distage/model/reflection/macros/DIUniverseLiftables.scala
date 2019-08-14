@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.model.reflection.macros
+package izumi.distage.model.reflection.macros
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.fundamentals.reflection.ReflectionUtil
+import izumi.distage.model.reflection.universe._
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.ReflectionUtil
 
 abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 

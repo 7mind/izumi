@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.{GCMode, Planner, PlannerInput}
-import com.github.pshirshov.izumi.functional.Value
-import com.github.pshirshov.izumi.fundamentals.graphs.Toposort
+import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
+import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
+import izumi.distage.model.plan._
+import izumi.distage.model.planning._
+import izumi.distage.model.reflection.SymbolIntrospector
+import izumi.distage.model.{GCMode, Planner, PlannerInput}
+import izumi.functional.Value
+import izumi.fundamentals.graphs.Toposort
 import distage.DIKey
 
 import scala.collection.immutable

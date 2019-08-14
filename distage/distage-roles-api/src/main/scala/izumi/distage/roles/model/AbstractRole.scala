@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.roles.model
+package izumi.distage.roles.model
 
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 
 sealed trait AbstractRoleF[+F[_]]
 

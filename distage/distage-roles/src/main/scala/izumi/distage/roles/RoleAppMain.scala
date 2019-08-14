@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.roles
+package izumi.distage.roles
 
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.roles.services.AppFailureHandler
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
-import com.github.pshirshov.izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.roles.services.AppFailureHandler
+import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
+import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import distage.TagK
 
 

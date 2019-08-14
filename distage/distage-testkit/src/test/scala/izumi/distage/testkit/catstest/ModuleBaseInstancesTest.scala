@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.testkit.catstest
+package izumi.distage.testkit.catstest
 
 import cats.implicits._
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
-import com.github.pshirshov.izumi.distage.model.definition.Bindings.binding
-import com.github.pshirshov.izumi.distage.model.definition._
+import izumi.distage.fixtures.BasicCases._
+import izumi.distage.model.definition.Bindings.binding
+import izumi.distage.model.definition._
 import org.scalatest.WordSpec
 
-import com.github.pshirshov.izumi.distage.dsl.TestTagOps._
+import izumi.distage.dsl.TestTagOps._
 
 class ModuleBaseInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {

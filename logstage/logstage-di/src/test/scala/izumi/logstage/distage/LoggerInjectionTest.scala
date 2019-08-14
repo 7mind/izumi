@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.distage
+package izumi.logstage.distage
 
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.logstage.api.routing.ConfigurableLogRouter
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
+import izumi.distage.model.PlannerInput
+import izumi.logstage.api.routing.ConfigurableLogRouter
+import izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}
 import org.scalatest.WordSpec
 

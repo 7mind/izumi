@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.logstage.sink
+package izumi.logstage.sink
 
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
+import izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 
 class LoggingAsyncSinkTest extends WordSpec {

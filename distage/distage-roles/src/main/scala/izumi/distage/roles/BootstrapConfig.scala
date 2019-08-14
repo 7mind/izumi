@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles
+package izumi.distage.roles
 
 import distage.plugins.PluginConfig
 

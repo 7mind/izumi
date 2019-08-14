@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.typesafe.config
+package izumi.fundamentals.typesafe.config
 
 import com.typesafe.config.ConfigValueFactory
 import org.scalatest.WordSpec

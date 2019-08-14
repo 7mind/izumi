@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.LoggerHook
-import com.github.pshirshov.izumi.distage.model.exceptions.InvalidPlanException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
+import izumi.distage.model.LoggerHook
+import izumi.distage.model.exceptions.InvalidPlanException
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.provisioning.FactoryTools
 
 class FactoryProviderStrategyDefaultImpl
 (

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw
+package izumi.fundamentals.platform.cli.model.raw
 
 import java.io.File
 import java.nio.file.Path

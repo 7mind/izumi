@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.planning
+package izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan._
+import izumi.distage.model.plan._
 
 trait SanityChecker {
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.functional
+package izumi.functional
 
 final class Value[A] private (private val value: A) extends AnyVal {
   @inline def map[B](f: A => B): Value[B] = {

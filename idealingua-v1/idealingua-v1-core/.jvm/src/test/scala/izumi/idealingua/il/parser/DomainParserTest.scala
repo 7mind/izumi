@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
 import org.scalatest.WordSpec
 

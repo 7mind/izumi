@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModuleDef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
+import izumi.distage.model.definition.BootstrapModuleDef
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import izumi.distage.model.planning.PlanningHook
 
 abstract class AutoSetModule extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.Axis.AxisValue
 
 import scala.language.implicitConversions
 

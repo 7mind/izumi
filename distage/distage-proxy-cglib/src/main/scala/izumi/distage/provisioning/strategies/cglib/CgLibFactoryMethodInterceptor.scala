@@ -1,17 +1,17 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.TraitIndex
-import com.github.pshirshov.izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import com.github.pshirshov.izumi.distage.provisioning.FactoryTools
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.CgLibFactoryMethodInterceptor.JustExecutor
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
-import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.strategies.TraitIndex
+import izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.provisioning.FactoryTools
+import izumi.distage.provisioning.strategies.cglib.CgLibFactoryMethodInterceptor.JustExecutor
+import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
+import izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
 
 protected[distage] class CgLibFactoryMethodInterceptor

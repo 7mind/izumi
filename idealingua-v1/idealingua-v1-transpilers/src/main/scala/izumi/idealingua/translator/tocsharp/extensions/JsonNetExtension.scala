@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions
+package izumi.idealingua.translator.tocsharp.extensions
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Generic, Primitive, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Alternative, Singular}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
+import izumi.fundamentals.platform.language.Quirks.discard
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{Generic, Primitive, TypeId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.DefMethod
+import izumi.idealingua.model.il.ast.typed.DefMethod.Output.{Alternative, Singular}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.tocsharp.types.{CSharpClass, CSharpField, CSharpType}
+import izumi.idealingua.translator.tocsharp.{CSTContext, CSharpImports}
 
 object JsonNetExtension extends CSharpTranslatorExtension {
   override def preModelEmit(ctx: CSTContext, id: Identifier)(implicit im: CSharpImports, ts: Typespace): String = {

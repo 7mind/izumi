@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
+package izumi.idealingua.translator.toscala.layout
 
-import com.github.pshirshov.izumi.fundamentals.reflection.ProjectAttributeMacro
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
+import izumi.fundamentals.reflection.ProjectAttributeMacro
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.output.{Module, ModuleId}
+import izumi.idealingua.model.publishing.manifests.ScalaProjectLayout
+import izumi.idealingua.translator.CompilerOptions.ScalaTranslatorOptions
+import izumi.idealingua.translator._
 
 case class RawExpr(e: String)
 

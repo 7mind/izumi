@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.impl
+package izumi.distage.impl
 
-import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
-import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
-import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
-import com.github.pshirshov.izumi.distage.planning.PlanAnalyzerDefaultImpl
+import izumi.distage.bootstrap.BootstrapLocator
+import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.planning.PlanAnalyzer
+import izumi.distage.planning.PlanAnalyzerDefaultImpl
 import distage.DIKey
 import org.scalatest.WordSpec
 

@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.distage.model.definition.dsl
+package izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import com.github.pshirshov.izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
-import com.github.pshirshov.izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
 

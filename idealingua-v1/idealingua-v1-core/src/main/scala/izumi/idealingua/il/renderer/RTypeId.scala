@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common
-import com.github.pshirshov.izumi.idealingua.model.common._
+import izumi.functional.Renderable
+import izumi.idealingua.model.common
+import izumi.idealingua.model.common._
 
 class RTypeId(context: IDLRenderingContext) extends Renderable[TypeId] {
 

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.il.parser.{IDLParser, IDLParserContext}
-import com.github.pshirshov.izumi.idealingua.model.loader._
+import izumi.idealingua.il.parser.{IDLParser, IDLParserContext}
+import izumi.idealingua.model.loader._
 import fastparse._
 
 

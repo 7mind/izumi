@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.json.flat
+package izumi.json.flat
 
-import com.github.pshirshov.izumi.functional.IzEither._
+import izumi.functional.IzEither._
 import io.circe.Json
 
 import scala.annotation.switch
@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
 class JsonFlattener {
   import JsonFlattener._
   import PathElement._
-  import com.github.pshirshov.izumi.fundamentals.platform.strings.IzEscape
+  import izumi.fundamentals.platform.strings.IzEscape
 
   private final val NullT = 'n'
   private final val BoolT = 'b'

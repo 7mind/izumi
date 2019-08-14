@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.staticinjector
+package izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.fixtures.CircularCases.{CircularCase1, CircularCase2}
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
+import izumi.distage.fixtures.CircularCases.{CircularCase1, CircularCase2}
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.StaticModuleDef
 import distage.ModuleBase
 import org.scalatest.WordSpec
 

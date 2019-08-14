@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.plugins.load
+package izumi.distage.plugins.load
 
-import com.github.pshirshov.izumi.distage.plugins.{PluginBase, PluginDef}
-import com.github.pshirshov.izumi.functional.Value
+import izumi.distage.plugins.{PluginBase, PluginDef}
+import izumi.functional.Value
 import io.github.classgraph.ClassGraph
 
 import scala.collection.JavaConverters._

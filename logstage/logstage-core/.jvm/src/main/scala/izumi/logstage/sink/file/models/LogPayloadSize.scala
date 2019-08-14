@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.sink.file.models
+package izumi.logstage.sink.file.models
 
 import java.nio.charset.StandardCharsets
 

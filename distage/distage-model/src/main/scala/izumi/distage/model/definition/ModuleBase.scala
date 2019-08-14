@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
 import cats.kernel.BoundedSemilattice
-import com.github.pshirshov.izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilatice, ModuleBaseSemilattice}
-import com.github.pshirshov.izumi.distage.model.exceptions.ModuleMergeException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilatice, ModuleBaseSemilattice}
+import izumi.distage.model.exceptions.ModuleMergeException
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
 

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, LoggerId}
-import com.github.pshirshov.izumi.logstage.macros.LoggerMacroMethods._
+import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.logstage.api.Log.{CustomContext, LoggerId}
+import izumi.logstage.macros.LoggerMacroMethods._
 
 import scala.language.experimental.macros
 

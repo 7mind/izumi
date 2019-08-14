@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.fixtures
+package izumi.distage.fixtures
 
-import com.github.pshirshov.izumi.distage.model.definition.Id
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.definition.Id
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.language.Quirks._
 
 @ExposedTestScope
 object ProviderCases {

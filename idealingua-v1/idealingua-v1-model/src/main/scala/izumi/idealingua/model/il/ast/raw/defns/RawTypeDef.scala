@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
+package izumi.idealingua.model.il.ast.raw.defns
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
+import izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 
 
 sealed trait RawTypeDef

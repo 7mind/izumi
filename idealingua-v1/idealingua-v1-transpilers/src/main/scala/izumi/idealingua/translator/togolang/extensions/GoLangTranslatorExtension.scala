@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.togolang.extensions
+package izumi.idealingua.translator.togolang.extensions
 
-import com.github.pshirshov.izumi.idealingua.translator.TranslatorExtension
+import izumi.idealingua.translator.TranslatorExtension
 
 trait GoLangTranslatorExtension extends TranslatorExtension {
 

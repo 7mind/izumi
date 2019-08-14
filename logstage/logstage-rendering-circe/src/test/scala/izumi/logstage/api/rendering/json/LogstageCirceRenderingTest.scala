@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.json
+package izumi.logstage.api.rendering.json
 
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
-import com.github.pshirshov.izumi.logstage.sink.{ConsoleSink, ExampleService}
+import izumi.logstage.api.{IzLogger, TestSink}
+import izumi.logstage.sink.{ConsoleSink, ExampleService}
 import io.circe.literal._
 import io.circe.parser._
 import org.scalatest.WordSpec

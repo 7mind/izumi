@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.reflection
+package izumi.distage.reflection
 
-import com.github.pshirshov.izumi.distage.model.reflection.SymbolIntrospector
-import com.github.pshirshov.izumi.distage.model.reflection.universe.DIUniverse
-import com.github.pshirshov.izumi.fundamentals.reflection.AnnotationTools
+import izumi.distage.model.reflection.SymbolIntrospector
+import izumi.distage.model.reflection.universe.DIUniverse
+import izumi.fundamentals.reflection.AnnotationTools
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 

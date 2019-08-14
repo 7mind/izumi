@@ -1,22 +1,22 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.Generic.TMap
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{DefMethod, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.runtime.circe.IRTTimeInstances
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ClassSource, FullServiceContext, StructContext, runtime}
+import izumi.idealingua.model.common.Generic.TMap
+import izumi.idealingua.model.common.{Builtin, TypeId}
+import izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration, Identifier, Interface}
+import izumi.idealingua.model.il.ast.typed.{DefMethod, TypeDef}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.runtime.circe.IRTTimeInstances
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.products.CogenProduct
+import izumi.idealingua.translator.toscala.products.CogenProduct.{CogenServiceProduct, CompositeProduct, IdentifierProudct, InterfaceProduct}
+import izumi.idealingua.translator.toscala.types.{ClassSource, FullServiceContext, StructContext, runtime}
 
 import scala.annotation.tailrec
 import scala.meta._
 
 trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
 
-  import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+  import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
   protected case class CirceTrait(name: String, defn: Defn.Trait)
 

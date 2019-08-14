@@ -1,27 +1,27 @@
-package com.github.pshirshov.izumi.distage.bootstrap
+package izumi.distage.bootstrap
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.distage.commons.{TraitInitTool, UnboxingTool}
-import com.github.pshirshov.izumi.distage.model._
-import com.github.pshirshov.izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning._
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{PlanInterpreter, _}
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import com.github.pshirshov.izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
-import com.github.pshirshov.izumi.distage.planning._
-import com.github.pshirshov.izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
-import com.github.pshirshov.izumi.distage.provisioning._
-import com.github.pshirshov.izumi.distage.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.reflection._
-import com.github.pshirshov.izumi.distage.{provisioning, _}
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.commons.{TraitInitTool, UnboxingTool}
+import izumi.distage.model._
+import izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
+import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
+import izumi.distage.model.plan._
+import izumi.distage.model.planning._
+import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
+import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.provisioning.{PlanInterpreter, _}
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
+import izumi.distage.planning._
+import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
+import izumi.distage.provisioning._
+import izumi.distage.provisioning.strategies._
+import izumi.distage.reflection._
+import izumi.distage.{provisioning, _}
+import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
 final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.logstage.adapter.slf4j
+package izumi.logstage.adapter.slf4j
 
-import com.github.pshirshov.izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, TestSink}
+import izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
+import izumi.logstage.api.{IzLogger, TestSink}
 import org.scalatest.WordSpec
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.StaticLoggerBinder

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.loader
+package izumi.idealingua.model.loader
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
+import izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
 
 
 sealed trait DomainParsingResult {

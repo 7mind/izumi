@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.layout
+package izumi.idealingua.translator.toscala.layout
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.publishing.ProjectNamingRule
-import com.github.pshirshov.izumi.idealingua.translator.BaseNamingConvention
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.publishing.ProjectNamingRule
+import izumi.idealingua.translator.BaseNamingConvention
 
 class ScalaNamingConvention(rule: ProjectNamingRule) {
   private val naming = new BaseNamingConvention(rule)

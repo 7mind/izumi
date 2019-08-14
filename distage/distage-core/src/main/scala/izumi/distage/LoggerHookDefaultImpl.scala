@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.LoggerHook
+import izumi.distage.model.LoggerHook
 
 class LoggerHookDefaultImpl extends LoggerHook {
   override def log(message: => String): Unit = {}

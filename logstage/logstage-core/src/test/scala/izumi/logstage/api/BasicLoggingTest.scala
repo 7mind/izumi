@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.SourceFilePosition
-import com.github.pshirshov.izumi.logstage.api.Log._
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.logstage.api.Log._
+import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import org.scalatest.WordSpec
 
 import scala.util.Random

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
 import distage.TagK
 

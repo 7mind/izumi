@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.testkit.distagesuite.fixtures
+package izumi.distage.testkit.distagesuite.fixtures
 
 import cats.effect.IO
-import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
-import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.TODOMemoizeMe
-import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
+import izumi.distage.plugins.PluginDef
+import izumi.distage.roles.model.IntegrationCheck
+import izumi.distage.testkit.services.dstest.TODOMemoizeMe
+import izumi.fundamentals.platform.integration.ResourceCheck
 import distage.TagK
 
 class MockPostgresCheck[F[_]]() extends IntegrationCheck {

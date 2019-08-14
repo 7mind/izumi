@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.common
+package izumi.idealingua.model.common
 
 case class SigParamSource(sourceType: TypeId, sourceName: String)
 

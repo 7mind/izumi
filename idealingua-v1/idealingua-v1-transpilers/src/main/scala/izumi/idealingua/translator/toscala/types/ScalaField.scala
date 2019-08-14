@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types
+package izumi.idealingua.translator.toscala.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.ExtendedField
+import izumi.idealingua.model.common.ExtendedField
 
 import scala.meta.{Term, Type}
 

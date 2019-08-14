@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.functional.bio.BIOExit.{Error, Success, Termination}
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
-import com.github.pshirshov.izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceMethods}
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.functional.bio.BIOExit.{Error, Success, Termination}
+import izumi.idealingua.runtime.rpc._
+import izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceMethods}
 import org.http4s._
 import org.http4s.server.Router
 import org.http4s.server.blaze._

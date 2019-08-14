@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional.bio.impl
+package izumi.functional.bio.impl
 
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOAsync, BIOExit}
+import izumi.functional.bio.{BIO, BIOAsync, BIOExit}
 import zio.{ZIO, ZSchedule}
 import zio.clock.Clock
 import zio.duration.Duration.fromScala

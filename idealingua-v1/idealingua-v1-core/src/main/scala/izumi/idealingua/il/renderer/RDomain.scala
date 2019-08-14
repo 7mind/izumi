@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.il.ast.InputPosition
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
+import izumi.functional.Renderable
+import izumi.idealingua.model.il.ast.InputPosition
+import izumi.idealingua.model.il.ast.raw.domains.Import
+import izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.problems.IDLException
 
 class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition] {
   import context._

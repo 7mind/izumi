@@ -1,4 +1,4 @@
-//package com.github.pshirshov.izumi.fundamentals.bio
+//package izumi.fundamentals.bio
 
 // Commented because cats-effect-laws-1.2.0 depends on scalatest-3.0.5 while we use 3.2.0-SNAP9
 // Can't run these tests as part of normal build due to dependency convergence
@@ -11,9 +11,9 @@
 //import cats.effect.{ExitCase, Sync}
 //import cats.instances.all._
 //import cats.laws.discipline.arbitrary._
-//import com.github.pshirshov.izumi.functional.bio.BIO.{ToFlattenOps, ToOps}
-//import com.github.pshirshov.izumi.functional.bio.impl.MiniBIO
-//import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
+//import izumi.functional.bio.BIO.{ToFlattenOps, ToOps}
+//import izumi.functional.bio.impl.MiniBIO
+//import izumi.functional.bio.{BIO, BIOExit}
 //import org.scalacheck.Arbitrary
 //import org.scalatest.prop.Checkers
 //import org.scalatest.{FunSuite, WordSpec}

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{TypeDef, _}
+import izumi.functional.Renderable
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.il.ast.typed.{TypeDef, _}
 
 class IDLRenderingContext(val domain: DomainDefinition, val options: IDLRenderingOptions) {
   implicit lazy val domainDefinition: Renderable[DomainDefinition] = new RDomain(this)

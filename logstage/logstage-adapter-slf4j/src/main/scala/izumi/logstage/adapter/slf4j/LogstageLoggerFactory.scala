@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.logstage.adapter.slf4j
+package izumi.logstage.adapter.slf4j
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+import izumi.logstage.api.routing.StaticLogRouter
 import org.slf4j.{ILoggerFactory, Logger}
 
 class LogstageLoggerFactory extends ILoggerFactory {

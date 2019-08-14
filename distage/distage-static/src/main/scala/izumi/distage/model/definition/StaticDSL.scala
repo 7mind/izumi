@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding.ImplBinding
-import com.github.pshirshov.izumi.distage.model.definition.StaticDSL.{StaticBindDSL, StaticBinding, StaticSetDSL}
-import com.github.pshirshov.izumi.distage.model.definition.dsl.ModuleDefDSL.{BindDSLBase, SetDSLBase}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
-import com.github.pshirshov.izumi.distage.provisioning.AnyConstructor
+import izumi.distage.model.definition.Binding.ImplBinding
+import izumi.distage.model.definition.StaticDSL.{StaticBindDSL, StaticBinding, StaticSetDSL}
+import izumi.distage.model.definition.dsl.ModuleDefDSL.{BindDSLBase, SetDSLBase}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import izumi.distage.provisioning.AnyConstructor
 
 import scala.language.implicitConversions
 

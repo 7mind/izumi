@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.model.definition.Binding
-import com.github.pshirshov.izumi.distage.model.exceptions.UnexpectedProvisionResultException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.NewObjectOp
-import com.github.pshirshov.izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
+import izumi.distage.model.definition.Binding
+import izumi.distage.model.exceptions.UnexpectedProvisionResultException
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.NewObjectOp
+import izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 
 object FactoryTools {
 

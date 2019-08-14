@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.crypto
+package izumi.fundamentals.platform.crypto
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._

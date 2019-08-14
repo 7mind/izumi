@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.distage.fixtures
+package izumi.distage.fixtures
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.Id
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.Locator
+import izumi.distage.model.definition.Id
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.language.Quirks
 
 @ExposedTestScope
 object BasicCases {
@@ -74,7 +74,7 @@ object BasicCases {
     class TestClass
     (
       @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
-      , @Id("com.github.pshirshov.izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
+      , @Id("izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
       , @Id("named.test") argDependency: => TestInstanceBinding
     ) {
       val x = argDependency

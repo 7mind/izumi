@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.roles.test
+package izumi.distage.roles.test
 
 import com.typesafe.config.ConfigFactory
 

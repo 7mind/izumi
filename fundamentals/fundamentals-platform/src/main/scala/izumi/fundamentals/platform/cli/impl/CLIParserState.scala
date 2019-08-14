@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli.impl
+package izumi.fundamentals.platform.cli.impl
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser.ParserError
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw._
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.cli.CLIParser.ParserError
+import izumi.fundamentals.platform.cli.model.raw._
+import izumi.fundamentals.platform.language.Quirks
 
 sealed trait CLIParserState {
   def addRole(name: String): CLIParserState

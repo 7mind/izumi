@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.sink.file
+package izumi.logstage.sink.file
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.sink.file.FileSink.FileIdentity
-import com.github.pshirshov.izumi.logstage.sink.file.models.LogFile
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.sink.file.FileSink.FileIdentity
+import izumi.logstage.sink.file.models.LogFile
 
 import scala.collection.JavaConverters._
 import scala.collection.concurrent

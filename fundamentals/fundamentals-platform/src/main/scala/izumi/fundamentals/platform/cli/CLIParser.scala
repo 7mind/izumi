@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform.cli
+package izumi.fundamentals.platform.cli
 
-import com.github.pshirshov.izumi.fundamentals.platform.cli.CLIParser._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.impl.CLIParserState
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw._
+import izumi.fundamentals.platform.cli.CLIParser._
+import izumi.fundamentals.platform.cli.impl.CLIParserState
+import izumi.fundamentals.platform.cli.model.raw._
 
 import scala.collection.mutable
 

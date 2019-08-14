@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.console
+package izumi.fundamentals.platform.console
 
 trait AbstractStringTrivialSink {
   def flush(value: => String): Unit

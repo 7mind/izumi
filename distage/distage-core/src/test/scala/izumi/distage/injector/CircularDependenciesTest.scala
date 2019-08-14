@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.CircularCases._
-import com.github.pshirshov.izumi.distage.model.Locator.LocatorRef
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.InstantiationOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ProxyDispatcher
+import izumi.distage.fixtures.CircularCases._
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
+import izumi.distage.model.plan.ExecutableOp.InstantiationOp
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import distage._
 import org.scalatest.WordSpec
 

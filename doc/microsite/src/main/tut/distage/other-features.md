@@ -223,7 +223,7 @@ package com.example
 import distage._
 import distage.plugins._
 import distage.config._
-import com.github.pshirshov.izumi.distage.app.ModuleRequirements
+import izumi.distage.app.ModuleRequirements
 
 final case class HostPort(host: String, port: Int)
 
@@ -263,7 +263,7 @@ package com.example.test
 
 import com.example._
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.app.StaticPluginChecker
+import izumi.distage.app.StaticPluginChecker
 
 final class AppPluginTest extends WordSpec {
   
@@ -344,7 +344,7 @@ The above strategy depends on `distage-proxy-cglib` module which is brought in b
 It's enabled by default. If you want to disable it, use `noCogen` bootstrap environment:
 
 ```scala
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import izumi.distage.bootstrap.DefaultBootstrapContext
 import distage._
 
 Injector(DefaultBootstrapContext.noCogen)
@@ -357,7 +357,7 @@ Most cycles can also be resolved manually when identified, using `by-name` param
 Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
 
 ```scala
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
+import izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
 import distage._
 
 class A(b0: => B) {
@@ -393,7 +393,7 @@ otherwise distage will transparently revert to generating proxies.
 
 ### Auto-Sets: Collecting Bindings By Predicate
 
-AutoSet @scaladoc[Planner](com.github.pshirshov.izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
+AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
 
 Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
 

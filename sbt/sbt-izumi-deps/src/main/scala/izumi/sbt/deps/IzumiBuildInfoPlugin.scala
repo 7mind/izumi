@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.deps
+package izumi.sbt.deps
 
 import sbt.Keys._
 import sbt.{Def, _}

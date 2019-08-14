@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection.universe
 
-import com.github.pshirshov.izumi.distage.model.definition.DIStageAnnotation
-import com.github.pshirshov.izumi.fundamentals.reflection.SingletonUniverse
+import izumi.distage.model.definition.DIStageAnnotation
+import izumi.fundamentals.reflection.SingletonUniverse
 
 import scala.reflect.macros.blackbox
 

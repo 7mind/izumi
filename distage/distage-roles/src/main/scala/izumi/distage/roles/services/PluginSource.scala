@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
+import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import distage.plugins.PluginBase
 
 trait PluginSource {

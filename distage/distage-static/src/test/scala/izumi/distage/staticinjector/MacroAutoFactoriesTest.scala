@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.staticinjector
+package izumi.distage.staticinjector
 
-import com.github.pshirshov.izumi.distage.fixtures.FactoryCases.FactoryCase1
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.definition.StaticModuleDef
+import izumi.distage.fixtures.FactoryCases.FactoryCase1
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
 class MacroAutoFactoriesTest extends WordSpec with MkInjector {

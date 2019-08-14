@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.model
+package izumi.distage.model
 
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.definition.ModuleBase
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.platform.functional.Identity
 
 trait Injector extends Planner with Producer {
 

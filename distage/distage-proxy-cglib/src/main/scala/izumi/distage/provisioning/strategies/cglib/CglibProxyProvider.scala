@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies.cglib
+package izumi.distage.provisioning.strategies.cglib
 
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
+import izumi.distage.model.provisioning.strategies
+import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
 import scala.util.{Failure, Success, Try}

@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.commons.TraitInitTool
-import com.github.pshirshov.izumi.distage.model.exceptions.{NoRuntimeClassException, NoopProvisionerImplCalled}
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.commons.TraitInitTool
+import izumi.distage.model.exceptions.{NoRuntimeClassException, NoopProvisionerImplCalled}
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.fundamentals.platform.language.Quirks
 
 class TraitStrategyDefaultImpl
 (

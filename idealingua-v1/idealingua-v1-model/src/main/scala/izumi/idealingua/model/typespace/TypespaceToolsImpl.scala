@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common.{StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.fundamentals.platform.language.Quirks
+import izumi.idealingua.model.common.TypeId.{AdtId, DTOId, InterfaceId}
+import izumi.idealingua.model.common.{StructureId, TypeId}
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
 
 class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
   val methodOutputSuffix = "Output"

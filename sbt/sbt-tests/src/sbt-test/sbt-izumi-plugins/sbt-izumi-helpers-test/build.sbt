@@ -6,7 +6,7 @@ enablePlugins(IzumiEnvironmentPlugin)
 name := "sbt-izumi-helpers-test"
 
 defaultStubPackage in ThisBuild:= Some("org.test.project")
-organization in ThisBuild := "com.github.pshirshov.izumi.test.idl"
+organization in ThisBuild := "izumi.test.idl"
 
 val legacyScalaVersions = Seq("2.11.12")
 val newScalaVersions = Seq(IzumiRootDeps.V.scala_212)

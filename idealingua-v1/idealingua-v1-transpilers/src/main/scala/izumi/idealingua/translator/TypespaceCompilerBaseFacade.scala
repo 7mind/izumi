@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
-import com.github.pshirshov.izumi.idealingua.model.loader.LoadedDomain
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpTranslatorDescriptor
-import com.github.pshirshov.izumi.idealingua.translator.togolang.GoTranslatorDescriptor
-import com.github.pshirshov.izumi.idealingua.translator.toscala.ScalaTranslatorDescriptor
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TypescriptTranslatorDescriptor
+import izumi.idealingua.model.loader.LoadedDomain
+import izumi.idealingua.translator.tocsharp.CSharpTranslatorDescriptor
+import izumi.idealingua.translator.togolang.GoTranslatorDescriptor
+import izumi.idealingua.translator.toscala.ScalaTranslatorDescriptor
+import izumi.idealingua.translator.totypescript.TypescriptTranslatorDescriptor
 
 class TypespaceCompilerBaseFacade(options: UntypedCompilerOptions) {
   def compile(toCompile: Seq[LoadedDomain.Success]): Layouted = {

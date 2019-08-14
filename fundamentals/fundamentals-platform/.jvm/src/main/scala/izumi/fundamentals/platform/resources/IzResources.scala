@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.resources
+package izumi.fundamentals.platform.resources
 
 import java.io.{FileSystem => _, _}
 import java.net.URL
@@ -8,7 +8,7 @@ import java.util.jar.JarFile
 import java.util.stream.Collectors
 import java.util.zip.ZipEntry
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import izumi.fundamentals.platform.files.IzFiles
 
 import scala.collection.mutable
 import scala.language.implicitConversions

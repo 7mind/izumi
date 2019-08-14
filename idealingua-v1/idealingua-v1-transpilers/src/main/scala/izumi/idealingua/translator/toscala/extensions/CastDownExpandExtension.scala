@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.InterfaceProduct
+import izumi.idealingua.model.il.ast.typed.TypeDef.Interface
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.products.CogenProduct.InterfaceProduct
 
 import scala.meta._
 
@@ -41,7 +41,7 @@ object CastDownExpandExtension extends ScalaTranslatorExtension {
            """
     }
 
-    import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+    import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
     product.copy(companionBase = product.companionBase.appendDefinitions(constructors))
   }

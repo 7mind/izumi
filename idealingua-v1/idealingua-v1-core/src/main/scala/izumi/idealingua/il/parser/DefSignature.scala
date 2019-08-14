@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.{ids, sep}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawMethod.Output
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawMethod, RawNodeMeta, RawSimpleStructure}
+import izumi.idealingua.il.parser.structure.{ids, sep}
+import izumi.idealingua.model.il.ast.raw.defns.RawMethod.Output
+import izumi.idealingua.model.il.ast.raw.defns.{RawMethod, RawNodeMeta, RawSimpleStructure}
 import fastparse.NoWhitespace._
 import fastparse._
 

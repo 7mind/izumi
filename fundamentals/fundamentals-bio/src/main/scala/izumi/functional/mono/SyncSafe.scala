@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.functional.mono
+package izumi.functional.mono
 
 import cats.effect.Sync
-import com.github.pshirshov.izumi.functional.bio.{BIO, SyncSafe2}
+import izumi.functional.bio.{BIO, SyncSafe2}
 
 import scala.language.implicitConversions
 

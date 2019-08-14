@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, IdentifierId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.common._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId.{DTOId, IdentifierId, InterfaceId}
+import izumi.idealingua.model.common._
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.typespace.structures.{ConverterDef, FieldConflicts, PlainStruct, Struct}
 
 import scala.collection.mutable
 

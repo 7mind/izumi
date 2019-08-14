@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.strings
+package izumi.fundamentals.platform.strings
 
 import java.nio.charset.StandardCharsets
 

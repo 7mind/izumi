@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.planning
+package izumi.distage.model.planning
 
-import com.github.pshirshov.izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.fundamentals.platform.language.Quirks._
 
 // TODO: Just one method onPhase(Id, plan) ?
 

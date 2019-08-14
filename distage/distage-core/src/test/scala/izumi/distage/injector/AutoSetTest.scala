@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.fixtures.SetCases._
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.distage.planning.AssignableFromAutoSetHook
+import izumi.distage.fixtures.SetCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.planning.PlanningHook
+import izumi.distage.planning.AssignableFromAutoSetHook
 import distage.{BootstrapModuleDef, Injector, ModuleDef}
 
 class AutoSetTest extends WordSpec with MkInjector {

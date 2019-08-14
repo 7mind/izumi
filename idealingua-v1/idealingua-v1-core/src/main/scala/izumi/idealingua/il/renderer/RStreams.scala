@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.renderer
+package izumi.idealingua.il.renderer
 
-import com.github.pshirshov.izumi.functional.Renderable
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Streams
+import izumi.functional.Renderable
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.il.ast.typed.Streams
 
 class RStreams(context: IDLRenderingContext) extends Renderable[Streams] {
   import context._

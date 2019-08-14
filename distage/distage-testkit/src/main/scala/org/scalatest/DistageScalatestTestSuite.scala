@@ -1,11 +1,11 @@
 package org.scalatest
 
-import com.github.pshirshov.izumi.distage.roles.services.IntegrationCheckerImpl
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.DistageTestRunner._
-import com.github.pshirshov.izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentImpl, DistageTestRunner}
-import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import izumi.distage.roles.services.IntegrationCheckerImpl
+import izumi.distage.testkit.services.dstest.DistageTestRunner._
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentImpl, DistageTestRunner}
+import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.{IzLogger, Log}
 import distage.TagK
 import org.scalatest.events._
 
@@ -149,7 +149,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
             ))
           case TestStatus.Cancelled(checks) =>
             recordStart(test)
-            import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+            import izumi.fundamentals.platform.strings.IzString._
             args.reporter.apply(TestCanceled(
               ord(test),
               s"ignored: ${checks.niceList()}",

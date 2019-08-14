@@ -1,27 +1,27 @@
-package com.github.pshirshov.izumi.distage.roles
+package izumi.distage.roles
 
 import cats.effect.LiftIO
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.AxisBase
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, DiAppBootstrapException, RoleService}
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.distage.roles.services.PluginSource.AllLoadedPlugins
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import com.github.pshirshov.izumi.distage.roles.services._
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import com.github.pshirshov.izumi.fundamentals.platform.cli.model.schema.ParserDef
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.resources.IzManifest
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.AxisBase
+import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
+import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
+import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException, RoleService}
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
+import izumi.distage.roles.services.ResourceRewriter.RewriteRules
+import izumi.distage.roles.services._
+import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
+import izumi.fundamentals.platform.cli.model.schema.ParserDef
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.resources.IzManifest
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.IzLogger
 import distage._
 
 import scala.concurrent.ExecutionContext

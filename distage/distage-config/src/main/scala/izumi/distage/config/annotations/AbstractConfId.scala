@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.config.annotations
+package izumi.distage.config.annotations
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait AbstractConfId
 

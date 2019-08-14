@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.logstage.api
+package izumi.logstage.api
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.rendering.RenderingPolicy
 
 @ExposedTestScope
 class TestSink(policy: Option[RenderingPolicy] = None) extends LogSink {

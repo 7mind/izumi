@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.types
+package izumi.idealingua.translator.tocsharp.types
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.SimpleStructure
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.Struct
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.CSharpImports
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.il.ast.typed.SimpleStructure
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.structures.Struct
+import izumi.idealingua.translator.tocsharp.CSharpImports
 
 final case class CSharpClass (
                               id: TypeId,

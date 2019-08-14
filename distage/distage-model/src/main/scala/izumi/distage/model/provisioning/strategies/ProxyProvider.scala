@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.model.provisioning.strategies
+package izumi.distage.model.provisioning.strategies
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.exceptions.NoopProvisionerImplCalled
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.WiringOp
-import com.github.pshirshov.izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.exceptions.NoopProvisionerImplCalled
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.provisioning.{ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.platform.language.Quirks
 
 case class DeferredInit(dispatcher: ProxyDispatcher, proxy: AnyRef)
 

@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.layout
+package izumi.idealingua.translator.totypescript.layout
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.AliasId
-import com.github.pshirshov.izumi.idealingua.model.output.{Module, ModuleId}
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
-import com.github.pshirshov.izumi.idealingua.translator._
+import izumi.idealingua.model.common.TypeId.AliasId
+import izumi.idealingua.model.output.{Module, ModuleId}
+import izumi.idealingua.model.publishing.BuildManifest.ManifestDependency
+import izumi.idealingua.model.publishing.manifests.{TypeScriptBuildManifest, TypeScriptProjectLayout}
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.CompilerOptions.TypescriptTranslatorOptions
+import izumi.idealingua.translator._
 import io.circe.Json
 import io.circe.literal._
 import io.circe.syntax._

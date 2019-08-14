@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.translator.toscala.STContext
 
 class ScalaTranslatorExtensions(ctx: STContext, extensions: Seq[ScalaTranslatorExtension]) {
   def extend(modules: Seq[Module]): Seq[Module] = {

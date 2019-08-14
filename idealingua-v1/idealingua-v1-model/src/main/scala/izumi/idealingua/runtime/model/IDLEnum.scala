@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.model
+package izumi.idealingua.runtime.model
 
 trait IDLEnum extends IDLGenerated {
   type Element <: IDLEnumElement

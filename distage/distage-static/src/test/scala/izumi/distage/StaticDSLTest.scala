@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases._
-import com.github.pshirshov.izumi.distage.model.definition.StaticDSL._
+import izumi.distage.fixtures.BasicCases._
+import izumi.distage.model.definition.StaticDSL._
 import distage.{ModuleBase, ModuleDef}
 import org.scalatest.WordSpec
 

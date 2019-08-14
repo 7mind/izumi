@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.fixtures
+package izumi.distage.fixtures
 
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.fundamentals.platform.build.ExposedTestScope
 
 @ExposedTestScope
 object ImplicitCases {

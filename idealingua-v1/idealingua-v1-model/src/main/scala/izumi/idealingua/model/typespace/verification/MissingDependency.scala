@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.verification
+package izumi.idealingua.model.typespace.verification
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{InterfaceId, ServiceId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId.{InterfaceId, ServiceId}
+import izumi.idealingua.model.il.ast.typed
 
 sealed trait MissingDependency {
   def missing: TypeId

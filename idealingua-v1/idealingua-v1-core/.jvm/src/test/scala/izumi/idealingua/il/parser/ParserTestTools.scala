@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.model.loader.FSPath
 import fastparse.NoWhitespace._
 import fastparse._
 

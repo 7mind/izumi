@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package izumi.distage.testkit.services
 
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.fundamentals.platform.jvm.CodePosition
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.fundamentals.platform.jvm.CodePosition
 import distage.{Tag, TagK}
 
 trait DISyntaxBase[F[_]] {

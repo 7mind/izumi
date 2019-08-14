@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript
+package izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions.{TypeScriptTranslatorExtension, TypeScriptTranslatorExtensions}
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.tools.ModuleTools
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
+import izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.totypescript.extensions.{TypeScriptTranslatorExtension, TypeScriptTranslatorExtensions}
+import izumi.idealingua.translator.totypescript.tools.ModuleTools
+import izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
 
 class TSTContext(
                  val typespace: Typespace,

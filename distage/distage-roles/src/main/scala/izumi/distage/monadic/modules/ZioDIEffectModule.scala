@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.monadic.modules
+package izumi.distage.monadic.modules
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
-import com.github.pshirshov.izumi.distage.model.definition.ModuleDef
-import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.roles.services.ResourceRewriter
-import com.github.pshirshov.izumi.functional.bio.{BIOError, BIORunner, BlockingIO}
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.roles.services.ResourceRewriter
+import izumi.functional.bio.{BIOError, BIORunner, BlockingIO}
 import distage.Id
 import logstage.IzLogger
 

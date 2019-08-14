@@ -1,19 +1,19 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis.Env
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
-import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
-import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
-import com.github.pshirshov.izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
-import com.github.pshirshov.izumi.distage.roles.model.AppActivation
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache
-import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.StandardAxis.Env
+import izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
+import izumi.distage.model.planning.PlanMergingPolicy
+import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
+import izumi.distage.roles.BootstrapConfig
+import izumi.distage.roles.model.AppActivation
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
+import izumi.distage.testkit.services.PluginsCache
+import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.IzLogger
 
 class DistageTestEnvironmentProviderImpl(suiteClass: Class[_]) extends DistageTestEnvironmentProvider {
   /**
@@ -56,7 +56,7 @@ class DistageTestEnvironmentProviderImpl(suiteClass: Class[_]) extends DistageTe
   }
 
   override protected def memoizePlugins: Boolean = {
-    import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+    import izumi.fundamentals.platform.strings.IzString._
 
     System.getProperty("izumi.distage.testkit.plugins.memoize")
       .asBoolean(true)

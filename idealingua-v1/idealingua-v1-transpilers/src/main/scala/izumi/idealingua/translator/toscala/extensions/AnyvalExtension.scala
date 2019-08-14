@@ -1,22 +1,22 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.JavaType
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, Generic, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, IdentifierProudct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
+import izumi.idealingua.model.JavaType
+import izumi.idealingua.model.common.TypeId.{AdtId, AliasId, EnumId, IdentifierId}
+import izumi.idealingua.model.common.{Builtin, Generic, StructureId, TypeId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.TypeDef
+import izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.products.CogenProduct
+import izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, IdentifierProudct}
+import izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
 
 import scala.collection.mutable
 import scala.meta._
 
 object AnyvalExtension extends ScalaTranslatorExtension {
 
-  import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+  import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
 
   override def handleTrait(ctx: STContext, interface: ScalaStruct, product: CogenProduct.TraitProduct): CogenProduct.TraitProduct = {

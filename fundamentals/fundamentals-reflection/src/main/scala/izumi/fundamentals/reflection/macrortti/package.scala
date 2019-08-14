@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
 package object macrortti {
   type LTagK[K[_]] = LHKTag[{ type Arg[A] = K[A] }]

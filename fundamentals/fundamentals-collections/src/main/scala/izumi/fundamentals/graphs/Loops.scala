@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.graphs
+package izumi.fundamentals.graphs
 
 trait Loops {
   def findCyclesFor[T](node: T, graph: T => Option[Set[T]]): Seq[Seq[T]] = {

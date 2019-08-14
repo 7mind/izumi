@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala
-import com.github.pshirshov.izumi.fundamentals.platform.language.IzScala.ScalaRelease
+import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import org.scalatest.WordSpec
 
 class ScalaVersionTest extends WordSpec {

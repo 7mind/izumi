@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.fundamentals.collections
+package izumi.fundamentals.collections
 
-import com.github.pshirshov.izumi.fundamentals.tags.TagExpr
+import izumi.fundamentals.tags.TagExpr
 import org.scalatest.WordSpec
 
 

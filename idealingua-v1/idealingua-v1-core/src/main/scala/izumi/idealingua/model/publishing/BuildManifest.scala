@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.model.publishing
+package izumi.idealingua.model.publishing
 
-import com.github.pshirshov.izumi.fundamentals.reflection.ProjectAttributeMacro
-import com.github.pshirshov.izumi.idealingua.model.publishing.BuildManifest._
+import izumi.fundamentals.reflection.ProjectAttributeMacro
+import izumi.idealingua.model.publishing.BuildManifest._
 
 trait BuildManifest {
   def common: Common

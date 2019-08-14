@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace.verification.rules
+package izumi.idealingua.model.typespace.verification.rules
 
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLDiagnostics, TypespaceError}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration}
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.VerificationRule
+import izumi.idealingua.model.problems.{IDLDiagnostics, TypespaceError}
+import izumi.idealingua.model.il.ast.typed.TypeDef.{Adt, Enumeration}
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.model.typespace.verification.VerificationRule
 
 object DuplicateMemberRule extends VerificationRule {
   override def verify(ts: Typespace): IDLDiagnostics = IDLDiagnostics {

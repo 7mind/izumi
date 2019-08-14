@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.json
+package izumi.logstage.api.rendering.json
 
-import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.Log.LogArg
-import com.github.pshirshov.izumi.logstage.api.rendering.logunits.LogFormat
-import com.github.pshirshov.izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
+import izumi.fundamentals.platform.exceptions.IzThrowable._
+import izumi.logstage.api.Log
+import izumi.logstage.api.Log.LogArg
+import izumi.logstage.api.rendering.logunits.LogFormat
+import izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
 import io.circe._
 import io.circe.syntax._
 
@@ -16,7 +16,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   import LogstageCirceRenderingPolicy._
 
   override def render(entry: Log.Entry): String = {
-    import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime._
+    import izumi.fundamentals.platform.time.IzTime._
 
     val result = mutable.ArrayBuffer[(String, Json)]()
 

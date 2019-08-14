@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.api.routing
+package izumi.logstage.api.routing
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogRouter
-import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogRouter
+import izumi.logstage.sink.ConsoleSink
 
 /**
   * When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
@@ -15,7 +15,7 @@ import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
   *
   * {{{
   *   import logstage._
-  *   import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
+  *   import izumi.logstage.api.routing.StaticLogRouter
   *
   *   val myLogger = IzLogger()
   *

@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
+package izumi.idealingua.translator.totypescript.extensions
 
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
+import izumi.idealingua.translator.totypescript.TSTContext
 
 class TypeScriptTranslatorExtensions(ctx: TSTContext, extensions: Seq[TypeScriptTranslatorExtension]) {
   def extend[S, P]

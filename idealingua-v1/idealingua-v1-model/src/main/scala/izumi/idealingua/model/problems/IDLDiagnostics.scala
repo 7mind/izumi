@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.model.problems
+package izumi.idealingua.model.problems
 
 case class IDLDiagnostics(issues: Vector[IDLError], warnings: Vector[IDLWarning]) {
   def ++(other: IDLDiagnostics): IDLDiagnostics = IDLDiagnostics(issues ++ other.issues, warnings ++ other.warnings)

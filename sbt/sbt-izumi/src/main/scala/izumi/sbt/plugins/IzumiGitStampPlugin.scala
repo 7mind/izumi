@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins
+package izumi.sbt.plugins
 
 // copypasted https://bitbucket.org/atlassianlabs/sbt-git-stamp from due to obsolete jgit dependency
 

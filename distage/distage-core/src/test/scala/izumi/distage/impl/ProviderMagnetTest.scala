@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.impl
+package izumi.distage.impl
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
-import com.github.pshirshov.izumi.distage.fixtures.ProviderCases.ProviderCase1
-import com.github.pshirshov.izumi.distage.model.providers.ProviderMagnet
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
+import izumi.distage.fixtures.ProviderCases.ProviderCase1
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
+import izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.WordSpec
 

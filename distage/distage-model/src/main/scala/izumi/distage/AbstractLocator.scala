@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage
+package izumi.distage
 
-import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.Locator
+import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.Locator
 
 trait AbstractLocator extends Locator {
   protected def unsafeLookup(key: DIKey): Option[Any]

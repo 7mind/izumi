@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins
+package izumi.sbt.plugins
 
 import java.time.format.DateTimeFormatter
 

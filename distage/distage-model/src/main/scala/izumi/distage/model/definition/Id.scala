@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.model.definition
+package izumi.distage.model.definition
 
 /**
   * Annotation for summoning named instances.

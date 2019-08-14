@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
 sealed trait DependencyKind
 

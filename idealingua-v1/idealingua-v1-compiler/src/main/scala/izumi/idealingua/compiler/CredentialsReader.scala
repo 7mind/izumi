@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.compiler
+package izumi.idealingua.compiler
 
 import java.io.File
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
-import com.github.pshirshov.izumi.idealingua.translator.IDLLanguage
+import izumi.fundamentals.platform.files.IzFiles
+import izumi.idealingua.translator.IDLLanguage
 import io.circe.Json
 import io.circe.parser.parse
 import io.circe.generic.auto._

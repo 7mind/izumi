@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator
+package izumi.idealingua.translator
 
 sealed trait IDLLanguage
 

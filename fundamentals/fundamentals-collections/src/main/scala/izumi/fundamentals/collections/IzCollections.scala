@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.collections
+package izumi.fundamentals.collections
 
 import scala.language.implicitConversions
 

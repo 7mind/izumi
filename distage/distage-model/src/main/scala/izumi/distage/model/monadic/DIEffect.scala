@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.model.monadic
+package izumi.distage.model.monadic
 
 import cats.effect.ExitCase
-import com.github.pshirshov.izumi.distage.model.monadic.FromCats._Sync
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.model.monadic.FromCats._Sync
+import izumi.functional.bio.{BIO, BIOExit}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks._
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}

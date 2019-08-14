@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.products
+package izumi.idealingua.translator.totypescript.products
 
 trait RenderableCogenProduct {
   def preamble: String

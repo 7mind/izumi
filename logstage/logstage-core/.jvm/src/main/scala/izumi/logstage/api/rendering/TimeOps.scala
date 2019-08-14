@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.rendering
+package izumi.logstage.api.rendering
 
 import java.time.{Instant, OffsetDateTime, ZoneId}
 

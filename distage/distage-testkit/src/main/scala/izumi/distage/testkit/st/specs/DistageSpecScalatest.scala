@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.testkit.st.specs
+package izumi.distage.testkit.st.specs
 
-import com.github.pshirshov.izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax
+import izumi.distage.testkit.services.st.dtest.DistageTestSuiteSyntax
 import distage.TagK
 import org.scalatest.DistageScalatestTestSuite
 

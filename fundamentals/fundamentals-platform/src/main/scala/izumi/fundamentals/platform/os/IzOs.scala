@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.os
+package izumi.fundamentals.platform.os
 
 import java.io.File
 import java.util.regex.Pattern

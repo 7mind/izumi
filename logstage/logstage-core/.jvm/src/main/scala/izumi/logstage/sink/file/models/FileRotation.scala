@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.sink.file.models
+package izumi.logstage.sink.file.models
 
 sealed trait FileRotation
 

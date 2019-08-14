@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.dsl
+package izumi.distage.dsl
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1
-import com.github.pshirshov.izumi.distage.model.definition.{Id, LocatorDef}
-import com.github.pshirshov.izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
+import izumi.distage.fixtures.BasicCases.BasicCase1
+import izumi.distage.model.definition.{Id, LocatorDef}
+import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import org.scalatest.WordSpec
 
 class LocatorDefTest extends WordSpec {

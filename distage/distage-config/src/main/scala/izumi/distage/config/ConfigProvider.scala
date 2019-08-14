@@ -1,15 +1,15 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.TranslationResult.TranslationFailure
-import com.github.pshirshov.izumi.distage.config.annotations._
-import com.github.pshirshov.izumi.distage.config.model.AppConfig
-import com.github.pshirshov.izumi.distage.config.model.exceptions.ConfigTranslationException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, SemiPlan}
-import com.github.pshirshov.izumi.distage.model.planning.PlanningHook
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.fundamentals.typesafe.config.RuntimeConfigReader
+import izumi.distage.config.TranslationResult.TranslationFailure
+import izumi.distage.config.annotations._
+import izumi.distage.config.model.AppConfig
+import izumi.distage.config.model.exceptions.ConfigTranslationException
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import izumi.distage.model.planning.PlanningHook
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.typesafe.config.RuntimeConfigReader
 import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
 
 import scala.util.Try

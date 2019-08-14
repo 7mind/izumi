@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.roles.services
+package izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp
-import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.logstage.api.IzLogger
 import distage.OrderedPlan
 
 class PlanCircularDependencyCheck(

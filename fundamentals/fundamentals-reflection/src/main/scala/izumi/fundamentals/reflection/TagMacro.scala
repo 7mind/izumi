@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.fundamentals.reflection
+package izumi.fundamentals.reflection
 
-import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger
 import WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
 import ReflectionUtil.{Kind, kindOf}
-import com.github.pshirshov.izumi.fundamentals.reflection.macrortti.{LHKTag, LightTypeTagMacro}
+import izumi.fundamentals.reflection.macrortti.{LHKTag, LightTypeTagMacro}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap

@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.commons
+package izumi.distage.commons
 
 import java.lang.reflect.Method
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.MirrorProvider
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 
 class UnboxingTool(mirrorProvider: MirrorProvider) {
 

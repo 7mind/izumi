@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.graphs.dotml
+package izumi.fundamentals.graphs.dotml
 
 import java.io.{File, PrintWriter}
 

@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.provisioning.strategies
+package izumi.distage.provisioning.strategies
 
-import com.github.pshirshov.izumi.distage.model.exceptions.MissingInstanceException
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.ImportDependency
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.{FactoryExecutor, ImportStrategy}
-import com.github.pshirshov.izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
+import izumi.distage.model.exceptions.MissingInstanceException
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.provisioning.strategies.{FactoryExecutor, ImportStrategy}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.platform.language.Quirks
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[NewObjectOp] = {

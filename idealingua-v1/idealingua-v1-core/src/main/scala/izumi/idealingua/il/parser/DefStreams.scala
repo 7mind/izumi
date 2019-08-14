@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.{kw, sep}
-import com.github.pshirshov.izumi.idealingua.model.common.StreamDirection
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.{RawStream, RawStreams, RawTopLevelDefn}
+import izumi.idealingua.il.parser.structure.{kw, sep}
+import izumi.idealingua.model.common.StreamDirection
+import izumi.idealingua.model.il.ast.raw.defns.{RawStream, RawStreams, RawTopLevelDefn}
 import fastparse.NoWhitespace._
 import fastparse._
 

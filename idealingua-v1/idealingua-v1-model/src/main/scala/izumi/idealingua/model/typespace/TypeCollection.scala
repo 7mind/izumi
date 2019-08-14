@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.DefMethod.{Output, RPCMethod}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed._
 
 class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
   def contains(key: K): Boolean = underlying.contains(key)
@@ -184,7 +184,7 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
     val conflictingTypes = types.groupBy(tpe => (tpe.id.path, tpe.id.name)).filter(_._2.size > 1)
 
     if (conflictingTypes.nonEmpty) {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      import izumi.fundamentals.platform.strings.IzString._
 
       val formatted = conflictingTypes.map {
         case (tpe, conflicts) =>

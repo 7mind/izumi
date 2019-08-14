@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.products
+package izumi.idealingua.translator.tocsharp.products
 
 object CogenProduct {
   final case class InterfaceProduct(iface: String = ""

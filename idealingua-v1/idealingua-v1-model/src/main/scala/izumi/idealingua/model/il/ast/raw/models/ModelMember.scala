@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models
+package izumi.idealingua.model.il.ast.raw.models
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
+import izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn
 
 sealed trait ModelMember
 

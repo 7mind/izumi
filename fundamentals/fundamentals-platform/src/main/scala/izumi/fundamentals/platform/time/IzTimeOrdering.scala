@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.time
+package izumi.fundamentals.platform.time
 
 import java.time._
 import java.util.Date

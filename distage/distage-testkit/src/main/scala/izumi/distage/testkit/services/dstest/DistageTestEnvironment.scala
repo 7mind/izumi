@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
-import com.github.pshirshov.izumi.distage.model.definition.BootstrapModule
-import com.github.pshirshov.izumi.distage.roles.model.AppActivation
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.{ConfigLoader, ModuleProvider, ModuleProviderImpl}
-import com.github.pshirshov.izumi.logstage.api.{IzLogger, Log}
+import izumi.distage.model.definition.BootstrapModule
+import izumi.distage.roles.model.AppActivation
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.{ConfigLoader, ModuleProvider, ModuleProviderImpl}
+import izumi.logstage.api.{IzLogger, Log}
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
 

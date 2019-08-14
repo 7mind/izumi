@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals
+package izumi.fundamentals
 
 import scala.reflect.api.Universe
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.gc
+package izumi.distage.gc
 
 import distage.{AutoSetModule, Injector, Locator, OrderedPlan}
 

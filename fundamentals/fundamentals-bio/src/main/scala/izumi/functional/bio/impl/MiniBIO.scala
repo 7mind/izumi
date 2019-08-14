@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.functional.bio.impl
+package izumi.functional.bio.impl
 
-import com.github.pshirshov.izumi.functional.bio.BIOExit.Trace
-import com.github.pshirshov.izumi.functional.bio.impl.MiniBIO.Fail
-import com.github.pshirshov.izumi.functional.bio.{BIO, BIOExit}
+import izumi.functional.bio.BIOExit.Trace
+import izumi.functional.bio.impl.MiniBIO.Fail
+import izumi.functional.bio.{BIO, BIOExit}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions

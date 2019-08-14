@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.provisioning
+package izumi.distage.provisioning
 
-import com.github.pshirshov.izumi.distage.commons.UnboxingTool
-import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies._
-import com.github.pshirshov.izumi.distage.model.reflection
-import com.github.pshirshov.izumi.distage.model.reflection.universe
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.reflection.TypeUtil
+import izumi.distage.commons.UnboxingTool
+import izumi.distage.model.exceptions._
+import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.reflection
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.reflection.TypeUtil
 
 
 trait ProvisionOperationVerifier {

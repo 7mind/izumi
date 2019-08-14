@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.model.plan
+package izumi.distage.model.plan
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe._
+import izumi.distage.model.reflection.universe._
 
 trait WithDIDependencyContext {
   this: DIUniverseBase

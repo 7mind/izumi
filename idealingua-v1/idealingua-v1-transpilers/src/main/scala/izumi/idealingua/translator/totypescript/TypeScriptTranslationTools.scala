@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript
+package izumi.idealingua.translator.totypescript
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId
+import izumi.idealingua.model.common.TypeId
 
 import scala.meta._
 

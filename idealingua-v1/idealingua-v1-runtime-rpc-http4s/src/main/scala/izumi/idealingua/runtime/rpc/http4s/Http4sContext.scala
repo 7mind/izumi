@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
 import cats.effect.{ConcurrentEffect, Timer}
-import com.github.pshirshov.izumi.functional.bio.{BIOAsync, BIORunner}
+import izumi.functional.bio.{BIOAsync, BIORunner}
 import org.http4s._
 import org.http4s.dsl._
 

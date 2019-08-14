@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.deps
+package izumi.sbt.deps
 
 import sbt._
 
@@ -141,7 +141,7 @@ object IzumiDepsPlugin extends AutoPlugin {
   override def trigger = allRequirements
 
   object autoImport {
-    val IzumiRootDeps: IzumiDeps.type = com.github.pshirshov.izumi.sbt.deps.IzumiDeps
+    val IzumiRootDeps: IzumiDeps.type = izumi.sbt.deps.IzumiDeps
   }
 
 }

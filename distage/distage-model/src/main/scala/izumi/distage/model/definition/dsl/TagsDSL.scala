@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.model.definition.dsl
+package izumi.distage.model.definition.dsl
 
-import com.github.pshirshov.izumi.distage.model.definition.BindingTag
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks.discard
+import izumi.distage.model.definition.BindingTag
+import izumi.fundamentals.platform.language.Quirks.discard
 
 import scala.collection.mutable
 

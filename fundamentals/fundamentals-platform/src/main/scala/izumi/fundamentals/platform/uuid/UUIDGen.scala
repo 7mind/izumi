@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package com.github.pshirshov.izumi.fundamentals.platform.uuid
+package izumi.fundamentals.platform.uuid
 
 import java.net.{InetAddress, NetworkInterface}
 import java.nio.ByteBuffer
 import java.security.{MessageDigest, SecureRandom}
 import java.util.{Collection, Collections, Enumeration, HashSet, Random, Set, UUID}
 
-import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen._
+import izumi.fundamentals.platform.uuid.UUIDGen._
 
 
 object UUIDGen {

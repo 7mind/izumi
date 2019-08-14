@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.fundamentals.platform
+package izumi.fundamentals.platform
 
 import java.util.concurrent.TimeUnit
 
-import com.github.pshirshov.izumi.fundamentals.platform.files.IzFiles
+import izumi.fundamentals.platform.files.IzFiles
 import org.scalatest.WordSpec
 
 import scala.concurrent.Await
@@ -17,7 +17,7 @@ class IzFilesTest extends WordSpec {
     }
   }
 
-  import com.github.pshirshov.izumi.fundamentals.platform.resources.IzResources
+  import izumi.fundamentals.platform.resources.IzResources
   import scala.concurrent.Future
 
   "Resource tools" should {

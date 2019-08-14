@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.distage.model.provisioning
+package izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.Locator
-import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
-import com.github.pshirshov.izumi.distage.model.exceptions.{DIException, ProvisioningException}
-import com.github.pshirshov.izumi.distage.model.monadic.DIEffect
-import com.github.pshirshov.izumi.distage.model.plan.{OpFormatter, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
-import com.github.pshirshov.izumi.distage.model.provisioning.Provision.ProvisionImmutable
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.Locator
+import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.exceptions.{DIException, ProvisioningException}
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.plan.{OpFormatter, OrderedPlan}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.provisioning.Provision.ProvisionImmutable
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait PlanInterpreter {
   def instantiate[F[_] : TagK : DIEffect](
@@ -53,8 +53,8 @@ object PlanInterpreter {
       val ccDone = failed.instances.size
       val ccTotal = plan.steps.size
 
-      import com.github.pshirshov.izumi.fundamentals.platform.exceptions.IzThrowable._
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      import izumi.fundamentals.platform.exceptions.IzThrowable._
+      import izumi.fundamentals.platform.strings.IzString._
 
       DIEffect[F].fail {
         new ProvisioningException(s"Provisioner stopped after $ccDone instances, $ccFailed/$ccTotal operations failed: ${repr.niceList()}", null)

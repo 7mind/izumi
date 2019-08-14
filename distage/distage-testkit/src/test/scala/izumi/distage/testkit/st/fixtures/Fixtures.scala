@@ -1,17 +1,17 @@
-package com.github.pshirshov.izumi.distage.testkit.st.fixtures
+package izumi.distage.testkit.st.fixtures
 
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.github.pshirshov.izumi.distage.config.annotations.ConfPath
-import com.github.pshirshov.izumi.distage.model.definition.DIResource
-import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
-import com.github.pshirshov.izumi.distage.plugins.PluginDef
-import com.github.pshirshov.izumi.distage.roles.model.IntegrationCheck
-import com.github.pshirshov.izumi.fundamentals.platform.integration.ResourceCheck
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.config.annotations.ConfPath
+import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.StandardAxis._
+import izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
+import izumi.distage.plugins.PluginDef
+import izumi.distage.roles.model.IntegrationCheck
+import izumi.fundamentals.platform.integration.ResourceCheck
+import izumi.fundamentals.platform.language.Quirks
+import izumi.logstage.api.IzLogger
 
 import scala.collection.mutable
 

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.platform.files
+package izumi.fundamentals.platform.files
 
 import java.io.File
 import java.net.URI

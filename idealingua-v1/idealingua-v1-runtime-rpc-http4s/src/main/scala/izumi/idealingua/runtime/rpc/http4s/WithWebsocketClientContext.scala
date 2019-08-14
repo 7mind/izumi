@@ -1,13 +1,13 @@
-package com.github.pshirshov.izumi.idealingua.runtime.rpc.http4s
+package izumi.idealingua.runtime.rpc.http4s
 
 import java.time.ZonedDateTime
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedDeque, TimeUnit, TimeoutException}
 
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.time.IzTime
-import com.github.pshirshov.izumi.fundamentals.platform.uuid.UUIDGen
-import com.github.pshirshov.izumi.idealingua.runtime.rpc._
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.time.IzTime
+import izumi.fundamentals.platform.uuid.UUIDGen
+import izumi.idealingua.runtime.rpc._
 import fs2.concurrent.Queue
 import io.circe.Json
 import io.circe.syntax._
@@ -95,7 +95,7 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 ) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
-  import com.github.pshirshov.izumi.functional.bio.BIO._
+  import izumi.functional.bio.BIO._
 
   type WSC = WebsocketClientContext[BiIO, ClientId, RequestContext]
 

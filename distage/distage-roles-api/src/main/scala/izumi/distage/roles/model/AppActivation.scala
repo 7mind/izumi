@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.roles.model
+package izumi.distage.roles.model
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.definition.AxisBase
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.AxisBase
 
 final case class AppActivation(choices: Map[AxisBase, Set[AxisValue]], active: Map[AxisBase, AxisValue])
 

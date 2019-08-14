@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.config
+package izumi.distage.config
 
-import com.github.pshirshov.izumi.distage.config.annotations.AutoConf
-import com.github.pshirshov.izumi.distage.model.definition.With
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.distage.config.annotations.AutoConf
+import izumi.distage.model.definition.With
+import izumi.fundamentals.platform.build.ExposedTestScope
 
 @ExposedTestScope
 object ConfigFixtures {

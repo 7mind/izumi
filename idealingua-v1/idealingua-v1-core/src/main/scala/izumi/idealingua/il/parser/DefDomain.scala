@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure._
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainHeader, Import}
+import izumi.idealingua.il.parser.structure._
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.il.ast.raw.domains
+import izumi.idealingua.model.il.ast.raw.domains.{DomainHeader, Import}
 import fastparse.NoWhitespace._
 import fastparse._
 

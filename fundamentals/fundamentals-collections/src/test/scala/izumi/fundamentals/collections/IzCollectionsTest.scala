@@ -1,7 +1,7 @@
 
-package com.github.pshirshov.izumi.fundamentals.collections
+package izumi.fundamentals.collections
 
-import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.collections.IzCollections._
 import org.scalatest.WordSpec
 
 import scala.collection.mutable

@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.distage.fixtures
+package izumi.distage.fixtures
 
-import com.github.pshirshov.izumi.distage.model.definition.Id
-import com.github.pshirshov.izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.distage.model.definition.Id
+import izumi.fundamentals.platform.build.ExposedTestScope
 
 @ExposedTestScope
 object SetCases {

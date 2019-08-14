@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.il.loader
+package izumi.idealingua.il.loader
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, ParsedDomain}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.{Inclusion, ParsedModel}
-import com.github.pshirshov.izumi.idealingua.model.loader._
-import com.github.pshirshov.izumi.idealingua.model.problems.RefResolverIssue
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.il.ast.raw.domains.{DomainMeshResolved, ParsedDomain}
+import izumi.idealingua.model.il.ast.raw.models.{Inclusion, ParsedModel}
+import izumi.idealingua.model.loader._
+import izumi.idealingua.model.problems.RefResolverIssue
 
 import scala.collection.mutable
 

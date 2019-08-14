@@ -1,7 +1,7 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types.runtime
+package izumi.idealingua.translator.toscala.types.runtime
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ScalaTypeConverter
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 
 import scala.reflect.{ClassTag, classTag}
 

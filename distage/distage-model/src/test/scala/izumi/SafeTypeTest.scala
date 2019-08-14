@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi
+package izumi
 
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import org.scalatest.WordSpec
 
 class SafeTypeTest extends WordSpec {

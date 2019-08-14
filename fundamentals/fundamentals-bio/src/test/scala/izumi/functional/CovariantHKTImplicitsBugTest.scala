@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.functional
+package izumi.functional
 
 import org.scalatest.{GivenWhenThen, WordSpec}
 

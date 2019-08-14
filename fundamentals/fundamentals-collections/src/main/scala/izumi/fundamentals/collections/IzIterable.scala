@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.fundamentals.collections
+package izumi.fundamentals.collections
 
 import scala.collection.compat._
 import scala.collection.mutable

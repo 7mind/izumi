@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.model.references
+package izumi.distage.model.references
 
-import com.github.pshirshov.izumi.distage.model.provisioning.strategies.ByNameDispatcher
-import com.github.pshirshov.izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
-import com.github.pshirshov.izumi.fundamentals.reflection.WithTags
+import izumi.distage.model.provisioning.strategies.ByNameDispatcher
+import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
+import izumi.fundamentals.reflection.WithTags
 
 trait WithDITypedRef {
   this: DIUniverseBase

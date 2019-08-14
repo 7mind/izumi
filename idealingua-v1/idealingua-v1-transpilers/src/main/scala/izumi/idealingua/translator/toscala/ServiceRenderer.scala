@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
 import _root_.io.circe.{DecodingFailure, Json}
-import com.github.pshirshov.izumi.functional.bio.BIO
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.RenderableCogenProduct
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{runtime, _}
+import izumi.functional.bio.BIO
+import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
+import izumi.idealingua.model.il.ast.typed.Service
+import izumi.idealingua.translator.toscala.products.CogenProduct.CogenServiceProduct
+import izumi.idealingua.translator.toscala.products.RenderableCogenProduct
+import izumi.idealingua.translator.toscala.types.{runtime, _}
 
 import scala.meta._
 

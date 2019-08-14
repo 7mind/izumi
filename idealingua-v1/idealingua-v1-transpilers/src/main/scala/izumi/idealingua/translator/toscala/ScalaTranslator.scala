@@ -1,14 +1,14 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala
+package izumi.idealingua.translator.toscala
 
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
-import com.github.pshirshov.izumi.idealingua.model.output.Module
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.CompilerOptions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.extensions._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products._
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.ClassSource
-import com.github.pshirshov.izumi.idealingua.translator.{Translated, Translator}
+import izumi.idealingua.model.il.ast.typed.TypeDef._
+import izumi.idealingua.model.il.ast.typed.{Buzzer, Service, TypeDef}
+import izumi.idealingua.model.output.Module
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.CompilerOptions._
+import izumi.idealingua.translator.toscala.extensions._
+import izumi.idealingua.translator.toscala.products._
+import izumi.idealingua.translator.toscala.types.ClassSource
+import izumi.idealingua.translator.{Translated, Translator}
 
 import scala.meta._
 
@@ -32,7 +32,7 @@ class ScalaTranslator(ts: Typespace, options: ScalaTranslatorOptions)
 
 
   def translate(): Translated = {
-    import com.github.pshirshov.izumi.fundamentals.collections.IzCollections._
+    import izumi.fundamentals.collections.IzCollections._
     val aliases = ctx.typespace.domain.types
       .collect {
         case a: Alias =>

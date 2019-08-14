@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.distage.impl
+package izumi.distage.impl
 
-import com.github.pshirshov.izumi.distage.model.planning.PlanAnalyzer
+import izumi.distage.model.planning.PlanAnalyzer
 import distage._
 import org.scalatest.WordSpec
 
@@ -15,7 +15,7 @@ class ModelTest extends WordSpec {
 
   "SafeType" should {
     "support construction from method type signatures" in {
-      import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+      import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
       assert(SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature) ==
         SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature))
     }

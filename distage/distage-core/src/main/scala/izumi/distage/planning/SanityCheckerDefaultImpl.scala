@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.exceptions._
-import com.github.pshirshov.izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
-import com.github.pshirshov.izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import com.github.pshirshov.izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.exceptions._
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.planning.{PlanAnalyzer, SanityChecker}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import scala.collection.mutable
 

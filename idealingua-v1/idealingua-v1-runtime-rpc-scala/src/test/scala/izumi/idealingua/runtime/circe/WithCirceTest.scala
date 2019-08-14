@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.runtime.circe
+package izumi.idealingua.runtime.circe
 
 import io.circe.JsonObject
 import io.circe.syntax._

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.layout
+package izumi.idealingua.translator.totypescript.layout
 
-import com.github.pshirshov.izumi.idealingua.model.output.ModuleId
-import com.github.pshirshov.izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
-import com.github.pshirshov.izumi.idealingua.translator.BaseNamingConvention
+import izumi.idealingua.model.output.ModuleId
+import izumi.idealingua.model.publishing.manifests.TypeScriptBuildManifest
+import izumi.idealingua.translator.BaseNamingConvention
 
 class TypescriptNamingConvention(manifest: TypeScriptBuildManifest) {
   private val naming = new BaseNamingConvention(manifest.yarn.projectNaming)

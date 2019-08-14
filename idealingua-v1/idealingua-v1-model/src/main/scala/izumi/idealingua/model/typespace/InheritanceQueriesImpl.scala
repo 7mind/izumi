@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.idealingua.model.typespace
+package izumi.idealingua.model.typespace
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.problems.{IDLCyclicInheritanceException, IDLException}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Structures
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.DTO
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{Builtin, StructureId, TypeId}
+import izumi.idealingua.model.problems.{IDLCyclicInheritanceException, IDLException}
+import izumi.idealingua.model.il.ast.typed.Structures
+import izumi.idealingua.model.il.ast.typed.TypeDef.DTO
 
 protected[typespace] class InheritanceQueriesImpl(ts: Typespace) extends InheritanceQueries {
   def allParents(id: TypeId): List[InterfaceId] = {

@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.sbt.plugins.optional
+package izumi.sbt.plugins.optional
 
 import java.nio.file.Path
 

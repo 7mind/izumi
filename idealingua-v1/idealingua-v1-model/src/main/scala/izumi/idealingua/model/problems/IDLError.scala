@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.model.problems
+package izumi.idealingua.model.problems
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId._
-import com.github.pshirshov.izumi.idealingua.model.common.{DomainId, TypeId}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.models.Inclusion
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed._
-import com.github.pshirshov.izumi.idealingua.model.loader.{FSPath, LoadedDomain, ModelParsingResult}
-import com.github.pshirshov.izumi.idealingua.model.typespace.verification.MissingDependency
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.common.TypeId._
+import izumi.idealingua.model.common.{DomainId, TypeId}
+import izumi.idealingua.model.il.ast.raw.models.Inclusion
+import izumi.idealingua.model.il.ast.typed._
+import izumi.idealingua.model.loader.{FSPath, LoadedDomain, ModelParsingResult}
+import izumi.idealingua.model.typespace.verification.MissingDependency
 
 sealed trait IDLError
 
@@ -15,7 +15,7 @@ sealed trait PostError extends IDLError
 object PostError {
   final case class DuplicatedDomains(paths: Map[DomainId, Seq[FSPath]]) extends PostError {
     override def toString: String = {
-      import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+      import izumi.fundamentals.platform.strings.IzString._
       val messages = paths.map(d => s"${d._1}:  ${d._2.niceList().shift(2)}")
       s"Duplicate domain ids at different paths: ${messages.niceList()}"
     }

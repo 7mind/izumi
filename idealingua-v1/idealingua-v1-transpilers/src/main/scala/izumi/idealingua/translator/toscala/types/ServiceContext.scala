@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.types
+package izumi.idealingua.translator.toscala.types
 
-import com.github.pshirshov.izumi.idealingua.model.common.{IndefiniteId, TypeName, TypePath}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.Service
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.model.common.{IndefiniteId, TypeName, TypePath}
+import izumi.idealingua.model.il.ast.typed.Service
+import izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
 

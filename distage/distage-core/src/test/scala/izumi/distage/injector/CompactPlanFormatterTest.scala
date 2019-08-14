@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.distage.injector
+package izumi.distage.injector
 
-import com.github.pshirshov.izumi.distage.fixtures.BasicCases.BasicCase1.{Impl1, JustTrait}
-import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
-import com.github.pshirshov.izumi.distage.model.PlannerInput
-import com.github.pshirshov.izumi.distage.model.plan.CompactPlanFormatter._
-import com.github.pshirshov.izumi.functional.Renderable._
+import izumi.distage.fixtures.BasicCases.BasicCase1.{Impl1, JustTrait}
+import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.CompactPlanFormatter._
+import izumi.functional.Renderable._
 import distage.ModuleDef
 import org.scalatest.WordSpec
 

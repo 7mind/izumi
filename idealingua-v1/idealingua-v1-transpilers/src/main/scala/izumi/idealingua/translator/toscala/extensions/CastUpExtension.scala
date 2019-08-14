@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.idealingua.translator.toscala.extensions
+package izumi.idealingua.translator.toscala.extensions
 
-import com.github.pshirshov.izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
-import com.github.pshirshov.izumi.idealingua.model.problems.IDLException
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef.Interface
-import com.github.pshirshov.izumi.idealingua.translator.toscala.STContext
-import com.github.pshirshov.izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, InterfaceProduct}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
-import com.github.pshirshov.izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
+import izumi.idealingua.model.common.TypeId.{DTOId, InterfaceId}
+import izumi.idealingua.model.problems.IDLException
+import izumi.idealingua.model.il.ast.typed.TypeDef.Interface
+import izumi.idealingua.translator.toscala.STContext
+import izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, InterfaceProduct}
+import izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
+import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
 import scala.meta._
 

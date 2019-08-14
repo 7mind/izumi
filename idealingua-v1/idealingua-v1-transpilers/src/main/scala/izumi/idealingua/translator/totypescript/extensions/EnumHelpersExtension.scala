@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.translator.totypescript.extensions
+package izumi.idealingua.translator.totypescript.extensions
 
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.typed.TypeDef
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.TSTContext
-import com.github.pshirshov.izumi.idealingua.translator.totypescript.products.CogenProduct.EnumProduct
+import izumi.fundamentals.platform.strings.IzString._
+import izumi.idealingua.model.il.ast.typed.TypeDef
+import izumi.idealingua.translator.totypescript.TSTContext
+import izumi.idealingua.translator.totypescript.products.CogenProduct.EnumProduct
 
 object EnumHelpersExtension extends TypeScriptTranslatorExtension {
   override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {

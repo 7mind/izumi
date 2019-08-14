@@ -1,10 +1,10 @@
-package com.github.pshirshov.izumi.logstage.sink.slf4j
+package izumi.logstage.sink.slf4j
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.github.pshirshov.izumi.logstage.api.Log
-import com.github.pshirshov.izumi.logstage.api.logger.LogSink
-import com.github.pshirshov.izumi.logstage.api.rendering.RenderingPolicy
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
+import izumi.logstage.api.rendering.RenderingPolicy
 import org.slf4j
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory

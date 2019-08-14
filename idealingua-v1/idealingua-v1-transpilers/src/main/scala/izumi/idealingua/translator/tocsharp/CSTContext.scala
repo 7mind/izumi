@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp
+package izumi.idealingua.translator.tocsharp
 
-import com.github.pshirshov.izumi.idealingua.model.typespace.Typespace
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, CSharpTranslatorExtensions}
-import com.github.pshirshov.izumi.idealingua.translator.tocsharp.tools.ModuleTools
+import izumi.idealingua.model.typespace.Typespace
+import izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtension, CSharpTranslatorExtensions}
+import izumi.idealingua.translator.tocsharp.tools.ModuleTools
 
 class CSTContext(
                   val typespace: Typespace

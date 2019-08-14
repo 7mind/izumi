@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.planning
+package izumi.distage.planning
 
-import com.github.pshirshov.izumi.distage.model.exceptions.ConflictingDIKeyBindingsException
-import com.github.pshirshov.izumi.distage.model.plan._
-import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
-import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy.{DIKeyConflictResolution, WithResolve}
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
-import com.github.pshirshov.izumi.fundamentals.platform.strings.IzString._
+import izumi.distage.model.exceptions.ConflictingDIKeyBindingsException
+import izumi.distage.model.plan._
+import izumi.distage.model.planning.PlanMergingPolicy
+import izumi.distage.model.planning.PlanMergingPolicy.{DIKeyConflictResolution, WithResolve}
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.strings.IzString._
 import distage.DIKey
 
 import scala.collection.mutable

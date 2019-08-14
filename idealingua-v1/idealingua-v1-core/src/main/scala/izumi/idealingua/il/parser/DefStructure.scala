@@ -1,16 +1,16 @@
-package com.github.pshirshov.izumi.idealingua.il.parser
+package izumi.idealingua.il.parser
 
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.syntax.Literals
-import com.github.pshirshov.izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDNewtype}
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.defns._
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.ImportedId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.typeid.ParsedId
+import izumi.idealingua.il.parser.structure.syntax.Literals
+import izumi.idealingua.il.parser.structure.{Separators, aggregates, ids, kw}
+import izumi.idealingua.model.il.ast.raw.defns
+import izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
+import izumi.idealingua.model.il.ast.raw.defns.RawEnum.EnumOp
+import izumi.idealingua.model.il.ast.raw.defns.RawStructure.StructOp
+import izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.{TLDDeclared, TLDNewtype}
+import izumi.idealingua.model.il.ast.raw.defns.RawTypeDef._
+import izumi.idealingua.model.il.ast.raw.defns._
+import izumi.idealingua.model.il.ast.raw.domains.ImportedId
+import izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 import fastparse.NoWhitespace._
 import fastparse._
 

@@ -1,12 +1,12 @@
-package com.github.pshirshov.izumi.distage.testkit.services.dstest
+package izumi.distage.testkit.services.dstest
 
-import com.github.pshirshov.izumi.distage.model.definition.{Axis, AxisBase}
-import com.github.pshirshov.izumi.distage.plugins.merge.PluginMergeStrategy
-import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
-import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import com.github.pshirshov.izumi.distage.roles.services.PluginSource
-import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache
-import com.github.pshirshov.izumi.logstage.api.IzLogger
+import izumi.distage.model.definition.{Axis, AxisBase}
+import izumi.distage.plugins.merge.PluginMergeStrategy
+import izumi.distage.roles.BootstrapConfig
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.services.PluginSource
+import izumi.distage.testkit.services.PluginsCache
+import izumi.logstage.api.IzLogger
 
 trait DistageTestEnvironmentProvider {
 

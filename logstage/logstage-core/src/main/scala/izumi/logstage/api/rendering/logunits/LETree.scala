@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.logstage.api.rendering.logunits
+package izumi.logstage.api.rendering.logunits
 
 sealed trait LETree
 

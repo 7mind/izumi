@@ -1,9 +1,9 @@
-package com.github.pshirshov.izumi.idealingua.model.il.ast.typed
+package izumi.idealingua.model.il.ast.typed
 
-import com.github.pshirshov.izumi.idealingua.model.common.DomainId
-import com.github.pshirshov.izumi.idealingua.model.il.ast.IDLPostTyper
-import com.github.pshirshov.izumi.idealingua.model.il.ast.raw.domains.Import
-import com.github.pshirshov.izumi.idealingua.model.loader.FSPath
+import izumi.idealingua.model.common.DomainId
+import izumi.idealingua.model.il.ast.IDLPostTyper
+import izumi.idealingua.model.il.ast.raw.domains.Import
+import izumi.idealingua.model.loader.FSPath
 
 case class Inclusion(include: String)
 

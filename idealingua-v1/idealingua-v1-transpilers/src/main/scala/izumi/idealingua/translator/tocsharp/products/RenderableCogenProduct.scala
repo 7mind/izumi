@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.idealingua.translator.tocsharp.products
+package izumi.idealingua.translator.tocsharp.products
 
 trait RenderableCogenProduct {
   def render: List[String]

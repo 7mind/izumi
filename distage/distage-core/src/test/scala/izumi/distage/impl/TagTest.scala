@@ -1,11 +1,11 @@
-package com.github.pshirshov.izumi.distage.impl
+package izumi.distage.impl
 
-import com.github.pshirshov.izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
-import com.github.pshirshov.izumi.distage.model.definition.With
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
-import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
+import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
+import izumi.distage.model.definition.With
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks._
 import distage.{SafeType, Tag}
 import org.scalatest.WordSpec
 
@@ -262,7 +262,7 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "Can create custom type tags to support bounded generics, e.g. <: Dep in TagK" in {
-      import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
+      import izumi.distage.fixtures.TypesCases.TypesCase3._
 
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
 
@@ -273,7 +273,7 @@ class TagTest extends WordSpec with X[String] {
       assertCompiles("HKTag.hktagFromTypeTag[{ type Arg[C] = Option[C] }]")
       assertTypeError("HKTag.hktagFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
       // The error produced above is:
-      //   Error:(177, 32) No TypeTag available for com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
+      //   Error:(177, 32) No TypeTag available for izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
       //   HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
       // That means that result of applying lambda:
       //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
@@ -283,7 +283,7 @@ class TagTest extends WordSpec with X[String] {
 
     "progression test: type tags with bounds are not currently requested by the macro" in {
       assertTypeError("""
-      import com.github.pshirshov.izumi.distage.fixtures.TypesCases.TypesCase3._
+      import izumi.distage.fixtures.TypesCases.TypesCase3._
 
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
 

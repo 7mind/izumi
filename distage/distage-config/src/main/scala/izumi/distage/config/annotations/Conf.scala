@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.config.annotations
+package izumi.distage.config.annotations
 
 /**
   * Inject parameter from config value at the specified path.

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.model.provisioning
+package izumi.distage.model.provisioning
 
-import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
-import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
+import izumi.distage.model.references.IdentifiedRef
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 import scala.collection.{Map, Seq, mutable}
 
