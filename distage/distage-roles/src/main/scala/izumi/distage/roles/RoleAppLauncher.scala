@@ -86,9 +86,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
     val options = contextOptions(parameters)
     val moduleProvider = makeModuleProvider(options, parameters, activation, roles, config, lateLogger)
-    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs
+    val bsModule = moduleProvider.bootstrapModules().merge overridenBy defBs overridenBy bsOverride
 
-    val appModule = moduleProvider.appModules().merge overridenBy defApp
+    val appModule = moduleProvider.appModules().merge overridenBy defApp overridenBy appOverride
     val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
@@ -97,6 +97,9 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     r.runPlan(appPlan)
   }
 
+  protected def appOverride: ModuleBase = ModuleBase.empty
+
+  protected def bsOverride: BootstrapModule = BootstrapModule.empty
 
   protected def defaultActivations: Map[AxisBase, AxisValue] = Map(
     Env -> Env.Prod,
