@@ -130,7 +130,7 @@ function init {
     fi
 
     export CI_BRANCH=${BUILD_SOURCEBRANCHNAME}
-    export CI_TAG=`git describe --contains | grep v | head -n 1 || true`
+    export CI_TAG=`git describe --contains | grep v | grep -v '~' | head -n 1 || true`
     export CI_BUILD_NUMBER=${BUILD_BUILDID}
     export CI_COMMIT=${BUILD_SOURCEVERSION}
 
