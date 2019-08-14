@@ -19,18 +19,27 @@ class PruningPlanMergingPolicy(
   import izumi.fundamentals.platform.strings.IzString._
 
   override protected def resolveConflict(plan: DodgyPlan, key: RuntimeDIUniverse.DIKey, operations: Set[DodgyPlan.JustOp]): DIKeyConflictResolution = {
-    val filtered = operations.filter(_.binding.tags.collect({ case BindingTag.AxisTag(t) => t }).forall(t => activeTags.contains(t)))
-    val ops = filtered.map(_.op: ExecutableOp)
-    if (filtered.size == 1) {
-      DIKeyConflictResolution.Successful(ops)
-    } else {
-      if (filtered.nonEmpty) {
-        val hints = makeHints(filtered)
-        DIKeyConflictResolution.Failed(operations.map(_.op), s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
-      } else {
-        val hints = makeHints(operations)
-        DIKeyConflictResolution.Failed(operations.map(_.op), s"All options were filtered out, original candidates: ${hints.niceList()}")
+    assert(operations.size > 1)
+    val filtered = operations
+      .filter {
+        op =>
+          op.binding.tags
+            .collect({ case BindingTag.AxisTag(t) => t })
+            .forall(t => activeTags.contains(t))
       }
+
+    val (explicitlyEnabled, noTags) = filtered.partition(_.binding.tags.nonEmpty)
+
+    if (explicitlyEnabled.size == 1) {
+      DIKeyConflictResolution.Successful(explicitlyEnabled.map(_.op: ExecutableOp))
+    } else if (noTags.size == 1) {
+      DIKeyConflictResolution.Successful(noTags.map(_.op: ExecutableOp))
+    } else if (filtered.nonEmpty) {
+      val hints = makeHints(filtered)
+      DIKeyConflictResolution.Failed(operations.map(_.op), s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
+    } else {
+      val hints = makeHints(operations)
+      DIKeyConflictResolution.Failed(operations.map(_.op), s"All options were filtered out, original candidates: ${hints.niceList()}")
     }
   }
 

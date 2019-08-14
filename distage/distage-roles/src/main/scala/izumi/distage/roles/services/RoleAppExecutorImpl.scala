@@ -73,10 +73,17 @@ class RoleAppExecutorImpl[F[_] : TagK](
       }
       val f = tt.foldLeft(finalizer) {
         case (acc, role) =>
-          _ => effect.definitelyRecover(role.use(acc), t => {
+          _ =>
+            val loggedTask = for {
+              _ <- effect.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
+              _ <- role.use(acc)
+              _ <- effect.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+            } yield ()
+
+            effect.definitelyRecover(loggedTask, t => {
             for {
               _ <- effect.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
-              _ <- effect.fail(t)
+              _ <- effect.fail[Unit](t)
             } yield ()
           })
       }
@@ -106,10 +113,16 @@ class RoleAppExecutorImpl[F[_] : TagK](
 
     effect.traverse_(tasksToRun) {
       case (task, cfg) =>
-        effect.definitelyRecover(task.start(cfg.roleParameters, cfg.freeArgs), t => {
+        val loggedTask = for {
+          _ <- effect.maybeSuspend(lateLogger.info(s"Task is about to start: $task"))
+          _ <- task.start(cfg.roleParameters, cfg.freeArgs)
+          _ <- effect.maybeSuspend(lateLogger.info(s"Task finished: $task"))
+        } yield ()
+
+        effect.definitelyRecover(loggedTask, error => {
           for {
-            _ <- effect.maybeSuspend(lateLogger.error(s"Task $task failed: $t"))
-            _ <- effect.fail(t)
+            _ <- effect.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
+            _ <- effect.fail[Unit](error)
           } yield ()
         })
 
