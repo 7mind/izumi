@@ -117,7 +117,7 @@ function sonatypeRelease {
   echo "SONATYPE RELEASE..."
 
   if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
-    csbt sonatypeRelease || exit 1
+    csbt sonatypeReleaseAll || exit 1
   fi
 }
 
