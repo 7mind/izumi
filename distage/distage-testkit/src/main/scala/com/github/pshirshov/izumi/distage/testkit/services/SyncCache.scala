@@ -1,5 +1,10 @@
 package com.github.pshirshov.izumi.distage.testkit.services
 
+import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, ModuleBase}
+import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
+import com.github.pshirshov.izumi.distage.roles.services.PluginSource
+
 import scala.collection.mutable
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks._
 
@@ -45,5 +50,19 @@ class SyncCache[K, V] {
     cache.synchronized {
       f
     }
+  }
+}
+
+object PluginsCache {
+  case class CacheKey(config: BootstrapConfig)
+  case class CacheValue(
+                         plugins: PluginSource.AllLoadedPlugins,
+                         bsModule: ModuleBase,
+                         appModule: ModuleBase,
+                         availableActivations: Map[AxisBase, Set[AxisValue]],
+                       )
+
+  object Instance extends SyncCache[CacheKey, CacheValue] {
+    // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
   }
 }

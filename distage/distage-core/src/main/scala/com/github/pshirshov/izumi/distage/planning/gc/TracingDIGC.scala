@@ -15,7 +15,7 @@ class TracingDIGC
 (
   roots: Set[DIKey],
   fullIndex: Map[DIKey, ExecutableOp],
-  override val ignoreMissing: Boolean,
+  override val ignoreMissingDeps: Boolean,
 ) extends AbstractGCTracer[DIKey, ExecutableOp] {
 
   @inline
@@ -63,7 +63,7 @@ class TracingDIGC
         val weakMembers = c.members
           .map {
             m =>
-              val setMemberOp = if (ignoreMissing) {
+              val setMemberOp = if (ignoreMissingDeps) {
                 fullIndex.get(m)
               } else {
                 Some(fullIndex(m))
@@ -108,7 +108,7 @@ object TracingDIGC extends DIGarbageCollector {
     plan.gcMode match {
       case GCMode.GCRoots(roots) =>
         assert(roots.nonEmpty)
-        val collected = new TracingDIGC(roots, plan.index, ignoreMissing = false).gc(plan.steps)
+        val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
 
         val updatedDefn = {
           val oldDefn = plan.definition.bindings

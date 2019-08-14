@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.fixtures
+package com.github.pshirshov.izumi.distage.testkit.st.fixtures
 
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -85,10 +85,12 @@ class TestPlugin01 extends PluginDef {
   make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
+object MonadPlugin extends PluginDef
+  with CatsDIEffectModule
+  with ZioDIEffectModule
+
 object TestPlugin00
-  extends PluginDef
-    with CatsDIEffectModule
-    with ZioDIEffectModule {
+  extends PluginDef {
   make[TestService1]
   make[TestService2]
   make[TestResource1]

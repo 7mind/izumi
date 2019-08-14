@@ -1,7 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+@deprecated("Use dstest", "2019/Jul/18")
 private[testkit] trait SuppressionSupport {
   this: IgnoreSupport =>
 

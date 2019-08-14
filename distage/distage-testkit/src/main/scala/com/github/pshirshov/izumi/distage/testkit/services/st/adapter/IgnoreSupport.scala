@@ -1,7 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
 
 import org.scalatest.exceptions.TestCanceledException
 
+@deprecated("Use dstest", "2019/Jul/18")
 private[testkit] trait IgnoreSupport {
   protected final def ignoreThisTest(cause: Throwable): Nothing = {
     ignoreThisTest(None, Some(cause))
@@ -21,5 +22,3 @@ private[testkit] trait IgnoreSupport {
 
 
 }
-
-

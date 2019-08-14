@@ -107,10 +107,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   protected def requiredActivations: Map[AxisBase, AxisValue] = Map.empty
 
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = {
-    rolesInfo.requiredComponents ++ Set(
-      RuntimeDIUniverse.DIKey.get[ResolvedConfig],
-      RuntimeDIUniverse.DIKey.get[Set[RoleService[F]]],
-    )
+    rolesInfo.requiredComponents
   }
 
 

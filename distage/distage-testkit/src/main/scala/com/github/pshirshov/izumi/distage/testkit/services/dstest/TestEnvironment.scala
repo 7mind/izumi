@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.services.dstest
 
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
-import distage.ModuleBase
+import distage._
 
 case class TestEnvironment(
                             bsModule: ModuleBase,

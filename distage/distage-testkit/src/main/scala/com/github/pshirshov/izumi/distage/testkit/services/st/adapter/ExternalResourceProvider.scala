@@ -1,4 +1,4 @@
-package com.github.pshirshov.izumi.distage.testkit.services
+package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
 
 import com.github.pshirshov.izumi.distage.bootstrap.BootstrapLocator
 import com.github.pshirshov.izumi.distage.model.definition.DIResource.DIResourceBase
@@ -6,7 +6,8 @@ import com.github.pshirshov.izumi.distage.model.definition.{DIResource, LocatorD
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import com.github.pshirshov.izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import com.github.pshirshov.izumi.distage.model.references.IdentifiedRef
-import com.github.pshirshov.izumi.distage.testkit.services.ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
+import com.github.pshirshov.izumi.distage.testkit.services.SyncCache
+import ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
 import com.github.pshirshov.izumi.fundamentals.platform.console.TrivialLogger
 import com.github.pshirshov.izumi.fundamentals.platform.functional.Identity
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
@@ -14,6 +15,7 @@ import distage.{DIKey, Locator, SafeType, TagK}
 
 import scala.annotation.unchecked.uncheckedVariance
 
+@deprecated("Use dstest", "2019/Jul/18")
 trait ExternalResourceProvider {
   def process(ctx: MemoizationContextId, ref: MemoizedInstance[Any]): Unit
 

@@ -1,8 +1,8 @@
-package com.github.pshirshov.izumi.distage.testkit
+package com.github.pshirshov.izumi.distage.testkit.services.st.adapter
 
 import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
 import com.github.pshirshov.izumi.distage.model.definition.StandardAxis._
-import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef, ModuleBase}
+import com.github.pshirshov.izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
 import com.github.pshirshov.izumi.distage.model.planning.PlanMergingPolicy
 import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import com.github.pshirshov.izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -11,12 +11,14 @@ import com.github.pshirshov.izumi.distage.roles.BootstrapConfig
 import com.github.pshirshov.izumi.distage.roles.model.AppActivation
 import com.github.pshirshov.izumi.distage.roles.model.meta.RolesInfo
 import com.github.pshirshov.izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
-import com.github.pshirshov.izumi.distage.testkit.DistagePluginTestSupport.{CacheKey, CacheValue}
-import com.github.pshirshov.izumi.distage.testkit.services.{MemoizationContextId, SyncCache}
+import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache
+import com.github.pshirshov.izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
+import com.github.pshirshov.izumi.distage.testkit.services.dstest.TestEnvironment
 import com.github.pshirshov.izumi.fundamentals.platform.language.Quirks
 import com.github.pshirshov.izumi.logstage.api.IzLogger
 import distage.SafeType
 
+@deprecated("Use dstest", "2019/Jul/18")
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
   /**
@@ -47,7 +49,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     }
 
     val plugins = if (memoizePlugins) {
-      DistagePluginTestSupport.Cache.getOrCompute(CacheKey(config), env())
+      PluginsCache.Instance.getOrCompute(CacheKey(config), env())
     } else {
       env()
     }
@@ -109,16 +111,3 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
 
 
-object DistagePluginTestSupport {
-  case class CacheKey(config: BootstrapConfig)
-  case class CacheValue(
-                         plugins: PluginSource.AllLoadedPlugins,
-                         bsModule: ModuleBase,
-                         appModule: ModuleBase,
-                         availableActivations: Map[AxisBase, Set[AxisValue]],
-                       )
-
-  object Cache extends SyncCache[CacheKey, CacheValue] {
-    // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run
-  }
-}

@@ -67,6 +67,7 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
           make[Ctx]
           make[S3Component]
           many[IntegrationComponent].add[S3Component]
+          make[Initiator]
         }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
 
         val result = injector.fproduce(plan)

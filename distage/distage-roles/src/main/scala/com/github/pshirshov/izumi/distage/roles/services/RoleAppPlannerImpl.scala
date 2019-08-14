@@ -1,9 +1,7 @@
 package com.github.pshirshov.izumi.distage.roles.services
 
-import com.github.pshirshov.izumi.distage.model.GCMode
 import com.github.pshirshov.izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import com.github.pshirshov.izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import com.github.pshirshov.izumi.distage.model.plan.{DependencyGraph, DependencyKind, ExecutableOp, PlanTopologyImmutable}
 import com.github.pshirshov.izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import com.github.pshirshov.izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import com.github.pshirshov.izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
@@ -37,65 +35,22 @@ class RoleAppPlannerImpl[F[_] : TagK](
     )
     val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-    val rolesPlan = injector.plan(PlannerInput(fullAppModule, appMainRoots))
-
-    val integrationComponents = rolesPlan.collectChildren[IntegrationCheck].map(_.target).toSet
-
-    val integrationPlan = if (integrationComponents.nonEmpty) {
-      // exclude runtime
-      injector.plan(PlannerInput(fullAppModule.drop(runtimePlan.keys), integrationComponents))
-    } else {
-      emptyPlan(runtimePlan)
+    val appPlan = injector.splitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
+      _.collectChildren[IntegrationCheck].map(_.target).toSet
     }
 
-    val refinedRolesPlan = if (appMainRoots.nonEmpty) {
-      // exclude runtime & integrations
-      injector.plan(PlannerInput(fullAppModule.drop(integrationPlan.keys), appMainRoots))
-    } else {
-      emptyPlan(runtimePlan)
-    }
-    //            println("====")
-    //            println(runtimePlan.render())
-    //            println("----")
-    //            println("====")
-    //            println(integrationPlan.render())
-    //            println("----")
-    //            println("====")
-    //            println(refinedRolesPlan.render())
-    //            println("----")
-
-    verify(runtimePlan)
-    verify(integrationPlan)
-    verify(refinedRolesPlan)
+    val check = new PlanCircularDependencyCheck(options, logger)
+    check.verify(runtimePlan)
+    check.verify(appPlan.subplan)
+    check.verify(appPlan.primary)
 
     AppStartupPlans(
       runtimePlan,
-      integrationPlan,
-      integrationComponents,
-      refinedRolesPlan,
+      appPlan.subplan,
+      appPlan.subRoots,
+      appPlan.primary,
       injector
     )
   }
-
-
-  private def emptyPlan(runtimePlan: OrderedPlan): OrderedPlan = {
-    OrderedPlan(runtimePlan.definition, Vector.empty, GCMode.NoGC, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
-  }
-
-  private def verify(plan: OrderedPlan): Unit = {
-    if (options.warnOnCircularDeps) {
-      val allProxies = plan.steps.collect {
-        case s: ExecutableOp.ProxyOp.MakeProxy =>
-          s
-      }
-
-      allProxies.foreach {
-        s =>
-          val deptree = plan.topology.dependencies.tree(s.target)
-          val tree = s"\n${plan.renderDeps(deptree)}"
-          logger.warn(s"Circular dependency has been resolved with proxy for ${s.target -> "key"}, $tree")
-      }
-    }
-  }
-
 }
+
