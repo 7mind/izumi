@@ -177,7 +177,7 @@ class HttpServer[C <: Http4sContext]
     for {
       parsed <- BIO.fromEither(parse(message))
       unmarshalled <- BIO.fromEither(parsed.as[RpcPacket])
-      id <- BIO.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
+      id <- wsContextProvider.toId(context.initialContext, context.id, unmarshalled)
       _ <- BIO.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandbox.catchAll {
         case BIOExit.Termination(exception, allExceptions, trace) =>
@@ -193,13 +193,12 @@ class HttpServer[C <: Http4sContext]
   protected def respond(context: WebsocketClientContextImpl[C], input: RpcPacket): BiIO[Throwable, Option[RpcPacket]] = {
     input match {
       case RpcPacket(RPCPacketKind.RpcRequest, None, _, _, _, _, _) =>
-        val (newId, response) = wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)
-        BIO.syncThrowable(context.updateId(newId)) *> response
+        wsContextProvider.handleEmptyBodyPacket(context.id, context.initialContext, input)(context.updateId)
 
       case RpcPacket(RPCPacketKind.RpcRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         for {
-          userCtx <- BIO.syncThrowable(wsContextProvider.toContext(context.id, context.initialContext, input))
+          userCtx <- wsContextProvider.toContext(context.id, context.initialContext, input)
           _ <- BIO.sync(logger.debug(s"${context -> null}: $id, $userCtx"))
           result <- muxer.doInvoke(data, userCtx, methodId)
           packet <- result match {

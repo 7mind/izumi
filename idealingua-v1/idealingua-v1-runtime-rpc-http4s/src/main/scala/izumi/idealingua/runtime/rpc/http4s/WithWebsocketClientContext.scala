@@ -59,31 +59,31 @@ object WsSessionListener {
 
 
 trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
-  def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): Ctx
+  def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): B[Throwable, Ctx]
 
-  def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): Option[ClientId]
+  def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): B[Throwable, Option[ClientId]]
 
   // TODO: we use this to mangle with authorization but it's dirty
-  def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): (Option[ClientId], B[Throwable, Option[RpcPacket]])
+  def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket)(idUpdate: Option[ClientId] => Unit): B[Throwable, Option[RpcPacket]]
 }
 
 class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextProvider[C#BiIO, C#RequestContext, C#ClientId] {
 
   import c._
 
-  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): (Option[C#ClientId], C#BiIO[Throwable, Option[RpcPacket]]) = {
+  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket)(idUpdate: Option[ClientId] => Unit): C#BiIO[Throwable, Option[RpcPacket]] = {
     Quirks.discard(id, initial, packet)
-    (None, BIO.pure(None))
+    BIO.pure(None)
   }
 
-  override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#RequestContext = {
+  override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, C#RequestContext] = {
     Quirks.discard(packet, id)
-    initial
+    BIO.pure(initial)
   }
 
-  override def toId(initial: C#RequestContext, currentId: WsClientId[C#ClientId], packet: RpcPacket): Option[C#ClientId] = {
+  override def toId(initial:  C#RequestContext, currentId:  WsClientId[C#ClientId], packet:  RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
     Quirks.discard(initial, packet)
-    None
+    BIO.pure(None)
   }
 }
 

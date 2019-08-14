@@ -45,7 +45,7 @@ object Http4sTestContext {
     // DON'T DO THIS IN PRODUCTION CODE !!!
     val knownAuthorization = new AtomicReference[Credentials](null)
 
-    override def toContext(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): DummyRequestContext = {
+    override def toContext(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, DummyRequestContext] = {
       Quirks.discard(id)
 
       initial.credentials match {
@@ -61,41 +61,49 @@ object Http4sTestContext {
           knownAuthorization.set(value.credentials)
         case None =>
       }
-      initial.copy(credentials = Option(knownAuthorization.get()))
+      BIO.pure{
+        initial.copy(credentials = Option(knownAuthorization.get()))
+      }
     }
 
-    override def toId(initial: DummyRequestContext, currentId: WsClientId[String], packet: RpcPacket): Option[String] = {
-      packet.headers.getOrElse(Map.empty).get("Authorization")
-        .map(Authorization.parse)
-        .flatMap(_.toOption)
-        .collect {
-          case Authorization(BasicCredentials((user, _))) => user
-        }
+    override def toId(initial:  DummyRequestContext, currentId:  WsClientId[String], packet:  RpcPacket): zio.IO[Throwable, Option[String]] = {
+      zio.IO.effect {
+        packet.headers.getOrElse(Map.empty).get("Authorization")
+          .map(Authorization.parse)
+          .flatMap(_.toOption)
+          .collect {
+            case Authorization(BasicCredentials((user, _))) => user
+          }
+      }
     }
 
-    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): (Option[String], zio.IO[Throwable, Option[RpcPacket]]) = {
+    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket)(idUpdate: Option[String] => Unit): zio.IO[Throwable, Option[RpcPacket]] = {
       Quirks.discard(id, initial)
 
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
-          None -> BIO.pure(None)
+          idUpdate(None)
+          BIO.pure(None)
 
         case Some(_) =>
-          toId(initial, id, packet) match {
+          toId(initial, id, packet).flatMap {
             case id@Some(_) =>
               // here we may set internal state
-              id -> BIO.pure(packet.ref.map {
+              idUpdate(id)
+              BIO.pure(packet.ref.map {
                 ref =>
                   RpcPacket.rpcResponse(ref, Json.obj())
               })
 
             case None =>
-              None -> BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
+              idUpdate(None)
+              BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed")))
           }
 
         case None =>
-          None -> BIO.pure(None)
+          idUpdate(None)
+          BIO.pure(None)
       }
     }
   }
