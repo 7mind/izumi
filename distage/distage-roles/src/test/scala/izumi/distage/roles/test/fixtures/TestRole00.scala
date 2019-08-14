@@ -7,6 +7,7 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable
 import izumi.distage.roles.test.fixtures.TestRole00.TestRole00Resource
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
@@ -37,12 +38,13 @@ class TestRole00[F[_] : DIEffect]
 , logger: IzLogger
 , notCloseable: NotCloseable
 , val resources: Set[Resource]
+, val conflict: Conflict
 , val es: ExecutorService
 ) extends RoleService[F]  {
   notCloseable.discard()
 
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
-    logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies")
+    logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
   }) {
     _ =>
       DIEffect[F].maybeSuspend {

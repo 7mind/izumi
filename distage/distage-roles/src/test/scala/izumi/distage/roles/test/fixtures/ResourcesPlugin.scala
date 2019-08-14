@@ -11,6 +11,7 @@ class ResourcesPlugin extends PluginDef {
   make[InitCounter]
   make[Conflict].tagged(Env.Prod).from[Conflict1]
   make[Conflict].tagged(Env.Test).from[Conflict2]
+  make[Conflict].from[Conflict3]
   make[UnsolvableConflict].from[UnsolvableConflict1]
   make[UnsolvableConflict].from[UnsolvableConflict2]
 
@@ -35,6 +36,7 @@ object ResourcesPlugin {
   trait Conflict
   case class Conflict1() extends Conflict
   case class Conflict2(u: UnsolvableConflict) extends Conflict
+  case class Conflict3() extends Conflict
 
   trait UnsolvableConflict
   class UnsolvableConflict1 extends UnsolvableConflict

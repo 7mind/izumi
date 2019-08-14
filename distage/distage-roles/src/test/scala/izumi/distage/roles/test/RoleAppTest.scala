@@ -10,13 +10,29 @@ import org.scalatest.WordSpec
 
 class RoleAppTest extends WordSpec
   with WithProperties {
+  private val prefix = "target/configwriter"
+
+  private val overrides = Map(
+    "testservice.systemPropInt" -> "265"
+    , "testservice.systemPropList.0" -> "111"
+    , "testservice.systemPropList.1" -> "222"
+  )
 
   "Role Launcher" should {
-    "produce config dumps and support minimization" in {
+    "be able to start roles" in {
+      TestEntrypoint.main(Array(
+        "-ll", "critical",
+        ":testrole00",
+      ))
+    }
 
+    "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array("-ll", "critical", ":configwriter", "-t", prefix))
+        TestEntrypoint.main(Array(
+          "-ll", "critical",
+          ":configwriter", "-t", prefix
+        ))
       }
 
       val cfg1 = cfg("configwriter", version)
@@ -31,13 +47,6 @@ class RoleAppTest extends WordSpec
     }
   }
 
-  private val prefix = "target/configwriter"
-
-  private val overrides = Map(
-    "testservice.systemPropInt" -> "265"
-    , "testservice.systemPropList.0" -> "111"
-    , "testservice.systemPropList.1" -> "222"
-  )
 
   private def cfg(role: String, version: ArtifactVersion) = {
     val justConfig = Paths.get(prefix, s"$role-${version.version}.json").toFile

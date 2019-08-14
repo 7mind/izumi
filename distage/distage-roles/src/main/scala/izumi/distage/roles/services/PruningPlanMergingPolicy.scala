@@ -31,6 +31,10 @@ class PruningPlanMergingPolicy(
     val (explicitlyEnabled, noTags) = filtered.partition(_.binding.tags.nonEmpty)
 
     if (explicitlyEnabled.size == 1) {
+      if (noTags.nonEmpty) {
+        logger.info(s"Untagged conflicts were filtered out in $key: ${noTags.niceList() -> "filtered conflicts"}")
+        logger.warn(s"Untagged alternatives for conflict in $key were filtered out, continuing...")
+      }
       DIKeyConflictResolution.Successful(explicitlyEnabled.map(_.op: ExecutableOp))
     } else if (noTags.size == 1) {
       DIKeyConflictResolution.Successful(noTags.map(_.op: ExecutableOp))
@@ -73,7 +77,7 @@ class PruningPlanMergingPolicy(
       } else {
         val good = lastTry.collect({ case (k, DIKeyConflictResolution.Successful(s)) => k -> s })
         val erased = good.filter(_._2.isEmpty)
-        logger.info(s"Erased conflicts: ${erased.keys.niceList() -> "erased conflicts"}")
+        logger.info(s"${erased.keys.niceList() -> "erased conflicts"}")
         logger.warn(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
         val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
         SemiPlan(plan.definition, allResolved, plan.gcMode)
