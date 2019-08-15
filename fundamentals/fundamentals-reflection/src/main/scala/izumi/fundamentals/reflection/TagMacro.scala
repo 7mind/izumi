@@ -1,9 +1,9 @@
 package izumi.fundamentals.reflection
 
 import izumi.fundamentals.platform.console.TrivialLogger
-import WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
-import ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTagMacro}
+import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
+import izumi.fundamentals.reflection.WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagMacro}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
@@ -48,6 +48,25 @@ class TagMacro(val c: blackbox.Context) {
 
     reify {
       HKTagMaterializer(universe.splice.HKTag[T](res.splice, lhktag.splice))
+    }
+  }
+
+  // FIXME: report scalac bug - `Nothing` type is lost when two implicits for it are summoned as in
+  //    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
+  //  [info] /Users/kai/src/izumi-r2/distage/distage-core/src/test/scala/izumi/distage/impl/TagTest.scala:55:17: universe.this.RuntimeDIUniverse.Tag.tagFromTypeTag is not a valid implicit value for izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag[Nothing] because:
+  //  [info] hasMatchingSymbol reported error: type mismatch;
+  //  [info]  found   : izumi.fundamentals.reflection.macrortti.LTag.Weak[Nothing]
+  //  [info]  required: izumi.fundamentals.reflection.macrortti.LWeakTag[T]
+  //  [info]     (which expands to)  izumi.fundamentals.reflection.macrortti.LTag.Weak[T]
+  //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
+  //  [info] You may wish to define T as +T instead. (SLS 4.5)
+  //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
+  def FIXMEgetLTagAlso[DIU <: WithTags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+    val tagMacro = new LightTypeTagMacro(c)
+    val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+
+    reify {
+      c.prefix.asInstanceOf[Expr[DIU#TagObject]].splice.apply[T](t.splice, ltag.splice)
     }
   }
 
@@ -169,8 +188,8 @@ class TagMacro(val c: blackbox.Context) {
     c.universe.appliedType(tpe, tpe.typeArgs.map(_ => definitions.NothingTpe))
 
   protected[this] def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
-    import internal.{typeBounds, polyType}
     import internal.reificationSupport._
+    import internal.{polyType, typeBounds}
 
     val tpeSymbol = newNestedSymbol(owner, freshTypeName(""), NoPosition, Flag.PARAM | Flag.DEFERRED, isClass = false)
 

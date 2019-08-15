@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection
 
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.WithTags.hktagFormat
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LTag, LWeakTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
@@ -130,9 +130,17 @@ trait WithTags extends UniverseGeneric { self =>
     /** For construction from [[TagLambdaMacro]] */
     type HKTagRef[T] = HKTag[T]
 
-//    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
-    // FIXME: TODO: Not using LTag macro
-    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = Tag(t, LightTypeTagImpl.makeFLTT(u)(t.tpe))
+    // FIXME: report scalac bug - `Nothing` type is lost when two implicits for it are summoned as in
+    //    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
+    //  [info] /Users/kai/src/izumi-r2/distage/distage-core/src/test/scala/izumi/distage/impl/TagTest.scala:55:17: universe.this.RuntimeDIUniverse.Tag.tagFromTypeTag is not a valid implicit value for izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag[Nothing] because:
+    //  [info] hasMatchingSymbol reported error: type mismatch;
+    //  [info]  found   : izumi.fundamentals.reflection.macrortti.LTag.Weak[Nothing]
+    //  [info]  required: izumi.fundamentals.reflection.macrortti.LWeakTag[T]
+    //  [info]     (which expands to)  izumi.fundamentals.reflection.macrortti.LTag.Weak[T]
+    //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
+    //  [info] You may wish to define T as +T instead. (SLS 4.5)
+    //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
+    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
   }
 
   trait LowPriorityTagInstances {
