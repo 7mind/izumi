@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.{AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam}
 
 protected[macrortti] object RuntimeAPI {
 

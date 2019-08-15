@@ -3,7 +3,7 @@ package izumi.fundamentals.reflection
 import izumi.fundamentals.platform.console.TrivialLogger
 import WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
 import ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.macrortti.{LHKTag, LightTypeTagMacro}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTagMacro}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
@@ -42,7 +42,7 @@ class TagMacro(val c: blackbox.Context) {
     logger.log(s"resulting implicit summon $res")
 
     val tagMacro = new LightTypeTagMacro(c)
-    val lhktag = tagMacro.makeHKTagRaw[T](newHkTag.asInstanceOf[tagMacro.c.Type]).asInstanceOf[c.Expr[LHKTag[T]]]
+    val lhktag = tagMacro.makeHKTagRaw[T](newHkTag.asInstanceOf[tagMacro.c.Type]).asInstanceOf[c.Expr[LTag.WeakHK[T]]]
 
     logger.log(s"resulting LHKTag $lhktag")
 

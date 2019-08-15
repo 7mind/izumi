@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection
 
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.WithTags.hktagFormat
-import izumi.fundamentals.reflection.macrortti.{FLTT, LHKTag, LWeakTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
@@ -41,7 +41,7 @@ trait WithTags extends UniverseGeneric { self =>
   trait Tag[T] {
     def tag: TypeTag[T]
 
-    def fullLightTypeTag: FLTT
+    def fullLightTypeTag: LightTypeTag
 
     override def toString: String = s"Tag[${tag.tpe}]@@[$fullLightTypeTag]"
   }
@@ -74,10 +74,10 @@ trait WithTags extends UniverseGeneric { self =>
 
     def apply[T: Tag]: Tag[T] = implicitly
 
-    def apply[T](t: TypeTag[T], FLTT: FLTT): Tag[T] =
+    def apply[T](t: TypeTag[T], FLTT: LightTypeTag): Tag[T] =
       new Tag[T] {
         override val tag: TypeTag[T] = t
-        override def fullLightTypeTag: FLTT = FLTT
+        override def fullLightTypeTag: LightTypeTag = FLTT
       }
 
     /**
@@ -167,14 +167,14 @@ trait WithTags extends UniverseGeneric { self =>
      * Internal `TypeTag` holding the `typeConstructor` of type `T`
      **/
     def tag: TypeTag[_]
-    def fullLightTypeTag: FLTT
+    def fullLightTypeTag: LightTypeTag
 
     override def toString: String =
       s"${hktagFormat(tag.tpe)}@@[$fullLightTypeTag]"
   }
 
   object HKTag extends LowPriorityHKTagInstances {
-    def apply[T](k: TypeTag[T], l: LHKTag[T]): HKTag[T] = {
+    def apply[T](k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
         override val tag: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
@@ -186,11 +186,11 @@ trait WithTags extends UniverseGeneric { self =>
 
           TypeTag(k.mirror, ctorCreator)
         }
-        override val fullLightTypeTag: FLTT = l.fullLightTypeTag
+        override val fullLightTypeTag: LightTypeTag = l.fullLightTypeTag
       }
     }
 
-    implicit def hktagFromTypeTag[T](implicit k: TypeTag[T], l: LHKTag[T]): HKTag[T] = {
+    implicit def hktagFromTypeTag[T](implicit k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
         override val tag: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
@@ -202,7 +202,7 @@ trait WithTags extends UniverseGeneric { self =>
 
           TypeTag(k.mirror, ctorCreator)
         }
-        override val fullLightTypeTag: FLTT = l.fullLightTypeTag
+        override val fullLightTypeTag: LightTypeTag = l.fullLightTypeTag
       }
     }
 
@@ -290,7 +290,7 @@ trait WithTags extends UniverseGeneric { self =>
   // So we resort to weak type parameters and pointer equality
   trait WeakTag[T] {
     def tag: WeakTypeTag[T]
-    def fullLightTypeTag: FLTT
+    def fullLightTypeTag: LightTypeTag
 
     override final def toString: String = s"WeakTag[${tag.tpe}]"
   }
@@ -298,10 +298,10 @@ trait WithTags extends UniverseGeneric { self =>
   object WeakTag extends WeakTagInstances0 {
     def apply[T: WeakTag]: WeakTag[T] = implicitly
 
-    def apply[T](t: WeakTypeTag[T], l: FLTT): WeakTag[T] =
+    def apply[T](t: WeakTypeTag[T], l: LightTypeTag): WeakTag[T] =
       new WeakTag[T] {
         override val tag: WeakTypeTag[T] = t
-        override def fullLightTypeTag: FLTT = l
+        override def fullLightTypeTag: LightTypeTag = l
       }
   }
 
@@ -310,7 +310,7 @@ trait WithTags extends UniverseGeneric { self =>
   }
 
   trait WeakTagInstances1 {
-    implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T], l: LWeakTag[T]): WeakTag[T] = WeakTag(t, l.fullLightTypeTag)
+    implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T], l: LTag.Weak[T]): WeakTag[T] = WeakTag(t, l.fullLightTypeTag)
   }
 
   // workaround for a strange (prefix?) equality issue when splicing calls to `implicitly[RuntimeDIUniverse.u.TypeTag[X[Y]]`

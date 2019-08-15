@@ -2,18 +2,23 @@ package izumi.fundamentals.reflection.macrortti
 
 import scala.language.experimental.macros
 
-final case class LTag[T](fullLightTypeTag: FLTT)
-
+/**
+ * these are different summoners for light tags, it's fine for them to be the same structurally
+ *
+ * We don't have a "strong" tag at this point because TagMacro plays their role
+ */
 object LTag {
-  def apply[T: LTag]: LTag[T] = implicitly
+  final case class WeakHK[T](fullLightTypeTag: LightTypeTag)
 
-  implicit def materialize[T]: LTag[T] = macro LightTypeTagMacro.makeTag[T]
-}
+  object WeakHK {
+    implicit def materialize[T]: WeakHK[T] = macro LightTypeTagMacro.makeWeakHKTag[T]
+  }
 
-final case class LWeakTag[T](fullLightTypeTag: FLTT)
+  final case class Weak[T](fullLightTypeTag: LightTypeTag)
 
-object LWeakTag {
-  def apply[T: LWeakTag]: LWeakTag[T] = implicitly
+  object Weak {
+    def apply[T: Weak]: Weak[T] = implicitly
 
-  implicit def materialize[T]: LWeakTag[T] = macro LightTypeTagMacro.makeWeakTag[T]
+    implicit def materialize[T]: Weak[T] = macro LightTypeTagMacro.makeWeakTag[T]
+  }
 }

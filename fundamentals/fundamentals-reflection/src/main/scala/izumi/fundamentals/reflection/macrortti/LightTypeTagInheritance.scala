@@ -1,7 +1,7 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.strings.IzString._
@@ -19,19 +19,19 @@ object LightTypeTagInheritance {
 
 }
 
-final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
+final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   private final val tpeNothing = NameReference("scala.Nothing")
   private final val tpeAny = NameReference("scala.Any")
   private final val tpeAnyRef = NameReference("scala.AnyRef")
   private final val tpeObject = NameReference("java.lang.Object")
 
-  private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = FLTT.mergeIDBs(self.idb, other.idb)
-  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = FLTT.mergeIDBs(self.basesdb, other.basesdb)
+  private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = LightTypeTag.mergeIDBs(self.idb, other.idb)
+  private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = LightTypeTag.mergeIDBs(self.basesdb, other.basesdb)
 
 
   def isChild(): Boolean = {
-    val st = self.t
-    val ot = other.t
+    val st = self.ref
+    val ot = other.ref
     val logger = TrivialLogger.makeOut[this.type]("izumi.distage.debug.reflection", forceLog = false)
 
     logger.log(
@@ -43,11 +43,11 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
   }
 
   implicit class CtxExt(val ctx: Ctx) {
-    def isChild(selfT0: LightTypeTag, thatT0: LightTypeTag): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
+    def isChild(selfT0: LightTypeTagRef, thatT0: LightTypeTagRef): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
 
   }
 
-  private def isChild(ctx: Ctx)(selfT: LightTypeTag, thatT: LightTypeTag): Boolean = {
+  private def isChild(ctx: Ctx)(selfT: LightTypeTagRef, thatT: LightTypeTagRef): Boolean = {
     import ctx._
     logger.log(s"✴️ ️$selfT <:< $thatT, context = ${ctx.params}")
 
@@ -105,16 +105,16 @@ final class LightTypeTagInheritance(self: FLTT, other: FLTT) {
                 ctx.isChild(c, p)
             }
         }
-      case (s: IntersectionReference, t: LightTypeTag) =>
+      case (s: IntersectionReference, t: LightTypeTagRef) =>
         s.refs.exists(c => ctx.isChild(c, t))
-      case (s: LightTypeTag, o: IntersectionReference) =>
+      case (s: LightTypeTagRef, o: IntersectionReference) =>
         o.refs.forall(t => ctx.isChild(s, t))
 
       case (s: Refinement, t: Refinement) =>
         ctx.isChild(s.reference, t.reference) && t.decls.diff(s.decls).isEmpty
-      case (s: Refinement, t: LightTypeTag) =>
+      case (s: Refinement, t: LightTypeTagRef) =>
         ctx.isChild(s.reference, t)
-      case (_: LightTypeTag, _: Refinement) =>
+      case (_: LightTypeTagRef, _: Refinement) =>
         false
     }
     logger.log(s"${if (result) "✅" else "⛔️"} $selfT <:< $thatT == $result")

@@ -1,11 +1,11 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.functional.{Renderable, WithRenderableSyntax}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 trait LTTRenderables extends WithRenderableSyntax {
 
-  implicit def r_LightTypeTag: Renderable[LightTypeTag] = {
+  implicit def r_LightTypeTag: Renderable[LightTypeTagRef] = {
     case a: AbstractReference =>
       a.render()
   }
@@ -101,7 +101,7 @@ object LTTRenderables {
       value.prefix match {
         case Some(p) =>
 
-          s"${(p: LightTypeTag).render()}::$rr"
+          s"${(p: LightTypeTagRef).render()}::$rr"
         case None =>
           rr
       }
@@ -122,7 +122,7 @@ object LTTRenderables {
       value.prefix match {
         case Some(p) =>
 
-          s"${(p: LightTypeTag).render()}::$rr"
+          s"${(p: LightTypeTagRef).render()}::$rr"
         case None =>
           rr
       }

@@ -1,14 +1,20 @@
 package izumi.fundamentals.reflection
 
 package object macrortti {
-  type LTagK[K[_]] = LHKTag[{ type Arg[A] = K[A] }]
-  type LTagKK[K[_, _]] = LHKTag[{ type Arg[A, B] = K[A, B] }]
-  type LTagK3[K[_, _, _]] = LHKTag[{ type Arg[A, B, C] = K[A, B, C]}]
+  type LWeakTag[T] = LTag.Weak[T]
 
-  type LTagT[K[_[_]]] = LHKTag[{ type Arg[A[_]] = K[A]}]
-  type LTagTK[K[_[_], _]] = LHKTag[{ type Arg[A[_], B] = K[A, B] }]
-  type LTagTKK[K[_[_], _, _]] = LHKTag[{ type  Arg[A[_], B, C] = K[A, B, C] }]
-  type LTagTK3[K[_[_], _, _, _]] = LHKTag[{ type Arg[A[_], B, C, D] = K[A, B, C, D] }]
+  object LWeakTag {
+    def apply[T: LWeakTag]: LWeakTag[T] = implicitly
+  }
+
+  type LTagK[K[_]] = LTag.WeakHK[{ type Arg[A] = K[A] }]
+  type LTagKK[K[_, _]] = LTag.WeakHK[{ type Arg[A, B] = K[A, B] }]
+  type LTagK3[K[_, _, _]] = LTag.WeakHK[{ type Arg[A, B, C] = K[A, B, C]}]
+
+  type LTagT[K[_[_]]] = LTag.WeakHK[{ type Arg[A[_]] = K[A]}]
+  type LTagTK[K[_[_], _]] = LTag.WeakHK[{ type Arg[A[_], B] = K[A, B] }]
+  type LTagTKK[K[_[_], _, _]] = LTag.WeakHK[{ type  Arg[A[_], B, C] = K[A, B, C] }]
+  type LTagTK3[K[_[_], _, _, _]] = LTag.WeakHK[{ type Arg[A[_], B, C, D] = K[A, B, C, D] }]
 
   object LTagK {
     /**

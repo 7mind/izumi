@@ -77,55 +77,55 @@ class LightTypeTagTest extends WordSpec {
 
   trait H5 extends H4
 
-  def println(o: Any) = info(o.toString)
+  def println(o: Any): Unit = info(o.toString)
 
-  def println(o: FLTT) = info(o.t.toString)
+  def println(o: LightTypeTag): Unit = info(o.ref.toString)
 
-  def assertRepr(t: FLTT, expected: String): Unit = {
+  def assertRepr(t: LightTypeTag, expected: String): Unit = {
     assert(t.toString == expected)
     ()
   }
 
-  def assertSame(t: FLTT, expected: FLTT): Unit = {
+  def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
     info(s"$t =?= $expected")
     assert(t =:= expected)
     ()
   }
 
-  def assertDifferent(t: FLTT, expected: FLTT): Unit = {
+  def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
     info(s"$t =!= $expected")
     assert(!(t =:= expected))
     ()
   }
 
-  def assertChild(child: FLTT, parent: FLTT): Unit = {
+  def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     info(s"$child <?< $parent")
     assert(child <:< parent)
     ()
   }
 
-  def assertNotChild(child: FLTT, parent: FLTT): Unit = {
+  def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     info(s"$child <!< $parent")
     assert(!(child <:< parent))
     ()
   }
 
 
-  def assertCombine(outer: FLTT, inner: Seq[FLTT], expected: FLTT): Unit = {
+  def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
     info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
     assert(combined == expected)
     ()
   }
 
-  def assertCombine(outer: FLTT, inner: FLTT, expected: FLTT): Unit = {
+  def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
     info(s"($outer)•($inner) => $combined =?= $expected")
     assert(combined == expected)
     ()
   }
 
-  def assertCombineNonPos(outer: FLTT, inner: Seq[Option[FLTT]], expected: FLTT): Unit = {
+  def assertCombineNonPos(outer: LightTypeTag, inner: Seq[Option[LightTypeTag]], expected: LightTypeTag): Unit = {
     val combined = outer.combineNonPos(inner: _*)
     info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
     assert(combined == expected)
