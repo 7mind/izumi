@@ -217,13 +217,6 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
     }
 
-    "handle generic parameters with TypeTag" in {
-      def fn[T: TypeTag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
-
-      assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
-      assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))
-    }
-
     "handle generic parameters with Tag" in {
       def fn[T: Tag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
 
