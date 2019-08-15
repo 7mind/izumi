@@ -27,7 +27,7 @@ object IzumiDeps {
 
     val http4s = "0.21.0-M4"
 
-    val scalameta = "4.2.0"
+    val scalameta = "4.2.1"
     val fastparse = "2.1.3"
 
     val scala_xml = "1.2.0"
