@@ -25,7 +25,7 @@ object IzumiDeps {
     val circe_derivation = "0.12.0-M5"
     val jawn = "0.14.2"
 
-    val http4s = "0.21.0-M3"
+    val http4s = "0.21.0-M4"
 
     val scalameta = "4.2.0"
     val fastparse = "2.1.3"
