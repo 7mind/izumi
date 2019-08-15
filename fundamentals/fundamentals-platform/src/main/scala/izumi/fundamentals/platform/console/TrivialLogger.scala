@@ -6,7 +6,6 @@ import scala.reflect.ClassTag
 
 trait TrivialLogger {
   def log(s: => String): Unit
-
   def log(s: => String, e: => Throwable): Unit
 
   def sub(): TrivialLogger =  sub(1)

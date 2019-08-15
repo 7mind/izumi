@@ -85,7 +85,7 @@ trait WithTags extends UniverseGeneric { self =>
       * (which is not usually a problem, but still worth naming it 'unsafe')
       */
     def unsafeFromSafeType[T](tpe: SafeType0[u.type]): Tag[T] =
-      Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe.tpe, u.rootMirror), tpe.fullLightTypeTag)
+      Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe.tpe, u.rootMirror), tpe.tag)
 
     /**
       * Create a Tag of a type formed by applying the type in `tag` to `args`.

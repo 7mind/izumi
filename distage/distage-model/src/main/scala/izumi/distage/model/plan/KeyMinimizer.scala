@@ -4,41 +4,42 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
-  def renderType(tpe: TypeNative): String = {
-    trFull.renderType(tpe)
-  }
+//  def renderType(tpe: TypeNative): String = {
+//    trFull.renderType(tpe)
+//  }
 
   def renderType(tpe: SafeType): String = {
-    trFull.renderType(tpe)
+    tpe.tag.toString
+    //trFull.renderType(tpe)
   }
 
   def render(key: DIKey): String = {
     render(key, renderType)
   }
 
-  private val indexed: Map[String, Int] = allKeys
-    .toSeq
-    .flatMap(extract)
-    .map {
-      k =>
-        k.tpe.typeSymbol.name.toString -> k.tpe.typeSymbol
-    }
-    .groupBy(_._1)
-    .mapValues(_.map(_._2).toSet.size)
-    .toMap
+//  private val indexed: Map[String, Int] = allKeys
+//    .toSeq
+//    .flatMap(extract)
+//    .map {
+//      k =>
+//        k.tpe.typeSymbol.name.toString -> k.tpe.typeSymbol
+//    }
+//    .groupBy(_._1)
+//    .mapValues(_.map(_._2).toSet.size)
+//    .toMap
 
-  private val trFull = new TypeRenderer(getName)
+  //private val trFull = new TypeRenderer(getName)
 
-  private def getName(tpe: RuntimeDIUniverse.TypeNative): String = {
-    val shortname = tpe.typeSymbol.name.toString
-
-    val by = indexed.getOrElse(shortname, 0)
-    if (by == 1) {
-      shortname
-    } else {
-      tpe.typeSymbol.fullName
-    }
-  }
+//  private def getName(tpe: RuntimeDIUniverse.TypeNative): String = {
+//    val shortname = tpe.typeSymbol.name.toString
+//
+//    val by = indexed.getOrElse(shortname, 0)
+//    if (by == 1) {
+//      shortname
+//    } else {
+//      tpe.typeSymbol.fullName
+//    }
+//  }
 
 
   private def render(key: DIKey, rendertype: SafeType => String): String = {
@@ -86,43 +87,43 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     Set(key) ++ params
   }
 
-  private class TypeRenderer(getName: TypeNative => String) {
-    def renderType(tpe: SafeType): String = {
-      renderType(tpe.tpe)
-    }
-
-    def renderType(tpe: TypeNative): String = {
-      val resultType = tpe.dealias.finalResultType
-      val targs = resultType.typeArgs
-      val tparams = resultType.typeParams
-
-      val args = if (targs.nonEmpty && tparams.isEmpty) {
-        targs.map(_.dealias.finalResultType)
-          .map {
-            t =>
-              if (t.typeSymbol.isParameter) {
-                "?"
-              } else {
-                renderType(t)
-              }
-          }
-      } else if (targs.isEmpty && tparams.nonEmpty) {
-        List.fill(tparams.size)("?")
-      } else if (targs.nonEmpty && tparams.nonEmpty) {
-        List("<?>")
-      } else {
-        List.empty
-      }
-
-      val asList = if (args.forall(_ == "?")) {
-        ""
-      } else {
-        args.mkString("[", ",", "]")
-      }
-
-      getName(tpe) + asList
-    }
-  }
+//  private class TypeRenderer(getName: TypeNative => String) {
+//    def renderType(tpe: SafeType): String = {
+//      renderType(tpe.tpe)
+//    }
+//
+//    def renderType(tpe: TypeNative): String = {
+//      val resultType = tpe.dealias.finalResultType
+//      val targs = resultType.typeArgs
+//      val tparams = resultType.typeParams
+//
+//      val args = if (targs.nonEmpty && tparams.isEmpty) {
+//        targs.map(_.dealias.finalResultType)
+//          .map {
+//            t =>
+//              if (t.typeSymbol.isParameter) {
+//                "?"
+//              } else {
+//                renderType(t)
+//              }
+//          }
+//      } else if (targs.isEmpty && tparams.nonEmpty) {
+//        List.fill(tparams.size)("?")
+//      } else if (targs.nonEmpty && tparams.nonEmpty) {
+//        List("<?>")
+//      } else {
+//        List.empty
+//      }
+//
+//      val asList = if (args.forall(_ == "?")) {
+//        ""
+//      } else {
+//        args.mkString("[", ",", "]")
+//      }
+//
+//      getName(tpe) + asList
+//    }
+//  }
 
 
 }

@@ -70,12 +70,10 @@ final class LightTypeTag(
     ref.render()
   }
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[LightTypeTag]
 
   override def equals(other: Any): Boolean = other match {
     case that: LightTypeTag =>
-      (that canEqual this) &&
-        ref == that.ref
+      ref == that.ref
     case _ => false
   }
 
@@ -86,6 +84,8 @@ final class LightTypeTag(
 }
 
 object LightTypeTag {
+
+  object ReflectionLock
 
   import izumi.fundamentals.collections.IzCollections._
 

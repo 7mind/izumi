@@ -61,14 +61,17 @@ sealed trait LightTypeTagRef {
 
 
 object LightTypeTagRef {
-
-
   import LTTRenderables.Short._
-
 
   sealed trait AbstractReference extends LightTypeTagRef
 
   case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
+    def referenced: Set[NameReference] = RuntimeAPI.unpack(this)
+    def paramRefs: Set[NameReference] = input.map(n => NameReference(n.name)).toSet
+    def allArgumentsReferenced: Boolean = {
+      paramRefs.diff(referenced).isEmpty
+    }
+
     override def toString: String = this.render()
   }
 
@@ -97,7 +100,7 @@ object LightTypeTagRef {
     def apply(ref: String, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
   }
 
-  case class FullReference(ref: String, parameters: List[TypeParam],  prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix = prefix)
 

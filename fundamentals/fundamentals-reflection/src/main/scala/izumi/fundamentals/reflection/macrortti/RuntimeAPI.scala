@@ -22,7 +22,7 @@ protected[macrortti] object RuntimeAPI {
           case reference: AppliedNamedReference =>
             reference match {
               case n: NameReference =>
-                Set(n) ++ n.prefix.toSet.flatMap(unpack) ++ unpackBoundaries(n.boundaries)
+                Set(n.copy(prefix = None, boundaries = Boundaries.Empty)) ++ n.prefix.toSet.flatMap(unpack) ++ unpackBoundaries(n.boundaries)
               case f: FullReference =>
                 f.parameters.map(_.ref).flatMap(unpack).toSet ++ f.prefix.toSet.flatMap(unpack) + f.asName
             }
@@ -61,7 +61,9 @@ protected[macrortti] object RuntimeAPI {
         NameReference(v, self.replaceBoundaries(n.boundaries), self.replacePrefix(n.prefix))
       })
 
-      Lambda(nr, rewriter.replaceRefs(replaced))
+      val out = Lambda(nr, rewriter.replaceRefs(replaced))
+      assert(out.allArgumentsReferenced, s"bad lambda: $out, ${out.paramRefs}, ${out.referenced}")
+      out
     }
   }
 

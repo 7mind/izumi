@@ -2,6 +2,7 @@ package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ScalacSink
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
@@ -67,7 +68,7 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
 object LightTypeTagImpl {
   final val loggerId = "izumi.distage.debug.reflection"
 
-  def makeFLTT(u: Universe)(typeTag: u.Type): LightTypeTag = {
+  def makeFLTT(u: Universe)(typeTag: u.Type): LightTypeTag = ReflectionLock.synchronized {
     val logger = TrivialLogger.makeOut[this.type](LightTypeTagImpl.loggerId)
     new LightTypeTagImpl[u.type](u, logger).makeFLTT(typeTag)
   }
@@ -139,8 +140,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
           }
 
           val allbases = tpeBases(i)
-
-
+            .filterNot(_.takesTypeArgs)
           srcname ++ allbases.map {
             b =>
               (targetRef, makeRef(b))
@@ -185,7 +185,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
                 Seq(l)
               case reference: AppliedReference =>
                 Seq(Lambda(lamParams.map(_._2), reference))
-                  .filter(l => lamParams.map(_._2.name).toSet.diff(RuntimeAPI.unpack(l).map(_.ref)).isEmpty)
+                  .filter(_.allArgumentsReferenced)
             }
           } else {
             Seq.empty
@@ -300,6 +300,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       thisLevel.log(s"✴️ λ type $t has parameters $lamParams, terminal names = $terminalNames")
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
+//      if (!out.allArgumentsReferenced) {
+//        println(s"⚠️ bad lambda for $t => $result, $terminalNames, ${result.takesTypeArgs}: $out, ${out.paramRefs}, ${out.referenced}, $lamParams")
+//      }
+
       thisLevel.log(s"✳️ Restored $t => $out")
       out
     }
