@@ -2,11 +2,11 @@ package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.strategies.FactoryExecutor
-import izumi.distage.model.reflection.macros.{DIUniverseLiftables, TrivialMacroLogger}
+import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.provisioning.{AnyConstructor, FactoryConstructor, FactoryTools}
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil}
+import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 

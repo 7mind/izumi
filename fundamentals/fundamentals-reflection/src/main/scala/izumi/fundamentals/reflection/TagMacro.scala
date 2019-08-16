@@ -17,7 +17,7 @@ class TagMacro(val c: blackbox.Context) {
 
   protected[this] val defaultError: String = defaultTagImplicitError
 
-  protected[this] val logger: TrivialLogger = TrivialLogger.make[this.type]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
+  protected[this] val logger: TrivialLogger = TrivialMacroLogger[this.type](c)
 
   /**
     * Workaround for a scalac bug whereby it loses the correct type of HKTag argument
@@ -107,16 +107,16 @@ class TagMacro(val c: blackbox.Context) {
     res
   }
 
-  def getImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): String =
+  def getImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): String = {
     symbolOf[DIU#Tag[Any]].annotations.headOption.flatMap(
       AnnotationTools.findArgument(_) {
         case Literal(Constant(s: String)) => s
       }
     ).getOrElse(defaultError)
+  }
 
   @inline
   protected[this] def mkRefined[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
-
     val intersectionsTags = c.Expr[List[DIU#ScalaReflectTypeTag[_]]](q"${
       intersection.map {
         t0 =>

@@ -3,7 +3,7 @@ package izumi.distage.model.reflection.macros
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import izumi.fundamentals.reflection.AnnotationTools
+import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 

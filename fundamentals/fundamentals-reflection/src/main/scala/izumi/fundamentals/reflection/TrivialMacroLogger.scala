@@ -1,7 +1,6 @@
-package izumi.distage.model.reflection.macros
+package izumi.fundamentals.reflection
 
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.reflection.MacroTrivialSink
 
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
