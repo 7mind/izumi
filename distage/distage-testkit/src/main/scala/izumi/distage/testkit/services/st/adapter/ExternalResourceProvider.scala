@@ -1,5 +1,6 @@
 package izumi.distage.testkit.services.st.adapter
 
+import distage.{DIKey, Locator, SafeType, TagK}
 import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{DIResource, LocatorDef}
@@ -7,11 +8,10 @@ import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.testkit.services.SyncCache
-import ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
+import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
-import distage.{DIKey, Locator, SafeType, TagK}
 
 import scala.annotation.unchecked.uncheckedVariance
 
@@ -111,7 +111,7 @@ object ExternalResourceProvider {
 
     private val shutdownHook = new Thread(() => stop(), "termination-hook-memoizer")
 
-    private val logger = TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.memoizer", default = true)
+    private val logger = TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.memoizer")
 
     Runtime.getRuntime.addShutdownHook(shutdownHook)
 

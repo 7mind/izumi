@@ -1,6 +1,7 @@
 package izumi.logstage.api.logger
 
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.logstage.api.Log
 
 trait LogRouter extends AutoCloseable {
@@ -22,7 +23,7 @@ object LogRouter {
   }
 
   final val debugRouter: LogRouter = new LogRouter {
-    private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, forceLog = true)
+    private val fallback: TrivialLogger = TrivialLogger.make[LogRouter](LogRouter.fallbackPropertyName, Config(forceLog = true))
 
     override def acceptable(id: Log.LoggerId, messageLevel: Log.Level): Boolean = true
 

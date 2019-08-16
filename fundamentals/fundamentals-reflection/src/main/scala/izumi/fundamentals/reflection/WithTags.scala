@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection
 
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.WithTags.hktagFormat
-import izumi.fundamentals.reflection.macrortti.{LTag, LWeakTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros

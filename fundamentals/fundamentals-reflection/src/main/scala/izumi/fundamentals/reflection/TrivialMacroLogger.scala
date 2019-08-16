@@ -1,6 +1,7 @@
 package izumi.fundamentals.reflection
 
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 
 import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
@@ -12,6 +13,7 @@ import scala.reflect.macros.blackbox
 * }}}
 */
 object TrivialMacroLogger {
-  def apply[T: ClassTag](c: blackbox.Context): TrivialLogger =
-    TrivialLogger.make[T]("izumi.distage.debug.macro", sink = new MacroTrivialSink(c))
+  def id(s: String) = s"izumi.debug.macro.$s"
+  def make[T: ClassTag](c: blackbox.Context, id: String): TrivialLogger =
+    TrivialLogger.make[T](id, config = Config(sink = new ScalacSink(c)))
 }

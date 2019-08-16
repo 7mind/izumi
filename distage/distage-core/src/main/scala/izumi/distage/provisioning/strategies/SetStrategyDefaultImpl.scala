@@ -39,10 +39,10 @@ class SetStrategyDefaultImpl
       case (m, Some(value)) if m.tpe == op.tpe =>
         // in case member type == set type we just merge them
         value.asInstanceOf[collection.Set[Any]]
-      case (m, Some(value)) if m.tpe.tpe.baseClasses.contains(setErasure) && m.tpe.tpe.typeArgs.headOption.exists(SafeType(_) weak_<:< keyType) =>
+      case (m, Some(value)) if m.tpe.tpe.baseClasses.contains(setErasure) && m.tpe.tpe.typeArgs.headOption.exists(SafeType(_) <:< keyType) =>
         // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[collection.Set[Any]]
-      case (m, Some(value)) if m.tpe weak_<:< keyType =>
+      case (m, Some(value)) if m.tpe <:< keyType =>
         ListSet(value)
       case (m, Some(value)) =>
         // Member key type may not conform to set parameter (valid case for autosets) while implementation is still valid

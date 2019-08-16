@@ -36,7 +36,7 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
   @inline override final def *>[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, B] = f *> next
   @inline override final def <*[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, A] = f <* next
   @inline override final def map2[E, A, E2 >: E, B, C](r1: IO[E, A], r2: => IO[E2, B])(f: (A, B) => C): IO[E2, C] = {
-    r1.zipWith(ZIO.suspend(r2))(f)
+    r1.zipWith(ZIO.effectSuspendTotal(r2))(f)
   }
 
   @inline override final def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.foldM(err, succ)

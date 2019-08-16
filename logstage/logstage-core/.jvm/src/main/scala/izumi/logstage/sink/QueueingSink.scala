@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.{LogRouter, LogSink}
@@ -22,7 +23,7 @@ class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
   private val maxBatchSize = 100
   private val stop = new AtomicBoolean(false)
 
-  private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
+  private val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, Config(forceLog = true))
 
   private val pollingThread = {
     val result = new Thread(new ThreadGroup("logstage"), poller(), "logstage-poll")

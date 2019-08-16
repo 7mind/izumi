@@ -1,6 +1,5 @@
 package izumi.logstage.sink
 
-import izumi.fundamentals.platform.console.SystemOutStringTrivialSink
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.rendering.logunits.Renderer
@@ -8,7 +7,7 @@ import izumi.logstage.api.rendering.{RenderingOptions, RenderingPolicy, StringRe
 
 class ConsoleSink(policy: RenderingPolicy) extends LogSink {
   override def flush(e: Log.Entry): Unit = {
-    SystemOutStringTrivialSink.flush(policy.render(e))
+    System.out.println(policy.render(e))
   }
 }
 

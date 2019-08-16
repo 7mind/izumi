@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
+import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, NameReference}
 
 final class LightTypeTag(
@@ -84,6 +85,7 @@ final class LightTypeTag(
 }
 
 object LightTypeTag {
+  final val loggerId = TrivialMacroLogger.id("rtti")
 
   object ReflectionLock
 

@@ -1,6 +1,7 @@
 package izumi.logstage.api.routing
 
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.{LogRouter, LogSink}
@@ -12,7 +13,7 @@ class ConfigurableLogRouter
 (
   logConfigService: LogConfigService
 ) extends LogRouter {
-  private final val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, forceLog = true)
+  private final val fallback = TrivialLogger.make[FallbackConsoleSink](LogRouter.fallbackPropertyName, Config(forceLog = true))
 
   override def log(entry: Log.Entry): Unit = {
     val sinks = logConfigService

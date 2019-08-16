@@ -17,7 +17,7 @@ class TagMacro(val c: blackbox.Context) {
 
   protected[this] val defaultError: String = defaultTagImplicitError
 
-  protected[this] val logger: TrivialLogger = TrivialMacroLogger[this.type](c)
+  protected[this] val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
 
   /**
     * Workaround for a scalac bug whereby it loses the correct type of HKTag argument

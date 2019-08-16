@@ -1,7 +1,7 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.reflection.ScalacSink
+import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
@@ -16,8 +16,7 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
 
-  private val sink = new ScalacSink(c)
-  private val logger: TrivialLogger = TrivialLogger.make[this.type](LightTypeTagImpl.loggerId, sink, forceLog = false)
+  private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
   protected val impl = new LightTypeTagImpl[c.universe.type](c.universe, logger)
 
   @inline def makeWeakHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.WeakHK[ArgStruct]] = {
@@ -66,10 +65,9 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
 
 // FIXME: Object makes this impossible to override ...
 object LightTypeTagImpl {
-  final val loggerId = "izumi.distage.debug.reflection"
 
   def makeFLTT(u: Universe)(typeTag: u.Type): LightTypeTag = ReflectionLock.synchronized {
-    val logger = TrivialLogger.makeOut[this.type](LightTypeTagImpl.loggerId)
+    val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
     new LightTypeTagImpl[u.type](u, logger).makeFLTT(typeTag)
   }
 }
@@ -300,9 +298,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       thisLevel.log(s"✴️ λ type $t has parameters $lamParams, terminal names = $terminalNames")
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
-//      if (!out.allArgumentsReferenced) {
-//        println(s"⚠️ bad lambda for $t => $result, $terminalNames, ${result.takesTypeArgs}: $out, ${out.paramRefs}, ${out.referenced}, $lamParams")
-//      }
+      if (!out.allArgumentsReferenced) {
+        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${lamParams.map({case (k, v) => s"$v = $k" })}, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
+      }
 
       thisLevel.log(s"✳️ Restored $t => $out")
       out
@@ -376,7 +374,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       tpef.asInstanceOf[AnyRef] match {
         case x: it.RefinementTypeRef =>
           Some((x.parents.map(_.asInstanceOf[Type]), x.decls.map(_.asInstanceOf[SymbolApi]).toList))
-        case r: RefinedTypeApi =>
+        case r: RefinedTypeApi@unchecked =>
           Some((r.parents, r.decls.toList))
         case _ =>
           None
@@ -424,7 +422,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
     }
 
     def breakRefinement(t: Type): Broken[Type, SymbolApi] = {
-      breakRefinement0(List.empty)(t) match {
+      breakRefinement0(t) match {
         case (t, d) if d.isEmpty && t.size == 1 =>
           Broken.Single(t.head)
         case (t, d) =>
@@ -432,10 +430,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       }
     }
 
-    private def breakRefinement0(allDecls: List[SymbolApi])(t: Type): (Set[Type], Set[SymbolApi]) = {
+    private def breakRefinement0(t: Type): (Set[Type], Set[SymbolApi]) = {
       fullDealias(t) match {
         case UniRefinement(parents, decls) =>
-          val parts = parents.map(breakRefinement0(decls))
+          val parts = parents.map(breakRefinement0)
           val types = parts.flatMap(_._1)
           val d = parts.flatMap(_._2)
           (types.toSet, (decls ++ d).toSet)

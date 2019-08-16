@@ -1,6 +1,5 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.reflect.runtime.{universe => ru}

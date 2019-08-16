@@ -20,7 +20,7 @@ object FactoryConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger[this.type](c)
+    val logger = TrivialMacroLogger.make[this.type](c, MacroLog.id)
 
     // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
@@ -73,7 +73,8 @@ object FactoryConstructorMacro {
 
         val resultTypeOfMethod: Type = factoryMethod.finalResultType.tpe
 
-        val methodDef =  q"""
+        val methodDef =
+          q"""
           override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
             val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
 
@@ -85,7 +86,8 @@ object FactoryConstructorMacro {
         val providedKeys = method.associationsFromContext.map(_.wireWith)
 
         // TODO: remove ReflectiveInstantiationWiring by generating providers for factory products too, so that the only wiring allowed is Function
-        val methodInfo =q"""{
+        val methodInfo =
+          q"""{
           val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
 
           ${reify(RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod)}.apply(

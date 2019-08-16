@@ -8,6 +8,8 @@ import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
+
+
 object ConcreteConstructorMacro {
 
   def mkConcreteConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ConcreteConstructor[T]] = mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
@@ -21,7 +23,7 @@ object ConcreteConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger[this.type](c)
+    val logger = TrivialMacroLogger.make[this.type](c, MacroLog.id)
 
     val targetType = weakTypeOf[T]
 

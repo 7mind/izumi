@@ -91,7 +91,7 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
           case s: DIKey.SetElementKey if s.set == setKey =>
             Seq(op)
 
-          case _ if ExecutableOp.instanceType(op) weak_<:< instanceType =>
+          case _ if ExecutableOp.instanceType(op) <:< instanceType =>
             if (instanceType == setElemetType) {
               newMembers += op.target
               Seq(op)

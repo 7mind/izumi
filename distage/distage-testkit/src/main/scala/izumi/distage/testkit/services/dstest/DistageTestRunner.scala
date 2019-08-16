@@ -70,7 +70,7 @@ class DistageTestRunner[F[_] : TagK](
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testplans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(op => ExecutableOp.instanceType(op) weak_<:< SafeType.get[TODOMemoizeMe]).map(_.target)
+            plan.steps.filter(op => ExecutableOp.instanceType(op) <:< SafeType.get[TODOMemoizeMe]).map(_.target)
         }.toSet -- runtimeGcRoots
 
         val shared = injector.splitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {

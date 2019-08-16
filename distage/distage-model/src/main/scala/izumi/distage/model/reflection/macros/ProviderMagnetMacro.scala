@@ -3,6 +3,7 @@ package izumi.distage.model.reflection.macros
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag
 import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -24,7 +25,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
   final val macroUniverse = StaticDIUniverse(c)
 
-  private final val logger = TrivialMacroLogger[this.type](c)
+  private final val logger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
   private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
   private final val tools =

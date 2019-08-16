@@ -23,7 +23,7 @@ object TraitConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger[this.type](c)
+    val logger = TrivialMacroLogger.make[this.type](c, MacroLog.id)
 
     val targetType = weakTypeOf[T]
 

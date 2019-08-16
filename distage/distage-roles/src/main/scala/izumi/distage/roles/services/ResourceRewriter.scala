@@ -81,7 +81,7 @@ class ResourceRewriter(
     import RewriteResult._
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
-        if (implDef.implType weak_<:< SafeType.get[T]) {
+        if (implDef.implType <:< SafeType.get[T]) {
           val resourceType = SafeType.get[DIResource[Identity, Any]]
 
           implDef match {
@@ -118,7 +118,7 @@ class ResourceRewriter(
       case implDef: ImplDef.RecursiveImplDef =>
         implDef match {
           case _: ImplDef.EffectImpl =>
-            if (implDef.implType weak_<:< SafeType.get[T]) {
+            if (implDef.implType <:< SafeType.get[T]) {
               logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[T] -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
             }
             DontChange

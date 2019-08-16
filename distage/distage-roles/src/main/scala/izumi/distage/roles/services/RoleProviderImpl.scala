@@ -68,7 +68,7 @@ class RoleProviderImpl[F[_] : TagK](
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
-    tpe weak_<:< SafeType.get[AbstractRoleF[F]]
+    tpe <:< SafeType.get[AbstractRoleF[F]]
   }
 
   private def getDescriptor(role: SafeType): Option[RoleDescriptor] = {

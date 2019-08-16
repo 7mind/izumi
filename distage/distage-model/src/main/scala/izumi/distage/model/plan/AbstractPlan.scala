@@ -23,7 +23,9 @@ sealed trait AbstractPlan {
   def gcMode: GCMode
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
+
   def resolveImport[T: Tag](instance: T): AbstractPlan
+
   def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
 
   def locateImports(locator: Locator): AbstractPlan
@@ -33,11 +35,11 @@ sealed trait AbstractPlan {
   }
 
   /** Get all imports (unresolved dependencies).
-    *
-    * Note, presence of imports does not automatically mean that a plan is invalid,
-    * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
-    * [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
-    * */
+   *
+   * Note, presence of imports does not automatically mean that a plan is invalid,
+   * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
+   * [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+   * */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
 
@@ -93,7 +95,7 @@ sealed trait AbstractPlan {
     steps.filter {
       op =>
         val maybeChild = ExecutableOp.instanceType(op)
-        maybeChild weak_<:< parent
+        maybeChild <:< parent
     }
   }
 
@@ -132,10 +134,10 @@ object AbstractPlan {
 }
 
 /**
-  * An unordered plan.
-  *
-  * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
-  */
+ * An unordered plan.
+ *
+ * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
+ */
 final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode) extends AbstractPlan {
 
   override def toSemi: SemiPlan = this
@@ -165,15 +167,15 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], g
 
 object SemiPlan {
 
-//  implicit def catsKernelStdHashForSemiPlan: Hash[SemiPlan] =
-//    new Hash[SemiPlan] {
-//      override def hash(x: SemiPlan): Int = x.hashCode()
-//
-//      override def eqv(x: SemiPlan, y: SemiPlan): Boolean = x == y
-//    }
+  //  implicit def catsKernelStdHashForSemiPlan: Hash[SemiPlan] =
+  //    new Hash[SemiPlan] {
+  //      override def hash(x: SemiPlan): Int = x.hashCode()
+  //
+  //      override def eqv(x: SemiPlan, y: SemiPlan): Boolean = x == y
+  //    }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
-  implicit def optionalCatsMonoidForSemiplan[K[_]: CatsMonoid]: K[SemiPlan] =
+  implicit def optionalCatsMonoidForSemiplan[K[_] : CatsMonoid]: K[SemiPlan] =
     new Monoid[SemiPlan] {
       override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty, GCMode.NoGC)
 
@@ -185,17 +187,17 @@ object SemiPlan {
   import cats.syntax.traverse._
 
   implicit final class SemiPlanExts(private val plan: SemiPlan) extends AnyVal {
-    def traverse[F[_]: Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
+    def traverse[F[_] : Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => plan.copy(steps = s))
 
-    def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
+    def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => plan.copy(steps = s.flatten))
 
     def resolveImportF[T]: ResolveImportFSemiPlanPartiallyApplied[T] = new ResolveImportFSemiPlanPartiallyApplied(plan)
 
-    def resolveImportF[F[_]: Applicative, T: Tag](f: F[T]): F[SemiPlan] = resolveImportF[T](f)
+    def resolveImportF[F[_] : Applicative, T: Tag](f: F[T]): F[SemiPlan] = resolveImportF[T](f)
 
-    def resolveImportsF[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[SemiPlan] =
+    def resolveImportsF[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[SemiPlan] =
       resolveImportsImpl(f, plan.steps).map(s => plan.copy(steps = s))
   }
 
@@ -241,42 +243,45 @@ object OrderedPlan {
   }
 
   implicit final class OrderedPlanExts(private val plan: OrderedPlan) extends AnyVal {
+
     import cats.instances.vector._
     import cats.syntax.functor._
     import cats.syntax.traverse._
 
-    def traverse[F[_]: Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
+    def traverse[F[_] : Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
       plan.steps.traverse(f).map(SemiPlan(plan.definition, _, plan.gcMode))
 
-    def flatMapF[F[_]: Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
+    def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => SemiPlan(plan.definition, s.flatten, plan.gcMode))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 
-    def resolveImportF[F[_]: Applicative, T: Tag](f: F[T]): F[OrderedPlan] = resolveImportF[T](f)
+    def resolveImportF[F[_] : Applicative, T: Tag](f: F[T]): F[OrderedPlan] = resolveImportF[T](f)
 
-    def resolveImportsF[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[OrderedPlan] =
+    def resolveImportsF[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[OrderedPlan] =
       resolveImportsImpl(f, plan.steps).map(s => plan.copy(steps = s))
   }
 
 }
 
 private[plan] final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
-  def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
+  def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
     plan.resolveImportsF[F] {
       case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
     }
 }
 
 private[plan] final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
-  def apply[F[_]: Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
+  def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
     plan.resolveImportsF[F] {
       case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
     }
 }
 
 private object SemiPlanOrderedPlanInstances {
+
   sealed abstract class CatsMonoid[K[_]]
+
   object CatsMonoid {
     implicit val get: CatsMonoid[Monoid] = null
   }
@@ -286,7 +291,7 @@ private object SemiPlanOrderedPlanInstances {
   import cats.syntax.traverse._
 
   @inline
-  final def resolveImportsImpl[F[_]: Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[ExecutableOp]): F[Vector[ExecutableOp]] =
+  final def resolveImportsImpl[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[ExecutableOp]): F[Vector[ExecutableOp]] =
     steps.traverse {
       case i: ImportDependency =>
         f.lift(i).map {
