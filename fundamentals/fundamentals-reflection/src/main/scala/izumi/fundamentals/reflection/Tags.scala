@@ -226,7 +226,7 @@ trait Tags extends UniverseGeneric { self =>
       *
       * TODO: report scalac bug
       */
-    implicit def hktagFromHKTagMaterializer[T](implicit t: HKTagMaterializer[self.type, T]): HKTag[T] = t.value
+    implicit def hktagFixupArgStruct[T]: HKTag[T] = macro TagMacro.fixupHKTagArgStruct[self.type, T]
   }
 
   /**
@@ -327,6 +327,7 @@ trait Tags extends UniverseGeneric { self =>
 
   // workaround for being unable to refer to Tag object's type from a type projection (?)
   type TagObject = Tag.type
+  type HKTagObject = HKTag.type
 }
 
 object Tags extends Tags {

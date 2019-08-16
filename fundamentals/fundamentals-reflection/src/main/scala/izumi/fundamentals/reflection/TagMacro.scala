@@ -28,12 +28,11 @@ class TagMacro(val c: blackbox.Context) {
     *
     * TODO: report scalac bug
     */
-  def fixupHKTagArgStruct[DIU <: Tags with Singleton: c.WeakTypeTag, T: WeakTypeTag]: c.Expr[HKTagMaterializer[DIU, T]] = {
+  def fixupHKTagArgStruct[DIU <: Tags with Singleton, T: WeakTypeTag]: c.Expr[DIU#HKTag[T]] = {
     val argStruct = weakTypeOf[T]
     val typeConstructor = argStruct.decls.head.info.typeConstructor
-    val universe = universeSingleton[DIU]
 
-    logger.log(s"HKTag fixup: got universe: ${showCode(universe.tree)}, arg struct $argStruct, type constructor $typeConstructor")
+    logger.log(s"HKTag fixup: got arg struct $argStruct, type constructor $typeConstructor")
 
     val newHkTag = mkHKTagArg(typeConstructor, kindOf(typeConstructor))
 
@@ -47,7 +46,7 @@ class TagMacro(val c: blackbox.Context) {
     logger.log(s"resulting LHKTag $lhktag")
 
     reify {
-      HKTagMaterializer(universe.splice.HKTag[T](res.splice, lhktag.splice))
+      c.prefix.asInstanceOf[c.Expr[DIU#HKTagObject]].splice.apply[T](res.splice, lhktag.splice)
     }
   }
 
