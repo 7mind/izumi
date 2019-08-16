@@ -3,10 +3,11 @@ package izumi.distage.reflection
 import izumi.distage.model.reflection.SymbolIntrospector
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.AnnotationTools
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
-  override def selectConstructor(symb: u.SafeType): Option[SelectedConstructor] = {
+  override def selectConstructor(symb: u.SafeType): Option[SelectedConstructor] = ReflectionLock.synchronized {
     selectConstructorMethod(symb).map {
       selectedConstructor =>
         val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
@@ -28,12 +29,12 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   }
 
 
-  override def hasConstructor(tpe: u.SafeType): Boolean = {
+  override def hasConstructor(tpe: u.SafeType): Boolean = ReflectionLock.synchronized {
     val constructor = findConstructor(tpe)
     constructor.isConstructor
   }
 
-  override def selectConstructorMethod(tpe: u.SafeType): Option[u.MethodSymb] = {
+  override def selectConstructorMethod(tpe: u.SafeType): Option[u.MethodSymb] = ReflectionLock.synchronized {
     val constructor = findConstructor(tpe)
     if (!constructor.isTerm) {
       None
@@ -42,7 +43,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]] = {
+  override def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]] = ReflectionLock.synchronized {
     symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
   }
 
@@ -60,11 +61,11 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  protected def isConcrete(tpe: u.TypeNative): Boolean = {
+  protected def isConcrete(tpe: u.TypeNative): Boolean = ReflectionLock.synchronized {
     tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract
   }
 
-  override def isWireableAbstract(symb: u.SafeType): Boolean = {
+  override def isWireableAbstract(symb: u.SafeType): Boolean = ReflectionLock.synchronized {
     val tpe = symb.tpe
     val abstractMembers = tpe.members.filter(_.isAbstract)
 
@@ -79,7 +80,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
   }
 
 
-  override def isFactory(symb: u.SafeType): Boolean = {
+  override def isFactory(symb: u.SafeType): Boolean = ReflectionLock.synchronized {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
       val abstracts = symb.tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod(symb, _)) &&
@@ -87,24 +88,24 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
-  override def isWireableMethod(tpe: u.SafeType, decl: u.Symb): Boolean = {
+  override def isWireableMethod(tpe: u.SafeType, decl: u.Symb): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       decl.asMethod.paramLists.isEmpty && u.SafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  override def isFactoryMethod(tpe: u.SafeType, decl: u.Symb): Boolean = {
+  override def isFactoryMethod(tpe: u.SafeType, decl: u.Symb): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
     }
   }
 
-  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] = {
+  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] = ReflectionLock.synchronized {
     symb.findUniqueAnnotation(annType)
   }
 
-  override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = {
+  override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = ReflectionLock.synchronized {
     val univ: u.u.type = u.u // intellij
     AnnotationTools.findTypeAnnotation(univ)(annType.tpe, tpe.tpe)
   }

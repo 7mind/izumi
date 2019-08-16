@@ -12,7 +12,7 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
   override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = if (parameterSymbol.isByName) {
-      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.tpe.typeArgs.head.finalResultType))
+      DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.use(_.typeArgs.head.finalResultType)))
     } else {
       DIKey.TypeKey(parameterSymbol.finalResultType)
     }

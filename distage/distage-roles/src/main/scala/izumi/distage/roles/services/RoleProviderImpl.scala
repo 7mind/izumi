@@ -52,7 +52,7 @@ class RoleProviderImpl[F[_] : TagK](
         case (rb, impltype) =>
           getDescriptor(rb.key.tpe) match {
             case Some(d) =>
-              val runtimeClass = mirrorProvider.mirror.runtimeClass(impltype.tpe)
+              val runtimeClass = impltype.use(mirrorProvider.mirror.runtimeClass)
               val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
               Seq(RoleBinding(rb, runtimeClass, impltype, d, src))
             case None =>
@@ -64,7 +64,7 @@ class RoleProviderImpl[F[_] : TagK](
   }
 
   private def isEnabledRole(b: RoleBinding): Boolean = {
-    requiredRoles.contains(b.descriptor.id) || requiredRoles.contains(b.tpe.tpe.typeSymbol.name.decodedName.toString.toLowerCase)
+    requiredRoles.contains(b.descriptor.id) || requiredRoles.contains(b.tpe.use(_.typeSymbol.name.decodedName.toString.toLowerCase))
   }
 
   private def isAvailableRoleType(tpe: SafeType): Boolean = {
@@ -73,7 +73,7 @@ class RoleProviderImpl[F[_] : TagK](
 
   private def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
     try {
-      mirrorProvider.mirror.reflectModule(role.tpe.dealias.companion.typeSymbol.asClass.module.asModule).instance match {
+      role.use(t => mirrorProvider.mirror.reflectModule(t.dealias.companion.typeSymbol.asClass.module.asModule).instance) match {
         case rd: RoleDescriptor => Some(rd)
         case _ => None
       }

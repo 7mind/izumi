@@ -12,12 +12,23 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit def liftableSafeType: Liftable[SafeType]
 
-  protected final val liftableDefaultSafeType: Liftable[SafeType] =
-    value => q"{ $runtimeDIUniverse.SafeType.get[${Liftable.liftType(value.tpe)}] }"
+  protected final val liftableDefaultSafeType: Liftable[SafeType] = {
+    value =>
+      value.use {
+        tpe =>
+          q"{ $runtimeDIUniverse.SafeType.get[${Liftable.liftType(tpe)}] }"
+      }
+  }
 
   /** A hack to support generic methods in macro factories, see `WeakTag`, `GenericAssistedFactory` and associated tests **/
-  protected final val liftableUnsafeWeakSafeType: Liftable[SafeType] =
-    value => q"{ $runtimeDIUniverse.SafeType.unsafeGetWeak[${Liftable.liftType(value.tpe)}] }"
+  protected final val liftableUnsafeWeakSafeType: Liftable[SafeType] = {
+    value =>
+      value.use {
+        tpe =>
+          q"{ $runtimeDIUniverse.SafeType.unsafeGetWeak[${Liftable.liftType(tpe)}] }"
+      }
+
+  }
 
   // DIKey
 
@@ -61,7 +72,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     Liftable[DIKey] {
       d =>
         (d: @unchecked) match {
-          case t: DIKey.TypeKey=> q"$t"
+          case t: DIKey.TypeKey => q"$t"
           case t: DIKey.IdKey[_] => q"${t: DIKey.BasicKey}"
           case p: DIKey.ProxyElementKey => q"$p"
           case s: DIKey.SetElementKey => q"$s"

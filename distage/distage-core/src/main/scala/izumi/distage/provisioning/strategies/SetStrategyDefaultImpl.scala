@@ -16,21 +16,21 @@ class SetStrategyDefaultImpl
   def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]
-    val setErasure = scalaCollectionSetType.tpe.typeSymbol
+    val setErasure = scalaCollectionSetType.use(_.typeSymbol)
 
-    if (!op.tpe.tpe.baseClasses.contains(setErasure)) {
+    if (!op.tpe.use(_.baseClasses.contains(setErasure))) {
       throw new IncompatibleTypesException("Tried to create a Set with a non-Set type! " +
         s"For ${op.target} expected ${op.tpe} to be a sub-class of $scalaCollectionSetType, but it isn't!"
         , scalaCollectionSetType
         , op.tpe)
     }
 
-    val keyType = op.tpe.tpe.typeArgs match {
+    val keyType = op.tpe.use(_.typeArgs match {
       case head :: Nil =>
         SafeType(head)
       case _ =>
         throw new IncompatibleTypesException("Expected to be a set type but has no parameters", scalaCollectionSetType, op.tpe)
-    }
+    })
 
     val fetched = op.members
       .map(m => (m, context.fetchKey(m, makeByName = false)))
@@ -39,7 +39,7 @@ class SetStrategyDefaultImpl
       case (m, Some(value)) if m.tpe == op.tpe =>
         // in case member type == set type we just merge them
         value.asInstanceOf[collection.Set[Any]]
-      case (m, Some(value)) if m.tpe.tpe.baseClasses.contains(setErasure) && m.tpe.tpe.typeArgs.headOption.exists(SafeType(_) <:< keyType) =>
+      case (m, Some(value)) if m.tpe.use(_.baseClasses.contains(setErasure)) && m.tpe.use(_.typeArgs.headOption.exists(SafeType(_) <:< keyType)) =>
         // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[collection.Set[Any]]
       case (m, Some(value)) if m.tpe <:< keyType =>

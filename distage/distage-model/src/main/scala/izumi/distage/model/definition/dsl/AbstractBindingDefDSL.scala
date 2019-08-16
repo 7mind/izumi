@@ -123,7 +123,7 @@ object AbstractBindingDefDSL {
             case SetImpl(implDef) => b.withImplDef(implDef)
             case AddTags(tags) => b.addTags(tags)
             case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
-            case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tpe.toString.toLowerCase))
+            case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.use(_.toString.toLowerCase)))
           }
       }
     )

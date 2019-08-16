@@ -41,26 +41,28 @@ class ClassStrategyDefaultImpl
   protected def mkScala(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass, args: Seq[Dep]): Any = {
     val wiring = op.wiring
     val targetType = wiring.instanceType
-    val symbol = targetType.tpe.typeSymbol
+    targetType.use {
+      tpe =>
+        val symbol = tpe.typeSymbol
+        if (symbol.isModule) { // don't re-instantiate scala objects
+          mirrorProvider.mirror.reflectModule(symbol.asModule).instance
+        } else {
+          val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
+          val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
 
-    if (symbol.isModule) { // don't re-instantiate scala objects
-      mirrorProvider.mirror.reflectModule(symbol.asModule).instance
-    } else {
-      val ctorSymbol = symbolIntrospector.selectConstructorMethod(targetType)
-      val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+          val (refClass, prefixInstance) = reflectClass(context, op, symbol)
 
-      val (refClass, prefixInstance) = reflectClass(context, op, symbol)
-
-      if (hasByName) {
-        // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
-        mkJava(targetType, prefixInstance, args)
-      } else {
-        val refCtor = refClass.reflectConstructor(ctorSymbol.getOrElse(
-          throw new MissingConstructorException(s"Missing constructor in $targetType")
-        ))
-        val values = args.map(_.value)
-        refCtor.apply(values: _*)
-      }
+          if (hasByName) {
+            // this is a dirty workaround for crappy logic in JavaTransformingMethodMirror
+            mkJava(targetType, prefixInstance, args)
+          } else {
+            val refCtor = refClass.reflectConstructor(ctorSymbol.getOrElse(
+              throw new MissingConstructorException(s"Missing constructor in $targetType")
+            ))
+            val values = args.map(_.value)
+            refCtor.apply(values: _*)
+          }
+        }
     }
   }
 
@@ -69,8 +71,8 @@ class ClassStrategyDefaultImpl
     val wiring = op.wiring
     val targetType = wiring.instanceType
     if (!symbol.isStatic) {
-      val typeRef = ReflectionUtil.toTypeRef[u.type](targetType.tpe)
-        .getOrElse(throw new ProvisioningException(s"Expected TypeRefApi while processing $targetType, got ${targetType.tpe}", null))
+      val typeRef = targetType.use(tpe => ReflectionUtil.toTypeRef[u.type](tpe)
+        .getOrElse(throw new ProvisioningException(s"Expected TypeRefApi while processing $targetType, got $tpe", null)))
 
       val prefix = typeRef.pre
 

@@ -35,7 +35,7 @@ trait WithDISymbolInfo {
     case class Runtime protected (underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
-      override val finalResultType: SafeType = SafeType(underlying.typeSignatureIn(definingClass.tpe).finalResultType)
+      override val finalResultType: SafeType = definingClass.use(tpe => SafeType(underlying.typeSignatureIn(tpe).finalResultType))
 
       override def isByName: Boolean = underlying.isTerm && underlying.asTerm.isByNameParam
 
@@ -65,7 +65,7 @@ trait WithDISymbolInfo {
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
       def findAnnotation(annType: SafeType): Option[u.Annotation] = {
-        symbolInfo.annotations.find(AnnotationTools.annotationTypeEq(u)(annType.tpe, _))
+        symbolInfo.annotations.find(a => annType.use(tpe => AnnotationTools.annotationTypeEq(u)(tpe, a)))
       }
 
       def findUniqueAnnotation(annType: SafeType): Option[u.Annotation] = {

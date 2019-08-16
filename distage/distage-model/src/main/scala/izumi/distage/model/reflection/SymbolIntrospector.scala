@@ -30,7 +30,7 @@ trait SymbolIntrospector {
   def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation]
 
   def canBeProxied(tpe: u.SafeType): Boolean = {
-    !tpe.tpe.typeSymbol.isFinal
+    !tpe.use(_.typeSymbol.isFinal)
   }
 
   def hasByNameParameter(sym: u.MethodSymb): Boolean = {

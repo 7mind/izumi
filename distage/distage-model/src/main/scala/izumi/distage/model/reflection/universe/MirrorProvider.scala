@@ -15,7 +15,7 @@ object MirrorProvider {
     override val mirror: model.reflection.universe.RuntimeDIUniverse.u.Mirror = scala.reflect.runtime.currentMirror
 
     override def runtimeClass(tpe: SafeType): Option[Class[_]] = {
-      runtimeClass(tpe.tpe)
+      tpe.use(runtimeClass)
     }
 
     override def runtimeClass(tpe: TypeNative): Option[Class[_]] = {

@@ -93,7 +93,7 @@ class ProxyStrategyDefaultImpl(
             import u._
             typeOf[AnyRef]
           } else {
-            param.wireWith.tpe.tpe
+            param.wireWith.tpe.use(identity)
           }
           (parameterType, value)
       }
@@ -110,7 +110,7 @@ class ProxyStrategyDefaultImpl(
       ProxyParams.Empty
     }
 
-    val runtimeClass = mirror.runtimeClass(tpe.tpe).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
+    val runtimeClass = tpe.use(mirror.runtimeClass).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
     val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
     val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
@@ -118,10 +118,13 @@ class ProxyStrategyDefaultImpl(
   }
 
   protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
-    val constructors = tpe.tpe.decls.filter(_.isConstructor)
-    val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
-    val hasNoDependencies = constructors.isEmpty || hasTrivial
-    !hasNoDependencies
+    tpe.use {
+      t =>
+        val constructors = t.decls.filter(_.isConstructor)
+        val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
+        val hasNoDependencies = constructors.isEmpty || hasTrivial
+        !hasNoDependencies
+    }
   }
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
