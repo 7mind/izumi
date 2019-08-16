@@ -8,7 +8,7 @@ import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
-class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Context) extends ProviderMagnetMacro(c) {
+final class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Context) extends ProviderMagnetMacro(c) {
   override protected def generateUnsafeWeakSafeTypes: Boolean = true
 }
 

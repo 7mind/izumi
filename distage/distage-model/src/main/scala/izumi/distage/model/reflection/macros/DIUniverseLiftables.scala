@@ -1,7 +1,6 @@
 package izumi.distage.model.reflection.macros
 
 import izumi.distage.model.reflection.universe._
-import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.ReflectionUtil
 
 abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
@@ -9,23 +8,22 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  private[this] implicit val liftableRuntimeUniverse: Liftable[RuntimeDIUniverse.type] = { _: RuntimeDIUniverse.type => q"${symbolOf[RuntimeDIUniverse.type].asClass.module}" }
-  liftableRuntimeUniverse.discard()
+  val runtimeDIUniverse: Tree = q"${symbolOf[RuntimeDIUniverse.type].asClass.module}"
 
   implicit def liftableSafeType: Liftable[SafeType]
 
   protected final val liftableDefaultSafeType: Liftable[SafeType] =
-    value => q"{ $RuntimeDIUniverse.SafeType.get[${Liftable.liftType(value.tpe)}] }"
+    value => q"{ $runtimeDIUniverse.SafeType.get[${Liftable.liftType(value.tpe)}] }"
 
   /** A hack to support generic methods in macro factories, see `WeakTag`, `GenericAssistedFactory` and associated tests **/
   protected final val liftableUnsafeWeakSafeType: Liftable[SafeType] =
-    value => q"{ $RuntimeDIUniverse.SafeType.unsafeGetWeak[${Liftable.liftType(value.tpe)}] }"
+    value => q"{ $runtimeDIUniverse.SafeType.unsafeGetWeak[${Liftable.liftType(value.tpe)}] }"
 
   // DIKey
 
   implicit val liftableTypeKey: Liftable[DIKey.TypeKey] = {
     case DIKey.TypeKey(symbol) => q"""
-    { new $RuntimeDIUniverse.DIKey.TypeKey($symbol) }
+    { new $runtimeDIUniverse.DIKey.TypeKey($symbol) }
       """
   }
 
@@ -34,18 +32,18 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       import idKey._
       // FIXME: will fail on config keys [Though ConfigModule is tied to RuntimeUniverse right now anyway]
       val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
-      q"""{ new $RuntimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
+      q"""{ new $runtimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }
 
   implicit val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
     case DIKey.ProxyElementKey(proxied, symbol) => q"""
-    { new $RuntimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
+    { new $runtimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
       """
   }
 
   implicit val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
     case DIKey.SetElementKey(set, ref) => q"""
-    { new $RuntimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, ${liftableDIKey(ref)}) }
+    { new $runtimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, ${liftableDIKey(ref)}) }
       """
   }
 
@@ -75,11 +73,11 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // ParameterContext
 
   implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
-    context => q"{ new $RuntimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
+    context => q"{ new $runtimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
   }
 
   implicit val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
-    context => q"{ new $RuntimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
+    context => q"{ new $runtimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
   }
 
   implicit val liftableParameterContext: Liftable[DependencyContext.ParameterContext] = {
@@ -94,7 +92,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
       q"""
-    { $RuntimeDIUniverse.SymbolInfo.Static(
+    { $runtimeDIUniverse.SymbolInfo.Static(
       ${info.name}
       , ${liftableUnsafeWeakSafeType(info.finalResultType)}
       , ${info.annotations}
@@ -110,7 +108,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(context, name, tpe, wireWith, isByName, wasGeneric) =>
-      q"{ new $RuntimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName, $wasGeneric)}"
+      q"{ new $runtimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName, $wasGeneric)}"
   }
 
   // Annotations

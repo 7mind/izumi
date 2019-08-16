@@ -11,8 +11,8 @@ import scala.language.experimental.macros
   *
   * TODO: report scalac bug
   */
-final case class HKTagMaterializer[DIU <: WithTags with Singleton, T](value: DIU#HKTag[T]) extends AnyVal
+final case class HKTagMaterializer[DIU <: Tags with Singleton, T](value: DIU#HKTag[T]) extends AnyVal
 
 object HKTagMaterializer {
-  implicit def materialize[DIU <: WithTags with Singleton, T]: HKTagMaterializer[DIU, T] = macro TagMacro.fixupHKTagArgStruct[DIU, T]
+  implicit def materialize[DIU <: Tags with Singleton, T]: HKTagMaterializer[DIU, T] = macro TagMacro.fixupHKTagArgStruct[DIU, T]
 }

@@ -4,6 +4,7 @@ import izumi.distage.model.exceptions.{UnsupportedDefinitionException, Unsupport
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import izumi.fundamentals.reflection.ReflectionUtil
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
@@ -13,7 +14,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  def symbolToWiring(symbl: SafeType): Wiring.PureWiring = {
+  def symbolToWiring(symbl: SafeType): Wiring.PureWiring = ReflectionLock.synchronized {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -56,7 +57,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def providerToWiring(function: Provider): Wiring.PureWiring = {
+  override def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized  {
     function match {
       case factory: Provider.FactoryProvider@unchecked =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
@@ -65,10 +66,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override final def constructorParameters(symbl: SafeType): List[Association.Parameter] =
+  override final def constructorParameters(symbl: SafeType): List[Association.Parameter] = ReflectionLock.synchronized {
     constructorParameterLists(symbl).flatten
+  }
 
-  override def constructorParameterLists(symbl: SafeType): List[List[Association.Parameter]] = {
+  override def constructorParameterLists(symbl: SafeType): List[List[Association.Parameter]] = ReflectionLock.synchronized {
     val argLists: List[List[u.SymbolInfo]] = symbolIntrospector.selectConstructor(symbl).map(_.arguments).toList.flatten
 
     argLists.map(_.map(keyProvider.associationFromParameter))

@@ -1,4 +1,5 @@
 package izumi.distage.model.definition
+
 import java.util.concurrent.{ExecutorService, TimeUnit}
 
 import cats.effect.Bracket
@@ -203,15 +204,42 @@ object DIResource {
 
   abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
-  class LiftF[+F[_]: DIEffect, A](acquire: => F[A]) extends { private[this] final val tmp = () => acquire } with NoClose[F, A] {
-    override def acquire: F[A] = tmp()
+  /***
+    * Class-based variant of [[liftF]]:
+    *
+    * {{{
+    *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
+    * }}}
+    */
+  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
+    def this(acquire: => F[A]) = this(() => acquire)
+
+    override def acquire: F[A] = acquire0()
   }
 
-  class Make[+F[_], A](acquire: => F[A])(release: A => F[Unit]) extends { private[this] final val tmp = () => acquire } with DIResource[F, A] {
-    override def acquire: F[A] = tmp()
+  /***
+    * Class-based variant of [[make]]:
+    *
+    * {{{
+    *   class IntRes extends DIResource.Make(
+    *     acquire = IO(1000)
+    *   )(release = _ => IO.unit)
+    * }}}
+    */
+  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused","") dummy: Boolean = false) extends DIResource[F, A] {
+    def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
+
+    override def acquire: F[A] = acquire0()
     override def release(resource: A): F[Unit] = release.apply(resource)
   }
 
+  /***
+    * Class-based variant of [[make_]]:
+    *
+    * {{{
+    *   class IntRes extends DIResource.Make_(IO(1000))(IO.unit)
+    * }}}
+    */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
@@ -419,7 +447,7 @@ object DIResource {
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
       val tagMacro = new TagMacro(c)
-      val tagTrace = tagMacro.getImplicitError[RuntimeDIUniverse.type]()
+      val tagTrace = tagMacro.getImplicitError[RuntimeDIUniverse.tags.type]()
 
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }

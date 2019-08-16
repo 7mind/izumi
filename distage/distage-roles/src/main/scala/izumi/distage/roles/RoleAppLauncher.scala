@@ -2,15 +2,15 @@ package izumi.distage.roles
 
 import cats.effect.LiftIO
 import izumi.distage.config.model.AppConfig
-import izumi.distage.config.{ConfigInjectionOptions, ResolvedConfig}
+import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.AxisBase
 import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException, RoleService}
+import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
 import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules

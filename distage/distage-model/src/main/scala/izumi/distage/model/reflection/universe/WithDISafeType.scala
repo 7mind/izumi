@@ -1,10 +1,11 @@
 package izumi.distage.model.reflection.universe
 
+import izumi.fundamentals.reflection.SafeType0
 import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagImpl}
-import izumi.fundamentals.reflection.{SafeType0, WithTags}
 
 trait WithDISafeType {
-  this: DIUniverseBase with WithTags =>
+  this: DIUniverseBase
+    with WithTags =>
 
   // TODO: hotspot, hashcode on keys is inefficient
   case class SafeType protected(override val tpe: TypeNative, override val tag: LightTypeTag) extends SafeType0[u.type](tpe, tag)

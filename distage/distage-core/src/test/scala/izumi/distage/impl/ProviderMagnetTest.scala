@@ -3,7 +3,6 @@ package izumi.distage.impl
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u.TypeTag
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
 import org.scalatest.WordSpec

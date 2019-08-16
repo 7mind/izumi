@@ -1,7 +1,6 @@
 package izumi.distage.model.references
 
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
-import izumi.fundamentals.reflection.WithTags
+import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithTags}
 
 trait WithDIKey {
   this: DIUniverseBase

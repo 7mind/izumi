@@ -57,7 +57,7 @@ import izumi.fundamentals.reflection.CodePositionMaterializer
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
-  * @see [[izumi.fundamentals.reflection.WithTags#TagK TagK]]
+  * @see [[izumi.fundamentals.reflection.Tags#TagK TagK]]
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */

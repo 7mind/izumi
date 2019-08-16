@@ -1,10 +1,10 @@
 package izumi.distage.injector
 
+import distage._
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, UnsupportedWiringException}
-import distage._
+import izumi.distage.model.exceptions.UnsupportedWiringException
 import org.scalatest.WordSpec
 
 import scala.language.reflectiveCalls

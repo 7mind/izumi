@@ -3,7 +3,6 @@ package izumi.distage.model.reflection.universe
 import izumi.distage.model.definition.WithDIAnnotation
 import izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext, WithDIWiring}
 import izumi.distage.model.references._
-import izumi.fundamentals.reflection.WithTags
 
 trait DIUniverse
   extends DIUniverseBase

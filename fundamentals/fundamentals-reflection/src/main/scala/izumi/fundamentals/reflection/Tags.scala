@@ -1,7 +1,7 @@
 package izumi.fundamentals.reflection
 
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.WithTags.hktagFormat
+import izumi.fundamentals.reflection.Tags.hktagFormat
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
@@ -9,9 +9,9 @@ import scala.language.experimental.macros
 import scala.reflect.api
 import scala.reflect.api.{TypeCreator, Universe}
 
-trait WithTags extends UniverseGeneric { self =>
+trait Tags extends UniverseGeneric { self =>
 
-  import ReflectionUtil._
+  import ReflectionUtil.WeakTypeTagMigrate
   import u._
 
   /**
@@ -329,11 +329,13 @@ trait WithTags extends UniverseGeneric { self =>
   type TagObject = Tag.type
 }
 
-object WithTags {
+object Tags extends Tags {
+  override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
+
   final val defaultTagImplicitError: String =
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
 
-  def hktagFormatMap: Map[Kind, String] = Map(
+  final def hktagFormatMap: Map[Kind, String] = Map(
     Kind(Nil) -> "Tag"
     , Kind(Kind(Nil) :: Nil) -> "TagK"
     , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK"
@@ -344,7 +346,7 @@ object WithTags {
     , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3"
   )
 
-  def hktagFormat(tpe: Universe#Type): String = {
+  final def hktagFormat(tpe: Universe#Type): String = {
     val kind = kindOf(tpe)
     hktagFormatMap.get(kind) match {
       case Some(t) => s"$t[$tpe]"

@@ -6,12 +6,10 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp,
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.SymbolIntrospector
-import izumi.distage.model.{GCMode, Planner, PlannerInput}
+import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
 import distage.DIKey
-
-import scala.collection.immutable
 
 final class PlannerDefaultImpl
 (

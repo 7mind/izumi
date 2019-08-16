@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection
 
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.WithTags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
+import izumi.fundamentals.reflection.Tags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagMacro}
 
 import scala.annotation.{implicitNotFound, tailrec}
@@ -28,7 +28,7 @@ class TagMacro(val c: blackbox.Context) {
     *
     * TODO: report scalac bug
     */
-  def fixupHKTagArgStruct[DIU <: WithTags with Singleton: c.WeakTypeTag, T: WeakTypeTag]: c.Expr[HKTagMaterializer[DIU, T]] = {
+  def fixupHKTagArgStruct[DIU <: Tags with Singleton: c.WeakTypeTag, T: WeakTypeTag]: c.Expr[HKTagMaterializer[DIU, T]] = {
     val argStruct = weakTypeOf[T]
     val typeConstructor = argStruct.decls.head.info.typeConstructor
     val universe = universeSingleton[DIU]
@@ -61,7 +61,7 @@ class TagMacro(val c: blackbox.Context) {
   //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
   //  [info] You may wish to define T as +T instead. (SLS 4.5)
   //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
-  def FIXMEgetLTagAlso[DIU <: WithTags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
     val tagMacro = new LightTypeTagMacro(c)
     val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
 
@@ -70,7 +70,7 @@ class TagMacro(val c: blackbox.Context) {
     }
   }
 
-  def impl[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
+  def impl[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
 
     logger.log(s"GOT UNIVERSE: ${c.weakTypeOf[DIU]}")
     logger.log(s"Got compile tag: ${weakTypeOf[T]}")
@@ -107,7 +107,7 @@ class TagMacro(val c: blackbox.Context) {
     res
   }
 
-  def getImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): String = {
+  def getImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](): String = {
     symbolOf[DIU#Tag[Any]].annotations.headOption.flatMap(
       AnnotationTools.findArgument(_) {
         case Literal(Constant(s: String)) => s
@@ -116,7 +116,7 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def mkRefined[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
+  protected[this] def mkRefined[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
     val intersectionsTags = c.Expr[List[DIU#ScalaReflectTypeTag[_]]](q"${
       intersection.map {
         t0 =>
@@ -133,7 +133,7 @@ class TagMacro(val c: blackbox.Context) {
 
   @inline
   // have to tag along the original intersection, because scalac dies on trying to summon typetag for a custom made refinedType from `internal.refinedType` ...
-  protected[this] def mkStruct[DIU <: WithTags with Singleton: c.WeakTypeTag](struct: Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
+  protected[this] def mkStruct[DIU <: Tags with Singleton: c.WeakTypeTag](struct: Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
 
     struct.decls.find(_.info.typeSymbol.isParameter).foreach {
       s =>
@@ -149,7 +149,7 @@ class TagMacro(val c: blackbox.Context) {
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
-  protected[this] def mkTag[DIU <: WithTags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], tpe: c.Type): c.Expr[DIU#Tag[T]] = {
+  protected[this] def mkTag[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], tpe: c.Type): c.Expr[DIU#Tag[T]] = {
 
     val ctor = tpe.typeConstructor
     val constructorTag: c.Expr[DIU#ScalaReflectTypeTag[_]] = paramKind(ctor) match {
@@ -237,19 +237,19 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def summonTypeTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
+  protected[this] def summonTypeTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], tpeN)}]")
 
   @inline
-  protected[this] def summonWeakTypeTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] =
+  protected[this] def summonWeakTypeTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] =
     c.Expr[DIU#ScalaReflectWeakTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectWeakTypeTag[Nothing]], tpeN)}]")
 
   @inline
-  protected[this] def summonTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
+  protected[this] def summonTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
     summonTag[DIU](tpe, kindOf(tpe))
 
   @inline
-  protected[this] def summonTag[DIU <: WithTags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
+  protected[this] def summonTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
 
     val summoned = try {
       if (kind == Kind(Nil)) {
@@ -297,7 +297,7 @@ class TagMacro(val c: blackbox.Context) {
   @inline
   protected[this] def universeSingleton[DIU: c.WeakTypeTag]: c.Expr[DIU] = {
     val value = c.weakTypeOf[DIU] match {
-      case u: SingleType =>
+      case u: SingleTypeApi =>
         u.sym.asTerm
       case u => c.abort(c.enclosingPosition,
         s"""Got a non-singleton universe type - $u. Please instantiate universe as
@@ -307,15 +307,15 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def addImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](err: String): Unit =
+  protected[this] def addImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](err: String): Unit =
     setImplicitError(s"${getImplicitError()}\n$err")
 
   @inline
-  protected[this] def resetImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](): Unit =
+  protected[this] def resetImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](): Unit =
     setImplicitError[DIU](defaultError)
 
   @inline
-  protected[this] def setImplicitError[DIU <: WithTags with Singleton: c.WeakTypeTag](err: String): Unit = {
+  protected[this] def setImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](err: String): Unit = {
     import internal.decorators._
 
     val _ = symbolOf[DIU#Tag[Any]].setAnnotations(Annotation(typeOf[implicitNotFound], List[Tree](Literal(Constant(err))), ListMap.empty))
@@ -328,15 +328,15 @@ class TagMacro(val c: blackbox.Context) {
 
 }
 
-class TagLambdaMacro(override val c: whitebox.Context { type PrefixType <: WithTags#TagObject }) extends TagMacro(c) {
+class TagLambdaMacro(override val c: whitebox.Context { type PrefixType <: Tags#TagObject }) extends TagMacro(c) {
   import c.universe._
   import c.universe.internal.decorators._
 
   def lambdaImpl: c.Tree = {
     val prefixTpe = c.prefix.actualType
 
-    if (!(prefixTpe <:< typeOf[WithTags#TagObject])) {
-      c.abort(c.enclosingPosition, "Tag lambda should be called only as a member of WithTags#Tag companion object")
+    if (!(prefixTpe <:< typeOf[Tags#TagObject])) {
+      c.abort(c.enclosingPosition, "Tag lambda should be called only as a member of Tags#Tag companion object")
     }
 
     val pos = c.macroApplication.pos
