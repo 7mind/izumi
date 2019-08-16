@@ -1,46 +1,39 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.NameReference
+import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
-//  def renderType(tpe: TypeNative): String = {
-//    trFull.renderType(tpe)
-//  }
+  private val indexed: Map[String, Int] = allKeys
+    .toSeq
+    .flatMap(extract)
+    .map(name => name.split('.').last -> name)
+    .toMultimap
+    .mapValues(_.size)
+    .toMap
 
-  def renderType(tpe: SafeType): String = {
-    tpe.tag.toString
-    //trFull.renderType(tpe)
+  private val minimizer = new LTTRenderables {
+    protected def nameToString(value: NameReference): String = {
+      val shortname = value.ref.split('.').last
+      val by = indexed.getOrElse(shortname, 0)
+      if (by <= 1) {
+        shortname
+      } else {
+        value.ref
+      }
+    }
   }
 
   def render(key: DIKey): String = {
     render(key, renderType)
   }
 
-//  private val indexed: Map[String, Int] = allKeys
-//    .toSeq
-//    .flatMap(extract)
-//    .map {
-//      k =>
-//        k.tpe.typeSymbol.name.toString -> k.tpe.typeSymbol
-//    }
-//    .groupBy(_._1)
-//    .mapValues(_.map(_._2).toSet.size)
-//    .toMap
-
-  //private val trFull = new TypeRenderer(getName)
-
-//  private def getName(tpe: RuntimeDIUniverse.TypeNative): String = {
-//    val shortname = tpe.typeSymbol.name.toString
-//
-//    val by = indexed.getOrElse(shortname, 0)
-//    if (by == 1) {
-//      shortname
-//    } else {
-//      tpe.typeSymbol.fullName
-//    }
-//  }
-
+  def renderType(tpe: SafeType): String = {
+    import minimizer._
+    tpe.tag.ref.render()
+  }
 
   private def render(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
@@ -66,7 +59,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
   }
 
-  private def extract(key: DIKey): Set[SafeType] = {
+  private def extract(key: DIKey): Set[String] = {
     key match {
       case k: DIKey.TypeKey =>
         extract(k.tpe)
@@ -82,48 +75,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
   }
 
-  private def extract(key: SafeType): Set[SafeType] = {
-    val params = key.tpe.dealias.finalResultType.typeArgs.map(_.dealias.finalResultType).map(SafeType.apply).flatMap(extract)
-    Set(key) ++ params
+  private def extract(key: SafeType): Set[String] = {
+    RuntimeAPI.unpack(key.tag.ref match {
+      case reference: LightTypeTagRef.AbstractReference =>
+        reference
+    }).map(_.ref)
   }
-
-//  private class TypeRenderer(getName: TypeNative => String) {
-//    def renderType(tpe: SafeType): String = {
-//      renderType(tpe.tpe)
-//    }
-//
-//    def renderType(tpe: TypeNative): String = {
-//      val resultType = tpe.dealias.finalResultType
-//      val targs = resultType.typeArgs
-//      val tparams = resultType.typeParams
-//
-//      val args = if (targs.nonEmpty && tparams.isEmpty) {
-//        targs.map(_.dealias.finalResultType)
-//          .map {
-//            t =>
-//              if (t.typeSymbol.isParameter) {
-//                "?"
-//              } else {
-//                renderType(t)
-//              }
-//          }
-//      } else if (targs.isEmpty && tparams.nonEmpty) {
-//        List.fill(tparams.size)("?")
-//      } else if (targs.nonEmpty && tparams.nonEmpty) {
-//        List("<?>")
-//      } else {
-//        List.empty
-//      }
-//
-//      val asList = if (args.forall(_ == "?")) {
-//        ""
-//      } else {
-//        args.mkString("[", ",", "]")
-//      }
-//
-//      getName(tpe) + asList
-//    }
-//  }
-
-
 }

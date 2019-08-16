@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, LambdaParameter, NameReference, Refinement, RefinementDecl, TypeParam}
 
-protected[macrortti] object RuntimeAPI {
+protected[izumi] object RuntimeAPI {
 
   def unpack(ref: AbstractReference): Set[NameReference] = {
     def unpackBoundaries(b: Boundaries): Set[NameReference] = {

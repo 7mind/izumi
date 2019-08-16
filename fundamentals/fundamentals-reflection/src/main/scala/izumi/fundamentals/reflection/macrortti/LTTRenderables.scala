@@ -53,9 +53,25 @@ trait LTTRenderables extends WithRenderableSyntax {
     s"%${value.name}"
   }
 
-  implicit def r_NameReference: Renderable[NameReference] = nameRefRenderer
+  implicit def r_NameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
+    val r = nameToString(value)
 
-  protected def nameRefRenderer: Renderable[NameReference]
+    val rr = value.boundaries match {
+      case _: Boundaries.Defined =>
+        s"$r|${value.boundaries.render()}"
+      case Boundaries.Empty =>
+        r
+    }
+
+    value.prefix match {
+      case Some(p) =>
+        s"${(p: LightTypeTagRef).render()}::$rr"
+      case None =>
+        rr
+    }
+  }
+
+  protected def nameToString(value: NameReference): String
 
   implicit def r_FullReference: Renderable[FullReference] = (value: FullReference) => {
     s"${value.asName.render()}${value.parameters.map(_.render()).mkString("[", ",", "]")}"
@@ -88,45 +104,14 @@ trait LTTRenderables extends WithRenderableSyntax {
 object LTTRenderables {
 
   object Short extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
-      val r = value.ref.split('.').last
-
-      val rr = value.boundaries match {
-        case _: Boundaries.Defined =>
-          s"$r|${value.boundaries.render()}"
-        case Boundaries.Empty =>
-          r
-      }
-
-      value.prefix match {
-        case Some(p) =>
-
-          s"${(p: LightTypeTagRef).render()}::$rr"
-        case None =>
-          rr
-      }
+    protected def nameToString(value: NameReference): String = {
+      value.ref.split('.').last
     }
-
   }
 
   object Long extends LTTRenderables {
-    override protected def nameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
-      val r = value.ref
-      val rr = value.boundaries match {
-        case _: Boundaries.Defined =>
-          s"$r|${value.boundaries.render()}"
-        case Boundaries.Empty =>
-          r
-      }
-
-      value.prefix match {
-        case Some(p) =>
-
-          s"${(p: LightTypeTagRef).render()}::$rr"
-        case None =>
-          rr
-      }
+    protected def nameToString(value: NameReference): String = {
+      value.ref
     }
   }
-
 }

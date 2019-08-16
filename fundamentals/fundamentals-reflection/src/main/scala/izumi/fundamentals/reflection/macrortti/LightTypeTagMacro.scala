@@ -8,7 +8,6 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.language.higherKinds
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
