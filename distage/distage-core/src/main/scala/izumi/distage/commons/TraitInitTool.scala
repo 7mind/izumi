@@ -10,10 +10,10 @@ import izumi.fundamentals.reflection._
 class TraitInitTool {
 
   def traitIndex(tpe: RuntimeDIUniverse.SafeType, methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): TraitIndex = {
-    val vals = tpe.tpe.decls.collect {
+    val vals = tpe.use(_.decls.collect {
       case m: RuntimeDIUniverse.u.TermSymbolApi if m.isVal || m.isVar =>
         m
-    }
+    })
 
     val getters = vals.map { v =>
       v.name.toString -> TraitField(v.name.toString)
@@ -21,7 +21,7 @@ class TraitInitTool {
 
     val setters = vals.map {
       v =>
-        val runtimeClass = tpe.tpe.typeSymbol.asClass.fullName
+        val runtimeClass = tpe.use(_.typeSymbol.asClass.fullName)
         val setterBase = runtimeClass.replace('.', '$')
         val setterName = s"$setterBase$$_setter_$$${v.name.toString}_$$eq"
         setterName -> TraitField(v.name.toString)
@@ -31,7 +31,7 @@ class TraitInitTool {
   }
 
   def initTrait(instanceType: RuntimeDIUniverse.SafeType, runtimeClass: Class[_], instance: AnyRef): Unit = {
-    instanceType.tpe.decls.find(_.name.decodedName.toString == "$init$") match {
+    instanceType.use(_.decls.find(_.name.decodedName.toString == "$init$") match {
       case Some(_) => // here we have an instance of scala MethodSymbol though we can't reflect it, so let's use java
         try {
           try {
@@ -51,13 +51,17 @@ class TraitInitTool {
             throw new TraitInitializationFailedException(s"Failed to initialize trait $instanceType. It may be an issue with the trait, framework bug or trait instantiator implemetation lim", instanceType, e)
         }
       case None =>
-    }
+    })
   }
 
   private def makeTraitIndex(methods: Seq[RuntimeDIUniverse.Association.AbstractMethod]): Map[Method, RuntimeDIUniverse.Association.AbstractMethod] = {
     methods.map {
       m =>
-        ReflectionUtil.toJavaMethod(m.context.definingClass.tpe, m.context.methodSymbol.underlying) -> m
+        m.context.definingClass.use {
+          tpe =>
+            ReflectionUtil.toJavaMethod(tpe, m.context.methodSymbol.underlying) -> m
+        }
+
     }.toMap
   }
 

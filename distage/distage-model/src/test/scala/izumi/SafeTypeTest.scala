@@ -18,10 +18,7 @@ class SafeTypeTest extends WordSpec {
       import u._
 
       val testClass = SafeType.get[TestClass]
-      val testClassTpe = testClass.tpe
-
-      val rtype = testClassTpe.decl(TermName("field")).asMethod.returnType
-
+      val rtype = testClass.use(_.decl(TermName("field")).asMethod.returnType)
       val t3 = SafeType(rtype)
 
       assert(t1 == t3)

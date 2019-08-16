@@ -46,9 +46,12 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
     val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
 
-    val casts = associations.map(_.tpe.tpe).zipWithIndex.map {
-      case (t, i) =>
-        q"{ seqAny($i).asInstanceOf[$t] }"
+    val casts = associations.zipWithIndex.map {
+      case (st, i) =>
+        st.tpe.use {
+          t =>
+            q"{ seqAny($i).asInstanceOf[$t] }"
+        }
     }
 
     val result = c.Expr[ProviderMagnet[R]] {

@@ -7,14 +7,15 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 
 class UnboxingTool(mirrorProvider: MirrorProvider) {
-
   def unbox(info: DIKey, value: Any): AnyRef = {
-    val tpe = info.tpe.tpe
-    if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isDerivedValueClass) {
-      val u = getUnboxMethod(tpe)
-      u.invoke(value)
-    } else {
-      value.asInstanceOf[AnyRef]
+    info.tpe.use {
+      tpe =>
+        if (tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isDerivedValueClass) {
+          val u = getUnboxMethod(tpe)
+          u.invoke(value)
+        } else {
+          value.asInstanceOf[AnyRef]
+        }
     }
   }
 

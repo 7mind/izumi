@@ -84,8 +84,10 @@ trait Tags extends UniverseGeneric { self =>
       * Resulting [Tag] will not have the ability to migrate into a different universe
       * (which is not usually a problem, but still worth naming it 'unsafe')
       */
-    def unsafeFromSafeType[T](tpe: SafeType0[u.type]): Tag[T] =
-      Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(tpe.tpe, u.rootMirror), tpe.tag)
+    def unsafeFromSafeType[T](tpe: SafeType0[u.type]): Tag[T] = {
+      tpe.use(t => Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(t, u.rootMirror), tpe.tag))
+    }
+
 
     /**
       * Create a Tag of a type formed by applying the type in `tag` to `args`.

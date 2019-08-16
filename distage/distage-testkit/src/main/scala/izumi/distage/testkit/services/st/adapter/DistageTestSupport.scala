@@ -203,7 +203,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
-        .filterNot(_.tpe.tpe.typeSymbol.isAbstract)
+        .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
           key =>
             SingletonBinding(key, ImplDef.TypeImpl(key.tpe))

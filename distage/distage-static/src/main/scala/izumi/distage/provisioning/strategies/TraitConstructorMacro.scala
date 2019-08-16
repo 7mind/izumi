@@ -31,13 +31,14 @@ object TraitConstructorMacro {
 
     val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(ctx, name, _, key) =>
-        val tpe = key.tpe.tpe
-        val methodName: TermName = TermName(name)
-        val argName: TermName = c.freshName(methodName)
+        key.tpe.use { tpe =>
+          val methodName: TermName = TermName(name)
+          val argName: TermName = c.freshName(methodName)
 
-        val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
+          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-        q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
+          q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
+        }
     }.unzip
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)

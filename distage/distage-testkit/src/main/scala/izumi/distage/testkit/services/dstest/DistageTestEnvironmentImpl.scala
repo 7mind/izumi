@@ -21,7 +21,7 @@ class DistageTestEnvironmentImpl[F[_]: TagK] extends DistageTestEnvironment[F] {
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
-        .filterNot(_.tpe.tpe.typeSymbol.isAbstract)
+        .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
           key =>
             SingletonBinding(key, ImplDef.TypeImpl(key.tpe))

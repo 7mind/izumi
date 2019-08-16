@@ -33,11 +33,13 @@ object FactoryConstructorMacro {
 
     def _unsafeWrong_convertReflectiveWiringToFunctionWiring(w: Wiring.SingletonWiring.ReflectiveInstantiationWiring): Tree = {
       // TODO: FIXME: Macro call in liftable that substitutes for a different type (not just in a different DIUniverse...)
-      q"""{
-      val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[${w.instanceType.tpe}].provider.get
-
-      ${reify(RuntimeDIUniverse.Wiring.SingletonWiring.Function)}.apply(fun, fun.associations)
-      }"""
+      w.instanceType.use {
+        tpe =>
+          q"""{
+            val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
+            ${reify(RuntimeDIUniverse.Wiring.SingletonWiring.Function)}.apply(fun, fun.associations)
+          }"""
+      }
     }
 
     val targetType = weakTypeOf[T]
@@ -48,13 +50,14 @@ object FactoryConstructorMacro {
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
       case AbstractMethod(ctx, name, _, key) =>
-        val tpe = key.tpe.tpe
-        val methodName: TermName = TermName(name)
-        val argName: TermName = c.freshName(methodName)
+        key.tpe.use { tpe =>
+          val methodName: TermName = TermName(name)
+          val argName: TermName = c.freshName(methodName)
 
-        val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
+          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-        (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+          (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+        }
     }.unzip
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
@@ -64,23 +67,24 @@ object FactoryConstructorMacro {
       case (method@Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
 
         val (methodArgs, executorArgs) = methodArguments.map {
-          dIKey =>
+          diKey =>
             val name = TermName(c.freshName())
-            q"$name: ${dIKey.tpe.tpe}" -> q"{ $name }"
+            diKey.tpe.use {
+              tpe =>
+                q"$name: $tpe" -> q"{ $name }"
+            }
         }.unzip
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val resultTypeOfMethod: Type = factoryMethod.finalResultType.tpe
-
-        val methodDef =
+        val methodDef = factoryMethod.finalResultType.use(resultTypeOfMethod =>
           q"""
           override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
             val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
 
             $factoryTools.interpret($executorName.execute($methodIndex, executorArgs)).asInstanceOf[$resultTypeOfMethod]
           }
-          """
+          """)
 
 
         val providedKeys = method.associationsFromContext.map(_.wireWith)

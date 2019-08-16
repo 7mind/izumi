@@ -115,7 +115,7 @@ class ConfigProvider
   }
 
   implicit class TypeExt(t: SafeType) {
-    def name: String = t.tpe.typeSymbol.asClass.fullName
+    def name: String = t.use(_.typeSymbol.asClass.fullName)
   }
 
   case class DepType(fqName: Seq[String], qualifier: Seq[String]) {

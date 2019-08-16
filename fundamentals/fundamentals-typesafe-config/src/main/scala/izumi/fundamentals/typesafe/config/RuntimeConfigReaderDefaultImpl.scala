@@ -45,26 +45,25 @@ class RuntimeConfigReaderDefaultImpl
   }
 
   def anyReader(tpe: SafeType0[ru.type]): ConfigReader[_] = {
-    val key = SafeType0(tpe.tpe.dealias.erasure)
+    val key = SafeType0(tpe.use(_.dealias.erasure))
 
     codecs.get(key) match {
       case Some(primitiveValueReader) =>
         primitiveValueReader
-      case _ if tpe.tpe.erasure.baseClasses.contains(SafeType0.get[Enum[_]].tpe.erasure.typeSymbol) =>
-        val clazz = mirror.runtimeClass(tpe.tpe)
-
+      case _ if tpe.use(_.erasure.baseClasses.contains(SafeType0.get[Enum[_]].use(_.erasure.typeSymbol))) =>
+        val clazz = tpe.use(mirror.runtimeClass)
         ConfigReaderInstances.javaEnumReader(ClassTag(clazz))
       case _ if tpe <:< SafeType0.get[collection.Map[String, Any]] =>
-        Compat.objectMapReader(mirror, anyReader)(tpe.tpe.dealias)
+        Compat.objectMapReader(mirror, anyReader)(tpe.use(_.dealias))
       case _ if tpe <:< SafeType0.get[Iterable[Any]] =>
-        listReader(tpe.tpe.dealias)(Compat.configListReader(mirror, anyReader))
-      case _ if key.tpe =:= ru.typeOf[Option[_]].dealias.erasure =>
-        optionReader(tpe.tpe.dealias)
-      case _ if tupleTypes.exists(_ =:= key.tpe) =>
-        listReader(tpe.tpe.dealias)(tupleReader)
-      case _ if !tpe.tpe.typeSymbol.isAbstract && tpe.tpe.typeSymbol.isClass && tpe.tpe.typeSymbol.asClass.isCaseClass =>
+        listReader(tpe.use(_.dealias))(Compat.configListReader(mirror, anyReader))
+      case _ if key.use(_ =:= ru.typeOf[Option[_]].dealias.erasure) =>
+        optionReader(tpe.use(_.dealias))
+      case _ if tupleTypes.exists(e => key.use(_ =:= e)) =>
+        listReader(tpe.use(_.dealias))(tupleReader)
+      case _ if !tpe.use(_.typeSymbol.isAbstract) && tpe.use(_.typeSymbol.isClass) && tpe.use(_.typeSymbol.asClass.isCaseClass) =>
         deriveCaseClassReader(tpe)
-      case _ if tpe.tpe.typeSymbol.isAbstract && tpe.tpe.typeSymbol.isClass && tpe.tpe.typeSymbol.asClass.isSealed =>
+      case _ if tpe.use(_.typeSymbol.isAbstract) && tpe.use(_.typeSymbol.isClass) && tpe.use(_.typeSymbol.asClass.isSealed) =>
         deriveSealedTraitReader(tpe)
       case _ =>
         throw new ConfigReadException(
@@ -77,41 +76,44 @@ class RuntimeConfigReaderDefaultImpl
     cv => Try {
       cv match {
         case obj: ConfigObject =>
-          val tpe = targetType.tpe
-          val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
-          val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
-            p =>
-              p.name.decodedName.toString -> p.typeSignatureIn(tpe).finalResultType
-          }
+          targetType.use {
+            tpe =>
+              val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
+              val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
+                p =>
+                  p.name.decodedName.toString -> p.typeSignatureIn(tpe).finalResultType
+              }
 
-          val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-            (e, param) => param match {
-              case (name, typ) =>
-                val value = obj.get(name)
+              val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
+                (e, param) => param match {
+                  case (name, typ) =>
+                    val value = obj.get(name)
 
-                val res = anyReader(SafeType0(typ))(value).fold(
-                  exc => Left(s"Couldn't parse field `$name` of case class $tpe because of exception: ${exc.getMessage}")
-                  , Right(_)
-                )
+                    val res = anyReader(SafeType0(typ))(value).fold(
+                      exc => Left(s"Couldn't parse field `$name` of case class $tpe because of exception: ${exc.getMessage}")
+                      , Right(_)
+                    )
 
-                res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
-            }
-          }
+                    res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
+                }
+              }
 
-          val parsedArgs = parsedResult.fold(
-            errors => throw new ConfigReadException(
-              s"""Couldn't read config object as a case class $targetType, there were errors when trying to parse it's fields from value: $obj
-                 |The errors were:
-                 |  ${errors.niceList()}
+              val parsedArgs = parsedResult.fold(
+                errors => throw new ConfigReadException(
+                  s"""Couldn't read config object as a case class $targetType, there were errors when trying to parse it's fields from value: $obj
+                     |The errors were:
+                     |  ${errors.niceList()}
                """.stripMargin
-            )
-            , identity
-          )
+                )
+                , identity
+              )
 
-          val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
-          val constructor = reflectedClass.reflectConstructor(constructorSymbol)
+              val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
+              val constructor = reflectedClass.reflectConstructor(constructorSymbol)
 
-          constructor.apply(parsedArgs: _*)
+              constructor.apply(parsedArgs: _*)
+          }
+
         case _ =>
           throw new ConfigReadException(
             s"""
@@ -127,9 +129,11 @@ class RuntimeConfigReaderDefaultImpl
           import RuntimeConfigReaderDefaultImpl._
 
           val (subclasses, names) = {
-            val tpe = targetType.tpe
-            val ctors = ctorsOf(tpe)
-            ctors -> ctors.map(c => nameAsString(nameOf(c)))
+            targetType.use {
+              tpe =>
+                val ctors = ctorsOf(tpe)
+                ctors -> ctors.map(c => nameAsString(nameOf(c)))
+            }
           }
           val namedSubclasses = subclasses zip names
 
@@ -252,28 +256,28 @@ class RuntimeConfigReaderDefaultImpl
   }
 
   private[this] val tupleTypes: Seq[ru.Type] = Seq(
-    SafeType0.get[Tuple1[_]].tpe.erasure
-  , SafeType0.get[Tuple2[_, _]].tpe.erasure
-  , SafeType0.get[Tuple3[_, _, _]].tpe.erasure
-  , SafeType0.get[Tuple4[_, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple5[_, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple6[_, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple7[_, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple8[_, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple9[_, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple10[_, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple11[_, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple12[_, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple13[_, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple14[_, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
-  , SafeType0.get[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].tpe.erasure
+    SafeType0.get[Tuple1[_]].use(_.erasure)
+  , SafeType0.get[Tuple2[_, _]].use(_.erasure)
+  , SafeType0.get[Tuple3[_, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple4[_, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple5[_, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple6[_, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple7[_, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple8[_, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple9[_, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple10[_, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple11[_, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple12[_, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple13[_, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple14[_, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
   )
 }
 

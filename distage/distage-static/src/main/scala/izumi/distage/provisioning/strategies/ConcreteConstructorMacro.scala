@@ -41,7 +41,12 @@ object ConcreteConstructorMacro {
 
         val mods = AnnotationTools.mkModifiers(u)(p.context.symbol.annotations)
 
-        q"$mods val $name: ${p.wireWith.tpe.tpe}" -> name
+        p.wireWith.tpe.use {
+          tpe =>
+          q"$mods val $name: $tpe" -> name
+        }
+
+
     })
 
     val args = fnArgsNamesLists.flatten.unzip._1

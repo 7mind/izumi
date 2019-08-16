@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection
 
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.reflect.runtime.{universe => ru}
@@ -9,7 +10,6 @@ class SafeType0[U <: SingletonUniverse] protected(
                                                    val tpe: U#Type,
                                                    val tag: LightTypeTag,
                                                  ) {
-
   override final val hashCode: Int = {
     tag.hashCode()
   }
@@ -40,6 +40,12 @@ class SafeType0[U <: SingletonUniverse] protected(
     tag <:< that.tag
   }
 
+  @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
+  def use[T](f: U#Type => T): T = {
+    ReflectionLock.synchronized {
+      f(tpe)
+    }
+  }
 }
 
 object SafeType0 {

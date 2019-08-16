@@ -101,7 +101,7 @@ class ProxyStrategyDefaultImpl(
       val argClasses = args.map(_._1)
         .map {
           t =>
-          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, t))
+          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
         }
         .toArray
       val argValues = args.map(_._2).toArray

@@ -41,7 +41,8 @@ class FactoryStrategyDefaultImpl
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
     op.wiring.factoryMethods.map {
       wiring =>
-        ReflectionUtil.toJavaMethod(op.wiring.factoryType.tpe, wiring.factoryMethod.underlying) -> wiring
+        op.wiring.factoryType.use(t => ReflectionUtil.toJavaMethod(t, wiring.factoryMethod.underlying))-> wiring
+
     }.toMap
   }
 }

@@ -78,8 +78,9 @@ class TagTest extends WordSpec with X[String] {
 
       assert(Tag[str.type].tpe == safe[str.type])
       assert(Tag[this.Z].tpe == safe[this.Z])
-      assert(Tag[this.Z].tpe.tpe == typeOf[this.Z])
       assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
+
+      assert(Tag[this.Z].tpe.use(_ == typeOf[this.Z]))
     }
 
     "Work for structural concrete types" in {

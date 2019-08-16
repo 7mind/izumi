@@ -50,7 +50,7 @@ protected[distage] class CgLibFactoryMethodInterceptor
 
     val unmatchedTypes = providedValues.filterNot {
       case (key, value) =>
-        mirror.runtimeClass(key.tpe.tpe) match {
+        key.tpe.use(mirror.runtimeClass) match {
           case Some(runtimeClass) =>
             TypeUtil.isAssignableFrom(runtimeClass, value)
           case None =>
