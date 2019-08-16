@@ -36,6 +36,15 @@ final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLifta
     makeFLTTImpl(weakTypeOf[T])
   }
 
+  @inline def makeWeakTagString[T: c.WeakTypeTag]: c.Expr[String] = {
+    val bytes = new ByteArrayOutputStream
+    val oo = new ObjectOutputStream(bytes)
+    val res = impl.makeFLTT(weakTypeOf[T])
+    oo.writeObject(res)
+    oo.close()
+    c.Expr[String](Liftable.liftString(bytes.toString("ISO-8859-1")))
+  }
+
   def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LTag.WeakHK[ArgStruct]] = {
     def badShapeError(t: TypeApi) = {
       c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LightTagK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
@@ -63,9 +72,11 @@ final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLifta
 object LightTypeTagImpl {
   lazy val cache = new ConcurrentHashMap[Any, Any]()
 
-  def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = ReflectionLock.synchronized {
-    val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
-    new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
+  def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = {
+    ReflectionLock.synchronized {
+      val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
+      new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
+    }
   }
 }
 

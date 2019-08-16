@@ -86,8 +86,8 @@ object DependencyKeyProviderDefaultImpl {
     // [info]   ...
     //
     // So these calls are delayed to a point at which the universe is a known concrete type
-    override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[With[Any]]
-    override protected val typeOfIdAnnotation: u.SafeType = u.SafeType.get[Id]
+    override protected val typeOfWithAnnotation: u.SafeType = u.SafeType(u.u.typeOf[Any])
+    override protected val typeOfIdAnnotation: u.SafeType = u.SafeType(u.u.typeOf[Id])
   }
 
   object Static {
@@ -96,8 +96,8 @@ object DependencyKeyProviderDefaultImpl {
         override final val u: macroUniverse.type = macroUniverse
         override final val symbolIntrospector: symbolintrospector.type = symbolintrospector
 
-        override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[With[Any]]
-        override protected val typeOfIdAnnotation: u.SafeType = u.SafeType.get[Id]
+        override protected val typeOfWithAnnotation: u.SafeType = u.SafeType(u.u.typeOf[With[Any]])
+        override protected val typeOfIdAnnotation: u.SafeType = u.SafeType(u.u.typeOf[Id])
       }
     }
   }

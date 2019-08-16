@@ -23,7 +23,7 @@ object StaticDIUniverse {
     new StaticDIUniverse { self =>
       override val u: c.universe.type = c.universe
       override lazy val tags: tags0.type = tags0
-      override protected val typeOfDistageAnnotation: SafeType = SafeType.get[DIStageAnnotation]
+      override protected val typeOfDistageAnnotation: SafeType = SafeType(u.typeOf[DIStageAnnotation])
       override implicit val stringIdContract: IdContract[String] = new IdContractImpl[String]
       override implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S] = new IdContractImpl[S]
     }

@@ -7,7 +7,13 @@ import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTag
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
+import scala.collection.mutable
+import scala.reflect.api.Universe
 import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
+
+object glob {
+  val exprs: mutable.Map[Universe#Type, Universe#Tree] = mutable.Map.empty
+}
 
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
@@ -60,12 +66,48 @@ class TagMacro(val c: blackbox.Context) {
   //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
   //  [info] You may wish to define T as +T instead. (SLS 4.5)
   //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
-  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
-    val tagMacro = new LightTypeTagMacro(c)
-    val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+//  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+//    val tagMacro = new LightTypeTagMacro(c)
+//    val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//    val ltag = tagMacro.makeWeakTagString[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[String]]
 
-    reify {
-      c.prefix.asInstanceOf[Expr[DIU#TagObject]].splice.apply[T](t.splice, ltag.splice)
+//    val ltag = {
+//      val cached = glob.exprs.get(w.tpe).orNull
+//      if (cached eq null) {
+//        val tagMacro = new LightTypeTagMacro(c)
+//        val res = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//        glob.exprs(w.tpe) = res.tree
+//        res
+//      } else {
+//        c.Expr[LightTypeTag](cached.asInstanceOf[c.Tree])
+//      }
+//    }
+
+//    {
+//      val tagMacro = new LightTypeTagMacro(c)
+//      val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//    }
+//
+//    {
+//      val tagMacro = new LightTypeTagMacro(c)
+//      val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//    }
+//
+//    {
+//      val tagMacro = new LightTypeTagMacro(c)
+//      val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//    }
+//
+//    {
+//      val tagMacro = new LightTypeTagMacro(c)
+//      val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
+//    }
+
+    c.Expr[DIU#Tag[T]] {
+//      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, _root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($ltag: String))"
+//      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, $ltag)"
+      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, _root_.shapeless.Cached.implicitly[_root_.izumi.fundamentals.reflection.macrortti.LTag.Weak[$w]].fullLightTypeTag)"
     }
   }
 
