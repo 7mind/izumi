@@ -17,9 +17,9 @@ trait WithDISafeType {
       new SafeType(tpe, LightTypeTagImpl.makeFLTT(u)(tpe))
     }
 
-    def get[T: Tag]: SafeType = SafeType(Tag[T].tag.tpe, Tag[T].fullLightTypeTag)
+    def get[T: Tag]: SafeType = SafeType(Tag[T].tpe.tpe, Tag[T].tag)
 
-    def getK[K[_] : TagK]: SafeType = SafeType(TagK[K].tag.tpe, TagK[K].fullLightTypeTag)
+    def getK[K[_] : TagK]: SafeType = SafeType(TagK[K].tpe.tpe, TagK[K].tag)
 
     def unsafeGetWeak[T](implicit weakTag: WeakTag[T]): SafeType = SafeType(weakTag.tag.tpe, weakTag.fullLightTypeTag)
 

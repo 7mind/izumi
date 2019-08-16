@@ -279,7 +279,7 @@ class TagMacro(val c: blackbox.Context) {
         c.abort(c.enclosingPosition, msg)
     }
 
-    c.Expr[DIU#ScalaReflectTypeTag[_]](q"{$summoned.tag}")
+    c.Expr[DIU#ScalaReflectTypeTag[_]](q"{$summoned.tpe}")
   }
 
   /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us

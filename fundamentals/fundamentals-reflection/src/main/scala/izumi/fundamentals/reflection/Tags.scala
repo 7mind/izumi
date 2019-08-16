@@ -14,6 +14,12 @@ trait Tags extends UniverseGeneric { self =>
   import ReflectionUtil.WeakTypeTagMigrate
   import u._
 
+  protected[izumi] trait TagInterface[T] {
+    def tag: LightTypeTag
+
+    protected[izumi] def tpe: TypeTag[_]
+  }
+
   /**
   * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
   *
@@ -38,12 +44,12 @@ trait Tags extends UniverseGeneric { self =>
   *   * Further details at [[https://github.com/7mind/izumi/pull/369]]
   */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
-  trait Tag[T] {
-    def tag: TypeTag[T]
+  trait Tag[T] extends TagInterface[T] {
+    def tag: LightTypeTag
 
-    def fullLightTypeTag: LightTypeTag
+    override def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
 
-    override def toString: String = s"Tag[${tag.tpe}]@@[$fullLightTypeTag]"
+    protected[izumi] def tpe: TypeTag[T]
   }
 
   object Tag extends LowPriorityTagInstances {
@@ -76,8 +82,8 @@ trait Tags extends UniverseGeneric { self =>
 
     def apply[T](t: TypeTag[T], FLTT: LightTypeTag): Tag[T] =
       new Tag[T] {
-        override val tag: TypeTag[T] = t
-        override def fullLightTypeTag: LightTypeTag = FLTT
+        protected[izumi] override val tpe: TypeTag[T] = t
+        override def tag: LightTypeTag = FLTT
       }
 
     /**
@@ -171,22 +177,22 @@ trait Tags extends UniverseGeneric { self =>
     * }}}
     *
     */
-  trait HKTag[T] {
+  trait HKTag[T] extends TagInterface[T] {
+    def tag: LightTypeTag
+
+    override def toString: String =
+      s"${hktagFormat(tpe.tpe)}@@[$tag]"
 
     /**
      * Internal `TypeTag` holding the `typeConstructor` of type `T`
      **/
-    def tag: TypeTag[_]
-    def fullLightTypeTag: LightTypeTag
-
-    override def toString: String =
-      s"${hktagFormat(tag.tpe)}@@[$fullLightTypeTag]"
+    protected[izumi] def tpe: TypeTag[_]
   }
 
   object HKTag extends LowPriorityHKTagInstances {
     def apply[T](k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
-        override val tag: TypeTag[_] = {
+        protected[izumi] override val tpe: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
             override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
               val t = k.migrate(m).tpe.decls.head.info
@@ -196,13 +202,13 @@ trait Tags extends UniverseGeneric { self =>
 
           TypeTag(k.mirror, ctorCreator)
         }
-        override val fullLightTypeTag: LightTypeTag = l.fullLightTypeTag
+        override val tag: LightTypeTag = l.fullLightTypeTag
       }
     }
 
     implicit def hktagFromTypeTag[T](implicit k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
-        override val tag: TypeTag[_] = {
+        protected[izumi] override val tpe: TypeTag[_] = {
           val ctorCreator = new TypeCreator {
             override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
               val t = k.migrate(m).tpe.decls.head.info
@@ -212,7 +218,7 @@ trait Tags extends UniverseGeneric { self =>
 
           TypeTag(k.mirror, ctorCreator)
         }
-        override val fullLightTypeTag: LightTypeTag = l.fullLightTypeTag
+        override val tag: LightTypeTag = l.fullLightTypeTag
       }
     }
 
@@ -316,7 +322,7 @@ trait Tags extends UniverseGeneric { self =>
   }
 
   trait WeakTagInstances0 extends WeakTagInstances1 {
-    implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].tag, Tag[T].fullLightTypeTag)
+    implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].tpe, Tag[T].tag)
   }
 
   trait WeakTagInstances1 {

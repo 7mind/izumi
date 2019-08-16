@@ -155,9 +155,9 @@ class HigherKindsTest extends WordSpec with MkInjector {
     val context = Injector.Standard().produceUnsafe(PlannerInput.noGc(definition))
     assert(context != null)
 
-    assert(definition.t0.tag.tpe =:= typeOf[TestCovariantTC[Either]])
-    assert(definition.t1.tag.tpe =:= typeOf[TestClassFG[Either, Option]])
-    assert(definition.t2.tag.tpe =:= typeOf[TestClassFA[Either, Int]])
+    assert(definition.t0.tpe.tpe =:= typeOf[TestCovariantTC[Either]])
+    assert(definition.t1.tpe.tpe =:= typeOf[TestClassFG[Either, Option]])
+    assert(definition.t2.tpe.tpe =:= typeOf[TestClassFA[Either, Int]])
     assert(context.get[Either[String, Int]] == value)
   }
 

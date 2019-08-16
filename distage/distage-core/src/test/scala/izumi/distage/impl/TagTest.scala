@@ -7,6 +7,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import distage.{SafeType, Tag}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag
 import org.scalatest.WordSpec
 
 trait X[Y] {
@@ -28,11 +29,11 @@ class TagTest extends WordSpec with X[String] {
   def safe[T: TypeTag] = SafeType(typeOf[T])
 
   implicit class TagSafeType(tag: Tag[_]) {
-    def tpe: SafeType = SafeType(tag.tag.tpe)
+    def toSafe: SafeType = SafeType(tag.tpe.tpe)
   }
 
   implicit class TagKSafeType(tagK: HKTag[_]) {
-    def tpe: SafeType = SafeType(tagK.tag.tpe)
+    def toSafe: SafeType = SafeType(tagK.tpe.tpe)
   }
 
   override final val tagZ = Tag[String]
@@ -55,53 +56,53 @@ class TagTest extends WordSpec with X[String] {
   "Tag" should {
 
     "Work for any concrete type" in {
-      assert(Tag[Int].tpe == safe[Int])
-      assert(Tag[Set[String]].tpe == safe[Set[String]])
-      assert(Tag[Map[Boolean, Double]].tpe == safe[Map[Boolean, Double]])
-      assert(Tag[_ => Unit].tpe == safe[_ => Unit])
-      assert(Tag[Unit => _].tpe == safe[Unit => _])
-      assert(Tag[_ => _].tpe == safe[_ => _])
+      assert(Tag[Int].toSafe == safe[Int])
+      assert(Tag[Set[String]].toSafe == safe[Set[String]])
+      assert(Tag[Map[Boolean, Double]].toSafe == safe[Map[Boolean, Double]])
+      assert(Tag[_ => Unit].toSafe == safe[_ => Unit])
+      assert(Tag[Unit => _].toSafe == safe[Unit => _])
+      assert(Tag[_ => _].toSafe == safe[_ => _])
 
-      assert(Tag[Any].tpe == safe[Any])
-      assert(Tag[Nothing].tpe == safe[Nothing])
-      assert(Tag[Any => Nothing].tpe == safe[Any => Nothing])
-      assert(Tag[Nothing => Any].tpe == safe[Nothing => Any])
-      assert(TagK[Identity].tpe == TagK[Lambda[A => A]].tpe)
+      assert(Tag[Any].toSafe == safe[Any])
+      assert(Tag[Nothing].toSafe == safe[Nothing])
+      assert(Tag[Any => Nothing].toSafe == safe[Any => Nothing])
+      assert(Tag[Nothing => Any].toSafe == safe[Nothing => Any])
+      assert(TagK[Identity].toSafe == TagK[Lambda[A => A]].toSafe)
 
-      assert(Tag[With[Any]].tpe == safe[With[Any]])
-      assert(Tag[With[Nothing]].tpe == safe[With[Nothing]])
-      assert(Tag[With[_]].tpe == safe[With[_]])
+      assert(Tag[With[Any]].toSafe == safe[With[Any]])
+      assert(Tag[With[Nothing]].toSafe == safe[With[Nothing]])
+      assert(Tag[With[_]].toSafe == safe[With[_]])
 
-      assert(Tag[ {def a: Int; def g: Boolean}].tpe == safe[ {def a: Int; def g: Boolean}])
-      assert(Tag[Int with String].tpe == safe[Int with String])
-      assert(Tag[Int {def a: Int}].tpe == safe[Int {def a: Int}])
+      assert(Tag[ {def a: Int; def g: Boolean}].toSafe == safe[ {def a: Int; def g: Boolean}])
+      assert(Tag[Int with String].toSafe == safe[Int with String])
+      assert(Tag[Int {def a: Int}].toSafe == safe[Int {def a: Int}])
 
-      assert(Tag[str.type].tpe == safe[str.type])
-      assert(Tag[this.Z].tpe == safe[this.Z])
-      assert(Tag[TagTest#Z].tpe == safe[TagTest#Z])
+      assert(Tag[str.type].toSafe == safe[str.type])
+      assert(Tag[this.Z].toSafe == safe[this.Z])
+      assert(Tag[TagTest#Z].toSafe == safe[TagTest#Z])
 
-      assert(Tag[this.Z].tpe.use(_ == typeOf[this.Z]))
+      assert(Tag[this.Z].toSafe.use(_ == typeOf[this.Z]))
     }
 
     "Work for structural concrete types" in {
-      assert(Tag[With[str.type] with ({type T = str.type with Int})].tpe == safe[With[str.type] with ({type T = str.type with Int})])
-      assert(Tag[With[str.type] with ({type T = str.type with Int})].tpe != safe[With[str.type] with ({type T = str.type with Long})])
+      assert(Tag[With[str.type] with ({type T = str.type with Int})].toSafe == safe[With[str.type] with ({type T = str.type with Int})])
+      assert(Tag[With[str.type] with ({type T = str.type with Int})].toSafe != safe[With[str.type] with ({type T = str.type with Long})])
     }
 
     "Work with odd type prefixes" in {
       val zy = new ZY {}
 
-      assert(Tag[zy.T].tpe == safe[zy.T])
-      assert(Tag[zy.x.type].tpe == safe[zy.x.type])
-      assert(Tag[zy.y.type].tpe == safe[zy.y.type])
+      assert(Tag[zy.T].toSafe == safe[zy.T])
+      assert(Tag[zy.x.type].toSafe == safe[zy.x.type])
+      assert(Tag[zy.y.type].toSafe == safe[zy.y.type])
     }
 
     "Work with subtyping odd type prefixes" in {
       val zy = new ZY {}
 
-      val b1 = Tag[zy.T].tpe <:< safe[zy.T]
-      val b2 = Tag[zy.x.type].tpe <:< safe[zy.x.type]
-      val b3 = Tag[zy.y.type].tpe <:< safe[zy.y.type]
+      val b1 = Tag[zy.T].toSafe <:< safe[zy.T]
+      val b2 = Tag[zy.x.type].toSafe <:< safe[zy.x.type]
+      val b3 = Tag[zy.y.type].toSafe <:< safe[zy.y.type]
 
       assert(b1)
       assert(b2)
@@ -114,26 +115,26 @@ class TagTest extends WordSpec with X[String] {
       {
         implicit val t: TypeTag[Unit] = t_
 
-        assert(Tag[Unit].tag eq t)
+        assert(Tag[Unit].tpe eq t)
       }
     }
 
     "Work for any abstract type with available TypeTag when obscured by empty refinement" in {
       def testTag[T: TypeTag] = Tag[T {}]
 
-      assert(testTag[String].tpe == safe[String])
+      assert(testTag[String].toSafe == safe[String])
     }
 
     "Work for any abstract type with available Tag when obscured by empty refinement" in {
       def testTag[T: Tag] = Tag[T {}]
 
-      assert(testTag[String].tpe == safe[String])
+      assert(testTag[String].toSafe == safe[String])
     }
 
     "Work for any abstract type with available Tag while preserving additional refinement" in {
       def testTag[T: Tag] = Tag[T {def x: Int}]
 
-      assert(testTag[String].tpe == safe[String {def x: Int}])
+      assert(testTag[String].toSafe == safe[String {def x: Int}])
     }
 
     "handle function local type aliases" in {
@@ -143,13 +144,13 @@ class TagTest extends WordSpec with X[String] {
         Tag[X[T {}]]
       }
 
-      assert(testTag[String].tpe == safe[Either[Int, String]])
+      assert(testTag[String].toSafe == safe[Either[Int, String]])
     }
 
     "Work for an abstract type with available TagK when obscured by empty refinement" in {
       def testTagK[F[_] : TagK, T: Tag] = Tag[F[T {}] {}]
 
-      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+      assert(testTagK[Set, Int].toSafe == safe[Set[Int]])
     }
 
     "Work for an abstract type with available TagK when TagK is requested through an explicit implicit" in {
@@ -158,7 +159,11 @@ class TagTest extends WordSpec with X[String] {
         Tag[F[T {}] {}]
       }
 
-      assert(testTagK[Set, Int].tpe == safe[Set[Int]])
+      assert(testTagK[Set, Int].toSafe == safe[Set[Int]])
+    }
+
+    "xxx" in {
+
     }
 
     "Tag.auto.T kind inference macro works for known cases" in {
@@ -168,10 +173,10 @@ class TagTest extends WordSpec with X[String] {
 
       def x3[T[_, _, _[_[_], _], _[_], _]](implicit x: Tag.auto.T[T]): Tag.auto.T[T] = x
 
-      val b1 = x[Option].tag.tpe =:= TagK[Option].tag.tpe
-      val b2 = x2[Either].tag.tpe =:= TagKK[Either].tag.tpe
-      val b3 = implicitly[Tag.auto.T[OptionT]].tag.tpe =:= TagTK[OptionT].tag.tpe
-      val b4 = x3[T2].tag.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor
+      val b1 = x[Option].tpe.tpe =:= TagK[Option].tpe.tpe
+      val b2 = x2[Either].tpe.tpe =:= TagKK[Either].tpe.tpe
+      val b3 = implicitly[Tag.auto.T[OptionT]].tag =:= TagTK[OptionT].tag
+      val b4 = x3[T2].tpe.tpe.typeConstructor =:= safe[T2[Nothing, Nothing, Nothing, Nothing, Nothing]].tpe.typeConstructor
 
       assert(b1)
       assert(b2)
@@ -182,7 +187,7 @@ class TagTest extends WordSpec with X[String] {
     "Work for an abstract type with available TagKK" in {
       def t1[F[_, _] : TagKK, T: Tag, G: Tag] = Tag[F[T, G]]
 
-      assert(t1[ZOBA[Int, ?, ?], Int, String].tpe == safe[ZOBA[Int, Int, String]])
+      assert(t1[ZOBA[Int, ?, ?], Int, String].toSafe == safe[ZOBA[Int, Int, String]])
     }
 
     "Handle Tags outside of a predefined set" in {
@@ -191,7 +196,7 @@ class TagTest extends WordSpec with X[String] {
       def testTagX[F[_, _, _[_[_], _], _[_], _] : TagX, A: Tag, B: Tag, C[_[_], _] : TagTK, D[_] : TagK, E: Tag] = Tag[F[A, B, C, D, E]]
 
       val value = testTagX[T2, Int, String, OptionT, List, Boolean]
-      assert(value.tpe == safe[T2[Int, String, OptionT, List, Boolean]])
+      assert(value.toSafe == safe[T2[Int, String, OptionT, List, Boolean]])
     }
 
     "Shouldn't work for any abstract type without available TypeTag or Tag or TagK" in {
@@ -208,36 +213,36 @@ class TagTest extends WordSpec with X[String] {
 
       type ZOB[A, B, C] = Either[B, C]
 
-      assert(t1[Int, Boolean, ZOB[Unit, Int, Int], TagK[Option], Nothing, ZOB[Unit, Int, ?]].tpe
+      assert(t1[Int, Boolean, ZOB[Unit, Int, Int], TagK[Option], Nothing, ZOB[Unit, Int, ?]].toSafe
         == safe[T1[Int, Boolean, Either[Int, Int], TagK[Option], Nothing, Either[Int, ?]]])
 
       def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_] : TagK, SD: Tag, GG[A] <: L[A] : TagK, ZZZ[_, _] : TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
 
-      assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].tpe
+      assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].toSafe
         == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, X, String, Y, Either, String, String, String]])
     }
 
     "handle Swap type lambda" in {
       def t1[F[_, _] : TagKK, A: Tag, B: Tag] = Tag[F[A, B]]
 
-      assert(t1[Swap, Int, String].tpe == safe[Either[String, Int]])
+      assert(t1[Swap, Int, String].toSafe == safe[Either[String, Int]])
     }
 
     "handle Id type lambda" in {
-      assert(TagK[Id].tag.tpe.toString.contains(".Id"))
+      assert(TagK[Id].tpe.tpe.toString.contains(".Id"))
     }
 
     "handle Id1 type lambda" in {
 
-      assert(TagTK[Id1].tag.tpe.toString.contains(".Id1"))
+      assert(TagTK[Id1].tpe.tpe.toString.contains(".Id1"))
     }
 
     "Assemble from higher than TagKK tags" in {
       def tag[T[_[_], _] : TagTK, F[_] : TagK, A: Tag] = Tag[T[F, A]]
 
 
-      assert(tag[OptionT, Option, Int].tpe == safe[OptionT[Option, Int]])
+      assert(tag[OptionT, Option, Int].toSafe == safe[OptionT[Option, Int]])
     }
 
     "Handle abstract types instead of parameters" in {
@@ -251,7 +256,15 @@ class TagTest extends WordSpec with X[String] {
         def x: Tag[F[G, Either[A, B]]]
       }
 
-      val t1 = new T1 {
+      val t1: T1 {
+        type G[T] = List[T]
+
+        type C[A0, B0] = Either[A0, B0]
+
+        type A = Int
+
+        type B = Byte
+      } = new T1 {
         type G[T] = List[T]
         type C[A0, B0] = Either[A0, B0]
         type A = Int
@@ -269,7 +282,7 @@ class TagTest extends WordSpec with X[String] {
         }
       }
 
-      assert(t1.x.tpe == safe[OptionT[List, Either[Int, Byte]]])
+      assert(t1.x.toSafe == safe[OptionT[List, Either[Int, Byte]]])
     }
 
     "Can create custom type tags to support bounded generics, e.g. <: Dep in TagK" in {
@@ -277,7 +290,7 @@ class TagTest extends WordSpec with X[String] {
 
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ {type Arg[A <: Dep] = K[A]}]
 
-      implicitly[`TagK<:Dep`[Trait3]].tag.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
+      implicitly[`TagK<:Dep`[Trait3]].tpe.tpe =:= typeOf[Trait3[Nothing]].typeConstructor
     }
 
     "scalac bug: can't find HKTag when obscured by type lambda" in {
