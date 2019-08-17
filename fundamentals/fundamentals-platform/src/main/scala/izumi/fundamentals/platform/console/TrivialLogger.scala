@@ -6,6 +6,8 @@ import izumi.fundamentals.platform.strings.IzString._
 import scala.reflect.ClassTag
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 
+import scala.collection.mutable
+
 trait TrivialLogger {
   def log(s: => String): Unit
 
@@ -36,7 +38,7 @@ object AbstractStringTrivialSink {
 
 }
 
-class TrivialLoggerImpl(config: Config, id: String, loggerLevel: Int) extends TrivialLogger {
+class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErrors: Boolean, loggerLevel: Int) extends TrivialLogger {
   override def log(s: => String): Unit = {
     flush(Level.Info, format(s))
   }
@@ -53,7 +55,9 @@ class TrivialLoggerImpl(config: Config, id: String, loggerLevel: Int) extends Tr
     flush(Level.Error, formatError(s, e))
   }
 
-  override def sub(delta: Int): TrivialLogger = new TrivialLoggerImpl(config, id, loggerLevel + delta)
+  override def sub(delta: Int): TrivialLogger = {
+    new TrivialLoggerImpl(config, id, logMessages, logErrors, loggerLevel + delta)
+  }
 
 
   @inline private[this] def format(s: => String): String = {
@@ -63,11 +67,6 @@ class TrivialLoggerImpl(config: Config, id: String, loggerLevel: Int) extends Tr
   @inline private[this] def formatError(s: => String, e: => Throwable) = {
     s"$s\n${e.stackTrace}"
   }
-
-
-  private val logMessages: Boolean = checkLog(false)
-
-  private val logErrors: Boolean = checkLog(true)
 
   @inline private[this] def flush(level: Level, s: => String): Unit = {
     level match {
@@ -80,15 +79,6 @@ class TrivialLoggerImpl(config: Config, id: String, loggerLevel: Int) extends Tr
           config.sink.flushError(s.shift(loggerLevel * 2))
         }
     }
-  }
-
-  private def checkLog(default: Boolean) = {
-    val parts = id.split('.')
-    val candidates = parts.tail.scanLeft(parts.head) {
-      case (acc, chunk) =>
-        acc + "." + chunk
-    }
-    config.forceLog || candidates.exists(c => System.getProperty(c).asBoolean().getOrElse(default))
   }
 }
 
@@ -110,7 +100,22 @@ object TrivialLogger {
                    )
 
   def make[T: ClassTag](id: String, config: Config = Config()): TrivialLogger = {
-    new TrivialLoggerImpl(config, id, 0)
+    val logMessages: Boolean = checkLog(id, config, default = false)
+    val logErrors: Boolean = checkLog(id, config, default = true)
+    new TrivialLoggerImpl(config, id, logMessages, logErrors, 0)
+  }
+
+  private val enabled = new mutable.HashMap[String, Boolean]()
+
+  private def checkLog(id: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
+    config.forceLog || enabled.getOrElseUpdate(id, {
+      val parts = id.split('.')
+      val candidates = parts.tail.scanLeft(parts.head) {
+        case (acc, chunk) =>
+          acc + "." + chunk
+      }
+      candidates.exists(c => System.getProperty(c).asBoolean().getOrElse(default))
+    })
   }
 }
 

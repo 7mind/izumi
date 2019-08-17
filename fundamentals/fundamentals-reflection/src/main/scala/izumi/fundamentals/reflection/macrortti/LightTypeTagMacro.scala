@@ -11,6 +11,7 @@ import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
+
 final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
 
   import c.universe._
