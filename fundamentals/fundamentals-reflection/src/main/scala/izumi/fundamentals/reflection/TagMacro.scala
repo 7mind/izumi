@@ -66,15 +66,15 @@ class TagMacro(val c: blackbox.Context) {
   //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
   //  [info] You may wish to define T as +T instead. (SLS 4.5)
   //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
-  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
-//  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+//  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
     val tagMacro = new LightTypeTagMacro0[c.type](c)
 //    import tagMacro.lifted_LightTypeTagRef
 
 //    val ltag: LightTypeTag = tagMacro.makeWeakTag0[T](w)
 
-//    val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
-    val ltag = tagMacro.makeWeakTagString[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[String]]
+//    val ltag = tagMacro.makeWeakTagCore[T](w)
+    val ltag = tagMacro.makeWeakTagString[T](w)
 
 //    val ltag = {
 //      val cached = glob.exprs.get(w.tpe).orNull
@@ -92,8 +92,8 @@ class TagMacro(val c: blackbox.Context) {
 //      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, null)"
 //      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, $ltag)"
 //      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, $ltag)"
-//      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, _root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($ltag: String))"
-      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, _root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($ltag: String))"
+      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, $ltag)"
+//      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, _root_.izumi.fundamentals.reflection.macrortti.LightTypeTag.parse($ltag: String))"
 //      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, _root_.shapeless.Cached.implicitly[_root_.izumi.fundamentals.reflection.macrortti.LTag.Weak[$w]].fullLightTypeTag)"
     }
   }

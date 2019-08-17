@@ -148,8 +148,8 @@ trait Tags extends UniverseGeneric { self =>
     //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
     //  [info] You may wish to define T as +T instead. (SLS 4.5)
     //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
-//    implicit final def tagFromTypeTag[T]: Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
-    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
+    implicit final def tagFromTypeTag[T]: Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
+//    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
   }
 
   trait LowPriorityTagInstances {
