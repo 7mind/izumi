@@ -2,6 +2,7 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.util.concurrent.ConcurrentHashMap
 
+import boopickle.DefaultBasic
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
@@ -43,12 +44,16 @@ class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLi
   }
 
   @inline def makeWeakTagString[T: c.WeakTypeTag]: c.Expr[String] = {
-    val bytes = new ByteArrayOutputStream
-    val oo = new ObjectOutputStream(bytes)
     val res = impl.makeFLTT(weakTypeOf[T])
-    oo.writeObject(res)
-    oo.close()
-    c.Expr[String](Liftable.liftString(bytes.toString("ISO-8859-1")))
+
+//    val bytes = new ByteArrayOutputStream
+//    val oo = new ObjectOutputStream(bytes)
+//    oo.writeObject(res)
+//    oo.close()
+
+    val bytes = DefaultBasic.Pickle(res).toByteBuffer
+
+    c.Expr[String](Liftable.liftString(new String(bytes.array(), "ISO-8859-1")))
   }
 
   def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LTag.WeakHK[ArgStruct]] = {

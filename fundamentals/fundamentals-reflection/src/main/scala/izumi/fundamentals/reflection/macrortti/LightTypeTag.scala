@@ -1,9 +1,10 @@
 package izumi.fundamentals.reflection.macrortti
 
-import java.io.{ByteArrayInputStream, ObjectInputStream}
+import java.nio.ByteBuffer
 
+import boopickle.{DefaultBasic, Pickler}
 import izumi.fundamentals.reflection.TrivialMacroLogger
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, NameReference}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, FullReference, NameReference, TypeParam}
 
 final class LightTypeTag
 (
@@ -91,7 +92,35 @@ object LightTypeTag {
 
 
   def parse[T](s: String): LightTypeTag = {
-    new ObjectInputStream(new ByteArrayInputStream(s.getBytes("ISO-8859-1"))).readObject().asInstanceOf[LightTypeTag]
+    val bytes = s.getBytes("ISO-8859-1")
+    binarySerializer.unpickle(ByteBuffer.wrap(bytes, 0, bytes.length))
+//    new ObjectInputStream(new ByteArrayInputStream(s.getBytes("ISO-8859-1"))).readObject().asInstanceOf[LightTypeTag]
+  }
+
+  implicit val binarySerializer: Pickler[LightTypeTag] = {
+    import boopickle.Default._
+    implicit val serializer6 = generatePickler[AppliedReference]
+    implicit val serializer4 = generatePickler[NameReference]
+    implicit val serializer5 = generatePickler[AbstractReference]
+    implicit val refSerializer = generatePickler[LightTypeTagRef]
+
+    implicit val z = generatePickler[(
+      LightTypeTagRef,
+      Map[AbstractReference, Set[AbstractReference]],
+      Map[NameReference, Set[NameReference]],
+    )]
+
+    DefaultBasic.transformPickler[LightTypeTag,
+      (
+        LightTypeTagRef,
+        Map[AbstractReference, Set[AbstractReference]],
+        Map[NameReference, Set[NameReference]],
+      )
+    ] {
+      case (a, b, c) => apply(a, b, c)
+    } {
+      l => (l.ref, l.basesdb, l.idb)
+    }
   }
 
   final val loggerId = TrivialMacroLogger.id("rtti")

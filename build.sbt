@@ -296,7 +296,7 @@ lazy val fundamentalsReflection = inFundamentals.as.cross(platforms)
   .settings(
     libraryDependencies ++= Seq(
       R.scala_reflect % scalaVersion.value % Provided,
-      R.shapeless,
+      R.boopickle.cross(platformDepsCrossVersion.value),
     )
   )
 
