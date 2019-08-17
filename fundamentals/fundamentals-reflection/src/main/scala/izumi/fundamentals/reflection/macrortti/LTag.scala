@@ -8,13 +8,13 @@ import scala.language.experimental.macros
  * We don't have a "strong" tag at this point because TagMacro plays their role
  */
 object LTag {
-  final case class WeakHK[T](fullLightTypeTag: LightTypeTag)
+  final case class WeakHK[T](tag: LightTypeTag)
 
   object WeakHK {
     implicit def materialize[T]: WeakHK[T] = macro LightTypeTagMacro.makeWeakHKTag[T]
   }
 
-  final case class Weak[T](fullLightTypeTag: LightTypeTag)
+  final case class Weak[T](tag: LightTypeTag)
 
   object Weak {
     def apply[T: Weak]: Weak[T] = implicitly

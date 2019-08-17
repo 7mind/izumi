@@ -253,7 +253,7 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support TagK* family summoners" in {
-      assertSame(LTagK[List].fullLightTypeTag, `LTT[_]`[List])
+      assertSame(LTagK[List].tag, `LTT[_]`[List])
     }
 
     "support intersection type equality" in {

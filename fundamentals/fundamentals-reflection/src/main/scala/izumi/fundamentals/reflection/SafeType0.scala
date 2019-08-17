@@ -54,5 +54,5 @@ object SafeType0 {
     new SafeType0[ru.type](tpe, LightTypeTagImpl.makeFLTT(ru)(tpe))
   }
 
-  def get[T: ru.TypeTag : LTag.Weak]: SafeType0[ru.type] = new SafeType0[ru.type](ru.typeOf[T], LTag.Weak[T].fullLightTypeTag)
+  def get[T: ru.TypeTag : LTag.Weak]: SafeType0[ru.type] = new SafeType0[ru.type](ru.typeOf[T], LTag.Weak[T].tag)
 }
