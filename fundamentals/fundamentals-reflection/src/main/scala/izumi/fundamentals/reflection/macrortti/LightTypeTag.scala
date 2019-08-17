@@ -1,7 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
-import java.io.{ByteArrayInputStream, ObjectInputStream, StringBufferInputStream}
-import java.nio.charset.StandardCharsets
+import java.io.{ByteArrayInputStream, ObjectInputStream}
 
 import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, NameReference}
@@ -89,6 +88,7 @@ object LightTypeTag {
   def apply(ref: LightTypeTagRef, bases: => Map[AbstractReference, Set[AbstractReference]], db: => Map[NameReference, Set[NameReference]]): LightTypeTag = {
     new LightTypeTag(ref, () => bases, () => db)
   }
+
 
   def parse[T](s: String): LightTypeTag = {
     new ObjectInputStream(new ByteArrayInputStream(s.getBytes("ISO-8859-1"))).readObject().asInstanceOf[LightTypeTag]

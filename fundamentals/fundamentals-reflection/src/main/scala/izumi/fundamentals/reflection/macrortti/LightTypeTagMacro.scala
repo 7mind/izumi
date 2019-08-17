@@ -13,7 +13,9 @@ import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
-final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLiftables[blackbox.Context](c) {
+final class LightTypeTagMacro(override val c: blackbox.Context) extends LightTypeTagMacro0[blackbox.Context](c)
+
+class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLiftables[C](c) {
 
   import c.universe._
 
@@ -34,6 +36,10 @@ final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLifta
 
   @inline def makeWeakTagCore[T: c.WeakTypeTag]: c.Expr[LightTypeTag] = {
     makeFLTTImpl(weakTypeOf[T])
+  }
+
+  @inline def makeWeakTag0[T: c.WeakTypeTag]: LightTypeTag = {
+    impl.makeFLTT(weakTypeOf[T])
   }
 
   @inline def makeWeakTagString[T: c.WeakTypeTag]: c.Expr[String] = {
