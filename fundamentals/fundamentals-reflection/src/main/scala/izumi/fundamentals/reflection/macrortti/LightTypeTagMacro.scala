@@ -11,8 +11,7 @@ import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
-
-final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
+final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLiftables[blackbox.Context](c) {
 
   import c.universe._
 
@@ -51,14 +50,6 @@ final class LightTypeTagMacro(val c: blackbox.Context) extends LTTLiftables {
   }
 
   protected def makeFLTTImpl(tpe: Type): c.Expr[LightTypeTag] = {
-    // FIXME: Try to summon Tags from environment for all found type parameters instead of failing immediately [replicate TagMacro]
-    // FIXME: makeWeakTag should disable this check
-
-    // FIXME: summon LTag[Nothing] fails
-    //    if (tpe.typeSymbol.isParameter) {
-    //      c.abort(c.enclosingPosition, s"Can't assemble Light Type Tag for $tpe – it's an abstract type parameter")
-    //    }
-
     c.Expr[LightTypeTag](lifted_FLLT(impl.makeFLTT(tpe)))
   }
 }
@@ -104,7 +95,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
 
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
   @inline private[this] final val is = u.asInstanceOf[scala.reflect.internal.Symbols]
-
 
   def makeFLTT(tpe: Type): LightTypeTag = {
     val out = makeRef(tpe)

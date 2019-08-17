@@ -31,7 +31,7 @@ object Http4sTestContext {
   import RT.rt
   import rt._
 
-  final val demo = new DummyServices[rt.type#BiIO, DummyRequestContext]()
+  final val demo = new DummyServices[rt.BiIO, DummyRequestContext]()
 
   //
   final val authUser: Kleisli[OptionT[MonoIO, ?], Request[MonoIO], DummyRequestContext] =

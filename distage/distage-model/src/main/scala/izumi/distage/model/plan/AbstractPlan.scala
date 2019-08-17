@@ -227,7 +227,7 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
 }
 
 object OrderedPlan {
-  implicit val defaultFormatter: CompactPlanFormatter.OrderedPlanFormatter.type = CompactPlanFormatter.OrderedPlanFormatter
+  implicit val defaultFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 
   def empty: OrderedPlan = OrderedPlan(ModuleBase.empty, Vector.empty, GCMode.NoGC, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
 

@@ -3,11 +3,12 @@ package izumi.fundamentals.reflection.macrortti
 import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, NameReference}
 
-final class LightTypeTag(
-                    val ref: LightTypeTagRef,
-                    bases: () => Map[AbstractReference, Set[AbstractReference]],
-                    db: () => Map[NameReference, Set[NameReference]],
-          ) {
+final class LightTypeTag
+(
+  val ref: LightTypeTagRef,
+  bases: () => Map[AbstractReference, Set[AbstractReference]],
+  db: () => Map[NameReference, Set[NameReference]],
+) extends Serializable {
 
   protected[macrortti] lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
   protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
@@ -19,7 +20,6 @@ final class LightTypeTag(
   @inline def =:=(other: LightTypeTag): Boolean = {
     this == other
   }
-
 
   def combine(o: LightTypeTag*): LightTypeTag = {
 
@@ -65,12 +65,10 @@ final class LightTypeTag(
     ref.toString
   }
 
-
   def repr: String = {
     import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     ref.render()
   }
-
 
   override def equals(other: Any): Boolean = other match {
     case that: LightTypeTag =>
@@ -85,17 +83,19 @@ final class LightTypeTag(
 }
 
 object LightTypeTag {
+  def apply(ref: LightTypeTagRef, bases: => Map[AbstractReference, Set[AbstractReference]], db: => Map[NameReference, Set[NameReference]]): LightTypeTag = {
+    new LightTypeTag(ref, () => bases, () => db)
+  }
+
   final val loggerId = TrivialMacroLogger.id("rtti")
 
   object ReflectionLock
 
-  import izumi.fundamentals.collections.IzCollections._
-
   protected[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
+    import izumi.fundamentals.collections.IzCollections._
 
     val both = self.toSeq ++ other.toSeq
     both.toMultimap.mapValues(_.flatten).toMap
-
   }
 
 }

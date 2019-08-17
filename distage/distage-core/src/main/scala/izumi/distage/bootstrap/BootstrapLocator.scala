@@ -63,9 +63,9 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 }
 
 object BootstrapLocator {
-  final val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
+  final val symbolIntrospector: SymbolIntrospectorDefaultImpl.Runtime = new SymbolIntrospectorDefaultImpl.Runtime
 
-  final val reflectionProvider = new ReflectionProviderDefaultImpl.Runtime(
+  final val reflectionProvider: ReflectionProviderDefaultImpl.Runtime = new ReflectionProviderDefaultImpl.Runtime(
     new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
     , symbolIntrospector
   )

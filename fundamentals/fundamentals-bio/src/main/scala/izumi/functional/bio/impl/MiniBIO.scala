@@ -98,7 +98,7 @@ object MiniBIO {
         throw failure.toThrowable
     }
 
-    implicit val BIOMiniBIOHighPriority: BIOMiniBIO.type = BIOMiniBIO
+    implicit val BIOMiniBIOHighPriority: BIO[MiniBIO] = BIOMiniBIO
   }
 
   final case class Fail[+E](e: () => BIOExit.Failure[E]) extends MiniBIO[E, Nothing]

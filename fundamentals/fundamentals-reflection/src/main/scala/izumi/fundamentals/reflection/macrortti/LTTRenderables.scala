@@ -98,7 +98,7 @@ trait LTTRenderables extends WithRenderableSyntax {
     case Boundaries.Empty =>
       ""
   }
-  
+
 }
 
 object LTTRenderables {

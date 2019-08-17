@@ -66,7 +66,7 @@ trait WithDIWiring {
       case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
         override def associations: Seq[Association] = Seq.empty
 
-        override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
+        override def replaceKeys(f: Association => DIKey.BasicKey): Instance = { f.discard(); this }
       }
 
       case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {
@@ -74,7 +74,7 @@ trait WithDIWiring {
 
         override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
 
-        override def replaceKeys(f: Association => DIKey.BasicKey): this.type = { f.discard(); this }
+        override def replaceKeys(f: Association => DIKey.BasicKey): Reference = { f.discard(); this }
       }
     }
 
