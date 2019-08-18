@@ -96,7 +96,8 @@ function publishScala {
 
   echo "PUBLISH SCALA LIBRARIES..."
 
-  csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
+  #csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
+  csbt clean +package +publishSigned || exit 1
   source ./.secrets/ant-secrets.sh
   mkdir tasks
   curl -o tasks/nexus-staging-ant-tasks-1.6.3-uber.jar https://search.maven.org/remotecontent\?filepath\=org/sonatype/nexus/ant/nexus-staging-ant-tasks/1.6.3/nexus-staging-ant-tasks-1.6.3-uber.jar
