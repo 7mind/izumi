@@ -37,6 +37,15 @@ So, the whole sequence to setup the project for publishing is:
     cp doc/samples/credentials.sonatype-nexus.properties .secrets/
     nano .secrets/credentials.sonatype-nexus.properties
 
+Openssl notes
+-------------
+
+    export OPENSSL_KEY=`openssl rand -hex 64`
+    export OPENSSL_IV=`openssl rand -hex 16`
+    echo "$OPENSSL_KEY"
+    echo "$OPENSSL_IV"
+    openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar -out secrets.tar.enc
+
 Travis notes
 ------------
 
