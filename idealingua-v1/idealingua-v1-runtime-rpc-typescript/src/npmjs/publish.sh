@@ -9,9 +9,10 @@ cp -R ../main/resources/runtime/typescript/irt .
 npm install
 tsc
 cp package.json dist/
+npm install json
+./node_modules/json/lib/json.js -I -f dist/package.json -e "this.version=\"${IZUMI_VERSION}\""
 cd dist
-npm install -g json
-json -I -f package.json -e "this.version=\"${IZUMI_VERSION}\""
-npm publish --access public
+npm publish --access public || exit 1
 
 popd
+

@@ -53,6 +53,11 @@ val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
+    publishTo := (if (!isSnapshot.value) {
+        Some(Resolver.file("local-publish", new File("target/local-repo")))
+      } else {
+        Some(Opts.resolver.sonatypeSnapshots)
+      })
   )
 }
 
@@ -127,11 +132,21 @@ val SbtScriptedSettings = new SettingsGroup {
 
   override val plugins: Set[Plugins] = Set(ScriptedPlugin)
 
+  private val ivyOverrides = Option(System.getProperty("sbt.ivy.home")) match {
+    case Some(value) =>
+      Seq(s"-Dsbt.ivy.home=$value", s"-Divy.home=$value")
+    case None =>
+      Seq.empty
+  }
+
   override val settings: Seq[sbt.Setting[_]] = Seq(
     Seq(
       scriptedLaunchOpts := {
         scriptedLaunchOpts.value ++
-          Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+          Seq(
+            "-Xmx1024M",
+            "-Dplugin.version=" + version.value,
+          ) ++ ivyOverrides
       },
       scriptedBufferLog := false,
     )

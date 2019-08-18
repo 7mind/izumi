@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:staging="antlib:org.sonatype.nexus.ant.staging">
+    <property environment="env"/>
+    <!-- https://oss.sonatype.org/ -->
+    <property name="nexus.uri" value="${env.NEXUS_URI}" />
+    <property name="nexus.user" value="${env.NEXUS_USER}" />
+    <property name="nexus.pass" value="${env.NEXUS_PASS}" />
+    <property name="dir.repo" value="${env.DIR_REPO}" />
+    <property name="nexus.profile" value="${env.NEXUS_PROFILE}" />
+
+    <taskdef uri="antlib:org.sonatype.nexus.ant.staging"
+            resource="org/sonatype/nexus/ant/staging/antlib.xml">
+    <classpath>
+        <fileset dir="tasks" includes="nexus-staging-ant-tasks-*uber.jar" />
+    </classpath>
+    </taskdef>
+
+    <staging:nexusStagingInfo id="target-nexus" stagingDirectory="target/staging">
+        <staging:projectInfo
+                groupId="org.sonatype.nexus.ant"
+                artifactId="nexus-staging-ant-tasks"
+                stagingProfileId="${nexus.profile}"
+                version="1.0" />
+        <staging:connectionInfo
+            baseUrl="${nexus.uri}">
+            <staging:authentication
+            username="${nexus.user}"
+            password="${nexus.pass}" />
+        </staging:connectionInfo>
+    </staging:nexusStagingInfo>
+
+    <target name="deploy" description="Deploy: Local and Remote Staging">
+        <staging:stageLocally>
+            <staging:nexusStagingInfo refid="target-nexus" />
+            <fileset dir="${dir.repo}" includes="**/*.*" />
+        </staging:stageLocally>
+
+        <staging:stageRemotely>
+            <staging:nexusStagingInfo refid="target-nexus" />
+        </staging:stageRemotely>
+
+        <staging:releaseStagingRepository>
+            <staging:nexusStagingInfo refid="target-nexus" />
+        </staging:releaseStagingRepository>
+
+        <staging:dropStagingRepository>
+            <staging:nexusStagingInfo refid="target-nexus" />
+        </staging:dropStagingRepository>
+    </target>
+
+</project>

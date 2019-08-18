@@ -16,7 +16,7 @@ function scala213() {
 }
 
 function csbt {
-  COMMAND="time sbt -batch -no-colors -v $*"
+  COMMAND="time sbt -Dsbt.ivy.home=$IVY_CACHE_FOLDER -Divy.home=$IVY_CACHE_FOLDER -Dcoursier.cache=$COURSIER_CACHE -batch -no-colors -v $*"
   eval $COMMAND
 }
 
@@ -75,8 +75,9 @@ function publishIDL {
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
   export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
-  ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh
-  ./idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/nuget/publish.sh
+
+  ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh || exit 1
+  ./idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/nuget/publish.sh || exit 1
 }
 
 function publishScala {
@@ -95,30 +96,16 @@ function publishScala {
   #copypaste
 
   echo "PUBLISH SCALA LIBRARIES..."
-
   csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
-}
 
-function sonatypeRelease {
-  #copypaste
-  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
+  if [[ "$CI_BRANCH" == "develop" ]] ; then
     return 0
   fi
 
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
-    return 0
-  fi
-
-  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
-    return 0
-  fi
-  #copypaste
-
-  echo "SONATYPE RELEASE..."
-
-  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
-    csbt sonatypeReleaseAll || exit 1
-  fi
+  source ./.secrets/ant-secrets.sh
+  mkdir tasks
+  curl -o tasks/nexus-staging-ant-tasks-1.6.3-uber.jar https://search.maven.org/remotecontent\?filepath\=org/sonatype/nexus/ant/nexus-staging-ant-tasks/1.6.3/nexus-staging-ant-tasks-1.6.3-uber.jar
+  ant -f .publish.xml deploy
 }
 
 function init {
@@ -138,6 +125,8 @@ function init {
     export NUGET_TOKEN=${TOKEN_NUGET}
     export CODECOV_TOKEN=${TOKEN_CODECOV}
     export USERNAME=${USER:-`whoami`}
+    export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
+    export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
     printenv
 
