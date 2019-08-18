@@ -32,7 +32,7 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
+//publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
 val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettingsRoot")
@@ -53,6 +53,11 @@ val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
+    publishTo := (if (!isSnapshot.value) {
+        Some(Resolver.file("local-publish", new File("target/local-repo")))
+      } else {
+        Some(Opts.resolver.sonatypeSnapshots)
+      })
   )
 }
 

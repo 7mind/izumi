@@ -8,7 +8,7 @@ jobs:
             ${{ pair.key }}: ${{ pair.value }}
         pool:
           vmImage: 'ubuntu-latest'
-        container: septimalmind/izumi-env:jdk11-5
+        container: septimalmind/izumi-env:jdk11-6
         steps:
           - script: |
                echo "CPU:"
