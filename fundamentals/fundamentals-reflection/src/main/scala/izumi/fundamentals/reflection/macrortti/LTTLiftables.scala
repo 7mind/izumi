@@ -78,6 +78,9 @@ protected[macrortti] abstract class LTTLiftables[C <: blackbox.Context](val c: C
       lifted_AbstractReference(r)
   }
 
+  // compare with strings
+  // test by running same test 20000 times (after 10k)
+
   implicit final val lifted_FLLT: Liftable[LightTypeTag] = Liftable[LightTypeTag] {
     f =>
       q"$lightTypeTag.apply(${f.ref}, ${f.basesdb}, ${f.idb})"

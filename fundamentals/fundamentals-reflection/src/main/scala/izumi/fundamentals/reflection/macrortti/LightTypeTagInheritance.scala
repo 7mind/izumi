@@ -11,7 +11,7 @@ import scala.collection.mutable
 
 object LightTypeTagInheritance {
 
-  case class Ctx(params: List[LambdaParameter], logger: TrivialLogger) {
+  final case class Ctx(params: List[LambdaParameter], logger: TrivialLogger) {
     def next(): Ctx = Ctx(params, logger.sub())
 
     def next(newparams: List[LambdaParameter]): Ctx = Ctx(newparams, logger.sub())
@@ -27,7 +27,6 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
 
   private lazy val ib: ImmutableMultiMap[NameReference, NameReference] = LightTypeTag.mergeIDBs(self.idb, other.idb)
   private lazy val bdb: ImmutableMultiMap[AbstractReference, AbstractReference] = LightTypeTag.mergeIDBs(self.basesdb, other.basesdb)
-
 
   def isChild(): Boolean = {
     val st = self.ref

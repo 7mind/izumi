@@ -2,9 +2,10 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.util.concurrent.ConcurrentHashMap
 
-import boopickle.{DefaultBasic, PickleImpl}
+import boopickle.{PickleImpl, Pickler}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.TrivialMacroLogger
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
@@ -45,11 +46,16 @@ class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLi
 
   @inline def makeWeakTagString[T: c.WeakTypeTag]: c.Tree = {
     val res = impl.makeFLTT(weakTypeOf[T])
-    val bytes = PickleImpl(res).toByteBuffer
 
-    val str = new String(bytes.array(), "ISO-8859-1")
+    @inline def serialize[A: Pickler](a: A) = {
+      val bytes = PickleImpl(a).toByteBuffer.array()
+      new String(bytes, 0, bytes.length, "ISO-8859-1")
+    }
 
-    q"$lightTypeTag.parseX(${res.ref}, $str : _root_.scala.String)"
+    val strRef = serialize(res.ref)(LightTypeTag.lttRefSerializer)
+    val strDBs = serialize(SubtypeDBs(res.basesdb, res.idb))(LightTypeTag.subtypeDBsSerializer)
+
+    q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)"
   }
 
   def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LTag.WeakHK[ArgStruct]] = {
@@ -225,7 +231,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
     val al = inhUnrefined.flatMap(a => makeBaseClasses(a, None))
 
     val basesdb: Map[AbstractReference, Set[AbstractReference]] = Seq(basesAsLambdas, al).flatten.toMultimap.filterNot(_._2.isEmpty)
-    new LightTypeTag(out, () => basesdb, () => inhdb)
+    LightTypeTag(out, basesdb, inhdb)
   }
 
   private def makeBaseClasses(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
