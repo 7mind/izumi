@@ -32,7 +32,7 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges // : ReleaseStep, also checks that an upstream branch is properly configured
 )
 
-//publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
+publishTargets in ThisBuild := Repositories.typical("sonatype-nexus", sonatypeTarget.value.root)
 
 val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
   override val id = SettingsGroupId("GlobalSettingsRoot")

@@ -19,27 +19,30 @@ jobs:
           displayName: 'Tests and Coverage 2.12'
           steps:
             - script: |
-                  bash .build.sh coverage
-            - task: PublishTestResults@2
-            - task: PublishCodeCoverageResults@1
-              inputs:
-                codeCoverageTool: 'Cobertura'
-                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
+                bash .build.sh secrets
+#                  bash .build.sh coverage
+#            - task: PublishTestResults@2
+#            - task: PublishCodeCoverageResults@1
+#              inputs:
+#                codeCoverageTool: 'Cobertura'
+#                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
         - job: build_213
           displayName: 'Tests and Coverage 2.13'
           steps:
             - script: |
-                bash .build.sh 2.13 coverage
-            - task: PublishTestResults@2
-            - task: PublishCodeCoverageResults@1
-              inputs:
-                codeCoverageTool: 'Cobertura'
-                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
+                bash .build.sh secrets
+#                bash .build.sh 2.13 coverage
+#            - task: PublishTestResults@2
+#            - task: PublishCodeCoverageResults@1
+#              inputs:
+#                codeCoverageTool: 'Cobertura'
+#                summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
         - job: sbt
           displayName: 'SBT plugin tests'
           steps:
             - script: |
-                bash .build.sh scripted
+                bash .build.sh secrets
+#                bash .build.sh scripted
         - job: site
           dependsOn:
           - build_212

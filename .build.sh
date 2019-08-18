@@ -98,33 +98,42 @@ function publishScala {
 
   #csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
   csbt clean +package +publishSigned || exit 1
-  source ./.secrets/ant-secrets.sh
-  mkdir tasks
-  curl -o tasks/nexus-staging-ant-tasks-1.6.3-uber.jar https://search.maven.org/remotecontent\?filepath\=org/sonatype/nexus/ant/nexus-staging-ant-tasks/1.6.3/nexus-staging-ant-tasks-1.6.3-uber.jar
-  ant -f .publish.xml deploy
-}
 
-function sonatypeRelease {
-  #copypaste
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
-    return 0
-  fi
-
-  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
     return 0
   fi
 
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
-  #copypaste
 
-  echo "SONATYPE RELEASE..."
-
-  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
-    csbt sonatypeReleaseAll || exit 1
-  fi
+  source ./.secrets/ant-secrets.sh
+  mkdir tasks
+  curl -o tasks/nexus-staging-ant-tasks-1.6.3-uber.jar https://search.maven.org/remotecontent\?filepath\=org/sonatype/nexus/ant/nexus-staging-ant-tasks/1.6.3/nexus-staging-ant-tasks-1.6.3-uber.jar
+  ant -f .publish.xml deploy
 }
+
+#function sonatypeRelease {
+#  #copypaste
+#  if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
+#    return 0
+#  fi
+#
+#  if [[ ! -f .secrets/credentials.sonatype-nexus.properties ]] ; then
+#    return 0
+#  fi
+#
+#  if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
+#    return 0
+#  fi
+#  #copypaste
+#
+#  echo "SONATYPE RELEASE..."
+#
+#  if [[ "$CI_TAG" =~ ^v.*$ ]] ; then
+#    csbt sonatypeReleaseAll || exit 1
+#  fi
+#}
 
 function init {
     echo "=== INIT ==="
