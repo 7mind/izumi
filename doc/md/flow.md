@@ -44,6 +44,7 @@ Openssl notes
     export OPENSSL_IV=`openssl rand -hex 16`
     echo "$OPENSSL_KEY"
     echo "$OPENSSL_IV"
+    tar cvf secrets.tar -v --exclude=gnupg.home .secrets
     openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar -out secrets.tar.enc
 
 Travis notes
