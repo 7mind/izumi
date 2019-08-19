@@ -7,8 +7,6 @@ import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTag
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
-import scala.collection.mutable
-import scala.reflect.api.Universe
 import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion

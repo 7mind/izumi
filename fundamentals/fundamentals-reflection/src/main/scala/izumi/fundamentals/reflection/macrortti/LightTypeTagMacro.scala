@@ -17,9 +17,11 @@ import scala.reflect.macros.blackbox
 
 final class LightTypeTagMacro(override val c: blackbox.Context) extends LightTypeTagMacro0[blackbox.Context](c)
 
-class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLiftables[C](c) {
+class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   import c.universe._
+
+  final val lightTypeTag: Tree = q"${symbolOf[LightTypeTag.type].asClass.module}"
 
   private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
 
