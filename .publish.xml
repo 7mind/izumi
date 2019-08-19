@@ -6,6 +6,7 @@
     <property name="nexus.user" value="${env.NEXUS_USER}" />
     <property name="nexus.pass" value="${env.NEXUS_PASS}" />
     <property name="dir.repo" value="${env.DIR_REPO}" />
+    <property name="nexus.profile" value="${env.NEXUS_PROFILE}" />
 
     <taskdef uri="antlib:org.sonatype.nexus.ant.staging"
             resource="org/sonatype/nexus/ant/staging/antlib.xml">
@@ -15,7 +16,11 @@
     </taskdef>
 
     <staging:nexusStagingInfo id="target-nexus" stagingDirectory="staging">
-        <staging:projectInfo groupId="org.sonatype.nexus.ant" artifactId="nexus-staging-ant-tasks" version="1.0" />
+        <staging:projectInfo
+                groupId="org.sonatype.nexus.ant"
+                artifactId="nexus-staging-ant-tasks"
+                stagingProfileId="${nexus.profile}"
+                version="1.0" />
         <staging:connectionInfo
             baseUrl="${nexus.uri}">
             <staging:authentication
@@ -37,10 +42,6 @@
         <staging:releaseStagingRepository>
             <staging:nexusStagingInfo refid="target-nexus" />
         </staging:releaseStagingRepository>
-
-        <staging:promoteStagingRepository>
-            <staging:nexusStagingInfo refid="target-nexus" />
-        </staging:promoteStagingRepository>
     </target>
 
 </project>
