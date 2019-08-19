@@ -15,7 +15,7 @@
     </classpath>
     </taskdef>
 
-    <staging:nexusStagingInfo id="target-nexus" stagingDirectory="staging">
+    <staging:nexusStagingInfo id="target-nexus" stagingDirectory="target/staging">
         <staging:projectInfo
                 groupId="org.sonatype.nexus.ant"
                 artifactId="nexus-staging-ant-tasks"
