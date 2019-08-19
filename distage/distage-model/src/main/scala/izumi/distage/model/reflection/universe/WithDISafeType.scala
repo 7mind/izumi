@@ -14,7 +14,7 @@ trait WithDISafeType {
     // FIXME TODO constructing SafeType from a runtime type tag
     @deprecated("constructing SafeType from a runtime type tag", "0.9.0")
     def apply(tpe: TypeNative): SafeType = {
-      new SafeType(tpe, LightTypeTagImpl.makeFLTT(u)(tpe))
+      new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
     }
 
     def get[T: Tag]: SafeType = SafeType(Tag[T].tpe.tpe, Tag[T].tag)

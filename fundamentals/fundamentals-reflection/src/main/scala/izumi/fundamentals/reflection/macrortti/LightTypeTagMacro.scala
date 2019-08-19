@@ -18,7 +18,10 @@ final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLifta
   import c.universe._
 
   private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
-  protected val impl = new LightTypeTagImpl[c.universe.type](c.universe, logger)
+
+  def cacheEnabled: Boolean = c.settings.contains("ltt-cache")
+
+  protected val impl = new LightTypeTagImpl[c.universe.type](c.universe, withCache = cacheEnabled, logger)
 
   @inline def makeWeakHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.WeakHK[ArgStruct]] = {
     makeHKTagRaw[ArgStruct](weakTypeOf[ArgStruct])
@@ -52,17 +55,17 @@ final class LightTypeTagMacro(override val c: blackbox.Context) extends LTTLifta
   }
 
   protected def makeFLTTImpl(tpe: Type): c.Expr[LightTypeTag] = {
-    c.Expr[LightTypeTag](lifted_FLLT(impl.makeFLTT(tpe)))
+    c.Expr[LightTypeTag](lifted_FLLT(impl.makeFullTagImpl(tpe)))
   }
 }
 
 // FIXME: Object makes this impossible to override ...
 object LightTypeTagImpl {
-  val cache = new ConcurrentHashMap[Any, Any]()
+  lazy val cache = new ConcurrentHashMap[Any, Any]()
 
-  def makeFLTT(u: Universe)(typeTag: u.Type): LightTypeTag = ReflectionLock.synchronized {
+  def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = ReflectionLock.synchronized {
     val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
-    new LightTypeTagImpl[u.type](u, logger).makeFLTT(typeTag)
+    new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
   }
 }
 
@@ -84,16 +87,18 @@ object Broken {
 
 
 // FIXME: AnyVal makes this impossible to override ...
-final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: TrivialLogger) {
+final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: Boolean, logger: TrivialLogger) {
 
   import u._
 
-  case class StableType(tpe:  U#Type) {
+  case class StableType(tpe: U#Type) {
 
     import izumi.fundamentals.reflection.ReflectionUtil._
+
     private final val dealiased: U#Type = {
       deannotate(tpe.dealias)
     }
+
     @inline private[this] final def freeTermPrefixTypeSuffixHeuristicEq(op: (U#Type, U#Type) => Boolean, t: U#Type, that: U#Type): Boolean =
       t -> that match {
         case (tRef: U#TypeRefApi, oRef: U#TypeRefApi) =>
@@ -124,9 +129,10 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
     override final val hashCode: Int = {
       dealiased.typeSymbol.name.toString.hashCode
     }
+
     override final def equals(obj: Any): Boolean = {
       obj match {
-        case that: StableType @unchecked =>
+        case that: StableType@unchecked =>
           dealiased =:= that.dealiased ||
             singletonFreeTermHeuristicEq(dealiased, that.dealiased) ||
             freeTermPrefixTypeSuffixHeuristicEq(_ =:= _, dealiased, that.dealiased)
@@ -147,7 +153,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
   @inline private[this] final val is = u.asInstanceOf[scala.reflect.internal.Symbols]
 
-  def makeFLTT(tpe: Type): LightTypeTag = {
+  def makeFullTagImpl(tpe: Type): LightTypeTag = {
     val out = makeRef(tpe)
     val inh = allTypeReferences(tpe)
 
@@ -306,14 +312,20 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
   private def makeRef(tpe: Type): AbstractReference = {
     val st = StableType(tpe)
     // we may accidentally recompute twice in concurrent environment but that's fine
-    Option(LightTypeTagImpl.cache.get(st)) match {
-      case Some(value) =>
-        value.asInstanceOf[AbstractReference]
-      case None =>
-        val ref =makeRef(tpe, Map.empty)
-        LightTypeTagImpl.cache.put(st, ref)
-        ref
+    if (withCache) {
+      Option(LightTypeTagImpl.cache.get(st)) match {
+        case Some(value) =>
+          value.asInstanceOf[AbstractReference]
+        case None =>
+          val ref = makeRef(tpe, Map.empty)
+          LightTypeTagImpl.cache.put(st, ref)
+          ref
+      }
+    } else {
+      makeRef(tpe, Map.empty)
     }
+
+
   }
 
   private def makeRef(tpe: Type, terminalNames: Map[String, LambdaParameter]): AbstractReference = {
@@ -353,7 +365,7 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, logger: Tri
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
       if (!out.allArgumentsReferenced) {
-        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${lamParams.map({case (k, v) => s"$v = $k" })}, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
+        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${lamParams.map({ case (k, v) => s"$v = $k" })}, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
       }
 
       thisLevel.log(s"✳️ Restored $t => $out")

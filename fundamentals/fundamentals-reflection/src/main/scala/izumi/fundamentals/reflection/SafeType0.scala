@@ -51,7 +51,7 @@ class SafeType0[U <: SingletonUniverse] protected(
 object SafeType0 {
   @deprecated("constructing SafeType from a runtime type tag", "0.9.0")
   def apply(tpe: ru.Type): SafeType0[ru.type] = {
-    new SafeType0[ru.type](tpe, LightTypeTagImpl.makeFLTT(ru)(tpe))
+    new SafeType0[ru.type](tpe, LightTypeTagImpl.makeLightTypeTag(ru)(tpe))
   }
 
   def get[T: ru.TypeTag : LTag.Weak]: SafeType0[ru.type] = new SafeType0[ru.type](ru.typeOf[T], LTag.Weak[T].tag)

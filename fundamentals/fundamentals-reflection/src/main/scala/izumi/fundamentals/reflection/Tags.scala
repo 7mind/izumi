@@ -111,7 +111,7 @@ trait Tags extends UniverseGeneric { self =>
         }
       }
       val newTypeTag = TypeTag[R](tag.mirror, appliedTypeCreator)
-      Tag(newTypeTag, LightTypeTagImpl.makeFLTT(u)(newTypeTag.tpe))
+      Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
     }
 
     /**
@@ -132,7 +132,7 @@ trait Tags extends UniverseGeneric { self =>
         }
       }
       val newTypeTag = TypeTag[R](intersection.headOption.fold(u.rootMirror)(_.mirror), refinedTypeCreator)
-      Tag(newTypeTag, LightTypeTagImpl.makeFLTT(u)(newTypeTag.tpe))
+      Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
     }
 
     /** For construction from [[TagLambdaMacro]] */
