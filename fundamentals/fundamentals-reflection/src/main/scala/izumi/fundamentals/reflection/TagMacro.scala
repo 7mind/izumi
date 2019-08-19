@@ -11,10 +11,6 @@ import scala.collection.mutable
 import scala.reflect.api.Universe
 import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 
-object glob {
-  val exprs: mutable.Map[Universe#Type, Universe#Tree] = mutable.Map.empty
-}
-
 // TODO: benchmark difference between running implicit search inside macro vs. return tree with recursive implicit macro expansion
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
