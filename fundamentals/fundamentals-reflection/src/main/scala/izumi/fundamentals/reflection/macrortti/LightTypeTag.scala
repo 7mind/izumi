@@ -3,6 +3,7 @@ package izumi.fundamentals.reflection.macrortti
 import java.nio.ByteBuffer
 
 import boopickle.Default.Pickler
+import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
@@ -153,6 +154,9 @@ object LightTypeTag {
 //    } {
 //      l => (l.ref, l.basesdb, l.idb)
 //    }
+
+    // false positive unused warnings
+    appliedRefSerializer.discard(); nameRefSerializer.discard(); abstractRefSerializer.discard()
 
     (/*fltt,*/ refSerializer, dbsSerializer)
   }

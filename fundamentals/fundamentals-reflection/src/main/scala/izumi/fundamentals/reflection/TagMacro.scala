@@ -174,9 +174,8 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def paramKind(tpe: c.Type): Option[Kind] =
+  protected[this] def paramKind(tpe: c.Type): Option[Kind] = {
   // c.internal.isFreeType ?
-  {
     if (tpe.typeSymbol.isParameter)
       Some(kindOf(tpe))
     else
