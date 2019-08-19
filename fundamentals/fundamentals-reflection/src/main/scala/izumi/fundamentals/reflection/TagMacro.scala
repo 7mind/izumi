@@ -295,7 +295,7 @@ class TagMacro(val c: blackbox.Context) {
   protected[this] final def norm(x: Type): Type = {
     x match {
       case RefinedType(t :: Nil, m) if m.isEmpty =>
-        logger.log(s"Stripped empty refinement of type $t. member scope $m, true)")
+        logger.log(s"Stripped empty refinement of type $t. member scope $m")
         norm(t)
       case AnnotatedType(_, t) => norm(t)
       case _ => x
