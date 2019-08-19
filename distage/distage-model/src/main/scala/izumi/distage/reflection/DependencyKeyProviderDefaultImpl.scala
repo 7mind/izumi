@@ -86,7 +86,7 @@ object DependencyKeyProviderDefaultImpl {
     // [info]   ...
     //
     // So these calls are delayed to a point at which the universe is a known concrete type
-    override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[Any]
+    override protected val typeOfWithAnnotation: u.SafeType = u.SafeType.get[With[Any]]
     override protected val typeOfIdAnnotation: u.SafeType = u.SafeType.get[Id]
   }
 
