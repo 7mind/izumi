@@ -65,7 +65,7 @@ object LightTypeTagRef {
 
   sealed trait AbstractReference extends LightTypeTagRef
 
-  case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
+  final case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
     def referenced: Set[NameReference] = RuntimeAPI.unpack(this)
     def paramRefs: Set[NameReference] = input.map(n => NameReference(n.name)).toSet
     def allArgumentsReferenced: Boolean = {
@@ -75,7 +75,7 @@ object LightTypeTagRef {
     override def toString: String = this.render()
   }
 
-  case class LambdaParameter(name: String) {
+  final case class LambdaParameter(name: String) {
     override def toString: String = this.render()
   }
 
@@ -85,11 +85,11 @@ object LightTypeTagRef {
     def asName: NameReference
   }
 
-  case class IntersectionReference(refs: Set[AppliedNamedReference]) extends AppliedReference {
+  final case class IntersectionReference(refs: Set[AppliedNamedReference]) extends AppliedReference {
     override def toString: String = this.render()
   }
 
-  case class NameReference(ref: String, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class NameReference(ref: String, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = this
 
@@ -100,7 +100,7 @@ object LightTypeTagRef {
     def apply(ref: String, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
   }
 
-  case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
 
     override def asName: NameReference = NameReference(ref, prefix = prefix)
 
@@ -111,7 +111,7 @@ object LightTypeTagRef {
     def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
 
-  case class TypeParam(ref: AbstractReference, variance: Variance) {
+  final case class TypeParam(ref: AbstractReference, variance: Variance) {
     override def toString: String = this.render()
   }
 
@@ -119,13 +119,13 @@ object LightTypeTagRef {
 
   object RefinementDecl {
 
-    case class Signature(name: String, input: List[AppliedReference], output: AppliedReference) extends RefinementDecl
+    final case class Signature(name: String, input: List[AppliedReference], output: AppliedReference) extends RefinementDecl
 
-    case class TypeMember(name: String, ref: AbstractReference) extends RefinementDecl
+    final case class TypeMember(name: String, ref: AbstractReference) extends RefinementDecl
 
   }
 
-  case class Refinement(reference: AppliedReference, decls: Set[RefinementDecl]) extends AppliedReference {
+  final case class Refinement(reference: AppliedReference, decls: Set[RefinementDecl]) extends AppliedReference {
     override def toString: String = this.render()
   }
 
@@ -149,7 +149,7 @@ object LightTypeTagRef {
 
   object Boundaries {
 
-    case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
+    final case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
 
     case object Empty extends Boundaries
 

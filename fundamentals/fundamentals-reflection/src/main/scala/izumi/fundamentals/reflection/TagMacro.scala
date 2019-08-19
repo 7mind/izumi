@@ -68,7 +68,7 @@ class TagMacro(val c: blackbox.Context) {
   //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
   def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
     val tagMacro = new LightTypeTagMacro0[c.type](c)
-    val ltag = tagMacro.makeWeakTagString[T](w)
+    val ltag = tagMacro.makeParsedLightTypeTag[T](w)
     c.Expr[DIU#Tag[T]] {
       q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, $ltag)"
     }

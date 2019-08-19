@@ -32,30 +32,12 @@ class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLi
   }
 
   @inline def makeWeakTag[T: c.WeakTypeTag]: c.Expr[LTag.Weak[T]] = {
-    val res = makeFLTTImpl(weakTypeOf[T])
+    val res = makeParsedLightTypeTagImpl(weakTypeOf[T])
     c.Expr[LTag.Weak[T]](q"new ${weakTypeOf[LTag.Weak[T]]}($res)")
   }
 
-  @inline def makeWeakTagCore[T: c.WeakTypeTag]: c.Expr[LightTypeTag] = {
-    makeFLTTImpl(weakTypeOf[T])
-  }
-
-  @inline def makeWeakTag0[T: c.WeakTypeTag]: LightTypeTag = {
-    impl.makeFLTT(weakTypeOf[T])
-  }
-
-  @inline def makeWeakTagString[T: c.WeakTypeTag]: c.Tree = {
-    val res = impl.makeFLTT(weakTypeOf[T])
-
-    @inline def serialize[A: Pickler](a: A) = {
-      val bytes = PickleImpl(a).toByteBuffer.array()
-      new String(bytes, 0, bytes.length, "ISO-8859-1")
-    }
-
-    val strRef = serialize(res.ref)(LightTypeTag.lttRefSerializer)
-    val strDBs = serialize(SubtypeDBs(res.basesdb, res.idb))(LightTypeTag.subtypeDBsSerializer)
-
-    q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)"
+  @inline def makeParsedLightTypeTag[T: c.WeakTypeTag]: c.Expr[LightTypeTag] = {
+    makeParsedLightTypeTagImpl(weakTypeOf[T])
   }
 
   def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LTag.WeakHK[ArgStruct]] = {
@@ -67,7 +49,7 @@ class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLi
       case r: RefinedTypeApi =>
         r.decl(TypeName("Arg")) match {
           case sym: TypeSymbolApi =>
-            val res = makeFLTTImpl(sym.info.typeConstructor)
+            val res = makeParsedLightTypeTagImpl(sym.info.typeConstructor)
             // FIXME: `appliedType` doesn't work here for some reason; have to write down the entire name
             c.Expr[LTag.WeakHK[ArgStruct]](q"new _root_.izumi.fundamentals.reflection.macrortti.LTag.WeakHK[$argStruct]($res)")
           case _ => badShapeError(r)
@@ -76,8 +58,18 @@ class LightTypeTagMacro0[C <: blackbox.Context](override val c: C) extends LTTLi
     }
   }
 
-  protected def makeFLTTImpl(tpe: Type): c.Expr[LightTypeTag] = {
-    c.Expr[LightTypeTag](lifted_FLLT(impl.makeFullTagImpl(tpe)))
+  protected[this] def makeParsedLightTypeTagImpl(tpe: Type): c.Expr[LightTypeTag] = {
+    val res = impl.makeFullTagImpl(tpe)
+
+    @inline def serialize[A: Pickler](a: A): String = {
+      val bytes = PickleImpl(a).toByteBuffer.array()
+      new String(bytes, 0, bytes.length, "ISO-8859-1")
+    }
+
+    val strRef = serialize(res.ref)(LightTypeTag.lttRefSerializer)
+    val strDBs = serialize(SubtypeDBs(res.basesdb, res.idb))(LightTypeTag.subtypeDBsSerializer)
+
+    c.Expr[LightTypeTag](q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)")
   }
 }
 
@@ -99,11 +91,11 @@ sealed trait Broken[T, S] {
 
 object Broken {
 
-  case class Single[T, S](t: T) extends Broken[T, S] {
+  final case class Single[T, S](t: T) extends Broken[T, S] {
     override def toSet: Set[T] = Set(t)
   }
 
-  case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
+  final case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
     override def toSet: Set[T] = tpes
   }
 
@@ -603,53 +595,53 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
 
 // simple materializers
 object LTT {
-  implicit def apply[T]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T]
+  implicit def apply[T]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T]
 }
 
 object `LTT[_]` {
 
   trait Fake
 
-  implicit def apply[T[_]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[T[_]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
 
 object `LTT[+_]` {
 
   trait Fake
 
-  implicit def apply[T[+ _]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[T[+ _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
 
 object `LTT[A,B,_>:B<:A]` {
-  implicit def apply[A, B <: A, T[_ >: B <: A]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[A, B <: A, T[_ >: B <: A]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
 
 object `LTT[_[_]]` {
 
   trait Fake[F[_[_]]]
 
-  implicit def apply[T[_[_]]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[T[_[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
 
 object `LTT[_[_[_]]]` {
 
   trait Fake[F[_[_[_]]]]
 
-  implicit def apply[T[_[_[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[T[_[_[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
 
 object `LTT[_,_]` {
 
   trait Fake
 
-  implicit def apply[T[_, _]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing, Nothing]]
+  implicit def apply[T[_, _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
 }
 
 object `LTT[_[_],_[_]]` {
 
   trait Fake[_[_]]
 
-  implicit def apply[T[_[_], _[_]]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing, Nothing]]
+  implicit def apply[T[_[_], _[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
 }
 
 
@@ -657,5 +649,5 @@ object `LTT[_[_[_],_[_]]]` {
 
   trait Fake[K[_], V[_]]
 
-  implicit def apply[T[_[_[_], _[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeWeakTagCore[T[Nothing]]
+  implicit def apply[T[_[_[_], _[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }
