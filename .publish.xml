@@ -42,6 +42,10 @@
         <staging:releaseStagingRepository>
             <staging:nexusStagingInfo refid="target-nexus" />
         </staging:releaseStagingRepository>
+
+        <staging:dropStagingRepository>
+            <staging:nexusStagingInfo refid="target-nexus" />
+        </staging:dropStagingRepository>
     </target>
 
 </project>
