@@ -30,10 +30,10 @@ trait GreeterServiceClient[Or[+ _, + _]] {
   def alternative(): Or[Long, String]
 }
 
-class GreeterServiceClientWrapped[R[+ _, + _] : BIO](dispatcher: IRTDispatcher[R])
-  extends GreeterServiceClient[R] {
+class GreeterServiceClientWrapped[F[+ _, + _] : BIO](dispatcher: IRTDispatcher[F])
+  extends GreeterServiceClient[F] {
 
-  val R: BIO[R] = implicitly
+  val R: BIO[F] = implicitly
   import izumi.r2.idealingua.test.generated.{GreeterServiceMethods => _M}
 
   override def greet(name: String, surname: String): R.Just[String] = {

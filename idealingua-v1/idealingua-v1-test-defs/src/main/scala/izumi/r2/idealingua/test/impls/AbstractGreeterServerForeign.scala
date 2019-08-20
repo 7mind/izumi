@@ -39,7 +39,7 @@
 //object AbstractGreeterServerMonomorphicForeign {
 //    class ImplEitherT[C] extends AbstractGreeterServer[EitherT[cats.effect.IO, ?, ?], C]
 //
-//    class ImplForeignProxy[R[_, _] : IRTResult, C](proxied: ImplEitherT[C]) extends GreeterServiceServer[R, C] {
+//    class ImplForeignProxy[F[_, _] : IRTResult, C](proxied: ImplEitherT[C]) extends GreeterServiceServer[F, C] {
 //      override def greet(ctx: C, name: String, surname: String): Just[String] = {
 //        proxied.greet(ctx, name, surname)
 //      }

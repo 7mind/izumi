@@ -4,12 +4,12 @@ import izumi.functional.bio.BIO
 import izumi.functional.bio.BIO._
 import io.circe.Json
 
-class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
-  protected val BIO: BIO[R] = implicitly
+class IRTClientMultiplexor[F[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
+  protected val BIO: BIO[F] = implicitly
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap
 
-  def encode(input: IRTMuxRequest): R[Throwable, Json] = {
+  def encode(input: IRTMuxRequest): F[Throwable, Json] = {
     codecs.get(input.method) match {
       case Some(marshaller) =>
         BIO.syncThrowable(marshaller.encodeRequest(input.body))
@@ -18,11 +18,11 @@ class IRTClientMultiplexor[R[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
     }
   }
 
-  def decode(input: Json, method: IRTMethodId): R[Throwable, IRTMuxResponse] = {
+  def decode(input: Json, method: IRTMethodId): F[Throwable, IRTMuxResponse] = {
     codecs.get(method) match {
       case Some(marshaller) =>
         for {
-          decoder <- BIO.syncThrowable(marshaller.decodeResponse[R].apply(IRTJsonBody(method, input)))
+          decoder <- BIO.syncThrowable(marshaller.decodeResponse[F].apply(IRTJsonBody(method, input)))
           body <- decoder
         } yield {
           IRTMuxResponse(body, method)

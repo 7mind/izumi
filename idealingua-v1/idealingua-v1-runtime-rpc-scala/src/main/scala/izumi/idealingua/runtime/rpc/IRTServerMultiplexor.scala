@@ -20,12 +20,12 @@ object ContextExtender {
 }
 
 
-class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R, C2]], extender: ContextExtender[R, C, C2]) {
-  protected val BIO: BIO[R] = implicitly
+class IRTServerMultiplexor[F[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[F, C2]], extender: ContextExtender[F, C, C2]) {
+  protected val BIO: BIO[F] = implicitly
 
-  val services: Map[IRTServiceId, IRTWrappedService[R, C2]] = list.map(s => s.serviceId -> s).toMap
+  val services: Map[IRTServiceId, IRTWrappedService[F, C2]] = list.map(s => s.serviceId -> s).toMap
 
-  def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): R[Throwable, Option[Json]] = {
+  def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): F[Throwable, Option[Json]] = {
     (for {
       service <- services.get(toInvoke.service)
       method <- service.allMethods.get(toInvoke)
@@ -39,9 +39,9 @@ class IRTServerMultiplexor[R[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[R
     }
   }
 
-  @inline private[this] def invoke(context: C2, toInvoke: IRTMethodId, method: IRTMethodWrapper[R, C2], parsedBody: Json): R[Throwable, Json] = {
+  @inline private[this] def invoke(context: C2, toInvoke: IRTMethodId, method: IRTMethodWrapper[F, C2], parsedBody: Json): F[Throwable, Json] = {
     for {
-      decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[R].apply(IRTJsonBody(toInvoke, parsedBody)))
+      decodeAction <- BIO.syncThrowable(method.marshaller.decodeRequest[F].apply(IRTJsonBody(toInvoke, parsedBody)))
       safeDecoded <- decodeAction.sandbox.catchAll {
         case BIOExit.Termination(_, exceptions, trace) =>
           BIO.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()} $trace", exceptions.headOption))

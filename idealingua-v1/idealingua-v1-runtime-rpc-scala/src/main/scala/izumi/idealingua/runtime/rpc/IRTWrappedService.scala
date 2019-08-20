@@ -1,14 +1,14 @@
 package izumi.idealingua.runtime.rpc
 
-trait IRTWrappedService[R[_, _], -C] { self =>
+trait IRTWrappedService[F[_, _], -C] { self =>
   def serviceId: IRTServiceId
 
-  def allMethods: Map[IRTMethodId, IRTMethodWrapper[R, C]]
+  def allMethods: Map[IRTMethodId, IRTMethodWrapper[F, C]]
 
-  final def contramap[D](f: D => C): IRTWrappedService[R, D] = {
-    new IRTWrappedService[R, D] {
+  final def contramap[D](f: D => C): IRTWrappedService[F, D] = {
+    new IRTWrappedService[F, D] {
       override final val serviceId: IRTServiceId = self.serviceId
-      override final val allMethods: Map[IRTMethodId, IRTMethodWrapper[R, D]] = {
+      override final val allMethods: Map[IRTMethodId, IRTMethodWrapper[F, D]] = {
         self.allMethods.map { case (k, v) => k -> v.contramap(f) }
       }
     }

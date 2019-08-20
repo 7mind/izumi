@@ -35,11 +35,11 @@ trait BIOSyntax {
 
   @inline implicit final def ToOps[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
 
-  @inline implicit final def ToAsyncOps[R[+_, +_]: BIOAsync, E, A](self: R[E, A]): BIOSyntax.BIOAsyncOps[R, E, A] = new BIOSyntax.BIOAsyncOps[R, E, A](self)
+  @inline implicit final def ToAsyncOps[F[+_, +_]: BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
 
-  @inline implicit final def ToFlattenOps[R[+_, +_]: BIOMonad, E, A](self: R[E, R[E, A]]): BIOSyntax.BIOFlattenOps[R, E, A] = new BIOSyntax.BIOFlattenOps[R, E, A](self)
+  @inline implicit final def ToFlattenOps[F[+_, +_]: BIOMonad, E, A](self: F[E, F[E, A]]): BIOSyntax.BIOFlattenOps[F, E, A] = new BIOSyntax.BIOFlattenOps[F, E, A](self)
 
-  @inline implicit final def ToForkOps[R[_, _]: BIOFork, E, A](self: R[E, A]): BIOSyntax.BIOForkOps[R, E, A] = new BIOSyntax.BIOForkOps[R, E, A](self)
+  @inline implicit final def ToForkOps[F[_, _]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
 
 }
 

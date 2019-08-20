@@ -1,5 +1,5 @@
 package izumi.idealingua.runtime.rpc
 
-trait IRTDispatcher[R[_, _]] {
-  def dispatch(input: IRTMuxRequest): R[Throwable, IRTMuxResponse]
+trait IRTDispatcher[F[_, _]] {
+  def dispatch(input: IRTMuxRequest): F[Throwable, IRTMuxResponse]
 }
