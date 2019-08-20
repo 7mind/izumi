@@ -83,6 +83,8 @@ object IzumiDeps {
 
     val shapeless = "com.chuusai" %% "shapeless" % V.shapeless
 
+    val boopickle = "io.suzaku" %% "boopickle" % "1.3.1"
+
     val circe: Seq[ModuleID] = Seq(
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",

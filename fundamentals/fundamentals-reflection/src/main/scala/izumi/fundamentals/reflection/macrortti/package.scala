@@ -1,5 +1,7 @@
 package izumi.fundamentals.reflection
 
+import scala.language.experimental.macros
+
 package object macrortti {
   type LWeakTag[T] = LTag.Weak[T]
 
@@ -51,4 +53,16 @@ package object macrortti {
   object LTagTK3 {
     def apply[K[_[_], _, _, _]: LTagTK3]: LTagTK3[K] = implicitly
   }
+
+  // simple materializers
+  def LTT[T]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T]
+  def `LTT[_]`[T[_]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[+_]`[T[+ _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[A,B,_>:B<:A]`[A, B <: A, T[_ >: B <: A]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[_[_]]`[T[_[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[_[_[_]]]`[T[_[_[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[_,_]`[T[_, _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
+  def `LTT[_[_],_[_]]`[T[_[_], _[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
+  def `LTT[_[_[_],_[_]]]`[T[_[_[_], _[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+
 }

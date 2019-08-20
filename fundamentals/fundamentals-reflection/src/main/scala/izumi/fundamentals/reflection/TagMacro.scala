@@ -3,7 +3,7 @@ package izumi.fundamentals.reflection
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.Tags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagMacro}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagMacro, LightTypeTagMacro0}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
@@ -61,11 +61,10 @@ class TagMacro(val c: blackbox.Context) {
   //  [info] You may wish to define T as +T instead. (SLS 4.5)
   //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
   def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
-    val tagMacro = new LightTypeTagMacro(c)
-    val ltag = tagMacro.makeWeakTagCore[T](w.asInstanceOf[tagMacro.c.WeakTypeTag[T]]).asInstanceOf[c.Expr[LightTypeTag]]
-
-    reify {
-      c.prefix.asInstanceOf[Expr[DIU#TagObject]].splice.apply[T](t.splice, ltag.splice)
+    val tagMacro = new LightTypeTagMacro0[c.type](c)
+    val ltag = tagMacro.makeParsedLightTypeTag[T](w)
+    c.Expr[DIU#Tag[T]] {
+      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, $ltag)"
     }
   }
 
@@ -175,16 +174,18 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def paramKind(tpe: c.Type): Option[Kind] =
+  protected[this] def paramKind(tpe: c.Type): Option[Kind] = {
   // c.internal.isFreeType ?
     if (tpe.typeSymbol.isParameter)
       Some(kindOf(tpe))
     else
       None
+  }
 
   @inline
-  protected[this] def applyToNothings(tpe: c.Type): c.Type =
+  protected[this] def applyToNothings(tpe: c.Type): c.Type = {
     c.universe.appliedType(tpe, tpe.typeArgs.map(_ => definitions.NothingTpe))
+  }
 
   protected[this] def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
     import internal.reificationSupport._
@@ -236,16 +237,19 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def summonTypeTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
+  protected[this] def summonTypeTag[DIU <: Tags with Singleton : c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
     c.Expr[DIU#ScalaReflectTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectTypeTag[Nothing]], tpeN)}]")
+  }
 
   @inline
-  protected[this] def summonWeakTypeTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] =
+  protected[this] def summonWeakTypeTag[DIU <: Tags with Singleton : c.WeakTypeTag](tpeN: c.Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
     c.Expr[DIU#ScalaReflectWeakTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[DIU#ScalaReflectWeakTypeTag[Nothing]], tpeN)}]")
+  }
 
   @inline
-  protected[this] def summonTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] =
+  protected[this] def summonTag[DIU <: Tags with Singleton : c.WeakTypeTag](tpe: c.Type): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
     summonTag[DIU](tpe, kindOf(tpe))
+  }
 
   @inline
   protected[this] def summonTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
@@ -285,12 +289,14 @@ class TagMacro(val c: blackbox.Context) {
   /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
     * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
   @tailrec
-  protected[this] final def norm(x: Type): Type = x match {
-    case RefinedType(t :: Nil, m) if m.isEmpty =>
-      logger.log(s"Stripped empty refinement of type $t. member scope $m, true)")
-      norm(t)
-    case AnnotatedType(_, t) => norm(t)
-    case _ => x
+  protected[this] final def norm(x: Type): Type = {
+    x match {
+      case RefinedType(t :: Nil, m) if m.isEmpty =>
+        logger.log(s"Stripped empty refinement of type $t. member scope $m")
+        norm(t)
+      case AnnotatedType(_, t) => norm(t)
+      case _ => x
+    }
   }
 
   @inline
@@ -306,12 +312,14 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def addImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](err: String): Unit =
+  protected[this] def addImplicitError[DIU <: Tags with Singleton : c.WeakTypeTag](err: String): Unit = {
     setImplicitError(s"${getImplicitError()}\n$err")
+  }
 
   @inline
-  protected[this] def resetImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](): Unit =
+  protected[this] def resetImplicitError[DIU <: Tags with Singleton : c.WeakTypeTag](): Unit = {
     setImplicitError[DIU](defaultError)
+  }
 
   @inline
   protected[this] def setImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](err: String): Unit = {

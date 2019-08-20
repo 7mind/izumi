@@ -1,13 +1,12 @@
 package izumi.distage.impl
 
+import distage.{SafeType, Tag}
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import izumi.distage.model.definition.With
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import distage.{SafeType, Tag}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag
 import org.scalatest.WordSpec
 
 trait X[Y] {

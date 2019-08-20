@@ -78,7 +78,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
     someFunction()
   }
 
-
   "support path-dependant by-name injections" in {
     import InnerClassByNameCase._
 
