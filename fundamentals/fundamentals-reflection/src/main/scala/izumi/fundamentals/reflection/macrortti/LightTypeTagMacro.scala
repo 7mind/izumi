@@ -52,7 +52,7 @@ class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
     }
   }
 
-  protected[this] def makeParsedLightTypeTagImpl(tpe: Type): c.Expr[LightTypeTag] = {
+  def makeParsedLightTypeTagImpl(tpe: Type): c.Expr[LightTypeTag] = {
     val res = impl.makeFullTagImpl(tpe)
 
     @inline def serialize[A: Pickler](a: A): String = {

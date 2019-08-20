@@ -14,7 +14,7 @@ abstract class LightTypeTag
   db: () => Map[NameReference, Set[NameReference]],
 ) extends Serializable {
 
-  val ref: LightTypeTagRef
+  def ref: LightTypeTagRef
   protected[macrortti] lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
   protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
 
