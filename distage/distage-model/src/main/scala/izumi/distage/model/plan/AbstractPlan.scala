@@ -280,8 +280,13 @@ private[plan] final class ResolveImportFOrderedPlanPartiallyApplied[T](private v
 
 private object SemiPlanOrderedPlanInstances {
 
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    * */
   sealed abstract class CatsMonoid[K[_]]
-
   object CatsMonoid {
     implicit val get: CatsMonoid[Monoid] = null
   }
