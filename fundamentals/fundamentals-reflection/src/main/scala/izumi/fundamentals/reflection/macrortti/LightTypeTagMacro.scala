@@ -4,8 +4,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import boopickle.{PickleImpl, Pickler}
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.reflection
-import izumi.fundamentals.reflection.{StableType, TrivialMacroLogger}
+import izumi.fundamentals.reflection.ReflectionUtil.deannotate
+import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
@@ -110,12 +110,59 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
 
   import u._
 
+  /** scala-reflect `Type` wrapped to provide a contract-abiding equals-hashCode */
+  class StableType(val tpe: U#Type) {
+
+    private final val dealiased: U#Type = {
+      deannotate(tpe.dealias)
+    }
+
+    @inline private[this] final def freeTermPrefixTypeSuffixHeuristicEq(op: (U#Type, U#Type) => Boolean, t: U#Type, that: U#Type): Boolean =
+      t -> that match {
+        case (tRef: U#TypeRefApi, oRef: U#TypeRefApi) =>
+          singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && (
+            tRef.sym.isType && oRef.sym.isType && {
+              val t1 = (u: U).internal.typeRef(u.NoType, tRef.sym, tRef.args)
+              val t2 = (u: U).internal.typeRef(u.NoType, oRef.sym, oRef.args)
+
+              op(t1, t2)
+            }
+              || tRef.sym.isTerm && oRef.sym.isTerm && tRef.sym == oRef.sym
+            )
+        case (tRef: U#SingleTypeApi, oRef: U#SingleTypeApi) =>
+          singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && tRef.sym == oRef.sym
+        case _ => false
+      }
+
+    private[this] final def singletonFreeTermHeuristicEq(t: U#Type, that: U#Type): Boolean =
+      t.asInstanceOf[Any] -> that.asInstanceOf[Any] match {
+        case (tpe: scala.reflect.internal.Types#UniqueSingleType, other: scala.reflect.internal.Types#UniqueSingleType)
+          if tpe.sym.isFreeTerm && other.sym.isFreeTerm =>
+
+          new StableType(tpe.pre.asInstanceOf[U#Type]) == new StableType(other.pre.asInstanceOf[U#Type]) && tpe.sym.name.toString == other.sym.name.toString
+        case _ =>
+          false
+      }
+
+    override final val hashCode: Int = {
+      dealiased.typeSymbol.name.toString.hashCode
+    }
+
+    override final def equals(obj: Any): Boolean = {
+      obj match {
+        case that: StableType =>
+          dealiased =:= that.dealiased ||
+            singletonFreeTermHeuristicEq(dealiased, that.dealiased) ||
+            freeTermPrefixTypeSuffixHeuristicEq(_ =:= _, dealiased, that.dealiased)
+        case _ =>
+          false
+      }
+    }
+  }
+
   @inline private[this] val any: Type = definitions.AnyTpe
-
   @inline private[this] val obj: Type = definitions.ObjectTpe
-
   @inline private[this] val nothing: Type = definitions.NothingTpe
-
   @inline private[this] val ignored: Set[Type] = Set(any, obj, nothing)
 
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
@@ -276,10 +323,9 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
     allbases
   }
 
-
   private def makeRef(tpe: Type): AbstractReference = {
     if (withCache) {
-      val st = new StableType(u, tpe)
+      val st = new StableType(tpe)
       // we may accidentally recompute twice in concurrent environment but that's fine
       Option(LightTypeTagImpl.cache.get(st)) match {
         case Some(value) =>
@@ -292,8 +338,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
     } else {
       makeRef(tpe, Map.empty)
     }
-
-
   }
 
   private def makeRef(tpe: Type, terminalNames: Map[String, LambdaParameter]): AbstractReference = {
@@ -318,7 +362,6 @@ final class LightTypeTagImpl[U <: Universe with Singleton](val u: U, withCache: 
         case _ =>
           Boundaries.Empty
       }
-
     }
 
     def makeLambda(t: Type): AbstractReference = {
