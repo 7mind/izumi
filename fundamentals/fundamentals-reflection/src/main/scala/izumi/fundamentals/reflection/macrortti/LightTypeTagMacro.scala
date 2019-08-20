@@ -5,7 +5,6 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 
-import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 final class LightTypeTagMacro(override val c: blackbox.Context) extends LightTypeTagMacro0[blackbox.Context](c)
@@ -66,77 +65,4 @@ class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
     c.Expr[LightTypeTag](q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)")
   }
-}
-
-sealed trait Broken[T, S] {
-  def toSet: Set[T]
-}
-
-object Broken {
-  final case class Single[T, S](t: T) extends Broken[T, S] {
-    override def toSet: Set[T] = Set(t)
-  }
-
-  final case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
-    override def toSet: Set[T] = tpes
-  }
-}
-
-// simple materializers
-object LTT {
-  implicit def apply[T]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T]
-}
-
-object `LTT[_]` {
-
-  trait Fake
-
-  implicit def apply[T[_]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-}
-
-object `LTT[+_]` {
-
-  trait Fake
-
-  implicit def apply[T[+ _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-}
-
-object `LTT[A,B,_>:B<:A]` {
-  implicit def apply[A, B <: A, T[_ >: B <: A]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-}
-
-object `LTT[_[_]]` {
-
-  trait Fake[F[_[_]]]
-
-  implicit def apply[T[_[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-}
-
-object `LTT[_[_[_]]]` {
-
-  trait Fake[F[_[_[_]]]]
-
-  implicit def apply[T[_[_[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-}
-
-object `LTT[_,_]` {
-
-  trait Fake
-
-  implicit def apply[T[_, _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
-}
-
-object `LTT[_[_],_[_]]` {
-
-  trait Fake[_[_]]
-
-  implicit def apply[T[_[_], _[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
-}
-
-
-object `LTT[_[_[_],_[_]]]` {
-
-  trait Fake[K[_], V[_]]
-
-  implicit def apply[T[_[_[_], _[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
 }

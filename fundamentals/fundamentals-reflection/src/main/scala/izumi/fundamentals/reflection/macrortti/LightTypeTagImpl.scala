@@ -6,11 +6,12 @@ import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil._
 import izumi.fundamentals.reflection.SingletonUniverse
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
+import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.Broken
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
-import scala.reflect.api.Universe
 import scala.collection.mutable
+import scala.reflect.api.Universe
 
 object LightTypeTagImpl {
   lazy val cache = new ConcurrentHashMap[Any, Any]()
@@ -19,6 +20,20 @@ object LightTypeTagImpl {
     ReflectionLock.synchronized {
       val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
       new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
+    }
+  }
+
+  sealed trait Broken[T, S] {
+    def toSet: Set[T]
+  }
+
+  object Broken {
+    final case class Single[T, S](t: T) extends Broken[T, S] {
+      override def toSet: Set[T] = Set(t)
+    }
+
+    final case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
+      override def toSet: Set[T] = tpes
     }
   }
 }
@@ -437,7 +452,6 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       }
     }
   }
-
 
   private def toPrefix(tpef: u.Type): Option[AppliedReference] = {
     def fromRef(o: Type): Option[AppliedReference] = {
