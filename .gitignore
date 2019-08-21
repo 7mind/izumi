@@ -9,6 +9,7 @@ secrets.tar
 build/project
 .DS_Store
 .metals
+.bloop
 .java-version
 
 # Created by .ignore support plugin (hsz.mobi)

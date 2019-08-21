@@ -1,6 +1,6 @@
-import izumi.sbt.deps.IzumiDeps.{R, _}
-import izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
-import izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
+import _root_.izumi.sbt.deps.IzumiDeps.{R, _}
+import _root_.izumi.sbt.plugins.IzumiConvenienceTasksPlugin.Keys._
+import _root_.izumi.sbt.plugins.optional.IzumiPublishingPlugin.Keys._
 import sbt.Keys.{publishMavenStyle, sourceDirectory}
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -724,7 +724,7 @@ lazy val microsite = inDoc.as.module
     unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)
   )
 
-lazy val `izumi-r2`: Project = inRoot.as
+lazy val izumi: Project = inRoot.as
   .root
   .transitiveAggregateSeq(allProjects ++ allJsProjects)
   .settings(skip in publish := true)
