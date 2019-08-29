@@ -65,7 +65,7 @@ object IzSockets {
 
   def temporaryServerHostnameAndPort(interface: String = RANDOM_LOOPBACK_ADDRESS): (String, Int) = {
     val socketAddress = temporaryServerAddress(interface)
-    socketAddress.getHostString → socketAddress.getPort
+    socketAddress.getHostString -> socketAddress.getPort
   }
 
   def temporaryUdpIpv6Port(iface: NetworkInterface): Int = {
