@@ -22,7 +22,7 @@ object IzumiDeps {
     val zio_interop_cats = "2.0.0.0-RC2"
 
     val circe = "0.12.0-RC4"
-    val circe_derivation = "0.12.0-M5"
+    val circe_derivation = "0.12.0-M6"
     val jawn = "0.14.2"
 
     val http4s = "0.21.0-M4"
