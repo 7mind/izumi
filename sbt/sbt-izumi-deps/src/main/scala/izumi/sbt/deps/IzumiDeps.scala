@@ -61,7 +61,7 @@ object IzumiDeps {
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
 
-    val kind_projector = "org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.binary
+    val kind_projector = "org.typelevel" %% "kind-projector" % V.kind_projector
 
     val fast_classpath_scanner = "io.github.classgraph" % "classgraph" % V.classgraph
 
