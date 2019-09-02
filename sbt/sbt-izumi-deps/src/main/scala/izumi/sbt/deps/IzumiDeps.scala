@@ -56,7 +56,7 @@ object IzumiDeps {
 
     val collection_compat = "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat
 
-    val zio_core: ModuleID = "dev.zio" %% "zio" % V.zio
+
     val zio_interop: ModuleID = "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats
 
     val essentials: Seq[ModuleID] = Seq(collection_compat)
