@@ -23,7 +23,7 @@ object IzSockets {
       IzSockets.temporaryServerAddress(address = "127.20.0.0")
       true
     } catch {
-      case _: java.net.BindException ⇒
+      case _: java.net.BindException =>
         false
     }
   }
@@ -43,10 +43,10 @@ object IzSockets {
     Vector.fill(numberOfAddresses) {
 
       val address = hostname match {
-        case RANDOM_LOOPBACK_ADDRESS ⇒
+        case RANDOM_LOOPBACK_ADDRESS =>
           if (canBindOnAlternativeLoopbackAddresses) s"127.20.${Random.nextInt(256)}.${Random.nextInt(256)}"
           else "127.0.0.1"
-        case other ⇒
+        case other =>
           other
       }
 
@@ -60,12 +60,12 @@ object IzSockets {
         (ss, new InetSocketAddress(address, ss.getLocalPort))
       }
 
-    } collect { case (socket, address) ⇒ socket.close(); address }
+    } collect { case (socket, address) => socket.close(); address }
   }
 
   def temporaryServerHostnameAndPort(interface: String = RANDOM_LOOPBACK_ADDRESS): (String, Int) = {
     val socketAddress = temporaryServerAddress(interface)
-    socketAddress.getHostString → socketAddress.getPort
+    socketAddress.getHostString -> socketAddress.getPort
   }
 
   def temporaryUdpIpv6Port(iface: NetworkInterface): Int = {
