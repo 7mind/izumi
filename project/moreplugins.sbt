@@ -1,3 +1,10 @@
+// http://www.scala-sbt.org/sbt-pgp/
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
+
+// https://github.com/scoverage/sbt-scoverage
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
+
+
 //scalaVersion := "2.12.8"
 //
 //// bootstrap
