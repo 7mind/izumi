@@ -1,6 +1,11 @@
+#!/bin/sh
+coursier launch com.lihaoyi:ammonite_2.13.0:1.6.9 --fork -M ammonite.Main -- sbtgen.sc $*
+exit
+!#
 import $ivy.`io.7mind.izumi.sbtgen::core:0.0.6`, izumi.sbtgen._, izumi.sbtgen.model._
 import ammonite.ops._
 interp.load.module(pwd / "project" / "Versions.scala")
+
 @
 
 val settings = GlobalSettings(
@@ -11,7 +16,6 @@ val settings = GlobalSettings(
 def entrypoint(args: String*) = {
   Entrypoint.main(Izumi.izumi, settings, Seq("-o", ".") ++ args)
 }
-
 
 object Izumi {
 
