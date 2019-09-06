@@ -69,17 +69,32 @@ object Izumi {
 
     final val fastparse = Library("com.lihaoyi", "fastparse", V.fastparse) in Scope.Compile.all
 
+    final val http4s_client = Seq(
+      Library("org.http4s", "http4s-blaze-client", V.http4s),
+    )
+
+    val http4s_server = Seq(
+       Library("org.http4s", "http4s-dsl", V.http4s),
+       Library("org.http4s", "http4s-circe", V.http4s),
+       Library( "org.http4s", "http4s-blaze-server", V.http4s),
+    )
+
+    val http4s_all = (http4s_server ++ http4s_client)
+
+    val asynchttpclient = Library("org.asynchttpclient", "async-http-client", V.asynchttpclient)
   }
 
   import Deps._
 
   final val scala212 = ScalaVersion("2.12.9")
+  final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
+    final val docs = Set(Group("docs"))
   }
 
   object Targets {
@@ -87,7 +102,10 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       Platform.Jvm,
       targetScala,
-      //plugins = Projects.root.plugins
+    )
+    private val jvmPlatform212 = PlatformEnv(
+      Platform.Jvm,
+      Seq(scala212doc),
     )
     private val jsPlatform = PlatformEnv(
       Platform.Js,
@@ -96,10 +114,10 @@ object Izumi {
         "coverageEnabled" := false,
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
       ),
-      //plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
+    final val jvmDocs = Seq(jvmPlatform212)
   }
 
   final val assemblyPluginJvm = Plugin("AssemblyPlugin", Platform.Jvm)
@@ -163,10 +181,7 @@ object Izumi {
         SettingDef.RawSettingDef("""scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString)"""),
       )
 
-      final val sharedSettings = Seq(
-        "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) := Seq(
+      final val scala212settings = Seq(
             "-Ypartial-unification"
             , "-Xsource:2.13"
             , "-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() / 2).toString
@@ -205,7 +220,12 @@ object Izumi {
             //, "-Ywarn-self-implicit"
             , "-Ywarn-unused-import" // Warn when imports are unused.
             , "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
-          ),
+          )
+      final val sharedSettings = Seq(
+        "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala212), None) := scala212settings,
+          SettingKey(Some(scala212doc), None) := scala212settings,
           SettingKey(Some(scala213), None) := Seq(
             //        "-Xsource:2.14", // Delay -Xsource:2.14 due to spurious warnings https://github.com/scala/bug/issues/11639
             "-Xsource:2.13",
@@ -288,6 +308,12 @@ object Izumi {
       final val compiler = ArtifactId("idealingua-v1-compiler")
     }
 
+    object docs {
+      final val id = ArtifactId("doc")
+      final val basePath = Seq("doc")
+
+      final lazy val microsite = ArtifactId("microsite")
+    }
   }
 
 
@@ -491,14 +517,20 @@ object Izumi {
         Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
       ),
       Artifact(
+        Projects.idealingua.runtimeRpcHttp4s,
+        (http4s_all ++ Seq(asynchttpclient)).map(_ in Scope.Compile.all),
+        Seq(Projects.idealingua.runtimeRpcScala, Projects.logstage.core, Projects.logstage.adapterSlf4j).map(_ in Scope.Compile.all) ++
+        Seq(Projects.idealingua.testDefs).map(_ in Scope.Test.jvm),
+        platforms = Targets.jvm,
+      ),
+      Artifact(
         Projects.idealingua.transpilers,
         Seq(scala_xml, scalameta),
         Projects.fundamentals.basics ++
           Seq(Projects.fundamentals.fundamentalsJsonCirce, Projects.idealingua.core, Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all) ++
-          Seq(Projects.idealingua.testDefs, Projects.idealingua.runtimeRpcTypescript, Projects.idealingua.runtimeRpcGo, Projects.idealingua.runtimeRpcCSharp).map(_ in Scope.Compile.jvm),
+          Seq(Projects.idealingua.testDefs, Projects.idealingua.runtimeRpcTypescript, Projects.idealingua.runtimeRpcGo, Projects.idealingua.runtimeRpcCSharp).map(_ in Scope.Test.jvm),
         settings = forkTests
       ),
-
       Artifact(
         Projects.idealingua.testDefs,
         Seq.empty,
@@ -560,6 +592,80 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
+  val all = Seq(fundamentals, distage, /*idealingua,*/ logstage)
+
+  final lazy val docs = Aggregate(
+    Projects.docs.id,
+    Seq(
+      Artifact(
+        Projects.docs.microsite,
+        (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
+        all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
+        plugins = Plugins(Seq(
+          Plugin("ScalaUnidocPlugin"),
+          Plugin("ParadoxSitePlugin"),
+          Plugin("SitePlugin"),
+          Plugin("GhpagesPlugin"),
+          Plugin("ParadoxMaterialThemePlugin"),
+          Plugin("PreprocessPlugin"),
+          Plugin("MdocPlugin")
+        ), Seq(Plugin("ScoverageSbtPlugin"))),
+        settings = Seq(
+          "coverageEnabled" := false,
+          "skip" in SettingScope.Raw("publish") := true,
+          "DocKeys.prefix" := """{if (isSnapshot.value) {
+            "latest/snapshot"
+          } else {
+            "latest/release"
+          }}""".raw,
+          "previewFixedPort" := "Some(9999)".raw,
+          "git.remoteRepo" := "git@github.com:7mind/izumi-microsite.git",
+          "classLoaderLayeringStrategy" in SettingScope.Raw("Compile") := "ClassLoaderLayeringStrategy.Flat".raw,
+          "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
+          "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
+          "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
+          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") := """{
+            (mappings in SitePlugin.autoImport.makeSite)
+              .dependsOn(mdoc.toTask(" "))
+              .value
+          }""".raw,
+          "version" in SettingScope.Raw("Paradox") := "version.value".raw,
+
+          SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
+          SettingDef.RawSettingDef("addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)"),
+          // SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)"),
+
+          SettingDef.RawSettingDef("""paradoxMaterialTheme in Paradox ~= {
+            _.withCopyright("7mind.io")
+              .withRepository(uri("https://github.com/7mind/izumi"))
+            //        .withColor("222", "434343")
+          }"""),
+          "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """s"${DocKeys.prefix.value}/api"""".raw,
+          "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
+          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
+            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+            "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
+            "izumi.version" -> version.value,
+          )"""),
+          SettingDef.RawSettingDef("""excludeFilter in ghpagesCleanSite :=
+            new FileFilter {
+              def accept(f: File): Boolean = {
+                (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
+                  (ghpagesRepository.value / "CNAME").getCanonicalPath == f.getCanonicalPath ||
+                  (ghpagesRepository.value / ".nojekyll").getCanonicalPath == f.getCanonicalPath ||
+                  (ghpagesRepository.value / "index.html").getCanonicalPath == f.getCanonicalPath ||
+                  (ghpagesRepository.value / "README.md").getCanonicalPath == f.getCanonicalPath ||
+                  f.toPath.startsWith((ghpagesRepository.value / "media").toPath) ||
+                  f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
+              }
+            }""")
+        )
+      ),
+    ),
+    pathPrefix = Projects.docs.basePath,
+    groups = Groups.docs,
+    defaultPlatforms = Targets.jvmDocs,
+  )
   val izumi: Project = Project(
     Projects.root.id,
     Seq(
@@ -567,6 +673,7 @@ object Izumi {
       distage,
       logstage,
       idealingua,
+      docs,
     ),
     Projects.root.settings,
     Projects.root.sharedSettings,
