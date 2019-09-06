@@ -9,7 +9,7 @@ val settings = GlobalSettings(
 
 @main
 def entrypoint(args: String*) = {
-  Entrypoint.main(Izumi.izumi, settings, args)
+  Entrypoint.main(Izumi.izumi, settings, Seq("-o", ".") ++ args)
 }
 
 

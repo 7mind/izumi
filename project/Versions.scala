@@ -1,5 +1,3 @@
-val ttt = 1
-
 object V {
   // foundation
   val scala_212 = "2.12.9"
