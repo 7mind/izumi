@@ -2,7 +2,7 @@
 coursier launch com.lihaoyi:ammonite_2.13.0:1.6.9 --fork -M ammonite.Main -- sbtgen.sc $*
 exit
 !#
-import $ivy.`io.7mind.izumi.sbtgen::core:0.0.6`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbtgen::core:0.0.7`, izumi.sbtgen._, izumi.sbtgen.model._
 import ammonite.ops._
 interp.load.module(pwd / "project" / "Versions.scala")
 
@@ -140,6 +140,11 @@ object Izumi {
 
       final val sharedAggSettings = Seq(
         "crossScalaVersions" := Targets.targetScala.map(_.value),
+        "scalaVersion" := "crossScalaVersions.value.head".raw,
+      )
+
+      final val docSettings = Seq(
+        "crossScalaVersions" := Seq(scala212doc.value),
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
@@ -610,7 +615,7 @@ object Izumi {
           Plugin("PreprocessPlugin"),
           Plugin("MdocPlugin")
         ), Seq(Plugin("ScoverageSbtPlugin"))),
-        settings = Seq(
+        settings = Projects.root.docSettings ++ Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" := """{if (isSnapshot.value) {
@@ -665,7 +670,11 @@ object Izumi {
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
     defaultPlatforms = Targets.jvmDocs,
+    dontIncludeInSuperAgg = true,
+    enableSharedSettings = false,
+    settings = Projects.root.docSettings,
   )
+
   val izumi: Project = Project(
     Projects.root.id,
     Seq(

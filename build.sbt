@@ -4065,6 +4065,10 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     publishArtifact in (Test, packageSrc) := true,
     unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/main/test" ,
+    crossScalaVersions := Seq(
+      "2.12.8"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     skip in publish := true,
     DocKeys.prefix := {if (isSnapshot.value) {
@@ -4336,8 +4340,7 @@ lazy val `doc` = (project in file("doc"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
-      "2.13.0"
+      "2.12.8"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4394,6 +4397,5 @@ lazy val `izumi` = (project in file("."))
     `fundamentals`,
     `distage`,
     `logstage`,
-    `idealingua`,
-    `doc`
+    `idealingua`
   )
