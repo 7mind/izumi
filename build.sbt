@@ -3312,7 +3312,7 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
       "org.http4s" %% "http4s-circe" % "0.21.0-M4",
       "org.http4s" %% "http4s-blaze-server" % "0.21.0-M4",
       "org.http4s" %% "http4s-blaze-client" % "0.21.0-M4",
-      "org.asynchttpclient" %% "async-http-client" % "2.10.1"
+      "org.asynchttpclient" % "async-http-client" % "2.10.1"
     )
   )
 

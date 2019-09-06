@@ -81,7 +81,7 @@ object Izumi {
 
     val http4s_all = (http4s_server ++ http4s_client)
 
-    val asynchttpclient = Library("org.asynchttpclient", "async-http-client", V.asynchttpclient)
+    val asynchttpclient = Library("org.asynchttpclient", "async-http-client", V.asynchttpclient, LibraryType.Invariant)
   }
 
   import Deps._
