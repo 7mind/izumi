@@ -16,8 +16,8 @@ object IzumiDeps {
 
     val shapeless = "2.3.3"
 
-    val cats = "2.0.0-RC2"
-    val cats_effect = "2.0.0-RC2"
+    val cats = "2.0.0-RC3"
+    val cats_effect = "2.0.0-RC3"
     val zio = "1.0.0-RC12-1"
     val zio_interop_cats = "2.0.0.0-RC3"
 
