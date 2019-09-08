@@ -1,23 +1,35 @@
 package izumi.distage.model.definition.dsl
 
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, MultipleRef, SetRef, SingletonInstruction, SingletonRef}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
+<<<<<<< HEAD
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
+=======
+import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, SafeType, Tag, TagK}
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.reflection.CodePositionMaterializer
+>>>>>>> e41de49d1... Binding implementation to multiple interfaces
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 
 import scala.collection.mutable
 
-trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
+trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
 
   private[definition] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
   private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
+
+  private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): MultipleDSL[T]
 
   private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
 
@@ -91,6 +103,57 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     _setDSL(setRef)
   }
 
+<<<<<<< HEAD
+=======
+  final protected def bind[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.TypeImpl(SafeType.get[T]))
+  }
+
+  final protected def bind[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.InstanceImpl(SafeType.get[T], instance))
+  }
+
+  final protected def bind[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T: Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
+  }
+
+  final protected def bindEffect[F[_]: TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
+  }
+
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
+  }
+
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
+  }
+
+  final protected def bindResource[R <: DIResourceBase[Any, T], T](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
+  }
+
+  final protected def bindResource[R0, R <: DIResourceBase[Any, T], T]
+  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, T]], tag: ResourceTag[R]{type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+    import tag._
+    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
+  }
+
+//  @deprecated("use .setOf", "14.03.2019")
+//  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = setOf[T]
+
+>>>>>>> e41de49d1... Binding implementation to multiple interfaces
   /** Same as `make[T].from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
     registered(new SingletonRef(Bindings.binding(instance))).discard()
@@ -101,6 +164,10 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
   }
 
+  private[distage] def bindImpl[T: Tag](implDef: ImplDef)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    val ref = registered(new MultipleRef(SingletonBinding(DIKey.get[T], implDef)))
+    _multipleDSL[T](ref)
+  }
 }
 
 object AbstractBindingDefDSL {
@@ -130,6 +197,26 @@ object AbstractBindingDefDSL {
       ops += op
       this
     }
+  }
+
+  final class MultipleRef(implBinding: SingletonBinding[DIKey.BasicKey], ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
+    override def interpret: Seq[Binding] = {
+      val referenceBindings = ops.map {
+        case ImplWithReference(key) =>
+          SingletonBinding(key, ImplDef.ReferenceImpl(implBinding.implementation.implType, implBinding.key, weak = false))
+      }.toList
+
+      implBinding :: referenceBindings
+    }
+
+    def append(op: MultipleInstruction): MultipleRef = {
+      ops += op
+      this
+    }
+  }
+
+  private final class MultiSetHackId(private val long: Long) extends AnyVal {
+    override def toString: String = s"multi.${long.toString}"
   }
 
   final class SetRef
@@ -226,6 +313,13 @@ object AbstractBindingDefDSL {
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
 
     final case class SetIdFromImplName() extends SingletonInstruction
+  }
+
+  sealed trait MultipleInstruction
+
+  object MultipleInstruction {
+
+    final case class ImplWithReference(key: DIKey) extends MultipleInstruction
   }
 
   sealed trait SetInstruction
