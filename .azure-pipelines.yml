@@ -64,17 +64,17 @@ jobs:
                 mkdir -p $IVY_CACHE_FOLDER
         - job: publishAlien
           displayName: 'Publish to Maven Central 2.12'
-          #dependsOn:
-          #  - build_212
-          #  - sbt
+          dependsOn:
+            - build_212
+            - sbt
           steps:
             - script: |
                 bash .build.sh 2.12 secrets publishScala
         - job: publish213
           displayName: 'Publish to Maven Central 2.13'
-          #dependsOn:
-          #  - build_213
-          #  - sbt
+          dependsOn:
+            - build_213
+            - sbt
           steps:
             - script: |
                 bash .build.sh 2.13 secrets publishScala
