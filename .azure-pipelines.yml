@@ -55,10 +55,10 @@ jobs:
                 bash .build.sh secrets site
         - job: publish
           displayName: 'Publish to Maven Central'
-          dependsOn:
-            #- build_213
-            #- build_212
-            - sbt
+          #dependsOn:
+          #  - build_213
+          #  - build_212
+          #  - sbt
           steps:
             - script: |
                 bash .build.sh secrets publishIDL publishScala
