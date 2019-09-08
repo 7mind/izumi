@@ -93,16 +93,14 @@ function publishScala {
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
-  #copypaste
 
   echo "PUBLISH SCALA LIBRARIES..."
-  csbt +clean +package +publishSigned || exit 1
 
   if [[ "$CI_BRANCH" == "develop" ]] ; then
-    return 0
+    csbt +clean +package +publishSigned || exit 1
+  else
+    csbt +clean +package +publishSigned sonatypeBundleRelease || exit 1
   fi
-
-  csbt clean sonatypeBundleRelease || exit 1
 }
 
 function init {

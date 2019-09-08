@@ -56,8 +56,8 @@ jobs:
         - job: publish
           displayName: 'Publish to Maven Central'
           dependsOn:
-            - build_213
-            - build_212
+            #- build_213
+            #- build_212
             - sbt
           steps:
             - script: |
