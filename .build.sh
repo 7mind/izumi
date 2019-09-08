@@ -99,7 +99,7 @@ function publishScala {
   if [[ "$CI_BRANCH" == "develop" ]] ; then
     csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
   else
-    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" "'$VERSION_COMMAND sonatypeBundleRelease'" || exit 1
+    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" sonatypeBundleRelease || exit 1
   fi
 }
 
