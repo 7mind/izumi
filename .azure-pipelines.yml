@@ -54,13 +54,18 @@ jobs:
             - script: |
                 bash .build.sh secrets site
         - job: publish212
+          displayName: 'Publish non-scala artifacts'
+          steps:
+            - script: |
+                bash .build.sh 2.12 secrets publishIDL
+        - job: publishAlien
           displayName: 'Publish to Maven Central 2.12'
           #dependsOn:
           #  - build_212
           #  - sbt
           steps:
             - script: |
-                bash .build.sh 2.12 secrets publishIDL publishScala
+                bash .build.sh 2.12 secrets publishScala
         - job: publish213
           displayName: 'Publish to Maven Central 2.13'
           #dependsOn:
@@ -68,4 +73,4 @@ jobs:
           #  - sbt
           steps:
             - script: |
-                bash .build.sh 2.13 secrets publishIDL publishScala
+                bash .build.sh 2.13 secrets publishScala
