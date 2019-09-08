@@ -54,7 +54,7 @@ jobs:
             - script: |
                 bash .build.sh secrets site
         - job: publish
-          displayName: 'Publish to Maven Central: 2.12'
+          displayName: 'Publish to Maven Central'
           dependsOn:
             - build_213
             - build_212
