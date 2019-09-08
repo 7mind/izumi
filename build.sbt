@@ -54,7 +54,7 @@ val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
     ),
     publishTo := (if (!isSnapshot.value) {
-        Some(Resolver.file("local-publish", new File("target/local-repo")))
+        sonatypePublishToBundle.value
       } else {
         Some(Opts.resolver.sonatypeSnapshots)
       })
