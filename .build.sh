@@ -12,8 +12,8 @@ function scala213 {
 }
 
 function scala212 {
-  echo "Using Scala 2.13..."
-  VERSION_COMMAND="++ $SCALA213"
+  echo "Using Scala 2.12..."
+  VERSION_COMMAND="++ $SCALA212"
 }
 
 function csbt {
