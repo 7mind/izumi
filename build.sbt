@@ -4092,6 +4092,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     version in Paradox := version.value,
     ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox),
     addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`izumi-jvm`, transitive=true),
     paradoxMaterialTheme in Paradox ~= {
                 _.withCopyright("7mind.io")
                   .withRepository(uri("https://github.com/7mind/izumi"))
@@ -4271,6 +4272,26 @@ lazy val `fundamentals` = (project in file("fundamentals"))
     `fundamentals-json-circe`
   )
 
+lazy val `fundamentals-jvm` = (project in file("fundamentals/.agg-jvm"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `fundamentals-collections`,
+    `fundamentals-platform`,
+    `fundamentals-functional`,
+    `fundamentals-bio`,
+    `fundamentals-typesafe-config`,
+    `fundamentals-reflection`,
+    `fundamentals-json-circe`
+  )
+
 lazy val `distage` = (project in file("distage"))
   .settings(
     skip in publish := true,
@@ -4293,7 +4314,49 @@ lazy val `distage` = (project in file("distage"))
     `distage-testkit`
   )
 
+lazy val `distage-jvm` = (project in file("distage/.agg-jvm"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `distage-model`,
+    `distage-proxy-cglib`,
+    `distage-core`,
+    `distage-config`,
+    `distage-roles-api`,
+    `distage-plugins`,
+    `distage-roles`,
+    `distage-static`,
+    `distage-testkit`
+  )
+
 lazy val `logstage` = (project in file("logstage"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `logstage-api`,
+    `logstage-core`,
+    `logstage-rendering-circe`,
+    `logstage-di`,
+    `logstage-config`,
+    `logstage-adapter-slf4j`,
+    `logstage-sink-slf4j`
+  )
+
+lazy val `logstage-jvm` = (project in file("logstage/.agg-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
@@ -4336,7 +4399,43 @@ lazy val `idealingua` = (project in file("idealingua-v1"))
     `idealingua-v1-compiler`
   )
 
+lazy val `idealingua-jvm` = (project in file("idealingua-v1/.agg-jvm"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `idealingua-v1-model`,
+    `idealingua-v1-core`,
+    `idealingua-v1-runtime-rpc-scala`,
+    `idealingua-v1-runtime-rpc-http4s`,
+    `idealingua-v1-transpilers`,
+    `idealingua-v1-test-defs`,
+    `idealingua-v1-runtime-rpc-typescript`,
+    `idealingua-v1-runtime-rpc-go`,
+    `idealingua-v1-runtime-rpc-csharp`,
+    `idealingua-v1-compiler`
+  )
+
 lazy val `doc` = (project in file("doc"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.8"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `microsite`
+  )
+
+lazy val `doc-jvm` = (project in file("doc/.agg-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
@@ -4398,4 +4497,21 @@ lazy val `izumi` = (project in file("."))
     `distage`,
     `logstage`,
     `idealingua`
+  )
+
+lazy val `izumi-jvm` = (project in file("./.agg-jvm"))
+  .settings(
+    skip in publish := true,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `fundamentals-jvm`,
+    `distage-jvm`,
+    `logstage-jvm`,
+    `idealingua-jvm`
   )

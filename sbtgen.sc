@@ -2,7 +2,7 @@
 coursier launch com.lihaoyi:ammonite_2.13.0:1.6.9 --fork -M ammonite.Main -- sbtgen.sc $*
 exit
 !#
-import $ivy.`io.7mind.izumi.sbtgen::core:0.0.7`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbtgen::core:0.0.8`, izumi.sbtgen._, izumi.sbtgen.model._
 import ammonite.ops._
 interp.load.module(pwd / "project" / "Versions.scala")
 
@@ -638,7 +638,7 @@ object Izumi {
 
           SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)"),
-          // SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAnyProject -- inProjects(unidocExcludes: _*)"),
+          SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`izumi-jvm`, transitive=true)"),
 
           SettingDef.RawSettingDef("""paradoxMaterialTheme in Paradox ~= {
             _.withCopyright("7mind.io")
