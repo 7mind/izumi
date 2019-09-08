@@ -23,7 +23,7 @@ jobs:
           displayName: 'Tests and Coverage: 2.12'
           steps:
             - script: |
-                bash 2.12 .build.sh coverage
+                bash .build.sh 2.12 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
