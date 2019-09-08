@@ -53,7 +53,7 @@ jobs:
           steps:
             - script: |
                 bash .build.sh secrets site
-        - job: publish
+        - job: publish212
           displayName: 'Publish to Maven Central 2.12'
           #dependsOn:
           #  - build_212
@@ -61,7 +61,7 @@ jobs:
           steps:
             - script: |
                 bash .build.sh 2.12 secrets publishIDL publishScala
-        - job: publish
+        - job: publish213
           displayName: 'Publish to Maven Central 2.13'
           #dependsOn:
           #  - build_213
