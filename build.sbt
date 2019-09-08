@@ -43,6 +43,7 @@ val GlobalSettingsRoot = new DefaultGlobalSettingsGroup {
       V.scala_213,
     ),
     sonatypeProfileName := "io.7mind",
+    sonatypeSessionName := s"[sbt-sonatype] ${name.value} ${version.value} ${scalaVersion.value}",
     testOptions in Test += Tests.Argument("-oDF"),
     addCompilerPlugin(R.kind_projector),
     scalacOptions ++= Seq(

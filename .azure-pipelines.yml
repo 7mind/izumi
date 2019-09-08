@@ -23,7 +23,7 @@ jobs:
           displayName: 'Tests and Coverage: 2.12'
           steps:
             - script: |
-                bash .build.sh coverage
+                bash 2.12 .build.sh coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -54,11 +54,18 @@ jobs:
             - script: |
                 bash .build.sh secrets site
         - job: publish
-          displayName: 'Publish to Maven Central'
+          displayName: 'Publish to Maven Central 2.12'
           #dependsOn:
-          #  - build_213
           #  - build_212
           #  - sbt
           steps:
             - script: |
-                bash .build.sh secrets publishIDL publishScala
+                bash .build.sh 2.12 secrets publishIDL publishScala
+        - job: publish
+          displayName: 'Publish to Maven Central 2.13'
+          #dependsOn:
+          #  - build_213
+          #  - sbt
+          steps:
+            - script: |
+                bash .build.sh 2.13 secrets publishIDL publishScala

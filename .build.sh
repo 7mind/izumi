@@ -1,18 +1,19 @@
 #!/bin/bash -xe
 
-function scala213() {
+# `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
+# Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
+# see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
+# and https://github.com/sbt/sbt/pull/3995/files
+# TL;DR strict aggregation in sbt is broken; this is a workaround
+
+function scala213 {
   echo "Using Scala 2.13..."
-  export CI_SCALA_VERSION="2.13.0"
-  # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
-  # Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
-  # see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
-  # and https://github.com/sbt/sbt/pull/3995/files
-  # TL;DR strict aggregation in sbt is broken; this is a workaround
-  if [ -z "$CI_SCALA_VERSION" ]; then
-      VERSION_COMMAND=""
-  else
-      VERSION_COMMAND="++ $CI_SCALA_VERSION"
-  fi
+  VERSION_COMMAND="++ $SCALA213"
+}
+
+function scala212 {
+  echo "Using Scala 2.13..."
+  VERSION_COMMAND="++ $SCALA213"
 }
 
 function csbt {
@@ -23,14 +24,14 @@ function csbt {
 function versionate {
   if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
     echo "Setting version suffix to $CI_BRANCH"
-    csbt "\"addVersionSuffix $CI_BRANCH\""
+    csbt "'addVersionSuffix $CI_BRANCH'"
   else
     echo "No version suffix required"
   fi
 }
 
 function coverage {
-  csbt clean coverage "\"$VERSION_COMMAND test\"" "\"$VERSION_COMMAND coverageReport\"" || exit 1
+  csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
   bash <(curl -s https://codecov.io/bash)
 }
 
@@ -74,7 +75,6 @@ function publishIDL {
 
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
   npm whoami
-  export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
 
   ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh || exit 1
   ./idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/nuget/publish.sh || exit 1
@@ -97,9 +97,9 @@ function publishScala {
   echo "PUBLISH SCALA LIBRARIES..."
 
   if [[ "$CI_BRANCH" == "develop" ]] ; then
-    csbt +clean +package +publishSigned || exit 1
+    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
   else
-    csbt +clean +package +publishSigned sonatypeBundleRelease || exit 1
+    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" "'$VERSION_COMMAND sonatypeBundleRelease'" || exit 1
   fi
 }
 
@@ -122,6 +122,10 @@ function init {
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
+
+    export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
+    export SCALA212=$(cat sbt/sbt-izumi-deps/src/main/scala/izumi/sbt/deps/IzumiDeps.scala | grep 'scala_212' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA213=$(cat sbt/sbt-izumi-deps/src/main/scala/izumi/sbt/deps/IzumiDeps.scala | grep 'scala_213' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
 
@@ -164,6 +168,10 @@ case $i in
 
     2.13)
         scala213
+    ;;
+
+    2.12)
+        scala212
     ;;
 
     versionate)
