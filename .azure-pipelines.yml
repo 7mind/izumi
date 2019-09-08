@@ -56,16 +56,9 @@ jobs:
         - job: publish
           displayName: 'Publish to Maven Central: 2.12'
           dependsOn:
+            - build_213
             - build_212
             - sbt
           steps:
             - script: |
                 bash .build.sh secrets publishIDL publishScala
-        - job: publish_213
-          displayName: 'Publish to Maven Central: 2.13'
-          dependsOn:
-            - build_213
-            - sbt
-          steps:
-            - script: |
-                bash .build.sh 2.13 secrets publishScala

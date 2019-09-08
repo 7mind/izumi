@@ -96,7 +96,7 @@ function publishScala {
   #copypaste
 
   echo "PUBLISH SCALA LIBRARIES..."
-  csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
+  csbt +clean +package +publishSigned || exit 1
 
   if [[ "$CI_BRANCH" == "develop" ]] ; then
     return 0
