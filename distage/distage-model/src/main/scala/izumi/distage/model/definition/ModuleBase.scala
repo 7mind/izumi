@@ -2,19 +2,16 @@ package izumi.distage.model.definition
 
 import cats.kernel.BoundedSemilattice
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilatice, ModuleBaseSemilattice}
+import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, ModuleBaseSemilattice}
 import izumi.distage.model.exceptions.ModuleMergeException
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
 
 trait ModuleBase {
-
   def bindings: Set[Binding]
-
   type Self <: ModuleBase
 
   final def keys: Set[DIKey] = bindings.map(_.key)
-
   override final def toString: String = bindings.toString()
 }
 
@@ -65,11 +62,7 @@ object ModuleBase {
   }
 
   implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
-    // Order is important
     def ++(that: ModuleBase): T = {
-      // TODO: a hack to support tag merging
-
-      // TODO: this makes sense because Bindings equals/hashcode ignores `tags` field
       val theseBindings = moduleDef.bindings.toSeq
       val thoseBindings = that.bindings.toSeq
 
@@ -166,7 +159,7 @@ object ModuleBase {
 //    }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_]: CatsBoundedSemilatice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
@@ -179,9 +172,9 @@ private object ModuleBaseInstances {
     def combine(x: T, y: T): T = x ++ y
   }
 
-  sealed abstract class CatsBoundedSemilatice[K[_]]
-  object CatsBoundedSemilatice {
-    implicit val get: CatsBoundedSemilatice[BoundedSemilattice] = null
+  sealed abstract class CatsBoundedSemilattice[K[_]]
+  object CatsBoundedSemilattice {
+    implicit val get: CatsBoundedSemilattice[BoundedSemilattice] = null
   }
 
 }
