@@ -108,8 +108,8 @@ import scala.reflect.macros.blackbox
   * }}}
   *
   * The lifecycle of the entire object graph is itself expressed with `DIResource`,
-  * you can control it by controlling the scope in `.use` or you can opt-out and use
-  * [[DIResourceBase.acquire]] and [[DIResourceBase.release]] manually.
+  * you can control it by controlling the scope in `.use` or by manually using
+  * [[DIResourceBase.acquire]] and [[DIResourceBase.release]].
   *
   * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
