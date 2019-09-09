@@ -1,11 +1,14 @@
+// https://www.scala-sbt.org/0.13/docs/Testing-sbt-plugins.html
+libraryDependencies += { "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value }
+
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.10-SNAPSHOT" )
+//////////////////////////////////////////////////////////////////////////////////
+
 // http://www.scala-sbt.org/sbt-pgp/
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
 
 // https://github.com/scoverage/sbt-scoverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
-
-// https://github.com/sbt/sbt-assembly
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
 
 // https://github.com/sbt/sbt-unidoc
 addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
@@ -22,15 +25,3 @@ addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.6.0")
 // https://github.com/scalameta/mdoc
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.2" )
 
-//scalaVersion := "2.12.8"
-//
-//// bootstrap
-//lazy val izumiDepsPlugin = RootProject(file("../sbt/sbt-izumi-deps"))
-//lazy val izumiPlugin = RootProject(file("../sbt/sbt-izumi"))
-//lazy val root = project.in(file(".")).dependsOn(izumiDepsPlugin, izumiPlugin)
-//
-////
-//libraryDependencies += {
-//  "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value
-//}
-//
