@@ -38,7 +38,7 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
   }
 
   /**
-    * Multibindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
+    * Set bindings are useful for implementing event listeners, plugins, hooks, http routes, etc.
     *
     * To define a multibinding use `.many` and `.add` methods in ModuleDef DSL:
     *
@@ -53,8 +53,8 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     * }
     * }}}
     *
-    * Multibindings defined in different modules will be merged together into a single Set.
-    * You can summon a multibinding by type `Set[_]`:
+    * Set bindings defined in different modules will be merged together into a single Set.
+    * You can summon a created Set by type `Set[T]`:
     *
     * {{{
     * import cats.implicits._, import org.http4s.server.blaze._, import org.http4s.implicits._

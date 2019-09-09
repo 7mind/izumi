@@ -30,7 +30,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *   - `make[X].fromEffect(X.create[F]: F[X])` = create X using a purely-functional effect `X.create` in `F` monad
   *   - `make[X].fromResource(X.resource[F]: Resource[F, X])` = create X using a Resource specifying its creation and destruction lifecycle
   *
-  * Multibindings:
+  * Set bindings:
   *   - `many[X].add[X1].add[X2]` = bind a [[Set]] of X, and add subtypes X1 and X2 created via their constructors to it.
   *                                 Sets can be bound in multiple different modules. All the elements of the same set in different modules will be joined together.
   *   - `many[X].add(x1).add(x2)` = add *instances* x1 and x2 to a `Set[X]`

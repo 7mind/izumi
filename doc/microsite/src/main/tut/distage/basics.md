@@ -348,7 +348,7 @@ server.router.run(Request(uri = uri("/blog/1")))
 
 Fantastic!
 
-consult [Guice wiki on Multibindings](https://github.com/google/guice/wiki/Multibindings) for more details about the concept.
+See also, same concept in [Guice](https://github.com/google/guice/wiki/Multibindings).
 
 ### Effect Bindings
 

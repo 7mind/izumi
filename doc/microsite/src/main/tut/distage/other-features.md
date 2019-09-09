@@ -391,7 +391,7 @@ cycles can emerge unexpectedly, outside of control of the origin module.
 NB: Currently a limitation applies to by-names - ALL dependencies on a class engaged in a by-name circular dependency have to be by-name,
 otherwise distage will transparently revert to generating proxies.
 
-### Auto-Sets: Collecting Bindings By Predicate
+### Auto-Sets
 
 AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
 
@@ -439,6 +439,8 @@ Note: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector
 as such they can't contain garbage by construction.
 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
+
+See also: same concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
 ### Weak Sets
 

@@ -4,6 +4,12 @@ import izumi.distage.model.definition.BootstrapModuleDef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import izumi.distage.model.planning.PlanningHook
 
+/**
+  * Auto-Sets collect all bindings with static types <: `T`
+  * into a summonable `Set[T]`
+  *
+  * @see same concept in MacWire: https://github.com/softwaremill/macwire#multi-wiring-wireset
+  */
 abstract class AutoSetModule extends BootstrapModuleDef {
   def register[T: Tag]: AutoSetModule = {
     many[T]
