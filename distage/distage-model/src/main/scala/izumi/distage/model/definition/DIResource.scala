@@ -154,6 +154,10 @@ object DIResource {
     make[Identity, A](acquire)(release)
   }
 
+  def pure[A](a: A): DIResource[Identity, A] = {
+    DIResource.makeSimple(a)(_ => ())
+  }
+
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
     makeSimple(acquire)(_.close)
   }
@@ -173,7 +177,7 @@ object DIResource {
     }
   }
 
-  /** Convert [[cats.effect.Resource]] into a [[DIResource]] */
+  /** Convert [[cats.effect.Resource]] to [[DIResource]] */
   def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
     new Cats[F, A] {
       override def acquire: F[(A, F[Unit])] = resource.allocated
@@ -181,16 +185,27 @@ object DIResource {
   }
 
   implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
-    /** Convert [[DIResource]] into a [[cats.effect.Resource]] */
+    /** Convert [[DIResource]] to [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
       Resource.make[G, resource.InnerResource](resource.acquire)(resource.release).map(resource.extract)
     }
 
-    def mapK[G[x] >: F[x], C[_]](f: G ~> C): DIResourceBase[C, A] = {
-      new DIResourceBase[C, A] {
+    def mapK[G[x] >: F[x], H[_]](f: G ~> H): DIResourceBase[H, A] = {
+      new DIResourceBase[H, A] {
         override type InnerResource = resource.InnerResource
-        override def acquire: C[InnerResource] = f(resource.acquire)
-        override def release(res: InnerResource): C[Unit] = f(resource.release(res))
+        override def acquire: H[InnerResource] = f(resource.acquire)
+        override def release(res: InnerResource): H[Unit] = f(resource.release(res))
+        override def extract(res: InnerResource): A = resource.extract(res)
+      }
+    }
+  }
+
+  implicit final class DIResourceSimpleSyntax[A](private val resource: DIResourceBase[Identity, A]) extends AnyVal {
+    def toEffect[G[_]: DIEffect]: DIResourceBase[G, A] = {
+      new DIResourceBase[G, A] {
+        override type InnerResource = resource.InnerResource
+        override def acquire: G[InnerResource] = DIEffect[G].maybeSuspend(resource.acquire)
+        override def release(res: InnerResource): G[Unit] = DIEffect[G].maybeSuspend(resource.release(res))
         override def extract(res: InnerResource): A = resource.extract(res)
       }
     }
@@ -214,7 +229,7 @@ object DIResource {
   class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
-    override def acquire: F[A] = acquire0()
+    override final def acquire: F[A] = acquire0()
   }
 
   /***
@@ -229,8 +244,8 @@ object DIResource {
   class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused","") dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
-    override def acquire: F[A] = acquire0()
-    override def release(resource: A): F[Unit] = release.apply(resource)
+    override final def acquire: F[A] = acquire0()
+    override final def release(resource: A): F[Unit] = release.apply(resource)
   }
 
   /***
@@ -241,6 +256,29 @@ object DIResource {
     * }}}
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
+
+  /**
+    * Class-based proxy for an existing [[DIResource]]
+    *
+    * {{{
+    *   class IntRes extends DIResource.Flatten(DIResource.pure(1000))
+    * }}}
+    */
+  class Flatten[+F[_], +A](private[Flatten] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
+    override final type InnerResource = inner.InnerResource
+    override final def acquire: F[inner.InnerResource] = inner.acquire
+    override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
+    override final def extract(resource: inner.InnerResource): A = inner.extract(resource)
+  }
+
+  /**
+    * Class-based proxy for an existing [[cats.effect.Resource]]
+    *
+    * {{{
+    *   class IntRes extends DIResource.Flatten(Resource.pure(1000))
+    * }}}
+    */
+  class FlattenCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends Flatten[F, A](fromCats(inner))
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
