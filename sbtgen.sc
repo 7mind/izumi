@@ -9,7 +9,7 @@ interp.load.module(pwd / "project" / "Versions.scala")
 @
 
 val settings = GlobalSettings(
-  groupId = "io.7mind"
+  groupId = "io.7mind.izumi"
 )
 
 @main
@@ -49,6 +49,7 @@ object Izumi {
     final val boopickle = Library("io.suzaku", "boopickle", "1.3.1") in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
+    final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
@@ -318,6 +319,17 @@ object Izumi {
       final val basePath = Seq("doc")
 
       final lazy val microsite = ArtifactId("microsite")
+    }
+
+    object sbtplugins {
+      final val id = ArtifactId("sbt-plugins")
+      final val basePath = Seq("sbt-plugins")
+
+      final val settings = Seq(
+        "sbtPlugin" := true,
+      )
+
+      final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
     }
   }
 
@@ -597,7 +609,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  val all = Seq(fundamentals, distage, /*idealingua,*/ logstage)
+  val all = Seq(fundamentals, distage, logstage)
 
   final lazy val docs = Aggregate(
     Projects.docs.id,
@@ -675,6 +687,26 @@ object Izumi {
     settings = Projects.root.docSettings,
   )
 
+  final lazy val sbtplugins = Aggregate(
+    Projects.sbtplugins.id,
+    Seq(
+      Artifact(
+        Projects.sbtplugins.izumi_deps,
+        Seq.empty,
+        Seq.empty,
+        settings = Projects.sbtplugins.settings ++ Seq(
+          SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
+        ),
+      ),
+    ),
+    pathPrefix = Projects.sbtplugins.basePath,
+    groups = Groups.docs,
+    defaultPlatforms = Targets.jvm,
+    dontIncludeInSuperAgg = true,
+    enableSharedSettings = false,
+  )
+
+
   val izumi: Project = Project(
     Projects.root.id,
     Seq(
@@ -683,14 +715,13 @@ object Izumi {
       logstage,
       idealingua,
       docs,
+      sbtplugins,
     ),
     Projects.root.settings,
     Projects.root.sharedSettings,
     Projects.root.sharedAggSettings,
     Projects.root.sharedRootSettings,
-    Seq(
-      Import("sbt.Keys._")
-    ),
+    Seq.empty,
     Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,

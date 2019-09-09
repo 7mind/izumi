@@ -1,11 +1,11 @@
-import sbt.Keys._
+
 
 disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals-collections"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -122,7 +122,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
   .enablePlugins(ScalaJSBundlerPlugin)
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -241,7 +241,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
 lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-functional"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -357,7 +357,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -479,7 +479,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
 lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamentals-typesafe-config"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -603,7 +603,7 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -726,7 +726,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-json-circe"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -853,7 +853,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 lazy val `distage-model` = project.in(file("distage/distage-model"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -979,7 +979,7 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
 lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1102,7 +1102,7 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
 lazy val `distage-core` = project.in(file("distage/distage-core"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1223,7 +1223,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
 lazy val `distage-config` = project.in(file("distage/distage-config"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1345,7 +1345,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
 lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1464,7 +1464,7 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
 lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1587,7 +1587,7 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
 lazy val `distage-roles` = project.in(file("distage/distage-roles"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1715,7 +1715,7 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
 lazy val `distage-static` = project.in(file("distage/distage-static"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1836,7 +1836,7 @@ lazy val `distage-static` = project.in(file("distage/distage-static"))
 lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -1964,7 +1964,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
 lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2085,7 +2085,7 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
 lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2211,7 +2211,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
 lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-rendering-circe"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2331,7 +2331,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
 lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2454,7 +2454,7 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
 lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2574,7 +2574,7 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
 lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-slf4j"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2697,7 +2697,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2819,7 +2819,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
 lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-model"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -2940,7 +2940,7 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
 lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-core"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3064,7 +3064,7 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
 lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-scala"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3192,7 +3192,7 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
 lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-http4s"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3319,7 +3319,7 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
 lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua-v1-transpilers"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3449,7 +3449,7 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
 lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v1-test-defs"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3568,7 +3568,7 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
 lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-typescript"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3684,7 +3684,7 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
 lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-go"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3800,7 +3800,7 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
 lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-csharp"))
   .disablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -3916,7 +3916,7 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
 lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1-compiler"))
   .enablePlugins(AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.9",
@@ -4055,7 +4055,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
   .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
   .settings(
-    organization := "io.7mind",
+    organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.8"
@@ -4249,6 +4249,124 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       "org.http4s" %% "http4s-circe" % "0.21.0-M4",
       "org.http4s" %% "http4s-blaze-server" % "0.21.0-M4",
       "org.http4s" %% "http4s-blaze-client" % "0.21.0-M4"
+    )
+  )
+
+lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
+  .disablePlugins(AssemblyPlugin)
+  .settings(
+    organization := "io.7mind.izumi",
+    scalaVersion := crossScalaVersions.value.head,
+    crossScalaVersions := Seq(
+      "2.12.9",
+      "2.13.0"
+    ),
+    publishArtifact in (Test, packageBin) := true,
+    publishArtifact in (Test, packageDoc) := false,
+    publishArtifact in (Test, packageSrc) := true,
+    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main" ,
+    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/main/test" ,
+    sbtPlugin := true,
+    withBuildInfo("izumi.sbt.deps", "Izumi"),
+    testOptions in Test += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.9") => Seq(
+        "-Ypartial-unification",
+        "-Xsource:2.13",
+        "-Ybackend-parallelism",
+        "8",
+        "-opt-warnings:_",
+        "-Ywarn-unused:_",
+        "-Yno-adapted-args",
+        "-explaintypes",
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard"
+      )
+      case (_, "2.12.8") => Seq(
+        "-Ypartial-unification",
+        "-Xsource:2.13",
+        "-Ybackend-parallelism",
+        "8",
+        "-opt-warnings:_",
+        "-Ywarn-unused:_",
+        "-Yno-adapted-args",
+        "-explaintypes",
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard"
+      )
+      case (_, "2.13.0") => Seq(
+        "-Xsource:2.13",
+        "-explaintypes",
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Xlint:_"
+      )
+      case (_, _) => Seq.empty
+    } }
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
+      "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
   )
 
@@ -4446,6 +4564,24 @@ lazy val `doc-jvm` = (project in file("doc/.agg-jvm"))
   .disablePlugins(AssemblyPlugin)
   .aggregate(
     `microsite`
+  )
+
+lazy val `sbt-plugins` = (project in file("sbt-plugins"))
+  .settings(
+    skip in publish := true
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `sbt-izumi-deps`
+  )
+
+lazy val `sbt-plugins-jvm` = (project in file("sbt-plugins/.agg-jvm"))
+  .settings(
+    skip in publish := true
+  )
+  .disablePlugins(AssemblyPlugin)
+  .aggregate(
+    `sbt-izumi-deps`
   )
 
 lazy val `izumi` = (project in file("."))
