@@ -1,7 +1,7 @@
 // https://www.scala-sbt.org/0.13/docs/Testing-sbt-plugins.html
 libraryDependencies += { "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value }
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.10-SNAPSHOT" )
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.10" )
 //////////////////////////////////////////////////////////////////////////////////
 
 // http://www.scala-sbt.org/sbt-pgp/
