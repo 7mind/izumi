@@ -17,8 +17,9 @@ class JsonFlattener {
   private final val LongT = 'l'
   private final val FloatT = 'f'
   private final val StringT = 's'
+  private final val AggT = 'a'
 
-  private final val tpes = Set(NullT, BoolT, LongT, FloatT, StringT)
+  private final val tpes = Set(NullT, BoolT, LongT, FloatT, StringT, AggT)
 
   private final val controlChars = Set('.', '[', ']')
   private final val escapeChar = '\\'
@@ -45,14 +46,28 @@ class JsonFlattener {
 
       },
       s => Seq(makePath(prefix, "str") -> s),
-      a => a.zipWithIndex.flatMap {
-        case (element, idx) =>
-          flatten(element, prefix :+ PathElement.Index(idx))
+      a => {
+        val out = a.zipWithIndex.flatMap {
+          case (element, idx) =>
+            flatten(element, prefix :+ PathElement.Index(idx))
+        }
+        if (out.nonEmpty) {
+          out
+        } else {
+          Seq(makePath(prefix, "agg") -> "arr")
+        }
       },
-      o => o.toIterable.flatMap {
-        case (name, value) =>
-          flatten(value, prefix :+ PathElement.ObjectName(name))
-      }.toSeq,
+      o => {
+        val out = o.toIterable.flatMap {
+          case (name, value) =>
+            flatten(value, prefix :+ PathElement.ObjectName(name))
+        }.toSeq
+        if (out.nonEmpty) {
+          out
+        } else {
+          Seq(makePath(prefix, "agg") -> "obj")
+        }
+      },
     )
   }
 
@@ -213,6 +228,12 @@ class JsonFlattener {
           case LongT => Json.fromLong(value.toLong)
           case FloatT => Json.fromBigDecimal(BigDecimal.apply(value))
           case StringT => Json.fromString(value)
+          case AggT => value match {
+            case "obj" =>
+              Json.obj()
+            case "arr" =>
+              Json.arr()
+          }
         }
       }
     } catch {
