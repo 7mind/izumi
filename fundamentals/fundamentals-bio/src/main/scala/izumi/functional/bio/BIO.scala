@@ -149,7 +149,7 @@ trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
   def terminate(v: => Throwable): F[Nothing, Nothing]
   def sandbox[E, A](r: F[E, A]): F[BIOExit.Failure[E], A]
 
-  @inline final def orTerminate[E <: Throwable, A](r: F[E, A]): F[Nothing, A] = catchAll(r)(terminate(_))
+  @inline final def orTerminate[A](r: F[Throwable, A]): F[Nothing, A] = catchAll(r)(terminate(_))
 }
 
 object BIOPanic {
