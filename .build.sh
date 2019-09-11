@@ -21,23 +21,23 @@ function csbt {
   eval $COMMAND
 }
 
-function versionate {
-  if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
-    echo "Setting version suffix to $CI_BRANCH"
-    csbt "'addVersionSuffix $CI_BRANCH'"
-  else
-    echo "No version suffix required"
-  fi
-}
+# function versionate {
+#   if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
+#     echo "Setting version suffix to $CI_BRANCH"
+#     csbt "\"addVersionSuffix $CI_BRANCH\""
+#   else
+#     echo "No version suffix required"
+#   fi
+# }
 
 function coverage {
   csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
   bash <(curl -s https://codecov.io/bash)
 }
 
-function scripted {
-  csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
-}
+# function scripted {
+#   csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
+# }
 
 function site {
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
@@ -170,17 +170,17 @@ case $i in
         scala212
     ;;
 
-    versionate)
-        versionate
-    ;;
+    # versionate)
+    #     versionate
+    # ;;
 
     coverage)
         coverage
     ;;
 
-    scripted)
-        scripted
-    ;;
+    # scripted)
+    #     scripted
+    # ;;
 
     publishIDL)
         publishIDL
