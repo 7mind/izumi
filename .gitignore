@@ -3,7 +3,13 @@
 *.jps
 /local.sbt
 .secrets*
-/config 
+/config
+.agg
+
+build.sbt
+project/plugins.sbt
+project/build.properties
+
 
 secrets.tar
 build/project
