@@ -1,18 +1,19 @@
 #!/bin/bash -xe
 
-function scala213() {
+# `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
+# Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
+# see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
+# and https://github.com/sbt/sbt/pull/3995/files
+# TL;DR strict aggregation in sbt is broken; this is a workaround
+
+function scala213 {
   echo "Using Scala 2.13..."
-  export CI_SCALA_VERSION="2.13.0"
-  # `++ 2.13.0 compile` has a different semantic than `;++2.13.0;compile`
-  # Strict aggregation applies ONLY to former, and ONLY if crossScalaVersions := Nil in root project
-  # see https://github.com/sbt/sbt/issues/3698#issuecomment-475955454
-  # and https://github.com/sbt/sbt/pull/3995/files
-  # TL;DR strict aggregation in sbt is broken; this is a workaround
-  if [ -z "$CI_SCALA_VERSION" ]; then
-      VERSION_COMMAND=""
-  else
-      VERSION_COMMAND="++ $CI_SCALA_VERSION"
-  fi
+  VERSION_COMMAND="++ $SCALA213"
+}
+
+function scala212 {
+  echo "Using Scala 2.12..."
+  VERSION_COMMAND="++ $SCALA212"
 }
 
 function csbt {
@@ -21,22 +22,22 @@ function csbt {
 }
 
 function versionate {
-  if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
-    echo "Setting version suffix to $CI_BRANCH"
-    csbt "\"addVersionSuffix $CI_BRANCH\""
-  else
-    echo "No version suffix required"
-  fi
+  # if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
+  #   echo "Setting version suffix to $CI_BRANCH"
+  #   csbt "\"addVersionSuffix $CI_BRANCH\""
+  # else
+  #   echo "No version suffix required"
+  # fi
 }
 
 function coverage {
-  csbt clean coverage "\"$VERSION_COMMAND test\"" "\"$VERSION_COMMAND coverageReport\"" || exit 1
+  csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
   bash <(curl -s https://codecov.io/bash)
 }
 
-function scripted {
-  csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
-}
+# function scripted {
+#   csbt clean publishLocal '"scripted sbt-izumi-plugins/*"' || exit 1
+# }
 
 function site {
   if [[ "$CI_PULL_REQUEST" != "false"  ]] ; then
@@ -93,19 +94,14 @@ function publishScala {
   if [[ ! ("$CI_BRANCH" == "develop" || "$CI_TAG" =~ ^v.*$ ) ]] ; then
     return 0
   fi
-  #copypaste
 
   echo "PUBLISH SCALA LIBRARIES..."
-  csbt clean "\"$VERSION_COMMAND package\"" "\"$VERSION_COMMAND publishSigned\"" || exit 1
 
   if [[ "$CI_BRANCH" == "develop" ]] ; then
-    return 0
+    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" || exit 1
+  else
+    csbt "'$VERSION_COMMAND clean'" "'$VERSION_COMMAND package'" "'$VERSION_COMMAND publishSigned'" sonatypeBundleRelease || exit 1
   fi
-
-  source ./.secrets/ant-secrets.sh
-  mkdir tasks
-  curl -o tasks/nexus-staging-ant-tasks-1.6.3-uber.jar https://search.maven.org/remotecontent\?filepath\=org/sonatype/nexus/ant/nexus-staging-ant-tasks/1.6.3/nexus-staging-ant-tasks-1.6.3-uber.jar
-  ant -f .publish.xml deploy
 }
 
 function init {
@@ -127,6 +123,10 @@ function init {
     export USERNAME=${USER:-`whoami`}
     export COURSIER_CACHE=${COURSIER_CACHE:-`~/.coursier`}
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
+
+    export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
+    export SCALA212=$(cat sbt/sbt-izumi-deps/src/main/scala/izumi/sbt/deps/IzumiDeps.scala | grep 'scala_212' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA213=$(cat sbt/sbt-izumi-deps/src/main/scala/izumi/sbt/deps/IzumiDeps.scala | grep 'scala_213' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
 
@@ -171,17 +171,21 @@ case $i in
         scala213
     ;;
 
-    versionate)
-        versionate
+    2.12)
+        scala212
     ;;
+
+    # versionate)
+    #     versionate
+    # ;;
 
     coverage)
         coverage
     ;;
 
-    scripted)
-        scripted
-    ;;
+    # scripted)
+    #     scripted
+    # ;;
 
     publishIDL)
         publishIDL

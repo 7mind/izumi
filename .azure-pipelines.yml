@@ -23,7 +23,8 @@ jobs:
           displayName: 'Tests and Coverage: 2.12'
           steps:
             - script: |
-                bash .build.sh coverage
+                bash sbtgen.sc --js
+                bash .build.sh 2.12 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
@@ -33,39 +34,41 @@ jobs:
           displayName: 'Tests and Coverage: 2.13'
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh 2.13 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
                 codeCoverageTool: 'Cobertura'
                 summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
-        - job: sbt
-          displayName: 'SBT plugin tests'
-          steps:
-            - script: |
-                bash .build.sh scripted
         - job: site
           dependsOn:
             - build_212
             - build_213
-            - sbt
           displayName: 'Publish Site'
           steps:
             - script: |
                 bash .build.sh secrets site
-        - job: publish
-          displayName: 'Publish to Maven Central: 2.12'
-          dependsOn:
-            - build_212
-            - sbt
+        - job: publish212
+          displayName: 'Publish non-scala artifacts'
           steps:
             - script: |
-                bash .build.sh secrets publishIDL publishScala
-        - job: publish_213
-          displayName: 'Publish to Maven Central: 2.13'
+                bash .build.sh 2.12 secrets publishIDL
+            - script: |
+                echo "Adding dummy cache directories so cache task wouldn't fail"
+                mkdir -p $COURSIER_CACHE
+                mkdir -p $IVY_CACHE_FOLDER
+        - job: publishAlien
+          displayName: 'Publish to Maven Central 2.12'
+          dependsOn:
+            - build_212
+          steps:
+            - script: |
+                bash .build.sh 2.12 secrets publishScala
+        - job: publish213
+          displayName: 'Publish to Maven Central 2.13'
           dependsOn:
             - build_213
-            - sbt
           steps:
             - script: |
                 bash .build.sh 2.13 secrets publishScala
