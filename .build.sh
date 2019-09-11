@@ -21,14 +21,14 @@ function csbt {
   eval $COMMAND
 }
 
-function versionate {
-  # if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
-  #   echo "Setting version suffix to $CI_BRANCH"
-  #   csbt "\"addVersionSuffix $CI_BRANCH\""
-  # else
-  #   echo "No version suffix required"
-  # fi
-}
+# function versionate {
+#   if [[ "$CI_BRANCH" != "master" &&  "$CI_BRANCH" != "develop" && ! ( "$CI_TAG" =~ ^v.*$ ) ]] ; then
+#     echo "Setting version suffix to $CI_BRANCH"
+#     csbt "\"addVersionSuffix $CI_BRANCH\""
+#   else
+#     echo "No version suffix required"
+#   fi
+# }
 
 function coverage {
   csbt clean coverage "'$VERSION_COMMAND test'" "'$VERSION_COMMAND coverageReport'" || exit 1
