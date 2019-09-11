@@ -42,6 +42,9 @@ Slides:
 * [ScalaUA Slides about LogStage](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [Slides from other meetups](https://github.com/7mind/slides)
 
+Contributing:
+* Run `./sbtgen.sc` to generate JVM-only sbt projects, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossprojects
+
 Key goals
 =========
 
