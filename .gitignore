@@ -6,9 +6,10 @@
 /config
 .agg
 
-build.sbt
-project/plugins.sbt
-project/build.properties
+# we cannot exclude build.sbt - scala steward wouldn't work without it
+#build.sbt
+#project/plugins.sbt
+#project/build.properties
 
 
 secrets.tar
