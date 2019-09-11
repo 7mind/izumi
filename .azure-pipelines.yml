@@ -48,6 +48,7 @@ jobs:
           displayName: 'Publish Site'
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh secrets site
         - job: publishAlien
           displayName: 'Publish non-scala artifacts'
@@ -64,6 +65,7 @@ jobs:
             - build_212
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh 2.12 secrets publishScala
         - job: publish213
           displayName: 'Publish to Maven Central 2.13'
@@ -71,4 +73,5 @@ jobs:
             - build_213
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh 2.13 secrets publishScala
