@@ -3,7 +3,9 @@
 *.jps
 /local.sbt
 .secrets*
-/config 
+/config
+.agg-jvm
+.agg-js
 
 secrets.tar
 build/project
