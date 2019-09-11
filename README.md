@@ -7,7 +7,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.7mind.izumi/izumi-r2_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.7mind.izumi%22)
 [![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/io.7mind.izumi/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/io/7mind/izumi/)
 [![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/io.7mind.izumi/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/io/7mind/izumi/)
-[![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE) 
+[![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE)
 [![Latest version](https://index.scala-lang.org/7mind/izumi/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
 
@@ -18,7 +18,7 @@ What is it?
 ===========
 
 Izumi (*jap. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
- 
+
 including the following components:
 
 1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent and debuggable runtime & compile-time Dependency Injection Framework,
@@ -42,7 +42,7 @@ Slides:
 * [ScalaUA Slides about LogStage](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [Slides from other meetups](https://github.com/7mind/slides)
 
-Key goals 
+Key goals
 =========
 
 We aim to provide tools that:
@@ -70,19 +70,21 @@ Credits
 
 [![YourKit](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com)
 
-YourKit supports open source projects with innovative and intelligent tools 
+YourKit supports open source projects with innovative and intelligent tools
 for monitoring and profiling Java and .NET applications.
-YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/), 
-[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
+YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/),
+[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
 
-[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/) 
+[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/)
 
 [Triplequote Hydra](https://triplequote.com/) is the world’s only parallel compiler for the Scala language. Hydra works by parallelizing all of the Scala compiler phases, taking full advantage of the many cores available in modern hardware.
 
 Contributors
 ============
+
+* Run `./sbtgen.sc` to generate JVM-only sbt projects, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossprojects
 
 See:
 
