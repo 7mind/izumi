@@ -77,7 +77,7 @@ function publishIDL {
   npm whoami
 
   ./idealingua-v1/idealingua-v1-runtime-rpc-typescript/src/npmjs/publish.sh || exit 1
-  ./idealingua-v1/idealingua-v1-runtime-rpc-c-sharp/src/main/nuget/publish.sh || exit 1
+  ./idealingua-v1/idealingua-v1-runtime-rpc-csharp/src/main/nuget/publish.sh || exit 1
 }
 
 function publishScala {
