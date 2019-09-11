@@ -49,7 +49,7 @@ jobs:
           steps:
             - script: |
                 bash .build.sh secrets site
-        - job: publish212
+        - job: publishAlien
           displayName: 'Publish non-scala artifacts'
           steps:
             - script: |
@@ -58,7 +58,7 @@ jobs:
                 echo "Adding dummy cache directories so cache task wouldn't fail"
                 mkdir -p $COURSIER_CACHE
                 mkdir -p $IVY_CACHE_FOLDER
-        - job: publishAlien
+        - job: publish212
           displayName: 'Publish to Maven Central 2.12'
           dependsOn:
             - build_212

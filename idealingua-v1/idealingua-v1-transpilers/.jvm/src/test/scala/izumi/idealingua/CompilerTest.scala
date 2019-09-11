@@ -32,6 +32,11 @@ class CompilerTest extends WordSpec {
       assert(compilesTypeScript(s"$id-plain", loadDefs(), TypeScriptProjectLayout.PLAIN))
     }
 
+    "be able to compile into typescript with yarn" in {
+      // TODO: once we switch to published runtime there may be an issue with this test same as with sbt one
+      require("tsc", "npm", "yarn")
+      assert(compilesTypeScript(s"$id-yarn", loadDefs(), TypeScriptProjectLayout.YARN))
+    }
 
     "be able to compile into golang" in {
       require("go")
@@ -42,14 +47,14 @@ class CompilerTest extends WordSpec {
     "be able to compile into csharp" in {
       require("csc", "nunit-console", "nuget", "msbuild")
       assert(compilesCSharp(s"$id-plain", loadDefs(), CSharpProjectLayout.PLAIN))
+    }
+
+    "be able to compile into csharp with nuget layout" in {
+      require("csc", "nunit-console", "nuget", "msbuild")
       assert(compilesCSharp(s"$id-nuget", loadDefs(), CSharpProjectLayout.NUGET))
     }
 
-    "be able to compile into typescript with yarn" in {
-      // TODO: once we switch to published runtime there may be an issue with this test same as with sbt one
-      require("tsc", "npm", "yarn")
-      assert(compilesTypeScript(s"$id-yarn", loadDefs(), TypeScriptProjectLayout.YARN))
-    }
+
   }
 
   private def require(tools: String*) = {

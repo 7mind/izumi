@@ -2,7 +2,7 @@
 coursier launch com.lihaoyi:ammonite_2.13.0:1.6.9 --fork -M ammonite.Main -- sbtgen.sc $*
 exit
 !#
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.19`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.23`, izumi.sbtgen._, izumi.sbtgen.model._
 import ammonite.ops._
 interp.load.module(pwd / "project" / "Versions.scala")
 
