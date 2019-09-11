@@ -23,6 +23,7 @@ jobs:
           displayName: 'Tests and Coverage: 2.12'
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh 2.12 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
@@ -33,22 +34,17 @@ jobs:
           displayName: 'Tests and Coverage: 2.13'
           steps:
             - script: |
+                bash sbtgen.sc --js
                 bash .build.sh 2.13 coverage
             - task: PublishTestResults@2
             - task: PublishCodeCoverageResults@1
               inputs:
                 codeCoverageTool: 'Cobertura'
                 summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/target/**/cobertura.xml'
-        - job: sbt
-          displayName: 'SBT plugin tests'
-          steps:
-            - script: |
-                bash .build.sh scripted
         - job: site
           dependsOn:
             - build_212
             - build_213
-            - sbt
           displayName: 'Publish Site'
           steps:
             - script: |
@@ -66,7 +62,6 @@ jobs:
           displayName: 'Publish to Maven Central 2.12'
           dependsOn:
             - build_212
-            - sbt
           steps:
             - script: |
                 bash .build.sh 2.12 secrets publishScala
@@ -74,7 +69,6 @@ jobs:
           displayName: 'Publish to Maven Central 2.13'
           dependsOn:
             - build_213
-            - sbt
           steps:
             - script: |
                 bash .build.sh 2.13 secrets publishScala
