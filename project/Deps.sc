@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.23`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.24`, izumi.sbtgen._, izumi.sbtgen.model._
 import $file.Versions, Versions._
 
 
@@ -69,7 +69,7 @@ object Izumi {
     val http4s_server = Seq(
       Library("org.http4s", "http4s-dsl", V.http4s),
       Library("org.http4s", "http4s-circe", V.http4s),
-      Library( "org.http4s", "http4s-blaze-server", V.http4s),
+      Library("org.http4s", "http4s-blaze-server", V.http4s),
     )
 
     val http4s_all = (http4s_server ++ http4s_client)
@@ -156,22 +156,16 @@ object Izumi {
         "credentials" in SettingScope.Build += """Credentials(file(".secrets/credentials.sonatype-nexus.properties"))""".raw,
         "homepage" in SettingScope.Build := """Some(url("https://izumi.7mind.io"))""".raw,
         "licenses" in SettingScope.Build := """Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))""".raw,
-        "developers" in SettingScope.Build := """List(
+        "developers" in SettingScope.Build :=
+          """List(
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-
-        "scalacOptions" in SettingScope.Build += """s"-Xmacro-settings:product-version=${version.value}"""".raw,
-        "scalacOptions" in SettingScope.Build += """s"-Xmacro-settings:product-group=${organization.value}"""".raw,
-        "scalacOptions" in SettingScope.Build += """s"-Xmacro-settings:sbt-version=${sbtVersion.value}"""".raw,
-        "scalacOptions" in SettingScope.Build += """s"-Xmacro-settings:scala-version=${scalaVersion.value}"""".raw,
-        "scalacOptions" in SettingScope.Build += s"""${"\""*3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\""*3}""".raw,
-        "scalacOptions" in SettingScope.Build += s"""${"\""*3}-Xmacro-settings:scala-versions=${Targets.targetScala.map(_.value).mkString(":")}${"\""*3}""".raw,
         SettingDef.RawSettingDef("""scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString)"""),
+        "scalacOptions" in SettingScope.Build += s"""${"\""*3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\""*3}""".raw,
       )
 
-
-      final val sharedSettings = Seq(
+      final val sharedSettings = Defaults.SbtMeta ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
@@ -263,6 +257,7 @@ object Izumi {
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
     }
+
   }
 
 
@@ -562,7 +557,8 @@ object Izumi {
         settings = Projects.root.docSettings ++ Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
-          "DocKeys.prefix" := """{if (isSnapshot.value) {
+          "DocKeys.prefix" :=
+            """{if (isSnapshot.value) {
             "latest/snapshot"
           } else {
             "latest/release"
@@ -573,7 +569,8 @@ object Izumi {
           "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
           "sourceDirectory" in SettingScope.Raw("Paradox") := "mdocOut.value".raw,
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
-          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") := """{
+          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
+            """{
             (mappings in SitePlugin.autoImport.makeSite)
               .dependsOn(mdoc.toTask(" "))
               .value
@@ -584,19 +581,22 @@ object Izumi {
           SettingDef.RawSettingDef("addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)"),
           SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`izumi-jvm`, transitive=true)"),
 
-          SettingDef.RawSettingDef("""paradoxMaterialTheme in Paradox ~= {
+          SettingDef.RawSettingDef(
+            """paradoxMaterialTheme in Paradox ~= {
             _.withCopyright("7mind.io")
               .withRepository(uri("https://github.com/7mind/izumi"))
             //        .withColor("222", "434343")
           }"""),
           "siteSubdirName" in SettingScope.Raw("ScalaUnidoc") := """s"${DocKeys.prefix.value}/api"""".raw,
           "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
-          SettingDef.RawSettingDef("""paradoxProperties ++= Map(
+          SettingDef.RawSettingDef(
+            """paradoxProperties ++= Map(
             "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "izumi.version" -> version.value,
           )"""),
-          SettingDef.RawSettingDef("""excludeFilter in ghpagesCleanSite :=
+          SettingDef.RawSettingDef(
+            """excludeFilter in ghpagesCleanSite :=
             new FileFilter {
               def accept(f: File): Boolean = {
                 (f.toPath.startsWith(ghpagesRepository.value.toPath.resolve("latest")) && !f.toPath.startsWith(ghpagesRepository.value.toPath.resolve(DocKeys.prefix.value))) ||
@@ -638,7 +638,6 @@ object Izumi {
     enableSharedSettings = false,
   )
 
-
   val izumi: Project = Project(
     Projects.root.id,
     Seq(
@@ -662,8 +661,15 @@ object Izumi {
     globalPlugins = Projects.plugins,
     rootPlugins = Projects.root.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
-    appendPlugins = Seq(
-      SbtPlugin("com.eed3si9n", "sbt-assembly", "0.14.9")
+    appendPlugins = Defaults.SbtGenPlugins ++ Seq(
+      SbtPlugin("com.eed3si9n", "sbt-assembly", "0.14.9"),
+      SbtPlugin("com.jsuereth", "sbt-pgp", "2.0.0-M2"),
+      SbtPlugin("org.scoverage", "sbt-scoverage", "1.6.0"),
+      SbtPlugin("com.eed3si9n", "sbt-unidoc", "0.4.2"),
+      SbtPlugin("com.typesafe.sbt", "sbt-site", "1.3.3"),
+      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", "0.6.3"),
+      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", "0.6.0"),
+      SbtPlugin("org.scalameta", "sbt-mdoc", "1.3.2"),
     )
   )
 }

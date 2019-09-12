@@ -92,6 +92,7 @@ object ProjectAttributeMacro {
     c.Expr[Option[String]](q"$result")
   }
 
+  @scala.annotation.tailrec
   private def projectRoot(cp: Path): Option[Path] = {
     if (cp.resolve("build.sbt").toFile.exists()) {
       Some(cp)
