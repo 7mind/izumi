@@ -271,14 +271,14 @@ final case class CSharpType (
         case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
       }
       if (escape) {
-        s"Uri.EscapeDataString($res)"
+        s"RestSharp.Contrib.HttpUtility.UrlEncode($res)"
       } else {
         res
       }
     }
 
     def renderFromString(src: String, unescape: Boolean, currentDomain: String = ""): String = {
-      val source = if (unescape) s"Uri.UnescapeDataString($src)" else src
+      val source = if (unescape) s"RestSharp.Contrib.HttpUtility.UrlDecode($src)" else src
       id match {
           case Primitive.TString => source
           case Primitive.TInt8 => s"sbyte.Parse($src)"   // No Escaping needed for integers
