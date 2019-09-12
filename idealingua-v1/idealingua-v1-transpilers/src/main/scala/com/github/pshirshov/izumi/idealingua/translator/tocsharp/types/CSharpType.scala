@@ -252,51 +252,51 @@ final case class CSharpType (
        """.stripMargin
   }
 
-    def renderToString(name: String, escape: Boolean): String = {
-      val res = id match {
-        case Primitive.TString => name
-        case Primitive.TInt8 => return s"$name.ToString()"  // No Escaping needed for integers
-        case Primitive.TInt16 => return s"$name.ToString()"
-        case Primitive.TInt32 => return s"$name.ToString()"
-        case Primitive.TInt64 => return s"$name.ToString()"
-        case Primitive.TUInt8 => return s"$name.ToString()"
-        case Primitive.TUInt16 => return s"$name.ToString()"
-        case Primitive.TUInt32 => return s"$name.ToString()"
-        case Primitive.TUInt64 => return s"$name.ToString()"
-        case Primitive.TBool => return s"$name.ToString()"
-        case Primitive.TBLOB => ???
-        case Primitive.TUUID => s"$name.ToString()"
-        case _: EnumId => s"$name.ToString()"
-        case _: IdentifierId => s"$name.ToString()"
-        case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
-      }
-      if (escape) {
-        s"Uri.EscapeDataString($res)"
-      } else {
-        res
-      }
+  def renderToString(name: String, escape: Boolean): String = {
+    val res = id match {
+      case Primitive.TString => name
+      case Primitive.TInt8 => return s"$name.ToString()"  // No Escaping needed for integers
+      case Primitive.TInt16 => return s"$name.ToString()"
+      case Primitive.TInt32 => return s"$name.ToString()"
+      case Primitive.TInt64 => return s"$name.ToString()"
+      case Primitive.TUInt8 => return s"$name.ToString()"
+      case Primitive.TUInt16 => return s"$name.ToString()"
+      case Primitive.TUInt32 => return s"$name.ToString()"
+      case Primitive.TUInt64 => return s"$name.ToString()"
+      case Primitive.TBool => return s"$name.ToString()"
+      case Primitive.TBLOB => ???
+      case Primitive.TUUID => s"$name.ToString()"
+      case _: EnumId => s"$name.ToString()"
+      case _: IdentifierId => s"$name.ToString()"
+      case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
     }
+    if (escape) {
+      s"RestSharp.Contrib.HttpUtility.UrlEncode($res)"
+    } else {
+      res
+    }
+  }
 
-    def renderFromString(src: String, unescape: Boolean, currentDomain: String = ""): String = {
-      val source = if (unescape) s"Uri.UnescapeDataString($src)" else src
-      id match {
-          case Primitive.TString => source
-          case Primitive.TInt8 => s"sbyte.Parse($src)"   // No Escaping needed for integers
-          case Primitive.TInt16 => s"short.Parse($src)"
-          case Primitive.TInt32 => s"int.Parse($src)"
-          case Primitive.TInt64 => s"long.Parse($src)"
-          case Primitive.TUInt8 => s"byte.Parse($src)"
-          case Primitive.TUInt16 => s"ushort.Parse($src)"
-          case Primitive.TUInt32 => s"uint.Parse($src)"
-          case Primitive.TUInt64 => s"ulong.Parse($src)"
-          case Primitive.TBool => s"bool.Parse($src)"
-          case Primitive.TUUID => s"new Guid($source)"
-          case Primitive.TBLOB => ???
-          case _: EnumId => s"${renderType(currentDomain != "" && currentDomain != id.uniqueDomainName)}Helpers.From($source)"
-          case i: IdentifierId => s"${i.name}.From($source)"
-          case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
-      }
+  def renderFromString(src: String, unescape: Boolean, currentDomain: String = ""): String = {
+    val source = if (unescape) s"RestSharp.Contrib.HttpUtility.UrlDecode($src)" else src
+    id match {
+      case Primitive.TString => source
+      case Primitive.TInt8 => s"sbyte.Parse($src)"   // No Escaping needed for integers
+      case Primitive.TInt16 => s"short.Parse($src)"
+      case Primitive.TInt32 => s"int.Parse($src)"
+      case Primitive.TInt64 => s"long.Parse($src)"
+      case Primitive.TUInt8 => s"byte.Parse($src)"
+      case Primitive.TUInt16 => s"ushort.Parse($src)"
+      case Primitive.TUInt32 => s"uint.Parse($src)"
+      case Primitive.TUInt64 => s"ulong.Parse($src)"
+      case Primitive.TBool => s"bool.Parse($src)"
+      case Primitive.TUUID => s"new Guid($source)"
+      case Primitive.TBLOB => ???
+      case _: EnumId => s"${renderType(currentDomain != "" && currentDomain != id.uniqueDomainName)}Helpers.From($source)"
+      case i: IdentifierId => s"${i.name}.From($source)"
+      case _ => throw new IDLException(s"Should never render non int, string, or Guid types to strings. Used for type ${id.name}")
     }
+  }
 
   def renderType(withPackage: Boolean = false): String = {
     renderNativeType(id, withPackage)
