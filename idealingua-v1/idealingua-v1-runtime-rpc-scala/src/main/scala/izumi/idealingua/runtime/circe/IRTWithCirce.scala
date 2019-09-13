@@ -15,9 +15,12 @@ import scala.reflect.macros.blackbox
  *
  * For sealed traits use [[IRTWithCirceGeneric]]. It's not as efficient wrt compile time, but will cache during a single compilation run.
  */
-abstract class IRTWithCirce[A: DerivationDerivedEncoder: DerivationDerivedDecoder] {
-  implicit val enc: Encoder.AsObject[A] = implicitly[DerivationDerivedEncoder[A]].value
-  implicit val dec: Decoder[A] = implicitly[DerivationDerivedDecoder[A]].value
+abstract class IRTWithCirce[A](implicit encoder: DerivationDerivedEncoder[A], decoder: DerivationDerivedDecoder[A]) {
+  // workaround https://github.com/milessabin/shapeless/issues/837
+  def this(proxy: IRTWithCirce[A]) = this()(DerivationDerivedEncoder(proxy.enc), DerivationDerivedDecoder(proxy.dec))
+
+  implicit val enc: Encoder.AsObject[A] = encoder.value
+  implicit val dec: Decoder[A] = decoder.value
 }
 
 // TODO: merge upstream, also with @JsonCodec
