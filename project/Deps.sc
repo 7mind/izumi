@@ -38,7 +38,7 @@ object Izumi {
     )
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
-    final val boopickle = Library("io.suzaku", "boopickle", "1.3.1") in Scope.Compile.all
+    final val boopickle = Library("io.suzaku", "boopickle", V.boopickle) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)

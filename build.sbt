@@ -485,9 +485,9 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Optional,
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1" % Optional,
-      "dev.zio" %% "zio" % "1.0.0-RC11-1" % Optional
+      "org.typelevel" %% "cats-core" % "2.0.0" % Optional,
+      "org.typelevel" %% "cats-effect" % "2.0.0" % Optional,
+      "dev.zio" %% "zio" % "1.0.0-RC12-1" % Optional
     )
   )
 
@@ -868,10 +868,10 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "io.circe" %% "circe-core" % "0.12.0-RC4",
-      "io.circe" %% "circe-parser" % "0.12.0-RC4",
-      "io.circe" %% "circe-literal" % "0.12.0-RC4",
-      "io.circe" %% "circe-generic-extras" % "0.12.0-RC4",
+      "io.circe" %% "circe-core" % "0.12.0",
+      "io.circe" %% "circe-parser" % "0.12.0",
+      "io.circe" %% "circe-literal" % "0.12.0",
+      "io.circe" %% "circe-generic-extras" % "0.12.0",
       "io.circe" %% "circe-derivation" % "0.12.0-M7",
       "org.typelevel" %% "jawn-parser" % "0.14.2"
     )
@@ -1001,8 +1001,8 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Optional,
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1" % Optional,
+      "org.typelevel" %% "cats-core" % "2.0.0" % Optional,
+      "org.typelevel" %% "cats-effect" % "2.0.0" % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
     )
   )
@@ -1763,9 +1763,9 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Optional,
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1" % Optional,
-      "dev.zio" %% "zio" % "1.0.0-RC11-1" % Optional
+      "org.typelevel" %% "cats-core" % "2.0.0" % Optional,
+      "org.typelevel" %% "cats-effect" % "2.0.0" % Optional,
+      "dev.zio" %% "zio" % "1.0.0-RC12-1" % Optional
     )
   )
 
@@ -2020,9 +2020,9 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8",
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Test,
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1" % Test,
-      "dev.zio" %% "zio" % "1.0.0-RC11-1" % Test
+      "org.typelevel" %% "cats-core" % "2.0.0" % Test,
+      "org.typelevel" %% "cats-effect" % "2.0.0" % Test,
+      "dev.zio" %% "zio" % "1.0.0-RC12-1" % Test
     )
   )
 
@@ -2273,11 +2273,11 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Optional,
-      "dev.zio" %% "zio" % "1.0.0-RC11-1" % Optional,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1" % Test,
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1" % Test,
-      "dev.zio" %% "zio" % "1.0.0-RC11-1" % Test
+      "org.typelevel" %% "cats-core" % "2.0.0" % Optional,
+      "dev.zio" %% "zio" % "1.0.0-RC12-1" % Optional,
+      "org.typelevel" %% "cats-core" % "2.0.0" % Test,
+      "org.typelevel" %% "cats-effect" % "2.0.0" % Test,
+      "dev.zio" %% "zio" % "1.0.0-RC12-1" % Test
     )
   )
 
@@ -3287,10 +3287,10 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1",
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1",
-      "dev.zio" %% "zio" % "1.0.0-RC11-1",
-      "dev.zio" %% "zio-interop-cats" % "2.0.0.0-RC2"
+      "org.typelevel" %% "cats-core" % "2.0.0",
+      "org.typelevel" %% "cats-effect" % "2.0.0",
+      "dev.zio" %% "zio" % "1.0.0-RC12-1",
+      "dev.zio" %% "zio-interop-cats" % "2.0.0.0-RC3"
     )
   )
 
@@ -4379,10 +4379,10 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "org.typelevel" %% "cats-core" % "2.0.0-RC1",
-      "org.typelevel" %% "cats-effect" % "2.0.0-RC1",
-      "dev.zio" %% "zio" % "1.0.0-RC11-1",
-      "dev.zio" %% "zio-interop-cats" % "2.0.0.0-RC2",
+      "org.typelevel" %% "cats-core" % "2.0.0",
+      "org.typelevel" %% "cats-effect" % "2.0.0",
+      "dev.zio" %% "zio" % "1.0.0-RC12-1",
+      "dev.zio" %% "zio-interop-cats" % "2.0.0.0-RC3",
       "org.http4s" %% "http4s-dsl" % "0.21.0-M4",
       "org.http4s" %% "http4s-circe" % "0.21.0-M4",
       "org.http4s" %% "http4s-blaze-server" % "0.21.0-M4",

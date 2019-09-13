@@ -92,7 +92,6 @@ trait BIOMonad[F[+_, +_]] extends BIOApplicative[F] {
   def flatMap[E, A, E2 >: E, B](r: F[E, A])(f: A => F[E2, B]): F[E2, B]
   def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
 
-
   // defaults
   @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
     flatMap(r)(a => pure(f(a)))
@@ -164,6 +163,7 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
   @inline def sync[A](effect: => A): F[Nothing, A]
   @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
+  // defaults
   @inline override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
     case Left(e) => fail(e): F[E, A]
     case Right(v) => pure(v): F[E, A]

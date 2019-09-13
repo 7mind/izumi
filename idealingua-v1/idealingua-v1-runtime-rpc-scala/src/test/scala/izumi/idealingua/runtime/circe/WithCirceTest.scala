@@ -20,7 +20,7 @@ final class WithCirceTest extends WordSpec {
     // workaround https://github.com/milessabin/shapeless/issues/837
     "WithCirce works with nested sealed traits via delegation" in {
       assert(Nested(Cba(1, 2)).asJson.as[Nested].right.get == Nested(Cba(1, 2)))
-      assert(Nested(Cba(1, 2)).asJson.noSpaces == """{"Sealed1":{"cba":{"a":1,"b":2}}}""")
+      assert(Nested(Cba(1, 2)).asJson.noSpaces == """{"Nested1":{"cba":{"a":1,"b":2}}}""")
     }
   }
 

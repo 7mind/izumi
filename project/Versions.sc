@@ -8,14 +8,16 @@ object V {
   val kind_projector = "0.10.3"
   val scalatest = "3.0.8"
 
+  val boopickle = "1.3.1"
+
   val shapeless = "2.3.3"
 
-  val cats = "2.0.0-RC1"
-  val cats_effect = "2.0.0-RC1"
-  val zio = "1.0.0-RC11-1"
-  val zio_interop_cats = "2.0.0.0-RC2"
+  val cats = "2.0.0"
+  val cats_effect = "2.0.0"
+  val zio = "1.0.0-RC12-1"
+  val zio_interop_cats = "2.0.0.0-RC3"
 
-  val circe = "0.12.0-RC4"
+  val circe = "0.12.0"
   val circe_derivation = "0.12.0-M7"
   val jawn = "0.14.2"
 
