@@ -26,7 +26,7 @@ object Izumi {
       Library("io.circe", "circe-core", V.circe),
       Library("io.circe", "circe-parser", V.circe),
       Library("io.circe", "circe-literal", V.circe),
-      Library("io.circe", "circe-generic-extras", V.circe),
+      Library("io.circe", "circe-generic-extras", V.circe_generic_extras),
       Library("io.circe", "circe-derivation", V.circe_derivation),
     ).map(_ in Scope.Compile.all)
 
