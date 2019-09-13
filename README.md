@@ -13,7 +13,6 @@
 
 [![Buy me a coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/7mind)
 
-
 What is it?
 ===========
 
@@ -75,7 +74,6 @@ for monitoring and profiling Java and .NET applications.
 YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/),
 [YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
-
 
 [![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/)
 
