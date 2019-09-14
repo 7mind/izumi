@@ -20,7 +20,9 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
           parserFailureHandler.onParserError(parserFailure)
 
         case Right(parameters) =>
-          launcher.launch(parameters.copy(roles = requiredRoles ++ parameters.roles))
+          val roleSet = parameters.roles.map(_.role).toSet
+          val reqRoles = requiredRoles.filterNot(roleSet contains _.role)
+          launcher.launch(parameters.copy(roles = reqRoles ++ parameters.roles))
       }
     } catch {
       case t: Throwable =>
@@ -31,7 +33,6 @@ abstract class RoleAppMain[F[_] : TagK : DIEffect](
   protected def parse(args: Array[String]): Either[CLIParser.ParserError, RawAppArgs] = new CLIParser().parse(args)
 
   protected def requiredRoles: Vector[RawRoleParams] = Vector.empty
-
 }
 
 object RoleAppMain {
