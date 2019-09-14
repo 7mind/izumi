@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import izumi.distage.config.annotations.ConfPath
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
+import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -87,7 +87,7 @@ class TestPlugin01 extends PluginDef {
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
-  with ZioDIEffectModule
+  with ZIODIEffectModule
 
 object TestPlugin00
   extends PluginDef {

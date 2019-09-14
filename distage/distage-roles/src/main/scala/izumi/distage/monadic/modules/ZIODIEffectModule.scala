@@ -2,16 +2,17 @@ package izumi.distage.monadic.modules
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
+import distage.Id
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.roles.services.ResourceRewriter
-import izumi.functional.bio.{BIOError, BIORunner, BlockingIO}
-import distage.Id
+import izumi.functional.bio._
 import logstage.IzLogger
+import zio.IO
 
-trait ZioDIEffectModule extends ModuleDef {
-  make[DIEffectRunner[zio.IO[Throwable, ?]]].from[DIEffectRunner.BIOImpl[zio.IO]]
-  addImplicit[DIEffect[zio.IO[Throwable, ?]]]
+trait ZIODIEffectModule extends ModuleDef {
+  make[DIEffectRunner[IO[Throwable, ?]]].from[DIEffectRunner.BIOImpl[IO]]
+  addImplicit[DIEffect[IO[Throwable, ?]]]
 
   make[ThreadPoolExecutor].named("zio.pool.cpu")
     .fromResource {
@@ -26,14 +27,26 @@ trait ZioDIEffectModule extends ModuleDef {
         ResourceRewriter.fromExecutorService(logger, Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
     }
 
-  make[BlockingIO[zio.IO]].from {
+  make[BlockingIO[IO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.pool.io") =>
       BlockingIO.BlockingZIOFromThreadPool(blockingPool)
   }
 
-  addImplicit[BIOError[zio.IO]]
+  addImplicit[BIO[IO]]
+  addImplicit[BIOTransZio[IO]]
+  addImplicit[BIOFork[IO]]
+  addImplicit[BIOFunctor[IO]]
+  addImplicit[BIOBifunctor[IO]]
+  addImplicit[BIOApplicative[IO]]
+  addImplicit[BIOGuarantee[IO]]
+  addImplicit[BIOMonad[IO]]
+  addImplicit[BIOError[IO]]
+  addImplicit[BIOMonadError[IO]]
+  addImplicit[BIOBracket[IO]]
+  addImplicit[BIOPanic[IO]]
+  addImplicit[SyncSafe2[IO]]
 
-  make[BIORunner[zio.IO]].from {
+  make[BIORunner[IO]].from {
     (
       cpuPool: ThreadPoolExecutor @Id("zio.pool.cpu"),
       logger: IzLogger,

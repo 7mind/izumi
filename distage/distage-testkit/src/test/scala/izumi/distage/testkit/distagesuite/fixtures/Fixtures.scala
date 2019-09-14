@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite.fixtures
 
 import cats.effect.IO
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZioDIEffectModule}
+import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.testkit.services.dstest.TODOMemoizeMe
@@ -31,7 +31,7 @@ class MockCachedUserService[F[_]](val users: MockUserRepository[F], val cache: M
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
-  with ZioDIEffectModule
+  with ZIODIEffectModule
 
 abstract class MockAppPlugin[F[_] : TagK]
   extends PluginDef {
