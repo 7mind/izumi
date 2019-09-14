@@ -12,7 +12,7 @@ trait ScalatestWords extends DSShouldVerb with DSMustVerb with DSCanVerb  {
     }
   }
 
-  protected[testkit] def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit
+  def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit
 }
 
 object ScalatestWords {

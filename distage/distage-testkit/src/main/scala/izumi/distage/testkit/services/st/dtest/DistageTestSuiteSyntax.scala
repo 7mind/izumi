@@ -15,7 +15,7 @@ import scala.language.implicitConversions
 
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
-  protected[testkit] def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
+  override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
     DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos)))
   }
 }
@@ -31,20 +31,18 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
-
   protected def distageSuiteId: String = this.getClass.getName
 
+  //
+  protected var context: Option[SuiteContext] = None
 
-  protected[dtest] var context: Option[SuiteContext] = None
-
-
-
-  protected[testkit] def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
+  override def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
     Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
     this.context = Some(SuiteContext(description, verb))
     fun()
     this.context = None
   }
+  //
 
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
     new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, env)
@@ -52,22 +50,22 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
 }
 
 object DistageTestSuiteSyntax {
-  case class SuiteContext(left: String, verb: String) {
+  final case class SuiteContext(left: String, verb: String) {
     def toName(name: String): String = {
       Seq(left, verb, name).mkString(" ")
     }
   }
+
   class DSWordSpecStringWrapper[F[_]](
-                                     context: Option[SuiteContext],
-                                     suiteName: String,
-                                     suiteId: String,
-                                     testname: String,
-                                     reg: TestRegistration[F],
-                                     env: TestEnvironment,
-                                   )
-                                   (
-                                     implicit val tagMonoIO: TagK[F]
-                                   ) extends DISyntaxBase[F] {
+                                       context: Option[SuiteContext],
+                                       suiteName: String,
+                                       suiteId: String,
+                                       testname: String,
+                                       reg: TestRegistration[F],
+                                       env: TestEnvironment,
+                                     )(
+                                       implicit override val tagMonoIO: TagK[F]
+                                     ) extends DISyntaxBase[F] {
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -96,17 +94,15 @@ object DistageTestSuiteSyntax {
   }
 
   class DSWordSpecStringWrapper2[F[+ _, + _]](
-                                             context: Option[SuiteContext],
-                                             suiteName: String,
-                                             suiteId: String,
-                                             testname: String,
-                                             reg: TestRegistration[F[Throwable, ?]],
-                                             env: TestEnvironment,
-                                           )
-                                           (
-                                             implicit val tagMonoIO: TagK[F[Throwable, ?]],
-                                             val tagBIO: TagKK[F],
-                                           ) extends DISyntaxBIOBase[F] {
+                                               context: Option[SuiteContext],
+                                               suiteName: String,
+                                               suiteId: String,
+                                               testname: String,
+                                               reg: TestRegistration[F[Throwable, ?]],
+                                               env: TestEnvironment,
+                                             )(
+                                               implicit override val tagBIO: TagKK[F],
+                                             ) extends DISyntaxBIOBase[F] {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(

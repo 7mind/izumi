@@ -5,5 +5,5 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.TestId
 import izumi.fundamentals.platform.jvm.CodePosition
 
 trait TestRegistration[F[_]] {
-  protected[testkit] def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit
+  def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit
 }
