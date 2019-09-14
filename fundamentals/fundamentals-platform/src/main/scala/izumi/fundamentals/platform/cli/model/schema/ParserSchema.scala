@@ -11,14 +11,14 @@ package izumi.fundamentals.platform.cli.model.schema
   *    * unary args used multiple times
   *    * missing required parameters
   */
-case class ParserSchema(
+final case class ParserSchema(
                          globalArgsSchema: GlobalArgsSchema,
                          descriptors: Seq[RoleParserSchema],
                        )
 
 
-case class GlobalArgsSchema(parserDef: ParserDef, doc: Option[String], notes: Option[String])
+final case class GlobalArgsSchema(parserDef: ParserDef, doc: Option[String], notes: Option[String])
 
-case class RoleParserSchema(id: String, parser: ParserDef, doc: Option[String], notes: Option[String], freeArgsAllowed: Boolean)
+final case class RoleParserSchema(id: String, parser: ParserDef, doc: Option[String], notes: Option[String], freeArgsAllowed: Boolean)
 
 
