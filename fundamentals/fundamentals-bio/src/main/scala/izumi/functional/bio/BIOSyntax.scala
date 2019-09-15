@@ -48,7 +48,7 @@ object BIOSyntax {
   final class BIOFunctorOps[F[_, + _], E, A](private val r: F[E, A])(implicit private val F: BIOFunctor[F]) {
     @inline def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
-    @inline def as[B](b: B): F[E, B] = F.map(r)(_ => b)
+    @inline def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
 
     @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = { val _ = ev; r.asInstanceOf[F[E, A1]] }
 
