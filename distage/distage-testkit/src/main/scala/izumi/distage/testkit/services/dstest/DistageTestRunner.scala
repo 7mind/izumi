@@ -26,7 +26,7 @@ trait TODOMemoizeMe {}
 class DistageTestRunner[F[_] : TagK](
                                       reporter: TestReporter,
                                       integrationChecker: IntegrationChecker,
-                                      runnerEnvironment: DistageTestEnvironmentImpl[F],
+                                      runnerEnvironment: DistageTestEnvironment[F],
                                       tests: Seq[DistageTest[F]]
                                     ) {
 
