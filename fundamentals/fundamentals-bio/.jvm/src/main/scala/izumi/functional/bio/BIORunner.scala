@@ -19,14 +19,14 @@ trait BIORunner[F[_, _]] {
 object BIORunner {
   def apply[F[_, _]: BIORunner]: BIORunner[F] = implicitly
 
-  def createZIO(platform: Platform): BIORunner[IO] = new ZIORunner(platform)
+  def createZIO(platform: Platform): ZIORunner = new ZIORunner(platform)
 
   def createZIO(
                  cpuPool: ThreadPoolExecutor
                , handler: FailureHandler = FailureHandler.Default
                , yieldEveryNFlatMaps: Int = 1024
                , tracingConfig: TracingConfig = TracingConfig.enabled
-               ): BIORunner[IO] = {
+               ): ZIORunner = {
     new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
   }
 
