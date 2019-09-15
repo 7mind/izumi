@@ -1,7 +1,9 @@
 package izumi.idealingua.runtime.circe
 
+import io.circe
+import io.circe.Codec
 import io.circe.syntax._
-import izumi.idealingua.runtime.circe.WithCirceTest.{Cba, Nested, Sealed}
+import izumi.idealingua.runtime.circe.WithCirceTest.{Cba, Enum, Enum1, Enum2, Nested, Sealed}
 import org.scalatest.WordSpec
 
 final class WithCirceTest extends WordSpec {
@@ -21,6 +23,12 @@ final class WithCirceTest extends WordSpec {
     "WithCirce works with nested sealed traits via delegation" in {
       assert(Nested(Cba(1, 2)).asJson.as[Nested].right.get == Nested(Cba(1, 2)))
       assert(Nested(Cba(1, 2)).asJson.noSpaces == """{"Nested1":{"cba":{"a":1,"b":2}}}""")
+    }
+
+    "WithCirce does not encode case objects as strings (circe-generic-extras deriveEnumCodec is still required)" in {
+      assert((Enum1: Enum).asJson.as[Enum].right.get == Enum1)
+      assert((Enum2: Enum).asJson.noSpaces != """"Enum2"""")
+      assert((Enum2: Enum).asJson.noSpaces == """{"Enum2":{}}""")
     }
   }
 
@@ -49,5 +57,14 @@ object WithCirceTest {
 
   // workaround https://github.com/milessabin/shapeless/issues/837
   private[this] object codecs extends IRTWithCirce[Nested]
+
+  sealed trait Enum
+  object Enum extends IRTWithCirce[Enum]
+  case object Enum1 extends Enum {
+    implicit val codec: Codec.AsObject[Enum1.type] = circe.derivation.deriveCodec[Enum1.type]
+  }
+  case object Enum2 extends Enum {
+    implicit val codec: Codec.AsObject[Enum2.type] = circe.derivation.deriveCodec[Enum2.type]
+  }
 }
 
