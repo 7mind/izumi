@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.st.dtest
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentProvider, DistageTestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, TestEnvironmentProvider, TestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.platform.language.Quirks
@@ -24,7 +24,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
 
   import DistageTestSuiteSyntax._
 
-  protected lazy val tenv: DistageTestEnvironmentProvider = new DistageTestEnvironmentProviderImpl(this.getClass)
+  protected lazy val tenv: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass)
   protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
   protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
 

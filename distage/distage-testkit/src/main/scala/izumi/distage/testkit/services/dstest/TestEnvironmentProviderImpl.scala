@@ -15,7 +15,7 @@ import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 
-class DistageTestEnvironmentProviderImpl(suiteClass: Class[_]) extends DistageTestEnvironmentProvider {
+class TestEnvironmentProviderImpl(suiteClass: Class[_]) extends TestEnvironmentProvider {
   /**
     * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
     */

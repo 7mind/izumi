@@ -48,7 +48,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
 
   override def tags: Map[String, Set[String]] = Map.empty
 
-  protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F]
+  protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F](this.getClass)
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap = ConfigMap.empty): TestData = {
     val suiteTags = for {

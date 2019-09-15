@@ -8,7 +8,7 @@ import izumi.distage.roles.services.PluginSource
 import izumi.distage.testkit.services.PluginsCache
 import izumi.logstage.api.IzLogger
 
-trait DistageTestEnvironmentProvider {
+trait TestEnvironmentProvider {
 
   /**
     * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on

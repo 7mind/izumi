@@ -16,7 +16,7 @@ import izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
 
-class DistageTestEnvironmentImpl[F[_]: TagK] extends DistageTestEnvironment[F] {
+class DistageTestEnvironmentImpl[F[_]: TagK](suiteClass: Class[_]) extends DistageTestEnvironment[F] {
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
@@ -51,7 +51,7 @@ class DistageTestEnvironmentImpl[F[_]: TagK] extends DistageTestEnvironment[F] {
   }
 
   def makeConfigLoader(logger: IzLogger): ConfigLoader = {
-    val thisClass = this.getClass
+    val thisClass = suiteClass.getClass
     val pname = s"${thisClass.getPackage.getName}"
     val lastPackage = pname.split('.').last
     val classname = thisClass.getName
