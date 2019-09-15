@@ -2,7 +2,7 @@ package izumi.distage.testkit.services.st.dtest
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentProvider, DistageTestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.platform.language.Quirks
@@ -13,20 +13,18 @@ import org.scalactic.source
 
 import scala.language.implicitConversions
 
-
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
     DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos)))
   }
 }
 
-
 trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
   import DistageTestSuiteSyntax._
 
-  protected lazy val tenv = new DistageTestEnvironmentProviderImpl(this.getClass)
+  protected lazy val tenv: DistageTestEnvironmentProvider = new DistageTestEnvironmentProviderImpl(this.getClass)
   protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
   protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
 
@@ -127,7 +125,6 @@ object DistageTestSuiteSyntax {
 //  abstract class StringVerbBlockRegistration {
 //    def apply(string: String, verb: String, pos: source.Position, block: () => Unit): Unit
 //  }
-
 
   def getSimpleNameOfAnObjectsClass(o: AnyRef): String = stripDollars(parseSimpleName(o.getClass.getName))
 

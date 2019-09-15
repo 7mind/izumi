@@ -185,10 +185,7 @@ class DistageTestRunner[F[_] : TagK](
           before <- effect.maybeSuspend(System.nanoTime())
           _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
           _ <- effect.definitelyRecover(doRun(before), doRecover(before))
-        } yield {
-
-        }
-
+        } yield ()
     }
   }
 

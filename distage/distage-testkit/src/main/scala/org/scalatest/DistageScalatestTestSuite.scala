@@ -2,7 +2,7 @@ package org.scalatest
 
 import izumi.distage.roles.services.IntegrationCheckerImpl
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironmentImpl, DistageTestRunner}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironment, DistageTestEnvironmentImpl, DistageTestRunner}
 import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
@@ -12,7 +12,6 @@ import org.scalatest.events._
 import scala.collection.immutable.TreeSet
 
 trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] {
-  thisSuite =>
   implicit def tagMonoIO: TagK[F]
 
   override final protected def runNestedSuites(args: Args): Status = {
@@ -47,10 +46,9 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
     }
   }
 
+  override def tags: Map[String, Set[String]] = Map.empty
 
-  override def tags: Map[String, Set[String]] = {
-    Map.empty
-  }
+  protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F]
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap = ConfigMap.empty): TestData = {
     val suiteTags = for {
@@ -92,8 +90,6 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
     val logger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
 
     val checker = new IntegrationCheckerImpl(logger)
-    val ruenv = new DistageTestEnvironmentImpl[F]
-
 
     val dreporter = new TestReporter {
 

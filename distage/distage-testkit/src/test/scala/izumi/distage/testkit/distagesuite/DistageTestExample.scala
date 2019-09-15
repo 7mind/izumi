@@ -12,9 +12,7 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] {
       service: MockUserRepository[ZIO[Throwable, ?]] =>
         for {
           _ <- ZIO(assert(service != null))
-        } yield {
-
-        }
+        } yield ()
     }
   }
 
@@ -27,9 +25,7 @@ class DistageTestExample extends DistageSpecScalatest[CIO] {
         for {
           _ <- CIO.delay(assert(service != null))
           _ <- CIO.delay(println("test2"))
-        } yield {
-
-        }
+        } yield ()
     }
 
     "test 2" in {
@@ -37,9 +33,7 @@ class DistageTestExample extends DistageSpecScalatest[CIO] {
         for {
           _ <- CIO.delay(assert(service != null))
           _ <- CIO.delay(println("test1"))
-        } yield {
-
-        }
+        } yield ()
     }
 
     "test 3" in {
@@ -63,9 +57,7 @@ class DistageTestExample1 extends DistageSpecScalatest[CIO] {
         for {
           _ <- CIO.delay(assert(service != null))
           _ <- CIO.delay(println("test2"))
-        } yield {
-
-        }
+        } yield ()
     }
 
     "test 2" in {
@@ -73,9 +65,7 @@ class DistageTestExample1 extends DistageSpecScalatest[CIO] {
         for {
           _ <- CIO.delay(assert(service != null))
           _ <- CIO.delay(println("test1"))
-        } yield {
-
-        }
+        } yield ()
     }
 
     "test 3" in {

@@ -38,9 +38,7 @@ class RoleAppExecutorImpl[F[_] : TagK](
     for {
       _ <- runTasks(roleIndex)
       _ <- runRoles(roleIndex)
-    } yield {
-
-    }
+    } yield ()
   }
 
   protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit effect: DIEffect[F]): F[Unit] = {
