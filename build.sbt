@@ -868,9 +868,9 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.2",
       "org.scalatest" %% "scalatest" % "3.0.8" % Test,
-      "io.circe" %% "circe-core" % "0.12.0",
-      "io.circe" %% "circe-parser" % "0.12.0",
-      "io.circe" %% "circe-literal" % "0.12.0",
+      "io.circe" %% "circe-core" % "0.12.1",
+      "io.circe" %% "circe-parser" % "0.12.1",
+      "io.circe" %% "circe-literal" % "0.12.1",
       "io.circe" %% "circe-generic-extras" % "0.12.2",
       "io.circe" %% "circe-derivation" % "0.12.0-M7",
       "org.typelevel" %% "jawn-parser" % "0.14.2"
