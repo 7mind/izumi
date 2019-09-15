@@ -51,10 +51,9 @@ class DistageTestEnvironmentImpl[F[_]: TagK](suiteClass: Class[_]) extends Dista
   }
 
   def makeConfigLoader(logger: IzLogger): ConfigLoader = {
-    val thisClass = suiteClass.getClass
-    val pname = s"${thisClass.getPackage.getName}"
+    val pname = s"${suiteClass.getPackage.getName}"
     val lastPackage = pname.split('.').last
-    val classname = thisClass.getName
+    val classname = suiteClass.getName
 
     val moreConfigs = Map(
       s"$lastPackage-test" -> None,
