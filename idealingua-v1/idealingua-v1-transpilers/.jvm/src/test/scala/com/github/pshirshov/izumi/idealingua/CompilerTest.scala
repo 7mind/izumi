@@ -39,9 +39,13 @@ class CompilerTest extends WordSpec {
       assert(compilesGolang(s"$id-plain", loadDefs(), GoProjectLayout.PLAIN))
     }
 
-    "be able to compile into csharp" in {
+    "be able to compile into csharp/plain" in {
       require("csc", "nunit-console", "nuget", "msbuild")
       assert(compilesCSharp(s"$id-plain", loadDefs(), CSharpProjectLayout.PLAIN))
+    }
+
+    "be able to compile into csharp/nuget" in {
+      require("csc", "nuget", "msbuild")
       assert(compilesCSharp(s"$id-nuget", loadDefs(), CSharpProjectLayout.NUGET))
     }
 

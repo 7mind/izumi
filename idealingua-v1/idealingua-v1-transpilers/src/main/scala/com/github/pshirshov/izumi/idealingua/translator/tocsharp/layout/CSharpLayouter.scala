@@ -359,6 +359,10 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
         </ItemGroup>
 
         <ItemGroup>
+          <Reference Include="System.Web" />
+        </ItemGroup>
+
+        <ItemGroup>
           <Compile Update="@(Compile)">
             <Pack>true</Pack>
             <PackagePath>$(ContentTargetFolders)/cs/any/src/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
