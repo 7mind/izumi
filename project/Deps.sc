@@ -616,7 +616,7 @@ object Izumi {
     defaultPlatforms = Targets.jvmDocs,
     settings = Projects.root.docSettings,
     enableSharedSettings = false,
-    dontIncludeInSuperAgg = true,
+    dontIncludeInSuperAgg = false,
   )
 
   final lazy val sbtplugins = Aggregate(
@@ -635,7 +635,7 @@ object Izumi {
     groups = Groups.docs,
     defaultPlatforms = Targets.jvm,
     enableSharedSettings = false,
-    dontIncludeInSuperAgg = true,
+    dontIncludeInSuperAgg = false,
   )
 
   val izumi: Project = Project(
