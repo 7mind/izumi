@@ -1,8 +1,8 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.24`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.26`, izumi.sbtgen._, izumi.sbtgen.model._
 import $file.Versions, Versions._
 
-
 object Izumi {
+
   def entrypoint(args: Seq[String]) = {
     Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args)
   }
@@ -18,8 +18,8 @@ object Izumi {
     final val cats_core = Library("org.typelevel", "cats-core", V.cats)
     final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect)
     final val cats_all = Seq(
-      cats_core
-      , cats_effect
+      cats_core,
+      cats_effect,
     )
 
     final val circe = Seq(
@@ -166,6 +166,8 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
+        "sonatypeProfileName" := "io.7mind",
+        "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
@@ -537,8 +539,8 @@ object Izumi {
   val all = Seq(fundamentals, distage, logstage)
 
   final lazy val docs = Aggregate(
-    Projects.docs.id,
-    Seq(
+    name = Projects.docs.id,
+    artifacts = Seq(
       Artifact(
         Projects.docs.microsite,
         (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
@@ -612,9 +614,9 @@ object Izumi {
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
     defaultPlatforms = Targets.jvmDocs,
-    dontIncludeInSuperAgg = true,
-    enableSharedSettings = false,
     settings = Projects.root.docSettings,
+    enableSharedSettings = false,
+    dontIncludeInSuperAgg = true,
   )
 
   final lazy val sbtplugins = Aggregate(
@@ -632,13 +634,13 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.docs,
     defaultPlatforms = Targets.jvm,
-    dontIncludeInSuperAgg = true,
     enableSharedSettings = false,
+    dontIncludeInSuperAgg = true,
   )
 
   val izumi: Project = Project(
-    Projects.root.id,
-    Seq(
+    name = Projects.root.id,
+    aggregates = Seq(
       fundamentals,
       distage,
       logstage,
@@ -646,18 +648,18 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    Projects.root.settings,
-    Projects.root.sharedSettings,
-    Projects.root.sharedAggSettings,
-    Projects.root.sharedRootSettings,
-    Seq.empty,
-    Seq(
+    settings = Projects.root.settings,
+    sharedSettings = Projects.root.sharedSettings,
+    sharedAggSettings = Projects.root.sharedAggSettings,
+    sharedRootSettings = Projects.root.sharedRootSettings,
+    imports = Seq.empty,
+    globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,
     ),
-    globalPlugins = Projects.plugins,
     rootPlugins = Projects.root.plugins,
+    globalPlugins = Projects.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
       SbtPlugin("com.eed3si9n", "sbt-assembly", "0.14.9"),
