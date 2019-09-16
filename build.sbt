@@ -8,7 +8,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -22,7 +22,7 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -128,7 +128,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -142,7 +142,7 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -251,7 +251,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -265,7 +265,7 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -371,7 +371,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -385,7 +385,7 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -497,7 +497,7 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -511,7 +511,7 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -625,7 +625,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -639,7 +639,7 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -752,7 +752,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -766,7 +766,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -883,7 +883,7 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -897,7 +897,7 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1013,7 +1013,7 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1027,7 +1027,7 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1140,7 +1140,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1154,7 +1154,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1265,7 +1265,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1279,7 +1279,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1391,7 +1391,7 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1405,7 +1405,7 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1514,7 +1514,7 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1528,7 +1528,7 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1641,7 +1641,7 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1655,7 +1655,7 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1773,7 +1773,7 @@ lazy val `distage-static` = project.in(file("distage/distage-static"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1787,7 +1787,7 @@ lazy val `distage-static` = project.in(file("distage/distage-static"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -1898,7 +1898,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -1913,7 +1913,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2030,7 +2030,7 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2044,7 +2044,7 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2155,7 +2155,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2169,7 +2169,7 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2285,7 +2285,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2299,7 +2299,7 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2409,7 +2409,7 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2423,7 +2423,7 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2536,7 +2536,7 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2550,7 +2550,7 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2660,7 +2660,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2677,7 +2677,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2787,7 +2787,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2801,7 +2801,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -2913,7 +2913,7 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -2927,7 +2927,7 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3038,7 +3038,7 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3052,7 +3052,7 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3166,7 +3166,7 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3180,7 +3180,7 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3298,7 +3298,7 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3312,7 +3312,7 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3429,7 +3429,7 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3444,7 +3444,7 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3564,7 +3564,7 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3578,7 +3578,7 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3687,7 +3687,7 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3701,7 +3701,7 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3807,7 +3807,7 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3821,7 +3821,7 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -3927,7 +3927,7 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -3941,7 +3941,7 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -4047,7 +4047,7 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -4074,7 +4074,7 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -4255,7 +4255,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -4394,7 +4394,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     publishArtifact in (Test, packageBin) := true,
@@ -4410,7 +4410,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     ),
     testOptions in Test += Tests.Argument("-oDF"),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.9") => Seq(
+      case (_, "2.12.10") => Seq(
         "-Ypartial-unification",
         "-Xsource:2.13",
         "-Ybackend-parallelism",
@@ -4514,7 +4514,7 @@ lazy val `fundamentals` = (project in file("fundamentals"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4534,7 +4534,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4554,7 +4554,7 @@ lazy val `distage` = (project in file("distage"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4576,7 +4576,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4598,7 +4598,7 @@ lazy val `logstage` = (project in file("logstage"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4618,7 +4618,7 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4638,7 +4638,7 @@ lazy val `idealingua` = (project in file("idealingua-v1"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4661,7 +4661,7 @@ lazy val `idealingua-jvm` = (project in file(".agg/idealingua-v1-idealingua-jvm"
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head
@@ -4755,7 +4755,7 @@ lazy val `izumi` = (project in file("."))
       s"-Xmacro-settings:sbt-version=${sbtVersion.value}"
     ),
     crossScalaVersions := Nil,
-    scalaVersion := "2.12.9",
+    scalaVersion := "2.12.10",
     organization in ThisBuild := "io.7mind.izumi",
     publishTo in ThisBuild := 
     (if (!isSnapshot.value) {
@@ -4786,7 +4786,7 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.9",
+      "2.12.10",
       "2.13.0"
     ),
     scalaVersion := crossScalaVersions.value.head

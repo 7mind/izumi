@@ -79,7 +79,7 @@ object Izumi {
 
   import Deps._
 
-  final val scala212 = ScalaVersion("2.12.9")
+  final val scala212 = ScalaVersion("2.12.10")
   final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.0")
 
