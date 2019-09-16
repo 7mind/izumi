@@ -351,11 +351,18 @@ class CSharpLayouter(options: CSharpTranslatorOptions) extends TranslationLayout
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
       </PropertyGroup>
         <ItemGroup>
-          { deps.map(d => <PackageReference Include={d.module} Version={d.version} /> ) }
+          { deps.map{
+          d =>
+              <PackageReference Include={d.module} Version={d.version} />
+          } }
         </ItemGroup>
 
         <ItemGroup>
           { projDeps.map(d => <ProjectReference Include={ s"$$(SolutionDir)/$d" } />) }
+        </ItemGroup>
+
+        <ItemGroup>
+          <Reference Include="System.Web" />
         </ItemGroup>
 
         <ItemGroup>
