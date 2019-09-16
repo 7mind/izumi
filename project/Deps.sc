@@ -145,6 +145,8 @@ object Izumi {
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
+        "sonatypeProfileName" := "io.7mind",
+        "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
         "publishTo" in SettingScope.Build :=
           """
             |(if (!isSnapshot.value) {
@@ -166,8 +168,6 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
-        "sonatypeProfileName" := "io.7mind",
-        "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
