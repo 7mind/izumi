@@ -7,6 +7,7 @@ import scala.reflect.runtime.{universe => ru}
 
 // TODO: hotspots, hashcode on keys is inefficient
 class SafeType0[U <: SingletonUniverse] protected(
+                                                   @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
                                                    val tpe: U#Type,
                                                    val tag: LightTypeTag,
                                                  ) {

@@ -68,14 +68,15 @@ class LightTypeTagTest extends WordSpec {
   type Const[A, B] = B
 
   trait H1
-
   trait H2 extends H1
-
   trait H3 extends H2
-
   trait H4 extends H3
-
   trait H5 extends H4
+
+  trait J1[F[_]]
+  trait J2
+  trait J3
+  trait J[F[_]] extends J1[F] with J2 with J3
 
   def println(o: Any): Unit = info(o.toString)
 
@@ -200,13 +201,23 @@ class LightTypeTagTest extends WordSpec {
       // I consider this stuff practically useless
       type X[A >: H4 <: H2] = Option[A]
       assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
-
       // allTypeReferences: we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       //assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
     }
 
+    "support additional mixin traits after first trait with a HKT parameter" in {
+      val t = LightTypeTagImpl.makeLightTypeTag(scala.reflect.runtime.universe)(scala.reflect.runtime.universe.typeOf[J[Option]])
+      println(t.asInstanceOf[{ val basesdb: AnyRef }].basesdb)
 
-    "progression: support swapped parents" in {
+      assertChild(LTT[J[Option]], LTT[J1[Option]])
+      assertChild(LTT[J[Option]], LTT[J3])
+      assertChild(LTT[J[Option]], LTT[J2])
+      assertChild(LTT[J[Option]], LTT[J1[Option] with J2])
+      assertChild(LTT[J[Option]], LTT[J2 with J3])
+      assertChild(LTT[J[Option]], LTT[J1[Option] with J2 with J3])
+    }
+
+    "support swapped parents" in {
       trait KT1[+A1, +B1]
       trait KT2[+A2, +B2] extends KT1[B2, A2]
 
@@ -275,7 +286,6 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[F1], LTT[W1])
       assertChild(LTT[F2], LTT[F1])
 
-
       assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
       assertChild(`LTT[_]`[T1], `LTT[_]`[W3])
       assertChild(`LTT[_]`[T1], LTT[W1])
@@ -320,7 +330,6 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
     }
-
 
     "resolve concrete types through PDTs and projections" in {
       val a1 = new C {

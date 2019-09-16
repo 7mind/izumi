@@ -200,17 +200,14 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
           val tref = ref.getOrElse(makeRef(t))
 
-          if (t.takesTypeArgs) {
-            baseLambdas(t)
-              .collect {
-                case l: Lambda =>
-                  (tref, l)
-              }
-          } else {
-            tpeBases(t)
-              .map(b => makeRef(b))
-              .filterNot(_ == tref).map(b => (tref, b))
-          }
+          val res = baseLambdas(t)
+            .collect {
+              case l: Lambda =>
+                (tref, l)
+            } ++ tpeBases(t)
+            .map(b => makeRef(b))
+            .filterNot(_ == tref).map(b => (tref, b))
+          res
       }
       .toSeq
   }
