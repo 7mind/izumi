@@ -124,8 +124,8 @@ function init {
     export IVY_CACHE_FOLDER=${IVY_CACHE_FOLDER:-`~/.ivy2`}
 
     export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
-    export SCALA212=$(cat project/Versions.scala | grep 'scala_212' |  sed -r 's/.*\"(.*)\".**/\1/')
-    export SCALA213=$(cat project/Versions.scala | grep 'scala_213' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA212=$(cat project/Versions.sc | grep 'scala_212' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA213=$(cat project/Versions.sc | grep 'scala_213' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
 
