@@ -7,7 +7,7 @@ addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.24")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
 
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
 
