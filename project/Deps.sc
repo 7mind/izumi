@@ -344,7 +344,6 @@ object Izumi {
         Seq(typesafe_config),
         Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        settings = forkTests
       ),
       Artifact(
         Projects.distage.rolesApi,
@@ -357,7 +356,6 @@ object Izumi {
         Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
-        settings = forkTests
       ),
       Artifact(
         Projects.distage.roles,
