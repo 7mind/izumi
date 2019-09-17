@@ -29,8 +29,6 @@ trait TestEnvironmentProvider {
 
   protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource
 
-  protected def thisPackage: Seq[String]
-
   protected def pluginPackages: Seq[String]
 
   protected def pluginBootstrapPackages: Option[Seq[String]]

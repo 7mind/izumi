@@ -15,7 +15,12 @@ import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 
-class TestEnvironmentProviderImpl(suiteClass: Class[_]) extends TestEnvironmentProvider {
+class TestEnvironmentProviderImpl
+(
+  suiteClass: Class[_],
+  override protected val activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
+) extends TestEnvironmentProvider {
+
   /**
     * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
     */
@@ -68,8 +73,6 @@ class TestEnvironmentProviderImpl(suiteClass: Class[_]) extends TestEnvironmentP
     RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
   }
 
-  override protected def activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
-
   override protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
     Quirks.discard(lateLogger)
     SimplePluginMergeStrategy
@@ -86,7 +89,7 @@ class TestEnvironmentProviderImpl(suiteClass: Class[_]) extends TestEnvironmentP
     new PluginSourceImpl(bootstrapConfig)
   }
 
-  override protected final def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
+  private[this] def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
 
   override protected def pluginPackages: Seq[String] = thisPackage
 

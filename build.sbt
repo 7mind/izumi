@@ -1917,8 +1917,7 @@ lazy val `distage-static` = project.in(file("distage/distage-static"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.chuusai" %% "shapeless" % V.shapeless
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
 
@@ -2040,6 +2039,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
   .dependsOn(
     `distage-config` % "test->compile;compile->compile",
     `distage-roles` % "test->compile;compile->compile",
+    `distage-static` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
     `distage-plugins` % "test->test;compile->compile"
@@ -2050,9 +2050,9 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scalatest" %% "scalatest" % V.scalatest,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional
     )
   )
 

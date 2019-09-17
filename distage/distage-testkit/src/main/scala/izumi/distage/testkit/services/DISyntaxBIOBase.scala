@@ -40,5 +40,4 @@ object DISyntaxBIOBase {
 
   final case class BIOBadBranch[A](error: A)
     extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error")
-
 }
