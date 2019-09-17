@@ -43,7 +43,7 @@ object BIORunner {
   class ZIORunner
   (
     val platform: Platform
-  ) extends BIORunner[IO] with BIOExit.ZIO {
+  ) extends BIORunner[IO] with BIOExit.ZIOExit {
 
     val runtime = Runtime((), platform)
 
@@ -81,7 +81,7 @@ object BIORunner {
   , handler: FailureHandler
   , yieldEveryNFlatMaps: Int
   , tracingConfig: TracingConfig
-  ) extends Platform with BIOExit.ZIO {
+  ) extends Platform with BIOExit.ZIOExit {
 
     override val executor: Executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
 

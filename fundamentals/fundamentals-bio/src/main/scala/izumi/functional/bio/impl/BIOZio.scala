@@ -10,7 +10,7 @@ import scala.util.Try
 
 object BIOZio extends BIOZio[Any]
 
-class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
+class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIOExit {
   private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
   @inline override final def pure[A](a: A): IO[Nothing, A] = ZIO.succeed(a)

@@ -45,7 +45,7 @@ object BIOExit {
     def apply(exception: Throwable, trace: Trace): Termination = new Termination(exception, List(exception), trace)
   }
 
-  trait ZIO {
+  trait ZIOExit {
 
     @inline def toBIOExit[E, A](result: Exit[E, A]): BIOExit[E, A] = result match {
       case Exit.Success(v) =>

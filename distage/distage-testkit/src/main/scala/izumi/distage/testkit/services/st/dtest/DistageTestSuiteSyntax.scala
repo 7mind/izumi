@@ -32,7 +32,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   protected def tenv: TestEnvironmentProvider = tenv0
   protected def env: TestEnvironment = env0.copy(
     bsModule = env0.bsModule overridenBy bootstrapOverrides,
-    appModule = env0.bsModule overridenBy moduleOverrides,
+    appModule = env0.appModule overridenBy moduleOverrides,
   )
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
