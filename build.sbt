@@ -4457,7 +4457,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
   )
 
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
-  .disablePlugins(AssemblyPlugin)
+  .disablePlugins(ScoverageSbtPlugin, AssemblyPlugin)
   .settings(
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
@@ -4471,6 +4471,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    coverageEnabled := false,
     sbtPlugin := true,
     withBuildInfo("izumi.sbt.deps", "Izumi"),
     scalacOptions ++= Seq(

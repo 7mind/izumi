@@ -667,6 +667,9 @@ object Izumi {
         settings = Projects.sbtplugins.settings ++ Seq(
           SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
         ),
+        plugins = Plugins(
+          enabled = Seq.empty,
+          disabled = Seq(Plugin("ScoverageSbtPlugin")))
       ),
     ),
     pathPrefix = Projects.sbtplugins.basePath,
