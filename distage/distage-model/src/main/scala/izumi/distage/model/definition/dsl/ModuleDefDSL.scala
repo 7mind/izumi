@@ -153,13 +153,13 @@ object ModuleDefDSL {
     }
   }
 
-  final class MultipleDSL[T]
+  final class MultipleDSL[I]
   (
     protected val mutableState: MultipleRef
-  ) extends MultipleDSLMutBase[T] {
+  ) extends MultipleDSLMutBase[I] {
 
-    def to[I >: T : Tag]: MultipleDSL[T] = {
-      addOp(ImplWithReference(DIKey.get[I]))(new MultipleDSL[T](_))
+    def to[T >: I : Tag]: MultipleDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T]))(new MultipleDSL[I](_))
     }
 
   }
