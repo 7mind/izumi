@@ -24,9 +24,12 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
 
   import DistageTestSuiteSyntax._
 
-  protected lazy val tenv: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass)
-  protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
-  protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
+  protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
+  private[this] lazy val tenv0: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass)
+  private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
+
+  protected def tenv: TestEnvironmentProvider = tenv0
+  protected def env: TestEnvironment = env0
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
