@@ -2,11 +2,12 @@ package izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.TimeUnit
 
+import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.distage.model.{Locator, SplittedPlan}
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
@@ -14,14 +15,8 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.jvm.CodePosition
-import distage.{DIKey, Injector, PlannerInput}
 
 import scala.concurrent.duration.FiniteDuration
-
-// a marker trait just for our demo purposes. All the entities inheriting this trait will be shared between tests contexts
-trait TODOMemoizeMe {}
-
-
 
 class DistageTestRunner[F[_] : TagK](
                                       reporter: TestReporter,
@@ -70,7 +65,7 @@ class DistageTestRunner[F[_] : TagK](
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testplans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(op => ExecutableOp.instanceType(op) <:< SafeType.get[TODOMemoizeMe]).map(_.target)
+            plan.steps.filter(env memoize _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
         val shared = injector.splitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {

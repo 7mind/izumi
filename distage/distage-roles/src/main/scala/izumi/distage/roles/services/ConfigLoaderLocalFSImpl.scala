@@ -10,10 +10,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.util.{Failure, Success, Try}
 
 class ConfigLoaderLocalFSImpl(
-                                       logger: IzLogger,
-                                       primaryConfig: Option[File],
-                                       roleConfigs: Map[String, Option[File]]
-                                     ) extends ConfigLoader {
+                               logger: IzLogger,
+                               primaryConfig: Option[File],
+                               roleConfigs: Map[String, Option[File]]
+                             ) extends ConfigLoader {
 
   import ConfigLoaderLocalFSImpl._
   import izumi.fundamentals.platform.strings.IzString._

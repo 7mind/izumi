@@ -11,7 +11,7 @@ import org.scalatest.events._
 
 import scala.collection.immutable.TreeSet
 
-trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] {
+trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
 
   override final protected def runNestedSuites(args: Args): Status = {
@@ -188,9 +188,7 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
         }
     }
 
-
     val runner = new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
-
 
     runner.run()
   }

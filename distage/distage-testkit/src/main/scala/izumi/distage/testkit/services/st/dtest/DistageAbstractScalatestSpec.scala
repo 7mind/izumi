@@ -1,11 +1,12 @@
 package izumi.distage.testkit.services.st.dtest
 
-import distage.{BootstrapModule, Module, ModuleBase, Tag, TagK, TagKK}
+import distage.{BootstrapModule, DIKey, Module, ModuleBase, Tag, TagK, TagKK}
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, StandardAxis}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._
+import izumi.distage.testkit.services.st.dtest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.platform.language.Quirks
@@ -21,10 +22,8 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   }
 }
 
-trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
+trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
-
-  import DistageTestSuiteSyntax._
 
   private[this] lazy val tenv0: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass, activation)
   private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
@@ -33,6 +32,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   protected def env: TestEnvironment = env0.copy(
     bsModule = env0.bsModule overridenBy bootstrapOverrides,
     appModule = env0.appModule overridenBy moduleOverrides,
+    memoize = key => env0.memoize(key) || memoizedKeys(key)
   )
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
@@ -41,6 +41,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   protected def activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
   protected def moduleOverrides: ModuleBase = Module.empty
   protected def bootstrapOverrides: BootstrapModule = BootstrapModule.empty
+  protected def memoizedKeys: DIKey => Boolean = Set.empty
 
   protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
@@ -60,7 +61,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   }
 }
 
-object DistageTestSuiteSyntax {
+object DistageAbstractScalatestSpec {
   final case class SuiteContext(left: String, verb: String) {
     def toName(name: String): String = {
       Seq(left, verb, name).mkString(" ")

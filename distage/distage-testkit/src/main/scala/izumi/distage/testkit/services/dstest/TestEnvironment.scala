@@ -9,4 +9,5 @@ case class TestEnvironment(
                             appModule: ModuleBase,
                             roles: RolesInfo,
                             activation: AppActivation,
+                            memoize: DIKey => Boolean = Set.empty
                           )

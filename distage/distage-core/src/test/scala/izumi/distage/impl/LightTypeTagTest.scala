@@ -206,9 +206,6 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support additional mixin traits after first trait with a HKT parameter" in {
-      val t = LightTypeTagImpl.makeLightTypeTag(scala.reflect.runtime.universe)(scala.reflect.runtime.universe.typeOf[J[Option]])
-      println(t.asInstanceOf[{ val basesdb: AnyRef }].basesdb)
-
       assertChild(LTT[J[Option]], LTT[J1[Option]])
       assertChild(LTT[J[Option]], LTT[J3])
       assertChild(LTT[J[Option]], LTT[J2])

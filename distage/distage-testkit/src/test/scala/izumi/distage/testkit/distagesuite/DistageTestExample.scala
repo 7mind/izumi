@@ -3,9 +3,13 @@ package izumi.distage.testkit.distagesuite
 import zio.{IO => ZIO}
 import cats.effect.{IO => CIO}
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCachedUserService, MockUserRepository}
+import izumi.distage.testkit.services.st.dtest.DistageAbstractScalatestSpec
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
 
-class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] {
+trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
+}
+
+class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] with DistageMemoizeExample[ZIO[Throwable, ?]] {
 
   "distage test runner" should {
     "support bifunctor" in {
@@ -18,7 +22,7 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] {
 
 }
 
-class DistageTestExample extends DistageSpecScalatest[CIO] {
+class DistageTestExample extends DistageSpecScalatest[CIO] with DistageMemoizeExample[CIO] {
   "distage test runner" should {
     "test 1" in {
       service: MockUserRepository[CIO] =>
@@ -41,7 +45,7 @@ class DistageTestExample extends DistageSpecScalatest[CIO] {
         CIO.delay(assert(service != null))
     }
 
-    "test 4" in {
+    "test 4 (should be ignored)" in {
       _: ApplePaymentProvider[CIO] =>
 //        ???
     }

@@ -4,7 +4,6 @@ import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 
