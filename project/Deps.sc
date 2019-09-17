@@ -104,6 +104,9 @@ object Izumi {
     private val jvmPlatformSbt = PlatformEnv(
       platform = Platform.Jvm,
       language = Seq(scala212),
+      settings = Seq(
+        "coverageEnabled" := false,
+      ),
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
