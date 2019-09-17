@@ -1,7 +1,6 @@
 package izumi.distage.testkit.services.dstest
 
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
 import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
@@ -18,7 +17,7 @@ import izumi.logstage.api.IzLogger
 class TestEnvironmentProviderImpl
 (
   suiteClass: Class[_],
-  override protected val activation: Map[AxisBase, AxisValue] = Map(Env -> Env.Test)
+  override protected val activation: Map[AxisBase, AxisValue],
 ) extends TestEnvironmentProvider {
 
   /**

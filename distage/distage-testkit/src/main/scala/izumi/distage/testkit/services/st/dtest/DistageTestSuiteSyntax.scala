@@ -1,14 +1,16 @@
 package izumi.distage.testkit.services.st.dtest
 
+import distage.{BootstrapModule, Module, ModuleBase, Tag, TagK, TagKK}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.{AxisBase, StandardAxis}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, TestEnvironmentProvider, TestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
+import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.logstage.api.{IzLogger, Log}
-import distage.{Tag, TagK, TagKK}
 import org.scalactic.source
 
 import scala.language.implicitConversions
@@ -24,15 +26,23 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
 
   import DistageTestSuiteSyntax._
 
-  protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
-  private[this] lazy val tenv0: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass)
+  private[this] lazy val tenv0: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass, activation)
   private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
 
   protected def tenv: TestEnvironmentProvider = tenv0
-  protected def env: TestEnvironment = env0
+  protected def env: TestEnvironment = env0.copy(
+    bsModule = env0.bsModule overridenBy bootstrapOverrides,
+    appModule = env0.bsModule overridenBy moduleOverrides,
+  )
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
+
+  protected def activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
+  protected def moduleOverrides: ModuleBase = Module.empty
+  protected def bootstrapOverrides: BootstrapModule = BootstrapModule.empty
+
+  protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
   //
   protected var context: Option[SuiteContext] = None

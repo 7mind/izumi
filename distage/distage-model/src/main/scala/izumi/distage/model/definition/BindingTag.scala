@@ -66,4 +66,28 @@ object StandardAxis {
     case object Mock extends ExternalApi
   }
 
+  def prodActivation: Map[AxisBase, AxisValue] = {
+    Map(
+      Env -> Env.Prod,
+      Repo -> Repo.Prod,
+      ExternalApi -> ExternalApi.Prod,
+    )
+  }
+
+  def testProdActivation: Map[AxisBase, AxisValue] = {
+    Map(
+      Env -> Env.Test,
+      Repo -> Repo.Prod,
+      ExternalApi -> ExternalApi.Prod,
+    )
+  }
+
+  def testDummyActivation: Map[AxisBase, AxisValue] = {
+    Map(
+      Env -> Env.Test,
+      Repo -> Repo.Dummy,
+      ExternalApi -> ExternalApi.Mock,
+    )
+  }
+
 }
