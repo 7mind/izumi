@@ -22,7 +22,7 @@ object RT {
   implicit val clock: Clock = Clock.Live
 
   final val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
-  val platform = new bio.BIORunner.ZIOEnvBase(
+  val platform = new bio.BIORunner.ZIOPlatform(
     Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
   , handler
   , 1024
