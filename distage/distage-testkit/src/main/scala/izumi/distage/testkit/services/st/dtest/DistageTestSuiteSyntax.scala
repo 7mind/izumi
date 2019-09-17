@@ -77,10 +77,6 @@ object DistageTestSuiteSyntax {
       reg.registerTest(function, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
-    }
-
     def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
@@ -89,7 +85,11 @@ object DistageTestSuiteSyntax {
       takeFunIO(function, pos.get)
     }
 
-    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunAny(function, pos.get)
     }
   }
