@@ -4462,8 +4462,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     organization := "io.7mind.izumi",
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.0"
+      "2.12.10"
     ),
     publishArtifact in (Test, packageBin) := true,
     publishArtifact in (Test, packageDoc) := false,
@@ -4851,7 +4850,8 @@ lazy val `izumi` = (project in file("."))
     `fundamentals`,
     `distage`,
     `logstage`,
-    `idealingua`
+    `idealingua`,
+    `sbt-plugins`
   )
 
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
@@ -4868,5 +4868,6 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
     `fundamentals-jvm`,
     `distage-jvm`,
     `logstage-jvm`,
-    `idealingua-jvm`
+    `idealingua-jvm`,
+    `sbt-plugins-jvm`
   )

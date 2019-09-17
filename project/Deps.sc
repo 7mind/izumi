@@ -88,21 +88,26 @@ object Izumi {
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
     final val docs = Set(Group("docs"))
+    final val sbt = Set(Group("sbt"))
   }
 
   object Targets {
     val targetScala = Seq(scala212, scala213)
     private val jvmPlatform = PlatformEnv(
-      Platform.Jvm,
-      targetScala,
+      platform = Platform.Jvm,
+      language = targetScala,
     )
-    private val jvmPlatform212 = PlatformEnv(
-      Platform.Jvm,
-      Seq(scala212doc),
+    private val jvmPlatformDoc = PlatformEnv(
+      platform = Platform.Jvm,
+      language = Seq(scala212doc),
+    )
+    private val jvmPlatformSbt = PlatformEnv(
+      platform = Platform.Jvm,
+      language = Seq(scala212),
     )
     private val jsPlatform = PlatformEnv(
-      Platform.Js,
-      targetScala,
+      platform = Platform.Js,
+      language = targetScala,
       settings = Seq(
         "coverageEnabled" := false,
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
@@ -110,7 +115,8 @@ object Izumi {
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
-    final val jvmDocs = Seq(jvmPlatform212)
+    final val jvmDoc = Seq(jvmPlatformDoc)
+    final val jvmSbt = Seq(jvmPlatformSbt)
   }
 
   final val assemblyPluginJvm = Plugin("AssemblyPlugin", Platform.Jvm)
@@ -542,18 +548,9 @@ object Izumi {
     name = Projects.docs.id,
     artifacts = Seq(
       Artifact(
-        Projects.docs.microsite,
-        (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
-        all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
-        plugins = Plugins(Seq(
-          Plugin("ScalaUnidocPlugin"),
-          Plugin("ParadoxSitePlugin"),
-          Plugin("SitePlugin"),
-          Plugin("GhpagesPlugin"),
-          Plugin("ParadoxMaterialThemePlugin"),
-          Plugin("PreprocessPlugin"),
-          Plugin("MdocPlugin")
-        ), Seq(Plugin("ScoverageSbtPlugin"))),
+        name = Projects.docs.microsite,
+        libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
+        depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Projects.root.docSettings ++ Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
@@ -608,32 +605,42 @@ object Izumi {
                   f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
               }
             }""")
-        )
+        ),
+        plugins = Plugins(
+          enabled = Seq(
+            Plugin("ScalaUnidocPlugin"),
+            Plugin("ParadoxSitePlugin"),
+            Plugin("SitePlugin"),
+            Plugin("GhpagesPlugin"),
+            Plugin("ParadoxMaterialThemePlugin"),
+            Plugin("PreprocessPlugin"),
+            Plugin("MdocPlugin")),
+          disabled = Seq(Plugin("ScoverageSbtPlugin")))
       ),
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvmDocs,
+    defaultPlatforms = Targets.jvmDoc,
     settings = Projects.root.docSettings,
     enableSharedSettings = false,
-    dontIncludeInSuperAgg = false,
+    dontIncludeInSuperAgg = true,
   )
 
   final lazy val sbtplugins = Aggregate(
     Projects.sbtplugins.id,
     Seq(
       Artifact(
-        Projects.sbtplugins.izumi_deps,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.sbtplugins.izumi_deps,
+        libs = Seq.empty,
+        depends = Seq.empty,
         settings = Projects.sbtplugins.settings ++ Seq(
           SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
         ),
       ),
     ),
     pathPrefix = Projects.sbtplugins.basePath,
-    groups = Groups.docs,
-    defaultPlatforms = Targets.jvm,
+    groups = Groups.sbt,
+    defaultPlatforms = Targets.jvmSbt,
     enableSharedSettings = false,
     dontIncludeInSuperAgg = false,
   )
