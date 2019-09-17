@@ -364,53 +364,55 @@ object Izumi {
     Projects.distage.id,
     Seq(
       Artifact(
-        Projects.distage.model,
-        (cats_all).map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
-        Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        name = Projects.distage.model,
+        libs = cats_all.map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.proxyCglib,
-        Seq(cglib_nodep),
-        Projects.fundamentals.basics ++ Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        name = Projects.distage.proxyCglib,
+        libs = Seq(cglib_nodep),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.core,
-        Seq(cglib_nodep),
-        Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
+        name = Projects.distage.core,
+        libs = Seq(cglib_nodep),
+        depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.config,
-        Seq(typesafe_config),
-        Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.config,
+        libs = Seq(typesafe_config),
+        depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
       ),
       Artifact(
-        Projects.distage.rolesApi,
-        Seq.empty,
-        Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        name = Projects.distage.rolesApi,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.plugins,
-        Seq(fast_classpath_scanner),
-        Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.plugins,
+        libs = Seq(fast_classpath_scanner),
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
       ),
       Artifact(
-        Projects.distage.roles,
-        allMonads,
-        Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.roles,
+        libs = allMonads,
+        depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.static,
-        Seq(shapeless),
-        Seq(Projects.distage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.roles).map(_ tin Scope.Test.all),
+        name = Projects.distage.static,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.roles).map(_ tin Scope.Test.all),
       ),
       Artifact(
-        Projects.distage.testkit,
-        Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsTest,
-        Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++ Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+        name = Projects.distage.testkit,
+        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsTest,
+        depends =
+          Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         )
