@@ -36,8 +36,7 @@ class DistageTestEnvironmentImpl[F[_]: TagK](suiteClass: Class[_]) extends Dista
 
   def appOverride: ModuleBase = Module.empty
 
-
-  def bootstrapLogLevel: Level = IzLogger.Level.Warn
+  def bootstrapLogLevel: Level = IzLogger.Level.Info
 
   def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
 
