@@ -22,7 +22,7 @@ class DistageTestRunner[F[_] : TagK](
                                       reporter: TestReporter,
                                       integrationChecker: IntegrationChecker,
                                       runnerEnvironment: DistageTestEnvironment[F],
-                                      tests: Seq[DistageTest[F]]
+                                      tests: Seq[DistageTest[F]],
                                     ) {
 
   import DistageTestRunner._
@@ -30,13 +30,18 @@ class DistageTestRunner[F[_] : TagK](
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
 
+    val logger = runnerEnvironment.makeLogger()
+    val options = runnerEnvironment.contextOptions()
+    val loader = runnerEnvironment.makeConfigLoader(logger)
+
+    val config = loader.buildConfig()
+    val checker = new PlanCircularDependencyCheck(options, logger)
+
+    logger.info(s"Starting tests across ${groups.size -> "num envs"}")
+    logger.trace(s"Env contents: ${groups.keys -> "test environments"}")
+
     groups.foreach {
       case (env, group) =>
-        val logger = runnerEnvironment.makeLogger()
-        val options = runnerEnvironment.contextOptions()
-        val loader = runnerEnvironment.makeConfigLoader(logger)
-        val config = loader.buildConfig()
-        val checker = new PlanCircularDependencyCheck(options, logger)
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
