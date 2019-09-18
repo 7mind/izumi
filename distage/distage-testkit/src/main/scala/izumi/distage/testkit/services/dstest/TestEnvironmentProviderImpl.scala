@@ -1,14 +1,13 @@
 package izumi.distage.testkit.services.dstest
 
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
-import izumi.distage.model.planning.PlanMergingPolicy
+import izumi.distage.model.definition.AxisBase
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.BootstrapConfig
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
+import izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl}
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
@@ -47,10 +46,7 @@ class TestEnvironmentProviderImpl
   override protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
     val roles = loadRoles(logger)
     val appActivation = AppActivation(env.availableActivations, activation)
-    val defBs = env.bsModule overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
-      make[AppActivation].from(appActivation)
-    }
+    val defBs = env.bsModule
     TestEnvironment(
       defBs,
       env.appModule,
