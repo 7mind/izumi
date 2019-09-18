@@ -73,9 +73,10 @@ class DistageTestRunner[F[_] : TagK](
             plan.steps.filter(env memoizedKeys _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
+        logger.info(s"Memoized components in env $sharedKeys")
+
         val shared = injector.splitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {
-          merged =>
-            merged.collectChildren[IntegrationCheck].map(_.target).toSet
+          _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
         //        println(shared.primary.render())
@@ -93,6 +94,7 @@ class DistageTestRunner[F[_] : TagK](
 
             runner.run {
               // now we produce integration components for our shared plan
+              checker.verify(shared.subplan)
               Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
                 sharedIntegrationLocator =>
                   check(testplans.map(_._1), shared, effect, sharedIntegrationLocator) {
@@ -121,7 +123,6 @@ class DistageTestRunner[F[_] : TagK](
   private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
-    checker.verify(shared.subplan)
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
       sharedLocator =>
         val testInjector = Injector.inherit(sharedLocator)
@@ -140,7 +141,7 @@ class DistageTestRunner[F[_] : TagK](
                 case (test, testplan) =>
                   val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
 
-                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
+                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, allSharedKeys, testplan) {
                     _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   }
 
