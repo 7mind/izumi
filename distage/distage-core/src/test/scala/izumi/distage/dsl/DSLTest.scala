@@ -329,7 +329,10 @@ class DSLTest extends WordSpec {
       val implXYZ = new ImplXYZ
 
       val definition = new ModuleDef {
-        bind[ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
+        bind[ImplXYZ]
+          .to[TraitX].named("simple")
+          .to[TraitY]
+          .to[TraitZ]
       }
 
       assert(definition === Module.make(

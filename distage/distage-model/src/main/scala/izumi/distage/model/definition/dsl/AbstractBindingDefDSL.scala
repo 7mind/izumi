@@ -199,14 +199,22 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class MultipleRef(implBinding: SingletonBinding[DIKey.BasicKey], ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
-    override def interpret: Seq[Binding] = {
-      val referenceBindings = ops.map {
-        case ImplWithReference(key) =>
-          SingletonBinding(key, ImplDef.ReferenceImpl(implBinding.implementation.implType, implBinding.key, weak = false))
-      }.toList
+  final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
+    override def interpret: Seq[ImplBinding] = {
+//      val referenceBindings = ops.map {
+//        case ImplWithReference(key) =>
+//          SingletonBinding(key, ImplDef.ReferenceImpl(implBinding.implementation.implType, implBinding.key, weak = false))
+//      }.toList
+      ops.foldLeft(initial: ImplBinding) {
+        (b, instr) =>
+          instr match {
+            case MultipleInstruction.AddTags(tags) => ???
+            case MultipleInstruction.SetId(id) => ???
+            case ImplWithReference(key) => ???
+          }
+      }
 
-      implBinding :: referenceBindings
+      //implBinding :: referenceBindings
     }
 
     def append(op: MultipleInstruction): MultipleRef = {
@@ -318,6 +326,10 @@ object AbstractBindingDefDSL {
   sealed trait MultipleInstruction
 
   object MultipleInstruction {
+
+    final case class AddTags(tags: Set[BindingTag]) extends MultipleInstruction
+
+    final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends MultipleInstruction
 
     final case class ImplWithReference(key: DIKey) extends MultipleInstruction
   }
