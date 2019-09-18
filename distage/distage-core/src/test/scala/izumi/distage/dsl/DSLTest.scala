@@ -273,7 +273,28 @@ class DSLTest extends WordSpec {
       val definition = def1 overridenBy def2
 
       assert(definition.bindings.head.tags.strings == Set("1", "2", "3", "a", "b", "x", "y"))
+
     }
+
+    "support zero element" in {
+      import BasicCase1._
+      val def1 = new ModuleDef {
+        make[TestDependency0]
+      }
+
+      val def2 = new ModuleDef {
+        make[TestDependency0]
+      }
+      val def3 = new ModuleDef {
+        make[TestDependency1]
+      }
+
+      assert((def1 overridenBy Module.empty) == def1)
+      assert(def1 == def2)
+      assert(def1 != def3)
+
+    }
+
 
     "support includes" in {
       import BasicCase1._
