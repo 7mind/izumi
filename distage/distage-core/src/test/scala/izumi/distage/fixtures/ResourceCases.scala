@@ -158,28 +158,31 @@ object ResourceCases {
   object Suspend2 {
     def apply[A](a: => A)(implicit dummy: DummyImplicit): Suspend2[Nothing, A] = new Suspend2(() => Right(a))
 
-    implicit def dimonadSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
+    implicit def DIEffectSuspend2[E <: Throwable]: DIEffect[Suspend2[E, ?]] = new DIEffect[Suspend2[E, ?]] {
       override def flatMap[A, B](fa: Suspend2[E, A])(f: A => Suspend2[E, B]): Suspend2[E, B] = fa.flatMap(f)
       override def map[A, B](fa: Suspend2[E, A])(f: A => B): Suspend2[E, B] = fa.map(f)
       override def pure[A](a: A): Suspend2[E, A] = Suspend2(a)
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
-      override def definitelyRecover[A](fa: => Suspend2[E, A], recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
+      override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         Suspend2(() => Try(fa.run()).toEither.flatMap(identity) match {
           case Left(exception) => recover(exception).run()
           case Right(value) => Right(value)
         })
       }
-
-      override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
-        bracketCase(acquire){case (a, _) => release(a)}(use)
+      override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
+        definitelyRecover(action)(recoverCause)
       }
+
+      override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =
+        bracketCase(acquire){case (a, _) => release(a)}(use)
+
       override def bracketCase[A, B](acquire: => Suspend2[E, A])(release: (A, Option[Throwable]) => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
         acquire.flatMap {
-          a => definitelyRecover(
-            use(a)
-          , err => release(a, Some(err)).flatMap(_ => fail(err))
-          ).flatMap(res => release(a, None).map(_ => res))
+          a => definitelyRecover(use(a)) {
+            err =>
+              release(a, Some(err)).flatMap(_ => fail(err))
+          }.flatMap(res => release(a, None).map(_ => res))
         }
       }
     }

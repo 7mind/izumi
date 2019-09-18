@@ -9,14 +9,16 @@ object BIOExit {
   trait Trace {
     def asString: String
     override final def toString: String = asString
+    def toThrowable: Throwable
   }
 
   object Trace {
     def zioTrace(cause: Cause[_]): Trace = ZIOTrace(cause)
-    def empty: Trace = new Trace { val asString = "<empty trace>" }
+    def empty: Trace = new Trace { val asString = "<empty trace>"; def toThrowable = new RuntimeException(asString) }
 
     final case class ZIOTrace(cause: Cause[_]) extends Trace {
       override def asString: String = cause.prettyPrint
+      override def toThrowable: Throwable = FiberFailure(cause)
     }
   }
 

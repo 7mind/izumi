@@ -75,7 +75,7 @@ class PlanInterpreterDefaultRuntimeImpl
             F.definitelyRecover[Try[Seq[NewObjectOp]]](
               action =
                 execute(LocatorContext(mutProvisioningContext.toImmutable, parentContext), step).map(Success(_))
-            , recover =
+            )(recover =
                 exception =>
                   F.maybeSuspend {
                     failureHandler.onExecutionFailed(failureContext)

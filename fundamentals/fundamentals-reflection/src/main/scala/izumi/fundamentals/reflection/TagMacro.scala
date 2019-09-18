@@ -28,7 +28,7 @@ class TagMacro(val c: blackbox.Context) {
     *
     * TODO: report scalac bug
     */
-  def fixupHKTagArgStruct[DIU <: Tags with Singleton, T: WeakTypeTag]: c.Expr[DIU#HKTag[T]] = {
+  def fixupHKTagArgStruct[DIU <: Tags with Singleton: WeakTypeTag, T: WeakTypeTag]: c.Expr[DIU#HKTag[T]] = {
     val argStruct = weakTypeOf[T]
     val typeConstructor = argStruct.decls.head.info.typeConstructor
 
