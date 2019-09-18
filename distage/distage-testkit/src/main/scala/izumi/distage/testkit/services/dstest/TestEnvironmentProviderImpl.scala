@@ -1,7 +1,8 @@
 package izumi.distage.testkit.services.dstest
 
+import distage.DIKey
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.AxisBase
+import izumi.distage.model.definition.{AxisBase, BootstrapModule, ModuleBase}
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.BootstrapConfig
@@ -17,6 +18,10 @@ class TestEnvironmentProviderImpl
 (
   suiteClass: Class[_],
   override protected val activation: Map[AxisBase, AxisValue],
+  protected val memoizedKeys: Set[DIKey],
+  protected val bootstrapOverrides: BootstrapModule,
+  protected val moduleOverrides: ModuleBase,
+  protected val pluginOverrides: Option[Seq[String]]
 ) extends TestEnvironmentProvider {
 
   /**
@@ -46,12 +51,12 @@ class TestEnvironmentProviderImpl
   override protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
     val roles = loadRoles(logger)
     val appActivation = AppActivation(env.availableActivations, activation)
-    val defBs = env.bsModule
     TestEnvironment(
-      defBs,
-      env.appModule,
+      env.bsModule overridenBy bootstrapOverrides,
+      env.appModule overridenBy moduleOverrides,
       roles,
       appActivation,
+      memoizedKeys,
     )
   }
 
@@ -84,9 +89,9 @@ class TestEnvironmentProviderImpl
     new PluginSourceImpl(bootstrapConfig)
   }
 
-  private[this] def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
+  protected def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
 
-  override protected def pluginPackages: Seq[String] = thisPackage
+  override protected def pluginPackages: Seq[String] = pluginOverrides getOrElse thisPackage
 
   override protected def pluginBootstrapPackages: Option[Seq[String]] = None
 

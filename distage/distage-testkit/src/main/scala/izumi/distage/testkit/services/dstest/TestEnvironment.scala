@@ -11,7 +11,7 @@ case class TestEnvironment(
                             appModule: ModuleBase,
                             roles: RolesInfo,
                             activation: AppActivation,
-                            memoize: DIKey => Boolean = Set.empty
+                            memoizedKeys: DIKey => Boolean,
                           ) {
   def bsModule: ModuleBase = baseBsModule overridenBy new BootstrapModuleDef {
     make[PlanMergingPolicy].from[PruningPlanMergingPolicy]

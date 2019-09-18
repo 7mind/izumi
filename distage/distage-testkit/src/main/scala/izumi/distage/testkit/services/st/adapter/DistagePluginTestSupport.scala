@@ -69,6 +69,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
       env.appModule,
       roles,
       appActivation,
+      Set.empty,
     )
   }
 

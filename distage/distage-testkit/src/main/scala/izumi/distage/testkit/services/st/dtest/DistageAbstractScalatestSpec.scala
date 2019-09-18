@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services.st.dtest
 
-import distage.{BootstrapModule, DIKey, Module, ModuleBase, Tag, TagK, TagKK}
+import distage.{BootstrapModule, DIKey, Module, Tag, TagK, TagKK}
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, StandardAxis}
 import izumi.distage.model.providers.ProviderMagnet
@@ -22,26 +22,50 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   }
 }
 
+/**
+  * @param pluginPackages  If `None`, scans recursively scans packages of the test class itself
+  *
+  * @param activation      Chosen configurations
+  *
+  * @param memoizedKeys    Setting `memoizedKeys` create a distinct memoization group
+  *                        the exact same `memoizedKeys`
+  *
+  * @param moduleOverrides Using overrides will create a distinct memoization group
+  *                        for this test, i.e. objects will be memoized only between
+  *                        tests with the exact same overrides
+  */
+final case class TestConfig(
+                             pluginPackages: Option[Seq[String]] = None
+                           , activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
+                           , memoizedKeys: Set[DIKey] = Set.empty
+                           , moduleOverrides: Module = Module.empty
+                           , bootstrapOverrides: BootstrapModule = BootstrapModule.empty
+                           )
+
 trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
-  private[this] lazy val tenv0: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass, activation)
+  private[this] lazy val tenv0: TestEnvironmentProvider = {
+    val c = config
+    import c._
+    new TestEnvironmentProviderImpl(
+      this.getClass,
+      activation,
+      memoizedKeys,
+      bootstrapOverrides,
+      moduleOverrides,
+      pluginPackages,
+    )
+  }
   private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
 
   protected def tenv: TestEnvironmentProvider = tenv0
-  protected def env: TestEnvironment = env0.copy(
-    bsModule = env0.bsModule overridenBy bootstrapOverrides,
-    appModule = env0.appModule overridenBy moduleOverrides,
-    memoize = key => env0.memoize(key) || memoizedKeys(key)
-  )
+  protected def env: TestEnvironment = env0
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
 
-  protected def activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
-  protected def moduleOverrides: ModuleBase = Module.empty
-  protected def bootstrapOverrides: BootstrapModule = BootstrapModule.empty
-  protected def memoizedKeys: DIKey => Boolean = Set.empty
+  protected def config: TestConfig = TestConfig()
 
   protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
