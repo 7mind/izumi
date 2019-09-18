@@ -48,6 +48,29 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   override def tags: Map[String, Set[String]] = Map.empty
 
+  override def run(testName: Option[String], args: Args): Status = {
+    val status = new StatefulStatus
+    val tracker = args.tracker
+
+    try {
+      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
+        doRun(tracker, testName, args)
+      } else {
+        addStub(args, tracker, None)
+      }
+    } catch {
+      case t: Throwable =>
+        // IDEA reporter is insane
+        //status.setFailedWith(t)
+        addStub(args, tracker, Some(t))
+
+    } finally {
+      status.setCompleted()
+    }
+
+    status
+  }
+
   protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F](this.getClass)
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap = ConfigMap.empty): TestData = {
@@ -191,29 +214,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
 
     runner.run()
-  }
-
-  override def run(testName: Option[String], args: Args): Status = {
-    val status = new StatefulStatus
-    val tracker = args.tracker
-
-    try {
-      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
-        doRun(tracker, testName, args)
-      } else {
-        addStub(args, tracker, None)
-      }
-    } catch {
-      case t: Throwable =>
-        // IDEA reporter is insane
-        //status.setFailedWith(t)
-        addStub(args, tracker, Some(t))
-
-    } finally {
-      status.setCompleted()
-    }
-
-    status
   }
 
 

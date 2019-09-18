@@ -18,9 +18,8 @@ object DistageTestsRegistrySingleton {
   def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]])
   }
-
-
-  private def runTracker = new ConcurrentHashMap[SafeType, Boolean]()
+  
+  private val runTracker = new ConcurrentHashMap[SafeType, Boolean]()
 
   def ticketToProceed[F[_]: TagK](): Boolean = {
     val tpe = SafeType.getK[F]
