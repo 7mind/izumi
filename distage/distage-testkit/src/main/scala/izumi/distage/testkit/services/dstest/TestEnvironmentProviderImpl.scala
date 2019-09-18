@@ -52,8 +52,8 @@ class TestEnvironmentProviderImpl
     val roles = loadRoles(logger)
     val appActivation = AppActivation(env.availableActivations, activation)
     TestEnvironment(
-      env.bsModule overridenBy bootstrapOverrides,
-      env.appModule overridenBy moduleOverrides,
+      env.bsModule /*overridenBy bootstrapOverrides*/,
+      env.appModule /*overridenBy moduleOverrides*/,
       roles,
       appActivation,
       memoizedKeys,

@@ -1,5 +1,7 @@
 package izumi.distage.testkit.distagesuite.fixtures
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import cats.effect.IO
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
@@ -18,7 +20,14 @@ class MockRedis[F[_]]()
 class MockUserRepository[F[_]](val pg: MockPostgresDriver[F])
 
 class MockCache[F[_]](val redis: MockRedis[F]) extends IntegrationCheck {
+  if (MockCache.instanceCounter.incrementAndGet() > 2) { // one instance per each monad
+    throw new RuntimeException(s"Something is wrong with memoization: ${MockCache.instanceCounter.get()} instances were created")
+  }
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
+}
+
+object MockCache {
+  val instanceCounter = new AtomicInteger()
 }
 
 class ApplePaymentProvider[F[_]]() extends IntegrationCheck {
