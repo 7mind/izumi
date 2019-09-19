@@ -78,6 +78,9 @@ class LightTypeTagTest extends WordSpec {
   trait J3
   trait J[F[_]] extends J1[F] with J2 with J3
 
+  trait RoleParent[F[_]]
+  trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
+
   def println(o: Any): Unit = info(o.toString)
 
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
@@ -252,6 +255,11 @@ class LightTypeTagTest extends WordSpec {
 
       assertDifferent(LTT[a1.A], LTT[Int])
       assertDifferent(LTT[a1.A], LTT[a2.A])
+    }
+
+    "support subtyping of parents parameterized with type lambdas" in {
+      implicitly[RoleChild[Either] <:< RoleParent[Either[Throwable, ?]]]
+      assertChild(LTT[RoleChild[Either]], LTT[RoleParent[Either[Throwable, ?]]])
     }
 
     "support complex type lambdas" in {
