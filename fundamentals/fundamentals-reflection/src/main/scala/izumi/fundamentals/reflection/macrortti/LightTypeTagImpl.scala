@@ -108,11 +108,14 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     val out = makeRef(tpe)
 
     val stableBases = UniRefinement.breakRefinement(tpe).toSet
-      .flatMap(tpeBases)
-      .filterNot(_.takesTypeArgs)
-      .map {
-        ref =>
-          (out, makeRef(ref))
+      .flatMap {
+        tpePart =>
+          tpeBases(tpePart)
+            .filterNot(_.takesTypeArgs)
+            .map {
+              b =>
+                (makeRef(tpePart), makeRef(b))
+            }
       }
 
     val allReferenceComponents = allTypeReferences(tpe)
@@ -123,10 +126,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
     val unparameterizedInheritanceData = makeUnparameterizedInheritanceDb(allReferenceComponents)
 
-    val basesAsLambdas = makeBaseClasses(tpe, Some(out))
-    val al = allReferenceComponents.flatMap(a => makeBaseClasses(a, None))
+    val basesAsLambdas = allReferenceComponents.flatMap(makeBaseClasses)
 
-    val basesdb = Seq(basesAsLambdas, al, stableBases).flatten.toMultimap.filterNot(_._2.isEmpty)
+    val basesdb = Seq(
+      basesAsLambdas,
+      stableBases,
+    ).flatten.toMultimap.filterNot(_._2.isEmpty)
     LightTypeTag(out, basesdb, unparameterizedInheritanceData)
   }
 
@@ -177,7 +182,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     unparameterizedInheritanceData
   }
 
-  private def makeBaseClasses(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
+  private def makeBaseClasses(t: Type): Seq[(AbstractReference, AbstractReference)] = {
     def baseLambdas(tpe: Type): Seq[AbstractReference] = {
       val basetypes = tpe.baseClasses.map(b => tpe.baseType(b)).filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
       val targs = tpe.etaExpand.typeParams
@@ -214,7 +219,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
             r.etaExpand
           }
 
-          val tref = ref.getOrElse(makeRef(t))
+          val tref = makeRef(t)
 
           val res = baseLambdas(t)
             .collect {
