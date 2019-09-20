@@ -107,24 +107,28 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   def makeFullTagImpl(tpe: Type): LightTypeTag = {
     val out = makeRef(tpe)
 
-    val stableBases = UniRefinement.breakRefinement(tpe).toSet
-      .flatMap {
-        tpePart =>
-          tpeBases(tpePart)
-            .filterNot(_.takesTypeArgs)
-            .map {
-              b =>
-                (makeRef(tpePart), makeRef(b))
-            }
-      }
-
     val allReferenceComponents = allTypeReferences(tpe)
       .flatMap {
         t =>
           UniRefinement.breakRefinement(t).toSet
       }
 
-    val unparameterizedInheritanceData = makeUnparameterizedInheritanceDb(allReferenceComponents)
+    val baseclassReferences: Set[(u.Type, AbstractReference)] = allReferenceComponents
+      .flatMap {
+        i =>
+          val allbases = tpeBases(i)
+            .filterNot(_.takesTypeArgs)
+          allbases.map {
+            b =>
+              (i, makeRef(b))
+          }
+      }
+
+    val stableBases = baseclassReferences.map {
+      case (b, p) =>
+        makeRef(b) -> p
+    }
+    val unparameterizedInheritanceData = makeUnparameterizedInheritanceDb(baseclassReferences)
 
     val basesAsLambdas = allReferenceComponents.flatMap(makeBaseClasses)
 
@@ -135,17 +139,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     LightTypeTag(out, basesdb, unparameterizedInheritanceData)
   }
 
-  private def makeUnparameterizedInheritanceDb(allReferenceComponents: Set[u.Type]): Map[NameReference, Set[NameReference]] = {
-    val baseclassReferences = allReferenceComponents
-      .flatMap {
-        i =>
-          val allbases = tpeBases(i)
-            .filterNot(_.takesTypeArgs)
-          allbases.map {
-            b =>
-              (i, makeRef(b))
-          }
-      }
+  private def makeUnparameterizedInheritanceDb(baseclassReferences: Set[(u.Type, AbstractReference)]): Map[NameReference, Set[NameReference]] = {
+
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
         val tpef = i.dealias.resultType
