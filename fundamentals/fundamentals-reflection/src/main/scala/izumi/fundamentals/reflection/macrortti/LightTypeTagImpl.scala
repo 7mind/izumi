@@ -9,6 +9,7 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.Broken
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
+import izumi.fundamentals.collections.IzCollections._
 
 import scala.collection.mutable
 import scala.reflect.api.Universe
@@ -105,16 +106,32 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
   def makeFullTagImpl(tpe: Type): LightTypeTag = {
     val out = makeRef(tpe)
-    val inh = allTypeReferences(tpe)
 
-    import izumi.fundamentals.collections.IzCollections._
-    val inhUnrefined = inh
+    val stableBases = UniRefinement.breakRefinement(tpe).toSet
+      .flatMap(tpeBases)
+      .filterNot(_.takesTypeArgs)
+      .map {
+        ref =>
+          (out, makeRef(ref))
+      }
+
+    val allReferenceComponents = allTypeReferences(tpe)
       .flatMap {
         t =>
           UniRefinement.breakRefinement(t).toSet
       }
 
-    val baseRefs = inhUnrefined
+    val unparameterizedInheritanceData = makeUnparameterizedInheritanceDb(allReferenceComponents)
+
+    val basesAsLambdas = makeBaseClasses(tpe, Some(out))
+    val al = allReferenceComponents.flatMap(a => makeBaseClasses(a, None))
+
+    val basesdb = Seq(basesAsLambdas, al, stableBases).flatten.toMultimap.filterNot(_._2.isEmpty)
+    LightTypeTag(out, basesdb, unparameterizedInheritanceData)
+  }
+
+  private def makeUnparameterizedInheritanceDb(allReferenceComponents: Set[u.Type]): Map[NameReference, Set[NameReference]] = {
+    val baseclassReferences = allReferenceComponents
       .flatMap {
         i =>
           val allbases = tpeBases(i)
@@ -124,43 +141,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
               (i, makeRef(b))
           }
       }
-
-    val stableBases = baseRefs.map {
-      case (_, ref) =>
-        (out, ref)
-    }
-
-    /*
-        val inhdb = inhUnrefined
-          .flatMap {
-            i =>
-              val tpef = i.dealias.resultType
-              val targetNameRef = tpef.typeSymbol.fullName
-              val prefix = toPrefix(tpef)
-              val targetRef = NameReference(targetNameRef, prefix = prefix)
-
-              val srcname = i match {
-                case a: TypeRefApi =>
-                  val srcname = a.sym.fullName
-                  if (srcname != targetNameRef) {
-                    Seq((NameReference(srcname, prefix = toPrefix(i)), targetRef))
-                  } else {
-                    Seq.empty
-                  }
-
-                case _ =>
-                  Seq.empty
-              }
-
-              val allbases = tpeBases(i)
-                .filterNot(_.takesTypeArgs)
-              srcname ++ allbases.map {
-                b =>
-                  (targetRef, makeRef(b))
-              }
-          }
-     */
-    val inhdb = baseRefs.flatMap {
+    val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
         val tpef = i.dealias.resultType
         val targetNameRef = tpef.typeSymbol.fullName
@@ -193,12 +174,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
             .filterNot(_ == t)
       }
       .filterNot(_._2.isEmpty)
-
-    val basesAsLambdas = makeBaseClasses(tpe, Some(out))
-    val al = inhUnrefined.flatMap(a => makeBaseClasses(a, None))
-
-    val basesdb = Seq(basesAsLambdas, al, stableBases).flatten.toMultimap.filterNot(_._2.isEmpty)
-    LightTypeTag(out, basesdb, inhdb)
+    unparameterizedInheritanceData
   }
 
   private def makeBaseClasses(t: Type, ref: Option[AbstractReference]): Seq[(AbstractReference, AbstractReference)] = {
