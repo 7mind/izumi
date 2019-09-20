@@ -91,41 +91,47 @@ class LightTypeTagTest extends WordSpec {
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =?= $expected")
-    assert(t =:= expected)
+    val clue = s"$t =?= $expected"
+    info(clue)
+    assert(t =:= expected, clue)
     ()
   }
 
   def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =!= $expected")
-    assert(!(t =:= expected))
+    val clue = s"$t =!= $expected"
+    info(clue)
+    assert(!(t =:= expected), clue)
     ()
   }
 
   def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <?< $parent")
-    assert(child <:< parent)
+    val clue = s"$child <?< $parent"
+    info(clue)
+    assert(child <:< parent, clue)
     ()
   }
 
   def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <!< $parent")
-    assert(!(child <:< parent))
+    val clue = s"$child <!< $parent"
+    info(clue)
+    assert(!(child <:< parent), clue)
     ()
   }
 
 
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
-    info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
-    assert(combined =:= expected)
+    val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 
   def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
-    info(s"($outer)•($inner) => $combined =?= $expected")
-    assert(combined =:= expected)
+    val clue = s"($outer)•($inner) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 

@@ -73,8 +73,34 @@ object LightTypeTagRef {
       paramRefs.diff(referenced).isEmpty
     }
 
+    def normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
+    def normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
+
+    override def equals(obj: Any): Boolean = {
+      obj match {
+        case l: Lambda =>
+          if (input.size == l.input.size) {
+            normalizedOutput == l.normalizedOutput
+          } else {
+            false
+          }
+
+        case _ =>
+          false
+      }
+    }
+
     override def toString: String = this.render()
+
+    private def makeFakeParams = {
+      input.zipWithIndex.map {
+        case (p, idx) =>
+          p.name -> NameReference(s"!FAKE_${idx}")
+      }
+    }
   }
+
+
 
   final case class LambdaParameter(name: String) {
     override def toString: String = this.render()

@@ -49,19 +49,20 @@ protected[izumi] object RuntimeAPI {
     if (newParams.isEmpty) {
       replaced
     } else {
-      val renamed = newParams.zipWithIndex.map {
-        case (p, idx) =>
-          p.name -> idx.toString
-      }
-      val nr = newParams.zipWithIndex.map {
-        case (_, idx) =>
-          LambdaParameter(idx.toString)
-      }
-      val rewriter = new Rewriter(renamed.toMap)((self, n, v) => {
-        NameReference(v, self.replaceBoundaries(n.boundaries), self.replacePrefix(n.prefix))
-      })
-
-      val out = Lambda(nr, rewriter.replaceRefs(replaced))
+      val out = Lambda(newParams, replaced)
+//      val renamed = newParams.zipWithIndex.map {
+//        case (p, idx) =>
+//          p.name -> idx.toString
+//      }
+//      val nr = newParams.zipWithIndex.map {
+//        case (_, idx) =>
+//          LambdaParameter(idx.toString)
+//      }
+//      val rewriter = new Rewriter(renamed.toMap)((self, n, v) => {
+//        NameReference(v, self.replaceBoundaries(n.boundaries), self.replacePrefix(n.prefix))
+//      })
+//
+//      val out = Lambda(nr, rewriter.replaceRefs(replaced))
       assert(out.allArgumentsReferenced, s"bad lambda: $out, ${out.paramRefs}, ${out.referenced}")
       out
     }

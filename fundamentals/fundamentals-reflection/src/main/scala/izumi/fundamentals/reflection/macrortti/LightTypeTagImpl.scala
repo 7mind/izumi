@@ -425,9 +425,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       case (p, idx) =>
         val name = ctxid match {
           case Some(value) =>
-            //s"$value:${idx.toString}"
-            idx.toString
-
+            s"$value:${idx.toString}"
           case None =>
             idx.toString
         }
