@@ -22,7 +22,7 @@ object V {
   val circe_derivation = "0.12.0-M7"
   val jawn = "0.14.2"
 
-  val http4s = "0.21.0-M4"
+  val http4s = "0.21.0-M5"
 
   val scalameta = "4.2.3"
   val fastparse = "2.1.3"
