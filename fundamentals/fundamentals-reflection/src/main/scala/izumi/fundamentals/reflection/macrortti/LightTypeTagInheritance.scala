@@ -4,6 +4,7 @@ import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 
@@ -31,7 +32,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   def isChild(): Boolean = {
     val st = self.ref
     val ot = other.ref
-    val logger = TrivialLogger.make[this.type]("izumi.distage.debug.reflection")
+    val logger = TrivialLogger.make[this.type]("izumi.distage.debug.reflection", Config())
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
