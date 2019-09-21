@@ -78,6 +78,9 @@ class LightTypeTagTest extends WordSpec {
   trait J3
   trait J[F[_]] extends J1[F] with J2 with J3
 
+  trait RoleParent[F[_]]
+  trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
+
   def println(o: Any): Unit = info(o.toString)
 
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
@@ -88,48 +91,54 @@ class LightTypeTagTest extends WordSpec {
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =?= $expected")
-    assert(t =:= expected)
+    val clue = s"$t =?= $expected"
+    info(clue)
+    assert(t =:= expected, clue)
     ()
   }
 
   def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =!= $expected")
-    assert(!(t =:= expected))
+    val clue = s"$t =!= $expected"
+    info(clue)
+    assert(!(t =:= expected), clue)
     ()
   }
 
   def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <?< $parent")
-    assert(child <:< parent)
+    val clue = s"$child <?< $parent"
+    info(clue)
+    assert(child <:< parent, clue)
     ()
   }
 
   def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <!< $parent")
-    assert(!(child <:< parent))
+    val clue = s"$child <!< $parent"
+    info(clue)
+    assert(!(child <:< parent), clue)
     ()
   }
 
 
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
-    info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
-    assert(combined == expected)
+    val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 
   def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
-    info(s"($outer)•($inner) => $combined =?= $expected")
-    assert(combined == expected)
+    val clue = s"($outer)•($inner) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 
   def assertCombineNonPos(outer: LightTypeTag, inner: Seq[Option[LightTypeTag]], expected: LightTypeTag): Unit = {
     val combined = outer.combineNonPos(inner: _*)
     info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
-    assert(combined == expected)
+    assert(combined =:= expected)
     ()
   }
 
@@ -252,6 +261,11 @@ class LightTypeTagTest extends WordSpec {
 
       assertDifferent(LTT[a1.A], LTT[Int])
       assertDifferent(LTT[a1.A], LTT[a2.A])
+    }
+
+    "support subtyping of parents parameterized with type lambdas" in {
+      implicitly[RoleChild[Either] <:< RoleParent[Either[Throwable, ?]]]
+      assertChild(LTT[RoleChild[Either]], LTT[RoleParent[Either[Throwable, ?]]])
     }
 
     "support complex type lambdas" in {

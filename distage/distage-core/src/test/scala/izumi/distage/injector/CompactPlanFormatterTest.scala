@@ -38,7 +38,7 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     println(formatted)
     assert(!formatted.contains(classOf[Impl1].getName))
     assert(formatted.contains("Impl1"))
-    assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %0 → Either[+Nothing,+0],=Unit]}"))
+    assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %1:0 → Either[+Nothing,+1:0],=Unit]}"))
     assert(formatted.contains("{type.CompactPlanFormatterTest::W1::izumi.distage.injector.CompactPlanFormatterTest.W1.T2}"))
   }
 }

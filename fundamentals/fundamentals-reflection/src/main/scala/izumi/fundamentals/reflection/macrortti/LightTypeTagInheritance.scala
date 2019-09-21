@@ -4,6 +4,7 @@ import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
 
@@ -31,7 +32,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   def isChild(): Boolean = {
     val st = self.ref
     val ot = other.ref
-    val logger = TrivialLogger.make[this.type]("izumi.distage.debug.reflection")
+    val logger = TrivialLogger.make[this.type]("izumi.distage.debug.reflection", Config())
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
@@ -94,7 +95,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       case (s: Lambda, t: AppliedNamedReference) =>
         isChild(ctx.next(s.input))(s.output, t)
       case (s: Lambda, o: Lambda) =>
-        s.input == o.input && isChild(ctx.next(s.input))(s.output, o.output)
+        s.input.size == o.input.size && isChild(ctx.next(s.normalizedParams.map(p => LambdaParameter(p.ref))))(s.normalizedOutput, o.normalizedOutput)
       case (s: IntersectionReference, t: IntersectionReference) =>
         // yeah, this shit is quadratic
         s.refs.forall {
@@ -149,7 +150,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
         .map(l => l.combine(self.parameters.map(_.ref)))
       }).flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
-      moreParents
+      (allParents ++ moreParents)
         .exists {
           l =>
             val maybeParent = l
