@@ -95,7 +95,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       case (s: Lambda, t: AppliedNamedReference) =>
         isChild(ctx.next(s.input))(s.output, t)
       case (s: Lambda, o: Lambda) =>
-        s.input.size == o.input.size && isChild(ctx.next(s.input))(s.normalizedOutput, o.normalizedOutput)
+        s.input.size == o.input.size && isChild(ctx.next(s.normalizedParams.map(p => LambdaParameter(p.ref))))(s.normalizedOutput, o.normalizedOutput)
       case (s: IntersectionReference, t: IntersectionReference) =>
         // yeah, this shit is quadratic
         s.refs.forall {
@@ -150,7 +150,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
         .map(l => l.combine(self.parameters.map(_.ref)))
       }).flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
-      moreParents
+      (allParents ++ moreParents)
         .exists {
           l =>
             val maybeParent = l
