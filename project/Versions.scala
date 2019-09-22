@@ -14,7 +14,7 @@ object V {
 
   val cats = "2.0.0"
   val cats_effect = "2.0.0"
-  val zio = "1.0.0-RC12-1"
+  val zio = "1.0.0-RC13"
   val zio_interop_cats = "2.0.0.0-RC3"
 
   val circe = "0.12.1"
