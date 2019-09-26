@@ -19,5 +19,5 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
 
 addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.6.0")
 
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.2")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.4")
 
