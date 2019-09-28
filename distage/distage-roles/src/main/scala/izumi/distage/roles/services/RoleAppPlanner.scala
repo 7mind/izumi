@@ -6,7 +6,7 @@ import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import distage.{BootstrapModule, DIKey, Injector}
 
 trait RoleAppPlanner[F[_]] {
-  def reboot(bsModule: BootstrapModule): RoleAppPlannerImpl[F]
+  def reboot(bsModule: BootstrapModule): RoleAppPlanner[F]
   def makePlan(appMainRoots: Set[DIKey], appModule: ModuleBase): AppStartupPlans
 }
 
