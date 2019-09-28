@@ -331,8 +331,8 @@ class DSLTest extends WordSpec {
       val definition = new ModuleDef {
         bind[ImplXYZ]
           .to[TraitX].named("simple")
-          .to[TraitY]
-          .to[TraitZ]
+          .to[TraitY]//.named("skdfjls")
+          .to[TraitZ]//.named("slkdjfl")
       }
 
       assert(definition === Module.make(
