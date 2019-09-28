@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.26`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.32`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
 
@@ -36,7 +36,7 @@ object Izumi {
   }
 
   val settings = GlobalSettings(
-    groupId = "io.7mind.izumi"
+    groupId = "io.7mind.izumi",
   )
 
   object Deps {
@@ -115,6 +115,7 @@ object Izumi {
     final val fundamentals = Set(Group("fundamentals"))
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
+    final val idealingua = Set(Group("idealingua"))
     final val docs = Set(Group("docs"))
     final val sbt = Set(Group("sbt"))
   }
@@ -571,7 +572,7 @@ object Izumi {
       ),
     ),
     pathPrefix = Projects.idealingua.basePath,
-    groups = Groups.logstage,
+    groups = Groups.idealingua,
     defaultPlatforms = Targets.cross,
   )
 
