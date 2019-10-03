@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.26`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.34`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
 
@@ -30,13 +30,23 @@ object Izumi {
     val scala_java_time = Version.VExpr("V.scala_java_time")
   }
 
+  object PV {
+    val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
+    val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
+    val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
+    val sbt_site = Version.VExpr("PV.sbt_site")
+    val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
+    val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
+    val sbt_pgp = Version.VExpr("PV.sbt_pgp")
+    val sbt_assembly = Version.VExpr("PV.sbt_assembly")
+  }
 
   def entrypoint(args: Seq[String]) = {
     Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args)
   }
 
   val settings = GlobalSettings(
-    groupId = "io.7mind.izumi"
+    groupId = "io.7mind.izumi",
   )
 
   object Deps {
@@ -115,6 +125,7 @@ object Izumi {
     final val fundamentals = Set(Group("fundamentals"))
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
+    final val idealingua = Set(Group("idealingua"))
     final val docs = Set(Group("docs"))
     final val sbt = Set(Group("sbt"))
   }
@@ -571,7 +582,7 @@ object Izumi {
       ),
     ),
     pathPrefix = Projects.idealingua.basePath,
-    groups = Groups.logstage,
+    groups = Groups.idealingua,
     defaultPlatforms = Targets.cross,
   )
 
@@ -705,14 +716,14 @@ object Izumi {
     globalPlugins = Projects.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
-      SbtPlugin("com.eed3si9n", "sbt-assembly", "0.14.9"),
-      SbtPlugin("com.jsuereth", "sbt-pgp", "2.0.0-M2"),
-      SbtPlugin("org.scoverage", "sbt-scoverage", "1.6.0"),
-      SbtPlugin("com.eed3si9n", "sbt-unidoc", "0.4.2"),
-      SbtPlugin("com.typesafe.sbt", "sbt-site", "1.3.3"),
-      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", "0.6.3"),
-      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", "0.6.0"),
-      SbtPlugin("org.scalameta", "sbt-mdoc", "1.3.2"),
+      SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
+      SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
+      SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
+      SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
+      SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     )
   )
 }

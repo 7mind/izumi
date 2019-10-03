@@ -1,23 +1,23 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.26")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.35")
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.26")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.35")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % PV.sbt_assembly)
 
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0-M2")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % PV.sbt_pgp)
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.0")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % PV.sbt_scoverage)
 
-addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
+addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % PV.sbt_unidoc)
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-site" % PV.sbt_site)
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 
-addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.6.0")
+addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
 
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.4")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % PV.sbt_mdoc)
 

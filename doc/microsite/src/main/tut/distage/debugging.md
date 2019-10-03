@@ -28,10 +28,10 @@ System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
 The printer highlights circular dependencies.
 
 distage also uses some macros to create `TagK`s and [function bindings](#function-bindings),
-you can turn on macro debug output during compilation by setting `-Dizumi.distage.debug.macro=true` java property:
+you can turn on macro debug output during compilation by setting `-Dizumi.debug.macro.rtti=true` java property:
 
 ```bash
-sbt -Dizumi.distage.debug.macro=true compile
+sbt -Dizumi.debug.macro.rtti=true compile
 ```
 
 Macros power `distage-static` module, an alternative backend that does not use JVM runtime reflection to instantiate classes and auto-traits.
