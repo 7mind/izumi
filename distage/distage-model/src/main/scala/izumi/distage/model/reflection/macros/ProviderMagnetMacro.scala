@@ -13,9 +13,9 @@ final class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: black
 }
 
 /**
-* To see macro debug output during compilation, set `-Dizumi.distage.debug.macro=true` java property! e.g.
+* To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
 * {{{
-* sbt -Dizumi.distage.debug.macro=true compile
+* sbt -Dizumi.debug.macro.rtti=true compile
 * }}}
 */
 // TODO: bench and optimize
