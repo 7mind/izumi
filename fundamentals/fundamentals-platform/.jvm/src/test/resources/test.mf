@@ -11,7 +11,7 @@ X-Built-By: root
 X-Build-JDK: 1.8.0_111
 X-Git-Branch: develop
 X-Build-Timestamp: 2018-07-06T13:15:15.265Z
-X-Version: 0.1.0-SNAPSHOT
+X-Version: 0.1.0-SNAPSHqOT
 X-Git-Repo-Is-Clean: true
 X-Build-SBT: 1.2.8
 X-Build-Scala: 2.12.8

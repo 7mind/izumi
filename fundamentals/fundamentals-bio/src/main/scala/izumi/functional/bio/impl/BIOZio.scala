@@ -1,5 +1,6 @@
 package izumi.functional.bio.impl
 
+import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIO, BIOAsync, BIOExit}
 import zio.{ZIO, ZSchedule}
 import zio.clock.Clock
@@ -10,7 +11,7 @@ import scala.util.Try
 
 object BIOZio extends BIOZio[Any]
 
-class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
+class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
   @inline override final def pure[A](a: A): IO[Nothing, A] = ZIO.succeed(a)
@@ -54,12 +55,12 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] with BIOExit.ZIO {
   }
 
   @inline override final def bracketCase[E, A, B](acquire: IO[E, A])(release: (A, BIOExit[E, B]) => IO[Nothing, Unit])(use: A => IO[E, B]): IO[E, B] = {
-    ZIO.bracketExit[R, E, A, B](acquire, { case (a, exit) => release(a, toBIOExit(exit)) }, use)
+    ZIO.bracketExit[R, E, A, B](acquire, { case (a, exit) => release(a, ZIOExit.toBIOExit(exit)) }, use)
   }
 
   @inline override final def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreach(l)(f)
 
-  @inline override final def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(toBIOExit[E])
+  @inline override final def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(ZIOExit.toBIOExit[E])
 }
 
 class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R, +?, +?]] {

@@ -11,6 +11,15 @@ trait ModuleBase {
   def bindings: Set[Binding]
   type Self <: ModuleBase
 
+
+  override def hashCode(): Int = bindings.hashCode()
+
+  override def equals(obj: Any): Boolean = obj match {
+    case m: ModuleBase =>
+      m.bindings == this.bindings
+    case o => false
+  }
+
   final def keys: Set[DIKey] = bindings.map(_.key)
   override final def toString: String = bindings.toString()
 }

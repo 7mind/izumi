@@ -2,11 +2,12 @@ package izumi.distage.testkit.services.dstest
 
 import java.util.concurrent.TimeUnit
 
+import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
+import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{TagK, _}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.distage.model.{Locator, SplittedPlan}
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
@@ -14,20 +15,14 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.jvm.CodePosition
-import distage.{DIKey, Injector, PlannerInput}
 
 import scala.concurrent.duration.FiniteDuration
-
-// a marker trait just for our demo purposes. All the entities inheriting this trait will be shared between tests contexts
-trait TODOMemoizeMe {}
-
-
 
 class DistageTestRunner[F[_] : TagK](
                                       reporter: TestReporter,
                                       integrationChecker: IntegrationChecker,
                                       runnerEnvironment: DistageTestEnvironment[F],
-                                      tests: Seq[DistageTest[F]]
+                                      tests: Seq[DistageTest[F]],
                                     ) {
 
   import DistageTestRunner._
@@ -35,13 +30,18 @@ class DistageTestRunner[F[_] : TagK](
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
 
+    val logger = runnerEnvironment.makeLogger()
+    val options = runnerEnvironment.contextOptions()
+    val loader = runnerEnvironment.makeConfigLoader(logger)
+
+    val config = loader.buildConfig()
+    val checker = new PlanCircularDependencyCheck(options, logger)
+
+    logger.info(s"Starting tests across ${groups.size -> "num envs"}")
+    logger.trace(s"Env contents: ${groups.keys -> "test environments"}")
+
     groups.foreach {
       case (env, group) =>
-        val logger = runnerEnvironment.makeLogger()
-        val options = runnerEnvironment.contextOptions()
-        val loader = runnerEnvironment.makeConfigLoader(logger)
-        val config = loader.buildConfig()
-        val checker = new PlanCircularDependencyCheck(options, logger)
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
@@ -70,12 +70,13 @@ class DistageTestRunner[F[_] : TagK](
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testplans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(op => ExecutableOp.instanceType(op) <:< SafeType.get[TODOMemoizeMe]).map(_.target)
+            plan.steps.filter(env memoizedKeys _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
+        logger.info(s"Memoized components in env $sharedKeys")
+
         val shared = injector.splitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {
-          merged =>
-            merged.collectChildren[IntegrationCheck].map(_.target).toSet
+          _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
         //        println(shared.primary.render())
@@ -93,6 +94,7 @@ class DistageTestRunner[F[_] : TagK](
 
             runner.run {
               // now we produce integration components for our shared plan
+              checker.verify(shared.subplan)
               Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
                 sharedIntegrationLocator =>
                   check(testplans.map(_._1), shared, effect, sharedIntegrationLocator) {
@@ -121,7 +123,6 @@ class DistageTestRunner[F[_] : TagK](
   private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
-    checker.verify(shared.subplan)
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
       sharedLocator =>
         val testInjector = Injector.inherit(sharedLocator)
@@ -140,7 +141,7 @@ class DistageTestRunner[F[_] : TagK](
                 case (test, testplan) =>
                   val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
 
-                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, testplan) {
+                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, allSharedKeys, testplan) {
                     _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   }
 
@@ -184,7 +185,7 @@ class DistageTestRunner[F[_] : TagK](
         for {
           before <- effect.maybeSuspend(System.nanoTime())
           _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
-          _ <- effect.definitelyRecover(doRun(before), doRecover(before))
+          _ <- effect.definitelyRecoverCause(doRun(before))(doRecover(before))
         } yield ()
     }
   }

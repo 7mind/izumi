@@ -11,7 +11,7 @@ import org.scalatest.events._
 
 import scala.collection.immutable.TreeSet
 
-trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] {
+trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
 
   override final protected def runNestedSuites(args: Args): Status = {
@@ -47,6 +47,29 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
   }
 
   override def tags: Map[String, Set[String]] = Map.empty
+
+  override def run(testName: Option[String], args: Args): Status = {
+    val status = new StatefulStatus
+    val tracker = args.tracker
+
+    try {
+      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
+        doRun(tracker, testName, args)
+      } else {
+        addStub(args, tracker, None)
+      }
+    } catch {
+      case t: Throwable =>
+        // IDEA reporter is insane
+        //status.setFailedWith(t)
+        addStub(args, tracker, Some(t))
+
+    } finally {
+      status.setCompleted()
+    }
+
+    status
+  }
 
   protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F](this.getClass)
 
@@ -188,34 +211,9 @@ trait DistageScalatestTestSuite[F[_]] extends Suite with AbstractDistageSpec[F] 
         }
     }
 
-
     val runner = new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
 
-
     runner.run()
-  }
-
-  override def run(testName: Option[String], args: Args): Status = {
-    val status = new StatefulStatus
-    val tracker = args.tracker
-
-    try {
-      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
-        doRun(tracker, testName, args)
-      } else {
-        addStub(args, tracker, None)
-      }
-    } catch {
-      case t: Throwable =>
-        // IDEA reporter is insane
-        //status.setFailedWith(t)
-        addStub(args, tracker, Some(t))
-
-    } finally {
-      status.setCompleted()
-    }
-
-    status
   }
 
 

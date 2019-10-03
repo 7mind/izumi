@@ -19,6 +19,16 @@ sealed trait Binding {
   def withTarget[K <: DIKey](key: K): Binding
   def addTags(tags: Set[BindingTag]): Binding
 
+
+  override def hashCode(): Int = group.hashCode()
+
+  override def equals(obj: Any): Boolean = obj match {
+    case b: Binding =>
+      b.group == this.group && b.tags == this.tags
+    case _ =>
+      false
+  }
+
   protected[distage] def withTags(tags: Set[BindingTag]): Binding
 }
 

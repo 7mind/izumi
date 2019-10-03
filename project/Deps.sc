@@ -1,52 +1,90 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.24`, izumi.sbtgen._, izumi.sbtgen.model._
-import $file.Versions, Versions._
-
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.34`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
+
+  object V {
+    val scala_212 = Version.VExpr("V.scala_212")
+    val scala_213 = Version.VExpr("V.scala_213")
+    val collection_compat = Version.VExpr("V.collection_compat")
+    val kind_projector = Version.VExpr("V.kind_projector")
+    val scalatest = Version.VExpr("V.scalatest")
+    val boopickle = Version.VExpr("V.boopickle")
+    val shapeless = Version.VExpr("V.shapeless")
+    val cats = Version.VExpr("V.cats")
+    val cats_effect = Version.VExpr("V.cats_effect")
+    val zio = Version.VExpr("V.zio")
+    val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
+    val circe = Version.VExpr("V.circe")
+    val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
+    val circe_derivation = Version.VExpr("V.circe_derivation")
+    val jawn = Version.VExpr("V.jawn")
+    val http4s = Version.VExpr("V.http4s")
+    val scalameta = Version.VExpr("V.scalameta")
+    val fastparse = Version.VExpr("V.fastparse")
+    val scala_xml = Version.VExpr("V.scala_xml")
+    val asynchttpclient = Version.VExpr("V.asynchttpclient")
+    val classgraph = Version.VExpr("V.classgraph")
+    val slf4j = Version.VExpr("V.slf4j")
+    val typesafe_config = Version.VExpr("V.typesafe_config")
+    val cglib_nodep = Version.VExpr("V.cglib_nodep")
+    val scala_java_time = Version.VExpr("V.scala_java_time")
+  }
+
+  object PV {
+    val sbt_mdoc = Version.VExpr("PV.sbt_mdoc")
+    val sbt_paradox_material_theme = Version.VExpr("PV.sbt_paradox_material_theme")
+    val sbt_ghpages = Version.VExpr("PV.sbt_ghpages")
+    val sbt_site = Version.VExpr("PV.sbt_site")
+    val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
+    val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
+    val sbt_pgp = Version.VExpr("PV.sbt_pgp")
+    val sbt_assembly = Version.VExpr("PV.sbt_assembly")
+  }
+
   def entrypoint(args: Seq[String]) = {
     Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args)
   }
 
   val settings = GlobalSettings(
-    groupId = "io.7mind.izumi"
+    groupId = "io.7mind.izumi",
   )
 
   object Deps {
-    final val collection_compat = Library("org.scala-lang.modules", "scala-collection-compat", V.collection_compat)
-    final val scalatest = Library("org.scalatest", "scalatest", V.scalatest) in Scope.Test.all
+    final val collection_compat = Library("org.scala-lang.modules", "scala-collection-compat", V.collection_compat, LibraryType.Auto)
+    final val scalatest = Library("org.scalatest", "scalatest", V.scalatest, LibraryType.Auto) in Scope.Test.all
 
-    final val cats_core = Library("org.typelevel", "cats-core", V.cats)
-    final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect)
+    final val cats_core = Library("org.typelevel", "cats-core", V.cats, LibraryType.Auto)
+    final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect, LibraryType.Auto)
     final val cats_all = Seq(
-      cats_core
-      , cats_effect
+      cats_core,
+      cats_effect,
     )
 
     final val circe = Seq(
-      Library("io.circe", "circe-core", V.circe),
-      Library("io.circe", "circe-parser", V.circe),
-      Library("io.circe", "circe-literal", V.circe),
-      Library("io.circe", "circe-generic-extras", V.circe_generic_extras),
-      Library("io.circe", "circe-derivation", V.circe_derivation),
+      Library("io.circe", "circe-core", V.circe, LibraryType.Auto),
+      Library("io.circe", "circe-parser", V.circe, LibraryType.Auto),
+      Library("io.circe", "circe-literal", V.circe, LibraryType.Auto),
+      Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
+      Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto),
     ).map(_ in Scope.Compile.all)
 
-    final val zio_core = Library("dev.zio", "zio", V.zio)
-    final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats)
+    final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
+    final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
     final val zio_all = Seq(
       zio_core,
       zio_interop_cats,
     )
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
-    final val boopickle = Library("io.suzaku", "boopickle", V.boopickle) in Scope.Compile.all
+    final val boopickle = Library("io.suzaku", "boopickle", V.boopickle, LibraryType.Auto) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
-    final val scala_xml = Library("org.scala-lang.modules", "scala-xml", V.scala_xml) in Scope.Compile.all
-    final val scalameta = Library("org.scalameta", "scalameta", V.scalameta) in Scope.Compile.all
+    final val scala_xml = Library("org.scala-lang.modules", "scala-xml", V.scala_xml, LibraryType.Auto) in Scope.Compile.all
+    final val scalameta = Library("org.scalameta", "scalameta", V.scalameta, LibraryType.Auto) in Scope.Compile.all
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
 
@@ -54,22 +92,22 @@ object Izumi {
     final val projector = Library("org.typelevel", "kind-projector", "0.10.3", LibraryType.AutoJvm)
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
-    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time) in Scope.Compile.all
-    final val shapeless = Library("com.chuusai", "shapeless", V.shapeless) in Scope.Compile.all
+    final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.all
+    final val shapeless = Library("com.chuusai", "shapeless", V.shapeless, LibraryType.Auto) in Scope.Compile.all
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant) in Scope.Compile.jvm
     final val slf4j_simple = Library("org.slf4j", "slf4j-simple", V.slf4j, LibraryType.Invariant) in Scope.Test.jvm
 
-    final val fastparse = Library("com.lihaoyi", "fastparse", V.fastparse) in Scope.Compile.all
+    final val fastparse = Library("com.lihaoyi", "fastparse", V.fastparse, LibraryType.Auto) in Scope.Compile.all
 
     final val http4s_client = Seq(
-      Library("org.http4s", "http4s-blaze-client", V.http4s),
+      Library("org.http4s", "http4s-blaze-client", V.http4s, LibraryType.Auto),
     )
 
     val http4s_server = Seq(
-      Library("org.http4s", "http4s-dsl", V.http4s),
-      Library("org.http4s", "http4s-circe", V.http4s),
-      Library("org.http4s", "http4s-blaze-server", V.http4s),
+      Library("org.http4s", "http4s-dsl", V.http4s, LibraryType.Auto),
+      Library("org.http4s", "http4s-circe", V.http4s, LibraryType.Auto),
+      Library("org.http4s", "http4s-blaze-server", V.http4s, LibraryType.Auto),
     )
 
     val http4s_all = (http4s_server ++ http4s_client)
@@ -79,7 +117,7 @@ object Izumi {
 
   import Deps._
 
-  final val scala212 = ScalaVersion("2.12.9")
+  final val scala212 = ScalaVersion("2.12.10")
   final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.0")
 
@@ -87,22 +125,31 @@ object Izumi {
     final val fundamentals = Set(Group("fundamentals"))
     final val distage = Set(Group("distage"))
     final val logstage = Set(Group("logstage"))
+    final val idealingua = Set(Group("idealingua"))
     final val docs = Set(Group("docs"))
+    final val sbt = Set(Group("sbt"))
   }
 
   object Targets {
     val targetScala = Seq(scala212, scala213)
     private val jvmPlatform = PlatformEnv(
-      Platform.Jvm,
-      targetScala,
+      platform = Platform.Jvm,
+      language = targetScala,
     )
-    private val jvmPlatform212 = PlatformEnv(
-      Platform.Jvm,
-      Seq(scala212doc),
+    private val jvmPlatformDoc = PlatformEnv(
+      platform = Platform.Jvm,
+      language = Seq(scala212doc),
+    )
+    private val jvmPlatformSbt = PlatformEnv(
+      platform = Platform.Jvm,
+      language = Seq(scala212),
+      settings = Seq(
+        "coverageEnabled" := false,
+      ),
     )
     private val jsPlatform = PlatformEnv(
-      Platform.Js,
-      targetScala,
+      platform = Platform.Js,
+      language = targetScala,
       settings = Seq(
         "coverageEnabled" := false,
         "scalaJSModuleKind" in(SettingScope.Project, Platform.Js) := "ModuleKind.CommonJSModule".raw,
@@ -110,7 +157,8 @@ object Izumi {
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
-    final val jvmDocs = Seq(jvmPlatform212)
+    final val jvmDoc = Seq(jvmPlatformDoc)
+    final val jvmSbt = Seq(jvmPlatformSbt)
   }
 
   final val assemblyPluginJvm = Plugin("AssemblyPlugin", Platform.Jvm)
@@ -145,6 +193,8 @@ object Izumi {
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
+        "sonatypeProfileName" := "io.7mind",
+        "sonatypeSessionName" := """s"[sbt-sonatype] ${name.value} ${version.value} ${java.util.UUID.randomUUID}"""".raw,
         "publishTo" in SettingScope.Build :=
           """
             |(if (!isSnapshot.value) {
@@ -325,55 +375,55 @@ object Izumi {
     Projects.distage.id,
     Seq(
       Artifact(
-        Projects.distage.model,
-        (cats_all).map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
-        Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        name = Projects.distage.model,
+        libs = cats_all.map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.proxyCglib,
-        Seq(cglib_nodep),
-        Projects.fundamentals.basics ++ Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        name = Projects.distage.proxyCglib,
+        libs = Seq(cglib_nodep),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.core,
-        Seq(cglib_nodep),
-        Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
+        name = Projects.distage.core,
+        libs = Seq(cglib_nodep),
+        depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.config,
-        Seq(typesafe_config),
-        Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.config,
+        libs = Seq(typesafe_config),
+        depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        settings = forkTests
       ),
       Artifact(
-        Projects.distage.rolesApi,
-        Seq.empty,
-        Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        name = Projects.distage.rolesApi,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.plugins,
-        Seq(fast_classpath_scanner),
-        Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.plugins,
+        libs = Seq(fast_classpath_scanner),
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
-        settings = forkTests
       ),
       Artifact(
-        Projects.distage.roles,
-        allMonads,
-        Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+        name = Projects.distage.roles,
+        libs = allMonads,
+        depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
-        Projects.distage.static,
-        Seq(shapeless),
-        Seq(Projects.distage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.roles).map(_ tin Scope.Test.all),
+        name = Projects.distage.static,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.roles).map(_ tin Scope.Test.all),
       ),
       Artifact(
-        Projects.distage.testkit,
-        Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsTest,
-        Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++ Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+        name = Projects.distage.testkit,
+        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonads,
+        depends =
+          Seq(Projects.distage.config, Projects.distage.roles, Projects.distage.static, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         )
@@ -532,28 +582,19 @@ object Izumi {
       ),
     ),
     pathPrefix = Projects.idealingua.basePath,
-    groups = Groups.logstage,
+    groups = Groups.idealingua,
     defaultPlatforms = Targets.cross,
   )
 
   val all = Seq(fundamentals, distage, logstage)
 
   final lazy val docs = Aggregate(
-    Projects.docs.id,
-    Seq(
+    name = Projects.docs.id,
+    artifacts = Seq(
       Artifact(
-        Projects.docs.microsite,
-        (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
-        all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
-        plugins = Plugins(Seq(
-          Plugin("ScalaUnidocPlugin"),
-          Plugin("ParadoxSitePlugin"),
-          Plugin("SitePlugin"),
-          Plugin("GhpagesPlugin"),
-          Plugin("ParadoxMaterialThemePlugin"),
-          Plugin("PreprocessPlugin"),
-          Plugin("MdocPlugin")
-        ), Seq(Plugin("ScoverageSbtPlugin"))),
+        name = Projects.docs.microsite,
+        libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
+        depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
         settings = Projects.root.docSettings ++ Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
@@ -608,39 +649,52 @@ object Izumi {
                   f.toPath.startsWith((ghpagesRepository.value / "v0.5.50-SNAPSHOT").toPath)
               }
             }""")
-        )
+        ),
+        plugins = Plugins(
+          enabled = Seq(
+            Plugin("ScalaUnidocPlugin"),
+            Plugin("ParadoxSitePlugin"),
+            Plugin("SitePlugin"),
+            Plugin("GhpagesPlugin"),
+            Plugin("ParadoxMaterialThemePlugin"),
+            Plugin("PreprocessPlugin"),
+            Plugin("MdocPlugin")),
+          disabled = Seq(Plugin("ScoverageSbtPlugin")))
       ),
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvmDocs,
-    dontIncludeInSuperAgg = true,
-    enableSharedSettings = false,
+    defaultPlatforms = Targets.jvmDoc,
     settings = Projects.root.docSettings,
+    enableSharedSettings = false,
+    dontIncludeInSuperAgg = true,
   )
 
   final lazy val sbtplugins = Aggregate(
     Projects.sbtplugins.id,
     Seq(
       Artifact(
-        Projects.sbtplugins.izumi_deps,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.sbtplugins.izumi_deps,
+        libs = Seq.empty,
+        depends = Seq.empty,
         settings = Projects.sbtplugins.settings ++ Seq(
           SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
         ),
+        plugins = Plugins(
+          enabled = Seq.empty,
+          disabled = Seq(Plugin("ScoverageSbtPlugin")))
       ),
     ),
     pathPrefix = Projects.sbtplugins.basePath,
-    groups = Groups.docs,
-    defaultPlatforms = Targets.jvm,
-    dontIncludeInSuperAgg = true,
+    groups = Groups.sbt,
+    defaultPlatforms = Targets.jvmSbt,
     enableSharedSettings = false,
+    dontIncludeInSuperAgg = false,
   )
 
   val izumi: Project = Project(
-    Projects.root.id,
-    Seq(
+    name = Projects.root.id,
+    aggregates = Seq(
       fundamentals,
       distage,
       logstage,
@@ -648,28 +702,28 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    Projects.root.settings,
-    Projects.root.sharedSettings,
-    Projects.root.sharedAggSettings,
-    Projects.root.sharedRootSettings,
-    Seq.empty,
-    Seq(
+    settings = Projects.root.settings,
+    sharedSettings = Projects.root.sharedSettings,
+    sharedAggSettings = Projects.root.sharedAggSettings,
+    sharedRootSettings = Projects.root.sharedRootSettings,
+    imports = Seq.empty,
+    globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
       collection_compat in Scope.Compile.all,
       scalatest,
     ),
-    globalPlugins = Projects.plugins,
     rootPlugins = Projects.root.plugins,
+    globalPlugins = Projects.plugins,
     pluginConflictRules = Map(assemblyPluginJvm.name -> true),
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
-      SbtPlugin("com.eed3si9n", "sbt-assembly", "0.14.9"),
-      SbtPlugin("com.jsuereth", "sbt-pgp", "2.0.0-M2"),
-      SbtPlugin("org.scoverage", "sbt-scoverage", "1.6.0"),
-      SbtPlugin("com.eed3si9n", "sbt-unidoc", "0.4.2"),
-      SbtPlugin("com.typesafe.sbt", "sbt-site", "1.3.3"),
-      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", "0.6.3"),
-      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", "0.6.0"),
-      SbtPlugin("org.scalameta", "sbt-mdoc", "1.3.2"),
+      SbtPlugin("com.eed3si9n", "sbt-assembly", PV.sbt_assembly),
+      SbtPlugin("com.jsuereth", "sbt-pgp", PV.sbt_pgp),
+      SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
+      SbtPlugin("com.eed3si9n", "sbt-unidoc", PV.sbt_unidoc),
+      SbtPlugin("com.typesafe.sbt", "sbt-site", PV.sbt_site),
+      SbtPlugin("com.typesafe.sbt", "sbt-ghpages", PV.sbt_ghpages),
+      SbtPlugin("io.github.jonas", "sbt-paradox-material-theme", PV.sbt_paradox_material_theme),
+      SbtPlugin("org.scalameta", "sbt-mdoc", PV.sbt_mdoc),
     )
   )
 }

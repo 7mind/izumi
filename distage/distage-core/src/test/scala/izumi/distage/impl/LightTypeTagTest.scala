@@ -68,14 +68,18 @@ class LightTypeTagTest extends WordSpec {
   type Const[A, B] = B
 
   trait H1
-
   trait H2 extends H1
-
   trait H3 extends H2
-
   trait H4 extends H3
-
   trait H5 extends H4
+
+  trait J1[F[_]]
+  trait J2
+  trait J3
+  trait J[F[_]] extends J1[F] with J2 with J3
+
+  trait RoleParent[F[_]]
+  trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
 
   def println(o: Any): Unit = info(o.toString)
 
@@ -87,48 +91,54 @@ class LightTypeTagTest extends WordSpec {
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =?= $expected")
-    assert(t =:= expected)
+    val clue = s"$t =?= $expected"
+    info(clue)
+    assert(t =:= expected, clue)
     ()
   }
 
   def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
-    info(s"$t =!= $expected")
-    assert(!(t =:= expected))
+    val clue = s"$t =!= $expected"
+    info(clue)
+    assert(!(t =:= expected), clue)
     ()
   }
 
   def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <?< $parent")
-    assert(child <:< parent)
+    val clue = s"$child <?< $parent"
+    info(clue)
+    assert(child <:< parent, clue)
     ()
   }
 
   def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
-    info(s"$child <!< $parent")
-    assert(!(child <:< parent))
+    val clue = s"$child <!< $parent"
+    info(clue)
+    assert(!(child <:< parent), clue)
     ()
   }
 
 
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
-    info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
-    assert(combined == expected)
+    val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 
   def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
-    info(s"($outer)•($inner) => $combined =?= $expected")
-    assert(combined == expected)
+    val clue = s"($outer)•($inner) => $combined =?= $expected"
+    info(clue)
+    assert(combined =:= expected, clue)
     ()
   }
 
   def assertCombineNonPos(outer: LightTypeTag, inner: Seq[Option[LightTypeTag]], expected: LightTypeTag): Unit = {
     val combined = outer.combineNonPos(inner: _*)
     info(s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected")
-    assert(combined == expected)
+    assert(combined =:= expected)
     ()
   }
 
@@ -200,13 +210,20 @@ class LightTypeTagTest extends WordSpec {
       // I consider this stuff practically useless
       type X[A >: H4 <: H2] = Option[A]
       assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
-
       // allTypeReferences: we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       //assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
     }
 
+    "support additional mixin traits after first trait with a HKT parameter" in {
+      assertChild(LTT[J[Option]], LTT[J1[Option]])
+      assertChild(LTT[J[Option]], LTT[J3])
+      assertChild(LTT[J[Option]], LTT[J2])
+      assertChild(LTT[J[Option]], LTT[J1[Option] with J2])
+      assertChild(LTT[J[Option]], LTT[J2 with J3])
+      assertChild(LTT[J[Option]], LTT[J1[Option] with J2 with J3])
+    }
 
-    "progression: support swapped parents" in {
+    "support swapped parents" in {
       trait KT1[+A1, +B1]
       trait KT2[+A2, +B2] extends KT1[B2, A2]
 
@@ -246,6 +263,11 @@ class LightTypeTagTest extends WordSpec {
       assertDifferent(LTT[a1.A], LTT[a2.A])
     }
 
+    "support subtyping of parents parameterized with type lambdas" in {
+      implicitly[RoleChild[Either] <:< RoleParent[Either[Throwable, ?]]]
+      assertChild(LTT[RoleChild[Either]], LTT[RoleParent[Either[Throwable, ?]]])
+    }
+
     "support complex type lambdas" in {
       assertSame(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
       assertSame(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]], `LTT[_[_]]`[Lambda[G[_] => FM2[G[S[W2, W1]]]]])
@@ -274,7 +296,6 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[F1], LTT[W3[Int]])
       assertChild(LTT[F1], LTT[W1])
       assertChild(LTT[F2], LTT[F1])
-
 
       assertChild(`LTT[_]`[W4], `LTT[_]`[W3])
       assertChild(`LTT[_]`[T1], `LTT[_]`[W3])
@@ -320,7 +341,6 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
     }
-
 
     "resolve concrete types through PDTs and projections" in {
       val a1 = new C {

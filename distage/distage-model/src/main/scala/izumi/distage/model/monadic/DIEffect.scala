@@ -22,7 +22,13 @@ trait DIEffect[F[_]] {
 
   /** A stronger version of `handleErrorWith`, the difference is that
     * this will _also_ intercept Throwable defects in `ZIO`, not only typed errors */
-  def definitelyRecover[A](action: => F[A], recover: Throwable => F[A]): F[A]
+  def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A]
+
+  /** `definitelyRecover`, but the Throwable is not guaranteed to be
+    * the original Throwable, it can be a Throwable enhanced with a
+    * Monad's own debugging information (e.g. in case of `ZIO` it's always `FiberFailure`)
+    */
+  def definitelyRecoverCause[A](action: => F[A])(recoverCause: Throwable => F[A]): F[A]
 
   def fail[A](t: => Throwable): F[A]
 
@@ -64,8 +70,11 @@ object DIEffect
     override def map[A, B](fa: Identity[A])(f: A => B): Identity[B] = f(fa)
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
-    override def definitelyRecover[A](fa: => Identity[A], recover: Throwable => Identity[A]): Identity[A] = {
+    override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
       try fa catch { case t: Throwable => recover(t) }
+    }
+    override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: Throwable => Identity[A]): Identity[A] = {
+      definitelyRecover(action)(recoverCause)
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -98,8 +107,11 @@ object DIEffect
         //  - hmm, usage of DIEffect in PlanInterpreter *is* completely exception-safe (because of .definitelyRecover)
         F.syncThrowable(eff)
       }
-      override def definitelyRecover[A](fa: => F[E, A], recover: Throwable => F[E, A]): F[E, A] = {
-        suspendF(fa).sandbox.catchAll(recover apply _.toThrowable)
+      override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
+        suspendF(action).sandbox.catchAll(recover apply _.toThrowable)
+      }
+      override def definitelyRecoverCause[A](action: => F[Throwable, A])(recover: Throwable => F[Throwable, A]): F[Throwable, A] = {
+        suspendF(action).sandbox.catchAll(recover apply _.trace.toThrowable)
       }
 
       override def fail[A](t: => Throwable): F[Throwable, A] = F.fail(t)
@@ -137,8 +149,11 @@ trait FromCats {
       override def maybeSuspend[A](eff: => A): F[A] = {
         F.delay(eff)
       }
-      override def definitelyRecover[A](fa: => F[A], recover: Throwable => F[A]): F[A] = {
-        F.handleErrorWith(F.suspend(fa))(recover)
+      override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
+        F.handleErrorWith(F.suspend(action))(recover)
+      }
+      override def definitelyRecoverCause[A](action: => F[A])(recoverCause: Throwable => F[A]): F[A] = {
+        definitelyRecover(action)(recoverCause)
       }
       override def fail[A](t: => Throwable): F[A] = F.suspend(F.raiseError(t))
       override def bracket[A, B](acquire: => F[A])(release: A => F[Unit])(use: A => F[B]): F[B] = {

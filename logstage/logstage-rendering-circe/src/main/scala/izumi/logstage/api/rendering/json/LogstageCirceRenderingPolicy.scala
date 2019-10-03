@@ -61,7 +61,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     val json = Json.fromFields(result)
 
     if (prettyPrint) {
-      json.pretty(Printer.spaces2)
+      json.printWith(Printer.spaces2)
     } else {
       json.noSpaces
     }

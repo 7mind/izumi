@@ -4,6 +4,10 @@ out: index.html
 SBT Toolkit
 ===========
 
+@@@ warning { title='MOVED' }
+Moved to https://github.com/7mind/sbtgen/
+@@@
+
 Izumi provides you a bunch of sbt plugins allowing you to significantly reduce size and increase clarity of huge multi-module builds.
 
 To start using Izumi plugins add the following into your `project/plugins.sbt`:

@@ -39,6 +39,5 @@ trait DISyntaxBIOBase[F[+ _, + _]] {
 object DISyntaxBIOBase {
 
   final case class BIOBadBranch[A](error: A)
-    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error")
-
+    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error", null, true, false)
 }

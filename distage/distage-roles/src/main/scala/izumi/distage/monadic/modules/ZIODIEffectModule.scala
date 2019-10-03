@@ -10,6 +10,7 @@ import izumi.functional.bio.BIORunner.ZIORunner
 import izumi.functional.bio._
 import logstage.IzLogger
 import zio.IO
+import zio.internal.tracing.TracingConfig
 
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner[IO[Throwable, ?]]].from[DIEffectRunner.BIOImpl[IO]]
@@ -46,19 +47,23 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOBracket[IO]]
   addImplicit[BIOPanic[IO]]
   addImplicit[SyncSafe2[IO]]
+  make[BIOAsync[IO]].from {
+    implicit r: zio.clock.Clock => BIOAsync[IO]
+  }
 
+  make[zio.clock.Clock].fromValue(zio.clock.Clock.Live)
   make[zio.Runtime[Any]].from((_: ZIORunner).runtime)
+  make[TracingConfig].from(TracingConfig.enabled)
   make[BIORunner[IO]].using[ZIORunner]
   make[ZIORunner].from {
-    (
-      cpuPool: ThreadPoolExecutor @Id("zio.cpu"),
-      logger: IzLogger,
-    ) =>
+    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"),
+     logger: IzLogger,
+     tracingConfig: TracingConfig) =>
       val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
-
       BIORunner.createZIO(
-        cpuPool
-        , handler
+        cpuPool = cpuPool,
+        handler = handler,
+        tracingConfig = tracingConfig,
       )
   }
 }

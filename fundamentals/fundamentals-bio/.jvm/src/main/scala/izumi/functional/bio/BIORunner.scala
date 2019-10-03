@@ -4,6 +4,7 @@ import java.util
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
+import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
 import zio.internal.{Executor, Platform, PlatformLive, Tracing}
 import zio.{Cause, FiberFailure, IO, Runtime}
@@ -27,7 +28,7 @@ object BIORunner {
                , yieldEveryNFlatMaps: Int = 1024
                , tracingConfig: TracingConfig = TracingConfig.enabled
                ): ZIORunner = {
-    new ZIORunner(new ZIOEnvBase(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
+    new ZIORunner(new ZIOPlatform(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
   }
 
   def newZioTimerPool(): ScheduledExecutorService = {
@@ -43,7 +44,7 @@ object BIORunner {
   class ZIORunner
   (
     val platform: Platform
-  ) extends BIORunner[IO] with BIOExit.ZIO {
+  ) extends BIORunner[IO] {
 
     val runtime = Runtime((), platform)
 
@@ -66,22 +67,22 @@ object BIORunner {
     }
 
     override def unsafeRunAsyncAsEither[E, A](io: => IO[E, A])(callback: BIOExit[E, A] => Unit): Unit = {
-      runtime.unsafeRunAsync[E, A](io)(exitResult => callback(toBIOExit(exitResult)))
+      runtime.unsafeRunAsync[E, A](io)(exitResult => callback(ZIOExit.toBIOExit(exitResult)))
     }
 
     override def unsafeRunSyncAsEither[E, A](io: => IO[E, A]): BIOExit[E, A] = {
       val result = runtime.unsafeRunSync(io)
-      toBIOExit(result)
+      ZIOExit.toBIOExit(result)
     }
   }
 
-  class ZIOEnvBase
+  class ZIOPlatform
   (
     cpuPool: ThreadPoolExecutor
   , handler: FailureHandler
   , yieldEveryNFlatMaps: Int
   , tracingConfig: TracingConfig
-  ) extends Platform with BIOExit.ZIO {
+  ) extends Platform {
 
     override val executor: Executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
 
@@ -96,7 +97,7 @@ object BIORunner {
           }
 
         case FailureHandler.Custom(f) =>
-          f(toBIOExit(cause))
+          f(ZIOExit.toBIOExit(cause))
       }
     }
 

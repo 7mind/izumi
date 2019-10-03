@@ -1,6 +1,6 @@
 object V {
   // foundation
-  val scala_212 = "2.12.9"
+  val scala_212 = "2.12.10"
   val scala_213 = "2.13.0"
 
   val collection_compat = "2.1.2"
@@ -22,7 +22,7 @@ object V {
   val circe_derivation = "0.12.0-M7"
   val jawn = "0.14.2"
 
-  val http4s = "0.21.0-M4"
+  val http4s = "0.21.0-M5"
 
   val scalameta = "4.2.3"
   val fastparse = "2.1.3"
@@ -31,7 +31,7 @@ object V {
 
   // java-only dependencies below
   // java, we need it bcs http4s ws client isn't ready yet
-  val asynchttpclient = "2.10.1"
+  val asynchttpclient = "2.10.3"
 
   val classgraph = "4.8.47"
   val slf4j = "1.7.28"

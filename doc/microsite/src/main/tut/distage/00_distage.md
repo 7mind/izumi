@@ -5,8 +5,6 @@ out: index.html
 distage: Staged Dependency Injection
 ====================================
 
-TF is OOP
-
 `distage` is a pragmatic module system for Scala that combines simplicity and reliability of pure FP with extreme late-binding
 and flexibility of runtime dependency injection frameworks such as Guice.
 

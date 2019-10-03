@@ -6,14 +6,12 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 /**
- * Provides circe codecs for case classes (won't work with sealed traits):
+ * Provides circe codecs for case classes and sealed traits
  * {{{
  *   final case class Abc(a: String, b: String, c: String)
  *
- *   object Abc extends WithCirce[Abc]
+ *   object Abc extends IRTWithCirce[Abc]
  * }}}
- *
- * For sealed traits use [[IRTWithCirceGeneric]]. It's not as efficient wrt compile time, but will cache during a single compilation run.
  */
 abstract class IRTWithCirce[A](implicit encoder: DerivationDerivedEncoder[A], decoder: DerivationDerivedDecoder[A]) {
   // workaround https://github.com/milessabin/shapeless/issues/837

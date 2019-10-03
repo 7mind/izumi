@@ -15,6 +15,7 @@ trait TestEnvironmentProvider {
     */
   def loadEnvironment(logger: IzLogger): TestEnvironment
 
+  //
   protected def doLoad(logger: IzLogger, env: PluginsCache.CacheValue): TestEnvironment
 
   protected def memoizePlugins: Boolean
@@ -28,8 +29,6 @@ trait TestEnvironmentProvider {
   protected def bootstrapConfig: BootstrapConfig
 
   protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource
-
-  protected def thisPackage: Seq[String]
 
   protected def pluginPackages: Seq[String]
 

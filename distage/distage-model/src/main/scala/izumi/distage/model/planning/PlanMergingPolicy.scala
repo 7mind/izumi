@@ -6,9 +6,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
-
   def freeze(plan: DodgyPlan): SemiPlan
-
 }
 
 object PlanMergingPolicy {

@@ -73,7 +73,7 @@ trait Planner {
 
   final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = plan(PlannerInput(input, gcMode))
 
-  final def splitExistingPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
+  final def splitExistingPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], disabled: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
     assert(primaryRoots.diff(primaryPlan.keys).isEmpty)
     // here we extract integration checks out of our shared components plan and build it
     val extractedRoots = extractSubRoots(primaryPlan)
@@ -88,8 +88,8 @@ trait Planner {
     val reduced = appModule.drop(extractedSubplan.keys)
 
     // and here we build our final plan for shared components, with integration components excluded
-    val primaryPlanWithoutExtractedPart = if (extractedRoots.nonEmpty) {
-      val partsLeft = primaryRoots -- extractedRoots
+    val primaryPlanWithoutExtractedPart = if (extractedRoots.nonEmpty || disabled.nonEmpty) {
+      val partsLeft = primaryRoots -- extractedRoots -- disabled
       if (partsLeft.isEmpty) {
         OrderedPlan.empty
       } else {
@@ -109,6 +109,6 @@ trait Planner {
       OrderedPlan.empty
     }
 
-    splitExistingPlan(appModule, primaryRoots, primaryPlan)(extractSubRoots)
+    splitExistingPlan(appModule, primaryRoots, Set.empty, primaryPlan)(extractSubRoots)
   }
 }

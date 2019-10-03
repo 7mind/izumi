@@ -4,9 +4,9 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, ModuleBase}
 import izumi.distage.roles.BootstrapConfig
 import izumi.distage.roles.services.PluginSource
+import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.mutable
-import izumi.fundamentals.platform.language.Quirks._
 
 class SyncCache[K, V] {
 

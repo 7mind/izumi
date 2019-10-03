@@ -78,12 +78,13 @@ class RoleAppExecutorImpl[F[_] : TagK](
               _ <- effect.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
             } yield ()
 
-            effect.definitelyRecover(loggedTask, t => {
-            for {
-              _ <- effect.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
-              _ <- effect.fail[Unit](t)
-            } yield ()
-          })
+            effect.definitelyRecover(loggedTask) {
+              t =>
+                for {
+                  _ <- effect.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
+                  _ <- effect.fail[Unit](t)
+                } yield ()
+            }
       }
       f(())
     } else {
@@ -117,13 +118,13 @@ class RoleAppExecutorImpl[F[_] : TagK](
           _ <- effect.maybeSuspend(lateLogger.info(s"Task finished: $task"))
         } yield ()
 
-        effect.definitelyRecover(loggedTask, error => {
-          for {
-            _ <- effect.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
-            _ <- effect.fail[Unit](error)
-          } yield ()
-        })
-
+        effect.definitelyRecover(loggedTask) {
+          error =>
+            for {
+              _ <- effect.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
+              _ <- effect.fail[Unit](error)
+            } yield ()
+        }
     }
   }
 

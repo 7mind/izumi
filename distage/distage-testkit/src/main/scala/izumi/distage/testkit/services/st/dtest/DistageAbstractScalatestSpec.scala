@@ -1,14 +1,17 @@
 package izumi.distage.testkit.services.st.dtest
 
+import distage.{BootstrapModule, DIKey, Module, Tag, TagK, TagKK}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.definition.{AxisBase, StandardAxis}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, TestEnvironmentProvider, TestEnvironmentProviderImpl, TestEnvironment, TestRegistration}
+import izumi.distage.testkit.services.dstest._
+import izumi.distage.testkit.services.st.dtest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.logstage.api.{IzLogger, Log}
-import distage.{Tag, TagK, TagKK}
 import org.scalactic.source
 
 import scala.language.implicitConversions
@@ -19,17 +22,52 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   }
 }
 
-trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
+/**
+  * @param pluginPackages  If `None`, scans recursively scans packages of the test class itself
+  *
+  * @param activation      Chosen configurations
+  *
+  * @param memoizedKeys    Setting `memoizedKeys` create a distinct memoization group
+  *                        the exact same `memoizedKeys`
+  *
+  * @param moduleOverrides Using overrides will create a distinct memoization group
+  *                        for this test, i.e. objects will be memoized only between
+  *                        tests with the exact same overrides
+  */
+final case class TestConfig(
+                             pluginPackages: Option[Seq[String]] = None
+                           , activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
+                           , memoizedKeys: Set[DIKey] = Set.empty
+                           , moduleOverrides: Module = Module.empty
+                           , bootstrapOverrides: BootstrapModule = BootstrapModule.empty
+                           )
+
+trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
-  import DistageTestSuiteSyntax._
+  private[this] lazy val tenv0: TestEnvironmentProvider = {
+    val c = config
+    import c._
+    new TestEnvironmentProviderImpl(
+      this.getClass,
+      activation,
+      memoizedKeys,
+      bootstrapOverrides,
+      moduleOverrides,
+      pluginPackages,
+    )
+  }
+  private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
 
-  protected lazy val tenv: TestEnvironmentProvider = new TestEnvironmentProviderImpl(this.getClass)
-  protected lazy val logger: IzLogger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
-  protected lazy val env: TestEnvironment = tenv.loadEnvironment(logger)
+  protected def tenv: TestEnvironmentProvider = tenv0
+  protected def env: TestEnvironment = env0
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
+
+  protected def config: TestConfig = TestConfig()
+
+  protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
   //
   protected var context: Option[SuiteContext] = None
@@ -47,7 +85,7 @@ trait DistageTestSuiteSyntax[F[_]] extends ScalatestWords with WithSingletonTest
   }
 }
 
-object DistageTestSuiteSyntax {
+object DistageAbstractScalatestSpec {
   final case class SuiteContext(left: String, verb: String) {
     def toName(name: String): String = {
       Seq(left, verb, name).mkString(" ")
@@ -74,10 +112,6 @@ object DistageTestSuiteSyntax {
       reg.registerTest(function, env, pos, id)
     }
 
-    def in(function: ProviderMagnet[Any])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
-      takeAny(function, pos.get)
-    }
-
     def in(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO(function, pos.get)
     }
@@ -86,7 +120,11 @@ object DistageTestSuiteSyntax {
       takeFunIO(function, pos.get)
     }
 
-    def in[T: Tag](function: T => Any)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+    def in(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      takeAny(function, pos.get)
+    }
+
+    def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunAny(function, pos.get)
     }
   }

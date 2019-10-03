@@ -31,4 +31,7 @@
 # Bumping JIT inline-level increases performance of Scala code
 #   https://www.reddit.com/r/scala/comments/cigh0t/these_go_to_eighteen_c_jon_pretty/
 #   https://scalacenter.github.io/bloop/docs/performance-guide#tweak-the-java-jit
+#   https://twitter.com/leifwickland/status/1179419045055086595
 -XX:MaxInlineLevel=18
+-XX:MaxInlineSize=270
+-XX:MaxTrivialSize=12
