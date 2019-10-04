@@ -28,7 +28,7 @@ object BlockingIO {
   def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
 
   def BlockingZIOFromThreadPool(blockingPool: ThreadPoolExecutor): BlockingIO[IO] = {
-    val executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
+    val executor = Executor.fromThreadPoolExecutor(_ => Int.MaxValue)(blockingPool)
     val blocking = new Blocking {
       override val blocking: Blocking.Service[Any] = new Blocking.Service[Any] {
         override val blockingExecutor: ZIO[Any, Nothing, Executor] = UIO.succeed(executor)

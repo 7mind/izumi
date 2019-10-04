@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.34`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.35`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
 

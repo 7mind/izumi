@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import zio.{Exit, Cause, FiberFailure}
+import zio.{Cause, Exit, FiberFailure}
 
 sealed trait BIOExit[+E, +A]
 

@@ -84,7 +84,7 @@ object BIORunner {
   , tracingConfig: TracingConfig
   ) extends Platform {
 
-    override val executor: Executor = PlatformLive.ExecutorUtil.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
+    override val executor: Executor = Executor.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
 
     override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
 
