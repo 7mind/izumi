@@ -88,8 +88,8 @@ object Izumi {
 
     final val cglib_nodep = Library("cglib", "cglib-nodep", V.cglib_nodep, LibraryType.Invariant) in Scope.Compile.jvm
 
-
-    final val projector = Library("org.typelevel", "kind-projector", "0.10.3", LibraryType.AutoJvm)
+    final val projector = Library("org.typelevel", "kind-projector", V.kind_projector, LibraryType.Invariant)
+      .more(LibSetting.Raw("cross CrossVersion.full"))
 
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto) in Scope.Compile.all

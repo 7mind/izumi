@@ -5,7 +5,7 @@ object V {
 
   val collection_compat = "2.1.2"
 
-  val kind_projector = "0.10.3"
+  val kind_projector = "0.11.0"
   val scalatest = "3.0.8"
 
   val boopickle = "1.3.1"
@@ -15,7 +15,7 @@ object V {
   val cats = "2.0.0"
   val cats_effect = "2.0.0"
   val zio = "1.0.0-RC14"
-  val zio_interop_cats = "2.0.0.0-RC3"
+  val zio_interop_cats = "2.0.0.0-RC4"
 
   val circe = "0.12.1"
   val circe_generic_extras = "0.12.2"
