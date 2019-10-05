@@ -47,6 +47,10 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
+    scalaJsVersion = "0.6.29",
+//    scalaJsVersion = "${PV.scala_js_version}",
+//    crossProjectVersion = "${PV.crossproject_version}",
+//    bundlerVersion = "${PV.scalajs_bundler_version}",
   )
 
   object Deps {
