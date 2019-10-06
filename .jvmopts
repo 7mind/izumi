@@ -33,5 +33,6 @@
 #   https://scalacenter.github.io/bloop/docs/performance-guide#tweak-the-java-jit
 #   https://twitter.com/leifwickland/status/1179419045055086595
 -XX:MaxInlineLevel=18
--XX:MaxInlineSize=270
--XX:MaxTrivialSize=12
+# These seem to cause sbt import slowdown :\
+#-XX:MaxInlineSize=270
+#-XX:MaxTrivialSize=12
