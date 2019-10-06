@@ -3370,7 +3370,6 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    fork in Test := true,
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
@@ -3470,7 +3469,8 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.0"
-    )
+    ),
+    fork in Test := true
   )
   .disablePlugins(AssemblyPlugin)
 

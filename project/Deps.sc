@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.35`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.36`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
 
@@ -39,6 +39,10 @@ object Izumi {
     val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
     val sbt_pgp = Version.VExpr("PV.sbt_pgp")
     val sbt_assembly = Version.VExpr("PV.sbt_assembly")
+
+    val scala_js_version = Version.VExpr("PV.scala_js_version")
+    val crossproject_version = Version.VExpr("PV.crossproject_version")
+    val scalajs_bundler_version = Version.VExpr("PV.scalajs_bundler_version")
   }
 
   def entrypoint(args: Seq[String]) = {
@@ -47,10 +51,9 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    scalaJsVersion = "0.6.29",
-//    scalaJsVersion = "${PV.scala_js_version}",
-//    crossProjectVersion = "${PV.crossproject_version}",
-//    bundlerVersion = "${PV.scalajs_bundler_version}",
+    scalaJsVersion = PV.scala_js_version,
+    crossProjectVersion = PV.crossproject_version,
+    bundlerVersion = PV.scalajs_bundler_version,
   )
 
   object Deps {
@@ -316,7 +319,7 @@ object Izumi {
 
 
   final val forkTests = Seq(
-    "fork" in(SettingScope.Test, Platform.Jvm) := true,
+    "fork" in (SettingScope.Test, Platform.Jvm) := true,
   )
 
   final lazy val fundamentals = Aggregate(
@@ -430,7 +433,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
-        )
+        ),
       ),
     ),
     pathPrefix = Projects.distage.basePath,
@@ -515,16 +518,16 @@ object Izumi {
         Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.idealingua.runtimeRpcHttp4s,
-        (http4s_all ++ Seq(asynchttpclient)).map(_ in Scope.Compile.all),
-        Seq(Projects.idealingua.runtimeRpcScala, Projects.logstage.core, Projects.logstage.adapterSlf4j).map(_ in Scope.Compile.all) ++
+        name = Projects.idealingua.runtimeRpcHttp4s,
+        libs = (http4s_all ++ Seq(asynchttpclient)).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.idealingua.runtimeRpcScala, Projects.logstage.core, Projects.logstage.adapterSlf4j).map(_ in Scope.Compile.all) ++
           Seq(Projects.idealingua.testDefs).map(_ in Scope.Test.jvm),
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.idealingua.transpilers,
-        Seq(scala_xml, scalameta),
-        Projects.fundamentals.basics ++
+        name = Projects.idealingua.transpilers,
+        libs = Seq(scala_xml, scalameta),
+        depends = Projects.fundamentals.basics ++
           Seq(Projects.fundamentals.fundamentalsJsonCirce, Projects.idealingua.core, Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all) ++
           Seq(Projects.idealingua.testDefs, Projects.idealingua.runtimeRpcTypescript, Projects.idealingua.runtimeRpcGo, Projects.idealingua.runtimeRpcCSharp).map(_ in Scope.Test.jvm),
         settings = forkTests

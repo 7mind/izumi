@@ -4,6 +4,7 @@ import izumi.fundamentals.platform.files.IzFiles
 import izumi.idealingua.model.publishing.manifests.{CSharpProjectLayout, GoProjectLayout, ScalaProjectLayout, TypeScriptProjectLayout}
 import org.scalatest.WordSpec
 
+import scala.util.Properties
 
 class CompilerTest extends WordSpec {
 
@@ -14,7 +15,7 @@ class CompilerTest extends WordSpec {
 
     "be able to compile into scala" in {
       require("scalac")
-      assume(util.Properties.versionNumberString.startsWith("2.12"), "compiler test can run on the 2.12 only (local compiler used for test should be the same as build compiler)")
+      assume(Properties.versionNumberString.startsWith("2.12"), "compiler test can run on the 2.12 only (local compiler used for test should be the same as build compiler)")
       assert(compilesScala(s"$id-plain", loadDefs(), ScalaProjectLayout.PLAIN))
       assert(compilesScala(s"$id-plain-nonportable", loadDefs("/defs/scala"), ScalaProjectLayout.PLAIN))
     }
