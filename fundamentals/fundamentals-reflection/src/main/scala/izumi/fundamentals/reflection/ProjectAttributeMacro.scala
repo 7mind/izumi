@@ -37,8 +37,9 @@ object ProjectAttributeMacro {
   def buildTimestampMacro(c: blackbox.Context)(): c.Expr[LocalDateTime] = {
     import c.universe._
 
-    reify {
-      LocalDateTime.now()
+    val time = LocalDateTime.now()
+    c.Expr[LocalDateTime] {
+      q"{_root_.java.time.LocalDateTime.of(${time.getYear}, ${time.getMonthValue}, ${time.getDayOfMonth}, ${time.getHour}, ${time.getMinute}, ${time.getSecond}, ${time.getNano})}"
     }
   }
 

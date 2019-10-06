@@ -9,13 +9,11 @@ import scala.language.experimental.macros
  */
 object LTag {
   final case class WeakHK[T](tag: LightTypeTag)
-
   object WeakHK {
     implicit def materialize[T]: WeakHK[T] = macro LightTypeTagMacro.makeWeakHKTag[T]
   }
 
   final case class Weak[T](tag: LightTypeTag)
-
   object Weak {
     def apply[T: Weak]: Weak[T] = implicitly
 

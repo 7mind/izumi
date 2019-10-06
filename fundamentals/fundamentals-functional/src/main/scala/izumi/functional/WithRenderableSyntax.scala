@@ -1,10 +1,10 @@
 package izumi.functional
 
 trait WithRenderableSyntax {
-  def apply[T: Renderable]: Renderable[T] = implicitly[Renderable[T]]
+  def apply[T: Renderable]: Renderable[T] = implicitly
 
   implicit class RenderableSyntax[T: Renderable](r: T) {
-    def render(): String = implicitly[Renderable[T]].render(r)
+    def render(): String = Renderable[T].render(r)
   }
 }
 

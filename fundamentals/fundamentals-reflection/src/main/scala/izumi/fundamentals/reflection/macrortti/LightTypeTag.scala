@@ -64,8 +64,6 @@ abstract class LightTypeTag
   }
 
   override def toString: String = {
-    //    import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
-    //    t.render()
     ref.toString
   }
 
