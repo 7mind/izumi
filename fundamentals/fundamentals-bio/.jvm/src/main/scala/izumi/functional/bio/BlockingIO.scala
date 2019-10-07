@@ -3,7 +3,7 @@ package izumi.functional.bio
 import java.util.concurrent.ThreadPoolExecutor
 
 import zio.blocking.Blocking
-import zio.internal.{Executor, PlatformLive}
+import zio.internal.Executor
 import zio.{IO, UIO, ZIO}
 
 trait BlockingIO[F[_, _]] {

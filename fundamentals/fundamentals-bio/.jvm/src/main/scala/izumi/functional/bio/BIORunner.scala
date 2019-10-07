@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.internal.tracing.TracingConfig
-import zio.internal.{Executor, Platform, PlatformLive, Tracing}
+import zio.internal.{Executor, Platform, Tracing}
 import zio.{Cause, FiberFailure, IO, Runtime}
 
 trait BIORunner[F[_, _]] {
