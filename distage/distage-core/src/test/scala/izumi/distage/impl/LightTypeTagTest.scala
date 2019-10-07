@@ -9,7 +9,7 @@ class LightTypeTagTest extends WordSpec {
   trait T0[A[_], B[_]]
   final val str = "str"
 
-  type F[T] = T
+  type Id[T] = T
   type FP1[+T] = List[T]
   type FP[+T] = FP1[T]
   type L[P] = List[P]
@@ -150,7 +150,7 @@ class LightTypeTagTest extends WordSpec {
       assertRepr(`LTT[_]`[Nothing], "Nothing")
       assertRepr(LTT[Int], "Int")
       assertRepr(LTT[List[Int]], "List[+Int]")
-      assertRepr(LTT[F[Int]], "Int")
+      assertRepr(LTT[Id[Int]], "Int")
       assertRepr(LTT[FP[Int]], "List[+Int]")
       assertRepr(`LTT[_]`[L], "λ %0 → List[+0]")
       assertRepr(`LTT[_]`[Either[Unit, ?]], "λ %0 → Either[+Unit,+0]")
@@ -158,11 +158,11 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support typetag combination" in {
-      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[F], LTT[T1[F]])
+      assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[Id], LTT[T1[Id]])
       assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[FP], LTT[T1[FP]])
       assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[FI], LTT[T1[FI]])
 
-      assertCombine(`LTT[_[_]]`[T0[F, ?[_]]], `LTT[_]`[FP], LTT[T0[F, FP]])
+      assertCombine(`LTT[_[_]]`[T0[Id, ?[_]]], `LTT[_]`[FP], LTT[T0[Id, FP]])
       assertCombine(`LTT[_[_]]`[T1], `LTT[_]`[List], LTT[T1[List]])
       assertCombine(`LTT[_]`[List], LTT[Int], LTT[List[Int]])
       assertCombine(`LTT[_,_]`[Either], LTT[Unit], `LTT[_]`[Either[Unit, ?]])

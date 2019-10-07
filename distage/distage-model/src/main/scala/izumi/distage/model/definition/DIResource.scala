@@ -220,19 +220,6 @@ object DIResource {
   abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
   /***
-    * Class-based variant of [[liftF]]:
-    *
-    * {{{
-    *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
-    * }}}
-    */
-  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
-    def this(acquire: => F[A]) = this(() => acquire)
-
-    override final def acquire: F[A] = acquire0()
-  }
-
-  /***
     * Class-based variant of [[make]]:
     *
     * {{{
@@ -257,8 +244,32 @@ object DIResource {
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
+  /***
+    * Class-based variant of [[liftF]]:
+    *
+    * {{{
+    *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
+    * }}}
+    */
+  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
+    def this(acquire: => F[A]) = this(() => acquire)
+
+    override final def acquire: F[A] = acquire0()
+  }
+
+  /***
+    * Class-based variant of [[fromAutoCloseableF]]:
+    *
+    * {{{
+    *   class FileOutputRes extends DIResource.FromAutoCloseable(
+    *     acquire = IO(new FileOutputStream("abc"))
+    *   )
+    * }}}
+    */
+  class FromAutoCloseable[+F[_]: DIEffect, A <: AutoCloseable](acquire: => F[A]) extends Flatten(DIResource.fromAutoCloseableF(acquire))
+
   /**
-    * Class-based proxy for an existing [[DIResource]]
+    * Class-based proxy over a [[DIResource]] value
     *
     * {{{
     *   class IntRes extends DIResource.Flatten(DIResource.pure(1000))
