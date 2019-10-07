@@ -43,7 +43,7 @@ Slides:
 * [Slides from other meetups](https://github.com/7mind/slides)
 
 Video:
-* [Youtube: DIStage Livecoding Project](https://www.youtube.com/watch?v=C0srg5T0E4o&t=7221)
+* [Youtube: DIStage Livecoding Project](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
 Key goals
 =========
