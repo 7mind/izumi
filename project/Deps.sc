@@ -164,6 +164,7 @@ object Izumi {
     )
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
+    final val js = Seq(jsPlatform)
     final val jvmDoc = Seq(jvmPlatformDoc)
     final val jvmSbt = Seq(jvmPlatformSbt)
   }
