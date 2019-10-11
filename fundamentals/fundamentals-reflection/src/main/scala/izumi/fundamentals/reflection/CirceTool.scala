@@ -2,7 +2,6 @@ package izumi.fundamentals.reflection
 
 import scala.collection.mutable
 import scala.language.experimental.macros
-import scala.reflect.internal.Trees
 import scala.reflect.macros.blackbox
 
 object CirceTool {
@@ -20,9 +19,10 @@ class CirceToolMacro(val c: blackbox.Context) {
     val x = all
       .toSeq
       .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java"))
+      .filter(t => t.typeSymbol.isClass)
       .map {
         t =>
-          s"implicit def `codec:${t}`: Codec[$t] = deriveCodec"
+          s"implicit def `codec:${t}`: Codec.AsObject[$t] = deriveCodec"
       }
       .distinct
 
@@ -31,14 +31,12 @@ class CirceToolMacro(val c: blackbox.Context) {
     reify(())
   }
 
-  def processType(t: Type, all: mutable.HashSet[Type]): Unit = {
-
+  def processType(t0: Type, all: mutable.HashSet[Type]): Unit = {
+    val t = t0.dealias
     if (t.typeArgs.isEmpty) {
-
-
       handleNonGeneric(t, all)
     } else {
-      t.typeArgs.foreach(a => handleNonGeneric(a, all))
+      t.typeArgs.foreach(a => processType(a, all))
     }
 
 
@@ -47,16 +45,16 @@ class CirceToolMacro(val c: blackbox.Context) {
 
   }
 
-  private def handleNonGeneric(t: c.universe.Type, all: mutable.HashSet[c.universe.Type]): Unit = {
+  private def handleNonGeneric(t0: c.universe.Type, all: mutable.HashSet[c.universe.Type]): Unit = {
+    val t = t0.dealias
     if (!all.contains(t)) {
       all.add(t)
 
-      val x = c.universe.asInstanceOf[Trees]
+      // this triggers full typing so  knownDirectSubclasses works
+      if (t.toString == "" || t.typeSymbol.toString == "") {
+        ???
+      }
 
-      //println(("...", t, t.typeSymbol, t.typeSymbol.asClass, t.typeSymbol.asClass.isSealed, t.typeSymbol.asClass.isTrait, t.typeSymbol.asClass.isCaseClass)) //, t.typeSymbol.asClass, t.typeSymbol.isClass, t.typeSymbol.asClass.isCaseClass, t.typeSymbol.asClass.isSealed))
-      //println(("...", t, t.typeSymbol, t, ))
-
-      //println((".", t, t.typeSymbol, t.typeSymbol.asClass.isTrait))
       if (t.typeSymbol.isClass) {
         if (t.typeSymbol.asClass.knownDirectSubclasses.isEmpty) {
           val methods = t.members.filter(m => m.isMethod && m.asMethod.isGetter).map(_.asMethod)
@@ -69,25 +67,14 @@ class CirceToolMacro(val c: blackbox.Context) {
               if (s.isType) {
                 processType(s.asType.toType, all)
               } else {
-                println(("?", s))
+                println(("Not a type?..", s))
               }
           }
         }
       } else {
-        println(("??", t))
+        println(("Not a class nor trait?..", t))
 
       }
-
-
-      //      if (t.typeSymbol.asClass.isCaseClass) {
-      //
-      //      } else if (t.typeSymbol.asClass.isTrait) {
-      //        println(("!", t))
-      //
-      //      } else {
-      //        println(("???", t))
-      //
-      //      }
 
     }
   }
