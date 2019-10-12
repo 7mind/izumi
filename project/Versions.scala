@@ -35,7 +35,7 @@ object V {
 
   val classgraph = "4.8.47"
   val slf4j = "1.7.28"
-  val typesafe_config = "1.3.4"
+  val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
