@@ -90,8 +90,9 @@ trait Tags extends UniverseGeneric { self =>
       * Resulting [Tag] will not have the ability to migrate into a different universe
       * (which is not usually a problem, but still worth naming it 'unsafe')
       */
-    def unsafeFromSafeType[T](tpe: SafeType0[u.type]): Tag[T] = {
-      tpe.use(t => Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(t, u.rootMirror), tpe.tag))
+    @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
+    def unsafeFromSafeType[T](mirror: u.Mirror)(tpe: SafeType0[u.type]): Tag[T] = {
+      tpe.use(t => Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(t, mirror), tpe.tag))
     }
 
 
@@ -131,7 +132,7 @@ trait Tags extends UniverseGeneric { self =>
           m.universe.internal.refinedType(parents, struct.decls, struct.typeSymbol)
         }
       }
-      val newTypeTag = TypeTag[R](intersection.headOption.fold(u.rootMirror)(_.mirror), refinedTypeCreator)
+      val newTypeTag = TypeTag[R](intersection.headOption.fold(structType.mirror)(_.mirror), refinedTypeCreator)
       Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
     }
 

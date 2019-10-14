@@ -49,7 +49,7 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
     }.unsafeRunSync()
   }
 
-  "DIResource API should be compatible with provider and instance bindings with cats.effect.Resource" in {
+  "DIResource API should be compatible with provider and instance bindings of type cats.effect.Resource" in {
     val resResource: Resource[IO, Res1] = Resource.make(
       acquire = IO { val res = new Res1; res.initialized = true; res }
     )(release = res => IO(res.initialized = false))
@@ -107,6 +107,5 @@ class CatsResourcesTest extends WordSpec with GivenWhenThen {
       .flatMap((assert2 _).tupled)
       .unsafeRunSync()
   }
-
 
 }
