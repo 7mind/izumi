@@ -1,7 +1,6 @@
 package izumi.distage.model.reflection.universe
 
-import izumi.distage.model
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TypeNative, u}
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Option[Class[_]]
@@ -11,8 +10,7 @@ trait MirrorProvider {
 
 object MirrorProvider {
   object Impl extends MirrorProvider {
-
-    override val mirror: model.reflection.universe.RuntimeDIUniverse.u.Mirror = scala.reflect.runtime.currentMirror
+    override val mirror: u.Mirror = scala.reflect.runtime.currentMirror
 
     override def runtimeClass(tpe: SafeType): Option[Class[_]] = {
       tpe.use(runtimeClass)
@@ -28,8 +26,6 @@ object MirrorProvider {
           None
       }
     }
-
-
   }
 
 }
