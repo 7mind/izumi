@@ -18,15 +18,24 @@ class CirceToolMacro(val c: blackbox.Context) {
     println("===")
     val x = all
       .toSeq
-      .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java"))
+      .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java") || !t.toString.contains("."))
       .filter(t => t.typeSymbol.isClass)
+      .sortBy {
+        t =>
+          val kind = if (t.typeSymbol.asClass.isTrait) {
+            0
+          } else {
+            1
+          }
+          (kind, -t.baseClasses.size, t.toString)
+      }
       .map {
         t =>
           s"implicit def `codec:${t}`: Codec.AsObject[$t] = deriveCodec"
       }
       .distinct
 
-    println(x.sorted.mkString("\n"))
+    println(x.mkString("\n"))
 
     reify(())
   }
