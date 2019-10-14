@@ -21,12 +21,11 @@ class EarlyLoggers() {
   def makeLateLogger(parameters: RawAppArgs, earlyLogger: IzLogger, config: AppConfig): IzLogger = {
     val rootLogLevel = getRootLogLevel(parameters)
     val logJson = getLogFormatJson(parameters)
-    val router = new SimpleLoggerConfigurator(earlyLogger)
-      .makeLogRouter(
-        config.config.getConfig("logger")
-        , rootLogLevel
-        , logJson
-      )
+    val router = new SimpleLoggerConfigurator(earlyLogger).makeLogRouter(
+      config = config.config.getConfig("logger"),
+      root = rootLogLevel,
+      json = logJson,
+    )
 
     IzLogger(router)("phase" -> "late")
   }

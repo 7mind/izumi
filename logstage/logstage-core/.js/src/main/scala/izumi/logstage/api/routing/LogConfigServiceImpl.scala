@@ -7,7 +7,6 @@ import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig
 
 import scala.collection.mutable
 
-
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {
   override def threshold(e: Log.LoggerId): Log.Level = {
     configFor(e).threshold

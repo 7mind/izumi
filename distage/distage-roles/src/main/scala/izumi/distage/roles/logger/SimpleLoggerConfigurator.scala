@@ -1,5 +1,7 @@
 package izumi.distage.roles.logger
 
+import com.typesafe.config.Config
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
@@ -8,7 +10,6 @@ import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, StaticLogRouter}
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.sink.{ConsoleSink, QueueingSink}
-import com.typesafe.config.Config
 
 import scala.util.{Failure, Success, Try}
 
@@ -18,18 +19,12 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
 
   // TODO: this is a temporary solution until we finish full-scale logger configuration support
   def makeLogRouter(config: Config, root: Log.Level, json: Boolean): LogRouter = {
-
     val logconf = readConfig(config)
 
     val renderingPolicy = if (logconf.json.contains(true) || json) {
       new LogstageCirceRenderingPolicy()
     } else {
-      val options = logconf.options match {
-        case Some(value) =>
-          value
-        case None =>
-          RenderingOptions()
-      }
+      val options = logconf.options.getOrElse(RenderingOptions())
       new StringRenderingPolicy(options)
     }
 
@@ -53,19 +48,16 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
     result
   }
 
-  private def readConfig(config: Config): SinksConfig = {
+  private[this] def readConfig(config: Config): SinksConfig = {
     // TODO: copypaste from di boostrap, this MUST disappear
-    import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
     val reader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
 
     val maybeConf = for {
       section <- Try(config)
       config <- Try(reader.readConfigAsCaseClass(section, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig])
-    } yield {
-      config
-    }
+    } yield config
 
-    val logconf = maybeConf match {
+    maybeConf match {
       case Failure(exception) =>
         exceptionLogger.error(s"Failed to read `logger` config section, using defaults: $exception")
         SinksConfig(Map.empty, None, json = None, None)
@@ -73,12 +65,9 @@ class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
       case Success(value) =>
         value
     }
-    logconf
   }
 }
 
 object SimpleLoggerConfigurator {
-
-  case class SinksConfig(levels: Map[String, List[String]], options: Option[RenderingOptions], json: Option[Boolean], layout: Option[String])
-
+  final case class SinksConfig(levels: Map[String, List[String]], options: Option[RenderingOptions], json: Option[Boolean], layout: Option[String])
 }

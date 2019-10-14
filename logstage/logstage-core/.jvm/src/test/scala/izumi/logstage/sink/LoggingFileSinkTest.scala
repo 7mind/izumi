@@ -41,7 +41,6 @@ object FileServiceUtils {
 @ExposedTestScope
 trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
 
-
   def fileSvcUtils: FileServiceUtils[T]
 
   "File sink" should {

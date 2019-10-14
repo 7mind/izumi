@@ -78,9 +78,7 @@ object Log {
   type LogContext = Seq[LogArg]
 
   final case class CustomContext(values: LogContext) {
-    def +(that: CustomContext): CustomContext = {
-      CustomContext(values ++ that.values)
-    }
+    def +(that: CustomContext): CustomContext = CustomContext(values ++ that.values)
   }
 
   object CustomContext {
