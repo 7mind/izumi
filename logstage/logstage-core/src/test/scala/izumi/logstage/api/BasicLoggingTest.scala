@@ -32,6 +32,18 @@ class BasicLoggingTest extends WordSpec {
       assert(message1.args.head.name == "EXPRESSION:scala.util.Random.self.nextInt().+(1)")
       assert(message1.template.parts == List("expression: ", ""))
     }
+
+    "progression test: doesn't support .stripMargin yet" in {
+      val m = "M E S S A G E"
+      val message = Message {
+        s"""This
+           |is a
+           |multiline ${m -> "message"}""".stripMargin
+      }
+
+      assert(message.template.parts != List("This\nis a\nmultiline ", ""))
+      assert(message.args != List(LogArg(Seq("message"), m, hiddenName = false)))
+    }
   }
 
   "String rendering policy" should {
