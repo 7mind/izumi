@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.36`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.38`, izumi.sbtgen._, izumi.sbtgen.model._
 
 object Izumi {
 
@@ -51,6 +51,7 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
+    sbtVersion = "1.3.3",
     scalaJsVersion = PV.scala_js_version,
     crossProjectVersion = PV.crossproject_version,
     bundlerVersion = PV.scalajs_bundler_version,
@@ -318,14 +319,13 @@ object Izumi {
 
   }
 
-
   final val forkTests = Seq(
     "fork" in (SettingScope.Test, Platform.Jvm) := true,
   )
 
   final lazy val fundamentals = Aggregate(
-    Projects.fundamentals.id,
-    Seq(
+    name = Projects.fundamentals.id,
+    artifacts = Seq(
       Artifact(
         Projects.fundamentals.fundamentalsCollections,
         Seq.empty,
@@ -374,14 +374,12 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-
   final val allMonads = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core)).map(_ in Scope.Test.all)
 
-
   final lazy val distage = Aggregate(
-    Projects.distage.id,
-    Seq(
+    name = Projects.distage.id,
+    artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
         libs = cats_all.map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
@@ -443,8 +441,8 @@ object Izumi {
   )
 
   final lazy val logstage = Aggregate(
-    Projects.logstage.id,
-    Seq(
+    name = Projects.logstage.id,
+    artifacts = Seq(
       Artifact(
         Projects.logstage.api,
         Seq(scala_reflect in Scope.Provided.all) ++ Seq(scala_java_time),
@@ -501,8 +499,8 @@ object Izumi {
   )
 
   final lazy val idealingua = Aggregate(
-    Projects.idealingua.id,
-    Seq(
+    name = Projects.idealingua.id,
+    artifacts = Seq(
       Artifact(
         Projects.idealingua.model,
         Seq.empty,
@@ -640,7 +638,7 @@ object Izumi {
           "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
           SettingDef.RawSettingDef(
             """paradoxProperties ++= Map(
-            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "izumi.version" -> version.value,
           )"""),
