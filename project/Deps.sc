@@ -127,7 +127,6 @@ object Izumi {
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.10")
-  final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.1")
   // not 2.13.1 because of scoverage https://github.com/scoverage/scalac-scoverage-plugin/pull/283 ; coverage runs on 2.13.0, while publish from 2.13.1
   final val scala213coverage = ScalaVersion("2.13.0")
@@ -147,10 +146,6 @@ object Izumi {
       platform = Platform.Jvm,
       language = targetScala,
     )
-    private val jvmPlatformDoc = PlatformEnv(
-      platform = Platform.Jvm,
-      language = Seq(scala212doc),
-    )
     private val jvmPlatformSbt = PlatformEnv(
       platform = Platform.Jvm,
       language = Seq(scala212),
@@ -169,7 +164,6 @@ object Izumi {
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
-    final val jvmDoc = Seq(jvmPlatformDoc)
     final val jvmSbt = Seq(jvmPlatformSbt)
   }
 
@@ -193,11 +187,6 @@ object Izumi {
 
       final val sharedAggSettings = Seq(
         "crossScalaVersions" := Targets.targetScala.map(_.value),
-        "scalaVersion" := "crossScalaVersions.value.head".raw,
-      )
-
-      final val docSettings = Seq(
-        "crossScalaVersions" := Seq(scala212doc.value),
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
@@ -231,7 +220,6 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala212doc), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq
         ),
@@ -602,7 +590,7 @@ object Izumi {
         name = Projects.docs.microsite,
         libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
-        settings = Projects.root.docSettings ++ Seq(
+        settings = Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
@@ -671,9 +659,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvmDoc,
-    settings = Projects.root.docSettings,
-    enableSharedSettings = false,
+    defaultPlatforms = Targets.jvm,
     dontIncludeInSuperAgg = true,
   )
 
