@@ -143,13 +143,13 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
         val tpef = i.dealias.resultType
-        val targetNameRef = tpef.typeSymbol.fullName
+        val targetNameRef = symName(tpef.typeSymbol)
         val prefix = toPrefix(tpef)
         val targetRef = NameReference(targetNameRef, prefix = prefix)
 
         val srcname = i match {
           case a: TypeRefApi =>
-            val srcname = a.sym.fullName
+            val srcname = symName(a.sym)
             if (srcname != targetNameRef) {
               Seq((NameReference(srcname, prefix = toPrefix(i)), targetRef))
             } else {
@@ -378,7 +378,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
           NameReference(value.name, b, prefix)
 
         case None =>
-          NameReference(typeSymbol.fullName, b, prefix)
+          NameReference(symName(typeSymbol), b, prefix)
       }
 
       tpef.typeArgs match {
@@ -558,8 +558,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
               case s =>
                 val u = s.typeSignature
                 if (u.typeSymbol.isAbstract) {
-
-                  Some(NameReference(o.termSymbol.fullName))
+                  Some(NameReference(symName(o.termSymbol)))
                 } else {
                   fromRef(u)
                 }
@@ -571,6 +570,16 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
 
     out
+  }
+
+  private def symName(sym: u.Symbol): String = {
+    val base = sym.fullName
+    val full = if (sym.isModuleClass) {
+      base + "::type"
+    } else {
+      base
+    }
+    full
   }
 
   private def fullDealias(t: u.Type): u.Type = {
