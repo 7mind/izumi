@@ -5,6 +5,12 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
+trait YieldOpCounts {
+  def zioYieldOpCount: Int = 1024
+  def blockingYieldOpCount: Int = Int.MaxValue
+}
+object YieldOpCounts extends YieldOpCounts
+
 class LightTypeTagTest extends WordSpec {
   trait T0[A[_], B[_]]
   final val str = "str"
@@ -353,6 +359,16 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[a1.A], LTT[Z.X#A])
       assertNotChild(LTT[Z.X#A], LTT[a1.A])
+    }
+
+    "resolve comparisons of object and trait with the same name" in {
+      println(LTT[YieldOpCounts.type])
+      println(LTT[YieldOpCounts])
+
+      assertNotChild(LTT[YieldOpCounts.type], LTT[RoleChild[Either]])
+      assertChild(LTT[YieldOpCounts.type], LTT[YieldOpCounts])
+      assertDifferent(LTT[YieldOpCounts.type], LTT[YieldOpCounts])
+      assertNotChild(LTT[YieldOpCounts], LTT[YieldOpCounts.type])
     }
 
   }
