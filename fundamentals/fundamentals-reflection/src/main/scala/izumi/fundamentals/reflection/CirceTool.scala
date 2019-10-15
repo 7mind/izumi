@@ -14,8 +14,12 @@ class CirceToolMacro(val c: blackbox.Context) {
 
   @inline def make[T: c.WeakTypeTag](): c.Expr[Unit] = {
     val all = new mutable.HashSet[Type]()
-    processType(weakTypeOf[T], all)
-    println("===")
+    val base = weakTypeOf[T]
+    processType(base, all)
+
+    val allSymbols = all.map(_.typeSymbol)
+
+    println(s"/* -- BEGIN: $base -- */")
     val x = all
       .toSeq
       .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java") || !t.toString.contains("."))
@@ -23,21 +27,43 @@ class CirceToolMacro(val c: blackbox.Context) {
       .sortBy {
         t =>
           val kind = if (t.typeSymbol.asClass.isTrait) {
-            0
+            if (complexPoly(t)) {
+              0
+            } else {
+              1
+            }
           } else {
-            1
+            2
           }
           (kind, -t.baseClasses.size, t.toString)
       }
       .map {
         t =>
-          s"implicit def `codec:${t}`: Codec.AsObject[$t] = deriveCodec"
+          if (t.typeSymbol.asClass.isTrait) {
+            val bad = t.typeSymbol.asClass.baseClasses.filter(b => b != t.typeSymbol && allSymbols.contains(b))
+            val isSealedSubHier = bad.nonEmpty
+            if (isSealedSubHier) {
+              s"implicit def `codec:$t`: Codec.AsObject[$t] = io.circe.generic.semiauto.deriveCodec"
+            } else if (complexPoly(t)) {
+              s"implicit def `codec:$t`: Codec.AsObject[$t] = io.circe.generic.semiauto.deriveCodec"
+            } else {
+              s"implicit def `codec:$t`: Codec.AsObject[$t] = io.circe.derivation.deriveCodec"
+            }
+          } else {
+            s"implicit def `codec:$t`: Codec.AsObject[$t] = io.circe.derivation.deriveCodec"
+          }
+
       }
       .distinct
 
-    println(x.mkString("\n"))
+    println(x.filter(_.nonEmpty).mkString("\n"))
+    println(s"/* -- END: $base -- */")
 
     reify(())
+  }
+
+  private def complexPoly[T: c.WeakTypeTag](t: c.universe.Type) = {
+    t.typeSymbol.asClass.knownDirectSubclasses.exists(_.asClass.isTrait)
   }
 
   def processType(t0: Type, all: mutable.HashSet[Type]): Unit = {
