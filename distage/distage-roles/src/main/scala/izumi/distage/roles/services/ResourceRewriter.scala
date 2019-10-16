@@ -25,38 +25,38 @@ class ResourceRewriter(
   override def hookDefinition(defn: ModuleBase): ModuleBase = {
     if (rules.applyRewrites) {
       defn
-        .flatMap(rewrite[AutoCloseable](a => fromAutoCloseable(logger, a)))
-        .flatMap(rewrite[ExecutorService](a => fromExecutorService(logger, a)))
+        .flatMap(rewrite[AutoCloseable](fromAutoCloseable(logger, _)))
+        .flatMap(rewrite[ExecutorService](fromExecutorService(logger, _)))
     } else {
       defn
     }
   }
 
-  private def rewrite[T: Tag](convert: T => DIResource[Identity, T])(b: Binding): Seq[Binding] = {
+  private def rewrite[TGT: Tag](convert: TGT => DIResource[Identity, TGT])(b: Binding): Seq[Binding] = {
     b match {
-      case binding: Binding.ImplBinding =>
-        binding match {
-          case b: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, b.key, b.origin, b.implementation, set = false) match {
+      case implBinding: Binding.ImplBinding =>
+        implBinding match {
+          case binding: Binding.SingletonBinding[_] =>
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, set = false) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
-                Seq(finish(b, newImpl))
-              case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}, ${originalKey -> "preserved"}")
-                Seq(b.copy(key = originalKey), finish(b, newImpl))
+                logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
+                Seq(finish(binding, newImpl))
+              case ReplaceImplMoveOrigToResourceKey(newImpl, resourceKey) =>
+                logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}, $resourceKey")
+                Seq(binding.copy(key = resourceKey), finish(binding, newImpl))
               case DontChange =>
                 Seq(binding)
             }
 
-
-          case b: Binding.SetElementBinding[_] =>
-            rewriteImpl(convert, b.key, b.origin, b.implementation, set = true) match {
+          case binding: Binding.SetElementBinding[_] =>
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, set = true) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting set element ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
-                Seq(finish(b, newImpl))
-              case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting set element ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}, ${originalKey -> "preserved"}")
-                Seq(b.copy(key = originalKey), finish(b, newImpl))
+                logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
+                Seq(finish(binding, newImpl))
+              case ReplaceImplMoveOrigToResourceKey(newImpl, resourceKey) =>
+                logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}, $resourceKey")
+                val elementResourceBinding = SingletonBinding(resourceKey, binding.implementation, binding.tags, binding.origin)
+                Seq(elementResourceBinding, finish(binding, newImpl))
               case RewriteResult.DontChange =>
                 Seq(binding)
             }
@@ -64,6 +64,69 @@ class ResourceRewriter(
 
       case binding: Binding.SetBinding =>
         Seq(binding)
+    }
+  }
+
+  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, set: Boolean): RewriteResult = {
+    implementation match {
+      case implDef: ImplDef.DirectImplDef =>
+        val implType = implDef.implType
+        if (implType <:< SafeType.get[TGT]) {
+          val resourceType = SafeType.get[DIResource[Identity, TGT]]
+
+          implDef match {
+            case _: ImplDef.ReferenceImpl =>
+              DontChange
+
+            case _: ImplDef.InstanceImpl =>
+              if (rules.warnOnExternal) {
+                logger.warn(s"External entity $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! Because it's not an explicit DIResource")
+              }
+              DontChange
+
+            case ImplDef.ProviderImpl(_, function) =>
+              val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[TGT]))
+              ReplaceImpl(ImplDef.ProviderImpl(resourceType, newImpl))
+
+            case ImplDef.TypeImpl(_) =>
+              val implTypeKey = DIKey.TypeKey(implType)
+              val newKey = DIKey.IdKey(
+                tpe = implType,
+                id = ResId(if (set) DIKey.SetElementKey(key, implTypeKey) else implTypeKey)
+              )
+
+              val parameter = {
+                val symbolInfo = SymbolInfo.Static(name = "x$1", finalResultType = implType, annotations = Nil, definingClass = implType, isByName = false, wasGeneric = false)
+                val debugInfo = DependencyContext.ConstructorParameterContext(implType, symbolInfo)
+                Association.Parameter(context = debugInfo, name = "x$1", tpe = implType, wireWith = newKey, isByName = false, wasGeneric = false)
+              }
+
+              val fn = Provider.ProviderImpl(
+                associations = Seq(parameter),
+                fun = {
+                  s: Seq[Any] =>
+                    println(("!!!", key, newKey, implDef, implType, SafeType.get[TGT], s.head, s))
+                    convert(s.head.asInstanceOf[TGT])
+                },
+                ret = resourceType
+              )
+
+              ReplaceImplMoveOrigToResourceKey(ImplDef.ProviderImpl(resourceType, fn), newKey)
+          }
+        } else {
+          DontChange
+        }
+      case implDef: ImplDef.RecursiveImplDef =>
+        implDef match {
+          case _: ImplDef.EffectImpl =>
+            if (implDef.implType <:< SafeType.get[TGT]) {
+              logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using DIResource.fromAutoCloseable/fromExecutorService")
+            }
+            DontChange
+
+          case _: ImplDef.ResourceImpl =>
+            DontChange
+        }
     }
   }
 
@@ -77,95 +140,29 @@ class ResourceRewriter(
     original.copy(implementation = res)
   }
 
-  private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, set: Boolean): RewriteResult = {
-    import RewriteResult._
-
-    implementation match {
-      case implDef: ImplDef.DirectImplDef =>
-        if (implDef.implType <:< SafeType.get[T]) {
-          val resourceType = SafeType.get[DIResource[Identity, Any]]
-
-          implDef match {
-            case _: ImplDef.ReferenceImpl =>
-              DontChange
-
-            case _: ImplDef.InstanceImpl =>
-              if (rules.warnOnExternal) {
-                logger.warn(s"External entity $key defined at $origin is ${SafeType.get[T] -> "type"}, it will NOT be finalized!")
-              }
-              DontChange
-
-            case ImplDef.ProviderImpl(_, function) =>
-              val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[T]))
-              ReplaceImpl(ImplDef.ProviderImpl(resourceType, newImpl))
-
-            case ImplDef.TypeImpl(_) =>
-              val tpe = key.tpe
-              val newkey = DIKey.IdKey(key.tpe, ResourceRewriter.ResId(key))
-
-              val debugInfo = DependencyContext.ConstructorParameterContext(tpe, SymbolInfo.Static("x$1", tpe, Nil, tpe, isByName = false, wasGeneric = false))
-
-              val p = Provider.ProviderImpl(
-                associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, newkey, isByName = false, wasGeneric = false))
-                , fun = {
-                  s: Seq[Any] =>
-                    println(("!!!", key, newkey, implDef, implDef.implType, SafeType.get[T], s.head, s))
-                    convert(s.head.asInstanceOf[T])
-                }
-                , ret = tpe
-              )
-
-              ReplaceAndPreserve(ImplDef.ProviderImpl(resourceType, p), newkey)
-          }
-        } else {
-          DontChange
-        }
-      case implDef: ImplDef.RecursiveImplDef =>
-        implDef match {
-          case _: ImplDef.EffectImpl =>
-            if (implDef.implType <:< SafeType.get[T]) {
-              logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[T] -> "type"} and it will NOT be finalized! You must wrap it into resource using DIResource.make")
-            }
-            DontChange
-
-          case _: ImplDef.ResourceImpl =>
-            DontChange
-
-        }
-
-    }
-  }
-
 }
 
 object ResourceRewriter {
 
   sealed trait RewriteResult
-
   object RewriteResult {
-
     final case class ReplaceImpl(newImpl: DirectImplDef) extends RewriteResult
-
-    final case class ReplaceAndPreserve(newImpl: DirectImplDef, originalKey: DIKey) extends RewriteResult
-
+    final case class ReplaceImplMoveOrigToResourceKey(newImpl: DirectImplDef, newKey: DIKey) extends RewriteResult
     case object DontChange extends RewriteResult
-
   }
 
-  final case class ResId(contextKey: DIKey) {
-    override def toString: String = s"res:${contextKey.toString}"
+  final case class ResId(disambiguator: DIKey) {
+    override def toString: String = s"res:${disambiguator.toString}"
   }
 
   object ResId {
     implicit val idContract: IdContract[ResId] = new RuntimeDIUniverse.IdContractImpl[ResId]
-
   }
 
   final case class RewriteRules(
                                  applyRewrites: Boolean = true,
                                  warnOnExternal: Boolean = true,
                                )
-
 
   /** Like [[DIResource.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {
