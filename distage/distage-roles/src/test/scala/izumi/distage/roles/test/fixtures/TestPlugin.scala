@@ -1,13 +1,18 @@
 package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
+import distage.DIResource
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.internal.{ConfigWriter, Help}
+import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.distage.roles.test.fixtures.Junk._
 import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.logstage.api.Log
+import izumi.logstage.api.logger.LogSink
 
 
 class TestPlugin extends PluginDef {
@@ -49,4 +54,36 @@ object TestPlugin {
     override def close(): Unit = {}
   }
 
+}
+
+
+class XXXXXPlugin extends PluginDef {
+  make[BuggyRole]
+  many[LogSink].add[BrokenSink] // comment it and uncomment below - it will work well
+  //  many[LogSink].add {
+  //    new BrokenSink()
+  //  }
+}
+
+class BrokenSink extends LogSink {
+  override def flush(e: Log.Entry): Unit = ???
+}
+
+
+class BuggyRole
+(
+  sinks: Set[LogSink]
+) extends RoleService[IO] {
+
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[IO, Unit] = {
+    DIResource.make(
+      acquire = IO(println(sinks.map(_.getClass.getName)))
+    )(release = _ =>
+      IO(println("Exit reached: users role"))
+    )
+  }
+}
+
+object BuggyRole extends RoleDescriptor {
+  override final val id = "buggy"
 }

@@ -25,6 +25,7 @@ object TestLauncher extends TestLauncherBase {
 
 object ExampleEntrypoint extends RoleAppMain.Default(TestLauncher) {
   override protected def requiredRoles: Vector[RawRoleParams] = Vector(
+    RawRoleParams("buggy", RawEntrypointParams.empty, Vector.empty),
     RawRoleParams("testrole00", RawEntrypointParams.empty, Vector.empty),
     RawRoleParams("testrole01", RawEntrypointParams.empty, Vector.empty),
     RawRoleParams("testrole02", RawEntrypointParams.empty, Vector.empty),
