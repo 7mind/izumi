@@ -338,7 +338,7 @@ object Izumi {
           Projects.fundamentals.fundamentalsCollections in Scope.Compile.all
         ),
         settings = Seq(
-          "npmDependencies" in(SettingScope.Compile, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
+          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
