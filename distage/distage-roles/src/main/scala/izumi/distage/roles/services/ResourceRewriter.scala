@@ -37,12 +37,12 @@ class ResourceRewriter(
       case binding: Binding.ImplBinding =>
         binding match {
           case b: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, b.key, b.origin, b.implementation) match {
+            rewriteImpl(convert, b.key, b.origin, b.implementation, set = false) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(finish(b, newImpl))
               case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
+                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}, ${originalKey -> "preserved"}")
                 Seq(b.copy(key = originalKey), finish(b, newImpl))
               case DontChange =>
                 Seq(binding)
@@ -50,12 +50,12 @@ class ResourceRewriter(
 
 
           case b: Binding.SetElementBinding[_] =>
-            rewriteImpl(convert, b.key, b.origin, b.implementation) match {
+            rewriteImpl(convert, b.key, b.origin, b.implementation, set = true) match {
               case ReplaceImpl(newImpl) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
+                logger.info(s"Adapting set element ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
                 Seq(finish(b, newImpl))
               case ReplaceAndPreserve(newImpl, originalKey) =>
-                logger.info(s"Adapting ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}")
+                logger.info(s"Adapting set element ${b.key} defined at ${b.origin} as ${SafeType.get[T] -> "type"}, ${originalKey -> "preserved"}")
                 Seq(b.copy(key = originalKey), finish(b, newImpl))
               case RewriteResult.DontChange =>
                 Seq(binding)
@@ -77,8 +77,9 @@ class ResourceRewriter(
     original.copy(implementation = res)
   }
 
-  private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
+  private def rewriteImpl[T: Tag](convert: T => DIResource[Identity, T], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, set: Boolean): RewriteResult = {
     import RewriteResult._
+
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         if (implDef.implType <:< SafeType.get[T]) {
@@ -106,7 +107,11 @@ class ResourceRewriter(
 
               val p = Provider.ProviderImpl(
                 associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, newkey, isByName = false, wasGeneric = false))
-                , fun = (s: Seq[Any]) => convert(s.head.asInstanceOf[T])
+                , fun = {
+                  s: Seq[Any] =>
+                    println(("!!!", key, newkey, implDef, implDef.implType, SafeType.get[T], s.head, s))
+                    convert(s.head.asInstanceOf[T])
+                }
                 , ret = tpe
               )
 

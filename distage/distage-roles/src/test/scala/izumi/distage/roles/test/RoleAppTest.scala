@@ -21,7 +21,7 @@ class RoleAppTest extends WordSpec
   "Role Launcher" should {
     "be able to start roles" in {
       TestEntrypoint.main(Array(
-        "-ll", "debug",
+        "-ll", "info",
         ":buggy",
       ))
     }

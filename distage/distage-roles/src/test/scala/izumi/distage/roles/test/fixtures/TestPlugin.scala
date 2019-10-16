@@ -60,9 +60,16 @@ object TestPlugin {
 class XXXXXPlugin extends PluginDef {
   make[BuggyRole]
   many[LogSink].add[BrokenSink] // comment it and uncomment below - it will work well
-  //  many[LogSink].add {
-  //    new BrokenSink()
-  //  }
+  many[LogSink].add[BrokenSink2] // comment it and uncomment below - it will work well
+//  many[LogSink].add {
+//    new BrokenSink()
+//  }
+  println((">>>", this.bindings))
+
+}
+
+class BrokenSink2 extends LogSink {
+  override def flush(e: Log.Entry): Unit = ???
 }
 
 class BrokenSink extends LogSink {
