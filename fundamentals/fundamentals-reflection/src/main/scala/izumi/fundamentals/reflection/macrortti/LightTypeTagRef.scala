@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.SymTypeName
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, Lambda}
 
 sealed trait LightTypeTagRef {
@@ -92,7 +93,7 @@ object LightTypeTagRef {
     private def makeFakeParams = {
       input.zipWithIndex.map {
         case (p, idx) =>
-          p.name -> NameReference(s"!FAKE_${idx}")
+          p.name -> NameReference(s"!FAKE_$idx")
       }
     }
   }
@@ -111,22 +112,21 @@ object LightTypeTagRef {
     override def toString: String = this.render()
   }
 
-  final case class NameReference(ref: String, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
+  final case class NameReference(ref: SymName, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
     override def asName: NameReference = this
 
     override def toString: String = this.render()
   }
-
   object NameReference {
-    def apply(ref: String, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
+    def apply(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
+    def apply(tpeName: String): NameReference = NameReference(SymTypeName(tpeName))
   }
 
   final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
-    override def asName: NameReference = NameReference(ref, prefix = prefix)
+    override def asName: NameReference = NameReference(SymTypeName(ref), prefix = prefix)
 
     override def toString: String = this.render()
   }
-
   object FullReference {
     def apply(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference] = None): FullReference = new FullReference(ref, parameters, prefix)
   }
@@ -135,8 +135,8 @@ object LightTypeTagRef {
     override def toString: String = this.render()
   }
 
-  sealed trait RefinementDecl
 
+  sealed trait RefinementDecl
   object RefinementDecl {
     final case class Signature(name: String, input: List[AppliedReference], output: AppliedReference) extends RefinementDecl
     final case class TypeMember(name: String, ref: AbstractReference) extends RefinementDecl
@@ -147,7 +147,7 @@ object LightTypeTagRef {
   }
 
   sealed trait Variance {
-    override def toString: String = this.render()
+    override final def toString: String = this.render()
   }
   object Variance {
     case object Invariant extends Variance
@@ -156,11 +156,29 @@ object LightTypeTagRef {
   }
 
   sealed trait Boundaries {
-    override def toString: String = this.render()
+    override final def toString: String = this.render()
   }
   object Boundaries {
     final case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
     case object Empty extends Boundaries
+  }
+
+  sealed trait SymName {
+    def name: String
+  }
+  object SymName {
+    final case class SymTermName(name: String) extends SymName
+    final case class SymTypeName(name: String) extends SymName
+    final case class SymLiteral(name: String) extends SymName
+    object SymLiteral {
+      def apply(c: Any): SymLiteral = {
+        val constant = c match {
+          case s: String => "\"" + s + "\""
+          case o => o.toString
+        }
+        SymLiteral(constant)
+      }
+    }
   }
 
 }

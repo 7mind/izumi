@@ -10,6 +10,7 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.Broken
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiteral, SymTermName, SymTypeName}
 
 import scala.collection.mutable
 import scala.reflect.api.Universe
@@ -96,13 +97,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
   }
 
-  @inline private[this] val any: Type = definitions.AnyTpe
-  @inline private[this] val obj: Type = definitions.ObjectTpe
-  @inline private[this] val nothing: Type = definitions.NothingTpe
-  @inline private[this] val ignored: Set[Type] = Set(any, obj, nothing)
+  @inline private[this] final val any = definitions.AnyTpe
+  @inline private[this] final val obj = definitions.ObjectTpe
+  @inline private[this] final val nothing = definitions.NothingTpe
+  @inline private[this] final val ignored = Set(any, obj, nothing)
 
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
-  @inline private[this] final val is = u.asInstanceOf[scala.reflect.internal.Symbols]
 
   def makeFullTagImpl(tpe: Type): LightTypeTag = {
     val out = makeRef(tpe)
@@ -114,22 +114,22 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       }
 
     val stableBases = makeStableBases(tpe, allReferenceComponents)
-    val unparameterizedInheritanceData = makeUnparameterizedInheritanceDb(allReferenceComponents)
     val basesAsLambdas = allReferenceComponents.flatMap(makeBaseClasses)
-
     val allBases = Seq(
       basesAsLambdas,
       stableBases,
     )
-    val basesdb = allBases
+    val fullDb = allBases
       .flatten
       .toMultimap
       .filterNot(_._2.isEmpty)
 
-    LightTypeTag(out, basesdb, unparameterizedInheritanceData)
+    val unappliedDb = makeUnappliedInheritanceDb(allReferenceComponents)
+
+    LightTypeTag(out, fullDb, unappliedDb)
   }
 
-  private def makeUnparameterizedInheritanceDb(allReferenceComponents: Set[Type]): Map[NameReference, Set[NameReference]] = {
+  private def makeUnappliedInheritanceDb(allReferenceComponents: Set[Type]): Map[NameReference, Set[NameReference]] = {
     val baseclassReferences = allReferenceComponents
       .flatMap {
         i =>
@@ -143,15 +143,14 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
         val tpef = i.dealias.resultType
-        val targetNameRef = symName(tpef.typeSymbol)
-        val prefix = toPrefix(tpef)
-        val targetRef = NameReference(targetNameRef, prefix = prefix)
+        val prefix = getPrefix(tpef)
+        val targetRef = makeNameReference(i, tpef.typeSymbol, Boundaries.Empty, prefix)
 
         val srcname = i match {
           case a: TypeRefApi =>
             val srcname = symName(a.sym)
-            if (srcname != targetNameRef) {
-              Seq((NameReference(srcname, prefix = toPrefix(i)), targetRef))
+            if (srcname != targetRef.ref) {
+              Seq((NameReference(srcname, prefix = getPrefix(i)), targetRef))
             } else {
               Seq.empty
             }
@@ -176,7 +175,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     unparameterizedInheritanceData
   }
 
-  private def makeStableBases(tpe: Type, allReferenceComponents: Set[Type]) = {
+  private def makeStableBases(tpe: Type, allReferenceComponents: Set[Type]): Set[(AbstractReference, AbstractReference)] = {
     val baseclassReferences = allReferenceComponents
       .flatMap {
         i =>
@@ -300,7 +299,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       }
       .map(s => tpef.baseType(s))
 
-    val allbases = parameterizedBases.filterNot(_ =:= tpe)
+    val allbases = parameterizedBases.filterNot(_ =:= tpef)
     allbases
   }
 
@@ -370,15 +369,16 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
     def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedNamedReference = {
       val tpef = t.dealias.resultType
-      val prefix = toPrefix(tpef)
+      val prefix = getPrefix(tpef)
       val typeSymbol = tpef.typeSymbol
-      val b = makeBoundaries(tpef)
+      val boundaries = makeBoundaries(tpef)
       val nameref = rules.get(typeSymbol.fullName) match {
         case Some(value) =>
-          NameReference(value.name, b, prefix)
+          // this is a previously encountered type variable
+          NameReference(SymTypeName(value.name), boundaries, prefix)
 
         case None =>
-          NameReference(symName(typeSymbol), b, prefix)
+          makeNameReference(t, typeSymbol, boundaries, prefix)
       }
 
       tpef.typeArgs match {
@@ -388,12 +388,11 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
         case args =>
           val params = args.zip(t.dealias.typeConstructor.typeParams).map {
             case (a, pa) =>
-              TypeParam(sub(a), toVariance(pa.asType))
+              TypeParam(sub(a), getVariance(pa.asType))
           }
-          FullReference(nameref.ref, params, prefix)
+          FullReference(nameref.ref.name, params, prefix)
       }
     }
-
 
     def unpackRefined(t: Type, rules: Map[String, LambdaParameter]): AppliedReference = {
       UniRefinement.breakRefinement(t) match {
@@ -435,7 +434,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     out
   }
 
-  private def makeLambdaParams(ctxid: Option[String], targs: List[Symbol]) = {
+  private def makeLambdaParams(ctxid: Option[String], targs: List[Symbol]): List[(String, LambdaParameter)] = {
     val lamParams = targs.zipWithIndex.map {
       case (p, idx) =>
         val name = ctxid match {
@@ -452,11 +451,11 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
 
   object UniRefinement {
-    def unapply(tpef: Type): Option[(List[Type], List[SymbolApi])] = {
-      tpef.asInstanceOf[AnyRef] match {
+    def unapply(tpef: u.Type): Option[(List[Type], List[SymbolApi])] = {
+      (tpef: AnyRef) match {
         case x: it.RefinementTypeRef =>
-          Some((x.parents.map(_.asInstanceOf[Type]), x.decls.map(_.asInstanceOf[SymbolApi]).toList))
-        case r: RefinedTypeApi@unchecked =>
+          Some((x.parents.map(_.asInstanceOf[Type]), x.decls.toList.asInstanceOf[List[SymbolApi]]))
+        case r: u.RefinedTypeApi @unchecked =>
           Some((r.parents, r.decls.toList))
         case _ =>
           None
@@ -526,7 +525,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
   }
 
-  private def toPrefix(tpef: u.Type): Option[AppliedReference] = {
+  private def getPrefix(tpef: u.Type): Option[AppliedReference] = {
     def fromRef(o: Type): Option[AppliedReference] = {
       makeRef(o) match {
         case a: AppliedReference =>
@@ -534,18 +533,18 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
         case o =>
           throw new IllegalStateException(s"Cannot extract prefix from $tpef: expected applied reference, but got $o")
       }
-
     }
 
-    val out = tpef match {
+    tpef match {
       case t: TypeRefApi =>
         t.pre match {
           case i if i.typeSymbol.isPackage =>
             None
-          case k if k == it.NoPrefix =>
+          case k if k == NoPrefix =>
             None
           case k: ThisTypeApi =>
             k.sym.asType.toType match {
+              // This case matches UniRefinement.unapply#it.RefinementTypeRef case
               case UniRefinement(_, _) =>
                 None
               case o =>
@@ -553,7 +552,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
             }
           case o =>
             o.termSymbol match {
-              case k if k == is.NoSymbol =>
+              case k if k == NoSymbol =>
                 fromRef(o)
               case s =>
                 val u = s.typeSignature
@@ -568,18 +567,24 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       case _ =>
         None
     }
-
-    out
   }
 
-  private def symName(sym: u.Symbol): String = {
-    val base = sym.fullName
-    val full = if (sym.isModuleClass) {
-      base + "::type"
-    } else {
-      base
+  private def makeNameReference(originalType: Type, typeSymbol: Symbol, boundaries: Boundaries, prefix: Option[AppliedReference]): NameReference = {
+    originalType match {
+      case c: ConstantTypeApi =>
+        NameReference(SymLiteral(c.value.value), boundaries, prefix)
+      case _ =>
+        NameReference(symName(typeSymbol), boundaries, prefix)
     }
-    full
+  }
+
+  private def symName(sym: u.Symbol): SymName = {
+    val base = sym.fullName
+    if (sym.isTerm || sym.isModuleClass || sym.typeSignature.isInstanceOf[u.SingletonTypeApi]) {
+      SymTermName(base)
+    } else {
+      SymTypeName(base)
+    }
   }
 
   private def fullDealias(t: u.Type): u.Type = {
@@ -590,7 +595,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
   }
 
-  private def toVariance(tpes: TypeSymbol): Variance = {
+  private def getVariance(tpes: TypeSymbol): Variance = {
     if (tpes.isCovariant) {
       Variance.Covariant
     } else if (tpes.isContravariant) {
