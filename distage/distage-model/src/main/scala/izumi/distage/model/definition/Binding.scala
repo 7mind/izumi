@@ -61,7 +61,16 @@ object Binding {
   }
 
   final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
-    override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
+    override def group: GroupingKey = {
+      val gk = key.reference match {
+        case id: DIKey.IdKey[_] =>
+          DIKey.SetElementKey(key.set, DIKey.TypeKey(id.tpe))
+        case _ =>
+          key
+      }
+//      val gk = key
+      GroupingKey.KeyImpl(gk, implementation)
+    }
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding =  {
       // TODO: seems like this will never be invoked

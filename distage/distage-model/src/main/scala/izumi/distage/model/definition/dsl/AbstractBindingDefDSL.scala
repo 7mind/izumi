@@ -171,10 +171,27 @@ object AbstractBindingDefDSL {
     }
   }
 
+//  private def key(basic: DIKey.TypeKey, dis: String, d: ImplDef): DIKey.BasicKey = {
+//    d match {
+//      case implDef: ImplDef.DirectImplDef =>
+//        implDef match {
+//          case _: ImplDef.TypeImpl=>
+//            basic
+//          case _ =>
+//            basic.named(dis)
+//        }
+//      case _: ImplDef.RecursiveImplDef =>
+//        basic.named(dis)
+//    }
+//  }
+
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
-      val implKey = DIKey.TypeKey(implDef.implType).named(pos.toString)
-      val elKey = DIKey.SetElementKey(setKey, implKey)
+      val implKey = DIKey.TypeKey(implDef.implType)
+      //val refkey = key(implKey, pos.toString, implDef)
+      val refkey = implKey.named(pos.toString)
+      val elKey = DIKey.SetElementKey(setKey, refkey)
+
       ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
         (b, instr) =>
           instr match {
@@ -190,6 +207,26 @@ object AbstractBindingDefDSL {
       this
     }
   }
+
+//  final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
+//    def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
+//      val implKey = DIKey.TypeKey(implDef.implType).named(pos.toString)
+//      val elKey = DIKey.SetElementKey(setKey, implKey)
+//      ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
+//        (b, instr) =>
+//          instr match {
+//            case ElementAddTags(tags) => b.addTags(tags)
+//          }
+//      }
+//    }
+//
+//
+//
+//    def append(op: SetElementInstruction): SetElementRef = {
+//      ops += op
+//      this
+//    }
+//  }
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {

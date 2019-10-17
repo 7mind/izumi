@@ -1,11 +1,8 @@
 package izumi.distage.model.definition
 
 import cats.kernel.BoundedSemilattice
-import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, ModuleBaseSemilattice}
-import izumi.distage.model.exceptions.ModuleMergeException
 import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
 
@@ -162,21 +159,15 @@ object ModuleBase {
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
-    val out = bs.groupBy(_.group)
+    val grouped = bs.groupBy(_.group)
+
+    val out = grouped
       .map {
         case (k, v) =>
-          assert(v.forall(_.key == k.key))
+          //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
           v.reduce(_ addTags _.tags)
       }
       .to[ListSet]
-//    import izumi.fundamentals.platform.strings.IzString._
-//    println("===")
-//    println(bs.size)
-//    println(bs.map(_.toString).toSeq.sorted.niceList())
-//    println("=>")
-//    println(out.size)
-//    println(out.map(_.toString).toSeq.sorted.niceList())
-//    println("===")
     out
   }
 
