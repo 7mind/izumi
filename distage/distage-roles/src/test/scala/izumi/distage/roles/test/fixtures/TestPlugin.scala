@@ -10,13 +10,16 @@ import izumi.distage.roles.model.{RoleDescriptor, RoleService}
 import izumi.distage.roles.test.fixtures.Junk._
 import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
+import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
 
 class TestPlugin extends PluginDef {
+
   import TestPlugin._
+
   tag(Env.Prod)
 
   addImplicit[DIEffect[IO]]
@@ -50,6 +53,7 @@ object TestPlugin {
   trait NotCloseable
 
   final val versionProperty = "launcher-version-test"
+
   class InheritedCloseable extends NotCloseable with AutoCloseable {
     override def close(): Unit = {}
   }
@@ -58,39 +62,37 @@ object TestPlugin {
 
 
 class XXXXXPlugin extends PluginDef {
-  make[BuggyRole]
-  many[LogSink].add[BrokenSink] // comment it and uncomment below - it will work well
-  many[LogSink].add[BrokenSink2] // comment it and uncomment below - it will work well
-//  many[LogSink].add {
-//    new BrokenSink()
-//  }
-  println((">>>", this.bindings))
-
+  make[AdoptedAutocloseablesCase]
+  many[LogSink].add[BrokenSink]
+  many[LogSink].add[BrokenSink2]
+  many[LogSink].add {
+    new BrokenSink()
+  }
 }
 
 class BrokenSink2 extends LogSink {
-  override def flush(e: Log.Entry): Unit = ???
+  override def flush(e: Log.Entry): Unit = {
+    Quirks.discard(e)
+  }
 }
 
 class BrokenSink extends LogSink {
-  override def flush(e: Log.Entry): Unit = ???
+  override def flush(e: Log.Entry): Unit = {
+    Quirks.discard(e)
+  }
 }
 
 
-class BuggyRole
+class AdoptedAutocloseablesCase
 (
   sinks: Set[LogSink]
 ) extends RoleService[IO] {
 
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[IO, Unit] = {
-    DIResource.make(
-      acquire = IO(println(sinks.map(_.getClass.getName)))
-    )(release = _ =>
-      IO(println("Exit reached: users role"))
-    )
+    DIResource.liftF(IO.unit)
   }
 }
 
-object BuggyRole extends RoleDescriptor {
+object AdoptedAutocloseablesCase extends RoleDescriptor {
   override final val id = "buggy"
 }

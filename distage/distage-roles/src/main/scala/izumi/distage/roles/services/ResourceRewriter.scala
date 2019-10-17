@@ -105,7 +105,6 @@ class ResourceRewriter(
                 associations = Seq(parameter),
                 fun = {
                   s: Seq[Any] =>
-                    println(("!!!", key, newKey, implDef, implType, SafeType.get[TGT], s.head, s))
                     convert(s.head.asInstanceOf[TGT])
                 },
                 ret = resourceType
