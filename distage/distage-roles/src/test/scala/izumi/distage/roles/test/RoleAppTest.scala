@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
-import izumi.distage.roles.test.fixtures.TestPlugin
+import izumi.distage.roles.test.fixtures.{AdoptedAutocloseablesCase, TestPlugin, TestRole00}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import org.scalatest.WordSpec
 
@@ -22,7 +22,8 @@ class RoleAppTest extends WordSpec
     "be able to start roles" in {
       TestEntrypoint.main(Array(
         "-ll", "critical",
-        ":testrole00",
+        ":"+ AdoptedAutocloseablesCase.id,
+        ":"+ TestRole00.id,
       ))
     }
 

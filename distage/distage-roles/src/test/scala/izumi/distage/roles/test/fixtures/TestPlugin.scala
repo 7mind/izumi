@@ -11,7 +11,9 @@ import izumi.fundamentals.platform.resources.ArtifactVersion
 
 
 class TestPlugin extends PluginDef {
+
   import TestPlugin._
+
   tag(Env.Prod)
 
   addImplicit[DIEffect[IO]]
@@ -45,8 +47,13 @@ object TestPlugin {
   trait NotCloseable
 
   final val versionProperty = "launcher-version-test"
+
   class InheritedCloseable extends NotCloseable with AutoCloseable {
     override def close(): Unit = {}
   }
 
 }
+
+
+
+

@@ -2,6 +2,8 @@ package izumi.distage.roles.test
 
 import cats.effect.IO
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.roles.internal.{ConfigWriter, Help}
+import izumi.distage.roles.test.fixtures.{AdoptedAutocloseablesCase, TestRole00, TestRole01, TestRole02, TestTask00}
 import izumi.distage.roles.{AppShutdownStrategy, BootstrapConfig, ImmediateExitShutdownStrategy, RoleAppLauncher, RoleAppMain}
 import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams}
 import izumi.fundamentals.reflection.SourcePackageMaterializer.thisPkg
@@ -25,12 +27,13 @@ object TestLauncher extends TestLauncherBase {
 
 object ExampleEntrypoint extends RoleAppMain.Default(TestLauncher) {
   override protected def requiredRoles: Vector[RawRoleParams] = Vector(
-    RawRoleParams("testrole00", RawEntrypointParams.empty, Vector.empty),
-    RawRoleParams("testrole01", RawEntrypointParams.empty, Vector.empty),
-    RawRoleParams("testrole02", RawEntrypointParams.empty, Vector.empty),
-    RawRoleParams("testtask00", RawEntrypointParams.empty, Vector.empty),
-    RawRoleParams("configwriter", RawEntrypointParams.empty, Vector.empty),
-    RawRoleParams("help", RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(AdoptedAutocloseablesCase.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(TestRole00.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(TestRole01.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(TestRole02.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(TestTask00.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(ConfigWriter.id, RawEntrypointParams.empty, Vector.empty),
+    RawRoleParams(Help.id, RawEntrypointParams.empty, Vector.empty),
   )
 }
 
