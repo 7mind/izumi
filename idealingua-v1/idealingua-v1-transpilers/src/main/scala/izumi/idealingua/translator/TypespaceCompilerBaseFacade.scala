@@ -34,11 +34,3 @@ object TypespaceCompilerBaseFacade {
   private def descriptorsMap: Map[IDLLanguage, TranslatorDescriptor[_]] = descriptors.map(d => d.language -> d).toMap
 }
 
-
-
-
-
-
-
-
-

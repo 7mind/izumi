@@ -3,7 +3,7 @@ package izumi.fundamentals.reflection.macrortti
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, Lambda}
 
 sealed trait LightTypeTagRef {
-  def combine(o: Seq[LightTypeTagRef]): AbstractReference = {
+  final def combine(o: Seq[LightTypeTagRef]): AbstractReference = {
     applyParameters {
       l =>
         l.input.zip(o).map {
@@ -13,7 +13,7 @@ sealed trait LightTypeTagRef {
     }
   }
 
-  def combineNonPos(o: Seq[Option[LightTypeTagRef]]): AbstractReference = {
+  final def combineNonPos(o: Seq[Option[LightTypeTagRef]]): AbstractReference = {
     applyParameters {
       l =>
         l.input.zip(o).flatMap {
@@ -28,7 +28,7 @@ sealed trait LightTypeTagRef {
     }
   }
 
-  def combine(o: Map[String, LightTypeTagRef]): AbstractReference = {
+  final def combine(o: Map[String, LightTypeTagRef]): AbstractReference = {
     val parameters = o.map {
       case (p, v: AbstractReference) =>
         p -> v
@@ -37,7 +37,7 @@ sealed trait LightTypeTagRef {
     applyParameters(_ => parameters)
   }
 
-  private def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
+  private[this] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
     this match {
       case l: Lambda =>
         val parameters = p(l)
@@ -49,7 +49,6 @@ sealed trait LightTypeTagRef {
         if (unknownKeys.nonEmpty) {
           throw new IllegalArgumentException(s"$this takes parameters: $expected but got unexpected ones: $unknownKeys")
         }
-
 
         val applied = RuntimeAPI.applyLambda(l, parameters)
         applied
@@ -69,9 +68,7 @@ object LightTypeTagRef {
   final case class Lambda(input: List[LambdaParameter], output: AbstractReference) extends AbstractReference {
     def referenced: Set[NameReference] = RuntimeAPI.unpack(this)
     def paramRefs: Set[NameReference] = input.map(n => NameReference(n.name)).toSet
-    def allArgumentsReferenced: Boolean = {
-      paramRefs.diff(referenced).isEmpty
-    }
+    def allArgumentsReferenced: Boolean = paramRefs.diff(referenced).isEmpty
 
     def normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
     def normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
@@ -100,8 +97,6 @@ object LightTypeTagRef {
     }
   }
 
-
-
   final case class LambdaParameter(name: String) {
     override def toString: String = this.render()
   }
@@ -117,7 +112,6 @@ object LightTypeTagRef {
   }
 
   final case class NameReference(ref: String, boundaries: Boundaries, prefix: Option[AppliedReference]) extends AppliedNamedReference {
-
     override def asName: NameReference = this
 
     override def toString: String = this.render()
@@ -128,7 +122,6 @@ object LightTypeTagRef {
   }
 
   final case class FullReference(ref: String, parameters: List[TypeParam], prefix: Option[AppliedReference]) extends AppliedNamedReference {
-
     override def asName: NameReference = NameReference(ref, prefix = prefix)
 
     override def toString: String = this.render()
@@ -145,11 +138,8 @@ object LightTypeTagRef {
   sealed trait RefinementDecl
 
   object RefinementDecl {
-
     final case class Signature(name: String, input: List[AppliedReference], output: AppliedReference) extends RefinementDecl
-
     final case class TypeMember(name: String, ref: AbstractReference) extends RefinementDecl
-
   }
 
   final case class Refinement(reference: AppliedReference, decls: Set[RefinementDecl]) extends AppliedReference {
@@ -159,27 +149,18 @@ object LightTypeTagRef {
   sealed trait Variance {
     override def toString: String = this.render()
   }
-
   object Variance {
-
     case object Invariant extends Variance
-
     case object Contravariant extends Variance
-
     case object Covariant extends Variance
-
   }
 
   sealed trait Boundaries {
     override def toString: String = this.render()
   }
-
   object Boundaries {
-
     final case class Defined(bottom: AbstractReference, top: AbstractReference) extends Boundaries
-
     case object Empty extends Boundaries
-
   }
 
 }
