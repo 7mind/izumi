@@ -32,7 +32,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   def isChild(): Boolean = {
     val st = self.ref
     val ot = other.ref
-    val logger = TrivialLogger.make[this.type]("izumi.distage.debug.reflection", Config(/*forceLog = true*/))
+    val logger = TrivialLogger.make[this.type]("izumi.debug.rtti", Config(/*forceLog = true*/))
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
@@ -50,7 +50,6 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   private def isChild(ctx: Ctx)(selfT: LightTypeTagRef, thatT: LightTypeTagRef): Boolean = {
     import ctx._
     logger.log(s"✴️ ️$selfT <:< $thatT, context = ${ctx.params}")
-
 
     val result = (selfT, thatT) match {
       case (s, t) if s == t =>
@@ -79,8 +78,9 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
         }
 
         any(
+          all(boundIsOk, safeParentsOf(s).exists(p => ctx.isChild(p, thatT))),
           all(boundIsOk, parentsOf(s).exists(p => ctx.isChild(p, thatT))),
-          all(boundIsOk, params.map(_.name).contains(t.ref)), // lambda parameter may accept anything
+          all(boundIsOk, params.map(_.name).contains(t.ref.name)), // lambda parameter may accept anything
           s.boundaries match {
             case Boundaries.Defined(_, top) =>
               ctx.isChild(top, t)
@@ -89,13 +89,12 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
           }
         )
 
-
       case (_: AppliedNamedReference, t: Lambda) =>
         isChild(ctx.next(t.input))(selfT, t.output)
       case (s: Lambda, t: AppliedNamedReference) =>
         isChild(ctx.next(s.input))(s.output, t)
       case (s: Lambda, o: Lambda) =>
-        s.input.size == o.input.size && isChild(ctx.next(s.normalizedParams.map(p => LambdaParameter(p.ref))))(s.normalizedOutput, o.normalizedOutput)
+        s.input.size == o.input.size && isChild(ctx.next(s.normalizedParams.map(p => LambdaParameter(p.ref.name))))(s.normalizedOutput, o.normalizedOutput)
       case (s: IntersectionReference, t: IntersectionReference) =>
         // yeah, this shit is quadratic
         s.refs.forall {

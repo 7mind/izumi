@@ -116,7 +116,7 @@ protected[izumi] object RuntimeAPI {
       reference match {
 
         case n@NameReference(ref, boundaries, prefix) =>
-          rules.get(ref) match {
+          rules.get(ref.name) match {
             case Some(value) =>
               complete(this, n, value)
             case None =>

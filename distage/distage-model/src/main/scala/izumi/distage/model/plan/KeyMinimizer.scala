@@ -16,12 +16,12 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
 
   private val minimizer = new LTTRenderables {
     protected def nameToString(value: NameReference): String = {
-      val shortname = value.ref.split('.').last
+      val shortname = value.ref.name.split('.').last
       val by = indexed.getOrElse(shortname, 0)
       if (by <= 1) {
         shortname
       } else {
-        value.ref
+        value.ref.name
       }
     }
   }
@@ -79,6 +79,6 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     RuntimeAPI.unpack(key.tag.ref match {
       case reference: LightTypeTagRef.AbstractReference =>
         reference
-    }).map(_.ref)
+    }).map(_.ref.name)
   }
 }

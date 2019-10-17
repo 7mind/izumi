@@ -67,6 +67,7 @@ abstract class LightTypeTag
     ref.toString
   }
 
+  /** Fully-qualified printing of a type, use [[toString]] for a printing that omits package names */
   def repr: String = {
     import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     ref.render()
@@ -116,22 +117,16 @@ object LightTypeTag {
     final case class SubtypeDBs(bases: Map[AbstractReference, Set[AbstractReference]], idb: Map[NameReference, Set[NameReference]])
   }
 
-  // strict parse entire ltt
-//  def parse[T](s: String): LightTypeTag = {
-//    val bytes = s.getBytes("ISO-8859-1")
-//    binarySerializer.unpickle(ByteBuffer.wrap(bytes, 0, bytes.length))
-//  }
-
   // parse lazy ParsedLightTypeTag
-  def parse[T](s1: String, s2: String): LightTypeTag = {
+  def parse[T](refString: String, basesString: String): LightTypeTag = {
     lazy val shared = {
-      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(s2.getBytes("ISO-8859-1")))
+      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes("ISO-8859-1")))
     }
 
-    new ParsedLightTypeTag(s1, () => shared.bases, () => shared.idb)
+    new ParsedLightTypeTag(refString, () => shared.bases, () => shared.idb)
   }
 
-  val (/*binarySerializer: Pickler[LightTypeTag],*/ lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
+  val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
     import boopickle.Default._
 
     implicit lazy val appliedRefSerializer: Pickler[AppliedReference] = generatePickler[AppliedReference]
@@ -141,27 +136,15 @@ object LightTypeTag {
     implicit lazy val refSerializer: Pickler[LightTypeTagRef] = generatePickler[LightTypeTagRef]
     implicit lazy val dbsSerializer: Pickler[SubtypeDBs] = generatePickler[SubtypeDBs]
 
-//    val fltt = DefaultBasic.transformPickler[LightTypeTag,
-//      (
-//        LightTypeTagRef,
-//        Map[AbstractReference, Set[AbstractReference]],
-//        Map[NameReference, Set[NameReference]],
-//      )
-//    ] {
-//      case (a, b, c) => apply(a, b, c)
-//    } {
-//      l => (l.ref, l.basesdb, l.idb)
-//    }
-
     // false positive unused warnings
     appliedRefSerializer.discard(); nameRefSerializer.discard(); abstractRefSerializer.discard()
 
-    (/*fltt,*/ refSerializer, dbsSerializer)
+    (refSerializer, dbsSerializer)
   }
 
   final val loggerId = TrivialMacroLogger.id("rtti")
 
-  object ReflectionLock
+  private[izumi] object ReflectionLock
 
   private[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
     import izumi.fundamentals.collections.IzCollections._

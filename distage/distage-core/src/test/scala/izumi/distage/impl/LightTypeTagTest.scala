@@ -5,6 +5,8 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
+import scala.reflect.runtime.universe
+
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
   def blockingYieldOpCount: Int = Int.MaxValue
@@ -92,36 +94,31 @@ class LightTypeTagTest extends WordSpec {
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
 
   def assertRepr(t: LightTypeTag, expected: String): Unit = {
-    assert(t.toString == expected)
-    ()
+    assert(t.toString == expected).discard()
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
     val clue = s"$t =?= $expected"
     info(clue)
-    assert(t =:= expected, clue)
-    ()
+    assert(t =:= expected, clue).discard()
   }
 
   def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
     val clue = s"$t =!= $expected"
     info(clue)
-    assert(!(t =:= expected), clue)
-    ()
+    assert(!(t =:= expected), clue).discard()
   }
 
   def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     val clue = s"$child <?< $parent"
     info(clue)
-    assert(child <:< parent, clue)
-    ()
+    assert(child <:< parent, clue).discard()
   }
 
   def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     val clue = s"$child <!< $parent"
     info(clue)
-    assert(!(child <:< parent), clue)
-    ()
+    assert(!(child <:< parent), clue).discard()
   }
 
 
@@ -129,16 +126,14 @@ class LightTypeTagTest extends WordSpec {
     val combined = outer.combine(inner: _*)
     val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
     info(clue)
-    assert(combined =:= expected, clue)
-    ()
+    assert(combined =:= expected, clue).discard()
   }
 
   def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
     val clue = s"($outer)•($inner) => $combined =?= $expected"
     info(clue)
-    assert(combined =:= expected, clue)
-    ()
+    assert(combined =:= expected, clue).discard()
   }
 
   def assertCombineNonPos(outer: LightTypeTag, inner: Seq[Option[LightTypeTag]], expected: LightTypeTag): Unit = {
@@ -148,9 +143,14 @@ class LightTypeTagTest extends WordSpec {
     ()
   }
 
+  def literalLtt(s: String)(implicit l: LTag[s.type]): LightTypeTag = l.tag
+  def literalTT(s: String)(implicit l: scala.reflect.runtime.universe.TypeTag[s.type]): universe.Type = l.tpe
+
   "lightweight type tags" should {
     "support human-readable representation" in {
-      println(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}])
+      assertRepr(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}],
+        "({Int} & {def a(String): Int, def b(): String, type M1 = LightTypeTagTest::W1, type M2 = M2|<Nothing..LightTypeTagTest::W2>, type M3 = λ %0 → Either[+Unit,+0]})"
+      )
       assertRepr(LTT[I1 with (I1 with (I1 with W1))], "{LightTypeTagTest::I1 & LightTypeTagTest::W1}")
       assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
       assertRepr(`LTT[_]`[Nothing], "Nothing")
@@ -196,6 +196,7 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
+      println(LTT[List[Int]])
       assertChild(LTT[List[Int]], `LTT[_]`[List])
       assertNotChild(LTT[Set[Int]], `LTT[_]`[Set])
 
@@ -330,7 +331,6 @@ class LightTypeTagTest extends WordSpec {
       Z.discard()
 
       assertSame(LTT[a1.A], LTT[Z.X#A])
-
     }
 
     "support structural & refinement type subtype checks" in {
@@ -346,6 +346,17 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
 
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
+    }
+
+    "support literal types" in {
+      assertRepr(literalLtt("str"), "\"str\"")
+      assertSame(literalLtt("str2"), literalLtt("str2"))
+      assertDifferent(literalLtt("str1"), literalLtt("str2"))
+
+      assertChild(literalLtt("str"), LTT[String])
+      assertNotChild(literalLtt("str"), LTT[Int])
+      assertNotChild(LTT[String], literalLtt("str"))
+      assertDifferent(LTT[String], literalLtt("str"))
     }
 
     "resolve concrete types through PDTs and projections" in {
