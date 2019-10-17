@@ -5,7 +5,6 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.jvm.SourceFilePosition
-import izumi.fundamentals.reflection.CodePositionMaterializer
 
 sealed trait Binding {
 
@@ -77,12 +76,6 @@ object Binding {
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     protected[distage] def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
-  }
-
-  implicit final class WithNamedTarget[R](private val binding: Binding {def key: DIKey.TypeKey; def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): R}) extends AnyVal {
-    def named[I: IdContract](id: I): R = {
-      binding.withTarget(binding.key.named(id))
-    }
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
