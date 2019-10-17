@@ -9,7 +9,7 @@ import scala.reflect.macros.blackbox
 
 final class LightTypeTagMacro(override val c: blackbox.Context) extends LightTypeTagMacro0[blackbox.Context](c)
 
-class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
+private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   import c.universe._
 
@@ -28,6 +28,16 @@ class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
   @inline def makeWeakTag[T: c.WeakTypeTag]: c.Expr[LTag.Weak[T]] = {
     val res = makeParsedLightTypeTagImpl(weakTypeOf[T])
     c.Expr[LTag.Weak[T]](q"new ${weakTypeOf[LTag.Weak[T]]}($res)")
+  }
+
+  @inline def makeStrongTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
+    val tpe = weakTypeOf[T]
+    if (allPartsStrong(tpe)) {
+      val res = makeParsedLightTypeTagImpl(tpe)
+      c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
+    } else {
+      c.abort(c.enclosingPosition, s"Can't materialize LTag[$tpe]: found unresolved type parameters in $tpe")
+    }
   }
 
   @inline def makeParsedLightTypeTag[T: c.WeakTypeTag]: c.Expr[LightTypeTag] = {
@@ -64,5 +74,25 @@ class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
     val strDBs = serialize(SubtypeDBs(res.basesdb, res.idb))(LightTypeTag.subtypeDBsSerializer)
 
     c.Expr[LightTypeTag](q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)")
+  }
+
+  protected def allPartsStrong(tpe: Type): Boolean = {
+    def selfStrong = !tpe.typeSymbol.isParameter
+    def prefixStrong = tpe match {
+      case t: TypeRefApi =>
+        allPartsStrong(t.pre)
+      case _ =>
+        true
+    }
+    def argsStrong = tpe.typeArgs.forall(allPartsStrong)
+    def intersectionStructStrong = tpe match {
+      case t: RefinedTypeApi =>
+        t.parents.forall(allPartsStrong) &&
+          t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
+      case _ =>
+        true
+    }
+
+    selfStrong && prefixStrong && argsStrong && intersectionStructStrong
   }
 }
