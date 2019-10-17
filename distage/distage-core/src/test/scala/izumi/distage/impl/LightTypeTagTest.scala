@@ -5,8 +5,6 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
-import scala.reflect.runtime.universe
-
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
   def blockingYieldOpCount: Int = Int.MaxValue
@@ -144,7 +142,6 @@ class LightTypeTagTest extends WordSpec {
   }
 
   def literalLtt(s: String)(implicit l: LTag[s.type]): LightTypeTag = l.tag
-  def literalTT(s: String)(implicit l: scala.reflect.runtime.universe.TypeTag[s.type]): universe.Type = l.tpe
 
   "lightweight type tags" should {
     "support human-readable representation" in {
