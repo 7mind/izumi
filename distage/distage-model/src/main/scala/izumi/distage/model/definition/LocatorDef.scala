@@ -70,7 +70,8 @@ trait LocatorDef
       case SingletonBinding(key, InstanceImpl(_, instance), _, _) =>
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
-        map += (key -> (map.getOrElse(key, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
+        val setKey = key.set
+        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
       case e: EmptySetBinding[_] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>

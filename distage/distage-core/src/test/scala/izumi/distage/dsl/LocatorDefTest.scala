@@ -73,9 +73,7 @@ class LocatorDefTest extends WordSpec {
       val ctx = new LocatorDef {
         many[TestInstanceBinding].named("r")
           .addValue(TestInstanceBinding())
-          .addValue(TestInstanceBinding(
-            """ Ma-ma-magic in her eyes, Leandoer's paradise
-              | All my, all my, boys off drugs, I've been lost in this life""".stripMargin))
+          .addValue(TestInstanceBinding("value 2"))
 
         many[TestInstanceBinding]
           .addValue(TestInstanceBinding())
