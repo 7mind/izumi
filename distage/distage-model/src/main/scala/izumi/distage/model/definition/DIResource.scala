@@ -266,16 +266,16 @@ object DIResource {
     *   )
     * }}}
     */
-  class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends Flatten(DIResource.fromAutoCloseableF(acquire))
+  class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends DIResource.Of(DIResource.fromAutoCloseableF(acquire))
 
   /**
     * Class-based proxy over a [[DIResource]] value
     *
     * {{{
-    *   class IntRes extends DIResource.Flatten(DIResource.pure(1000))
+    *   class IntRes extends DIResource.Of(DIResource.pure(1000))
     * }}}
     */
-  class Flatten[+F[_], +A](private[Flatten] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
+  class Of[+F[_], +A](private[Of] val inner: DIResourceBase[F, A]) extends DIResourceBase[F, A] {
     override final type InnerResource = inner.InnerResource
     override final def acquire: F[inner.InnerResource] = inner.acquire
     override final def release(resource: inner.InnerResource): F[Unit] = inner.release(resource)
@@ -286,10 +286,10 @@ object DIResource {
     * Class-based proxy for an existing [[cats.effect.Resource]]
     *
     * {{{
-    *   class IntRes extends DIResource.Flatten(Resource.pure(1000))
+    *   class IntRes extends DIResource.OfCats(Resource.pure(1000))
     * }}}
     */
-  class FlattenCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends Flatten[F, A](fromCats(inner))
+  class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
