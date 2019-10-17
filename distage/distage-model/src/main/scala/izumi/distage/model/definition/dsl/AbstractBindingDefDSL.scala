@@ -136,9 +136,9 @@ object AbstractBindingDefDSL {
     }
   }
 
-  private final class MultiSetHackId(private val long: Long) extends AnyVal {
-    override def toString: String = s"multi.${long.toString}"
-  }
+//  private final class MultiSetHackId(private val long: Long) extends AnyVal {
+//    override def toString: String = s"multi.${long.toString}"
+//  }
 
   final class SetRef
   (
@@ -181,13 +181,18 @@ object AbstractBindingDefDSL {
   }
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
-    def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
-      ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
+    def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
+      val implKey = DIKey.TypeKey(implDef.implType).named(pos.toString)
+      val elKey = DIKey.SetElementKey(setKey, implKey)
+      ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
           }
       }
+    }
+
+
 
     def append(op: SetElementInstruction): SetElementRef = {
       ops += op
@@ -198,13 +203,15 @@ object AbstractBindingDefDSL {
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
       // always positive: 0[32-bits of impldef hashcode][31 bit of this hashcode]
-      val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
+      //val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
+      //implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
 
-      implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
+      //val ukey = DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId))
+      val ukey = DIKey.IdKey(implDef.implType, pos.toString)
+      val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 
-      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, Set.empty, pos)
-
-      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
+      val elKey = DIKey.SetElementKey(setKey, ukey)
+      val refBind0 = SetElementBinding(elKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>

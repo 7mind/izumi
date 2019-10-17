@@ -27,6 +27,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 
 @deprecated("Use dstest", "2019/Jul/18")
@@ -127,7 +128,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
                 binding.implementation.implType
               case binding: Binding.SetBinding =>
                 binding match {
-                  case e: Binding.SetElementBinding[_] =>
+                  case e: Binding.SetElementBinding =>
                     e.implementation.implType
                   case s: Binding.EmptySetBinding[_] =>
                     s.key.tpe
@@ -206,7 +207,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
           key =>
-            SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
+            SingletonBinding(key, ImplDef.TypeImpl(key.tpe), Set.empty, CodePositionMaterializer().get.position)
         }
     }
 

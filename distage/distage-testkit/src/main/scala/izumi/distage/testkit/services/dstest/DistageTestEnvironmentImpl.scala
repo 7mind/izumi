@@ -15,6 +15,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 class DistageTestEnvironmentImpl[F[_]: TagK](suiteClass: Class[_]) extends DistageTestEnvironment[F] {
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
@@ -24,7 +25,7 @@ class DistageTestEnvironmentImpl[F[_]: TagK](suiteClass: Class[_]) extends Dista
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
           key =>
-            SingletonBinding(key, ImplDef.TypeImpl(key.tpe))
+            SingletonBinding(key, ImplDef.TypeImpl(key.tpe), Set.empty, CodePositionMaterializer().get.position)
         }
     }
 

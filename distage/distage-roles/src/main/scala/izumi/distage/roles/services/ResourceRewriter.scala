@@ -48,7 +48,7 @@ class ResourceRewriter(
                 Seq(binding)
             }
 
-          case binding: Binding.SetElementBinding[_] =>
+          case binding: Binding.SetElementBinding =>
             rewriteImpl(convert, binding.key, binding.origin, binding.implementation, set = true) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
@@ -134,7 +134,7 @@ class ResourceRewriter(
     original.copy(implementation = res)
   }
 
-  private def finish(original: SetElementBinding[DIKey], newImpl: DirectImplDef): Binding = {
+  private def finish(original: SetElementBinding, newImpl: DirectImplDef): Binding = {
     val res = ImplDef.ResourceImpl(original.implementation.implType, SafeType.getK[Identity], newImpl)
     original.copy(implementation = res)
   }

@@ -5,10 +5,12 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import izumi.distage.model.exceptions.{BadIdAnnotationException, ProvisioningException, UnsupportedWiringException, ConflictingDIKeyBindingsException}
+import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 import distage._
+import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.reflection.CodePositionMaterializer
 import org.scalatest.WordSpec
 
 class BasicTest extends WordSpec with MkInjector {
@@ -149,7 +151,7 @@ class BasicTest extends WordSpec with MkInjector {
 
     val definition = PlannerInput.noGc(new ModuleBase {
       override def bindings: Set[Binding] = Set(
-        SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]))
+        SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]), Set.empty, CodePositionMaterializer().get.position)
       )
     })
 
