@@ -266,7 +266,7 @@ object DIResource {
     *   )
     * }}}
     */
-  class FromAutoCloseable[+F[_]: DIEffect, A <: AutoCloseable](acquire: => F[A]) extends Flatten(DIResource.fromAutoCloseableF(acquire))
+  class FromAutoCloseable[+F[_]: DIEffect, +A <: AutoCloseable](acquire: => F[A]) extends Flatten(DIResource.fromAutoCloseableF(acquire))
 
   /**
     * Class-based proxy over a [[DIResource]] value
