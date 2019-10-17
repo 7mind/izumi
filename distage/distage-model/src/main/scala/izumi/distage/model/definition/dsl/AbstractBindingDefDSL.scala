@@ -6,11 +6,10 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import izumi.fundamentals.platform.jvm.SourceFilePosition
-import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
 
@@ -88,14 +87,10 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
-//  final protected def setOf[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
     val setRef = registered(new SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
-
-//  @deprecated("use .setOf", "14.03.2019")
-//  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = setOf[T]
 
   /** Same as `make[T].from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
@@ -135,10 +130,6 @@ object AbstractBindingDefDSL {
       this
     }
   }
-
-//  private final class MultiSetHackId(private val long: Long) extends AnyVal {
-//    override def toString: String = s"multi.${long.toString}"
-//  }
 
   final class SetRef
   (
@@ -202,11 +193,6 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      // always positive: 0[32-bits of impldef hashcode][31 bit of this hashcode]
-      //val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
-      //implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
-
-      //val ukey = DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId))
       val ukey = DIKey.IdKey(implDef.implType, pos.toString)
       val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 

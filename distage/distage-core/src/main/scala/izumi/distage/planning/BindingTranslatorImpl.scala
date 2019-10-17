@@ -31,13 +31,10 @@ class BindingTranslatorImpl(
 
       case set: SetElementBinding =>
         val target = set.key
-        //val discriminator = setElementDiscriminatorKey(set, currentPlan)
-        //val elementKey = DIKey.SetElementKey(target, discriminator)
         val elementKey = target
         val setKey = set.key.set
 
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-        println(("!!!", setKey))
         val oldSet = next.sets.getOrElse(target, CreateSet(setKey, target.tpe, Set.empty, Some(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
@@ -130,31 +127,5 @@ class BindingTranslatorImpl(
         SingletonWiring.Reference(r.implType, r.key, r.weak)
     }
   }
-
-//  private[this] def setElementDiscriminatorKey(b: SetElementBinding, currentPlan: DodgyPlan): DIKey = {
-//    val goodIdx = currentPlan.size.toString
-//
-//    val tpe = b.implementation match {
-//      case i: ImplDef.TypeImpl =>
-//        DIKey.TypeKey(i.implType)
-//
-//      case r: ImplDef.ReferenceImpl =>
-//        r.key
-//
-//      case i: ImplDef.InstanceImpl =>
-//        DIKey.TypeKey(i.implType).named(s"instance:$goodIdx")
-//
-//      case p: ImplDef.ProviderImpl =>
-//        DIKey.TypeKey(p.implType).named(s"provider:$goodIdx")
-//
-//      case e: ImplDef.EffectImpl =>
-//        DIKey.TypeKey(e.implType).named(s"effect:$goodIdx")
-//
-//      case r: ImplDef.ResourceImpl =>
-//        DIKey.TypeKey(r.implType).named(s"resource:$goodIdx")
-//    }
-//
-//    tpe
-//  }
 
 }
