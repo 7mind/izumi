@@ -239,8 +239,8 @@ object Izumi {
       final val id = ArtifactId("fundamentals")
       final val basePath = Seq("fundamentals")
 
-      final val fundamentalsCollections = ArtifactId("fundamentals-collections")
-      final val fundamentalsPlatform = ArtifactId("fundamentals-platform")
+      final val collections = ArtifactId("fundamentals-collections")
+      final val platform = ArtifactId("fundamentals-platform")
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
 
@@ -249,9 +249,9 @@ object Izumi {
       final val fundamentalsJsonCirce = ArtifactId("fundamentals-json-circe")
 
       final lazy val basics = Seq(
-        fundamentalsPlatform,
+        platform,
+        collections,
         functional,
-        fundamentalsCollections,
       ).map(_ in Scope.Runtime.all)
     }
 
@@ -327,15 +327,15 @@ object Izumi {
     name = Projects.fundamentals.id,
     artifacts = Seq(
       Artifact(
-        Projects.fundamentals.fundamentalsCollections,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.fundamentals.collections,
+        libs = Seq.empty,
+        depends = Seq.empty,
       ),
       Artifact(
-        Projects.fundamentals.fundamentalsPlatform,
-        Seq.empty,
-        Seq(
-          Projects.fundamentals.fundamentalsCollections in Scope.Compile.all
+        name = Projects.fundamentals.platform,
+        libs = Seq.empty,
+        depends = Seq(
+          Projects.fundamentals.collections in Scope.Compile.all
         ),
         settings = Seq(
           "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
@@ -343,30 +343,33 @@ object Izumi {
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
-        Projects.fundamentals.functional,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.fundamentals.functional,
+        libs = Seq.empty,
+        depends = Seq.empty,
       ),
       Artifact(
-        Projects.fundamentals.bio,
-        (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
-        Seq(Projects.fundamentals.functional in Scope.Runtime.all),
+        name = Projects.fundamentals.bio,
+        libs = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all),
+        depends = Seq.empty,
       ),
       Artifact(
-        Projects.fundamentals.typesafeConfig,
-        Seq(typesafe_config, scala_reflect in Scope.Compile.jvm),
-        Projects.fundamentals.basics ++ Seq(Projects.fundamentals.reflection in Scope.Runtime.jvm),
+        name = Projects.fundamentals.typesafeConfig,
+        libs = Seq(typesafe_config, scala_reflect in Scope.Compile.jvm),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.reflection in Scope.Runtime.jvm),
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.fundamentals.reflection,
-        Seq(boopickle, scala_reflect in Scope.Provided.all),
-        Projects.fundamentals.basics,
+        name = Projects.fundamentals.reflection,
+        libs = Seq(boopickle, scala_reflect in Scope.Provided.all),
+        depends = Seq(
+          Projects.fundamentals.platform,
+          Projects.fundamentals.functional,
+        ),
       ),
       Artifact(
-        Projects.fundamentals.fundamentalsJsonCirce,
-        circe ++ Seq(jawn in Scope.Compile.js),
-        Projects.fundamentals.basics,
+        name = Projects.fundamentals.fundamentalsJsonCirce,
+        libs = circe ++ Seq(jawn in Scope.Compile.js),
+        depends = Projects.fundamentals.basics,
       ),
     ),
     pathPrefix = Projects.fundamentals.basePath,

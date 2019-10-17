@@ -357,9 +357,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
   .disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
-  .dependsOn(
-    `fundamentals-functional` % "test->compile;compile->compile"
-  )
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
@@ -482,8 +479,8 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
 lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamentals-typesafe-config"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
   )
   .settings(
@@ -607,8 +604,7 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile"
+    `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -731,8 +727,8 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
 lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-json-circe"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile"
+    `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -859,8 +855,8 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
 lazy val `distage-model` = project.in(file("distage/distage-model"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
   )
@@ -986,8 +982,8 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
 lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `distage-model` % "test->compile;compile->compile"
   )
   .settings(
@@ -2841,8 +2837,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
 lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-model"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile"
+    `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2963,8 +2959,8 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
 lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-core"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `idealingua-v1-model` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
   )
@@ -3088,8 +3084,8 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
 lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-scala"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile"
   )
@@ -3345,8 +3341,8 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
 lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua-v1-transpilers"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
+    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
     `idealingua-v1-core` % "test->compile;compile->compile",
     `idealingua-v1-runtime-rpc-scala` % "test->compile;compile->compile",
@@ -4167,7 +4163,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
     siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc",
     paradoxProperties ++= Map(
-                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/com/github/pshirshov/",
+                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
                 "izumi.version" -> version.value,
               ),
