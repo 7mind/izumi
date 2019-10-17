@@ -85,13 +85,6 @@ object Binding {
     }
   }
 
-  implicit final class WithNamedTargetSet[R](private val binding: SetElementBinding) extends AnyVal {
-    def named[I: IdContract](id: I): R = {
-      ???
-      //binding.withTarget(binding.key.named(id))
-    }
-  }
-
   implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
     def withImpl[T: Tag]: R =
       binding.withImplDef(ImplDef.TypeImpl(SafeType.get[T]))
