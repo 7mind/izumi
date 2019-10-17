@@ -65,8 +65,8 @@ object Binding {
     override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding =  {
-      ???
-      //copy(key = key)
+      // TODO: seems like this will never be invoked
+      copy(key = this.key.copy(reference = key))
     }
     protected[distage] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
