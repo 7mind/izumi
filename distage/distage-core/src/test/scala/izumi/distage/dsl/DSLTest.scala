@@ -1,16 +1,14 @@
 package izumi.distage.dsl
 
+import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.definition.{BindingTag, Bindings, Module}
-import distage._
 import org.scalatest.WordSpec
-
 
 class DSLTest extends WordSpec {
 
   import TestTagOps._
-
 
   "Basic DSL" should {
     "allow to define contexts" in {
@@ -223,7 +221,6 @@ class DSLTest extends WordSpec {
         many[SetTrait].tagged("A", "B")
       }
 
-
       import izumi.fundamentals.platform.strings.IzString._
       println(definition.bindings.niceList())
       assert(definition.bindings.size == 7)
@@ -232,6 +229,25 @@ class DSLTest extends WordSpec {
       assert(definition.bindings.count(_.tags.strings == Set("CC")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
+    }
+
+    "ModuleBuilder supports tags; merges tags from identical multiset binds" in {
+      import SetCase1._
+
+//      val set1 = Set(new SetImpl4, new SetImpl4)
+//          .addSet(set1).tagged("A") // don't merge (function bind)
+//          .addSet(set1).tagged("B") // don't merge (function bind)
+
+      val set = Set(new SetImpl5, new SetImpl5)
+
+      val definition = new ModuleDef {
+        many[SetTrait].named("n1").tagged("A", "B")
+          .addSetValue(set).tagged("A") // merge
+          .addSetValue(set).tagged("B") // merge
+      }
+
+      assert(definition.bindings.size == 3) // empty set + singleton for set value + refSet
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
     }
 
     "Tags in different modules are merged" in {
