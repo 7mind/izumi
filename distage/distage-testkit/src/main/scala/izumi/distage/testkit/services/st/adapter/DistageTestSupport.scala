@@ -20,8 +20,7 @@ import izumi.distage.testkit.services.dstest.TestEnvironment
 import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.jvm.CodePosition
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.{CodePosition, Quirks}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level

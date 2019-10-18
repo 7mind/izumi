@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.platform.jvm.{CodePosition, SourceFilePosition}
+import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
 
 import scala.annotation.tailrec
 import scala.collection.mutable

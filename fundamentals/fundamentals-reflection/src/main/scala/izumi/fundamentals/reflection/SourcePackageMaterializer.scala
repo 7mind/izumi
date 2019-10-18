@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.platform.jvm.SourcePackage
+import izumi.fundamentals.platform.language.SourcePackage
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox

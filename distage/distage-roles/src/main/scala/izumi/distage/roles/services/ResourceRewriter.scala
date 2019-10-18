@@ -11,7 +11,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.IzLogger
 
 class ResourceRewriter(

@@ -2,9 +2,9 @@ package izumi.distage.testkit.services.st.adapter
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.DISyntaxBIOBase
-import izumi.fundamentals.platform.jvm.CodePosition
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import distage.Tag
+import izumi.fundamentals.platform.language.CodePosition
 
 @deprecated("Use dstest", "2019/Jul/18")
 trait DISyntaxBIO[F[+ _, + _]] extends DISyntaxBIOBase[F] {
