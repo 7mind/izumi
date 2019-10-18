@@ -1,7 +1,7 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.functional.{Renderable, WithRenderableSyntax}
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiteral, SymTypeName}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.SymLiteral
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 trait LTTRenderables extends WithRenderableSyntax {

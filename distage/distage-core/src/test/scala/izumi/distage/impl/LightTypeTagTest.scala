@@ -384,11 +384,13 @@ class LightTypeTagTest extends WordSpec {
       assertTypeError("def x1[T] = LTag[Array[Int] { type X = T }]")
       assertTypeError("def x1[T <: { type Array }] = LTag[T#Array]")
       assertTypeError("def x1[T] = LTag[Array[Int] with List[T]]")
+      assertTypeError("def x1[F[_]] = LTag[F[Int]]")
 
       assertCompiles("def x1 = { object x { type T }; def x1 = LTag[Array[x.T]].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] { type X = x.T }].discard() }")
       assertCompiles("def x1 = { object x { type T <: { type Array } }; LTag[x.T#Array].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] with List[x.T]].discard() }")
+      assertCompiles("def x1 = { object x { type F[_] }; LTag[x.F[Int]].discard() }")
     }
 
   }
