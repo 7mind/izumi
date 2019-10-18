@@ -99,31 +99,6 @@ object ModuleBase {
       (T.make(a) ++ T.make(b)).bindings
 
     def overridenBy(that: ModuleBase): T = {
-//            // we replace existing items in-place and append new at the end
-//            val existingSetElements = moduleDef.bindings.collect({ case b: SetElementBinding => b: Binding })
-//            val newSetElements = that.bindings.collect({ case b: SetElementBinding => b: Binding })
-//            val (_, mergedSetElements) = mergePreserve(existingSetElements, newSetElements)
-//
-//            val existingSets = moduleDef.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
-//            val newSets = that.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
-//            val mergedSets = modulewiseMerge(existingSets, newSets)
-//
-//            val mergedSetOperations = mergedSets ++ mergedSetElements
-//
-//            val setOps = mergedSetOperations.map(_.key)
-//
-//            val existingSingletons = moduleDef.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
-//            val newSingletons = that.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
-//
-//            val (mergedKeys, mergedSingletons) = mergePreserve(existingSingletons, newSingletons)
-//
-//            val merged = modulewiseMerge(mergedSingletons, mergedSetOperations)
-//
-//            val badKeys = setOps.intersect(mergedKeys)
-//            if (badKeys.nonEmpty) {
-//              throw new ModuleMergeException(s"Cannot override bindings, unsolvable conflicts: $badKeys", badKeys)
-//            }
-//            T.make(merged)
       T.make(mergePreserve(moduleDef.bindings, that.bindings)._2)
     }
 

@@ -5,6 +5,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 class DSLTest extends WordSpec {
 
@@ -222,7 +223,6 @@ class DSLTest extends WordSpec {
       }
 
       import izumi.fundamentals.platform.strings.IzString._
-      println(definition.bindings.niceList())
       assert(definition.bindings.size == 7)
       assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 3)
       assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 1)
@@ -231,7 +231,7 @@ class DSLTest extends WordSpec {
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
     }
 
-    "ModuleBuilder supports tags; merges tags from identical multiset binds" in {
+    "progression: multiset bindings should support tag merge" in {
       import SetCase1._
 
 //      val set1 = Set(new SetImpl4, new SetImpl4)
@@ -246,8 +246,10 @@ class DSLTest extends WordSpec {
           .addSetValue(set).tagged("B") // merge
       }
 
-      assert(definition.bindings.size == 3) // empty set + singleton for set value + refSet
-      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+      intercept[TestFailedException] {
+        assert(definition.bindings.size == 3) // empty set + singleton for set value + refSet
+        assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+      }
     }
 
     "Tags in different modules are merged" in {
