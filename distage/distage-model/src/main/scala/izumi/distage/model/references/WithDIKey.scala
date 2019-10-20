@@ -11,6 +11,8 @@ trait WithDIKey {
     def tpe: SafeType
   }
 
+
+
   object DIKey {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
 
@@ -48,6 +50,13 @@ trait WithDIKey {
       override def tpe: SafeType = reference.tpe
 
       override def toString: String = s"{set.$set/${reference.toString}}"
+    }
+
+    case class SetLocId(name: String)
+    object SetLocId {
+      implicit object SetLocIdContract extends IdContract[SetLocId] {
+        override def repr(v: SetLocId): String = "set/"+v.name
+      }
     }
   }
 

@@ -1,7 +1,11 @@
 package izumi.distage.model.definition
 
+import izumi.distage
+import izumi.distage.model
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection
+import izumi.distage.model.reflection.universe
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.jvm.SourceFilePosition
@@ -61,15 +65,38 @@ object Binding {
   }
 
   final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
-    override def group: GroupingKey = {
-      val gk = key.reference match {
-        case id: DIKey.IdKey[_] =>
-          DIKey.SetElementKey(key.set, DIKey.TypeKey(id.tpe))
-        case _ =>
-          key
+    override lazy val group: GroupingKey = {
+      def fixSetKey(k: DIKey.SetElementKey): DIKey.SetElementKey = {
+        k.reference match {
+          case id: DIKey.IdKey[_] =>
+            DIKey.SetElementKey(key.set, fixKey(id))
+          case _ =>
+            k
+        }
       }
-//      val gk = key
-      GroupingKey.KeyImpl(gk, implementation)
+      def fixKey(k: DIKey): reflection.universe.RuntimeDIUniverse.DIKey = {
+        k match {
+          case id: DIKey.IdKey[_] =>
+            id.id match {
+              case _: DIKey.SetLocId =>
+                DIKey.TypeKey(id.tpe)
+              case _ =>
+                k
+            }
+          case _ =>
+            k
+        }
+      }
+
+      val gk: universe.RuntimeDIUniverse.DIKey.SetElementKey = fixSetKey(key)
+
+      val gi = implementation match {
+        case r: ImplDef.ReferenceImpl =>
+          r.copy(key = fixKey(r.key))
+        case o => o
+      }
+
+      GroupingKey.KeyImpl(gk, gi)
     }
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding =  {

@@ -136,10 +136,16 @@ object ModuleBase {
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
     val grouped = bs.groupBy(_.group)
 
+    import izumi.fundamentals.platform.strings.IzString._
     val out = grouped
       .map {
         case (k, v) =>
           //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
+
+//          if (k.toString.contains("SetTrait")) {
+//            println(s"${k}: ${v.niceList()}")
+//          }
+
           v.reduce(_ addTags _.tags)
       }
       .to[ListSet]

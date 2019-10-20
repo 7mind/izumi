@@ -230,7 +230,7 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val ukey = DIKey.IdKey(implDef.implType, pos.toString)
+      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetLocId(pos.toString))
       val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 
       val elKey = DIKey.SetElementKey(setKey, ukey)

@@ -246,10 +246,11 @@ class DSLTest extends WordSpec {
           .addSetValue(set).tagged("B") // merge
       }
 
-      intercept[TestFailedException] {
-        assert(definition.bindings.size == 3) // empty set + singleton for set value + refSet
-        assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
-      }
+      import izumi.fundamentals.platform.strings.IzString._
+
+      //println(s"definitions: ${definition.bindings.niceList()}")
+      assert(definition.bindings.size == 4)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
     }
 
     "Tags in different modules are merged" in {
