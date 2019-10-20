@@ -1,8 +1,9 @@
 package izumi.distage.model.definition
 
-import cats.kernel.BoundedSemilattice
+import cats.Hash
+import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, ModuleBaseSemilattice}
+import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.exceptions.ModuleMergeException
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
@@ -157,17 +158,19 @@ object ModuleBase {
       .toSet
   }
 
-//  implicit def catsKernelStdPartialOrderHashForModuleBase[T <: ModuleBase]: PartialOrder[T] with Hash[T] =
-//    new PartialOrder[T] with Hash[T] {
-//      override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
-//
-//      override def hash(x: T): Int = x.hashCode()
-//
-//      override def eqv(x: T, y: T): Boolean = x == y
-//    }
+  /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
+  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
+    import cats.instances.set._
+
+    new PartialOrder[T] with Hash[T] {
+      override def partialCompare(x: T, y: T): Double = PartialOrder[Set[Binding]].partialCompare(x.bindings, y.bindings)
+      override def hash(x: T): Int = x.hashCode()
+      override def eqv(x: T, y: T): Boolean = x == y
+    }.asInstanceOf[K[T]]
+  }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T]: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
@@ -182,7 +185,13 @@ private object ModuleBaseInstances {
 
   sealed abstract class CatsBoundedSemilattice[K[_]]
   object CatsBoundedSemilattice {
-    implicit val get: CatsBoundedSemilattice[BoundedSemilattice] = null
+    @inline implicit def get: CatsBoundedSemilattice[BoundedSemilattice] = null
+  }
+
+  type PartialOrderHash[T] = PartialOrder[T] with Hash[T]
+  sealed abstract class CatsPartialOrderHash[K[_]]
+  object CatsPartialOrderHash {
+    @inline implicit def get[K[_]](implicit @deprecated("unused", "unused") guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
   }
 
 }

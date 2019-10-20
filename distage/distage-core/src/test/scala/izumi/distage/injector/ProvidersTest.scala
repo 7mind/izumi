@@ -72,8 +72,7 @@ class ProvidersTest extends WordSpec with MkInjector {
     val combinedDefinition = new Definition ++ new Definition
     val valDefinition = definition ++ definition
 
-    import izumi.distage.dsl.TestTagOps._
-    assert(!(combinedDefinition === definition))
-    assert(valDefinition === definition)
+    assert(!(combinedDefinition == definition))
+    assert(valDefinition == definition)
   }
 }
