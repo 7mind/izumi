@@ -17,6 +17,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{GCMode, Locator, definition}
+import izumi.fundamentals.platform.jvm.SourceFilePosition
 import izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable
@@ -53,7 +54,7 @@ trait LocatorDef
     val moduleDef = Module.make(
       frozenInstances.map {
         case IdentifiedRef(key, value) =>
-          Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value))
+          Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
       }.toSet
     )
 
@@ -69,7 +70,8 @@ trait LocatorDef
       case SingletonBinding(key, InstanceImpl(_, instance), _, _) =>
         map += (key -> instance)
       case SetElementBinding(key, InstanceImpl(_, instance), _, _) =>
-        map += (key -> (map.getOrElse(key, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
+        val setKey = key.set
+        map += (setKey -> (map.getOrElse(setKey, Set.empty[Any]).asInstanceOf[Set[Any]] + instance))
       case e: EmptySetBinding[_] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>

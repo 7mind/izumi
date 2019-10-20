@@ -16,6 +16,8 @@ object SetCases {
     class SetImpl1 extends SetTrait
     class SetImpl2 extends SetTrait
     class SetImpl3 extends SetTrait
+    class SetImpl4 extends SetTrait
+    class SetImpl5 extends SetTrait
 
     case class Service0(set: Set[SetTrait])
 

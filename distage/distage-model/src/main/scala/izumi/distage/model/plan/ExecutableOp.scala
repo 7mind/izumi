@@ -20,7 +20,7 @@ object ExecutableOp {
 
   final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: Option[Binding]) extends ExecutableOp
 
-  final case class CreateSet(target: DIKey, tpe: SafeType, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp
+  final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp
 
   sealed trait WiringOp extends InstantiationOp {
     def target: DIKey

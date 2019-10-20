@@ -8,19 +8,24 @@ import izumi.distage.model.exceptions.ModuleMergeException
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
 
+import scala.collection.immutable.ListSet
+
 trait ModuleBase {
   def bindings: Set[Binding]
+
   type Self <: ModuleBase
 
   final def keys: Set[DIKey] = bindings.map(_.key)
 
   override final def hashCode(): Int = bindings.hashCode()
+
   override final def equals(obj: Any): Boolean = obj match {
     case m: ModuleBase =>
       m.bindings == this.bindings
     case _ =>
       false
   }
+
   override final def toString: String = bindings.toString()
 }
 
@@ -91,54 +96,36 @@ object ModuleBase {
       T.make(filtered)
     }
 
+    // TODO: a hack to support tag merging
+    private def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
+      (T.make(a) ++ T.make(b)).bindings
+
     def overridenBy(that: ModuleBase): T = {
-      // we replace existing items in-place and append new at the end
-      // set bindings should not be touched
+      T.make(mergePreserve(moduleDef.bindings, that.bindings)._2)
+    }
 
-      // TODO: a hack to support tag merging
-      def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
-        (T.make(a) ++ T.make(b)).bindings
-
-      val existingSetElements = moduleDef.bindings.collect({ case b: SetElementBinding[_] => b: Binding })
-      val newSetElements = that.bindings.collect({ case b: SetElementBinding[_] => b: Binding })
-      val mergedSetElements = modulewiseMerge(existingSetElements, newSetElements)
-
-      val existingSets = moduleDef.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
-      val newSets = that.bindings.collect({ case b: EmptySetBinding[_] => b: Binding })
-      val mergedSets = modulewiseMerge(existingSets, newSets)
-
-      val mergedSetOperations = mergedSets ++ mergedSetElements
-
-      val setOps = mergedSetOperations.map(_.key)
-
-      val existingSingletons = moduleDef.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
-      val newSingletons = that.bindings.collect({ case b: SingletonBinding[_] => b: Binding })
-
-      val existingIndex = existingSingletons.map(b => b.key -> b).toMultimap
-      val newIndex = newSingletons.map(b => b.key -> b).toMultimap
+    private def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[universe.RuntimeDIUniverse.DIKey], Set[Binding]) = {
+      val existingIndex = existing.map(b => b.key -> b).toMultimap
+      val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
-      val badKeys = setOps.intersect(mergedKeys)
-      if (badKeys.nonEmpty) {
-        throw new ModuleMergeException(s"Cannot override bindings, unsolvable conflicts: $badKeys", badKeys)
-      }
+      val merged = mergedKeys
+        .flatMap {
+          k =>
+            val existingMappings = existingIndex.getOrElse(k, Set.empty)
+            val newMappings = newIndex.getOrElse(k, Set.empty)
 
-      val mergedSingletons = mergedKeys.flatMap {
-        k =>
-          val existingMappings = existingIndex.getOrElse(k, Set.empty)
-          val newMappings = newIndex.getOrElse(k, Set.empty)
+            if (existingMappings.isEmpty) {
+              newMappings
+            } else if (newMappings.isEmpty) {
+              existingMappings
+            } else {
+              // merge tags wrt strange Binding equals
+                modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
+            }
+        }
 
-          if (existingMappings.isEmpty) {
-            newMappings
-          } else if (newMappings.isEmpty) {
-            existingMappings
-          } else {
-            // merge tags wrt strange Binding equals
-            modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
-          }
-      }
-
-      T.make(modulewiseMerge(mergedSingletons, mergedSetOperations))
+      (mergedKeys, merged)
     }
   }
 
@@ -149,13 +136,16 @@ object ModuleBase {
   }
 
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
-    bs.groupBy(_.group)
+    val grouped = bs.groupBy(_.group)
+
+    val out = grouped
       .map {
         case (k, v) =>
-          assert(v.forall(_.key == k.key))
+          //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
           v.reduce(_ addTags _.tags)
       }
-      .toSet
+      .to[ListSet]
+    out
   }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
@@ -184,6 +174,7 @@ private object ModuleBaseInstances {
   }
 
   sealed abstract class CatsBoundedSemilattice[K[_]]
+
   object CatsBoundedSemilattice {
     @inline implicit def get: CatsBoundedSemilattice[BoundedSemilattice] = null
   }

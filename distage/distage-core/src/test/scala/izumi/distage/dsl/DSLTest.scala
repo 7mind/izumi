@@ -1,16 +1,14 @@
 package izumi.distage.dsl
 
+import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.definition.{BindingTag, Bindings, Module}
-import distage._
 import org.scalatest.WordSpec
-
 
 class DSLTest extends WordSpec {
 
   import TestTagOps._
-
 
   "Basic DSL" should {
     "allow to define contexts" in {
@@ -72,21 +70,6 @@ class DSLTest extends WordSpec {
           .add[SetImpl1]
           .add[SetImpl2]
           .add[SetImpl3]
-
-        many[SetTrait].named("n1")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
-
-        many[SetTrait].named("n2")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
-
-        many[SetTrait].named("n3")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
       }
 
       assert(definition == Module.make(
@@ -100,21 +83,6 @@ class DSLTest extends WordSpec {
           , Bindings.binding[Service1]
           , Bindings.binding[Service2]
           , Bindings.binding[Service3]
-
-          , Bindings.emptySet[SetTrait].named("n1")
-          , Bindings.setElement[SetTrait, SetImpl1].named("n1")
-          , Bindings.setElement[SetTrait, SetImpl2].named("n1")
-          , Bindings.setElement[SetTrait, SetImpl3].named("n1")
-
-          , Bindings.emptySet[SetTrait].named("n2")
-          , Bindings.setElement[SetTrait, SetImpl1].named("n2")
-          , Bindings.setElement[SetTrait, SetImpl2].named("n2")
-          , Bindings.setElement[SetTrait, SetImpl3].named("n2")
-
-          , Bindings.emptySet[SetTrait].named("n3")
-          , Bindings.setElement[SetTrait, SetImpl1].named("n3")
-          , Bindings.setElement[SetTrait, SetImpl2].named("n3")
-          , Bindings.setElement[SetTrait, SetImpl3].named("n3")
         )
       )
       )
@@ -223,13 +191,31 @@ class DSLTest extends WordSpec {
         many[SetTrait].tagged("A", "B")
       }
 
-
       assert(definition.bindings.size == 7)
       assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 3)
       assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("CC")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("A")) == 1)
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
+    }
+
+    "progression: multiset bindings should support tag merge" in {
+      import SetCase1._
+
+//      val set1 = Set(new SetImpl4, new SetImpl4)
+//          .addSet(set1).tagged("A") // don't merge (function bind)
+//          .addSet(set1).tagged("B") // don't merge (function bind)
+
+      val set = Set(new SetImpl5, new SetImpl5)
+
+      val definition = new ModuleDef {
+        many[SetTrait].named("n1").tagged("A", "B")
+          .addSetValue(set).tagged("A") // merge
+          .addSetValue(set).tagged("B") // merge
+      }
+
+      assert(definition.bindings.size == 3)
+      assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
     }
 
     "Tags in different modules are merged" in {

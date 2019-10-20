@@ -6,7 +6,6 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
@@ -88,14 +87,10 @@ trait AbstractBindingDefDSL[BindDSL[_], SetDSL[_]] {
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
-//  final protected def setOf[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
   final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
     val setRef = registered(new SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
-
-//  @deprecated("use .setOf", "14.03.2019")
-//  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = setOf[T]
 
   /** Same as `make[T].from(implicitly[T])` **/
   final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
@@ -117,12 +112,14 @@ object AbstractBindingDefDSL {
 
   final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: collection.Seq[ImplBinding] = Seq(
-      ops.foldLeft(initial: ImplBinding) {
+      ops.foldLeft(initial: SingletonBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {
             case SetImpl(implDef) => b.withImplDef(implDef)
             case AddTags(tags) => b.addTags(tags)
-            case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
+            case s: SetId[_] =>
+              val key = DIKey.IdKey(b.key.tpe, s.id)(s.idContract)
+              b.withTarget(key)
             case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.use(_.toString.toLowerCase)))
           }
       }
@@ -134,10 +131,6 @@ object AbstractBindingDefDSL {
       ops += op
       this
     }
-  }
-
-  private final class MultiSetHackId(private val long: Long) extends AnyVal {
-    override def toString: String = s"multi.${long.toString}"
   }
 
   final class SetRef
@@ -181,13 +174,20 @@ object AbstractBindingDefDSL {
   }
 
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
-    def interpret(setKey: DIKey.BasicKey): SetElementBinding[DIKey.BasicKey] =
-      ops.foldLeft(SetElementBinding(setKey, implDef, Set.empty, pos)) {
+    def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
+      val implKey = DIKey.TypeKey(implDef.implType)
+      val refkey = implKey.named(DIKey.SetLocId(pos.toString))
+      val elKey = DIKey.SetElementKey(setKey, refkey)
+
+      ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
         (b, instr) =>
           instr match {
             case ElementAddTags(tags) => b.addTags(tags)
           }
       }
+    }
+
+
 
     def append(op: SetElementInstruction): SetElementRef = {
       ops += op
@@ -197,14 +197,12 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      // always positive: 0[32-bits of impldef hashcode][31 bit of this hashcode]
-      val hopefullyRandomId = ((System.identityHashCode(implDef) & 0xffffffffL) << 31) | ((this.hashCode() & 0xffffffffL) >> 1)
+      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetImplId(implDef))
 
-      implicit val idContract: IdContract[MultiSetHackId] = new RuntimeDIUniverse.IdContractImpl[MultiSetHackId]
+      val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 
-      val bind = SingletonBinding(DIKey.IdKey(implDef.implType, new MultiSetHackId(hopefullyRandomId)), implDef, Set.empty, pos)
-
-      val refBind0 = SetElementBinding(setKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
+      val elKey = DIKey.SetElementKey(setKey, ukey)
+      val refBind0 = SetElementBinding(elKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>
@@ -212,6 +210,7 @@ object AbstractBindingDefDSL {
             case MultiSetElementInstruction.MultiAddTags(tags) => b.addTags(tags)
           }
       }
+
 
       Seq(bind, refBind)
     }
