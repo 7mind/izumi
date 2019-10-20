@@ -1,13 +1,13 @@
 package izumi.distage.roles.services
 
+import distage.ModuleBase
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, BindingTag}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.logstage.api.IzLogger
-import distage.ModuleBase
 import izumi.fundamentals.platform.strings.IzString._
+import izumi.logstage.api.IzLogger
 
 class ActivationParser {
   def parseActivation(
@@ -20,12 +20,14 @@ class ActivationParser {
     val uses = Options.use.findValues(parameters.globalParameters)
     val availableUses: Map[AxisBase, Set[AxisValue]] = ActivationParser.findAvailableChoices(logger, defApp)
 
-def options: String = availableUses
-      .map {
-        case (axis, members) =>
-          s"$axis:${members.niceList().shift(2)}"
-      }
-      .niceList()
+    def options: String = {
+      availableUses
+        .map {
+          case (axis, members) =>
+            s"$axis:${members.niceList().shift(2)}"
+        }
+        .niceList()
+    }
 
     val activeChoices = uses
       .map {
@@ -69,7 +71,9 @@ def options: String = availableUses
 
 object ActivationParser {
   def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisValue]] = {
-    val allChoices = defApp.bindings.flatMap(_.tags).collect({ case BindingTag.AxisTag(choice) => choice })
+    val allChoices = defApp.bindings.flatMap(_.tags).collect({
+      case BindingTag.AxisTag(choice) => choice
+    })
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
     val badAxis = allAxis.filter(_._2.size > 1)
     if (badAxis.nonEmpty) {

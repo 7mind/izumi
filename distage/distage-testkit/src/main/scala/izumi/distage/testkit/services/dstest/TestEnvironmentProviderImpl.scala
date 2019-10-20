@@ -8,7 +8,7 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.roles.BootstrapConfig
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl}
+import izumi.distage.roles.services.{ActivationParser, PluginSource}
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
@@ -21,7 +21,7 @@ class TestEnvironmentProviderImpl
   protected val memoizedKeys: Set[DIKey],
   protected val bootstrapOverrides: BootstrapModule,
   protected val moduleOverrides: ModuleBase,
-  protected val pluginOverrides: Option[Seq[String]]
+  protected val pluginOverrides: Option[Seq[String]],
 ) extends TestEnvironmentProvider {
 
   /**
@@ -86,7 +86,7 @@ class TestEnvironmentProviderImpl
   }
 
   override protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
-    new PluginSourceImpl(bootstrapConfig)
+    new PluginSource.Impl(bootstrapConfig)
   }
 
   protected def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)

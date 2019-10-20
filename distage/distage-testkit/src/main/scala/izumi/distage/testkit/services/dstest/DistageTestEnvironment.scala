@@ -1,12 +1,13 @@
 package izumi.distage.testkit.services.dstest
 
+import distage.config.AppConfig
+import distage.{DIKey, ModuleBase}
 import izumi.distage.model.definition.BootstrapModule
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.services.{ConfigLoader, ModuleProvider, ModuleProviderImpl}
+import izumi.distage.roles.config.ContextOptions
+import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.logstage.api.{IzLogger, Log}
-import distage.config.AppConfig
-import distage.{DIKey, ModuleBase}
 
 trait DistageTestEnvironment[F[_]] {
 
@@ -21,9 +22,9 @@ trait DistageTestEnvironment[F[_]] {
 
   def makeLogger(): IzLogger
 
-  def contextOptions(): ModuleProviderImpl.ContextOptions
+  def contextOptions(): ContextOptions
 
   def makeConfigLoader(logger: IzLogger): ConfigLoader
 
-  def makeModuleProvider(options: ModuleProviderImpl.ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F]
+  def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F]
 }

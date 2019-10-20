@@ -1,5 +1,7 @@
 package izumi.distage.testkit.services.st.adapter
 
+import distage.config.AppConfig
+import distage.{DIKey, Injector, ModuleBase}
 import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorRef
@@ -12,7 +14,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
-import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services._
@@ -20,14 +22,11 @@ import izumi.distage.testkit.services.dstest.TestEnvironment
 import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{MemoizedInstance, OrderedFinalizer, PreparedShutdownRuntime}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.{CodePosition, Quirks}
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.{CodePosition, Quirks}
+import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
-import distage.config.AppConfig
-import distage.{DIKey, Injector, ModuleBase}
-import izumi.fundamentals.reflection.CodePositionMaterializer
-
 
 @deprecated("Use dstest", "2019/Jul/18")
 abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
@@ -53,7 +52,6 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
           externalResourceProvider.process(memoizationContextId, MemoizedInstance[Any](ref, fmap.get(ref.key)))
       }
   }
-
 
   override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
     Quirks.discard(pos)
@@ -90,17 +88,17 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     try {
       makeExecutor(plan.injector, logger)
         .execute[F](plan, filters) {
-        (locator, effect) =>
-          implicit val F: DIEffect[F] = effect
+          (locator, effect) =>
+            implicit val F: DIEffect[F] = effect
 
-          for {
-            _ <- F.maybeSuspend(doMemoize(locator))
-            _ <- F.maybeSuspend(verifyTotalSuppression())
-            _ <- F.maybeSuspend(beforeRun(locator))
-            _ <- F.maybeSuspend(verifyTotalSuppression())
-            _ <- locator.run(function)
-          } yield ()
-      }
+            for {
+              _ <- F.maybeSuspend(doMemoize(locator))
+              _ <- F.maybeSuspend(verifyTotalSuppression())
+              _ <- F.maybeSuspend(beforeRun(locator))
+              _ <- F.maybeSuspend(verifyTotalSuppression())
+              _ <- locator.run(function)
+            } yield ()
+        }
     } catch {
       case i: IntegrationCheckException =>
         suppressTheRestOfTestSuite()
@@ -140,7 +138,6 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
             b
         }
 
-
     }
   }
 
@@ -154,7 +151,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   protected def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
-    new ModuleProviderImpl[F](
+    new ModuleProvider.Impl[F](
       lateLogger,
       config,
       roles,
@@ -174,7 +171,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
   }
 
   protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, logger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, activation, logger)
+    new RoleAppPlanner.Impl[F](options, bsModule, activation, logger)
   }
 
   protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
@@ -196,7 +193,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
       s"$lastPackage-test" -> None,
       s"$classname-test" -> None,
     )
-    new ConfigLoaderLocalFSImpl(logger, None, moreConfigs)
+    new ConfigLoader.LocalFSImpl(logger, None, moreConfigs)
   }
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */

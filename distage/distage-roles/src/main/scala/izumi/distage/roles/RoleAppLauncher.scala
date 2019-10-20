@@ -1,17 +1,19 @@
 package izumi.distage.roles
 
 import cats.effect.LiftIO
-import izumi.distage.config.model.AppConfig
+import distage._
 import izumi.distage.config.ConfigInjectionOptions
+import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.AxisBase
 import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
+import izumi.distage.roles.RoleAppLauncher.Options
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
-import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
 import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services._
@@ -22,10 +24,9 @@ import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
-import distage._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.global
 import scala.reflect.ClassTag
 
 /**
@@ -48,8 +49,6 @@ import scala.reflect.ClassTag
   * 16. Shutdown executors
   */
 abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
-
-  import RoleAppLauncher._
 
   private val loggers = new EarlyLoggers()
 
@@ -101,19 +100,20 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
 
   protected def bsOverride: BootstrapModule = BootstrapModule.empty
 
-  protected def defaultActivations: Map[AxisBase, AxisValue] = Map(
-    Env -> Env.Prod,
-    Repo -> Repo.Prod,
-    ExternalApi -> ExternalApi.Prod,
-  )
-
+  protected def defaultActivations: Map[AxisBase, AxisValue] = {
+    Map(
+      Env -> Env.Prod,
+      Repo -> Repo.Prod,
+      ExternalApi -> ExternalApi.Prod,
+    )
+  }
   protected def requiredActivations: Map[AxisBase, AxisValue] = Map.empty
 
   protected def gcRoots(rolesInfo: RolesInfo): Set[DIKey] = {
     rolesInfo.requiredComponents
   }
 
-protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs): PluginMergeStrategy = {
+  protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs): PluginMergeStrategy = {
     Quirks.discard(lateLogger, parameters)
     SimplePluginMergeStrategy
   }
@@ -124,15 +124,15 @@ protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAp
   }
 
   protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, lateLogger: IzLogger): RoleAppPlanner[F] = {
-    new RoleAppPlannerImpl[F](options, bsModule, activation, lateLogger)
+    new RoleAppPlanner.Impl[F](options, bsModule, activation, lateLogger)
   }
 
   protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
-    new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)
+    new RoleAppExecutor.Impl[F](hook, roles, injector, lateLogger, parameters)
   }
 
-protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
-    new ModuleProviderImpl[F](
+  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+    new ModuleProvider.Impl[F](
       lateLogger,
       config,
       roles,
@@ -155,7 +155,7 @@ protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs
   protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
     val activeRoleNames = parameters.roles.map(_.role).toSet
     val mp = MirrorProvider.Impl
-    val roleProvider: RoleProvider[F] = new RoleProviderImpl(logger, activeRoleNames, mp)
+    val roleProvider: RoleProvider[F] = new RoleProvider.Impl(logger, activeRoleNames, mp)
     val bindings = plugins.app.flatMap(_.bindings)
     val bsBindings = plugins.app.flatMap(_.bindings)
     logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
@@ -187,10 +187,12 @@ protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs
     logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
   }
 
-protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
+  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
     val withIzumi = referenceLibraries :+ LibraryReference("izumi-r2", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
-    withIzumi.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
+    withIzumi.foreach {
+      u => showDepData(logger, s"... using ${u.libraryName}", u.clazz)
+    }
     this
   }
 
@@ -212,7 +214,7 @@ protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryRefere
   }
 
   protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
-    new PluginSourceImpl(bootstrapConfig)
+    new PluginSource.Impl(bootstrapConfig)
   }
 
   protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
@@ -222,7 +224,7 @@ protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryRefere
       r =>
         r.role -> Options.configParam.findValue(r.roleParameters).asFile
     }
-    new ConfigLoaderLocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
+    new ConfigLoader.LocalFSImpl(logger, maybeGlobalConfig, roleConfigs.toMap)
   }
 
 }
