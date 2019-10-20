@@ -8,8 +8,7 @@ import scala.collection.mutable
 object Junk {
   trait Dummy
 
-
-  case class TestServiceConf(
+case class TestServiceConf(
                               intval: Int
                               , strval: String
                               , overridenInt: Int
@@ -17,9 +16,7 @@ object Junk {
                               , systemPropList: List[Int]
                             )
 
-
-
-  class InitCounter {
+class InitCounter {
     val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()

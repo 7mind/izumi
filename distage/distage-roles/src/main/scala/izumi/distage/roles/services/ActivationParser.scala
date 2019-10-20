@@ -20,8 +20,7 @@ class ActivationParser {
     val uses = Options.use.findValues(parameters.globalParameters)
     val availableUses: Map[AxisBase, Set[AxisValue]] = ActivationParser.findAvailableChoices(logger, defApp)
 
-
-    def options: String = availableUses
+def options: String = availableUses
       .map {
         case (axis, members) =>
           s"$axis:${members.niceList().shift(2)}"
@@ -65,7 +64,6 @@ class ActivationParser {
 
     AppActivation(availableUses, defaultActivations ++ activeChoices ++ requiredActivations)
   }
-
 
 }
 

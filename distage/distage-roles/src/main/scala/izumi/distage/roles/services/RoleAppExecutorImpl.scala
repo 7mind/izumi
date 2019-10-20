@@ -56,8 +56,7 @@ class RoleAppExecutorImpl[F[_] : TagK](
         }
     }
 
-
-    if (rolesToRun.nonEmpty) {
+if (rolesToRun.nonEmpty) {
       lateLogger.info(s"Going to run: ${rolesToRun.size -> "roles"}")
 
       val tt = rolesToRun.map {
@@ -92,8 +91,7 @@ class RoleAppExecutorImpl[F[_] : TagK](
     }
   }
 
-
-  protected def runTasks(index: Map[String, Object])(implicit effect: DIEffect[F]): F[Unit] = {
+protected def runTasks(index: Map[String, Object])(implicit effect: DIEffect[F]): F[Unit] = {
     val tasksToRun = parameters.roles.flatMap {
       r =>
         index.get(r.role) match {

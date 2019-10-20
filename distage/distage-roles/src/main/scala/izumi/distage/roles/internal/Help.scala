@@ -1,6 +1,5 @@
 package izumi.distage.roles.internal
 
-
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.roles.RoleAppLauncher
 import izumi.distage.roles.model.meta.RolesInfo

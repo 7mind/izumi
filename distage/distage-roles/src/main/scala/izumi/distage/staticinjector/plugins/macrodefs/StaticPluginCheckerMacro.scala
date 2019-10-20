@@ -197,8 +197,7 @@ object StaticPluginCheckerMacro {
     }.asInstanceOf[T]
   }
 
-
-  // FIXME: move to distage-model
+// FIXME: move to distage-model
   // blockers: AbstractConfId
   implicit final class OrderedPlanCheck(private val plan: OrderedPlan) {
 

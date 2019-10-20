@@ -30,7 +30,6 @@ class BrokenSink extends LogSink {
   }
 }
 
-
 class AdoptedAutocloseablesCase
 (
   sinks: Set[LogSink]

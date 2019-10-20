@@ -24,7 +24,6 @@ object TestLauncher extends TestLauncherBase {
   override protected val hook: AppShutdownStrategy[IO] = new ImmediateExitShutdownStrategy()
 }
 
-
 object ExampleEntrypoint extends RoleAppMain.Default(TestLauncher) {
   override protected def requiredRoles: Vector[RawRoleParams] = Vector(
     RawRoleParams(AdoptedAutocloseablesCase.id, RawEntrypointParams.empty, Vector.empty),
@@ -36,6 +35,5 @@ object ExampleEntrypoint extends RoleAppMain.Default(TestLauncher) {
     RawRoleParams(Help.id, RawEntrypointParams.empty, Vector.empty),
   )
 }
-
 
 object TestEntrypoint extends RoleAppMain.Silent(TestLauncher)

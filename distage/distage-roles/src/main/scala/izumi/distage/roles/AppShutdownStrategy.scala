@@ -9,7 +9,6 @@ import izumi.logstage.api.IzLogger
 
 import scala.concurrent.{ExecutionContext, Promise}
 
-
 trait AppShutdownStrategy[F[_]] {
   def await(logger: IzLogger): F[Unit]
 
@@ -57,7 +56,7 @@ class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends AppShutdownStrategy
   override def release(): Unit = {}
 }
 
-class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionContext) extends AppShutdownStrategy[F] {
+class CatsEffectIOShutdownStrategy[F[_] : LiftIO](executionContext: ExecutionContext) extends AppShutdownStrategy[F] {
   private val shutdownPromise: Promise[Unit] = Promise[Unit]()
   private val mainLatch: CountDownLatch = new CountDownLatch(1)
 
@@ -74,7 +73,6 @@ class CatsEffectIOShutdownStrategy[F[_]  : LiftIO](executionContext : ExecutionC
     val shutdownHook = new Thread(() => {
       stop()
     }, "termination-hook-promise")
-
 
     logger.info("Waiting on latch...")
     Runtime.getRuntime.addShutdownHook(shutdownHook)

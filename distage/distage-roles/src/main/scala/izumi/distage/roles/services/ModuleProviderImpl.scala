@@ -17,7 +17,6 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogstageModule
 import distage.TagK
 
-
 class ModuleProviderImpl[F[_] : TagK](
                                        logger: IzLogger,
                                        config: AppConfig,
@@ -78,7 +77,6 @@ class ModuleProviderImpl[F[_] : TagK](
   }
 
 }
-
 
 object ModuleProviderImpl {
 

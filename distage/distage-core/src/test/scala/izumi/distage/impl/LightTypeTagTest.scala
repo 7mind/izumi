@@ -193,7 +193,6 @@ class LightTypeTagTest extends WordSpec {
 
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
-      println(LTT[List[Int]])
       assertChild(LTT[List[Int]], `LTT[_]`[List])
       assertNotChild(LTT[Set[Int]], `LTT[_]`[Set])
 
@@ -370,9 +369,6 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "resolve comparisons of object and trait with the same name" in {
-      println(LTT[YieldOpCounts.type])
-      println(LTT[YieldOpCounts])
-
       assertNotChild(LTT[YieldOpCounts.type], LTT[RoleChild[Either]])
       assertChild(LTT[YieldOpCounts.type], LTT[YieldOpCounts])
       assertDifferent(LTT[YieldOpCounts.type], LTT[YieldOpCounts])

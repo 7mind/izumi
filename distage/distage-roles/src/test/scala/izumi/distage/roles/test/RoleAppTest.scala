@@ -48,8 +48,7 @@ class RoleAppTest extends WordSpec
     }
   }
 
-
-  private def cfg(role: String, version: ArtifactVersion) = {
+private def cfg(role: String, version: ArtifactVersion) = {
     val justConfig = Paths.get(prefix, s"$role-${version.version}.json").toFile
     justConfig
   }

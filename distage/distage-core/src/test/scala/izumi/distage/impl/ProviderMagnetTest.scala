@@ -144,8 +144,6 @@ class ProviderMagnetTest extends WordSpec {
 
     "handle opaque local references in traits" in {
       val testProviderModule = new TestProviderModule {}
-      println(SafeType.get[TestProviderModule#TestClass])
-      println(ProviderMagnet(testProviderModule.implArg _).get.ret)
       assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
       assert(ProviderMagnet(testProviderModule.implType _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
     }

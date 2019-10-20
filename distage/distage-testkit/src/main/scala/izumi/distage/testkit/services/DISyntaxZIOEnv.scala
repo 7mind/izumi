@@ -14,6 +14,7 @@ import scala.language.implicitConversions
   *   trait PetStore[F[_, _]] {
   *     def purchasePet(name: String, cost: Int): F[Throwable, Boolean]
   *   }
+  *
   *   trait Pets[F[_, _]]
   *     def myPets: F[Throwable, List[String]]
   *   }
@@ -34,11 +35,11 @@ import scala.language.implicitConversions
   *   }
   *
   *   "test purchase pets" in {
-  *     val test: ZIO[PetStoreEnv with PetsEnv, Throwable, Unit] = for {
+  *     for {
   *       _    <- store.purchasePet("Zab", 213)
   *       pets <- pets.myPets
   *     } yield assert(pets.contains("Zab"))
-  *     test
+  *     // : ZIO[PetStoreEnv with PetsEnv, Throwable, Unit]
   *   }
   * }}}
   */

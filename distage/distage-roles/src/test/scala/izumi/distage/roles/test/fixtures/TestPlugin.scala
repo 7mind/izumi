@@ -9,7 +9,6 @@ import izumi.distage.roles.test.fixtures.Junk._
 import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 
-
 class TestPlugin extends PluginDef {
 
   import TestPlugin._
@@ -53,7 +52,4 @@ object TestPlugin {
   }
 
 }
-
-
-
 

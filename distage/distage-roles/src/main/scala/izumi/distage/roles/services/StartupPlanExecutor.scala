@@ -17,8 +17,7 @@ object StartupPlanExecutor {
     new StartupPlanExecutorImpl(injector, checker)
   }
 
-
-  case class Filters[F[_]](
+case class Filters[F[_]](
                             filterF: FinalizersFilter[F],
                             filterId: FinalizersFilter[Identity],
                           )
