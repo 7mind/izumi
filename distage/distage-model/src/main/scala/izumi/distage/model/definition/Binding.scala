@@ -1,7 +1,5 @@
 package izumi.distage.model.definition
 
-import izumi.distage
-import izumi.distage.model
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection
@@ -90,22 +88,25 @@ object Binding {
 
       val gk: universe.RuntimeDIUniverse.DIKey.SetElementKey = fixSetKey(key)
 
-      val gi = implementation match {
-        case r: ImplDef.ReferenceImpl =>
-          r.copy(key = fixKey(r.key))
-        case o => o
-      }
+//      val gi = implementation match {
+//        case r: ImplDef.ReferenceImpl =>
+//          //r.copy(key = r.key)
+//          r
+//        case o => o
+//      }
 
-      GroupingKey.KeyImpl(gk, gi)
+      GroupingKey.KeyImpl(gk, implementation)
     }
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding =  {
       // TODO: seems like this will never be invoked
+      ???
       copy(key = this.key.copy(reference = key))
     }
     protected[distage] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
   }
+  
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding {
     override def group: GroupingKey = GroupingKey.Key(key)

@@ -1,5 +1,6 @@
 package izumi.distage.injector
 
+import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
@@ -8,8 +9,6 @@ import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
 import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
-import distage._
-import izumi.fundamentals.platform.jvm.SourceFilePosition
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import org.scalatest.WordSpec
 
@@ -307,21 +306,25 @@ class BasicTest extends WordSpec with MkInjector {
     val definition = PlannerInput.noGc(new ModuleDef {
       make[Int].from(7)
 
-      many[Int].add(5)
       many[Int].add(0)
-
       many[Int].addSet(Set(1, 2, 3))
+      many[Int].add(5)
 
-      many[Int].add { i: Int => i - 1 }
-      many[Int].addSet {
+      many[Int].add { i: Int => i - 1 } // 6
+      many[Int].addSet { // 7, 8, 9
         i: Int =>
           Set(i, i + 1, i + 2)
       }
     })
 
+    import izumi.fundamentals.platform.strings.IzString._
+    println(definition.bindings.bindings.niceList())
+
+    println(Injector.Standard().plan(definition).render())
+
     val context = Injector.Standard().produceUnsafe(definition)
 
-    assert(context.get[Set[Int]] == Set(0, 1, 2, 3, 5, 6, 7, 8, 9))
+    assert(context.get[Set[Int]].toList.sorted == List(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
   "support empty sets" in {

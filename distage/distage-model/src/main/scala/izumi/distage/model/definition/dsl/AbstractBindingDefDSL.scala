@@ -6,7 +6,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag, SafeType}
 import izumi.fundamentals.platform.jvm.SourceFilePosition
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.CodePositionMaterializer
@@ -189,7 +189,7 @@ object AbstractBindingDefDSL {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
       val implKey = DIKey.TypeKey(implDef.implType)
       //val refkey = key(implKey, pos.toString, implDef)
-      val refkey = implKey.named(pos.toString)
+      val refkey = implKey.named(DIKey.SetLocId(pos.toString))
       val elKey = DIKey.SetElementKey(setKey, refkey)
 
       ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
@@ -230,7 +230,8 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetLocId(pos.toString))
+      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetLocId(implDef.toString))
+
       val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 
       val elKey = DIKey.SetElementKey(setKey, ukey)

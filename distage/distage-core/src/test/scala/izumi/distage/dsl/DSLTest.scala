@@ -5,7 +5,6 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.definition.{BindingTag, Bindings, Module}
 import org.scalatest.WordSpec
-import org.scalatest.exceptions.TestFailedException
 
 class DSLTest extends WordSpec {
 
@@ -222,7 +221,6 @@ class DSLTest extends WordSpec {
         many[SetTrait].tagged("A", "B")
       }
 
-      import izumi.fundamentals.platform.strings.IzString._
       assert(definition.bindings.size == 7)
       assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 3)
       assert(definition.bindings.count(_.tags.strings == Set("CA", "CB")) == 1)
@@ -246,10 +244,7 @@ class DSLTest extends WordSpec {
           .addSetValue(set).tagged("B") // merge
       }
 
-      import izumi.fundamentals.platform.strings.IzString._
-
-      //println(s"definitions: ${definition.bindings.niceList()}")
-      assert(definition.bindings.size == 4)
+      assert(definition.bindings.size == 3)
       assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
     }
 
