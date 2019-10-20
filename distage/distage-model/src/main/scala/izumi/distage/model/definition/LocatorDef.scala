@@ -17,7 +17,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{GCMode, Locator, definition}
-import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.reflection.CodePositionMaterializer
 
 import scala.collection.mutable

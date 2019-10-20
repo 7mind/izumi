@@ -2,9 +2,7 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
-import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
-import izumi.distage.model.exceptions.ModuleMergeException
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
 
@@ -104,7 +102,7 @@ object ModuleBase {
       T.make(mergePreserve(moduleDef.bindings, that.bindings)._2)
     }
 
-    private def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[universe.RuntimeDIUniverse.DIKey], Set[Binding]) = {
+    private def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[DIKey], Set[Binding]) = {
       val existingIndex = existing.map(b => b.key -> b).toMultimap
       val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
@@ -140,7 +138,7 @@ object ModuleBase {
 
     val out = grouped
       .map {
-        case (k, v) =>
+        case (_, v) =>
           //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
           v.reduce(_ addTags _.tags)
       }

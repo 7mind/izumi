@@ -35,7 +35,6 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     }))
 
     val formatted = plan.render()
-    println(formatted)
     assert(!formatted.contains(classOf[Impl1].getName))
     assert(formatted.contains("Impl1"))
     assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %1:0 → Either[+Nothing,+1:0],=Unit]}"))

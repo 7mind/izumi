@@ -35,7 +35,7 @@ class SetStrategyDefaultImpl
       case (m, Some(value)) if m.tpe.use(_.baseClasses.contains(setErasure)) && m.tpe.use(_.typeArgs.headOption.exists(SafeType(_) <:< keyType)) =>
         // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[collection.Set[Any]]
-      case (m, Some(value)) =>
+      case (_, Some(value)) =>
         ListSet(value)
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
