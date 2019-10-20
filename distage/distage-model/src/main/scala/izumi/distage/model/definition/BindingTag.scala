@@ -14,16 +14,14 @@ object BindingTag {
 
 sealed trait AxisBase {
   def name: String
-  override def toString: String = s"$name"
 
-  implicit def self: AxisBase = this
-
+  override final def toString: String = s"$name"
+  implicit final def self: AxisBase = this
 }
 
 trait Axis[+MM <: AxisValue] extends AxisBase
 
 object Axis {
-
   trait AxisValue {
     def axis: AxisBase
 
@@ -34,7 +32,6 @@ object Axis {
 
     override def toString: String = s"$axis:$id"
   }
-
 }
 
 object StandardAxis {

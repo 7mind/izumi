@@ -49,8 +49,8 @@ object DodgyPlan {
     def op: InstantiationOp
     def binding: Binding
   }
-  case class JustOp(key: DIKey, op: InstantiationOp, binding: Binding) extends TraceableOp
-  case class SetOp(key: DIKey, op: CreateSet, binding: Binding) extends TraceableOp
+  final case class JustOp(key: DIKey, op: InstantiationOp, binding: Binding) extends TraceableOp
+  final case class SetOp(key: DIKey, op: CreateSet, binding: Binding) extends TraceableOp
 
   def empty(definition: ModuleBase, gcMode: GCMode): DodgyPlan = {
     new DodgyPlan(definition, gcMode)

@@ -19,18 +19,12 @@ trait WithDIAssociation {
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association
-
-    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey) extends Association
-
-    implicit class ParameterWithWireWith(p: Association.Parameter) {
-      def withWireWith(key: DIKey.BasicKey): Association.Parameter =
-        p.copy(wireWith = key)
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association {
+      final def withWireWith(key: DIKey.BasicKey): Association.Parameter = copy(wireWith = key)
     }
 
-    implicit class MethodWithWireWith(m: Association.AbstractMethod) {
-      def withWireWith(key: DIKey.BasicKey): Association.AbstractMethod =
-        m.copy(wireWith = key)
+    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey) extends Association {
+      final def withWireWith(key: DIKey.BasicKey): Association.AbstractMethod = copy(wireWith = key)
     }
   }
 

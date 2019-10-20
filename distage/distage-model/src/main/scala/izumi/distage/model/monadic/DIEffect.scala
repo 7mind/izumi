@@ -38,8 +38,9 @@ trait DIEffect[F[_]] {
   final def traverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit] = {
     // All reasonable effect types will be stack-safe (not heap-safe!) on left-associative
     // flatMaps so foldLeft is ok here. It also enables impure Identity to work correctly
-    l.foldLeft(unit) { (acc, a) =>
-      flatMap(acc)(_ => f(a))
+    l.foldLeft(unit) {
+      (acc, a) =>
+        flatMap(acc)(_ => f(a))
     }
   }
 }
@@ -47,7 +48,7 @@ trait DIEffect[F[_]] {
 object DIEffect
   extends FromCats {
 
-  def apply[F[_]: DIEffect]: DIEffect[F] = implicitly
+  def apply[F[_] : DIEffect]: DIEffect[F] = implicitly
 
   object syntax {
     implicit def suspendedSyntax[F[_], A](fa: => F[A]): DIEffectSuspendedSyntax[F, A] = new DIEffectSuspendedSyntax(() => fa)
@@ -71,7 +72,9 @@ object DIEffect
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
-      try fa catch { case t: Throwable => recover(t) }
+      try fa catch {
+        case t: Throwable => recover(t)
+      }
     }
     override def definitelyRecoverCause[A](action: => Identity[A])(recoverCause: Throwable => Identity[A]): Identity[A] = {
       definitelyRecover(action)(recoverCause)
@@ -137,7 +140,7 @@ trait FromCats {
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    * */
+    */
   implicit def fromCatsEffect[F[_], R[_[_]]](implicit l: _Sync[R], F0: R[F]): DIEffect[F] = {
     l.discard()
     val F = F0.asInstanceOf[cats.effect.Sync[F]]
@@ -175,10 +178,11 @@ trait FromCats {
 
 object FromCats {
   /**
-   * 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
-   * _still_ provide _non-orphan_ instances if it's on classpath
-   * @see https://blog.7mind.io/no-more-orphans.html
-   */
+    * 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
+    * _still_ provide _non-orphan_ instances if it's on classpath
+    *
+    * @see https://blog.7mind.io/no-more-orphans.html
+    */
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
     implicit val catsEffectSync: _Sync[cats.effect.Sync] = null

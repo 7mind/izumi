@@ -309,6 +309,7 @@ object DIResource {
     override final def extract(resource: (A, F[Unit])): A = resource._1
   }
 
+  /** Generalized [[DIResource]] */
   trait DIResourceBase[+F[_], +OuterResource] { self =>
     type InnerResource
     def acquire: F[InnerResource]
@@ -507,7 +508,7 @@ object DIResource {
       * The `resourceTag` implicit above works perfectly fine, this macro here is exclusively
       * a workaround for highlighting in Intellij IDEA
       *
-      * (it's also used to display error trace from TagK @implicitNotFound)
+      * (it's also used to display error trace from TagK's @implicitNotFound)
       *
       * TODO: include link to IJ bug tracker
       */

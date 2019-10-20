@@ -42,7 +42,7 @@ trait AbstractLocator extends Locator {
       .map(_.value)
   }
 
-  private final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
+  private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
     locator.lookup[T](key)
       .orElse(locator.parent.flatMap(p => recursiveLookup(key, p)))
   }

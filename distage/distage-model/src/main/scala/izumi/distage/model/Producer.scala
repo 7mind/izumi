@@ -8,6 +8,7 @@ import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finali
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.fundamentals.platform.functional.Identity
 
+/** Executes instructions in [[OrderedPlan]] to produce a [[Locator]] */
 trait Producer {
   protected[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator]
 

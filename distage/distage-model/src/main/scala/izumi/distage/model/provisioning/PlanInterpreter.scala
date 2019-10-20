@@ -10,11 +10,11 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait PlanInterpreter {
-  def instantiate[F[_] : TagK : DIEffect](
-                                           plan: OrderedPlan
-                                           , parentContext: Locator
-                                           , filterFinalizers: FinalizersFilter[F]
-                                         ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
+  def instantiate[F[_]: TagK: DIEffect](
+                                         plan: OrderedPlan,
+                                         parentContext: Locator,
+                                         filterFinalizers: FinalizersFilter[F],
+                                       ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {

@@ -2,8 +2,6 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
 sealed trait GCMode {
@@ -17,22 +15,21 @@ sealed trait GCMode {
   }
 }
 object GCMode {
+  def apply(key: DIKey, more: DIKey*): GCMode = GCRoots(more.toSet + key)
+
   final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")
-    override def toSet: Set[universe.RuntimeDIUniverse.DIKey] = roots
+    override def toSet: Set[DIKey] = roots
   }
   case object NoGC extends GCMode {
-    override def toSet: Set[RuntimeDIUniverse.DIKey] = Set.empty
+    override def toSet: Set[DIKey] = Set.empty
   }
-
-  def apply(key: DIKey, more: DIKey*): GCMode = GCRoots(more.toSet + key)
 }
-
 
 /**
   * Input for [[Planner]]
   *
-  * @param bindings Bindings probably created using [[izumi.distage.model.definition.ModuleDef]] DSL
+  * @param bindings Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
   * @param mode     Garbage collection roots.
   *
   *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
@@ -58,7 +55,7 @@ object PlannerInput {
 
 case class SplittedPlan(subplan: OrderedPlan, subRoots: Set[DIKey], primary: OrderedPlan, reducedModule: ModuleBase)
 
-
+/** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner {
   def plan(input: PlannerInput): OrderedPlan
 

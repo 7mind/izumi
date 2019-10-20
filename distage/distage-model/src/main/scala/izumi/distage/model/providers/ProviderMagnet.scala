@@ -77,7 +77,7 @@ import scala.language.implicitConversions
   *   }}}
   *
   * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
-  **/
+  */
 final case class ProviderMagnet[+R](get: Provider) {
   def map[B: Tag](f: R => B): ProviderMagnet[B] = {
     copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))

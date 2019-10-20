@@ -6,53 +6,53 @@ import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, TagK, TypedRef}
 
 import scala.collection.immutable.Queue
 
-/** Holds the object graph created by executing a `plan`
+/**
+  * The object graph created by executing a `plan`.
+  * Can be queried for contained objects.
   *
   * @see [[Injector]]
   * @see [[Planner]]
   * @see [[Producer]]
   **/
 trait Locator {
+
   /** Instances in order of creation
     *
     * @return *Only* instances contained in this Locator, *NOT* instances in [[parent]] Locators. All the keys must be unique
     */
   def instances: collection.Seq[IdentifiedRef]
 
+  def plan: OrderedPlan
+  def parent: Option[Locator]
+
+  def lookupInstanceOrThrow[T: Tag](key: DIKey): T
+  def lookupInstance[T: Tag](key: DIKey): Option[T]
+
+  def find[T: Tag]: Option[T]
+  def find[T: Tag](id: String): Option[T]
+
+  def get[T: Tag]: T
+  def get[T: Tag](id: String): T
+
+  protected[distage] def finalizers[F[_] : TagK]: collection.Seq[Finalizer[F]]
+  protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
+
+  def index: Map[DIKey, Any] = {
+    instances.map(i => i.key -> i.value).toMap
+  }
+
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Keys may be not unique.
     *
     * @see [[izumi.distage.bootstrap.BootstrapLocator]]
     */
-  final def allInstances: collection.Seq[IdentifiedRef] =
+  final def allInstances: collection.Seq[IdentifiedRef] = {
     parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances
-
-  def index: Map[RuntimeDIUniverse.DIKey, Any] = instances.map(i => i.key -> i.value).toMap
-
-  def plan: OrderedPlan
-
-  def parent: Option[Locator]
-
-  def lookupInstanceOrThrow[T: Tag](key: DIKey): T
-
-  def lookupInstance[T: Tag](key: DIKey): Option[T]
-
-  def find[T: Tag]: Option[T]
-
-  def find[T: Tag](id: String): Option[T]
-
-  def get[T: Tag]: T
-
-  def get[T: Tag](id: String): T
-
-  protected[distage] def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
-
-  protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
+  }
 
   /**
     * Run function `f` filling all the arguments from locator contents.
@@ -93,8 +93,9 @@ object Locator {
     *
     * Summoning the entire Locator is usually an anti-pattern, but may sometimes be necessary.
     */
-  class LocatorRef() {
+  class LocatorRef {
     protected[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
+
     def get: Locator = ref.get()
   }
 
