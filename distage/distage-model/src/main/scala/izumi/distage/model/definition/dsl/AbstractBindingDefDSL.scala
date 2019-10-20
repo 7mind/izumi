@@ -230,7 +230,8 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetLocId(implDef.toString))
+      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetImplId(implDef))
+      //val ukey = DIKey.TypeKey(implDef.implType)
 
       val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
 
@@ -243,6 +244,7 @@ object AbstractBindingDefDSL {
             case MultiSetElementInstruction.MultiAddTags(tags) => b.addTags(tags)
           }
       }
+
 
       Seq(bind, refBind)
     }

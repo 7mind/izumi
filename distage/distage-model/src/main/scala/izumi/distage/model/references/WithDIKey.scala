@@ -1,5 +1,6 @@
 package izumi.distage.model.references
 
+import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithTags}
 
 trait WithDIKey {
@@ -53,9 +54,17 @@ trait WithDIKey {
     }
 
     case class SetLocId(name: String)
+
     object SetLocId {
       implicit object SetLocIdContract extends IdContract[SetLocId] {
         override def repr(v: SetLocId): String = "set/"+v.name
+      }
+    }
+
+    case class SetImplId(impl: ImplDef) {}
+    object SetImplId {
+      implicit object SetImplIdContract extends IdContract[SetImplId] {
+        override def repr(v: SetImplId): String = "setimpl/"+v.toString
       }
     }
   }

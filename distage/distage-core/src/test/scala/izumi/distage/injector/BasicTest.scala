@@ -317,13 +317,7 @@ class BasicTest extends WordSpec with MkInjector {
       }
     })
 
-    import izumi.fundamentals.platform.strings.IzString._
-    println(definition.bindings.bindings.niceList())
-
-    println(Injector.Standard().plan(definition).render())
-
     val context = Injector.Standard().produceUnsafe(definition)
-
     assert(context.get[Set[Int]].toList.sorted == List(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 

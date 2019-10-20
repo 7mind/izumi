@@ -86,15 +86,7 @@ object Binding {
         }
       }
 
-      val gk: universe.RuntimeDIUniverse.DIKey.SetElementKey = fixSetKey(key)
-
-//      val gi = implementation match {
-//        case r: ImplDef.ReferenceImpl =>
-//          //r.copy(key = r.key)
-//          r
-//        case o => o
-//      }
-
+      val gk = fixSetKey(key)
       GroupingKey.KeyImpl(gk, implementation)
     }
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
@@ -106,7 +98,6 @@ object Binding {
     protected[distage] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
   }
-  
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding {
     override def group: GroupingKey = GroupingKey.Key(key)
