@@ -3,7 +3,6 @@ package izumi.distage.model.definition
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection
-import izumi.distage.model.reflection.universe
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.jvm.SourceFilePosition
@@ -17,7 +16,6 @@ sealed trait Binding {
   def group: GroupingKey
   def tags: Set[BindingTag]
 
-  def withTarget[K <: DIKey](key: K): Binding
   def addTags(tags: Set[BindingTag]): Binding
 
 
@@ -42,18 +40,20 @@ object Binding {
     case class Key(key: DIKey) extends GroupingKey
   }
 
+  sealed trait WithTarget {
+    def withTarget[K <: DIKey](key: K): Binding
+  }
   sealed trait ImplBinding extends Binding {
     def implementation: ImplDef
 
     def withImplDef(implDef: ImplDef): ImplBinding
-    override def withTarget[K <: DIKey](key: K): ImplBinding
     protected[distage] def withTags(tags: Set[BindingTag]): ImplBinding
     override def addTags(tags: Set[BindingTag]): ImplBinding
   }
 
   sealed trait SetBinding extends Binding
 
-  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding {
+  final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with WithTarget {
     override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
 
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
@@ -90,16 +90,11 @@ object Binding {
       GroupingKey.KeyImpl(gk, implementation)
     }
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
-    override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SetElementBinding =  {
-      // TODO: seems like this will never be invoked
-      ???
-      copy(key = this.key.copy(reference = key))
-    }
     protected[distage] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
   }
 
-  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding {
+  final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding with WithTarget {
     override def group: GroupingKey = GroupingKey.Key(key)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     protected[distage] def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)

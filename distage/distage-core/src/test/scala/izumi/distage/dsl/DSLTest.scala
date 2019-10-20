@@ -3,7 +3,9 @@ package izumi.distage.dsl
 import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
-import izumi.distage.model.definition.{BindingTag, Bindings, Module}
+import izumi.distage.model.definition.{Binding, BindingTag, Bindings, Module}
+import izumi.distage.model.reflection.universe
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import org.scalatest.WordSpec
 
 class DSLTest extends WordSpec {
@@ -71,34 +73,39 @@ class DSLTest extends WordSpec {
           .add[SetImpl2]
           .add[SetImpl3]
 
-        many[SetTrait].named("n1")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
-
-        many[SetTrait].named("n2")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
-
-        many[SetTrait].named("n3")
-          .add[SetImpl1]
-          .add[SetImpl2]
-          .add[SetImpl3]
+//        many[SetTrait].named("n1")
+//          .add[SetImpl1]
+//          .add[SetImpl2]
+//          .add[SetImpl3]
+//
+//        many[SetTrait].named("n2")
+//          .add[SetImpl1]
+//          .add[SetImpl2]
+//          .add[SetImpl3]
+//
+//        many[SetTrait].named("n3")
+//          .add[SetImpl1]
+//          .add[SetImpl2]
+//          .add[SetImpl3]
       }
+//      implicit final class WithNamedTarget[R](private val binding: Binding {def key: DIKey.TypeKey; def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): R}) extends AnyVal {
+//        def named[I: universe.RuntimeDIUniverse.IdContract](id: I): R = {
+//          binding.withTarget(binding.key.named(id))
+//        }
+//      }
 
-//      assert(definition === Module.make(
-//        Set(
-//          Bindings.emptySet[SetTrait]
-//          , Bindings.setElement[SetTrait, SetImpl1]
-//          , Bindings.setElement[SetTrait, SetImpl2]
-//          , Bindings.setElement[SetTrait, SetImpl3]
-//
-//          , Bindings.binding[Service0]
-//          , Bindings.binding[Service1]
-//          , Bindings.binding[Service2]
-//          , Bindings.binding[Service3]
-//
+      assert(definition === Module.make(
+        Set(
+          Bindings.emptySet[SetTrait]
+          , Bindings.setElement[SetTrait, SetImpl1]
+          , Bindings.setElement[SetTrait, SetImpl2]
+          , Bindings.setElement[SetTrait, SetImpl3]
+
+          , Bindings.binding[Service0]
+          , Bindings.binding[Service1]
+          , Bindings.binding[Service2]
+          , Bindings.binding[Service3]
+
 //          , Bindings.emptySet[SetTrait].named("n1")
 //          , Bindings.setElement[SetTrait, SetImpl1].named("n1")
 //          , Bindings.setElement[SetTrait, SetImpl2].named("n1")
@@ -113,9 +120,9 @@ class DSLTest extends WordSpec {
 //          , Bindings.setElement[SetTrait, SetImpl1].named("n3")
 //          , Bindings.setElement[SetTrait, SetImpl2].named("n3")
 //          , Bindings.setElement[SetTrait, SetImpl3].named("n3")
-//        )
-//      )
-//      )
+        )
+      )
+      )
     }
 
     "allow monoidal operations between different types of binding dsls" in {

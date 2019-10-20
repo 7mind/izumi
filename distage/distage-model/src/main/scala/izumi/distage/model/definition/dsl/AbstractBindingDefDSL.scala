@@ -112,12 +112,14 @@ object AbstractBindingDefDSL {
 
   final class SingletonRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[SingletonInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: collection.Seq[ImplBinding] = Seq(
-      ops.foldLeft(initial: ImplBinding) {
+      ops.foldLeft(initial: SingletonBinding[DIKey.BasicKey]) {
         (b, instr) =>
           instr match {
             case SetImpl(implDef) => b.withImplDef(implDef)
             case AddTags(tags) => b.addTags(tags)
-            case s: SetId[_] => b.withTarget(DIKey.IdKey(b.key.tpe, s.id)(s.idContract))
+            case s: SetId[_] =>
+              val key = DIKey.IdKey(b.key.tpe, s.id)(s.idContract)
+              b.withTarget(key)
             case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.use(_.toString.toLowerCase)))
           }
       }
