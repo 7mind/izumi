@@ -2,8 +2,8 @@ package izumi.distage.testkit.services
 
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.fundamentals.platform.jvm.CodePosition
 import distage.{Tag, TagK}
+import izumi.fundamentals.platform.language.CodePosition
 
 trait DISyntaxBase[F[_]] {
   implicit def tagMonoIO: TagK[F]

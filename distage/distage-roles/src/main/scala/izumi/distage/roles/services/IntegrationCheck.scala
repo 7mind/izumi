@@ -40,8 +40,7 @@ class IntegrationCheckerImpl(logger: IzLogger) extends IntegrationChecker {
     failingIntegrations(integrations)
   }
 
-
-  private def failingIntegrations(integrations: Set[IntegrationCheck]): Option[Seq[ResourceCheck.Failure]] = {
+private def failingIntegrations(integrations: Set[IntegrationCheck]): Option[Seq[ResourceCheck.Failure]] = {
     logger.info(s"Going to check availability of ${integrations.size -> "resources"}")
 
     val failures = integrations.toSeq.flatMap {

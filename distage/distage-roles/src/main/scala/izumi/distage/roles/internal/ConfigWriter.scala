@@ -189,7 +189,6 @@ class ConfigWriter[F[_] : DIEffect]
   private[this] final val configRenderOptions = ConfigRenderOptions.defaults.setOriginComments(false).setComments(false)
 }
 
-
 object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
@@ -215,8 +214,7 @@ object ConfigWriter extends RoleDescriptor {
                                           , parent: Option[Config] = None
                                         )
 
-
-  object P extends ParserDef {
+object P extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")
     final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
     final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")

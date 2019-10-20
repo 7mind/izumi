@@ -3,8 +3,8 @@ package izumi.distage.testkit.services
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.DISyntaxBIOBase.BIOBadBranch
 import izumi.functional.bio.BIOError
-import izumi.fundamentals.platform.jvm.CodePosition
 import distage.{Tag, TagKK}
+import izumi.fundamentals.platform.language.CodePosition
 
 trait DISyntaxBIOBase[F[+ _, + _]] {
 

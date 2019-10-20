@@ -7,9 +7,9 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruc
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, SetRef, SingletonInstruction, SingletonRef}
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, Tag}
-import izumi.fundamentals.platform.jvm.SourceFilePosition
-import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.SourceFilePosition
 
 import scala.collection.mutable
 

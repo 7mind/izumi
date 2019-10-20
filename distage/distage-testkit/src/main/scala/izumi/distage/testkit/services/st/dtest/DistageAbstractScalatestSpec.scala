@@ -8,8 +8,7 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.st.dtest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.fundamentals.platform.jvm.CodePosition
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.{CodePosition, Quirks}
 import izumi.fundamentals.reflection.CodePositionMaterializer
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source

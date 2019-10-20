@@ -25,8 +25,7 @@ class StartupPlanExecutorImpl(
                 integrationLocator =>
                   integrationChecker.checkOrFail(appPlan.integrationKeys, integrationLocator)
 
-
-                  Injector.inherit(integrationLocator)
+Injector.inherit(integrationLocator)
                     .produceFX[F](appPlan.app, filters.filterF)
                     .use(doRun(_, effect))
               }

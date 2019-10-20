@@ -14,7 +14,7 @@ import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyC
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.jvm.CodePosition
+import izumi.fundamentals.platform.language.CodePosition
 
 import scala.concurrent.duration.FiniteDuration
 

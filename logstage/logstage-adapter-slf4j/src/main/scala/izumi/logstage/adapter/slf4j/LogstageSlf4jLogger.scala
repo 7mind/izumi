@@ -1,6 +1,6 @@
 package izumi.logstage.adapter.slf4j
 
-import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
 import izumi.logstage.api.logger.LogRouter
 import org.slf4j.{Logger, Marker}

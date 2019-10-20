@@ -1,9 +1,8 @@
 package izumi.distage.dsl
 
 import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.{Axis, AxisBase, Binding, BindingTag}
+import izumi.distage.model.definition.{Axis, AxisBase, BindingTag}
 import izumi.fundamentals.platform.build.ExposedTestScope
-import distage.ModuleBase
 
 import scala.language.implicitConversions
 
@@ -27,15 +26,4 @@ object TestTagOps {
     def strings: Set[String] = tags.collect({ case BindingTag.AxisTag(v: TestAxis.TestTag) => v.t })
   }
 
-  implicit class BindingExt(b: Set[Binding]) {
-    def ===(o: Set[Binding]): Boolean = {
-      b.map(_.group) == o.map(_.group)
-    }
-  }
-
-  implicit class ModuleExt(b: ModuleBase) {
-    def ===(o: ModuleBase): Boolean = {
-      b.bindings === o.bindings
-    }
-  }
 }

@@ -113,8 +113,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     rolesInfo.requiredComponents
   }
 
-
-  protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs): PluginMergeStrategy = {
+protected def makeBootstrapMergeStrategy(lateLogger: IzLogger, parameters: RawAppArgs): PluginMergeStrategy = {
     Quirks.discard(lateLogger, parameters)
     SimplePluginMergeStrategy
   }
@@ -132,8 +131,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     new RoleAppExecutorImpl[F](hook, roles, injector, lateLogger, parameters)
   }
 
-
-  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     new ModuleProviderImpl[F](
       lateLogger,
       config,
@@ -189,8 +187,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     logger.info(s"Available ${availableRoleInfo.niceList() -> "roles"}")
   }
 
-
-  protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
+protected def showBanner(logger: IzLogger, referenceLibraries: Seq[LibraryReference]): this.type = {
     val withIzumi = referenceLibraries :+ LibraryReference("izumi-r2", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
     withIzumi.foreach { u => showDepData(logger, s"... using ${u.libraryName}", u.clazz) }
@@ -249,5 +246,4 @@ object RoleAppLauncher {
   }
 
 }
-
 

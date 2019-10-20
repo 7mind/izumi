@@ -92,36 +92,31 @@ class LightTypeTagTest extends WordSpec {
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
 
   def assertRepr(t: LightTypeTag, expected: String): Unit = {
-    assert(t.toString == expected)
-    ()
+    assert(t.toString == expected).discard()
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
     val clue = s"$t =?= $expected"
     info(clue)
-    assert(t =:= expected, clue)
-    ()
+    assert(t =:= expected, clue).discard()
   }
 
   def assertDifferent(t: LightTypeTag, expected: LightTypeTag): Unit = {
     val clue = s"$t =!= $expected"
     info(clue)
-    assert(!(t =:= expected), clue)
-    ()
+    assert(!(t =:= expected), clue).discard()
   }
 
   def assertChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     val clue = s"$child <?< $parent"
     info(clue)
-    assert(child <:< parent, clue)
-    ()
+    assert(child <:< parent, clue).discard()
   }
 
   def assertNotChild(child: LightTypeTag, parent: LightTypeTag): Unit = {
     val clue = s"$child <!< $parent"
     info(clue)
-    assert(!(child <:< parent), clue)
-    ()
+    assert(!(child <:< parent), clue).discard()
   }
 
 
@@ -129,16 +124,14 @@ class LightTypeTagTest extends WordSpec {
     val combined = outer.combine(inner: _*)
     val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
     info(clue)
-    assert(combined =:= expected, clue)
-    ()
+    assert(combined =:= expected, clue).discard()
   }
 
   def assertCombine(outer: LightTypeTag, inner: LightTypeTag, expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner)
     val clue = s"($outer)•($inner) => $combined =?= $expected"
     info(clue)
-    assert(combined =:= expected, clue)
-    ()
+    assert(combined =:= expected, clue).discard()
   }
 
   def assertCombineNonPos(outer: LightTypeTag, inner: Seq[Option[LightTypeTag]], expected: LightTypeTag): Unit = {
@@ -148,9 +141,13 @@ class LightTypeTagTest extends WordSpec {
     ()
   }
 
+  def literalLtt(s: String)(implicit l: LTag[s.type]): LightTypeTag = l.tag
+
   "lightweight type tags" should {
     "support human-readable representation" in {
-//      println(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}])
+      assertRepr(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}],
+        "({Int} & {def a(String): Int, def b(): String, type M1 = LightTypeTagTest::W1, type M2 = M2|<Nothing..LightTypeTagTest::W2>, type M3 = λ %0 → Either[+Unit,+0]})"
+      )
       assertRepr(LTT[I1 with (I1 with (I1 with W1))], "{LightTypeTagTest::I1 & LightTypeTagTest::W1}")
       assertRepr(`LTT[_]`[R1], "λ %0 → LightTypeTagTest::R1[=0]")
       assertRepr(`LTT[_]`[Nothing], "Nothing")
@@ -330,7 +327,6 @@ class LightTypeTagTest extends WordSpec {
       Z.discard()
 
       assertSame(LTT[a1.A], LTT[Z.X#A])
-
     }
 
     "support structural & refinement type subtype checks" in {
@@ -348,6 +344,17 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
     }
 
+    "support literal types" in {
+      assertRepr(literalLtt("str"), "\"str\"")
+      assertSame(literalLtt("str2"), literalLtt("str2"))
+      assertDifferent(literalLtt("str1"), literalLtt("str2"))
+
+      assertChild(literalLtt("str"), LTT[String])
+      assertNotChild(literalLtt("str"), LTT[Int])
+      assertNotChild(LTT[String], literalLtt("str"))
+      assertDifferent(LTT[String], literalLtt("str"))
+    }
+
     "resolve concrete types through PDTs and projections" in {
       val a1 = new C {
         override type A <: Int
@@ -362,9 +369,6 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "resolve comparisons of object and trait with the same name" in {
-//      println(LTT[YieldOpCounts.type])
-//      println(LTT[YieldOpCounts])
-
       assertNotChild(LTT[YieldOpCounts.type], LTT[RoleChild[Either]])
       assertChild(LTT[YieldOpCounts.type], LTT[YieldOpCounts])
       assertDifferent(LTT[YieldOpCounts.type], LTT[YieldOpCounts])
@@ -376,11 +380,13 @@ class LightTypeTagTest extends WordSpec {
       assertTypeError("def x1[T] = LTag[Array[Int] { type X = T }]")
       assertTypeError("def x1[T <: { type Array }] = LTag[T#Array]")
       assertTypeError("def x1[T] = LTag[Array[Int] with List[T]]")
+      assertTypeError("def x1[F[_]] = LTag[F[Int]]")
 
       assertCompiles("def x1 = { object x { type T }; def x1 = LTag[Array[x.T]].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] { type X = x.T }].discard() }")
       assertCompiles("def x1 = { object x { type T <: { type Array } }; LTag[x.T#Array].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] with List[x.T]].discard() }")
+      assertCompiles("def x1 = { object x { type F[_] }; LTag[x.F[Int]].discard() }")
     }
 
   }

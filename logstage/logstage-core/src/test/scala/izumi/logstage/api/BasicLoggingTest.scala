@@ -1,6 +1,6 @@
 package izumi.logstage.api
 
-import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.Log._
 import izumi.logstage.api.rendering.{RenderingOptions, StringRenderingPolicy}
 import org.scalatest.WordSpec

@@ -5,7 +5,8 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.fundamentals.platform.jvm.SourceFilePosition
+import izumi.fundamentals.platform.language.SourceFilePosition
+import izumi.fundamentals.reflection.CodePositionMaterializer
 
 sealed trait Binding {
 

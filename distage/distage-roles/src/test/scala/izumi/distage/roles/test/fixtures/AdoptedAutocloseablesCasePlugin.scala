@@ -30,10 +30,9 @@ class BrokenSink extends LogSink {
   }
 }
 
-
 class AdoptedAutocloseablesCase
 (
-  sinks: Set[LogSink]
+  val sinks: Set[LogSink]
 ) extends RoleService[IO] {
 
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[IO, Unit] = {

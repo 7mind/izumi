@@ -6,11 +6,9 @@ import izumi.distage.model.definition.Bindings.binding
 import izumi.distage.model.definition._
 import org.scalatest.WordSpec
 
-import izumi.distage.dsl.TestTagOps._
-
 class ModuleBaseInstancesTest extends WordSpec {
   "cats instances for ContextDefinition" should {
-    "allow monoidal operations between different types of binding dsls" in {
+    "allow monoidal & Eq.eqv operations between different types of binding dsls" in {
       import BasicCase1._
 
       val mod1 = new ModuleDef {
@@ -48,8 +46,8 @@ class ModuleBaseInstancesTest extends WordSpec {
       )) |+| mod3 // function pointer equality on magic trait providers
 
 
-      assert(combinedModules === complexModule)
-      assert(plusModules === complexModule)
+      assert(combinedModules eqv complexModule)
+      assert(plusModules eqv complexModule)
     }
   }
 }

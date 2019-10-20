@@ -6,7 +6,6 @@ import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawRoleParams}
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 import distage.TagK
 
-
 abstract class RoleAppMain[F[_] : TagK : DIEffect](
                                                     launcher: RoleAppLauncher[F],
                                                     failureHandler: AppFailureHandler,

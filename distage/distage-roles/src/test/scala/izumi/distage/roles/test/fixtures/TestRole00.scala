@@ -28,7 +28,6 @@ object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
 
-
 class TestRole00[F[_] : DIEffect]
 (
   val conf: TestServiceConf @ConfPath("testservice")
