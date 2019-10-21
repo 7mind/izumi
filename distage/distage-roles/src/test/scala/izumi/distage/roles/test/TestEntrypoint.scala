@@ -3,10 +3,10 @@ package izumi.distage.roles.test
 import cats.effect.IO
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.roles.internal.{ConfigWriter, Help}
-import izumi.distage.roles.test.fixtures.{AdoptedAutocloseablesCase, TestRole00, TestRole01, TestRole02, TestTask00}
-import izumi.distage.roles.{AppShutdownStrategy, BootstrapConfig, ImmediateExitShutdownStrategy, RoleAppLauncher, RoleAppMain}
+import izumi.distage.roles.test.fixtures._
+import izumi.distage.roles._
 import izumi.fundamentals.platform.cli.model.raw.{RawEntrypointParams, RawRoleParams}
-import izumi.fundamentals.reflection.SourcePackageMaterializer.thisPkg
+import izumi.fundamentals.platform.language.SourcePackageMaterializer.thisPkg
 
 class TestLauncherBase extends RoleAppLauncher.LauncherF[IO]() {
   protected val bootstrapConfig: BootstrapConfig = BootstrapConfig(

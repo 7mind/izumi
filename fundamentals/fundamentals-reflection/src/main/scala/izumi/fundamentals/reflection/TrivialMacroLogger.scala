@@ -7,13 +7,15 @@ import scala.reflect.ClassTag
 import scala.reflect.macros.blackbox
 
 /**
-* To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
-* {{{
-* sbt -Dizumi.debug.macro.rtti=true compile
-* }}}
-*/
+  * To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
+  * {{{
+  * sbt -Dizumi.debug.macro.rtti=true compile
+  * }}}
+  *
+  * @see [[DebugProperties]]
+  */
 object TrivialMacroLogger {
-  def id(s: String) = s"izumi.debug.macro.$s"
-  def make[T: ClassTag](c: blackbox.Context, id: String): TrivialLogger =
+  def make[T: ClassTag](c: blackbox.Context, id: String): TrivialLogger = {
     TrivialLogger.make[T](id, config = Config(sink = new ScalacSink(c)))
+  }
 }

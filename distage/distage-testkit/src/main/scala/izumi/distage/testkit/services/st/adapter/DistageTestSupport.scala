@@ -23,8 +23,7 @@ import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{Memoi
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.{CodePosition, Quirks}
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 

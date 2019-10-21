@@ -21,28 +21,28 @@ trait Tags extends UniverseGeneric { self =>
   }
 
   /**
-  * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
-  *
-  * In context of DI this lets you define modules parameterized by higher-kinded type parameters.
-  * This is especially helpful for applying [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
-  *
-  * Example:
-  * {{{
-  * class MyModule[F[_]: Monad: TagK] {
-  *   make[MyService[F]]
-  *   make[F[Int]].named("lucky-number").from(Monad[F].pure(7))
-  * }
-  * }}}
-  *
-  * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]` error
-  *
-  * Currently some limitations apply as to when a `Tag` will be correctly constructed:
-  *   * Type Parameters do not yet resolve inside structural refinements, e.g. T in {{{ Tag[{ def x: T}] }}}
-  *   * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
-  *   * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
-  *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
-  *   * Further details at [[https://github.com/7mind/izumi/pull/369]]
-  */
+    * Like [[scala.reflect.api.TypeTags.TypeTag]], but supports higher-kinded type tags via `TagK` type class.
+    *
+    * In context of DI this lets you define modules parameterized by higher-kinded type parameters.
+    * This is especially helpful for applying [[https://www.beyondthelines.net/programming/introduction-to-tagless-final/ `tagless final` style]]
+    *
+    * Example:
+    * {{{
+    * class MyModule[F[_]: Monad: TagK] {
+    *   make[MyService[F]]
+    *   make[F[Int]].named("lucky-number").from(Monad[F].pure(7))
+    * }
+    * }}}
+    *
+    * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]` error
+    *
+    * Currently some limitations apply as to when a `Tag` will be correctly constructed:
+    * * Type Parameters do not yet resolve inside structural refinements, e.g. T in {{{ Tag[{ def x: T}] }}}
+    * * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
+    * * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
+    * (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
+    * * Further details at [[https://github.com/7mind/izumi/pull/369]]
+    */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
@@ -75,17 +75,17 @@ trait Tags extends UniverseGeneric { self =>
       *   def x[K[_[_, _], _[_], _[_[_], _, _, _]: Tag.auto.T]: Tag.auto.T[K] = implicitly[Tag.auto.T[K]]
       * }}}
       *
-      * */
+      **/
     def auto: Any = macro TagLambdaMacro.lambdaImpl
 
     def apply[T: Tag]: Tag[T] = implicitly
 
-    def apply[T](t: TypeTag[T], FLTT: LightTypeTag): Tag[T] =
+    def apply[T](t: TypeTag[T], FLTT: LightTypeTag): Tag[T] = {
       new Tag[T] {
         override val tpe: TypeTag[T] = t
         override def tag: LightTypeTag = FLTT
       }
-
+    }
     /**
       * Resulting [Tag] will not have the ability to migrate into a different universe
       * (which is not usually a problem, but still worth naming it 'unsafe')
@@ -94,7 +94,6 @@ trait Tags extends UniverseGeneric { self =>
     def unsafeFromSafeType[T](mirror: u.Mirror)(tpe: SafeType0[u.type]): Tag[T] = {
       tpe.use(t => Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(t, mirror), tpe.tag))
     }
-
 
     /**
       * Create a Tag of a type formed by applying the type in `tag` to `args`.
@@ -181,12 +180,9 @@ trait Tags extends UniverseGeneric { self =>
   trait HKTag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
 
-    override def toString: String =
-      s"${hktagFormat(tpe.tpe)}@@[$tag]"
+    override def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
 
-    /**
-     * Internal `TypeTag` holding the `typeConstructor` of type `T`
-     **/
+    /** Internal `TypeTag` holding the `typeConstructor` of type `T` */
     def tpe: TypeTag[_]
   }
 
@@ -260,14 +256,16 @@ trait Tags extends UniverseGeneric { self =>
 
   object TagK {
     /**
-    * Construct a type tag for a higher-kinded type `K[_]`
-    *
-    * Example:
-    * {{{
-    *     TagK[Option]
-    * }}}
-    **/
-    def apply[K[_]: TagK]: TagK[K] = implicitly
+      * Construct a type tag for a higher-kinded type `K[_]`
+      *
+      * Example:
+      * {{{
+      *     TagK[Option]
+      * }}}
+      **/
+    def apply[K[_] : TagK]: TagK[K] = {
+      implicitly
+    }
   }
 
   object TagKK {
@@ -305,7 +303,7 @@ trait Tags extends UniverseGeneric { self =>
   //
   // We need to construct a SafeType signature for a generic method, but generic parameters have no type tags
   // So we resort to weak type parameters and pointer equality
-  trait WeakTag[T] extends TagInterface[T, WeakTypeTag]{
+  trait WeakTag[T] extends TagInterface[T, WeakTypeTag] {
     def tag: LightTypeTag
     def tpe: u.WeakTypeTag[_]
     override final def toString: String = s"WeakTag[$tag]"
@@ -314,11 +312,12 @@ trait Tags extends UniverseGeneric { self =>
   object WeakTag extends WeakTagInstances0 {
     def apply[T: WeakTag]: WeakTag[T] = implicitly
 
-    def apply[T](t: WeakTypeTag[T], l: LightTypeTag): WeakTag[T] =
+    def apply[T](t: WeakTypeTag[T], l: LightTypeTag): WeakTag[T] = {
       new WeakTag[T] {
         override def tag: LightTypeTag = l
         override val tpe: WeakTypeTag[T] = t
       }
+    }
   }
 
   trait WeakTagInstances0 extends WeakTagInstances1 {
@@ -344,16 +343,18 @@ object Tags extends Tags {
   final val defaultTagImplicitError: String =
     "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
 
-  final def hktagFormatMap: Map[Kind, String] = Map(
-    Kind(Nil) -> "Tag"
-    , Kind(Kind(Nil) :: Nil) -> "TagK"
-    , Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK"
-    , Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagT"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagTK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTKK"
-    , Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3"
-  )
+  final def hktagFormatMap: Map[Kind, String] = {
+    Map(
+      Kind(Nil) -> "Tag",
+      Kind(Kind(Nil) :: Nil) -> "TagK",
+      Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK",
+      Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3",
+      Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagT",
+      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagTK",
+      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTKK",
+      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3",
+    )
+  }
 
   final def hktagFormat(tpe: Universe#Type): String = {
     val kind = kindOf(tpe)

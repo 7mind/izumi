@@ -1,8 +1,7 @@
 package izumi.logstage.api
 
 import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, SourceFilePosition}
 import izumi.logstage.macros.LogMessageMacro.logMessageMacro
 
 import scala.language.experimental.macros

@@ -2,8 +2,8 @@ package izumi.fundamentals.reflection.macrortti
 
 import boopickle.{PickleImpl, Pickler}
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
+import izumi.fundamentals.reflection.{DebugProperties, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -15,7 +15,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   final val lightTypeTag: Tree = q"${symbolOf[LightTypeTag.type].asClass.module}"
 
-  private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
+  private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.rtti`)
 
   def cacheEnabled: Boolean = c.settings.contains("ltt-cache")
 
@@ -78,21 +78,24 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   protected def allPartsStrong(tpe: Type): Boolean = {
     def selfStrong = !tpe.typeSymbol.isParameter
-    def prefixStrong = tpe match {
-      case t: TypeRefApi =>
-        allPartsStrong(t.pre)
-      case _ =>
-        true
+    def prefixStrong = {
+      tpe match {
+        case t: TypeRefApi =>
+          allPartsStrong(t.pre)
+        case _ =>
+          true
+      }
     }
     def argsStrong = tpe.typeArgs.forall(allPartsStrong)
-    def intersectionStructStrong = tpe match {
-      case t: RefinedTypeApi =>
-        t.parents.forall(allPartsStrong) &&
-          t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
-      case _ =>
-        true
+    def intersectionStructStrong = {
+      tpe match {
+        case t: RefinedTypeApi =>
+          t.parents.forall(allPartsStrong) &&
+            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
+        case _ =>
+          true
+      }
     }
-
     selfStrong && prefixStrong && argsStrong && intersectionStructStrong
   }
 }

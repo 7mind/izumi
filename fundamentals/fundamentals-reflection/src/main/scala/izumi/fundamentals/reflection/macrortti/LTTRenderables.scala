@@ -33,7 +33,6 @@ trait LTTRenderables extends WithRenderableSyntax {
     s"(${value.reference.render()} & ${value.decls.map(_.render()).toSeq.sorted.mkString("{", ", ", "}")})"
   }
 
-
   implicit lazy val r_RefinementDecl: Renderable[RefinementDecl] = {
     case RefinementDecl.Signature(name, input, output) =>
       s"def $name${input.map(_.render()).mkString("(", ", ", ")")}: ${output.render()}"

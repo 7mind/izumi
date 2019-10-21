@@ -3,11 +3,11 @@ package izumi.fundamentals.reflection
 import java.lang.reflect.Method
 
 import scala.collection.immutable.ListMap
+import scala.language.reflectiveCalls
 import scala.reflect.api
 import scala.reflect.api.{Mirror, TypeCreator, Universe}
 import scala.reflect.internal.Symbols
 import scala.reflect.runtime.{universe => ru}
-import scala.language.reflectiveCalls
 import scala.util.{Failure, Success, Try}
 
 abstract class ReflectionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
@@ -15,7 +15,6 @@ abstract class ReflectionException(message: String, cause: Throwable = null) ext
 class RefinedTypeException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
 
 class MethodMirrorException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
-
 
 object ReflectionUtil {
   val mm: ru.Mirror = scala.reflect.runtime.currentMirror
@@ -51,7 +50,7 @@ object ReflectionUtil {
 
   def typeToTypeTag[T](u: Universe)(
     tpe: u.Type,
-    mirror: Mirror[u.type]
+    mirror: Mirror[u.type],
   ): u.TypeTag[T] = {
     val creator: TypeCreator = new reflect.api.TypeCreator {
       def apply[U <: SingletonUniverse](m: Mirror[U]): U#Type = {
@@ -64,17 +63,19 @@ object ReflectionUtil {
   }
 
   implicit final class WeakTypeTagMigrate[T](private val weakTypeTag: Universe#WeakTypeTag[T]) extends AnyVal {
-    def migrate[V <: SingletonUniverse](m: api.Mirror[V]): m.universe.WeakTypeTag[T] =
+    def migrate[V <: SingletonUniverse](m: api.Mirror[V]): m.universe.WeakTypeTag[T] = {
       weakTypeTag.in(m).asInstanceOf[m.universe.WeakTypeTag[T]]
+    }
   }
 
-  def deannotate[U <: SingletonUniverse](typ: U#Type): U#Type =
+  def deannotate[U <: SingletonUniverse](typ: U#Type): U#Type = {
     typ match {
       case t: U#AnnotatedTypeApi =>
         t.underlying
       case _ =>
         typ
     }
+  }
 
   def toTypeRef[U <: SingletonUniverse](tpe: U#TypeApi): Option[U#TypeRefApi] = {
     tpe match {
@@ -91,8 +92,9 @@ object ReflectionUtil {
     * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
     * calling this method.
     */
-  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation =
+  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation = {
     ru.Annotation.apply(tpe, scalaArgs, javaArgs)
+  }
 
   def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
     def go(tpe: U#Type): List[U#Type] = {
@@ -104,8 +106,9 @@ object ReflectionUtil {
     go(targetType).distinct
   }
 
-  def kindOf(tpe: Universe#Type): Kind =
+  def kindOf(tpe: Universe#Type): Kind = {
     Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
+  }
 
   final case class Kind(args: List[Kind]) {
     override def toString: String = format("_")

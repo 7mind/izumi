@@ -20,7 +20,7 @@ object FactoryConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger.make[this.type](c, MacroLog.id)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.static`)
 
     // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;

@@ -21,7 +21,7 @@ import izumi.distage.roles.RoleAppLauncher
 import izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import izumi.distage.staticinjector.plugins.ModuleRequirements
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
-import izumi.fundamentals.reflection.TreeTools
+import izumi.fundamentals.reflection.TreeUtil
 import izumi.logstage.api.IzLogger
 
 import scala.collection.JavaConverters._
@@ -72,7 +72,7 @@ object StaticPluginCheckerMacro {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
 
-    val pluginPath = TreeTools.stringLiteral(c)(c.universe)(pluginsPackage.tree)
+    val pluginPath = TreeUtil.stringLiteral(c)(c.universe)(pluginsPackage.tree)
 
     val loadedPlugins = if (pluginPath == "") {
       Seq.empty
@@ -86,7 +86,7 @@ object StaticPluginCheckerMacro {
       pluginLoader.load()
     }
 
-    val configRegex = TreeTools.stringLiteral(c)(c.universe)(configFileRegex.tree)
+    val configRegex = TreeUtil.stringLiteral(c)(c.universe)(configFileRegex.tree)
 
     val configModule = if (configRegex == "") {
       None
@@ -104,7 +104,7 @@ object StaticPluginCheckerMacro {
       Some(new ConfigModule(AppConfig(referenceConfig)))
     }
 
-    val gcRootPath = TreeTools.stringLiteral(c)(c.universe)(gcRoot.tree)
+    val gcRootPath = TreeUtil.stringLiteral(c)(c.universe)(gcRoot.tree)
 
     val gcRootModule = if (gcRootPath == "") {
       None
@@ -112,7 +112,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[PluginBase](gcRootPath, abort))
     }
 
-    val requirementsPath = TreeTools.stringLiteral(c)(c.universe)(requirements.tree)
+    val requirementsPath = TreeUtil.stringLiteral(c)(c.universe)(requirements.tree)
 
     val requirementsModule = if (requirementsPath == "") {
       None
@@ -120,7 +120,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val activationsVals = TreeTools.stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
+    val activationsVals = TreeUtil.stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
 
     check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
 

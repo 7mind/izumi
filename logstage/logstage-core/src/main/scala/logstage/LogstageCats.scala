@@ -2,7 +2,7 @@ package logstage
 
 import cats.syntax.flatMap._
 import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log.{CustomContext, Entry, Message}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance

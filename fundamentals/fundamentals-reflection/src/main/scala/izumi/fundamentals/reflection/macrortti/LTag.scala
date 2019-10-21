@@ -5,8 +5,8 @@ import scala.language.experimental.macros
 final case class LTag[T](tag: LightTypeTag)
 
 /**
- * these are different summoners for light tags, it's fine for them to be the same structurally
- */
+  * these are different summoners for light tags, it's fine for them to be the same structurally
+  */
 object LTag {
   def apply[T: LTag]: LTag[T] = implicitly
 

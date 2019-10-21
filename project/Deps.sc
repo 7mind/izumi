@@ -1,4 +1,6 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.38`, izumi.sbtgen._, izumi.sbtgen.model._
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.38`
+import izumi.sbtgen._
+import izumi.sbtgen.model._
 
 object Izumi {
 
@@ -221,7 +223,7 @@ object Izumi {
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
         SettingDef.RawSettingDef("""scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString)"""),
-        "scalacOptions" in SettingScope.Build += s"""${"\""*3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\""*3}""".raw,
+        "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
       )
 
       final val sharedSettings = Defaults.SbtMeta ++ Seq(
@@ -320,7 +322,7 @@ object Izumi {
   }
 
   final val forkTests = Seq(
-    "fork" in (SettingScope.Test, Platform.Jvm) := true,
+    "fork" in(SettingScope.Test, Platform.Jvm) := true,
   )
 
   final lazy val fundamentals = Aggregate(
@@ -333,12 +335,14 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.platform,
-        libs = Seq.empty,
+        libs = Seq(
+          scala_reflect in Scope.Provided.jvm,
+        ),
         depends = Seq(
           Projects.fundamentals.collections in Scope.Compile.all
         ),
         settings = Seq(
-          "npmDependencies" in (SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
+          "npmDependencies" in(SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
         ),
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
@@ -432,7 +436,7 @@ object Izumi {
         libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonads,
         depends =
           Seq(Projects.distage.config, Projects.distage.roles, Projects.distage.static, Projects.logstage.di).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+            Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),

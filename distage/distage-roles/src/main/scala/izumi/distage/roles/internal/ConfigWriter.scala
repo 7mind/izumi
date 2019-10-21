@@ -10,6 +10,7 @@ import izumi.distage.model.definition.{Id, ModuleBase}
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}

@@ -4,8 +4,8 @@ import distage.{BootstrapModule, DIKey, Injector, TagK, _}
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import izumi.distage.roles.config.ContextOptions
+import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import izumi.logstage.api.IzLogger
 
@@ -28,8 +28,7 @@ object RoleAppPlanner {
                            bsModule: BootstrapModule,
                            activation: AppActivation,
                            logger: IzLogger,
-                         ) extends RoleAppPlanner[F] {
-    self =>
+                         ) extends RoleAppPlanner[F] { self =>
 
     private val injector = Injector.Standard(bsModule)
 

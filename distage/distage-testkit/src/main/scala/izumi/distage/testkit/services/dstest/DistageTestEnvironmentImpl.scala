@@ -13,7 +13,7 @@ import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 

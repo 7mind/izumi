@@ -39,7 +39,6 @@ protected[izumi] object RuntimeAPI {
     }
   }
 
-
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
 
@@ -81,7 +80,6 @@ protected[izumi] object RuntimeAPI {
     def replacePrefix(prefix: Option[AppliedReference]): Option[AppliedReference] = {
       prefix.map(p => ensureApplied(p, replaceApplied(p)))
     }
-
 
     def replaceBoundaries(boundaries: Boundaries): Boundaries = {
       boundaries match {

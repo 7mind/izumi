@@ -1,6 +1,6 @@
 package izumi.logstage.api
 
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{CustomContext, LoggerId}
 import izumi.logstage.macros.LoggerMacroMethods._
 
