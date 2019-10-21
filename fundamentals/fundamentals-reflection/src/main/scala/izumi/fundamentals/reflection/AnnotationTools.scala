@@ -3,10 +3,9 @@ package izumi.fundamentals.reflection
 import scala.reflect.api.Universe
 
 object AnnotationTools {
-  def find(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] = (
+  def find(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] =
     findSymbolAnnotation(u)(annType, symb)
-      orElse findTypeAnnotation(u)(annType, symb.typeSignature.finalResultType)
-    )
+      .orElse(findTypeAnnotation(u)(annType, symb.typeSignature.finalResultType))
 
   def findSymbolAnnotation(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] =
     symb.annotations.find(annotationTypeEq(u)(annType, _))
@@ -19,11 +18,11 @@ object AnnotationTools {
 
   def getAllTypeAnnotations(u: Universe)(typ: u.Type): List[u.Annotation] =
     typ match {
-       case t: u.AnnotatedTypeApi =>
-         t.annotations
-       case _ =>
-         List()
-     }
+      case t: u.AnnotatedTypeApi =>
+        t.annotations
+      case _ =>
+        List()
+    }
 
   def annotationTypeEq(u: Universe)(tpe: u.Type, ann: u.Annotation): Boolean =
     ann.tree.tpe.erasure =:= tpe.erasure
@@ -33,7 +32,7 @@ object AnnotationTools {
 
   def collectFirstString[T: u.TypeTag](u: Universe)(symb: u.Symbol): Option[String] =
     collectFirstArgument[T, String](u)(symb, {
-      case l: u.Literal @unchecked if l.value.value.isInstanceOf[String] => l.value.value.asInstanceOf[String] // avoid unchecked warning
+      case l: u.Literal@unchecked if l.value.value.isInstanceOf[String] => l.value.value.asInstanceOf[String] // avoid unchecked warning
     })
 
   def findArgument[R](ann: Universe#Annotation)(matcher: PartialFunction[Universe#Tree, R]): Option[R] =

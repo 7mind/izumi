@@ -1,20 +1,16 @@
 package izumi.distage.testkit.st
 
 import cats.effect.IO
+import distage.{DIKey, ModuleBase, TagK}
 import izumi.distage.config.annotations.ConfPathId
 import izumi.distage.config.{ConfigInjectionOptions, ConfigProvider}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.roles.services._
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.testkit.st.TestkitTest.NotAddedClass
 import izumi.distage.testkit.st.fixtures._
 import izumi.fundamentals.platform.functional.Identity
-import distage.{DIKey, ModuleBase, TagK}
-
-
-
-
 
 abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
   "testkit" must {
@@ -69,15 +65,13 @@ abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
     }
   }
 
-
-  override protected def contextOptions(): ModuleProviderImpl.ContextOptions = {
+  override protected def contextOptions(): ContextOptions = {
     super.contextOptions().copy(configInjectionOptions = ConfigInjectionOptions.make {
       // here we may patternmatch on config value context and rewrite it
       case (ConfigProvider.ConfigImport(_: ConfPathId, _), c: TestConfig) =>
         c.copy(overriden = 3)
     })
   }
-
 
   override protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     super.refineBindings(roots, primaryModule) overridenBy new ModuleDef {
@@ -95,6 +89,5 @@ class TestkitTestZio extends TestkitTest[zio.IO[Throwable, ?]]
 object TestkitTest {
 
   case class NotAddedClass()
-
 
 }

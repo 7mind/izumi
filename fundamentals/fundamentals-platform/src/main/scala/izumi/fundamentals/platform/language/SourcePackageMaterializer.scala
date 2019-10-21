@@ -1,16 +1,14 @@
-package izumi.fundamentals.reflection
-
-import izumi.fundamentals.platform.language.SourcePackage
+package izumi.fundamentals.platform.language
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-final case class SourcePackageMaterializer(get: SourcePackage)
+final case class SourcePackageMaterializer(get: SourcePackage) extends AnyVal
 
 object SourcePackageMaterializer {
   implicit def materialize: SourcePackageMaterializer = macro getSourcePackage
 
-  def apply()(implicit ev: SourcePackageMaterializer): SourcePackageMaterializer = ev
+  def apply()(implicit ev: SourcePackageMaterializer, dummy: DummyImplicit): SourcePackageMaterializer = ev
 
   def thisPkg(implicit pkg: SourcePackageMaterializer): String = pkg.get.pkg
 
@@ -19,7 +17,7 @@ object SourcePackageMaterializer {
     import c.universe._
     var current = c.internal.enclosingOwner
     var path = List.empty[String]
-    while(current != NoSymbol && current.toString != "package <root>"){
+    while (current != NoSymbol && current.toString != "package <root>") {
       if (current.isPackage) {
         path = current.name.decodedName.toString.trim :: path
       }

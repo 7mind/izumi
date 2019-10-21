@@ -1,9 +1,9 @@
 package izumi.distage.roles.services
 
-import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
-import izumi.logstage.api.IzLogger
 import distage.OrderedPlan
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.roles.config.ContextOptions
+import izumi.logstage.api.IzLogger
 
 class PlanCircularDependencyCheck(
                                    options: ContextOptions,

@@ -2,6 +2,7 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
+import izumi.distage.model.definition.ModuleBase.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
@@ -136,13 +137,14 @@ object ModuleBase {
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
     val grouped = bs.groupBy(_.group)
 
-    val out = grouped
-      .map {
-        case (_, v) =>
-          //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
-          v.reduce(_ addTags _.tags)
-      }
-      .to[ListSet]
+    val out = ListSet.newBuilder.++= {
+      grouped
+        .map {
+          case (_, v) =>
+            //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
+            v.reduce(_ addTags _.tags)
+        }
+    }.result()
     out
   }
 

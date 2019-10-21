@@ -59,7 +59,6 @@ sealed trait LightTypeTagRef {
   }
 }
 
-
 object LightTypeTagRef {
   import LTTRenderables.Short._
   //import LTTRenderables.Long._
@@ -134,7 +133,6 @@ object LightTypeTagRef {
   final case class TypeParam(ref: AbstractReference, variance: Variance) {
     override def toString: String = this.render()
   }
-
 
   sealed trait RefinementDecl
   object RefinementDecl {

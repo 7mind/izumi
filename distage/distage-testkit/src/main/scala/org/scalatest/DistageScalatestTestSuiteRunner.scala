@@ -1,12 +1,12 @@
 package org.scalatest
 
-import izumi.distage.roles.services.IntegrationCheckerImpl
+import distage.TagK
+import izumi.distage.roles.services.IntegrationChecker
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironment, DistageTestEnvironmentImpl, DistageTestRunner}
 import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
-import distage.TagK
 import org.scalatest.events._
 
 import scala.collection.immutable.TreeSet
@@ -112,7 +112,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
     val logger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
 
-    val checker = new IntegrationCheckerImpl(logger)
+    val checker = new IntegrationChecker.Impl(logger)
 
     val dreporter = new TestReporter {
 
@@ -216,7 +216,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     runner.run()
   }
 
-
   private def addStub(args: Args, tracker: Tracker, failure: Option[Throwable]): Unit = {
     val FUCK_SCALATEST = "Scalatest is not good for your mental health"
     val SUITE_FAILED = "Whole suite failed :/"
@@ -260,5 +259,4 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   final override val styleName: String = "DistageSuite"
-
 }

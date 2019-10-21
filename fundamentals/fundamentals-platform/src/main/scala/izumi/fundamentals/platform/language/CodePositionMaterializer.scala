@@ -1,6 +1,4 @@
-package izumi.fundamentals.reflection
-
-import izumi.fundamentals.platform.language.{CodePosition, SourceFilePosition}
+package izumi.fundamentals.platform.language
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -33,10 +31,10 @@ object CodePositionMaterializer {
         reify {
           CodePosition.apply(
             SourceFilePosition(
-              c.Expr[String](Literal(Constant(file))).splice
-              , c.Expr[Int](Literal(Constant(line))).splice
-            )
-            , applicationPointId = c.Expr[String](Literal(Constant(applicationPointId))).splice
+              c.Expr[String](Literal(Constant(file))).splice,
+              c.Expr[Int](Literal(Constant(line))).splice,
+            ),
+            applicationPointId = c.Expr[String](Literal(Constant(applicationPointId))).splice,
           )
         }
     }
@@ -84,10 +82,10 @@ object CodePositionMaterializer {
 
     CodePosition(
       SourceFilePosition(
-        line = c.enclosingPosition.line
-        , file = c.enclosingPosition.source.file.name
-      )
-      , applicationPointId = normalizedName
+        line = c.enclosingPosition.line,
+        file = c.enclosingPosition.source.file.name,
+      ),
+      applicationPointId = normalizedName,
     )
   }
 }

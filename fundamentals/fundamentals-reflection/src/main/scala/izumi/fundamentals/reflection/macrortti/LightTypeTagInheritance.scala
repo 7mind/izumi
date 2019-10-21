@@ -1,12 +1,12 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.platform.basics.IzBoolean._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.console.TrivialLogger.Config
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagInheritance.Ctx
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 import scala.collection.mutable
 
@@ -145,8 +145,11 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
       val allParents = safeParentsOf(self)
-      val moreParents = bdb.collect({ case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({ case l: Lambda if l.input.size == self.parameters.size => l })
-        .map(l => l.combine(self.parameters.map(_.ref)))
+      val moreParents = bdb.collect({
+        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({
+          case l: Lambda if l.input.size == self.parameters.size => l
+        })
+          .map(l => l.combine(self.parameters.map(_.ref)))
       }).flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
       (allParents ++ moreParents)
@@ -175,7 +178,6 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
     parentsOf(t, out, tested)
     out.toSet
   }
-
 
   private def parentsOf(t: NameReference, out: mutable.HashSet[NameReference], tested: mutable.HashSet[NameReference]): Unit = {
     val direct = ib.get(t).toSet.flatten

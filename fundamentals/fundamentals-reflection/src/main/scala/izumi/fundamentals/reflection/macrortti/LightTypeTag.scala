@@ -4,7 +4,6 @@ import java.nio.ByteBuffer
 
 import boopickle.Default.Pickler
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.reflection.TrivialMacroLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
 
@@ -28,12 +27,12 @@ abstract class LightTypeTag
 
   def combine(o: LightTypeTag*): LightTypeTag = {
 
-    def mergedInhDb: Map[NameReference, Set[NameReference]] =
+    def mergedInhDb: Map[NameReference, Set[NameReference]] = {
       o.foldLeft(idb) {
         case (acc, v) =>
           LightTypeTag.mergeIDBs(acc, v.idb)
       }
-
+    }
     def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
       o.foldLeft(basesdb) {
         case (acc, v) =>
@@ -137,12 +136,12 @@ object LightTypeTag {
     implicit lazy val dbsSerializer: Pickler[SubtypeDBs] = generatePickler[SubtypeDBs]
 
     // false positive unused warnings
-    appliedRefSerializer.discard(); nameRefSerializer.discard(); abstractRefSerializer.discard()
+    appliedRefSerializer.discard();
+    nameRefSerializer.discard();
+    abstractRefSerializer.discard()
 
     (refSerializer, dbsSerializer)
   }
-
-  final val loggerId = TrivialMacroLogger.id("rtti")
 
   private[izumi] object ReflectionLock
 

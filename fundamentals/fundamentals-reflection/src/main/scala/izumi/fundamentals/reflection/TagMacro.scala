@@ -3,7 +3,7 @@ package izumi.fundamentals.reflection
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.Tags.{defaultTagImplicitError, hktagFormat, hktagFormatMap}
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagMacro, LightTypeTagMacro0}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTagMacro, LightTypeTagMacro0}
 
 import scala.annotation.{implicitNotFound, tailrec}
 import scala.collection.immutable.ListMap
@@ -13,11 +13,12 @@ import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
 // TODO: benchmark difference between searching all arguments vs. merge strategy
 // TODO: benchmark ProviderMagnet vs. identity macro vs. normal function
 class TagMacro(val c: blackbox.Context) {
+
   import c.universe._
 
   protected[this] val defaultError: String = defaultTagImplicitError
 
-  protected[this] val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, LightTypeTag.loggerId)
+  protected[this] val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.rtti`)
 
   /**
     * Workaround for a scalac bug whereby it loses the correct type of HKTag argument
@@ -28,7 +29,7 @@ class TagMacro(val c: blackbox.Context) {
     *
     * TODO: report scalac bug
     */
-  def fixupHKTagArgStruct[DIU <: Tags with Singleton: WeakTypeTag, T: WeakTypeTag]: c.Expr[DIU#HKTag[T]] = {
+  def fixupHKTagArgStruct[DIU <: Tags with Singleton : WeakTypeTag, T: WeakTypeTag]: c.Expr[DIU#HKTag[T]] = {
     val argStruct = weakTypeOf[T]
     val typeConstructor = argStruct.decls.head.info.typeConstructor
 
@@ -68,7 +69,7 @@ class TagMacro(val c: blackbox.Context) {
     }
   }
 
-  def impl[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
+  def impl[DIU <: Tags with Singleton : c.WeakTypeTag, T: c.WeakTypeTag]: c.Expr[TagMaterializer[DIU, T]] = {
 
     logger.log(s"GOT UNIVERSE: ${c.weakTypeOf[DIU]}")
     logger.log(s"Got compile tag: ${weakTypeOf[T]}")
@@ -95,7 +96,7 @@ class TagMacro(val c: blackbox.Context) {
     }
 
     val res = reify {
-      { new TagMaterializer[DIU, T](tag.splice) }
+      {new TagMaterializer[DIU, T](tag.splice)}
     }
 
     addImplicitError(s"  done: $tgt")
@@ -105,7 +106,7 @@ class TagMacro(val c: blackbox.Context) {
     res
   }
 
-  def getImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](): String = {
+  def getImplicitError[DIU <: Tags with Singleton : c.WeakTypeTag](): String = {
     symbolOf[DIU#Tag[Any]].annotations.headOption.flatMap(
       AnnotationTools.findArgument(_) {
         case Literal(Constant(s: String)) => s
@@ -114,7 +115,7 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def mkRefined[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
+  protected[this] def mkRefined[DIU <: Tags with Singleton : c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], intersection: List[Type], struct: Type): c.Expr[DIU#Tag[T]] = {
     val intersectionsTags = c.Expr[List[DIU#ScalaReflectTypeTag[_]]](q"${
       intersection.map {
         t0 =>
@@ -125,13 +126,13 @@ class TagMacro(val c: blackbox.Context) {
     val structTag = mkStruct[DIU](struct)
 
     reify {
-      { universe.splice.Tag.refinedTag[T](intersectionsTags.splice, structTag.splice) }
+      {universe.splice.Tag.refinedTag[T](intersectionsTags.splice, structTag.splice)}
     }
   }
 
   @inline
   // have to tag along the original intersection, because scalac dies on trying to summon typetag for a custom made refinedType from `internal.refinedType` ...
-  protected[this] def mkStruct[DIU <: Tags with Singleton: c.WeakTypeTag](struct: Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
+  protected[this] def mkStruct[DIU <: Tags with Singleton : c.WeakTypeTag](struct: Type): c.Expr[DIU#ScalaReflectWeakTypeTag[_]] = {
 
     struct.decls.find(_.info.typeSymbol.isParameter).foreach {
       s =>
@@ -147,7 +148,7 @@ class TagMacro(val c: blackbox.Context) {
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
-  protected[this] def mkTag[DIU <: Tags with Singleton: c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], tpe: c.Type): c.Expr[DIU#Tag[T]] = {
+  protected[this] def mkTag[DIU <: Tags with Singleton : c.WeakTypeTag, T: c.WeakTypeTag](universe: c.Expr[DIU], tpe: c.Type): c.Expr[DIU#Tag[T]] = {
 
     val ctor = tpe.typeConstructor
     val constructorTag: c.Expr[DIU#ScalaReflectTypeTag[_]] = paramKind(ctor) match {
@@ -169,13 +170,13 @@ class TagMacro(val c: blackbox.Context) {
     val argTags = c.Expr[List[DIU#ScalaReflectTypeTag[_]]](q"${args.map(summonTag[DIU])}")
 
     reify {
-      { universe.splice.Tag.appliedTag[T](constructorTag.splice, argTags.splice) }
+      {universe.splice.Tag.appliedTag[T](constructorTag.splice, argTags.splice)}
     }
   }
 
   @inline
   protected[this] def paramKind(tpe: c.Type): Option[Kind] = {
-  // c.internal.isFreeType ?
+    // c.internal.isFreeType ?
     if (tpe.typeSymbol.isParameter)
       Some(kindOf(tpe))
     else
@@ -252,8 +253,7 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def summonTag[DIU <: Tags with Singleton: c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
-
+  protected[this] def summonTag[DIU <: Tags with Singleton : c.WeakTypeTag](tpe: c.Type, kind: Kind): c.Expr[DIU#ScalaReflectTypeTag[_]] = {
     val summoned = try {
       if (kind == Kind(Nil)) {
         c.inferImplicitValue(appliedType(weakTypeOf[DIU#Tag[Nothing]].typeConstructor, tpe), silent = false)
@@ -266,19 +266,21 @@ class TagMacro(val c: blackbox.Context) {
       case _: TypecheckException =>
         val msg =
           s"""  could not find implicit value for ${hktagFormat(tpe)}
-             |${hktagFormatMap.get(kind) match {
-            case Some(_) => ""
-            case None =>
-              val (args, params) = kind.args.zipWithIndex.map {
-                case (k, i) =>
-                  val name = s"T${i+1}"
-                  k.format(name) -> name
-              }.unzip
-              s"""\n$tpe is of a kind $kind, which doesn't have a tag name. Please create a tag synonym as follows:\n\n
-                 |  type TagXXX[${kind.format("K")}] = HKTag[ { type Arg[${args.mkString(", ")}] = K[${params.mkString(", ")}] } ]\n\n
-                 |And use it in your context bound, as in def x[$tpe: TagXXX] = ...
+             |${
+            hktagFormatMap.get(kind) match {
+              case Some(_) => ""
+              case None =>
+                val (args, params) = kind.args.zipWithIndex.map {
+                  case (k, i) =>
+                    val name = s"T${i + 1}"
+                    k.format(name) -> name
+                }.unzip
+                s"""\n$tpe is of a kind $kind, which doesn't have a tag name. Please create a tag synonym as follows:\n\n
+                   |  type TagXXX[${kind.format("K")}] = HKTag[ { type Arg[${args.mkString(", ")}] = K[${params.mkString(", ")}] } ]\n\n
+                   |And use it in your context bound, as in def x[$tpe: TagXXX] = ...
                """.stripMargin
-          }}""".stripMargin
+            }
+          }""".stripMargin
         addImplicitError(msg)
         c.abort(c.enclosingPosition, msg)
     }
@@ -322,20 +324,21 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def setImplicitError[DIU <: Tags with Singleton: c.WeakTypeTag](err: String): Unit = {
+  protected[this] def setImplicitError[DIU <: Tags with Singleton : c.WeakTypeTag](err: String): Unit = {
     import internal.decorators._
 
     val _ = symbolOf[DIU#Tag[Any]].setAnnotations(Annotation(typeOf[implicitNotFound], List[Tree](Literal(Constant(err))), ListMap.empty))
   }
 
-//        // TODO: in 2.13 we can use these little functions to enrich error messages further (possibly remove .setAnnotation hack completely) by attaching implicitNotFound to parameter
-//        c.Expr[DIU#ScalaReflectTypeTag[_]](q"""
-//           { def $name(implicit @_root_.scala.annotation.implicitNotFound($implicitMsg)
-//          $param: ${appliedType(weakTypeOf[DIU#Tag[Nothing]], t)}) = $param; $name.tag }""")
+  //        // TODO: in 2.13 we can use these little functions to enrich error messages further (possibly remove .setAnnotation hack completely) by attaching implicitNotFound to parameter
+  //        c.Expr[DIU#ScalaReflectTypeTag[_]](q"""
+  //           { def $name(implicit @_root_.scala.annotation.implicitNotFound($implicitMsg)
+  //          $param: ${appliedType(weakTypeOf[DIU#Tag[Nothing]], t)}) = $param; $name.tag }""")
 
 }
 
-class TagLambdaMacro(override val c: whitebox.Context { type PrefixType <: Tags#TagObject }) extends TagMacro(c) {
+class TagLambdaMacro(override val c: whitebox.Context {type PrefixType <: Tags#TagObject}) extends TagMacro(c) {
+
   import c.universe._
   import c.universe.internal.decorators._
 

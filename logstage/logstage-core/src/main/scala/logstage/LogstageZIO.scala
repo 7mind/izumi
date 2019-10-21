@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.bio.SyncSafe2
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log.{CustomContext, Entry, Message}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance

@@ -43,9 +43,8 @@ object ProjectAttributeMacro {
     }
   }
 
-
   def extractAttrMacro(c: blackbox.Context)(name: c.Expr[String]): c.Expr[Option[String]] = {
-    val nameStr = TreeTools.stringLiteral(c)(c.universe)(name.tree)
+    val nameStr = TreeUtil.stringLiteral(c)(c.universe)(name.tree)
     extractAttr(c, nameStr)
   }
 

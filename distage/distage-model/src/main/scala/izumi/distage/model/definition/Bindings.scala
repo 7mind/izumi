@@ -2,7 +2,7 @@ package izumi.distage.model.definition
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType, Tag}
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 
 object Bindings {
   import Binding._

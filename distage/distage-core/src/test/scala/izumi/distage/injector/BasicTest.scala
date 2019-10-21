@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
 import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import org.scalatest.WordSpec
 
 class BasicTest extends WordSpec with MkInjector {

@@ -13,8 +13,7 @@ class Help[F[_] : DIEffect]
 (
   roleInfo: RolesInfo,
   activation: AppActivation,
-)
-  extends RoleTask[F] {
+) extends RoleTask[F] {
 
   override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
     Quirks.discard(roleParameters, freeArgs)

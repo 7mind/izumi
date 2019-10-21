@@ -3,16 +3,18 @@ package izumi.distage.roles.internal
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.{ConfigModule, ResolvedConfig}
 import izumi.distage.model.definition.{Id, ModuleBase}
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.distage.roles.services.ModuleProviderImpl.ContextOptions
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
@@ -21,7 +23,6 @@ import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.distage.LogstageModule
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 
 import scala.util._
 
@@ -32,7 +33,7 @@ class ConfigWriter[F[_] : DIEffect]
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
   options: ContextOptions,
-  appModule: ModuleBase@Id("application.module")
+  appModule: ModuleBase@Id("application.module"),
 )
   extends RoleTask[F] {
 
@@ -211,10 +212,10 @@ object ConfigWriter extends RoleDescriptor {
   final case class ConfigurableComponent(
                                           componentId: String
                                           , version: Option[ArtifactVersion]
-                                          , parent: Option[Config] = None
+                                          , parent: Option[Config] = None,
                                         )
 
-object P extends ParserDef {
+  object P extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")
     final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
     final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")

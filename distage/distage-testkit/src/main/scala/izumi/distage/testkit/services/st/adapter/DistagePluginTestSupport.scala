@@ -1,5 +1,6 @@
 package izumi.distage.testkit.services.st.adapter
 
+import distage.SafeType
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
@@ -10,13 +11,12 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.roles.BootstrapConfig
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.services.{ActivationParser, PluginSource, PluginSourceImpl, PruningPlanMergingPolicy}
+import izumi.distage.roles.services.{ActivationParser, PluginSource, PruningPlanMergingPolicy}
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.distage.testkit.services.dstest.TestEnvironment
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
-import distage.SafeType
 
 @deprecated("Use dstest", "2019/Jul/18")
 abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
@@ -27,7 +27,9 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
     * Though it has to be always explicitly specified because this behaviour applied by default
     * would be very obscure.
     */
-  protected final def thisPackage: Seq[String] = Seq(this.getClass.getPackage.getName)
+  protected final def thisPackage: Seq[String] = {
+    Seq(this.getClass.getPackage.getName)
+  }
 
   protected def pluginPackages: Seq[String]
 
@@ -105,7 +107,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   }
 
   protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
-    new PluginSourceImpl(bootstrapConfig)
+    new PluginSource.Impl(bootstrapConfig)
   }
 
 }

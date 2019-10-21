@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.reflection.CodePositionMaterializer
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log._
 import izumi.logstage.macros.LogIOMacros._

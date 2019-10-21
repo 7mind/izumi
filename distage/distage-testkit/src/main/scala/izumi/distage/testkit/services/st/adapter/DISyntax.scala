@@ -2,8 +2,8 @@ package izumi.distage.testkit.services.st.adapter
 
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.DISyntaxBase
-import izumi.fundamentals.reflection.CodePositionMaterializer
 import distage.Tag
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 
 @deprecated("Use dstest", "2019/Jul/18")
 trait DISyntax[F[_]] extends DISyntaxBase[F] {

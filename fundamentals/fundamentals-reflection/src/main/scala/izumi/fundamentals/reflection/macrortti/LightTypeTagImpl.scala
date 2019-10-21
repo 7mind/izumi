@@ -2,15 +2,15 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.util.concurrent.ConcurrentHashMap
 
+import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil._
-import izumi.fundamentals.reflection.SingletonUniverse
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.Broken
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
-import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiteral, SymTermName, SymTypeName}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
+import izumi.fundamentals.reflection.{DebugProperties, SingletonUniverse}
 
 import scala.collection.mutable
 import scala.reflect.api.Universe
@@ -20,7 +20,7 @@ object LightTypeTagImpl {
 
   def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = {
     ReflectionLock.synchronized {
-      val logger = TrivialLogger.make[this.type](LightTypeTag.loggerId)
+      val logger = TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.rtti`)
       new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
     }
   }
@@ -54,7 +54,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       deannotate(tpe.dealias)
     }
 
-    @inline private[this] final def freeTermPrefixTypeSuffixHeuristicEq(op: (U#Type, U#Type) => Boolean, t: U#Type, that: U#Type): Boolean =
+    @inline private[this] final def freeTermPrefixTypeSuffixHeuristicEq(op: (U#Type, U#Type) => Boolean, t: U#Type, that: U#Type): Boolean = {
       t -> that match {
         case (tRef: U#TypeRefApi, oRef: U#TypeRefApi) =>
           singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && (
@@ -70,8 +70,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
           singletonFreeTermHeuristicEq(tRef.pre, oRef.pre) && tRef.sym == oRef.sym
         case _ => false
       }
-
-    private[this] final def singletonFreeTermHeuristicEq(t: U#Type, that: U#Type): Boolean =
+    }
+    private[this] final def singletonFreeTermHeuristicEq(t: U#Type, that: U#Type): Boolean = {
       t.asInstanceOf[Any] -> that.asInstanceOf[Any] match {
         case (tpe: scala.reflect.internal.Types#UniqueSingleType, other: scala.reflect.internal.Types#UniqueSingleType)
           if tpe.sym.isFreeTerm && other.sym.isFreeTerm =>
@@ -80,7 +80,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
         case _ =>
           false
       }
-
+    }
     override final val hashCode: Int = {
       dealiased.typeSymbol.name.toString.hashCode
     }
@@ -206,14 +206,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     stableBases
   }
 
-
   private def makeBaseClasses(tpe: Type): Seq[(AbstractReference, AbstractReference)] = {
     def makeBaseLambdas(tpe: Type): Seq[AbstractReference] = {
       val basetypes = tpe.baseClasses.map(b => tpe.baseType(b))
         .filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
 
       val targs = tpe.etaExpand.typeParams
-
 
       val lambdas = if (targs.nonEmpty) {
         basetypes.flatMap {
@@ -260,7 +258,6 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
     out
   }
-
 
   private def allTypeReferences(tpe: Type): Set[Type] = {
     def extract(tpe: Type, inh: mutable.HashSet[Type]): Unit = {
@@ -360,7 +357,11 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
       if (!out.allArgumentsReferenced) {
-        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${lamParams.map({ case (k, v) => s"$v = $k" })}, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
+        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${
+          lamParams.map({
+            case (k, v) => s"$v = $k"
+          })
+        }, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
       }
 
       thisLevel.log(s"✳️ Restored $t => $out")
@@ -449,13 +450,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     lamParams
   }
 
-
   object UniRefinement {
     def unapply(tpef: u.Type): Option[(List[Type], List[SymbolApi])] = {
       (tpef: AnyRef) match {
         case x: it.RefinementTypeRef =>
           Some((x.parents.map(_.asInstanceOf[Type]), x.decls.toList.asInstanceOf[List[SymbolApi]]))
-        case r: u.RefinedTypeApi @unchecked =>
+        case r: u.RefinedTypeApi@unchecked =>
           Some((r.parents, r.decls.toList))
         case _ =>
           None

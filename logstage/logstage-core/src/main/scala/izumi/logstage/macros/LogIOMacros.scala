@@ -1,6 +1,6 @@
 package izumi.logstage.macros
 
-import izumi.fundamentals.reflection.CodePositionMaterializer.getEnclosingPosition
+import izumi.fundamentals.platform.language.CodePositionMaterializer.getEnclosingPosition
 import izumi.logstage.macros.LogMessageMacro.logMessageMacro
 import logstage.{Log, LogIO}
 

@@ -1,5 +1,6 @@
 package izumi.distage.roles.services
 
+import distage.DIKey
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
@@ -8,7 +9,6 @@ import izumi.distage.planning.PlanMergingPolicyDefaultImpl
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.distage.roles.model.AppActivation
 import izumi.logstage.api.IzLogger
-import distage.DIKey
 
 class PruningPlanMergingPolicy(
                                 logger: IzLogger,
@@ -24,7 +24,9 @@ class PruningPlanMergingPolicy(
       .filter {
         op =>
           op.binding.tags
-            .collect({ case BindingTag.AxisTag(t) => t })
+            .collect({
+              case BindingTag.AxisTag(t) => t
+            })
             .forall(t => activeTags.contains(t))
       }
 
@@ -70,12 +72,16 @@ class PruningPlanMergingPolicy(
           }
       }
 
-      val failed = lastTry.collect({ case (k, f: DIKeyConflictResolution.Failed) => k -> f })
+      val failed = lastTry.collect({
+        case (k, f: DIKeyConflictResolution.Failed) => k -> f
+      })
 
       if (failed.nonEmpty) {
         throwOnIssues(failed)
       } else {
-        val good = lastTry.collect({ case (k, DIKeyConflictResolution.Successful(s)) => k -> s })
+        val good = lastTry.collect({
+          case (k, DIKeyConflictResolution.Successful(s)) => k -> s
+        })
         val erased = good.filter(_._2.isEmpty)
         logger.info(s"${erased.keys.niceList() -> "erased conflicts"}")
         logger.warn(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
@@ -92,8 +98,12 @@ class PruningPlanMergingPolicy(
       .toSeq
       .map {
         f =>
-          val bindingTags = f.binding.tags.collect({ case BindingTag.AxisTag(t) => t }).diff(activeTags)
-          val alreadyActiveTags = f.binding.tags.collect({ case BindingTag.AxisTag(t) => t }).intersect(activeTags)
+          val bindingTags = f.binding.tags.collect({
+            case BindingTag.AxisTag(t) => t
+          }).diff(activeTags)
+          val alreadyActiveTags = f.binding.tags.collect({
+            case BindingTag.AxisTag(t) => t
+          }).intersect(activeTags)
           s"${f.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
       }
   }

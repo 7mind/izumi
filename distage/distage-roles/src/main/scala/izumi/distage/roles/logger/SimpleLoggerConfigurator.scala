@@ -13,7 +13,9 @@ import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 
 import scala.util.{Failure, Success, Try}
 
-class SimpleLoggerConfigurator(exceptionLogger: IzLogger) {
+class SimpleLoggerConfigurator(
+                                exceptionLogger: IzLogger,
+                              ) {
 
   import SimpleLoggerConfigurator._
 
