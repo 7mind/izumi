@@ -7,7 +7,7 @@ trait WithDISymbolInfo {
   this: DIUniverseBase
     with WithDISafeType =>
 
-  trait SymbolInfo {
+  sealed trait SymbolInfo {
     def name: String
 
     def finalResultType: SafeType
@@ -58,7 +58,7 @@ trait WithDISymbolInfo {
                        , annotations: List[u.Annotation]
                        , definingClass: SafeType
                        , isByName: Boolean
-                       , wasGeneric: Boolean
+                       , wasGeneric: Boolean,
                      ) extends SymbolInfo
 
     def apply(symb: Symb, definingClass: SafeType, wasGeneric: Boolean): SymbolInfo = Runtime(symb, definingClass, wasGeneric)

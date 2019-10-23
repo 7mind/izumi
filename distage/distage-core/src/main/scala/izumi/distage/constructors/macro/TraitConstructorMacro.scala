@@ -1,8 +1,8 @@
-package izumi.distage.provisioning.strategies
+package izumi.distage.constructors.`macro`
 
+import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.provisioning.TraitConstructor
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
@@ -16,14 +16,14 @@ object TraitConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse._
-    import macroUniverse.Wiring._
     import macroUniverse.Association._
+    import macroUniverse.Wiring._
+    import macroUniverse._
 
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.static`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     val targetType = weakTypeOf[T]
 
@@ -48,8 +48,10 @@ object TraitConstructorMacro {
     else
       q"new ..$parents { ..$wireMethods }"
 
-    val constructorDef = q"""
-      ${if (wireArgs.nonEmpty)
+    val constructorDef =
+      q"""
+      ${
+        if (wireArgs.nonEmpty)
           q"def constructor(..$wireArgs): $targetType = ($instantiate): $targetType"
         else
           q"def constructor: $targetType = ($instantiate): $targetType"

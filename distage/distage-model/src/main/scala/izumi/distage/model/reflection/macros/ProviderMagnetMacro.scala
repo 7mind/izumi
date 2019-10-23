@@ -3,8 +3,7 @@ package izumi.distage.model.reflection.macros
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag
-import izumi.fundamentals.reflection.{AnnotationTools, DebugProperties, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -13,11 +12,11 @@ final class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: black
 }
 
 /**
-* To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
-* {{{
-* sbt -Dizumi.debug.macro.rtti=true compile
-* }}}
-*/
+  * To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
+  * {{{
+  * sbt -Dizumi.debug.macro.rtti=true compile
+  * }}}
+  */
 // TODO: bench and optimize
 class ProviderMagnetMacro(val c: blackbox.Context) {
 

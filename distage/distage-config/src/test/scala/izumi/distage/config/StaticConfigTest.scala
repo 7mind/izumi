@@ -1,12 +1,12 @@
-package izumi.distage.staticinjector
+package izumi.distage.config
 
-import izumi.distage.config.annotations.AutoConf
-import izumi.distage.config.model.AppConfig
-import izumi.distage.config.{ConfigFixtures, ConfigModule}
-import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StaticModuleDef
 import com.typesafe.config.ConfigFactory
 import distage.Id
+import izumi.distage.config.annotations.AutoConf
+import izumi.distage.config.model.AppConfig
+import izumi.distage.constructors.StaticModuleDef
+import izumi.distage.injector.MkInjector
+import izumi.distage.model.PlannerInput
 import org.scalatest.WordSpec
 
 class StaticConfigTest extends WordSpec with MkInjector {
@@ -15,7 +15,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     import ConfigFixtures._
 
     val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-    val injector = mkInjector(new ConfigModule(config))
+    val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
       stat[TestDependency]
@@ -33,7 +33,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     import ConfigFixtures._
 
     val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-    val injector = mkInjector(new ConfigModule(config))
+    val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
       stat[TestDependency]
@@ -51,7 +51,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     import ConfigFixtures._
 
     val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-    val injector = mkInjector(new ConfigModule(config))
+    val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
       stat[TestDependency]
@@ -76,12 +76,12 @@ class StaticConfigTest extends WordSpec with MkInjector {
     import ConfigFixtures._
 
     val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
-    val injector = mkInjector(new ConfigModule(config))
+    val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
       make[Int].named("depInt").from(5)
       make[ConcreteProduct].from {
-        (conf: TestConf @AutoConf, i: Int @Id("depInt")) => ConcreteProduct(conf, i * 10)
+        (conf: TestConf@AutoConf, i: Int@Id("depInt")) => ConcreteProduct(conf, i * 10)
       }
     }
     val plan = injector.plan(PlannerInput.noGc(definition))

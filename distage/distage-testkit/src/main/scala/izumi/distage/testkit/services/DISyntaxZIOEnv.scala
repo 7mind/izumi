@@ -1,8 +1,8 @@
 package izumi.distage.testkit.services
 
 import distage.Tag
+import izumi.distage.constructors.TraitConstructor
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.provisioning.TraitConstructor
 import zio.{IO, ZIO}
 
 import scala.language.implicitConversions

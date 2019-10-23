@@ -8,7 +8,7 @@ trait WithDISafeType {
     with WithTags =>
 
   // TODO: hotspot, hashcode on keys is inefficient
-  case class SafeType protected(override val tpe: TypeNative, override val tag: LightTypeTag) extends SafeType0[u.type](tpe, tag)
+  case class SafeType protected (override val tpe: TypeNative, override val tag: LightTypeTag) extends SafeType0[u.type](tpe, tag)
 
   object SafeType {
     // FIXME TODO constructing SafeType from a runtime type tag

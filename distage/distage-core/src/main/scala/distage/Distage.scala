@@ -18,6 +18,8 @@ trait Distage {
   type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   val DIResource: model.definition.DIResource.type = model.definition.DIResource
 
+  type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
+
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer

@@ -1,8 +1,9 @@
 package izumi.distage.staticinjector
 
+import izumi.distage.constructors.StaticModuleDef
 import izumi.distage.fixtures.FactoryCases.FactoryCase1
+import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
 class MacroAutoFactoriesTest extends WordSpec with MkInjector {
@@ -18,7 +19,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       stat[AbstractFactory]
     })
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -52,7 +53,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -71,7 +72,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -90,7 +91,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -110,7 +111,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
         |  stat[Dependency]
         |}
         |
-        |val injector = mkInjector()
+        |val injector = mkStaticInjector()
         |val plan = injector.plan(definition)
         |val context = injector.produce(plan)
         |
@@ -130,7 +131,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       stat[Factory]
     })
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
