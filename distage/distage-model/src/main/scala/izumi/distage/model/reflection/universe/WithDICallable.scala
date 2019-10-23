@@ -26,7 +26,7 @@ trait WithDICallable {
       fun(args)
     }
 
-    private def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
+    private[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
       val countOk = refs.size == argTypes.size
 
       val typesOk = argTypes.zip(refs).forall {
@@ -40,15 +40,16 @@ trait WithDICallable {
         args
       } else {
         throw new UnsafeCallArgsMismatched(
-          s"""Mismatched arguments for unsafe call:
-             | ${if(!typesOk) "Wrong types!" else ""}
-             | ${if(!countOk) s"Expected number of arguments ${argTypes.size}, but got ${refs.size}" else ""}
-             |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${args.mkString(",")})""".stripMargin
-          , argTypes
-          , types
-          , args)
+          message =
+            s"""Mismatched arguments for unsafe call:
+               | ${if (!typesOk) "Wrong types!" else ""}
+               | ${if (!countOk) s"Expected number of arguments ${argTypes.size}, but got ${refs.size}" else ""}
+               |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${args.mkString(",")})""".stripMargin,
+          expected = argTypes,
+          actual = types,
+          actualValues = args,
+        )
       }
-
     }
   }
 
@@ -61,34 +62,33 @@ trait WithDICallable {
     override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
     override final val arity: Int = argTypes.size
 
-    override def toString: String =
+    override final def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
   }
 
   object Provider {
 
-    case class ProviderImpl[+R](
-                                 associations: Seq[Association.Parameter]
-                               , ret: SafeType
-                               , fun: Seq[Any] => Any
+    case class ProviderImpl[+A](
+                                 associations: Seq[Association.Parameter],
+                                 ret: SafeType,
+                                 fun: Seq[Any] => Any,
                                ) extends Provider {
 
-      override final def unsafeApply(refs: TypedRef[_]*): R =
-        super.unsafeApply(refs: _*).asInstanceOf[R]
+      override final def unsafeApply(refs: TypedRef[_]*): A =
+        super.unsafeApply(refs: _*).asInstanceOf[A]
 
       override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
         copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
       override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
         ProviderImpl(
-          associations ++ that.associations
-          , newRet
-          , { args0 =>
+          associations ++ that.associations,
+          newRet,
+          { args0 =>
             val (args1, args2) = args0.splitAt(arity)
             fun(args1) -> that.fun(args2)
-          }
+          },
         )
-
     }
 
     object ProviderImpl {

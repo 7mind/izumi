@@ -24,8 +24,8 @@ trait AtomicProxyDispatcher extends ProxyDispatcher {
   }
 }
 
-class ByNameDispatcher(val key: DIKey)
-  extends Function0[Any]
+final class ByNameDispatcher(val key: DIKey)
+  extends (() => Any)
     with AtomicProxyDispatcher {
   override def apply(): Any = {
     Option(reference.get()) match {
