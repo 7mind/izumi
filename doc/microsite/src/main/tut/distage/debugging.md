@@ -34,8 +34,6 @@ you can turn on macro debug output during compilation by setting `-Dizumi.debug.
 sbt -Dizumi.debug.macro.rtti=true compile
 ```
 
-Macros power `distage-static` module, an alternative backend that does not use JVM runtime reflection to instantiate classes and auto-traits.
-
 ### Graphviz rendering
 
 Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable dumping of graphviz files with a graphical representation of the `Plan`.

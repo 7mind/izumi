@@ -2,7 +2,6 @@ package izumi.distage.model.definition
 
 import cats.Hash
 import cats.kernel.{BoundedSemilattice, PartialOrder}
-import izumi.distage.model.definition.ModuleBase.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
@@ -120,7 +119,7 @@ object ModuleBase {
               existingMappings
             } else {
               // merge tags wrt strange Binding equals
-                modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
+              modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
             }
         }
 
@@ -149,7 +148,7 @@ object ModuleBase {
   }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
-  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
+  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_] : CatsPartialOrderHash]: K[T] = {
     import cats.instances.set._
 
     new PartialOrder[T] with Hash[T] {
@@ -160,7 +159,7 @@ object ModuleBase {
   }
 
   /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T]: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_] : CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }

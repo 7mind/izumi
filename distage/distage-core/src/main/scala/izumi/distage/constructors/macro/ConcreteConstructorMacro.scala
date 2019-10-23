@@ -1,14 +1,12 @@
-package izumi.distage.provisioning.strategies
+package izumi.distage.constructors.`macro`
 
+import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.provisioning.ConcreteConstructor
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
-
-
 
 object ConcreteConstructorMacro {
 
@@ -23,7 +21,7 @@ object ConcreteConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.static`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     val targetType = weakTypeOf[T]
 
@@ -43,9 +41,8 @@ object ConcreteConstructorMacro {
 
         p.wireWith.tpe.use {
           tpe =>
-          q"$mods val $name: $tpe" -> name
+            q"$mods val $name: $tpe" -> name
         }
-
 
     })
 

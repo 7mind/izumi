@@ -1,8 +1,9 @@
 package izumi.distage.staticinjector
 
+import izumi.distage.constructors.StaticModuleDef
 import izumi.distage.fixtures.ImplicitCases.ImplicitCase2
+import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StaticModuleDef
 import org.scalatest.WordSpec
 
 class StaticImplicitInjectionTest extends WordSpec with MkInjector {
@@ -10,7 +11,7 @@ class StaticImplicitInjectionTest extends WordSpec with MkInjector {
   "Handle multiple parameter lists" in {
     import ImplicitCase2._
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
 
     val definition = new StaticModuleDef {
       stat[TestDependency1]
@@ -30,7 +31,7 @@ class StaticImplicitInjectionTest extends WordSpec with MkInjector {
   "Implicit parameters are injected from the DI object graph, not from Scala's lexical implicit scope" in {
     import ImplicitCase2._
 
-    val injector = mkInjector()
+    val injector = mkStaticInjector()
 
     val definition = new StaticModuleDef {
       implicit val testDependency3: TestDependency3 = new TestDependency3

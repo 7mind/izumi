@@ -104,7 +104,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 You can use this feature to concisely provide non-singleton semantics for some of your components.
 
 By default, the factory implementation class will be created automatically at runtime.
-To create factories at compile-time use `distage-static` module.
+To create factories at compile-time summon an implicit @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) for your type.
 
 ### Plugins
 

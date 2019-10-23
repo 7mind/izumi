@@ -1,7 +1,7 @@
-package izumi.distage.provisioning.strategies
+package izumi.distage.constructors.`macro`
 
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.provisioning.AnyConstructor
 import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 
 import scala.reflect.macros.blackbox

@@ -1722,132 +1722,10 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-static` = project.in(file("distage/distage-static"))
-  .dependsOn(
-    `distage-core` % "test->test;compile->compile",
-    `distage-roles` % "test->compile,test"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
-    )
-  )
-  .settings(
-    organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    testOptions in Test += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalaVersion := crossScalaVersions.value.head,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    )
-  )
-  .disablePlugins(AssemblyPlugin)
-
 lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
   .dependsOn(
     `distage-config` % "test->compile;compile->compile",
     `distage-roles` % "test->compile;compile->compile",
-    `distage-static` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
     `distage-plugins` % "test->test;compile->compile"
@@ -4097,7 +3975,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-roles-api` % "test->compile;compile->compile",
     `distage-plugins` % "test->compile;compile->compile",
     `distage-roles` % "test->compile;compile->compile",
-    `distage-static` % "test->compile;compile->compile",
     `distage-testkit` % "test->compile;compile->compile",
     `logstage-api` % "test->compile;compile->compile",
     `logstage-core` % "test->compile;compile->compile",
@@ -4460,7 +4337,6 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-roles-api`,
     `distage-plugins`,
     `distage-roles`,
-    `distage-static`,
     `distage-testkit`
   )
 
@@ -4482,7 +4358,6 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-roles-api`,
     `distage-plugins`,
     `distage-roles`,
-    `distage-static`,
     `distage-testkit`
   )
 

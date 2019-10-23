@@ -2,8 +2,9 @@ package izumi.distage.staticinjector
 
 import izumi.distage.fixtures.CircularCases.{CircularCase1, CircularCase2}
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.StaticModuleDef
 import distage.ModuleBase
+import izumi.distage.constructors.StaticModuleDef
+import izumi.distage.injector.MkInjector
 import org.scalatest.WordSpec
 
 class StaticCircularDependenciesTest extends WordSpec with MkInjector {

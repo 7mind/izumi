@@ -1,8 +1,8 @@
 package izumi.distage
 
-import izumi.distage.fixtures.BasicCases._
-import izumi.distage.model.definition.StaticDSL._
 import distage.{ModuleBase, ModuleDef}
+import izumi.distage.constructors.StaticDSL._
+import izumi.distage.fixtures.BasicCases._
 import org.scalatest.WordSpec
 
 class StaticDSLTest extends WordSpec {

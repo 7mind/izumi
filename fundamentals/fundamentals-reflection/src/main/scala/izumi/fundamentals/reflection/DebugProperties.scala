@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.platform.logging.DebugProperties
+import izumi.fundamentals.platform
 
 /**
   * To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
@@ -8,6 +8,6 @@ import izumi.fundamentals.platform.logging.DebugProperties
   * sbt -Dizumi.debug.macro.rtti=true compile
   * }}}
   */
-object DebugProperties extends DebugProperties {
+object DebugProperties extends platform.logging.DebugProperties {
   final val `izumi.debug.macro.rtti` = "izumi.debug.macro.rtti"
 }

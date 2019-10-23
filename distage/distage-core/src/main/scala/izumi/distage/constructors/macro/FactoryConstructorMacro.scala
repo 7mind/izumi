@@ -1,10 +1,11 @@
-package izumi.distage.provisioning.strategies
+package izumi.distage.constructors.`macro`
 
+import izumi.distage.constructors.{AnyConstructor, DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.strategies.FactoryExecutor
 import izumi.distage.model.reflection.macros.DIUniverseLiftables
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import izumi.distage.provisioning.{AnyConstructor, FactoryConstructor, FactoryTools}
+import izumi.distage.provisioning.FactoryTools
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
@@ -20,7 +21,7 @@ object FactoryConstructorMacro {
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
     val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.static`)
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
@@ -86,7 +87,6 @@ object FactoryConstructorMacro {
           }
           """)
 
-
         val providedKeys = method.associationsFromContext.map(_.wireWith)
 
         // TODO: remove ReflectiveInstantiationWiring by generating providers for factory products too, so that the only wiring allowed is Function
@@ -95,9 +95,9 @@ object FactoryConstructorMacro {
           val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
 
           ${reify(RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod)}.apply(
-            ${factoryMethod: SymbolInfo}
+            ${liftableSymbolInfo(factoryMethod)}
             , wiring
-            , wiring.associations.map(_.wireWith) diff ${providedKeys.toList} // work hard to ensure pointer equality of dikeys...
+            , wiring.associations.map(_.wireWith) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)} // work hard to ensure pointer equality of dikeys...
           )
         }"""
 

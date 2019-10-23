@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.38`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.39`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -268,7 +268,6 @@ object Izumi {
       final lazy val rolesApi = ArtifactId("distage-roles-api")
       final lazy val plugins = ArtifactId("distage-plugins")
       final lazy val roles = ArtifactId("distage-roles")
-      final lazy val static = ArtifactId("distage-static")
       final lazy val testkit = ArtifactId("distage-testkit")
     }
 
@@ -427,15 +426,10 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
-        name = Projects.distage.static,
-        libs = Seq.empty,
-        depends = Seq(Projects.distage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.roles).map(_ tin Scope.Test.all),
-      ),
-      Artifact(
         name = Projects.distage.testkit,
         libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonads,
         depends =
-          Seq(Projects.distage.config, Projects.distage.roles, Projects.distage.static, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
