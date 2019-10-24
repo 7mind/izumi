@@ -445,41 +445,41 @@ object Izumi {
     name = Projects.logstage.id,
     artifacts = Seq(
       Artifact(
-        Projects.logstage.api,
-        Seq(scala_reflect in Scope.Provided.all) ++ Seq(scala_java_time),
-        Seq(Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        name = Projects.logstage.api,
+        libs = Seq(scala_reflect in Scope.Provided.all) ++ Seq(scala_java_time),
+        depends = Seq(Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.logstage.core,
-        Seq(scala_reflect in Scope.Provided.all) ++
+        name = Projects.logstage.core,
+        libs = Seq(scala_reflect in Scope.Provided.all) ++
           Seq(cats_core, zio_core).map(_ in Scope.Optional.all) ++
           allMonadsTest,
-        Seq(Projects.fundamentals.bio).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.api).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.bio).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.api).map(_ tin Scope.Compile.all),
       ),
       Artifact(
-        Projects.logstage.renderingCirce,
-        Seq.empty,
-        Seq(Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        name = Projects.logstage.renderingCirce,
+        libs = Seq.empty,
+        depends = Seq(Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
       ),
       Artifact(
-        Projects.logstage.di,
-        Seq.empty,
-        Seq(Projects.logstage.config, Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
+        name = Projects.logstage.di,
+        libs = Seq.empty,
+        depends = Seq(Projects.logstage.config, Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
         groups = Groups.distage,
       ),
       Artifact(
-        Projects.logstage.config,
-        Seq.empty,
-        Seq(Projects.fundamentals.typesafeConfig, Projects.logstage.core).map(_ in Scope.Compile.all),
+        name = Projects.logstage.config,
+        libs = Seq.empty,
+        depends = Seq(Projects.fundamentals.typesafeConfig, Projects.logstage.core).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.logstage.adapterSlf4j,
-        Seq(slf4j_api),
-        Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        name = Projects.logstage.adapterSlf4j,
+        libs = Seq(slf4j_api),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
         settings = Seq(
           "compileOrder" in SettingScope.Compile := "CompileOrder.Mixed".raw,
@@ -488,9 +488,9 @@ object Izumi {
         )
       ),
       Artifact(
-        Projects.logstage.sinkSlf4j,
-        Seq(slf4j_api, slf4j_simple),
-        Seq(Projects.logstage.api).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Test.all),
+        name = Projects.logstage.sinkSlf4j,
+        libs = Seq(slf4j_api, slf4j_simple),
+        depends = Seq(Projects.logstage.api).map(_ in Scope.Compile.all) ++ Seq(Projects.logstage.core).map(_ tin Scope.Test.all),
         platforms = Targets.jvm,
       )
     ),
@@ -503,19 +503,19 @@ object Izumi {
     name = Projects.idealingua.id,
     artifacts = Seq(
       Artifact(
-        Projects.idealingua.model,
-        Seq.empty,
-        Projects.fundamentals.basics,
+        name = Projects.idealingua.model,
+        libs = Seq.empty,
+        depends = Projects.fundamentals.basics,
       ),
       Artifact(
-        Projects.idealingua.core,
-        Seq(fastparse),
-        Projects.fundamentals.basics ++ Seq(Projects.idealingua.model, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        name = Projects.idealingua.core,
+        libs = Seq(fastparse),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.idealingua.model, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        Projects.idealingua.runtimeRpcScala,
-        Seq(scala_reflect in Scope.Provided.all) ++ (cats_all ++ zio_all).map(_ in Scope.Compile.all),
-        Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
+        name = Projects.idealingua.runtimeRpcScala,
+        libs = Seq(scala_reflect in Scope.Provided.all) ++ (cats_all ++ zio_all).map(_ in Scope.Compile.all),
+        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.idealingua.runtimeRpcHttp4s,
@@ -533,33 +533,33 @@ object Izumi {
         settings = forkTests
       ),
       Artifact(
-        Projects.idealingua.testDefs,
-        Seq.empty,
-        Seq(Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all),
+        name = Projects.idealingua.testDefs,
+        libs = Seq.empty,
+        depends = Seq(Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all),
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.idealingua.runtimeRpcTypescript,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.idealingua.runtimeRpcTypescript,
+        libs = Seq.empty,
+        depends = Seq.empty,
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.idealingua.runtimeRpcGo,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.idealingua.runtimeRpcGo,
+        libs = Seq.empty,
+        depends = Seq.empty,
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.idealingua.runtimeRpcCSharp,
-        Seq.empty,
-        Seq.empty,
+        name = Projects.idealingua.runtimeRpcCSharp,
+        libs = Seq.empty,
+        depends = Seq.empty,
         platforms = Targets.jvm,
       ),
       Artifact(
-        Projects.idealingua.compiler,
-        Seq(typesafe_config),
-        Seq(
+        name = Projects.idealingua.compiler,
+        libs = Seq(typesafe_config),
+        depends = Seq(
           Projects.idealingua.transpilers,
           Projects.idealingua.runtimeRpcScala,
           Projects.idealingua.runtimeRpcTypescript,
@@ -678,8 +678,8 @@ object Izumi {
   )
 
   final lazy val sbtplugins = Aggregate(
-    Projects.sbtplugins.id,
-    Seq(
+    name = Projects.sbtplugins.id,
+    artifacts = Seq(
       Artifact(
         name = Projects.sbtplugins.izumi_deps,
         libs = Seq.empty,
@@ -688,8 +688,7 @@ object Izumi {
           SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
         ),
         plugins = Plugins(
-          enabled = Seq.empty,
-          disabled = Seq(Plugin("ScoverageSbtPlugin")))
+          disabled = Seq(Plugin("ScoverageSbtPlugin"))),
       ),
     ),
     pathPrefix = Projects.sbtplugins.basePath,
