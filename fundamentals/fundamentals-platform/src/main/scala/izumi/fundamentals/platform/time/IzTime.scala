@@ -10,13 +10,10 @@ import scala.language.implicitConversions
 
 // safe to run on sjs with shims
 trait IzTimeSafe {
-  implicit final def toRichOffsetDateTime(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
-
-  implicit final def toRichLocalDateTime(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
-
-  implicit final def toRichDate(value: Date): IzDate = new IzDate(value)
-
-  implicit final def toRichDuration(duration: Duration): IzDuration = new IzDuration(duration)
+  @inline implicit final def toRichOffsetDateTime(timestamp: OffsetDateTime): IzOffsetDateTime = new IzOffsetDateTime(timestamp)
+  @inline implicit final def toRichLocalDateTime(timestamp: LocalDateTime): IzLocalDateTime = new IzLocalDateTime(timestamp)
+  @inline implicit final def toRichDate(value: Date): IzDate = new IzDate(value)
+  @inline implicit final def toRichDuration(duration: Duration): IzDuration = new IzDuration(duration)
 
   // formatters with 3 decimal positions for nanos
   final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
@@ -87,14 +84,12 @@ trait IzTime extends IzTimeSafe {
   final val EPOCH = ZonedDateTime.ofInstant(Instant.ofEpochSecond(0), TZ_UTC)
 
   // extended operators
-  implicit final def toRichZonedDateTime(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
+  @inline implicit final def toRichZonedDateTime(timestamp: ZonedDateTime): IzZonedDateTime = new IzZonedDateTime(timestamp)
 
   // parsers
-  implicit final def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
-
-  implicit final def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
-
-  implicit final def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
+  @inline implicit final def toRichLong(value: Long): IzLongParsers = new IzLongParsers(value)
+  @inline implicit final def stringToParseableTime(value: String): IzTimeParsers = new IzTimeParsers(value)
+  @inline implicit final def maybeStringToParseableTime(value: Option[String]): IzOptionalTimeParsers = new IzOptionalTimeParsers(value)
 
   // current time
   def utcNow: ZonedDateTime = ZonedDateTime.now(TZ_UTC)

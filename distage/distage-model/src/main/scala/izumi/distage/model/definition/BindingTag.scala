@@ -16,7 +16,7 @@ sealed trait AxisBase {
   def name: String
 
   override final def toString: String = s"$name"
-  implicit final def self: AxisBase = this
+  @inline implicit final def self: AxisBase = this
 }
 
 trait Axis[+MM <: AxisValue] extends AxisBase

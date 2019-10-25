@@ -29,7 +29,7 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
 
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
-    implicit val _sync: _Sync[Sync] = null
+    @inline implicit final def _sync: _Sync[Sync] = null
   }
 }
 

@@ -175,13 +175,13 @@ private object ModuleBaseInstances {
   sealed abstract class CatsBoundedSemilattice[K[_]]
 
   object CatsBoundedSemilattice {
-    @inline implicit def get: CatsBoundedSemilattice[BoundedSemilattice] = null
+    @inline implicit final def get: CatsBoundedSemilattice[BoundedSemilattice] = null
   }
 
   type PartialOrderHash[T] = PartialOrder[T] with Hash[T]
   sealed abstract class CatsPartialOrderHash[K[_]]
   object CatsPartialOrderHash {
-    @inline implicit def get[K[_]](implicit @deprecated("unused", "unused") guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
+    @inline implicit final def get[K[_]](implicit @deprecated("unused", "unused") guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
   }
 
 }

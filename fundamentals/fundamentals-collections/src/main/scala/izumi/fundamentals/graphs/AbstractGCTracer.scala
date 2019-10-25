@@ -48,7 +48,6 @@ trait AbstractGCTracer[NodeId, Node] {
 
   protected def prePrune(pruned: Pruned): Pruned
 
-  @inline
   protected def extractDependencies(index: Map[NodeId, Node], node: Node): Set[NodeId]
 
   protected def isRoot(node: NodeId): Boolean

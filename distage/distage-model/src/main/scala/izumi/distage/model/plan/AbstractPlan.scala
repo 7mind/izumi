@@ -288,7 +288,7 @@ private object SemiPlanOrderedPlanInstances {
     * */
   sealed abstract class CatsMonoid[K[_]]
   object CatsMonoid {
-    implicit val get: CatsMonoid[Monoid] = null
+    @inline implicit final def get: CatsMonoid[Monoid] = null
   }
 
   import cats.instances.vector._

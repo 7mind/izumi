@@ -152,7 +152,7 @@ trait Tags extends UniverseGeneric { self =>
   }
 
   trait LowPriorityTagInstances {
-    implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
+    @inline implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
   }
 
   /**

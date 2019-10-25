@@ -5,9 +5,7 @@ import zio.{Fiber, IO}
 
 trait BIOFiber[F[_, _], E, A] {
   def join: F[E, A]
-
   def observe: F[Nothing, BIOExit[E, A]]
-
   def interrupt: F[Nothing, BIOExit[E, A]]
 }
 

@@ -185,6 +185,6 @@ object FromCats {
     */
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {
-    implicit val catsEffectSync: _Sync[cats.effect.Sync] = null
+    @inline implicit final def catsEffectSync: _Sync[cats.effect.Sync] = null
   }
 }
