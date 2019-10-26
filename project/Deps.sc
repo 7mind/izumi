@@ -688,7 +688,9 @@ object Izumi {
           SettingDef.RawSettingDef("""withBuildInfo("izumi.sbt.deps", "Izumi")""")
         ),
         plugins = Plugins(
-          disabled = Seq(Plugin("ScoverageSbtPlugin"))),
+          enabled = Seq.empty,
+          disabled = Seq(Plugin("ScoverageSbtPlugin")),
+        )
       ),
     ),
     pathPrefix = Projects.sbtplugins.basePath,

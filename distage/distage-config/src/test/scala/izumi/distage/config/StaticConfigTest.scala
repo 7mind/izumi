@@ -14,7 +14,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
   "Inject config works for macro trait methods" in {
     import ConfigFixtures._
 
-    val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+    val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
@@ -32,7 +32,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
   "Inject config works for macro factory methods (not products)" in {
     import ConfigFixtures._
 
-    val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+    val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
@@ -50,7 +50,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     // FactoryMethod wirings are generated at compile-time and inacessible to ConfigModule, so method ends up depending on TestConf, not TestConf#auto[..]. To fix this, need a new type of binding that would include all factory reflected info
     import ConfigFixtures._
 
-    val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+    val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
@@ -75,7 +75,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
   "Inject config works for providers" in {
     import ConfigFixtures._
 
-    val config = AppConfig(ConfigFactory.load("macro-fixtures-test.conf"))
+    val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
     val definition = new StaticModuleDef {
