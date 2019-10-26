@@ -405,7 +405,7 @@ object Izumi {
         name = Projects.distage.config,
         libs = Seq(typesafe_config),
         depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Test.all),
+          Seq(Projects.distage.core).map(_ tin Scope.Test.all),
       ),
       Artifact(
         name = Projects.distage.rolesApi,

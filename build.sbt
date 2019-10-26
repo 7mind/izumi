@@ -1230,7 +1230,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
   .dependsOn(
     `distage-model` % "test->compile;compile->compile",
     `fundamentals-typesafe-config` % "test->compile;compile->compile",
-    `distage-core` % "test->compile"
+    `distage-core` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(
