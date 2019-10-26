@@ -8,13 +8,17 @@ object BIOExit {
 
   trait Trace {
     def asString: String
-    override final def toString: String = asString
     def toThrowable: Throwable
+
+    override final def toString: String = asString
   }
 
   object Trace {
     def zioTrace(cause: Cause[_]): Trace = ZIOTrace(cause)
-    def empty: Trace = new Trace { val asString = "<empty trace>"; def toThrowable = new RuntimeException(asString) }
+    def empty: Trace = new Trace {
+      val asString = "<empty trace>"
+      def toThrowable = new RuntimeException(asString)
+    }
 
     final case class ZIOTrace(cause: Cause[_]) extends Trace {
       override def asString: String = cause.prettyPrint
@@ -34,8 +38,8 @@ object BIOExit {
   }
 
   final case class Error[+E](error: E, trace: Trace) extends BIOExit.Failure[E] {
-    override def toEither: Right[List[Throwable], E] = Right(error)
-    override def toEitherCompound: Right[Throwable, E] = Right(error)
+    override def toEither: Right[Nothing, E] = Right(error)
+    override def toEitherCompound: Right[Nothing, E] = Right(error)
   }
 
   final case class Termination(compoundException: Throwable, allExceptions: List[Throwable], trace: Trace) extends BIOExit.Failure[Nothing] {

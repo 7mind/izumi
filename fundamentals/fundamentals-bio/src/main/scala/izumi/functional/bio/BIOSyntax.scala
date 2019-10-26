@@ -157,9 +157,10 @@ object BIOSyntax {
 
   final class BIOAsyncOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOAsync[F]) {
     @inline def retryOrElse[A2 >: A, E2](duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2] = F.retryOrElse[A, E, A2, E2](r)(duration, orElse)
+    @inline def repeatUntil[E2 >: E, A2](onTimeout: => E2, sleep: FiniteDuration, maxAttempts: Int)(implicit ev: A <:< Option[A2]): F[E2, A2] =
+      F.repeatUntil[E2, A2](onTimeout, sleep, maxAttempts)(new BIOFunctorOps(r)(F).widen)
 
     @inline def timeout(duration: Duration): F[E, Option[A]] = F.timeout(r)(duration)
-
     @inline def timeoutFail[E1 >: E](e: E1)(duration: Duration): F[E1, A] =
       F.flatMap(timeout(duration): F[E1, Option[A]])(_.fold[F[E1, A]](F.fail(e))(F.pure))
 

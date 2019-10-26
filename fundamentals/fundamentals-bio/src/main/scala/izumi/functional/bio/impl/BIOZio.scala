@@ -74,10 +74,11 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
 
   @inline override final def retryOrElse[A, E, A2 >: A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A2]): IO[E2, A2] =
     ZIO.accessM { env =>
-      r.provide(env).retryOrElse(ZSchedule.duration(fromScala(duration)), {
-        (_: Any, _: Any) =>
-          orElse.provide(env)
-      }).provide(clockService)
+      val zioDuration = ZSchedule.duration(fromScala(duration))
+
+      r.provide(env)
+        .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
+        .provide(clockService)
     }
 
   @inline override final def timeout[E, A](r: IO[E, A])(duration: Duration): IO[E, Option[A]] = {
