@@ -335,7 +335,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.platform,
         libs = Seq(
-          scala_reflect in Scope.Provided.jvm,
+          scala_reflect in Scope.Provided.all,
         ),
         depends = Seq(
           Projects.fundamentals.collections in Scope.Compile.all
