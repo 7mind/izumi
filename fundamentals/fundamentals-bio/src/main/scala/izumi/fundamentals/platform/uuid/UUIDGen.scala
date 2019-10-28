@@ -25,7 +25,6 @@ import java.util.{Collection, Collections, Enumeration, HashSet, Random, Set, UU
 
 import izumi.fundamentals.platform.uuid.UUIDGen._
 
-
 object UUIDGen {
 
   // A grand day! millis at 00:00:00.000 15 Oct 1582.

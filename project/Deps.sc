@@ -394,7 +394,7 @@ object Izumi {
       Artifact(
         name = Projects.distage.proxyCglib,
         libs = Seq(cglib_nodep),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.core,
@@ -510,12 +510,12 @@ object Izumi {
       Artifact(
         name = Projects.idealingua.core,
         libs = Seq(fastparse),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.idealingua.model, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.idealingua.model, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.idealingua.runtimeRpcScala,
         libs = Seq(scala_reflect in Scope.Provided.all) ++ (cats_all ++ zio_all).map(_ in Scope.Compile.all),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.fundamentalsJsonCirce).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.idealingua.runtimeRpcHttp4s,
@@ -527,8 +527,7 @@ object Izumi {
       Artifact(
         name = Projects.idealingua.transpilers,
         libs = Seq(scala_xml, scalameta),
-        depends = Projects.fundamentals.basics ++
-          Seq(Projects.fundamentals.fundamentalsJsonCirce, Projects.idealingua.core, Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.fundamentals.fundamentalsJsonCirce, Projects.idealingua.core, Projects.idealingua.runtimeRpcScala).map(_ in Scope.Compile.all) ++
           Seq(Projects.idealingua.testDefs, Projects.idealingua.runtimeRpcTypescript, Projects.idealingua.runtimeRpcGo, Projects.idealingua.runtimeRpcCSharp).map(_ in Scope.Test.jvm),
         settings = forkTests
       ),

@@ -1,4 +1,4 @@
-package izumi.fundamentals.platform.time
+package izumi.functional.mono
 
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
@@ -6,7 +6,6 @@ import java.time.temporal.ChronoUnit
 sealed trait ClockAccuracy
 
 object ClockAccuracy {
-
   case object DEFAULT extends ClockAccuracy
   case object NANO extends ClockAccuracy
   case object MILLIS extends ClockAccuracy
