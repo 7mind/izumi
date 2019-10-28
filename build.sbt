@@ -982,9 +982,6 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
 
 lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `distage-model` % "test->compile;compile->compile"
   )
   .settings(
@@ -2837,9 +2834,6 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
 
 lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-core"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `idealingua-v1-model` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile"
   )
@@ -2962,9 +2956,6 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
 
 lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idealingua-v1-runtime-rpc-scala"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile"
   )
@@ -3219,9 +3210,6 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
 
 lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua-v1-transpilers"))
   .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
     `idealingua-v1-core` % "test->compile;compile->compile",
     `idealingua-v1-runtime-rpc-scala` % "test->compile;compile->compile",
