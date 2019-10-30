@@ -210,6 +210,22 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated.dep == context.get[Dep])
   }
 
+  "support newtypes" in {
+    import TypesCase5._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[WidgetId].from(WidgetId(1))
+      make[Dep]
+    })
+
+    val injector = mkInjector()
+    val context = injector.produceUnsafe(definition)
+
+    val instantiated1 = context.get[Dep]
+    val instantiated2 = context.get[WidgetId]
+    assert(instantiated1.widgetId == instantiated2)
+  }
+
   "structural types are unsupported in class strategy" in {
     intercept[UnsupportedWiringException] {
       val definition = PlannerInput.noGc(new ModuleDef {
