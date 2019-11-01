@@ -13,8 +13,8 @@ object V {
   val shapeless = "2.3.3"
 
   val cats = "2.0.0"
-  val cats_effect = "2.0.0"
-  val zio = "1.0.0-RC15"
+  val cats_effect = "2.0.0
+  val zio = "1.0.0-RC16"
   val zio_interop_cats = "2.0.0.0-RC7"
 
   val circe = "0.12.3"
@@ -24,7 +24,7 @@ object V {
 
   val http4s = "0.21.0-M5"
 
-  val scalameta = "4.2.3"
+  val scalameta = "4.2.4"
   val fastparse = "2.1.3"
 
   val scala_xml = "1.2.0"
@@ -34,7 +34,7 @@ object V {
   val asynchttpclient = "2.10.4"
 
   val classgraph = "4.8.52"
-  val slf4j = "1.7.28"
+  val slf4j = "1.7.29"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
