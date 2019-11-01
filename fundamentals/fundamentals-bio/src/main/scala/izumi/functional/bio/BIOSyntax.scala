@@ -6,24 +6,24 @@ import scala.language.implicitConversions
 trait BIOSyntax {
 
   /**
-   * A convenient dependent summoner for BIO* hierarchy.
-   * Auto-narrows to the most powerful available class:
-   *
-   * {{{
-   *   def y[F[+_, +_]: BIOAsync] = {
-   *     F.timeout(5.seconds)(F.forever(F.unit))
-   *   }
-   * }}}
-   *
-   * */
+    * A convenient dependent summoner for BIO* hierarchy.
+    * Auto-narrows to the most powerful available class:
+    *
+    * {{{
+    *   def y[F[+_, +_]: BIOAsync] = {
+    *     F.timeout(5.seconds)(F.forever(F.unit))
+    *   }
+    * }}}
+    *
+    **/
   @inline final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 
   /**
-   * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
-   */
+    * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
+    */
   final object catz extends BIOCatsConversions
 
-  @inline implicit final def ToFunctorOps[F[_, +_] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
+  @inline implicit final def ToFunctorOps[F[_, + _] : BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
   @inline implicit final def ToBifunctorOps[F[+_, +_] : BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
   @inline implicit final def ToApplicativeOps[F[+_, +_] : BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
   @inline implicit final def ToGuaranteeOps[F[+_, +_] : BIOGuarantee, E, A](self: F[E, A]): BIOSyntax.BIOGuaranteeOps[F, E, A] = new BIOSyntax.BIOGuaranteeOps[F, E, A](self)
@@ -33,13 +33,13 @@ trait BIOSyntax {
   @inline implicit final def ToBracketOps[F[+_, +_] : BIOBracket, E, A](self: F[E, A]): BIOSyntax.BIOBracketOps[F, E, A] = new BIOSyntax.BIOBracketOps[F, E, A](self)
   @inline implicit final def ToPanicOps[F[+_, +_] : BIOPanic, E, A](self: F[E, A]): BIOSyntax.BIOPanicOps[F, E, A] = new BIOSyntax.BIOPanicOps[F, E, A](self)
 
-  @inline implicit final def ToOps[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
+  @inline implicit final def ToOps[F[+_, +_] : BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
 
-  @inline implicit final def ToAsyncOps[F[+_, +_]: BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
+  @inline implicit final def ToAsyncOps[F[+_, +_] : BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
 
-  @inline implicit final def ToFlattenOps[F[+_, +_]: BIOMonad, E, A](self: F[E, F[E, A]]): BIOSyntax.BIOFlattenOps[F, E, A] = new BIOSyntax.BIOFlattenOps[F, E, A](self)
+  @inline implicit final def ToFlattenOps[F[+_, +_] : BIOMonad, E, A](self: F[E, F[E, A]]): BIOSyntax.BIOFlattenOps[F, E, A] = new BIOSyntax.BIOFlattenOps[F, E, A](self)
 
-  @inline implicit final def ToForkOps[F[_, _]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
+  @inline implicit final def ToForkOps[F[_, _] : BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
 
 }
 
@@ -49,15 +49,12 @@ object BIOSyntax {
     @inline def map[B](f: A => B): F[E, B] = F.map(r)(f)
 
     @inline def as[B](b: => B): F[E, B] = F.map(r)(_ => b)
-
-    @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = { val _ = ev; r.asInstanceOf[F[E, A1]] }
-
     @inline def void: F[E, Unit] = F.void(r)
+    @inline def widen[A1](implicit ev: A <:< A1): F[E, A1] = {val _ = ev; r.asInstanceOf[F[E, A1]] }
   }
 
   final class BIOBifunctorOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOBifunctor[F]) {
     @inline def leftMap[E2](f: E => E2): F[E2, A] = F.leftMap(r)(f)
-
     @inline def bimap[E2, B](f: E => E2, g: A => B): F[E2, B] = F.bimap(r)(f, g)
 
     @inline def widenError[E1](implicit ev: E <:< E1): F[E1, A] = { val _ = ev; r.asInstanceOf[F[E1, A]] }
@@ -133,17 +130,17 @@ object BIOSyntax {
     @inline def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))
 
     /**
-     * Catch all _defects_ in this effect and convert them to Throwable
-     * Example:
-     *
-     * {{{
-     *   BIO[F].pure(1)
-     *     .map(_ => ???)
-     *     .sandboxThrowable
-     *     .catchAll(_ => BIO(println("Caught error!")))
-     * }}}
-     *
-     * */
+      * Catch all _defects_ in this effect and convert them to Throwable
+      * Example:
+      *
+      * {{{
+      *   BIO[F].pure(1)
+      *     .map(_ => ???)
+      *     .sandboxThrowable
+      *     .catchAll(_ => BIO(println("Caught error!")))
+      * }}}
+      *
+      **/
     @inline def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
       F.catchAll(F.sandbox(r))(failure => F.fail(failure.toThrowable))
   }

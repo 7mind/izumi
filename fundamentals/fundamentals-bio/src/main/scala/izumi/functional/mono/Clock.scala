@@ -15,11 +15,11 @@ trait Clock[+F[_]] {
 }
 
 object Clock {
-  def apply[F[_]: Clock]: Clock[F] = implicitly
+  def apply[F[_] : Clock]: Clock[F] = implicitly
 
   private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
 
-  class Standard extends Clock[Identity] {
+  object Standard extends Clock[Identity] {
     override def epoch: Long = {
       java.time.Clock.systemUTC().millis()
     }
