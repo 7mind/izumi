@@ -1,8 +1,5 @@
 object V {
   // foundation
-  val scala_212 = "2.12.10"
-  val scala_213 = "2.13.1"
-
   val collection_compat = "2.1.2"
 
   val kind_projector = "0.11.0"

@@ -5,8 +5,6 @@ import izumi.sbtgen.model._
 object Izumi {
 
   object V {
-    val scala_212 = Version.VExpr("V.scala_212")
-    val scala_213 = Version.VExpr("V.scala_213")
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
