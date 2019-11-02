@@ -1,6 +1,6 @@
 package izumi.json.flat
 
-import izumi.functional.IzEither._
+import izumi.functional.IzEither.EitherBiAggregate
 import io.circe.Json
 
 import scala.annotation.switch
@@ -171,40 +171,40 @@ class JsonFlattener {
     val grouped = pairs.groupBy(_._1.headOption)
 
     grouped.get(None) match {
-      case Some(value :: Nil) =>
-        return parse(value._2, value._3)
+      case Some(value +: t) if t.isEmpty =>
+        parse(value._2, value._3)
+
       case Some(value) =>
-        return for {
+        for {
           elements <- value.map(v => parse(v._2, v._3)).biAggregate
         } yield {
           Json.fromValues(elements)
         }
       case None =>
-    }
+        val grouped2 = pairs.groupBy(_._1.head)
 
-    val grouped2 = pairs.groupBy(_._1.head)
-
-    if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
-      for {
-        elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biAggregate
-      } yield {
-        Json.fromValues(elements)
-      }
-    } else if (grouped2.keys.forall(_.isInstanceOf[ObjectName])) {
-      for {
-        elements <- grouped2.map {
-          case (k, v) =>
-            for {
-              field <- inflateParsedNext(v)
-            } yield {
-              escape.unescape(k.asInstanceOf[ObjectName].name) -> field
-            }
-        }.toSeq.biAggregate
-      } yield {
-        Json.fromFields(elements)
-      }
-    } else {
-      Left(List(UnpackFailure.StructuralFailure(pairs)))
+        if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
+          for {
+            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biAggregate
+          } yield {
+            Json.fromValues(elements)
+          }
+        } else if (grouped2.keys.forall(_.isInstanceOf[ObjectName])) {
+          for {
+            elements <- grouped2.map {
+              case (k, v) =>
+                for {
+                  field <- inflateParsedNext(v)
+                } yield {
+                  escape.unescape(k.asInstanceOf[ObjectName].name) -> field
+                }
+            }.toSeq.biAggregate
+          } yield {
+            Json.fromFields(elements)
+          }
+        } else {
+          Left(List(UnpackFailure.StructuralFailure(pairs)))
+        }
     }
   }
 
@@ -246,31 +246,18 @@ class JsonFlattener {
 
 object JsonFlattener {
   sealed trait PathElement
-
   object PathElement {
-
     final case class ObjectName(name: String) extends PathElement
-
     final case class Index(idx: Int) extends PathElement
-
-
   }
 
   sealed trait UnpackFailure
-
   object UnpackFailure {
-
     final case class ScalarParsingFailed(tpe: String, value: String, t: Throwable) extends UnpackFailure
-
     final case class UnterminatedEscapeSequence(path: String) extends UnpackFailure
-
     final case class UnexpectedType(tpe: String, path: String) extends UnpackFailure
-
     final case class BadPathFormat(path: String) extends UnpackFailure
-
     final case class PathIndexParsingFailed(path: String, t: Throwable) extends UnpackFailure
-
     final case class StructuralFailure(structure: Seq[(Seq[PathElement], Char, String)]) extends UnpackFailure
-
   }
 }
