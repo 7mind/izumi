@@ -1,27 +1,23 @@
 [![Gitter](https://badges.gitter.im/7mind/izumi.svg)](https://gitter.im/7mind/izumi)
+[![Patreon](https://img.shields.io/badge/patreon-sponsor-ff69b4.svg)](https://www.patreon.com/7mind)
 [![Build Status](https://dev.azure.com/7mind/izumi/_apis/build/status/7mind.izumi?branchName=develop)](https://dev.azure.com/7mind/izumi/_build/latest?definitionId=1&branchName=develop)
 [![codecov](https://codecov.io/gh/7mind/izumi/branch/develop/graph/badge.svg)](https://codecov.io/gh/7mind/izumi)
 [![CodeFactor](https://www.codefactor.io/repository/github/7mind/izumi/badge)](https://www.codefactor.io/repository/github/7mind/izumi)
 [![Latest Release](https://img.shields.io/github/tag/7mind/izumi.svg)](https://github.com/7mind/izumi/releases)
-[![Maven Central](https://img.shields.io/maven-central/v/io.7mind.izumi/izumi-r2_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.7mind.izumi%22)
-[![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/io.7mind.izumi/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/io/7mind/izumi/)
-[![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/io.7mind.izumi/izumi-r2_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/io/7mind/izumi/)
-[![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE) 
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
+[![Maven Central](https://img.shields.io/maven-central/v/io.7mind.izumi/distage-core_2.12.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.7mind.izumi%22)
+[![Sonatype releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/releases/io/7mind/izumi/)
+[![Sonatype snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/io.7mind.izumi/distage-core_2.12.svg)](https://oss.sonatype.org/content/repositories/snapshots/io/7mind/izumi/)
+[![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE)
 [![Latest version](https://index.scala-lang.org/7mind/izumi/latest.svg?color=orange)](https://index.scala-lang.org/7mind/izumi)
-![:3](https://img.shields.io/badge/🔥-Blazing%20Fast-red.svg)
-![:3](https://img.shields.io/badge/😿-For%20Humans-blue.svg)
-![:3](https://img.shields.io/badge/🏢-Enterprise%20Grade-999999.svg)
-![:3](https://img.shields.io/badge/👌-Production%20Ready-00ddcc.svg)
-![:3](https://img.shields.io/badge/💎-Modern-44aadd.svg)
-![:3](https://img.shields.io/badge/🦋-Extremely%20Lightweight-7799cc.svg)
-![:3](https://img.shields.io/badge/🦄-Just%20Works-cc00cc.svg)
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
+
+[![Buy me a coffee](https://bmc-cdn.nyc3.digitaloceanspaces.com/BMC-button-images/custom_images/orange_img.png)](https://www.buymeacoffee.com/7mind)
 
 What is it?
 ===========
 
 Izumi (*jap. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
- 
+
 including the following components:
 
 1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent and debuggable runtime & compile-time Dependency Injection Framework,
@@ -37,15 +33,19 @@ Docs
 * [Scaladoc](https://izumi.7mind.io/latest/release/api/)
 
 Example projects:
-* [DIStage Example Project](https://github.com/7mind/distage-sample)
+* [DIStage Livecode from ScalaWAW Warsaw](https://github.com/7mind/distage-livecode)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
+* [DIStage Example Project (older)](https://github.com/7mind/distage-sample)
 
 Slides:
 * [ScalaUA Slides about DIStage](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 * [ScalaUA Slides about LogStage](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [Slides from other meetups](https://github.com/7mind/slides)
 
-Key goals 
+Video:
+* [Youtube: DIStage Livecode](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+
+Key goals
 =========
 
 We aim to provide tools that:
@@ -73,19 +73,20 @@ Credits
 
 [![YourKit](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com)
 
-YourKit supports open source projects with innovative and intelligent tools 
+YourKit supports open source projects with innovative and intelligent tools
 for monitoring and profiling Java and .NET applications.
-YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/), 
-[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and 
+YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/profiler/),
+[YourKit .NET Profiler](https://www.yourkit.com/.net/profiler/) and
 [YourKit YouMonitor](https://www.yourkit.com/youmonitor/).
 
-
-[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/) 
+[![Triplequote Hydra](https://triplequote.com/img/services/hydra-2.svg)](https://triplequote.com/)
 
 [Triplequote Hydra](https://triplequote.com/) is the world’s only parallel compiler for the Scala language. Hydra works by parallelizing all of the Scala compiler phases, taking full advantage of the many cores available in modern hardware.
 
 Contributors
 ============
+
+* Run `./sbtgen.sc` to generate JVM-only sbt projects, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossprojects
 
 See:
 

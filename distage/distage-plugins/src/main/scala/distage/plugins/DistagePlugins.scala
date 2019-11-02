@@ -1,7 +1,7 @@
 package distage.plugins
 
-import com.github.pshirshov.izumi.distage.plugins
-import com.github.pshirshov.izumi.distage.plugins.load
+import izumi.distage.plugins
+import izumi.distage.plugins.load
 
 trait DistagePlugins {
 

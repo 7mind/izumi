@@ -1,6 +1,6 @@
 package logstage.circe
 
-import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import izumi.logstage.sink.ConsoleSink
 
 final class ConsoleSinkJsonCtor(private val consoleSink: ConsoleSink.type) extends AnyVal {
 

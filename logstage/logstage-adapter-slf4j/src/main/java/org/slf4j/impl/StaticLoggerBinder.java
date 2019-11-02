@@ -1,6 +1,6 @@
 package org.slf4j.impl;
 
-import com.github.pshirshov.izumi.logstage.adapter.slf4j.LogstageLoggerFactory;
+import izumi.logstage.adapter.slf4j.LogstageLoggerFactory;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.spi.LoggerFactoryBinder;
 

@@ -4,6 +4,9 @@ EMAIL=${EMAIL:-pshirshov@gmail.com}
 SSHKEYNAME=travis-deploy-key
 
 PASSPHRASE=$(uuidgen)
+OPENSSL_KEY=`openssl rand -hex 32`
+OPENSSL_IV=`openssl rand -hex 16`
+
 SECRETS=./.secrets
 GPGHOME=$SECRETS/gnupg.home
 GPGTARGET=$SECRETS/gnupg
@@ -13,7 +16,11 @@ PUBRING=$GPGTARGET/pubring.gpg
 SECRING=$GPGTARGET/secring.gpg
 SSHKEY=$SECRETS/$SSHKEYNAME
 
-echo "Passphrase: $PASSPHRASE"
+echo "GPG Passphrase: $PASSPHRASE"
+echo "SECRETS ENCRYPTION:"
+echo "OPENSSL_KEY=$OPENSSL_KEY"
+echo "OPENSSL_IV=$OPENSSL_IV"
+
 rm -rf $GPGTARGET
 rm -rf $GPGHOME
 mkdir -p $GPGTARGET
@@ -23,7 +30,7 @@ chmod 700 $GPGHOME
 cat >$GPGTMP <<EOF
      %echo Generating a basic OpenPGP key
      Key-Type: RSA
-     Key-Length: 2048
+     Key-Length: 1024
      Key-Usage: encrypt,sign,auth
      Name-Real: Pavel Shirshov
      Name-Comment: izumi-r2 sonatype key
@@ -64,3 +71,8 @@ done
 
 #ssh key
 ssh-keygen -N "" -t rsa -m PEM -b 4096 -C $SSHKEYNAME -f $SSHKEY && cat $SSHKEY.pub
+
+
+tar cvf secrets.tar -v --exclude=gnupg.home .secrets
+openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar -out secrets.tar.enc
+

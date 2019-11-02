@@ -3,12 +3,20 @@
 *.jps
 /local.sbt
 .secrets*
-/config 
+/config
+.agg
+
+# we cannot exclude build.sbt - scala steward wouldn't work without it
+#build.sbt
+#project/plugins.sbt
+#project/build.properties
+
 
 secrets.tar
 build/project
 .DS_Store
 .metals
+.bloop
 .java-version
 
 # Created by .ignore support plugin (hsz.mobi)

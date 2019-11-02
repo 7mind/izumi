@@ -1,6 +1,6 @@
 package logstage
 
-import com.github.pshirshov.izumi.logstage.api.rendering.json
+import izumi.logstage.api.rendering.json
 
 package object circe extends LogstageCirce {
 

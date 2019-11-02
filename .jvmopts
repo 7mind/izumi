@@ -1,18 +1,14 @@
+# Workaround to allow shutdown hooks
 # https://github.com/sbt/sbt/issues/4796
 -Dsbt.classloader.close=false
 
--Xmx3G
+-Xmx4G
 -XX:ReservedCodeCacheSize=256m
--XX:MaxMetaspaceSize=1512m
-
--XX:+UseG1GC
+-XX:MaxMetaspaceSize=3G
 
 -XX:+OmitStackTraceInFastThrow
-
 -XX:SoftRefLRUPolicyMSPerMB=50
-
 -Dsun.io.useCanonCaches=false
-
 -noverify
 -server
 
@@ -21,6 +17,22 @@
 #-Xshare:dump
 #-Xlog:class+load=info
 
+-XX:+UseG1GC
+
+# Enable ZGC
 #-XX:+UnlockExperimentalVMOptions
 #-XX:+UseZGC
-#-XX:+UseShenandoahGC
+
+# Enable Graal JIT
+#-XX:+UnlockExperimentalVMOptions
+#-XX:+EnableJVMCI
+#-XX:+UseJVMCICompiler
+
+# Bumping JIT inline-level increases performance of Scala code
+#   https://www.reddit.com/r/scala/comments/cigh0t/these_go_to_eighteen_c_jon_pretty/
+#   https://scalacenter.github.io/bloop/docs/performance-guide#tweak-the-java-jit
+#   https://twitter.com/leifwickland/status/1179419045055086595
+-XX:MaxInlineLevel=18
+# These seem to cause sbt import slowdown :\
+#-XX:MaxInlineSize=270
+#-XX:MaxTrivialSize=12

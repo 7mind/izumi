@@ -1,38 +1,23 @@
-scalaVersion := "2.12.8"
 
-// bootstrap
-lazy val izumiDepsPlugin = RootProject(file("../sbt/sbt-izumi-deps"))
-lazy val izumiPlugin = RootProject(file("../sbt/sbt-izumi"))
-lazy val root = project.in(file(".")).dependsOn(izumiDepsPlugin, izumiPlugin)
+////////////////////////////////////////////////////////////////////////////////
 
-//
-libraryDependencies += {
-  "org.scala-sbt" %% "scripted-plugin" % sbtVersion.value
-}
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.39")
 
-// https://github.com/sbt/sbt-assembly
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.9")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi-deps" % "0.0.39")
 
-// https://github.com/sbt/sbt-unidoc
-addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.2")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % PV.sbt_assembly)
 
-// https://www.scala-sbt.org/sbt-site/
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.3")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % PV.sbt_pgp)
 
-// https://github.com/sbt/sbt-ghpages
-addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % PV.sbt_scoverage)
 
-// https://jonas.github.io/paradox-material-theme/
-addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % "0.6.0")
+addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % PV.sbt_unidoc)
 
-// https://github.com/scalameta/mdoc
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "1.3.1" )
+addSbtPlugin("com.typesafe.sbt" % "sbt-site" % PV.sbt_site)
 
-// https://www.scala-js.org/
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.28")
+addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % PV.sbt_ghpages)
 
-// https://scalacenter.github.io/scalajs-bundler/
-addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.14.0")
+addSbtPlugin("io.github.jonas" % "sbt-paradox-material-theme" % PV.sbt_paradox_material_theme)
 
-// https://github.com/portable-scala/sbt-crossproject
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % PV.sbt_mdoc)
+

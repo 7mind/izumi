@@ -1,4 +1,4 @@
-import com.github.pshirshov.izumi.logstage.{api, sink}
+import izumi.logstage.{api, sink}
 
 package object logstage extends LogStage {
   override type IzLogger = api.IzLogger

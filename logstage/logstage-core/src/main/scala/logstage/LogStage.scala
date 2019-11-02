@@ -1,6 +1,6 @@
 package logstage
 
-import com.github.pshirshov.izumi.logstage.{api, sink}
+import izumi.logstage.{api, sink}
 
 trait LogStage {
   type IzLogger = api.IzLogger

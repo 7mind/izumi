@@ -1,8 +1,8 @@
 package distage
 
-import com.github.pshirshov.izumi.distage.model.definition.Axis.AxisValue
-import com.github.pshirshov.izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import com.github.pshirshov.izumi.distage.{model, planning}
+import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.{model, planning}
 
 trait Distage {
 
@@ -17,6 +17,8 @@ trait Distage {
 
   type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   val DIResource: model.definition.DIResource.type = model.definition.DIResource
+
+  type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
   type Planner = model.Planner
   type Locator = model.Locator

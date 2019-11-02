@@ -1,8 +1,8 @@
 package logstage
 
-import com.github.pshirshov.izumi.functional.mono.SyncSafe
-import com.github.pshirshov.izumi.logstage.api.AbstractLogger
-import com.github.pshirshov.izumi.logstage.api.Log.{Entry, LoggerId}
+import izumi.functional.mono.SyncSafe
+import izumi.logstage.api.AbstractLogger
+import izumi.logstage.api.Log.{Entry, LoggerId}
 
 import scala.language.implicitConversions
 

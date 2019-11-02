@@ -156,7 +156,7 @@ To install current release version:
 
 ```bash
 # install release executable
-coursier bootstrap com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:$izumi.version$ -o idlc
+coursier bootstrap izumi.r2:idealingua-compiler_2.12:$izumi.version$ -o idlc
 
 ./idlc --help
 ```
@@ -167,7 +167,7 @@ To install development snapshot:
 
 ```bash
 # install snapshot
-coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ com.github.pshirshov.izumi.r2:idealingua-compiler_2.12:0.7.0-SNAPSHOT -o idlc
+coursier bootstrap -r https://oss.sonatype.org/content/repositories/snapshots/ izumi.r2:idealingua-compiler_2.12:0.7.0-SNAPSHOT -o idlc
 
 ./idlc --help
 ```

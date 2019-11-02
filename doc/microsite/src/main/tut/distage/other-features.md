@@ -104,7 +104,7 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 You can use this feature to concisely provide non-singleton semantics for some of your components.
 
 By default, the factory implementation class will be created automatically at runtime.
-To create factories at compile-time use `distage-static` module.
+To create factories at compile-time summon an implicit @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) for your type.
 
 ### Plugins
 
@@ -139,7 +139,7 @@ package com.example.petstore
 import distage._
 import distage.plugins._
 
-trait PetStorePlugin extends PluginDef {
+object PetStorePlugin extends PluginDef {
   make[PetRepository]
   make[PetStoreService]
   make[PetStoreController]
@@ -223,7 +223,7 @@ package com.example
 import distage._
 import distage.plugins._
 import distage.config._
-import com.github.pshirshov.izumi.distage.app.ModuleRequirements
+import izumi.distage.app.ModuleRequirements
 
 final case class HostPort(host: String, port: Int)
 
@@ -263,7 +263,7 @@ package com.example.test
 
 import com.example._
 import org.scalatest.WordSpec
-import com.github.pshirshov.izumi.distage.app.StaticPluginChecker
+import izumi.distage.app.StaticPluginChecker
 
 final class AppPluginTest extends WordSpec {
   
@@ -344,7 +344,7 @@ The above strategy depends on `distage-proxy-cglib` module which is brought in b
 It's enabled by default. If you want to disable it, use `noCogen` bootstrap environment:
 
 ```scala
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext
+import izumi.distage.bootstrap.DefaultBootstrapContext
 import distage._
 
 Injector(DefaultBootstrapContext.noCogen)
@@ -357,7 +357,7 @@ Most cycles can also be resolved manually when identified, using `by-name` param
 Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
 
 ```scala
-import com.github.pshirshov.izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
+import izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
 import distage._
 
 class A(b0: => B) {
@@ -391,11 +391,13 @@ cycles can emerge unexpectedly, outside of control of the origin module.
 NB: Currently a limitation applies to by-names - ALL dependencies on a class engaged in a by-name circular dependency have to be by-name,
 otherwise distage will transparently revert to generating proxies.
 
-### Auto-Sets: Collecting Bindings By Predicate
+### Auto-Sets
 
-AutoSet @scaladoc[Planner](com.github.pshirshov.izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
+AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
 
 Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
+
+NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
 ```scala
 trait PrintResource(name: String) {
@@ -435,6 +437,10 @@ When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 
 Note: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector), they are assembled *after* garbage collection is done,
 as such they can't contain garbage by construction.
+
+NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
+
+See also: same concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
 ### Weak Sets
 
@@ -494,12 +500,13 @@ locator.get[Set[SetElem]].size == 2
 ### Cats Integration
 
 Additional cats instances and syntax are available automatically
-without imports if you already depend on cats via [No More Orphans](https://blog.7mind.io/no-more-orphans.html)
-technique.
+without imports if `cats-core` or `cats-effect` are already dependencies of your project. (Note: distage *won't* bring
+`cats` as a dependency if you don't already use it. See [No More Orphans](https://blog.7mind.io/no-more-orphans.html)
+for the technique)
 
-@ref[Cats Resource Bindings](basics.md#resource-bindings--lifecycle) will also work out of the box without imports.
+@ref[Cats Resource Bindings](basics.md#resource-bindings-lifecycle) will also work out of the box without any magic imports.
 
-Usage:
+Example:
 
 ```scala
 import cats.implicits._
@@ -509,14 +516,20 @@ import com.example.{DBConnection, AppEntrypoint}
 
 object Main extends IOApp {
   def run(args: List[String]): IO[Unit] = {
-    val myModules = module1 |+| module2 // Monoid instance for ModuleDef is available now
+    // ModuleDef has a Monoid instance
+    val myModules = module1 |+| module2
     
     for {
-      plan <- myModules.resolveImportsF[IO] { // resolveImportsF is now available
+      // resolveImportsF can effectfully add missing instances to an existing plan
+      // (You can create instances effectfully beforehand via `make[_].fromEffect` bindings)
+      plan <- myModules.resolveImportsF[IO] {
         case i if i.target == DIKey.get[DBConnection] =>
            DBConnection.create[IO]
       } 
-      classes <- Injector().produceF[IO](plan) // produceF allows using cats `IO` with effect and resource bindings
+      // `produceF` specifies an Effect to run in; 
+      // Effect used in Resource and Effect Bindings 
+      // should match the effect in `produceF`
+      classes <- Injector().produceF[IO](plan)
       _ <- classes.get[AppEntrypoint].run
     } yield ()
   }

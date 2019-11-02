@@ -1,10 +1,10 @@
 package logstage
 
 import cats.syntax.flatMap._
-import com.github.pshirshov.izumi.functional.mono.SyncSafe
-import com.github.pshirshov.izumi.fundamentals.reflection.CodePositionMaterializer
-import com.github.pshirshov.izumi.logstage.api.AbstractLogger
-import com.github.pshirshov.izumi.logstage.api.Log.{CustomContext, Entry, Message}
+import izumi.functional.mono.SyncSafe
+import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.logstage.api.AbstractLogger
+import izumi.logstage.api.Log.{CustomContext, Entry, Message}
 import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 object LogstageCats {

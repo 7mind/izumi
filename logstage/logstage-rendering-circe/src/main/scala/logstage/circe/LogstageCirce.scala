@@ -1,7 +1,7 @@
 package logstage.circe
 
-import com.github.pshirshov.izumi.logstage.api.rendering.json
-import com.github.pshirshov.izumi.logstage.sink.ConsoleSink
+import izumi.logstage.api.rendering.json
+import izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
 

@@ -4,7 +4,7 @@ out: index.html
 Izumi Project
 =============
 
-Izumi (*jap. 泉水, spring*) is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
+Izumi *(jap. 泉水, spring)* is a set of independent libraries and frameworks allowing you to significantly increase productivity of your Scala development.
 
 including the following components:
 
@@ -17,87 +17,47 @@ including the following components:
 Dependencies
 ------------
 
-To use @ref[Izumi SBT Toolkit](sbt/00_sbt.md) add the following into `project/build.sbt`:
+To use, add the following into `project/build.sbt`,
 
 @@@vars
 ```scala
-val izumi_version = "$izumi.version$"
 
-// sbt toolkit
-addSbtPlugin("io.7mind.izumi" % "sbt-izumi" % izumi_version)
-
-// This is Izumi Bill of Materials, see below
-addSbtPlugin("io.7mind.izumi" % "sbt-izumi-deps" % izumi_version)
-```
-@@@
-
-
-You can use izumi's `BOM` definitions to import (from @ref[`sbt-izumi-deps` plugin](sbt/00_sbt.md#bills-of-materials)). BOM will insert the correct version automatically:
-
-@ref[**distage**](distage/00_distage.md) modules:
-
-```scala
 libraryDependencies ++= Seq(
-  Izumi.R.distage_core, // Core DIStage library
-  Izumi.T.distage_testkit,  // Testkit for ScalaTest
-  Izumi.R.distage_static, // Compile-time checks & reflection-less mode
-  Izumi.R.distage_config, // Typesafe Config support
-  Izumi.R.distage_plugins, // Classpath discovery support
-  Izumi.R.distage_roles,  // Roles & Application entrypoint framework
-)
-```
-
-@ref[**logstage**](logstage/00_logstage.md) modules:
-
-```scala
-libraryDependencies ++= Seq(
-  Izumi.R.logstage_core, // Core LogStage library
-  Izumi.R.logstage_config, // Configure LogStage with Typesafe Config
-  Izumi.R.logstage_di, // LogStage integration with DIStage
-  Izumi.R.logstage_adapter_slf4j, // Route Slf4J logs to LogStage
-  Izumi.R.logstage_sink_slf4j, // Route LogStage logs to Slf4J
-  Izumi.R.logstage_rendering_circe, // Write logs as JSON
-)
-```
-
-@ref[**IdeaLingua**](idealingua/00_idealingua.md) modules:
-
-```scala
-// Idealingua Runtime Dependencies (for use with the Idealingua compiler)
-libraryDependencies ++= Seq(
-  Izumi.R.idealingua_runtime_rpc_http4s
-)
-```
-
-Alternatively, you can use the following artifact names and versions:
-
-@@@vars
-```scala
-libraryDependencies ++= Seq(
+  // Core DIStage library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
+  // Testkit for ScalaTest
   "io.7mind.izumi" %% "distage-testkit" % "$izumi.version$" % Test,
-  "io.7mind.izumi" %% "distage-static" % "$izumi.version$",
+  // Typesafe Config support
   "io.7mind.izumi" %% "distage-config" % "$izumi.version$",
+  // Classpath discovery support
   "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$",
+  // Roles & Application entrypoint framework
   "io.7mind.izumi" %% "distage-roles" % "$izumi.version$",
-
-  "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
-  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
-  "io.7mind.izumi" %% "logstage-di" % "$izumi.version$",
-  "io.7mind.izumi" %% "logstage-adapter-slf4j " % "$izumi.version$",
-  "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
-  "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$",
   
+  // Core LogStage library
+  "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
+  // Configure LogStage with Typesafe Config
+  "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
+  // LogStage integration with DIStage
+  "io.7mind.izumi" %% "logstage-di" % "$izumi.version$",
+  // Write logs as JSON
+  "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$",
+  // Route Slf4J logs to LogStage
+  "io.7mind.izumi" %% "logstage-adapter-slf4j " % "$izumi.version$",
+  // Route LogStage logs to Slf4J
+  "io.7mind.izumi" %% "logstage-sink-slf4j " % "$izumi.version$",
+  
+  // Idealingua Runtime Dependencies (for use with the Idealingua compiler)
   "io.7mind.izumi" %% "idealingua-v1-runtime-rpc-http4s" % "$izumi.version$",
 )
 ```
 @@@
 
-You can find ScalaDoc API docs @scaladoc[here](izumi.index)
+@scaladoc[Scaladoc](izumi.index)
 
-You can find Izumi on github [here](https://github.com/7mind/izumi)
+Izumi on [GitHub](https://github.com/7mind/izumi)
 
-Latest SNAPSHOT documentation [here](https://izumi.7mind.io/latest/snapshot/doc/)
+Latest SNAPSHOT [documentation](https://izumi.7mind.io/latest/snapshot/doc/)
 
 @@@ index
 

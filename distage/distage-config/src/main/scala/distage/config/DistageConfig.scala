@@ -1,8 +1,8 @@
 package distage.config
 
-import com.github.pshirshov.izumi.distage.config
-import com.github.pshirshov.izumi.distage.config.model
-import com.github.pshirshov.izumi.distage.config.annotations
+import izumi.distage.config
+import izumi.distage.config.model
+import izumi.distage.config.annotations
 
 trait DistageConfig {
 

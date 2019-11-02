@@ -4,7 +4,7 @@ out: index.html
 LogStage
 ========
 
-LogStage is a zero-cost structural logging framework.
+LogStage is a zero-cost structural logging framework for Scala & Scala.js
 
 Key features:
 
@@ -58,6 +58,30 @@ Note:
 1. JSON formatter is type aware!
 2. Each JSON message contains `@class` field with holds a unique `event class` identifier.
    All events produced by the same source code line will share the same `event class`.
+   
+Syntax Reference
+------------
+
+1) Simple variable:
+   ```scala
+   logger.info(s"My message: $argument")
+   ```
+2) Chain:
+   ```scala
+   logger.info(s"My message: ${call.method} ${access.value}")
+   ```
+3) Named expression:
+   ```scala
+   logger.info(s"My message: ${Some.expression -> "argname"}")
+   ```
+4) Invisible name expression:
+   ```scala
+   logger.info(s"My message: ${Some.expression -> "argname" -> null}")
+   ```
+5) De-camelcased name:
+   ```scala
+   logger.info(${camelCaseName-> ' '})
+   ```
 
 Dependencies
 ------------
@@ -66,12 +90,18 @@ Dependencies
 // LogStage API, you need it to use the logger
 libraryDependencies += Izumi.R.logstage_core
 
-// optional
+// Optional
 libraryDependencies ++= Seq(
-  // json output
-    Izumi.R.logstage_rendering_circe
-  // router from Slf4j to LogStage
-  , Izumi.R.logstage_adapter-slf4j
+  // Json output
+  Izumi.R.logstage_rendering_circe,
+  // Router from Slf4j to LogStage
+  Izumi.R.logstage_adapter-slf4j,
+  // Configure LogStage with Typesafe Config
+  Izumi.R.logstage_config,
+  // LogStage integration with DIStage 
+  Izumi.R.logstage_di,
+  // Router from LogStage to Slf4J
+  Izumi.R.logstage_sink_slf4j,
 )
 ```
 
@@ -85,10 +115,16 @@ libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
 
 // optional
 libraryDependencies ++= Seq(
-  // json output
-    "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version
-  // router from Slf4j to LogStage
-  , "io.7mind.izumi" %% "logstage-adapter-slf4j" % izumi_version    
+  // Json output
+  "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version,
+  // Router from Slf4j to LogStage
+  "io.7mind.izumi" %% "logstage-adapter-slf4j" % izumi_version,    
+  // Configure LogStage with Typesafe Config
+  "io.7mind.izumi" %% "logstage-config" % izumi_version,
+  // LogStage integration with DIStage 
+  "io.7mind.izumi" %% "logstage-di" % izumi_version,
+  // Router from LogStage to Slf4J
+  "io.7mind.izumi" %% "logstage-sink-slf4j " % izumi_version,
 )
 ```
 @@@
@@ -115,25 +151,6 @@ logger.info("Hey")
 contextLogger.info(s"Hey")
 ```
 
-SLF4J Router
-------------
-
-When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
-
-Due to the global mutable nature of `slf4j` to configure slf4j logging you'll
-have to mutate a global singleton. To change its settings, replace its `LogRouter`
-with the same one you use elsewhere in your application. 
-
-```scala mdoc:reset
-import logstage._
-import com.github.pshirshov.izumi.logstage.api.routing.StaticLogRouter
-
-val myLogger = IzLogger()
-
-// configure SLF4j to use the same router that `myLogger` uses
-StaticLogRouter.instance.setup(myLogger.router)
-```
-
 Log algebras
 ------------
 
@@ -154,7 +171,7 @@ log.info(s"Hey! I'm logging with ${log}stage!").unsafeRunSync()
 I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_logstage.md:92) Hey! I'm logging with log=logstage.LogIO$$anon$1@72736f25stage!
 ```
 
-`LogstageZIO.withFiberId` provides an `LogBIO` instance that always logs the current fiber ID in addition to usual logging of thread ID:
+`LogstageZIO.withFiberId` provides a `LogBIO` instance that logs the current ZIO `FiberId` in addition to the thread id:
 
 Example: 
 
@@ -168,7 +185,7 @@ val logger = IzLogger()
 import logstage.LogstageZIO
 import zio.{IO, DefaultRuntime}
 
-val log = LogstageZIO.withFiberId(logger)
+val log: LogBIO[IO] = LogstageZIO.withFiberId(logger)
 
 val rts = new DefaultRuntime {}
 rts.unsafeRun {
@@ -186,25 +203,43 @@ I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_lo
 import cats.effect.IO
 import cats.implicits._
 import logstage._
+import io.circe.Printer
 import io.circe.syntax._
 
 def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
   val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.pretty(Printer.spaces2))
 
-  IO(???).handleErrorWith {
+  load(entity).handleErrorWith {
     case error =>
       ctxLog.error(s"Failed to import entity: $error.").void
-      // message includes `ID` and `entityAsJSON` fields
+      // JSON message includes `ID` and `entityAsJSON` fields
   }
 }
 ```
 
+SLF4J Router
+------------
+
+When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
+
+Due to the global mutable nature of `slf4j` to configure slf4j logging you'll
+have to mutate a global singleton. To change its settings, replace its `LogRouter`
+with the same one you use elsewhere in your application. 
+
+```scala mdoc:reset
+import logstage._
+import izumi.logstage.api.routing.StaticLogRouter
+
+val myLogger = IzLogger()
+
+// configure SLF4j to use the same router that `myLogger` uses
+StaticLogRouter.instance.setup(myLogger.router)
+```
 
 @@@ index
 
 * [Rendering policy](policy.md)
 * [Configuration](config.md)
 * [Logging contexts](custom_ctx.md)
-* [Syntax reference](syntax.md)
 
 @@@
