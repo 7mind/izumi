@@ -139,7 +139,7 @@ package com.example.petstore
 import distage._
 import distage.plugins._
 
-trait PetStorePlugin extends PluginDef {
+object PetStorePlugin extends PluginDef {
   make[PetRepository]
   make[PetStoreService]
   make[PetStoreController]
