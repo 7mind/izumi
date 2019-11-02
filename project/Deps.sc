@@ -125,9 +125,12 @@ object Izumi {
 
   import Deps._
 
+  // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.10")
   final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.1")
+  // not 2.13.1 because of scoverage https://github.com/scoverage/scalac-scoverage-plugin/pull/283 ; coverage runs on 2.13.0, while publish from 2.13.1
+  final val scala213coverage = ScalaVersion("2.13.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
