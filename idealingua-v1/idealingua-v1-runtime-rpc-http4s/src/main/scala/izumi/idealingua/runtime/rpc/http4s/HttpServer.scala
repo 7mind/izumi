@@ -177,7 +177,7 @@ class HttpServer[C <: Http4sContext]
     for {
       parsed <- F.fromEither(parse(message))
       unmarshalled <- F.fromEither(parsed.as[RpcPacket])
-      id <- F.syncThrowable(wsContextProvider.toId(context.initialContext, context.id, unmarshalled))
+      id <- wsContextProvider.toId(context.initialContext, context.id, unmarshalled)
       _ <- F.syncThrowable(context.updateId(id))
       response <- respond(context, unmarshalled).sandbox.catchAll {
         case BIOExit.Termination(exception, allExceptions, trace) =>

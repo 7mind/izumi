@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.BIOSyntax.FSummoner
-import com.github.pshirshov.izumi.functional.bio.BIOSyntax.FSummoner.FSummoner1
+import izumi.functional.bio.BIOSyntax.FSummoner
+import izumi.functional.bio.BIOSyntax.FSummoner.FSummoner1
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
@@ -29,35 +29,38 @@ trait BIOSyntax extends BIOImplicitPuns {
 object BIOSyntax {
 
   trait FSummoner extends FSummoner1 {
-    @inline implicit final def F0[F[+_, +_]](F: this.type)(implicit F0: BIOFunctor[F]): BIOFunctor[F] = F0
+    @inline implicit final def FBIOFunctor[F[+_, +_]](F: this.type)(implicit F0: BIOFunctor[F]): BIOFunctor[F] = F0
   }
   object FSummoner {
     trait FSummoner1 extends FSummoner2 {
-      @inline implicit final def FSummoner1[F[+ _, + _]](F: this.type)(implicit F0: BIOBifunctor[F]): BIOBifunctor[F] = F0
+      @inline implicit final def FBIOBifunctor[F[+ _, + _]](F: this.type)(implicit F0: BIOBifunctor[F]): BIOBifunctor[F] = F0
     }
     trait FSummoner2 extends FSummoner3 {
-      @inline implicit final def FSummoner2[F[+ _, + _]](F: this.type)(implicit F0: BIOApplicative[F]): BIOApplicative[F] = F0
+      @inline implicit final def FBIOApplicative[F[+ _, + _]](F: this.type)(implicit F0: BIOApplicative[F]): BIOApplicative[F] = F0
     }
     trait FSummoner3 extends FSummoner4 {
-      @inline implicit final def FSummoner3[F[+ _, + _]](F: this.type)(implicit F0: BIOGuarantee[F]): BIOGuarantee[F] = F0
+      @inline implicit final def FBIOGuarantee[F[+ _, + _]](F: this.type)(implicit F0: BIOGuarantee[F]): BIOGuarantee[F] = F0
     }
     trait FSummoner4 extends FSummoner5 {
-      @inline implicit final def FSummoner4[F[+ _, + _]](F: this.type)(implicit F0: BIOError[F]): BIOError[F] = F0
+      @inline implicit final def FBIOError[F[+ _, + _]](F: this.type)(implicit F0: BIOError[F]): BIOError[F] = F0
     }
     trait FSummoner5 extends FSummoner6 {
-      @inline implicit final def FSummoner5[F[+ _, + _]](F: this.type)(implicit F0: BIOMonad[F]): BIOMonad[F] = F0
+      @inline implicit final def FBIOMonad[F[+ _, + _]](F: this.type)(implicit F0: BIOMonad[F]): BIOMonad[F] = F0
     }
     trait FSummoner6 extends FSummoner7 {
-      @inline implicit final def FSummoner6[F[+ _, + _]](F: this.type)(implicit F0: BIOMonadError[F]): BIOMonadError[F] = F0
+      @inline implicit final def FBIOMonadError[F[+ _, + _]](F: this.type)(implicit F0: BIOMonadError[F]): BIOMonadError[F] = F0
     }
     trait FSummoner7 extends FSummoner8 {
-      @inline implicit final def FSummoner7[F[+ _, + _]](F: this.type)(implicit F0: BIOBracket[F]): BIOBracket[F] = F0
+      @inline implicit final def FBIOBracket[F[+ _, + _]](F: this.type)(implicit F0: BIOBracket[F]): BIOBracket[F] = F0
     }
     trait FSummoner8 extends FSummoner9 {
-      @inline implicit final def FSummoner8[F[+ _, + _]](F: this.type)(implicit F0: BIO[F]): BIO[F] = F0
+      @inline implicit final def FBIOPanic[F[+ _, + _]](F: this.type)(implicit F0: BIOPanic[F]): BIOPanic[F] = F0
     }
-    trait FSummoner9 {
-      @inline implicit final def FSummoner9[F[+ _, + _]](F: this.type)(implicit F0: BIOAsync[F]): BIOAsync[F] = F0
+    trait FSummoner9 extends FSummoner10 {
+      @inline implicit final def FBIO[F[+ _, + _]](F: this.type)(implicit F0: BIO[F]): BIO[F] = F0
+    }
+    trait FSummoner10 {
+      @inline implicit final def FBIOAsync[F[+ _, + _]](F: this.type)(implicit F0: BIOAsync[F]): BIOAsync[F] = F0
     }
   }
 

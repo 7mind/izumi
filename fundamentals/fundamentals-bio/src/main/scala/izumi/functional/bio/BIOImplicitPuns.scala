@@ -1,6 +1,6 @@
-package com.github.pshirshov.izumi.functional.bio
+package izumi.functional.bio
 
-import com.github.pshirshov.izumi.functional.bio.BIOImplicitPuns.BIOImplicitPuns1
+import izumi.functional.bio.BIOImplicitPuns.BIOImplicitPuns1
 
 import scala.language.implicitConversions
 

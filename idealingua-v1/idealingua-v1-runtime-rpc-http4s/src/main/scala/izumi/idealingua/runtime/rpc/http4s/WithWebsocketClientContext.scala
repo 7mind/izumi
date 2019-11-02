@@ -73,17 +73,17 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
 
   override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, (Option[ClientId], C#BiIO[Throwable, Option[RpcPacket]])] = {
     Quirks.discard(id, initial, packet)
-    BIO.pure((None, BIO.pure(None)))
+    F.pure((None, F.pure(None)))
   }
 
   override def toContext(id: WsClientId[C#ClientId], initial: C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, C#RequestContext] = {
     Quirks.discard(packet, id)
-    BIO.pure(initial)
+    F.pure(initial)
   }
 
   override def toId(initial:  C#RequestContext, currentId:  WsClientId[C#ClientId], packet:  RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
     Quirks.discard(initial, packet)
-    BIO.pure(None)
+    F.pure(None)
   }
 }
 

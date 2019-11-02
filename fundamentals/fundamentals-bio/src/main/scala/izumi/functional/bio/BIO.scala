@@ -1,6 +1,5 @@
 package izumi.functional.bio
 
-import cats.~>
 import izumi.functional.bio.impl.BIOZio
 
 import scala.util.Try
@@ -123,13 +122,12 @@ trait BIOPanic[F[+_, +_]] extends BIOBracket[F] {
   @inline final def orTerminate[A](r: F[Throwable, A]): F[Nothing, A] = catchAll(r)(terminate(_))
 }
 
-object BIOPanic {
-  @inline final def apply[F[+_, +_]: BIOPanic]: BIOPanic[F] = implicitly
-FIXME
-  implicit final class OrTerminateK[F[+_, +_]](private val F: BIOPanic[F]) extends AnyVal {
-    def orTerminateK: F[Throwable, ?] ~> F[Nothing, ?] = Lambda[F[Throwable, ?] ~> F[Nothing, ?]](F.orTerminate(_))
-  }
-}
+//object BIOPanic {
+//  @inline final def apply[F[+_, +_]: BIOPanic]: BIOPanic[F] = implicitly
+//  implicit final class OrTerminateK[F[+_, +_]](private val F: BIOPanic[F]) extends AnyVal {
+//    def orTerminateK: F[Throwable, ?] ~> F[Nothing, ?] = Lambda[F[Throwable, ?] ~> F[Nothing, ?]](F.orTerminate(_))
+//  }
+//}
 
 trait BIO[F[+_, +_]] extends BIOPanic[F] {
   type Or[+E, +A] = F[E, A]

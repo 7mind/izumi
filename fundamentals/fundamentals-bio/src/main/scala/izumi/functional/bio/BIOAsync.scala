@@ -6,7 +6,7 @@ import zio.clock.Clock
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-trait BIOAsync[F[+_, +_]] extends BIO[F] {
+trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOAsyncInstances {
   final type Canceler = F[Nothing, Unit]
 
   @inline def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
@@ -41,8 +41,7 @@ trait BIOAsync[F[+_, +_]] extends BIO[F] {
 
 }
 
-object BIOAsync {
-  def apply[F[+ _, + _] : BIOAsync]: BIOAsync[F] = implicitly
-
-  implicit def BIOAsyncZio[R](implicit clockService: Clock): BIOAsync[ZIO[R, +?, +?]] = new BIOAsyncZio[R](clockService)
+sealed trait BIOAsyncInstances
+object BIOAsyncInstances {
+  implicit def BIOAsyncZio[F](implicit clockService: Clock): BIOAsync[ZIO[F, +?, +?]] = new BIOAsyncZio[F](clockService)
 }
