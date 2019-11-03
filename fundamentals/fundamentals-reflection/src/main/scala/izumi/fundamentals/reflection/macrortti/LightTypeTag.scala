@@ -93,6 +93,14 @@ object LightTypeTag {
     }
   }
 
+  def parse[T](refString: String, basesString: String): LightTypeTag = {
+    lazy val shared = {
+      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes("ISO-8859-1")))
+    }
+
+    new ParsedLightTypeTag(refString, () => shared.bases, () => shared.idb)
+  }
+
   final class ParsedLightTypeTag(
                                   private val refString: String,
                                   bases: () => Map[AbstractReference, Set[AbstractReference]],
@@ -116,16 +124,7 @@ object LightTypeTag {
     final case class SubtypeDBs(bases: Map[AbstractReference, Set[AbstractReference]], idb: Map[NameReference, Set[NameReference]])
   }
 
-  // parse lazy ParsedLightTypeTag
-  def parse[T](refString: String, basesString: String): LightTypeTag = {
-    lazy val shared = {
-      subtypeDBsSerializer.unpickle(ByteBuffer.wrap(basesString.getBytes("ISO-8859-1")))
-    }
-
-    new ParsedLightTypeTag(refString, () => shared.bases, () => shared.idb)
-  }
-
-  val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
+  private[macrortti] val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
     import boopickle.Default._
 
     implicit lazy val appliedRefSerializer: Pickler[AppliedReference] = generatePickler[AppliedReference]
@@ -136,14 +135,12 @@ object LightTypeTag {
     implicit lazy val dbsSerializer: Pickler[SubtypeDBs] = generatePickler[SubtypeDBs]
 
     // false positive unused warnings
-    appliedRefSerializer.discard();
-    nameRefSerializer.discard();
+    appliedRefSerializer.discard()
+    nameRefSerializer.discard()
     abstractRefSerializer.discard()
 
     (refSerializer, dbsSerializer)
   }
-
-  private[izumi] object ReflectionLock
 
   private[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], other: Map[T, Set[T]]): Map[T, Set[T]] = {
     import izumi.fundamentals.collections.IzCollections._
@@ -151,5 +148,7 @@ object LightTypeTag {
     val both = self.toSeq ++ other.toSeq
     both.toMultimap.mapValues(_.flatten).toMap
   }
+
+  private[izumi] object ReflectionLock
 
 }

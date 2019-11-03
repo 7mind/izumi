@@ -46,10 +46,9 @@ trait Tags extends UniverseGeneric { self =>
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
-
-    override def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
-
     def tpe: TypeTag[T]
+
+    override final def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
   }
 
   object Tag extends LowPriorityTagInstances {
@@ -86,6 +85,7 @@ trait Tags extends UniverseGeneric { self =>
         override def tag: LightTypeTag = FLTT
       }
     }
+
     /**
       * Resulting [Tag] will not have the ability to migrate into a different universe
       * (which is not usually a problem, but still worth naming it 'unsafe')
@@ -138,16 +138,9 @@ trait Tags extends UniverseGeneric { self =>
     /** For construction from [[TagLambdaMacro]] */
     type HKTagRef[T] = HKTag[T]
 
-    // FIXME: report scalac bug - `Nothing` type is lost when two implicits for it are summoned as in
-    //    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
-    //  [info] /Users/kai/src/izumi-r2/distage/distage-core/src/test/scala/izumi/distage/impl/TagTest.scala:55:17: universe.this.RuntimeDIUniverse.Tag.tagFromTypeTag is not a valid implicit value for izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag[Nothing] because:
-    //  [info] hasMatchingSymbol reported error: type mismatch;
-    //  [info]  found   : izumi.fundamentals.reflection.macrortti.LTag.Weak[Nothing]
-    //  [info]  required: izumi.fundamentals.reflection.macrortti.LWeakTag[T]
-    //  [info]     (which expands to)  izumi.fundamentals.reflection.macrortti.LTag.Weak[T]
-    //  [info] Note: Nothing <: T, but class Weak is invariant in type T.
-    //  [info] You may wish to define T as +T instead. (SLS 4.5)
-    //  [info]       assert(Tag[Nothing].tpe == safe[Nothing])
+    // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
+    //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
+    // https://github.com/scala/bug/issues/11715
     implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
   }
 
@@ -178,12 +171,11 @@ trait Tags extends UniverseGeneric { self =>
     *
     */
   trait HKTag[T] extends TagInterface[T, TypeTag] {
-    def tag: LightTypeTag
-
-    override def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
-
     /** Internal `TypeTag` holding the `typeConstructor` of type `T` */
     def tpe: TypeTag[_]
+    def tag: LightTypeTag
+
+    override final def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
   }
 
   object HKTag extends LowPriorityHKTagInstances {

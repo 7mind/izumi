@@ -4029,7 +4029,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
     siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc",
     paradoxProperties ++= Map(
-                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
+                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
                 "izumi.version" -> version.value,
               ),

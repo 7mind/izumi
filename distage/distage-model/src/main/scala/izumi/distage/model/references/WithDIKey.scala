@@ -12,11 +12,7 @@ trait WithDIKey {
     def tpe: SafeType
   }
 
-
-
   object DIKey {
-    // in order to make idea links working we need to put a dot before Position occurence and avoid using #
-
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
     sealed trait BasicKey extends DIKey {

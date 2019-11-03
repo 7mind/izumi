@@ -168,8 +168,8 @@ class DSLTest extends WordSpec {
       }
 
       assert(definition.bindings == Set(
-        Bindings.binding[TestClass].withTags(Set("tag1", "tag2"))
-        , Bindings.binding[TestDependency0].withTags(Set("tag1", "tag2", "sniv")))
+        Bindings.binding[TestClass].addTags(Set("tag1", "tag2"))
+        , Bindings.binding[TestDependency0].addTags(Set("tag1", "tag2", "sniv")))
       )
     }
 
