@@ -19,6 +19,10 @@ import izumi.fundamentals.platform
   *
   * Set system property `-Dizumi.rtti.cache.runtime=false` to disable caching for runtime creation of LightTypeTags.
   * Caching is enabled by default for runtime light type tag creation.
+  *
+  * {{{
+  * sbt -Dizumi.rtti.cache.runtime=false
+  * }}}
   */
 object DebugProperties extends platform.logging.DebugProperties {
   final val `izumi.debug.macro.rtti` = "izumi.debug.macro.rtti"

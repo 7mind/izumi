@@ -20,7 +20,7 @@ object LightTypeTagImpl {
   private lazy val globalCache = new ConcurrentHashMap[Any, AbstractReference]
 
   /** caching is enabled by default for runtime light type tag creation */
-  private[this] def runtimeCacheEnabled(): Boolean = {
+  private[this] lazy val runtimeCacheEnabled: Boolean = {
     System.getProperty(DebugProperties.`izumi.rtti.cache.runtime`).asBoolean()
       .getOrElse(true)
   }
@@ -29,7 +29,7 @@ object LightTypeTagImpl {
   def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = {
     ReflectionLock.synchronized {
       val logger = TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.rtti`)
-      new LightTypeTagImpl[u.type](u, withCache = runtimeCacheEnabled(), logger).makeFullTagImpl(typeTag)
+      new LightTypeTagImpl[u.type](u, withCache = runtimeCacheEnabled, logger).makeFullTagImpl(typeTag)
     }
   }
 
