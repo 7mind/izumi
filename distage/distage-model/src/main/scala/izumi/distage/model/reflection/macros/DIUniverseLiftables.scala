@@ -46,40 +46,12 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
       q"""{ new $runtimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
   }
 
-  implicit val liftableProxyElementKey: Liftable[DIKey.ProxyElementKey] = {
-    case DIKey.ProxyElementKey(proxied, symbol) => q"""
-    { new $runtimeDIUniverse.DIKey.ProxyElementKey(${liftableDIKey(proxied)}, $symbol) }
-      """
-  }
-
-  implicit val liftableSetElementKey: Liftable[DIKey.SetElementKey] = {
-    case DIKey.SetElementKey(set, ref) => q"""
-    { new $runtimeDIUniverse.DIKey.SetElementKey(${liftableDIKey(set)}, ${liftableDIKey(ref)}) }
-      """
-  }
-
   implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
     Liftable[DIKey.BasicKey] {
-      d =>
-        (d: @unchecked) match {
-          case t: DIKey.TypeKey => q"$t"
-          case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
-        }
+      case t: DIKey.TypeKey => q"$t"
+      case i: DIKey.IdKey[_] => q"${liftableIdKey(i)}"
     }
   }
-
-  implicit val liftableDIKey: Liftable[DIKey] = {
-    Liftable[DIKey] {
-      d =>
-        (d: @unchecked) match {
-          case t: DIKey.TypeKey => q"$t"
-          case t: DIKey.IdKey[_] => q"${t: DIKey.BasicKey}"
-          case p: DIKey.ProxyElementKey => q"$p"
-          case s: DIKey.SetElementKey => q"$s"
-        }
-    }
-  }
-
 
   // ParameterContext
 

@@ -54,8 +54,8 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
       case DIKey.ProxyElementKey(proxied, _) =>
         s"{proxy.${render(proxied)}}"
 
-      case DIKey.SetElementKey(set, reference) =>
-        s"{set.${render(set)}/${render(reference)}}"
+      case DIKey.SetElementKey(set, reference, disambiguator) =>
+        s"{set.${render(set)}/${render(reference)}#${disambiguator.fold("0")(_.hashCode().toString)}"
     }
   }
 
