@@ -639,7 +639,7 @@ object Izumi {
           "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
           SettingDef.RawSettingDef(
             """paradoxProperties ++= Map(
-            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
+            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "izumi.version" -> version.value,
           )"""),

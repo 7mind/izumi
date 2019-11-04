@@ -134,10 +134,10 @@ object AbstractBindingDefDSL {
 
   final class SetRef
   (
-    initial: EmptySetBinding[DIKey.TypeKey]
-    , setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty
-    , elems: mutable.Queue[SetElementRef] = mutable.Queue.empty
-    , multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty
+    initial: EmptySetBinding[DIKey.TypeKey],
+    setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty,
+    elems: mutable.Queue[SetElementRef] = mutable.Queue.empty,
+    multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty,
   ) extends BindingRef {
     override def interpret: collection.Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
@@ -186,8 +186,6 @@ object AbstractBindingDefDSL {
       }
     }
 
-
-
     def append(op: SetElementInstruction): SetElementRef = {
       ops += op
       this
@@ -209,7 +207,6 @@ object AbstractBindingDefDSL {
             case MultiSetElementInstruction.MultiAddTags(tags) => b.addTags(tags)
           }
       }
-
 
       Seq(bind, refBind)
     }

@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.console.TrivialLogger
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.ReflectionUtil._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.Broken
@@ -16,31 +17,33 @@ import scala.collection.mutable
 import scala.reflect.api.Universe
 
 object LightTypeTagImpl {
-  lazy val cache = new ConcurrentHashMap[Any, Any]()
+  private lazy val globalCache = new ConcurrentHashMap[Any, AbstractReference]
 
+  /** caching is enabled by default for runtime light type tag creation */
+  private[this] def runtimeCacheEnabled(): Boolean = {
+    System.getProperty(DebugProperties.`izumi.rtti.cache.runtime`).asBoolean()
+      .getOrElse(true)
+  }
+
+  /** Create a LightTypeTag at runtime for a reflected type */
   def makeLightTypeTag(u: Universe)(typeTag: u.Type): LightTypeTag = {
     ReflectionLock.synchronized {
       val logger = TrivialLogger.make[this.type](DebugProperties.`izumi.debug.macro.rtti`)
-      new LightTypeTagImpl[u.type](u, withCache = false, logger).makeFullTagImpl(typeTag)
+      new LightTypeTagImpl[u.type](u, withCache = runtimeCacheEnabled(), logger).makeFullTagImpl(typeTag)
     }
   }
 
   sealed trait Broken[T, S] {
     def toSet: Set[T]
   }
-
   object Broken {
-
     final case class Single[T, S](t: T) extends Broken[T, S] {
       override def toSet: Set[T] = Set(t)
     }
-
     final case class Compound[T, S](tpes: Set[T], decls: Set[S]) extends Broken[T, S] {
       override def toSet: Set[T] = tpes
     }
-
   }
-
 }
 
 final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolean, logger: TrivialLogger) {
@@ -304,12 +307,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     if (withCache) {
       val st = new StableType(tpe)
       // we may accidentally recompute twice in concurrent environment but that's fine
-      Option(LightTypeTagImpl.cache.get(st)) match {
+      Option(LightTypeTagImpl.globalCache.get(st)) match {
         case Some(value) =>
-          value.asInstanceOf[AbstractReference]
+          value
         case None =>
           val ref = makeRef(tpe, Map.empty)
-          LightTypeTagImpl.cache.put(st, ref)
+          LightTypeTagImpl.globalCache.put(st, ref)
           ref
       }
     } else {

@@ -1,44 +1,36 @@
 package izumi.fundamentals.platform.console
 
 import izumi.fundamentals.platform.console.TrivialLogger.{Config, Level}
+import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.fundamentals.platform.strings.IzString._
 
-import scala.reflect.ClassTag
-import izumi.fundamentals.platform.exceptions.IzThrowable._
-
 import scala.collection.mutable
+import scala.reflect.{ClassTag, classTag}
 
 trait TrivialLogger {
   def log(s: => String): Unit
-
   def log(s: => String, e: => Throwable): Unit
 
   def err(s: => String): Unit
-
   def err(s: => String, e: => Throwable): Unit
 
   def sub(): TrivialLogger = sub(1)
-
   def sub(delta: Int): TrivialLogger
 }
 
 trait AbstractStringTrivialSink {
   def flush(value: => String): Unit
-
   def flushError(value: => String): Unit
 }
 
 object AbstractStringTrivialSink {
-
   object Console extends AbstractStringTrivialSink {
     override def flush(value: => String): Unit = System.out.println(value)
-
     override def flushError(value: => String): Unit = System.err.println(value)
   }
-
 }
 
-class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErrors: Boolean, loggerLevel: Int) extends TrivialLogger {
+final class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErrors: Boolean, loggerLevel: Int) extends TrivialLogger {
   override def log(s: => String): Unit = {
     flush(Level.Info, format(s))
   }
@@ -59,13 +51,12 @@ class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErr
     new TrivialLoggerImpl(config, id, logMessages, logErrors, loggerLevel + delta)
   }
 
-
   @inline private[this] def format(s: => String): String = {
-    s"$s"
+    s"$id: $s"
   }
 
-  @inline private[this] def formatError(s: => String, e: => Throwable) = {
-    s"$s\n${e.stackTrace}"
+  @inline private[this] def formatError(s: => String, e: => Throwable): String = {
+    s"$id: $s\n${e.stackTrace}"
   }
 
   @inline private[this] def flush(level: Level, s: => String): Unit = {
@@ -83,38 +74,33 @@ class TrivialLoggerImpl(config: Config, id: String, logMessages: Boolean, logErr
 }
 
 object TrivialLogger {
-
   sealed trait Level
-
   object Level {
-
     case object Info extends Level
-
     case object Error extends Level
-
   }
 
-  case class Config(
-                     sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
-                     forceLog: Boolean = false
-                   )
+  final case class Config(
+                           sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
+                           forceLog: Boolean = false,
+                         )
 
-  def make[T: ClassTag](id: String, config: Config = Config()): TrivialLogger = {
-    val logMessages: Boolean = checkLog(id, config, default = false)
-    val logErrors: Boolean = checkLog(id, config, default = true)
-    new TrivialLoggerImpl(config, id, logMessages, logErrors, 0)
+  def make[T: ClassTag](sysProperty: String, config: Config = Config()): TrivialLogger = {
+    val logMessages: Boolean = checkLog(sysProperty, config, default = false)
+    val logErrors: Boolean = checkLog(sysProperty, config, default = true)
+    new TrivialLoggerImpl(config, classTag[T].runtimeClass.getSimpleName, logMessages, logErrors, loggerLevel = 0)
   }
 
-  private val enabled = new mutable.HashMap[String, Boolean]()
+  private[this] val enabled = new mutable.HashMap[String, Boolean]()
 
-  private def checkLog(id: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
-    config.forceLog || enabled.getOrElseUpdate(id, {
-      val parts = id.split('.')
+  private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
+    config.forceLog || enabled.getOrElseUpdate(sysProperty, {
+      val parts = sysProperty.split('.')
       val candidates = parts.tail.scanLeft(parts.head) {
         case (acc, chunk) =>
           acc + "." + chunk
       }
-      candidates.exists(c => System.getProperty(c).asBoolean().getOrElse(default))
+      candidates.exists(System.getProperty(_).asBoolean().getOrElse(default))
     })
   }
 }
