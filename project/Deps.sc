@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.39`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.40`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -212,7 +212,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        SettingDef.RawSettingDef("""scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString)"""),
         "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
       )
 
@@ -696,10 +695,10 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    settings = Projects.root.settings,
+    topLevelSettings = Projects.root.settings,
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
-    sharedRootSettings = Projects.root.sharedRootSettings,
+    rootSettings = Projects.root.sharedRootSettings,
     imports = Seq.empty,
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),
