@@ -28,19 +28,22 @@ object Bindings {
   def setElement[T: Tag, I <: T: Tag](implicit pos: CodePositionMaterializer): SetElementBinding = {
     val setkey = DIKey.get[Set[T]]
     val implKey = DIKey.get[I]
-    SetElementBinding(DIKey.SetElementKey(setkey, implKey), ImplDef.TypeImpl(SafeType.get[I]), Set.empty, pos.get.position)
+    val implDef = ImplDef.TypeImpl(SafeType.get[I])
+    SetElementBinding(DIKey.SetElementKey(setkey, implKey, Some(implDef)), implDef, Set.empty, pos.get.position)
   }
 
   def setElement[T: Tag, I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): SetElementBinding = {
     val setkey = DIKey.get[Set[T]]
-    val implKey = DIKey.get[I].named(DIKey.SetLocId(pos.get.toString, instance.hashCode()))
-    SetElementBinding(DIKey.SetElementKey(setkey, implKey), ImplDef.InstanceImpl(SafeType.get[I], instance), Set.empty, pos.get.position)
+    val implKey = DIKey.get[I]
+    val implDef = ImplDef.InstanceImpl(SafeType.get[I], instance)
+    SetElementBinding(DIKey.SetElementKey(setkey, implKey, Some(implDef)), implDef, Set.empty, pos.get.position)
   }
 
   def setElementProvider[T: Tag](function: ProviderMagnet[T])(implicit pos: CodePositionMaterializer): SetElementBinding = {
     val setkey = DIKey.get[Set[T]]
-    val implKey = DIKey.TypeKey(function.get.ret).named(DIKey.SetLocId(pos.get.toString, function.hashCode()))
-    SetElementBinding(DIKey.SetElementKey(setkey, implKey), ImplDef.ProviderImpl(function.get.ret, function.get), Set.empty, pos.get.position)
+    val implKey = DIKey.TypeKey(function.get.ret)
+    val implDef = ImplDef.ProviderImpl(function.get.ret, function.get)
+    SetElementBinding(DIKey.SetElementKey(setkey, implKey, Some(implDef)), implDef, Set.empty, pos.get.position)
   }
 
   def todo[K <: DIKey](key: K)(implicit pos: CodePositionMaterializer): SingletonBinding[K] = {

@@ -5,14 +5,10 @@ import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.provisioning.ProvisionOperationVerifier
 
 import scala.collection.immutable.ListSet
 
-class SetStrategyDefaultImpl
-(
-  verifier: ProvisionOperationVerifier,
-) extends SetStrategy {
+class SetStrategyDefaultImpl extends SetStrategy {
   def makeSet(context: ProvisioningKeyProvider, op: CreateSet): Seq[NewObjectOp.NewInstance] = {
     // target is guaranteed to be a Set
     val scalaCollectionSetType = SafeType.get[collection.Set[_]]

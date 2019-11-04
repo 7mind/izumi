@@ -2,7 +2,6 @@ package izumi.distage.model.definition
 
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -59,32 +58,7 @@ object Binding {
   }
 
   final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
-    override lazy val group: GroupingKey = {
-      def fixSetKey(k: DIKey.SetElementKey): DIKey.SetElementKey = {
-        k.reference match {
-          case id: DIKey.IdKey[_] =>
-            DIKey.SetElementKey(key.set, fixKey(id))
-          case _ =>
-            k
-        }
-      }
-      def fixKey(k: DIKey): reflection.universe.RuntimeDIUniverse.DIKey = {
-        k match {
-          case id: DIKey.IdKey[_] =>
-            id.id match {
-              case _: DIKey.SetLocId =>
-                DIKey.TypeKey(id.tpe)
-              case _ =>
-                k
-            }
-          case _ =>
-            k
-        }
-      }
-
-      val gk = fixSetKey(key)
-      GroupingKey.KeyImpl(gk, implementation)
-    }
+    override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     protected[this] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)

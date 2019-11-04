@@ -1,5 +1,6 @@
 package izumi.distage.planning
 
+import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
@@ -96,8 +97,8 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
               newMembers += op.target
               Seq(op)
             } else {
-              val newKey = DIKey.SetElementKey(setKey, op.target)
               val provider = ProviderMagnet(wrap).get
+              val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
               val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.associations), op.origin)
               newMembers += newKey
               Seq(op, newOp)
@@ -108,7 +109,7 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
         }
     }
 
-    val newSetKeys: scala.collection.immutable.Set[DIKey] = ListSet.newBuilder.++=(newMembers).result()
+    val newSetKeys = ListSet.newBuilder.++=(newMembers).result()
     val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
 
     plan.copy(steps = newSteps :+ newSetOp)

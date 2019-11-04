@@ -88,11 +88,11 @@ class ResourceRewriter(
               val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[TGT]))
               ReplaceImpl(ImplDef.ProviderImpl(resourceType, newImpl))
 
-            case ImplDef.TypeImpl(_) =>
+            case implDef@ImplDef.TypeImpl(_) =>
               val implTypeKey = DIKey.TypeKey(implType)
               val newKey = DIKey.IdKey(
                 tpe = implType,
-                id = ResId(if (set) DIKey.SetElementKey(key, implTypeKey) else implTypeKey)
+                id = ResId(if (set) DIKey.SetElementKey(key, implTypeKey, Some(implDef)) else implTypeKey)
               )
 
               val parameter = {

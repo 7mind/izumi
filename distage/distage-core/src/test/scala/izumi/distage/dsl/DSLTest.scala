@@ -3,7 +3,8 @@ package izumi.distage.dsl
 import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
-import izumi.distage.model.definition.{BindingTag, Bindings, Module}
+import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
 import org.scalatest.WordSpec
 
 class DSLTest extends WordSpec {
@@ -199,7 +200,7 @@ class DSLTest extends WordSpec {
       assert(definition.bindings.count(_.tags.strings == Set("B")) == 1)
     }
 
-    "progression: multiset bindings should support tag merge" in {
+    "Multiset bindings support tag merge" in {
       import SetCase1._
 
 //      val set1 = Set(new SetImpl4, new SetImpl4)
@@ -216,6 +217,21 @@ class DSLTest extends WordSpec {
 
       assert(definition.bindings.size == 3)
       assert(definition.bindings.count(_.tags.strings == Set("A", "B")) == 2)
+    }
+
+    "Set bindings with the same source position but different implementations do not conflict" in {
+      val definition: ModuleDef = new ModuleDef {
+        def int(int: Int) = many[Int].addValue(int)
+
+        int(1)
+        int(2)
+        int(3)
+      }
+
+      assert(definition.bindings.size == 4)
+      assert(definition.bindings.collect {
+        case SetElementBinding(_, ImplDef.InstanceImpl(_, n: Int), _, _) => n
+      } == Set(1, 2, 3))
     }
 
     "Tags in different modules are merged" in {
