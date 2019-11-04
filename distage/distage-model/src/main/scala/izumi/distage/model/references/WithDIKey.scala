@@ -49,11 +49,11 @@ trait WithDIKey {
       override def toString: String = s"{set.$set/${reference.toString}}"
     }
 
-    case class SetLocId(name: String)
+    case class SetLocId(name: String, hc: Int)
 
     object SetLocId {
       implicit object SetLocIdContract extends IdContract[SetLocId] {
-        override def repr(v: SetLocId): String = "set/"+v.name
+        override def repr(v: SetLocId): String = s"set/${v.name}#${v.hc}"
       }
     }
 

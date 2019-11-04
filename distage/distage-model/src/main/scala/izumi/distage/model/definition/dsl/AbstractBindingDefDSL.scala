@@ -175,7 +175,7 @@ object AbstractBindingDefDSL {
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
       val implKey = DIKey.TypeKey(implDef.implType)
-      val refkey = implKey.named(DIKey.SetLocId(pos.toString))
+      val refkey = implKey.named(DIKey.SetLocId(pos.toString, implDef.hashCode()))
       val elKey = DIKey.SetElementKey(setKey, refkey)
 
       ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
