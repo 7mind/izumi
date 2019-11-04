@@ -17,7 +17,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   final private val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.rtti`)
 
-  protected final def cacheEnabled: Boolean = c.settings.contains(DebugProperties.`izumi.rtti.cache.compile`)
+  protected final def cacheEnabled: Boolean = !c.settings.contains(s"${DebugProperties.`izumi.rtti.cache.compile`}=false")
   protected final val impl = new LightTypeTagImpl[c.universe.type](c.universe, withCache = cacheEnabled, logger)
 
   @inline final def makeWeakHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.WeakHK[ArgStruct]] = {

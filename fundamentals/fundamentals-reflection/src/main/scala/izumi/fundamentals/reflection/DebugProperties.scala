@@ -9,12 +9,11 @@ import izumi.fundamentals.platform
   * sbt -Dizumi.debug.macro.rtti=true compile
   * }}}
   *
-  * Add compiler option `-Xmacro-settings:izumi.rtti.cache.compile` to enable compile-time caching of computed
-  * LightTypeTags. The option is disabled by default since there appears to be little noticeable compile-time
-  * performance gain from caching, but results may vary.
+  * Add compiler option `-Xmacro-settings:izumi.rtti.cache.compile=false` to disable compile-time caching of computed
+  * LightTypeTags. Caching is enabled by default for compile-time light type tag creation.
   *
   * {{{
-  * scalacOptions += "-Xmacro-settings:izumi.rtti.cache.compile"
+  * scalacOptions += "-Xmacro-settings:izumi.rtti.cache.compile=false"
   * }}}
   *
   * Set system property `-Dizumi.rtti.cache.runtime=false` to disable caching for runtime creation of LightTypeTags.
