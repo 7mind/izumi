@@ -381,7 +381,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonads = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
@@ -389,7 +389,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = cats_all.map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Compile.all),
         depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
@@ -422,13 +422,13 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.roles,
-        libs = allMonads,
+        libs = allMonadsOptional,
         depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonads,
+        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsOptional,
         depends =
           Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),

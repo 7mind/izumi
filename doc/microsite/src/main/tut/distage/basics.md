@@ -436,14 +436,13 @@ You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` metho
 
 ### Resource Bindings & Lifecycle
 
-Lifecycle is supported via Resource bindings.
-You can inject any [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html) into the object graph.
-You can also inject @scaladoc[DIResource](izumi.distage.model.definition.DIResource) classes.
-Global resources will be deallocated when the app or the test ends.
+You can specify objects' lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
+[zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.DIResource](izumi.distage.model.definition.DIResource)
+values that specify the allocation and finalization actions for an object.
+Resources will be deallocated when the scope of `.use` method on the result object graph ends, this will generally coincide 
+with the end of application lifecylce or a test suite.
 
-Note that lifecycle control via `DIResource` is available in non-FP applications as well via inheritance from `DIResource.Simple` and `DIResource.Mutable`.
-
-Example with `cats` Resource:
+Example with `cats.effect.Resource`:
 
 ```scala mdoc:reset
 import distage._
@@ -493,13 +492,18 @@ val HACK_OVERRIDE_module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc:override
-Injector().produceF[IO](HACK_OVERRIDE_module, GCMode.NoGC).use {
+// Injector returns a pure DIResource value that describes the creation
+// and finalization of the object graph.
+// One value can be reused to recreate the same graph multiple times.
+
+val objectGraphResource = Injector().produceF[IO](HACK_OVERRIDE_module, GCMode.NoGC)
+objectGraphResource.use {
   objects =>
     objects.get[MyApp].run
 }.unsafeRunSync()
 ```
 
-Example with `DIResource.Simple`:
+`DIResource` lifecycle is available without an effect type too, via `DIResource.Simple` and `DIResource.Mutable`:
 
 ```scala mdoc:reset
 import distage._
@@ -540,7 +544,8 @@ val closedInit = Injector().produce(HACK_OVERRIDE_module, GCMode.NoGC).use {
 println(closedInit.initialized)
 ```
 
-`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap` methods available. You can convert a `DIResource` into a `cats.effect.Resource` via `.toCats` method.
+`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap` methods available.
+You can convert a `DIResource` into a `cats.effect.Resource` via `.toCats` method.
 
 You need to use resource-aware `Injector.produce`/`Injector.produceF` methods to control lifecycle of the object graph.
 

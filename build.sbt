@@ -868,6 +868,7 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
     )
   )
