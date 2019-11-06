@@ -1,31 +1,40 @@
 package logstage
 
 import izumi.functional.mono.SyncSafe
+import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log.{Entry, LoggerId}
+import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
 
 import scala.language.implicitConversions
 
-trait UnsafeLogIO[F[_]] {
+trait UnsafeLogIO[F[_]] extends LogCreateIO[F] {
   /** Log irrespective of the log level threshold */
   def unsafeLog(entry: Entry): F[Unit]
 
-  /** Check if `loggerId` is not blacklisted and `logLevel` is above the configured threshold */
+  /** Check if `loggerId` is not blacklisted and `logLevel` is at or above the configured threshold */
   def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean]
+
+  /** Check if this class/package is allowed to log messages at or above `logLevel` */
+  def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean]
 }
 
 object UnsafeLogIO {
   def apply[F[_]: UnsafeLogIO]: UnsafeLogIO[F] = implicitly
 
-  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): UnsafeLogIO[F] = {
-    new UnsafeLogIO[F] {
-      override def unsafeLog(entry: Entry): F[Unit] = {
-        SyncSafe[F].syncSafe(logger.unsafeLog(entry))
-      }
+  def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F])
 
-      override def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean] = {
-        SyncSafe[F].syncSafe(logger.acceptable(loggerId, logLevel))
-      }
+  class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
+    override def unsafeLog(entry: Entry): F[Unit] = {
+      F.syncSafe(logger.unsafeLog(entry))
+    }
+
+    override def acceptable(loggerId: LoggerId, logLevel: Level): F[Boolean] = {
+      F.syncSafe(logger.acceptable(loggerId, logLevel))
+    }
+
+    override def acceptable(logLevel: Level)(implicit pos: CodePositionMaterializer): F[Boolean] = {
+      F.syncSafe(logger.acceptable(logLevel))
     }
   }
 
