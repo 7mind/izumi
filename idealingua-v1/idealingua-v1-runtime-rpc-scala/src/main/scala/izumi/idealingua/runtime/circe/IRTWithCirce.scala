@@ -1,24 +1,46 @@
 package izumi.idealingua.runtime.circe
 
-import io.circe.{Decoder, Encoder, derivation}
+import io.circe.{Codec, Decoder, Encoder, derivation}
 
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 /**
- * Provides circe codecs for case classes and sealed traits
- * {{{
- *   final case class Abc(a: String, b: String, c: String)
- *
- *   object Abc extends IRTWithCirce[Abc]
- * }}}
- */
-abstract class IRTWithCirce[A](implicit encoder: DerivationDerivedEncoder[A], decoder: DerivationDerivedDecoder[A]) {
-  // workaround https://github.com/milessabin/shapeless/issues/837
-  def this(proxy: IRTWithCirce[A]) = this()(DerivationDerivedEncoder(proxy.enc), DerivationDerivedDecoder(proxy.dec))
+  * Provides circe codecs for case classes and sealed traits
+  *
+  * {{{
+  *   final case class Abc(a: String, b: String, c: String)
+  *
+  *   object Abc extends IRTWithCirce[Abc]
+  * }}}
+  *
+  * To derive codecs for a sealed trait with branches inside its
+  * own companion object, use a proxy object. This works around
+  * a scala limitation: https://github.com/milessabin/shapeless/issues/837
+  *
+  * {{{
+  *   sealed trait Abc
+  *
+  *   private abcCodecs extends IRTWithCirce[Abc]
+  *
+  *   object Abc extends IRTWithCirce(abcCodecs) {
+  *     final case class A()
+  *     object A extends IRTWithCirce[A]
+  *
+  *     final case class B()
+  *     object B extends IRTWithCirce[B]
+  *     final case class C()
+  *
+  *     object C extends IRTWithCirce[C]
+  *   }
+  * }}}
+  *
+  */
+abstract class IRTWithCirce[A]()(implicit derivedCodec: DerivationDerivedCodec[A]) {
+  // workaround for https://github.com/milessabin/shapeless/issues/837
+  def this(proxy: IRTWithCirce[A]) = this()(DerivationDerivedCodec(proxy.codec))
 
-  implicit val enc: Encoder.AsObject[A] = encoder.value
-  implicit val dec: Decoder[A] = decoder.value
+  implicit val codec: Codec.AsObject[A] = derivedCodec.value
 }
 
 // TODO: merge upstream, also with @JsonCodec
@@ -34,14 +56,24 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
     c.Expr[DerivationDerivedDecoder[A]] {
       q"{ ${symbolOf[DerivationDerivedDecoder.type].asClass.module}.apply(${materializeDecoder[A]}) }"
     }
+
+  def materializeCodecImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedCodec[A]] =
+    c.Expr[DerivationDerivedCodec[A]] {
+      q"{ ${symbolOf[DerivationDerivedCodec.type].asClass.module}.apply(${materializeCodec[A]}) }"
+    }
 }
 
-final case class DerivationDerivedEncoder[A](value: Encoder.AsObject[A])
+final case class DerivationDerivedEncoder[A](value: Encoder.AsObject[A]) extends AnyVal
 object DerivationDerivedEncoder {
   implicit def materialize[A]: DerivationDerivedEncoder[A] = macro MaterializeDerivationMacros.materializeEncoderImpl[A]
 }
 
-final case class DerivationDerivedDecoder[A](value: Decoder[A])
+final case class DerivationDerivedDecoder[A](value: Decoder[A]) extends AnyVal
 object DerivationDerivedDecoder {
   implicit def materialize[A]: DerivationDerivedDecoder[A] = macro MaterializeDerivationMacros.materializeDecoderImpl[A]
+}
+
+final case class DerivationDerivedCodec[A](value: Codec.AsObject[A]) extends AnyVal
+object DerivationDerivedCodec {
+  implicit def materialize[A]: DerivationDerivedCodec[A] = macro MaterializeDerivationMacros.materializeCodecImpl[A]
 }
