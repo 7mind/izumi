@@ -32,7 +32,7 @@ object WildcardPrefixTree {
     val (currentValues, subValues) = pairs.partition(_._1.isEmpty)
 
     val next = subValues
-      .map {
+      .collect {
         case (k :: tail, v) =>
           (k, (tail, v))
       }
