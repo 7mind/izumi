@@ -5,12 +5,12 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log._
 import izumi.logstage.macros.LogIOMacros._
-import logstage.LogCreateIO.LogCreateIOSyncSafeInstance
+import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 
-trait LogIO[F[_]] extends LogCreateIO[F] {
+trait LogIO[F[_]] extends UnsafeLogIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
 
@@ -34,7 +34,7 @@ object LogIO {
   def apply[F[_]: LogIO]: LogIO[F] = implicitly
 
   def fromLogger[F[_]: SyncSafe](logger: AbstractLogger): LogIO[F] = {
-    new LogCreateIOSyncSafeInstance[F](SyncSafe[F]) with LogIO[F] {
+    new UnsafeLogIOSyncSafeInstance[F](logger)(SyncSafe[F]) with LogIO[F] {
       override def log(entry: Entry): F[Unit] = {
         F.syncSafe(logger.log(entry))
       }
