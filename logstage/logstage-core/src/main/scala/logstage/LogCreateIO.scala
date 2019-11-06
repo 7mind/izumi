@@ -4,7 +4,7 @@ import izumi.functional.mono.SyncSafe
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.Log.{Context, CustomContext, Entry, Message}
 
-trait LogCreateIO[F[_]] extends UnsafeLogIO[F] {
+trait LogCreateIO[F[_]] {
   def createEntry(logLevel: Level, message: Message)(implicit pos: CodePositionMaterializer): F[Entry]
   def createContext(logLevel: Level, customContext: CustomContext)(implicit pos: CodePositionMaterializer): F[Context]
 }

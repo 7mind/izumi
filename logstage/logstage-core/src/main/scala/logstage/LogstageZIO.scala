@@ -1,6 +1,5 @@
 package logstage
 
-import cats.Monad
 import izumi.functional.bio.SyncSafe2
 import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.AbstractLogger
@@ -31,7 +30,7 @@ object LogstageZIO {
         withDynamicContext(logger.withCustomContext(context))(dynamic)
       }
 
-      override protected[this] def wrap[T](f: AbstractLogger => T): F[T] = {
+      override protected[this] def wrap[A](f: AbstractLogger => A): ZIO[R, Nothing, A] = {
         dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
       }
     }
