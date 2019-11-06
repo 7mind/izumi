@@ -44,7 +44,7 @@ class LocalFilesystemEnumerator(roots: Seq[Path], cp: Seq[File], expectedExtensi
   }
 
   def enumerateDirectory(directory: Path): Seq[(FSPath, String)] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     java.nio.file.Files.walk(directory)
       .iterator().asScala

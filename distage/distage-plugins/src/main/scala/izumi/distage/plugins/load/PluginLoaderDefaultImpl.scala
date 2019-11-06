@@ -5,7 +5,7 @@ import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.{PluginBase, PluginDef}
 import izumi.functional.Value
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe
 
 class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {

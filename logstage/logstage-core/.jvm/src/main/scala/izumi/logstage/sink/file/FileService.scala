@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.sink.file.FileSink.FileIdentity
 import izumi.logstage.sink.file.models.LogFile
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.concurrent
 import scala.util.Try
 

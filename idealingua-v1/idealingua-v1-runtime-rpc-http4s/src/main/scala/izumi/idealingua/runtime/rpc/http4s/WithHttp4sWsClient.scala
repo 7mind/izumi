@@ -67,7 +67,7 @@ class ClientWsDispatcher[C <: Http4sContext]
   private val connection = new AtomicReference[NettyWebSocket]()
 
   private def send(out: String): Unit = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     connection.synchronized {
       if (connection.get() == null) {
         connection.set(wsc.prepareGet(baseUri.toString)

@@ -12,7 +12,7 @@ class TestSink(policy: Option[RenderingPolicy] = None) extends LogSink {
   private val messages = new ConcurrentLinkedQueue[Log.Entry]()
   private val renderedMessages = new ConcurrentLinkedQueue[String]()
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
 
   def fetch(): Seq[Log.Entry] = {

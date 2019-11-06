@@ -19,7 +19,7 @@ import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Json, JsonObject}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object CommandlineIDLCompiler {

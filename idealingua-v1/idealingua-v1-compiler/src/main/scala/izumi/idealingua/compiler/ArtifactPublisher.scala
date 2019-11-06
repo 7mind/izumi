@@ -10,7 +10,7 @@ import izumi.idealingua.translator.IDLLanguage
 
 import scala.sys.process._
 import scala.util.Try
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 class ArtifactPublisher(targetDir: Path, lang: IDLLanguage, creds: Credentials, manifest: BuildManifest) {
