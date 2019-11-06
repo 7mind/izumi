@@ -1,38 +1,38 @@
 package logstage
 
+import cats.Monad
 import izumi.functional.bio.SyncSafe2
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.functional.mono.SyncSafe
 import izumi.logstage.api.AbstractLogger
-import izumi.logstage.api.Log.{CustomContext, Entry, Message}
-import logstage.UnsafeLogIO.UnsafeLogIOSyncSafeInstance
-import zio.IO
+import izumi.logstage.api.Log.CustomContext
+import logstage.LogstageCats.WrappedLogIO
+import zio.{IO, ZIO}
 
 object LogstageZIO {
 
   def withFiberId(logger: AbstractLogger): LogBIO[IO] = {
-    new UnsafeLogIOSyncSafeInstance[IO[Nothing, ?]](logger)(SyncSafe2[IO]) with LogIO[IO[Nothing, ?]] {
-      override def unsafeLog(entry: Entry): IO[Nothing, Unit] = {
-        withFiberContext(_.unsafeLog(entry))
-      }
-
-      override def log(entry: Entry): IO[Nothing, Unit] = {
-        withFiberContext(_.log(entry))
-      }
-
-      override def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): IO[Nothing, Unit] = {
-        withFiberContext(_.log(logLevel)(messageThunk))
-      }
-
+    new WrappedLogIO[IO[Nothing, ?]](logger)(SyncSafe2[IO]) {
       override def withCustomContext(context: CustomContext): LogIO[IO[Nothing, ?]] = {
         withFiberId(logger.withCustomContext(context))
       }
 
-      private[this] def withFiberContext[T](f: AbstractLogger => T): IO[Nothing, T] = {
+      override protected[this] def wrap[A](f: AbstractLogger => A): IO[Nothing, A] = {
         IO.descriptorWith {
           descriptor =>
-            val fiberLogger = logger.withCustomContext(CustomContext("fiberId" -> descriptor.id))
-            IO.effectTotal(f(fiberLogger))
+            IO.effectTotal(f(logger.withCustomContext(CustomContext("fiberId" -> descriptor.id))))
         }
+      }
+    }
+  }
+
+  def withDynamicContext[R](logger: AbstractLogger)(dynamic: ZIO[R, Nothing, CustomContext]): LogIO[ZIO[R, Nothing, ?]] = {
+    new WrappedLogIO[ZIO[R, Nothing, ?]](logger)(SyncSafe[ZIO[R, Nothing, ?]]) {
+      override def withCustomContext(context: CustomContext): LogIO[ZIO[R, Nothing, ?]] = {
+        withDynamicContext(logger.withCustomContext(context))(dynamic)
+      }
+
+      override protected[this] def wrap[T](f: AbstractLogger => T): F[T] = {
+        dynamic.flatMap(ctx => IO.effectTotal(f(logger.withCustomContext(ctx))))
       }
     }
   }
