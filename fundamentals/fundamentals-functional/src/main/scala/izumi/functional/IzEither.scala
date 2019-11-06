@@ -20,7 +20,7 @@ trait IzEither {
     }
   }
 
-  implicit final class EitherBiFlatAggregate[L, R, Col[x] <: Iterable[x]](result: Col[Either[List[L], Iterable[R]]]) {
+  implicit final class EitherBiFlatAggregate[L, R, Col[x] <: Iterable[x], Col2[x] <: Iterable[x]](result: Col[Either[List[L], Col2[R]]]) {
     def biFlatAggregate(implicit b: Factory[R, Col[R]]): Either[List[L], Col[R]] = {
       val bad = result.collect {
         case Left(e) => e
@@ -49,7 +49,7 @@ trait IzEither {
     }
   }
 
-  implicit final class EitherBiFind[T](s: Iterable[T]) {
+  implicit final class EitherBiFind[Col[x] <: Iterable[x], T](s: Col[T]) {
     def biFind[E](predicate: T => Either[List[E], Boolean]): Either[List[E], Option[T]] = {
       val i = s.iterator
       while (i.hasNext) {
