@@ -41,6 +41,10 @@ trait AbstractLogger {
     }
   }
 
+  @inline final def acceptable(logLevel: Log.Level)(implicit pos: CodePositionMaterializer): Boolean = {
+    acceptable(LoggerId(pos.get.applicationPointId), logLevel)
+  }
+
   /** Log irrespective of the log level threshold */
   def unsafeLog(entry: Log.Entry): Unit
 

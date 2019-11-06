@@ -166,7 +166,7 @@ class ConfigWriter[F[_] : DIEffect]
 
   // TODO: sdk?
   private[this] def cleanupEffectiveAppConfig(effectiveAppConfig: Config, reference: Config): Config = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     ConfigFactory.parseMap(effectiveAppConfig.root().unwrapped().asScala.filterKeys(reference.hasPath).toMap.asJava)
   }

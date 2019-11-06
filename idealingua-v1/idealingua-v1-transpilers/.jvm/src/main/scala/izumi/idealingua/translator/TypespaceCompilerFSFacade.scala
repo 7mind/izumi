@@ -79,7 +79,7 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
       val iterator = IzResources.enumerateClasspath(s"runtime/${options.language.toString}")
       val rtFiles = iterator.files.map {
         f =>
-          import scala.collection.JavaConverters._
+          import scala.jdk.CollectionConverters._
           val parts = f.path.iterator().asScala.toList.map(_.toString)
           Module(ModuleId(parts.init, parts.last), new String(f.content, StandardCharsets.UTF_8))
       }.toList // .toList is important here, iterable is mutable

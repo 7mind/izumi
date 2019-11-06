@@ -1,4 +1,4 @@
-import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.39`
+import $ivy.`io.7mind.izumi.sbt::sbtgen:0.0.41`
 import izumi.sbtgen._
 import izumi.sbtgen.model._
 
@@ -125,9 +125,11 @@ object Izumi {
 
   import Deps._
 
+  // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.10")
-  final val scala212doc = ScalaVersion("2.12.8")
   final val scala213 = ScalaVersion("2.13.1")
+  // not 2.13.1 because of scoverage https://github.com/scoverage/scalac-scoverage-plugin/pull/283 ; coverage runs on 2.13.0, while publish from 2.13.1
+  final val scala213coverage = ScalaVersion("2.13.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -143,10 +145,6 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
-    )
-    private val jvmPlatformDoc = PlatformEnv(
-      platform = Platform.Jvm,
-      language = Seq(scala212doc),
     )
     private val jvmPlatformSbt = PlatformEnv(
       platform = Platform.Jvm,
@@ -166,7 +164,6 @@ object Izumi {
     final val cross = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
-    final val jvmDoc = Seq(jvmPlatformDoc)
     final val jvmSbt = Seq(jvmPlatformSbt)
   }
 
@@ -193,11 +190,6 @@ object Izumi {
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
-      final val docSettings = Seq(
-        "crossScalaVersions" := Seq(scala212doc.value),
-        "scalaVersion" := "crossScalaVersions.value.head".raw,
-      )
-
       final val sharedRootSettings = Defaults.SharedOptions ++ Seq(
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
@@ -220,7 +212,6 @@ object Izumi {
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )""".raw,
         "scmInfo" in SettingScope.Build := """Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))""".raw,
-        SettingDef.RawSettingDef("""scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString)"""),
         "scalacOptions" in SettingScope.Build += s"""${"\"" * 3}-Xmacro-settings:scalatest-version=${V.scalatest}${"\"" * 3}""".raw,
       )
 
@@ -228,7 +219,6 @@ object Izumi {
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
-          SettingKey(Some(scala212doc), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
           SettingKey.Default := Const.EmptySeq
         ),
@@ -378,7 +368,7 @@ object Izumi {
     defaultPlatforms = Targets.cross,
   )
 
-  final val allMonads = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
+  final val allMonadsOptional = (cats_all ++ Seq(zio_core)).map(_ in Scope.Optional.all)
   final val allMonadsTest = (cats_all ++ Seq(zio_core)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
@@ -386,7 +376,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = cats_all.map(_ in Scope.Optional.all) ++ Seq(scala_reflect in Scope.Compile.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Compile.all),
         depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
@@ -419,13 +409,13 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.roles,
-        libs = allMonads,
+        libs = allMonadsOptional,
         depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonads,
+        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsOptional,
         depends =
           Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -599,7 +589,7 @@ object Izumi {
         name = Projects.docs.microsite,
         libs = (cats_all ++ zio_all ++ http4s_all).map(_ in Scope.Compile.all),
         depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
-        settings = Projects.root.docSettings ++ Seq(
+        settings = Seq(
           "coverageEnabled" := false,
           "skip" in SettingScope.Raw("publish") := true,
           "DocKeys.prefix" :=
@@ -636,7 +626,7 @@ object Izumi {
           "siteSubdirName" in SettingScope.Raw("Paradox") := """s"${DocKeys.prefix.value}/doc"""".raw,
           SettingDef.RawSettingDef(
             """paradoxProperties ++= Map(
-            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
+            "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
             "izumi.version" -> version.value,
           )"""),
@@ -668,9 +658,7 @@ object Izumi {
     ),
     pathPrefix = Projects.docs.basePath,
     groups = Groups.docs,
-    defaultPlatforms = Targets.jvmDoc,
-    settings = Projects.root.docSettings,
-    enableSharedSettings = false,
+    defaultPlatforms = Targets.jvm,
     dontIncludeInSuperAgg = true,
   )
 
@@ -707,10 +695,10 @@ object Izumi {
       docs,
       sbtplugins,
     ),
-    settings = Projects.root.settings,
+    topLevelSettings = Projects.root.settings,
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
-    sharedRootSettings = Projects.root.sharedRootSettings,
+    rootSettings = Projects.root.sharedRootSettings,
     imports = Seq.empty,
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),

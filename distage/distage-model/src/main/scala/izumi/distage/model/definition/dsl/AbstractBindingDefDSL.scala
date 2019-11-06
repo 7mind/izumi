@@ -134,10 +134,10 @@ object AbstractBindingDefDSL {
 
   final class SetRef
   (
-    initial: EmptySetBinding[DIKey.TypeKey]
-    , setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty
-    , elems: mutable.Queue[SetElementRef] = mutable.Queue.empty
-    , multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty
+    initial: EmptySetBinding[DIKey.TypeKey],
+    setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty,
+    elems: mutable.Queue[SetElementRef] = mutable.Queue.empty,
+    multiElems: mutable.Queue[MultiSetElementRef] = mutable.Queue.empty,
   ) extends BindingRef {
     override def interpret: collection.Seq[Binding] = {
       val emptySetBinding = setOps.foldLeft(initial: EmptySetBinding[DIKey.BasicKey]) {
@@ -175,8 +175,7 @@ object AbstractBindingDefDSL {
   final class SetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[SetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): SetElementBinding = {
       val implKey = DIKey.TypeKey(implDef.implType)
-      val refkey = implKey.named(DIKey.SetLocId(pos.toString))
-      val elKey = DIKey.SetElementKey(setKey, refkey)
+      val elKey = DIKey.SetElementKey(setKey, implKey, Some(implDef))
 
       ops.foldLeft(SetElementBinding(elKey, implDef, Set.empty, pos)) {
         (b, instr) =>
@@ -186,8 +185,6 @@ object AbstractBindingDefDSL {
       }
     }
 
-
-
     def append(op: SetElementInstruction): SetElementRef = {
       ops += op
       this
@@ -196,12 +193,11 @@ object AbstractBindingDefDSL {
 
   final class MultiSetElementRef(implDef: ImplDef, pos: SourceFilePosition, ops: mutable.Queue[MultiSetElementInstruction] = mutable.Queue.empty) {
     def interpret(setKey: DIKey.BasicKey): Seq[Binding] = {
-      val ukey = DIKey.IdKey(implDef.implType, DIKey.SetImplId(implDef))
+      val valueProxyKey = DIKey.IdKey(implDef.implType, DIKey.MultiSetImplId(setKey, implDef))
+      val valueProxyBinding = SingletonBinding(valueProxyKey, implDef, Set.empty, pos)
 
-      val bind = SingletonBinding(ukey, implDef, Set.empty, pos)
-
-      val elKey = DIKey.SetElementKey(setKey, ukey)
-      val refBind0 = SetElementBinding(elKey, ImplDef.ReferenceImpl(bind.key.tpe, bind.key, weak = false), Set.empty, pos)
+      val elementKey = DIKey.SetElementKey(setKey, valueProxyKey, Some(implDef))
+      val refBind0 = SetElementBinding(elementKey, ImplDef.ReferenceImpl(valueProxyBinding.key.tpe, valueProxyBinding.key, weak = false), Set.empty, pos)
 
       val refBind = ops.foldLeft(refBind0) {
         (b, op) =>
@@ -210,8 +206,7 @@ object AbstractBindingDefDSL {
           }
       }
 
-
-      Seq(bind, refBind)
+      Seq(valueProxyBinding, refBind)
     }
 
     def append(op: MultiSetElementInstruction): MultiSetElementRef = {

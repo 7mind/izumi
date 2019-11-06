@@ -12,7 +12,7 @@ import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.os.{IzOs, OsType}
 import izumi.fundamentals.platform.time.IzTime
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object IzFiles {

@@ -12,11 +12,7 @@ trait WithDIKey {
     def tpe: SafeType
   }
 
-
-
   object DIKey {
-    // in order to make idea links working we need to put a dot before Position occurence and avoid using #
-
     def get[K: Tag]: TypeKey = TypeKey(SafeType.get[K])
 
     sealed trait BasicKey extends DIKey {
@@ -47,24 +43,16 @@ trait WithDIKey {
       * @param set Key of the parent Set. `set.tpe` must be of type `Set[T]`
       * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
       */
-    case class SetElementKey(set: DIKey, reference: DIKey) extends DIKey {
+    case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
       override def tpe: SafeType = reference.tpe
 
-      override def toString: String = s"{set.$set/${reference.toString}}"
+      override def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode().toString)}"
     }
 
-    case class SetLocId(name: String)
-
-    object SetLocId {
-      implicit object SetLocIdContract extends IdContract[SetLocId] {
-        override def repr(v: SetLocId): String = "set/"+v.name
-      }
-    }
-
-    case class SetImplId(impl: ImplDef) {}
-    object SetImplId {
-      implicit object SetImplIdContract extends IdContract[SetImplId] {
-        override def repr(v: SetImplId): String = "setimpl/"+v.toString
+    case class MultiSetImplId(set: DIKey, impl: ImplDef)
+    object MultiSetImplId {
+      implicit object SetImplIdContract extends IdContract[MultiSetImplId] {
+        override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode()}"
       }
     }
   }

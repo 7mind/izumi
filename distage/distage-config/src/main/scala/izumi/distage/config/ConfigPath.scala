@@ -3,7 +3,7 @@ package izumi.distage.config
 import izumi.distage.config.model.AppConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class ConfigPath(parts: Seq[String]) {
   def toPath: String = parts.mkString(".")

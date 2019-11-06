@@ -4,7 +4,7 @@ import izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config._
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.Queue
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{currentMirror, universe => ru}

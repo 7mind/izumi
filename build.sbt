@@ -24,46 +24,6 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -97,16 +57,12 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -145,46 +101,6 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -218,16 +134,12 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -262,46 +174,6 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -335,16 +207,12 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -382,46 +250,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -455,16 +283,12 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -507,46 +331,6 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -580,16 +364,12 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -630,46 +410,6 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -703,16 +443,12 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -758,46 +494,6 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -831,16 +527,12 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -868,6 +560,7 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value
     )
   )
@@ -885,46 +578,6 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -958,16 +611,12 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1006,46 +655,6 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1079,16 +688,12 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1128,46 +733,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1201,16 +766,12 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1251,46 +812,6 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1324,16 +845,12 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1371,46 +888,6 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1444,16 +921,12 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1495,46 +968,6 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1568,16 +1001,12 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1624,46 +1053,6 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1697,16 +1086,12 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1753,46 +1138,6 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1826,16 +1171,12 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -1875,46 +1216,6 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -1948,16 +1249,12 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2002,46 +1299,6 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2075,16 +1332,12 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2123,46 +1376,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2196,16 +1409,12 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2247,46 +1456,6 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2320,16 +1489,12 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2368,46 +1533,6 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2441,16 +1566,12 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2492,46 +1613,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2565,16 +1646,12 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2615,46 +1692,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2688,16 +1725,12 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2737,46 +1770,6 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2810,16 +1803,12 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2859,46 +1848,6 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -2932,16 +1881,12 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -2985,46 +1930,6 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3058,16 +1963,12 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3113,46 +2014,6 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3186,16 +2047,12 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3241,46 +2098,6 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3314,16 +2131,12 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3362,46 +2175,6 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3435,16 +2208,12 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3479,46 +2248,6 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3552,16 +2281,12 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3596,46 +2321,6 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3669,16 +2354,12 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3713,46 +2394,6 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3786,16 +2427,12 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3852,46 +2489,6 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -3925,16 +2522,12 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -3993,10 +2586,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    crossScalaVersions := Seq(
-      "2.12.8"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     skip in publish := true,
     DocKeys.prefix := {if (isSnapshot.value) {
@@ -4029,7 +2618,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     siteSubdirName in ScalaUnidoc := s"${DocKeys.prefix.value}/api",
     siteSubdirName in Paradox := s"${DocKeys.prefix.value}/doc",
     paradoxProperties ++= Map(
-                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/izumi/",
+                "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value}/api/",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value}/api/",
                 "izumi.version" -> version.value,
               ),
@@ -4053,46 +2642,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -4126,23 +2675,20 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
     } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
-      "2.12.8"
+      "2.12.10",
+      "2.13.1"
     )
   )
   .enablePlugins(ScalaUnidocPlugin, ParadoxSitePlugin, SitePlugin, GhpagesPlugin, ParadoxMaterialThemePlugin, PreprocessPlugin, MdocPlugin)
@@ -4172,46 +2718,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.10") => Seq(
         "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.12.8") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
         "-Ypartial-unification",
         "-Yno-adapted-args",
         "-Xlint:adapted-args",
@@ -4245,16 +2751,12 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Ywarn-value-discard"
       )
       case (_, "2.13.1") => Seq(
-        "-Xsource:2.13",
-        "-Ybackend-parallelism",
-        "8",
-        "-explaintypes",
-        "-Xlint:_",
-        "-Wunused:_",
+        "-Xlint:_,-eta-sam",
         "-Wdead-code",
         "-Wextra-implicit",
         "-Wnumeric-widen",
         "-Woctal-literal",
+        "-Wunused:_",
         "-Wvalue-discard"
       )
       case (_, _) => Seq.empty
@@ -4439,7 +2941,8 @@ lazy val `doc` = (project in file(".agg/doc-doc"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.8"
+      "2.12.10",
+      "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4452,7 +2955,8 @@ lazy val `doc-jvm` = (project in file(".agg/doc-doc-jvm"))
   .settings(
     skip in publish := true,
     crossScalaVersions := Seq(
-      "2.12.8"
+      "2.12.10",
+      "2.13.1"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
@@ -4508,7 +3012,12 @@ lazy val `izumi` = (project in file("."))
       "-feature",
       "-unchecked",
       "-deprecation",
-      "-language:higherKinds"
+      "-language:higherKinds",
+      "-Ybackend-parallelism",
+      math.max(1, sys.runtime.availableProcessors() - 1).toString,
+      "-explaintypes",
+      "-Ycache-plugin-class-loader:always",
+      "-Ycache-macro-class-loader:last-modified"
     ),
     javacOptions in ThisBuild ++= Seq(
       "-encoding",
@@ -4546,7 +3055,6 @@ lazy val `izumi` = (project in file("."))
               Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
             ),
     scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    scalacOptions in ThisBuild ++= Seq("-Ybackend-parallelism", math.max(1, sys.runtime.availableProcessors() - 1).toString),
     scalacOptions in ThisBuild += """-Xmacro-settings:scalatest-version=VExpr(V.scalatest)"""
   )
   .disablePlugins(AssemblyPlugin)

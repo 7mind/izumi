@@ -2,6 +2,8 @@ package izumi.distage.bootstrap
 
 import java.util.concurrent.atomic.AtomicReference
 
+import distage.TagK
+import izumi.distage._
 import izumi.distage.commons.{TraitInitTool, UnboxingTool}
 import izumi.distage.model._
 import izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
@@ -19,27 +21,20 @@ import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
 import izumi.distage.reflection._
-import izumi.distage.{provisioning, _}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
-import distage.TagK
 
 final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractLocator {
-
-  import BootstrapLocator.{bootstrapPlanner, bootstrapProducer}
-
-  val parent: Option[AbstractLocator] = None
-
-  val plan: OrderedPlan = bootstrapPlanner.plan(PlannerInput.noGc(bindings))
+  override val parent: Option[AbstractLocator] = None
+  override val plan: OrderedPlan = BootstrapLocator.bootstrapPlanner.plan(PlannerInput.noGc(bindings))
+  override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
   private val bootstrappedContext: Locator = {
-    val resource = bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
+    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
 
   private val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
-
-  override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
   override def instances: collection.Seq[IdentifiedRef] = {
     Option(_instances.get()) match {
@@ -66,8 +61,8 @@ object BootstrapLocator {
   final val symbolIntrospector: SymbolIntrospectorDefaultImpl.Runtime = new SymbolIntrospectorDefaultImpl.Runtime
 
   final val reflectionProvider: ReflectionProviderDefaultImpl.Runtime = new ReflectionProviderDefaultImpl.Runtime(
-    new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector)
-    , symbolIntrospector
+    keyProvider = new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector),
+    symbolIntrospector = symbolIntrospector,
   )
 
   final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
@@ -83,39 +78,36 @@ object BootstrapLocator {
     val hook = new PlanningHookAggregate(Set.empty)
     val translator = new BindingTranslatorImpl(reflectionProvider, hook)
     new PlannerDefaultImpl(
-      new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true),
-      new SanityCheckerDefaultImpl(analyzer),
-      NoopDIGC,
-      bootstrapObserver,
-      new PlanMergingPolicyDefaultImpl,
-      hook,
-      translator,
-      analyzer,
-      symbolIntrospector,
+      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true),
+      sanityChecker = new SanityCheckerDefaultImpl(analyzer),
+      gc = NoopDIGC,
+      planningObserver = bootstrapObserver,
+      planMergingPolicy = new PlanMergingPolicyDefaultImpl,
+      hook = hook,
+      bindingTranslator = translator,
+      analyzer = analyzer,
+      symbolIntrospector = symbolIntrospector,
     )
   }
 
   final val bootstrapProducer: PlanInterpreter = {
     val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
     val unboxingTool = new UnboxingTool(mirrorProvider)
-    val verifier = new provisioning.ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
+    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
     new PlanInterpreterDefaultRuntimeImpl(
-      new SetStrategyDefaultImpl(verifier)
-
-      , new ProxyStrategyFailingImpl
-      , new FactoryStrategyFailingImpl
-      , new TraitStrategyFailingImpl
-
-      , new FactoryProviderStrategyDefaultImpl(loggerHook)
-      , new ProviderStrategyDefaultImpl
-      , new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool)
-      , new ImportStrategyDefaultImpl
-      , new InstanceStrategyDefaultImpl
-      , new EffectStrategyDefaultImpl
-      , new ResourceStrategyDefaultImpl
-
-      , new ProvisioningFailureInterceptorDefaultImpl
-      , verifier
+      setStrategy = new SetStrategyDefaultImpl,
+      proxyStrategy = new ProxyStrategyFailingImpl,
+      factoryStrategy = new FactoryStrategyFailingImpl,
+      traitStrategy = new TraitStrategyFailingImpl,
+      factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl(loggerHook),
+      providerStrategy = new ProviderStrategyDefaultImpl,
+      classStrategy = new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool),
+      importStrategy = new ImportStrategyDefaultImpl,
+      instanceStrategy = new InstanceStrategyDefaultImpl,
+      effectStrategy = new EffectStrategyDefaultImpl,
+      resourceStrategy = new ResourceStrategyDefaultImpl,
+      failureHandler = new ProvisioningFailureInterceptorDefaultImpl,
+      verifier = verifier,
     )
   }
 
@@ -139,7 +131,7 @@ object BootstrapLocator {
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
     make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
-    make[Boolean].named("distage.init-proxies-asap").from(true)
+    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]

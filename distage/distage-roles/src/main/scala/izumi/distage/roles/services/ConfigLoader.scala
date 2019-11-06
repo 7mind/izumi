@@ -24,7 +24,7 @@ object ConfigLoader {
     import LocalFSImpl._
     import izumi.fundamentals.platform.strings.IzString._
 
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     def buildConfig(): AppConfig = {
       val commonConfigFile = toConfig("common", primaryConfig)

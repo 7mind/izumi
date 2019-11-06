@@ -24,7 +24,7 @@ import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParam
 import izumi.fundamentals.reflection.TreeUtil
 import izumi.logstage.api.IzLogger
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.currentMirror
 import scala.reflect.{ClassTag, classTag}

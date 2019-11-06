@@ -21,7 +21,7 @@ object V {
 
   val http4s = "0.21.0-M5"
 
-  val scalameta = "4.2.4"
+  val scalameta = "4.2.5"
   val fastparse = "2.1.3"
 
   val scala_xml = "1.2.0"
@@ -30,7 +30,7 @@ object V {
   // java, we need it bcs http4s ws client isn't ready yet
   val asynchttpclient = "2.10.4"
 
-  val classgraph = "4.8.52"
+  val classgraph = "4.8.53"
   val slf4j = "1.7.29"
   val typesafe_config = "1.4.0"
 

@@ -56,7 +56,7 @@ object IzZip {
 
 
   private def enumerate(predicate: Path => Boolean, fs: FileSystem): Iterable[Path] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     fs
       .getRootDirectories

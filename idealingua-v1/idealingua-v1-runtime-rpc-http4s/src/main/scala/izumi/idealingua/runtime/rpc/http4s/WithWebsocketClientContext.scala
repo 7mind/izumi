@@ -16,7 +16,7 @@ import org.http4s.AuthedRequest
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.{Ping, Text}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
 trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {

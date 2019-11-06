@@ -12,6 +12,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.TagMacro
+import zio.{Exit, Reservation, ZManaged}
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -184,6 +185,17 @@ object DIResource {
     }
   }
 
+  /** Convert [[zio.ZManaged]] to [[DIResource]] */
+  def fromZIO[R, E, A](managed: ZManaged[R, E, A]): DIResource.ZIO[R, E, A] = {
+    new ZIO[R, E, A] {
+      override def acquire: zio.ZIO[R, E, (A, zio.ZIO[R, Nothing, Unit])] = {
+        managed.reserve.uninterruptible.flatMap {
+          reservation => reservation.acquire.map(a => a -> reservation.release(Exit.succeed(a)).unit)
+        }
+      }
+    }
+  }
+
   implicit final class DIResourceCatsSyntax[F[_], A](private val resource: DIResourceBase[F, A]) extends AnyVal {
     /** Convert [[DIResource]] to [[cats.effect.Resource]] */
     def toCats[G[x] >: F[x]: Applicative]: Resource[G, A] = {
@@ -197,6 +209,16 @@ object DIResource {
         override def release(res: InnerResource): H[Unit] = f(resource.release(res))
         override def extract(res: InnerResource): A = resource.extract(res)
       }
+    }
+  }
+
+  implicit final class DIResourceZIOSyntax[R, E, A](private val resource: DIResourceBase[zio.ZIO[R, E, ?], A]) extends AnyVal {
+    /** Convert [[DIResource]] to [[zio.ZManaged]] */
+    def toZIO: ZManaged[R, E, A] = {
+      ZManaged(resource.acquire.map(r => Reservation(zio.ZIO.effectTotal(resource.extract(r)), _ => resource.release(r).orDieWith {
+        case e: Throwable => e
+        case any => new RuntimeException(s"DIResource finalizer: $any")
+      })))
     }
   }
 
@@ -309,6 +331,12 @@ object DIResource {
     override final def extract(resource: (A, F[Unit])): A = resource._1
   }
 
+  trait ZIO[R, E, A] extends DIResourceBase[zio.ZIO[R, E, ?], A] {
+    override final type InnerResource = (A, zio.ZIO[R, Nothing, Unit])
+    override final def release(resource: (A, zio.ZIO[R, Nothing, Unit])): zio.ZIO[R, Nothing, Unit] = resource._2
+    override final def extract(resource: (A, zio.ZIO[R, Nothing, Unit])): A = resource._1
+  }
+
   /** Generalized [[DIResource]] */
   trait DIResourceBase[+F[_], +OuterResource] { self =>
     type InnerResource
@@ -397,6 +425,20 @@ object DIResource {
     resourceProvider
       .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
       .map { case (resource, bracket) => fromCats(resource)(bracket) }
+  }
+
+  /**
+    * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
+    */
+  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.ZIO[R , E, A]] = {
+    providerFromZIOProvider(ProviderMagnet.pure(managed))
+  }
+
+  /**
+    * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+    */
+  implicit final def providerFromZIOProvider[R: Tag, E: Tag, A: Tag](managedProvider: ProviderMagnet[ZManaged[R, E, A]]): ProviderMagnet[DIResource.ZIO[R, E, A]] = {
+    managedProvider.map(fromZIO)
   }
 
   @inline

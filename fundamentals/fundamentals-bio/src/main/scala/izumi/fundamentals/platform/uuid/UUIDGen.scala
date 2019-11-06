@@ -314,7 +314,7 @@ object UUIDGen {
   // Since we don't use the mac address, the spec says that multicast
 
   private def doHash(data: Collection[InetAddress]): Array[Byte] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val messageDigest: MessageDigest = MessageDigest.getInstance("MD5")
     for (addr <- data.asScala) messageDigest.update(addr.getAddress)
     messageDigest.digest()

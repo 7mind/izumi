@@ -4,7 +4,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.SafeType0
 import com.typesafe.config.{ConfigList, ConfigObject}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.Queue
 import scala.collection.{GenMap, GenTraversable}
 import scala.collection.generic.{GenMapFactory, GenericCompanion}

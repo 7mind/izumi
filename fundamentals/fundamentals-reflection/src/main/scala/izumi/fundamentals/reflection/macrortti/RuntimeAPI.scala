@@ -1,8 +1,8 @@
 package izumi.fundamentals.reflection.macrortti
 
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, Boundaries, FullReference, IntersectionReference, Lambda, NameReference, Refinement, RefinementDecl, TypeParam}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
-protected[izumi] object RuntimeAPI {
+private[izumi] object RuntimeAPI {
 
   def unpack(ref: AbstractReference): Set[NameReference] = {
     def unpackBoundaries(b: Boundaries): Set[NameReference] = {
@@ -67,7 +67,7 @@ protected[izumi] object RuntimeAPI {
     }
   }
 
-  class Rewriter[T](rules: Map[String, T])(complete: (Rewriter[T], NameReference, T) => AbstractReference) {
+  final class Rewriter[T](rules: Map[String, T])(complete: (Rewriter[T], NameReference, T) => AbstractReference) {
     def replaceRefs(reference: AbstractReference): AbstractReference = {
       reference match {
         case l: Lambda =>

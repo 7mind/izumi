@@ -88,7 +88,7 @@ object BIORunner {
 
     override val tracing: Tracing = Tracing.enabledWith(tracingConfig)
 
-    override def reportFailure(cause: Cause[_]): Unit = {
+    override def reportFailure(cause: Cause[Any]): Unit = {
       handler match {
         case FailureHandler.Default =>
           // do not log interruptions
