@@ -93,6 +93,14 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    unmanagedSourceDirectories in Compile := (unmanagedSourceDirectories in Compile).value.flatMap {
+      dir =>
+       Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
+         case Some((2, 12)) => "_2.12"
+         case Some((2, 13)) => "_2.13"
+         case _             => "_3.0"
+       })))
+    },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"

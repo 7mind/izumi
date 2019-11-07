@@ -309,7 +309,19 @@ object Izumi {
   }
 
   final val forkTests = Seq(
-    "fork" in(SettingScope.Test, Platform.Jvm) := true,
+    "fork" in (SettingScope.Test, Platform.Jvm) := true,
+  )
+
+  final val crossScalaSources = Seq(
+    "unmanagedSourceDirectories" in SettingScope.Compile :=
+      """(unmanagedSourceDirectories in Compile).value.flatMap {
+        |  dir =>
+        |   Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
+        |     case Some((2, 12)) => "_2.12"
+        |     case Some((2, 13)) => "_2.13"
+        |     case _             => "_3.0"
+        |   })))
+        |}""".stripMargin.raw,
   )
 
   final lazy val fundamentals = Aggregate(
@@ -330,7 +342,7 @@ object Izumi {
         ),
         settings = Seq(
           "npmDependencies" in(SettingScope.Test, Platform.Js) ++= Seq("hash.js" -> "1.1.7"),
-        ),
+        ) ++ crossScalaSources,
         plugins = Plugins(Seq(Plugin("ScalaJSBundlerPlugin", Platform.Js))),
       ),
       Artifact(
