@@ -1,7 +1,7 @@
 package logstage
 
 import izumi.functional.mono.SyncSafe
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.platform.language.{CodePositionMaterializer, unused}
 import izumi.logstage.api.AbstractLogger
 import izumi.logstage.api.Log._
 import izumi.logstage.macros.LogIOMacros._
@@ -59,5 +59,5 @@ object LogIO {
     * @see https://github.com/scala/bug/issues/11427
     */
   implicit def limitedCovariance[F[+_, _], E](implicit log: LogBIO[F]): LogIO[F[E, ?]] = log.asInstanceOf[LogIO[F[E, ?]]]
-  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit ev: F[_] <:< G[_]): LogIO[G] = { val _ = ev; log.asInstanceOf[LogIO[G]] }
+  implicit def covarianceConversion[G[_], F[_]](log: LogIO[F])(implicit @unused ev: F[_] <:< G[_]): LogIO[G] = log.asInstanceOf[LogIO[G]]
 }
