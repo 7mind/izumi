@@ -72,14 +72,13 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   def catchSome[E, A, E2 >: E, A2 >: A](r: F[E, A])(f: PartialFunction[E, F[E2, A2]]): F[E2, A2]
 
   def fromEither[E, V](effect: => Either[E, V]): F[E, V]
-  def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): F[E, A]
+  def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A]
   def fromTry[A](effect: => Try[A]): F[Throwable, A]
 
   @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(pure), succ.andThen(pure))
   @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
   @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
   @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(pure, fail(_))
-  @inline final def fromOption[A](effect: => Option[A]): F[Unit, A] = fromOption(())(effect)
 
   // defaults
   @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))
@@ -174,7 +173,7 @@ trait BIO[F[+_, +_]] extends BIOPanic[F] {
     case Right(v) => pure(v): F[E, A]
   }
 
-  @inline override def fromOption[E, A](errorOnNone: E)(effect: => Option[A]): F[E, A] = {
+  @inline override def fromOption[E, A](errorOnNone: => E)(effect: => Option[A]): F[E, A] = {
     flatMap(sync(effect))(e => fromEither(e.toRight(errorOnNone)))
   }
 

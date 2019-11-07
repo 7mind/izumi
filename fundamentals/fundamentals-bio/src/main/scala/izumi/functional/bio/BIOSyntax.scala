@@ -112,9 +112,7 @@ object BIOSyntax {
 
     @inline def fromEither[E1 >: E, A1](implicit ev: A <:< Either[E1, A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromEither[E1, A1](_))
 
-    @inline def fromOption[E1 >: E, A1](errorOnNone: E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
-
-    @inline def fromOption[A1](implicit ev: E =:= Nothing, ev1: A <:< Option[A1]): F[Unit, A1] = F.flatMap(F.redeemPure(r)(ev, identity))(F.fromOption(_))
+    @inline def fromOption[E1 >: E, A1](errorOnNone: => E1)(implicit ev1: A <:< Option[A1]): F[E1, A1] = F.flatMap[E, A, E1, A1](r)(F.fromOption(errorOnNone)(_))
   }
 
   final class BIOBracketOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOBracket[F]) {
