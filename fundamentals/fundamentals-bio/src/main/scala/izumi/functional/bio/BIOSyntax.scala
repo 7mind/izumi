@@ -18,12 +18,12 @@ trait BIOSyntax extends BIOImplicitPuns {
     * }}}
     *
     */
-  @inline def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
+  def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 
   /**
     * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
     */
-  val catz: BIOCatsConversions = new BIOCatsConversions {}
+  def catz: BIOCatsConversions = new BIOCatsConversions {}
 }
 
 object BIOSyntax {
