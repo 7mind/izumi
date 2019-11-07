@@ -34,7 +34,7 @@ class Http4sRuntime[
 
   override type ClientMethodContext = _ClientMethodContext
 
-  override val BIO: BIOAsync[BiIO] = implicitly
+  override val F: BIOAsync[BiIO] = implicitly
 
   override val CIO: ConcurrentEffect[MonoIO] = implicitly
 

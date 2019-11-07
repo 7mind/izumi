@@ -2,16 +2,14 @@ package izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.ConcurrentHashMap
 
-import izumi.functional.bio.BIO._
-import izumi.functional.bio.BIOAsync
+import izumi.functional.bio.{BIOAsync, F}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.idealingua.runtime.rpc._
 import io.circe.Json
 
 import scala.concurrent.duration.FiniteDuration
 
-class RequestState[F[+ _, + _] : BIOAsync] {
-  private val BIO: BIOAsync[F] = implicitly
+class RequestState[F[+ _, + _]: BIOAsync] {
 
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
@@ -51,7 +49,7 @@ class RequestState[F[+ _, + _] : BIOAsync] {
 
   def handleResponse(maybePacketId: Option[RpcPacketId], data: Json): F[Throwable, PacketInfo] = {
     for {
-      maybeMethod <- BIO.sync {
+      maybeMethod <- F.sync {
         for {
           id <- maybePacketId
           method <- methodOf(id)
@@ -61,10 +59,10 @@ class RequestState[F[+ _, + _] : BIOAsync] {
       method <- maybeMethod match {
         case Some(m@PacketInfo(method, id)) =>
           respond(id, RawResponse.GoodRawResponse(data, method))
-          BIO.pure(m)
+          F.pure(m)
 
         case None =>
-          BIO.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
+          F.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
       }
     } yield {
       method
@@ -72,15 +70,15 @@ class RequestState[F[+ _, + _] : BIOAsync] {
   }
 
   def poll(id: RpcPacketId, interval: FiniteDuration, timeout: FiniteDuration): F[Nothing, Option[RawResponse]] =
-    BIO.sleep(interval)
+    F.sleep(interval)
       .flatMap {
         _ =>
           checkResponse(id) match {
             case None =>
-              BIO.fail(())
+              F.fail(())
             case Some(value) =>
-              BIO.pure(Some(value))
+              F.pure(Some(value))
           }
       }
-      .retryOrElse(timeout, BIO.pure(None))
+      .retryOrElse(timeout, F.pure(None))
 }

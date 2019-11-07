@@ -3,7 +3,6 @@ package izumi.distage.testkit.st
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.testkit.services.st.adapter.DISyntaxBIO
 import izumi.distage.testkit.st.adapter.specs.DistagePluginBioSpec
-import izumi.functional.bio.BIO._
 import izumi.functional.bio.{BIO, BIOError}
 import distage.{ModuleBase, TagK, TagKK}
 

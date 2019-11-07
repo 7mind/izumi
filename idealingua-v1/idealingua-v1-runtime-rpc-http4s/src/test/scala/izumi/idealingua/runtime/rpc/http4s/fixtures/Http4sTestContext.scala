@@ -61,7 +61,7 @@ object Http4sTestContext {
           knownAuthorization.set(value.credentials)
         case None =>
       }
-      BIO.pure{
+      F.pure {
         initial.copy(credentials = Option(knownAuthorization.get()))
       }
     }
@@ -83,25 +83,25 @@ object Http4sTestContext {
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
         case Some(value) if value.isEmpty =>
           // here we may clear internal state
-          BIO.pure(None -> BIO.pure(None))
+          F.pure(None -> F.pure(None))
 
         case Some(_) =>
           toId(initial, id, packet) flatMap {
             case id@Some(_) =>
               // here we may set internal state
-              BIO.pure{
-                id -> BIO.pure(packet.ref.map {
+              F.pure {
+                id -> F.pure(packet.ref.map {
                   ref =>
                     RpcPacket.rpcResponse(ref, Json.obj())
                 })
               }
 
             case None =>
-              BIO.pure(None -> BIO.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed"))))
+              F.pure(None -> F.pure(Some(RpcPacket.rpcFail(packet.ref, "Authorization failed"))))
           }
 
         case None =>
-          BIO.pure( None -> BIO.pure(None))
+          F.pure(None -> F.pure(None))
       }
     }
   }

@@ -4,7 +4,7 @@ import java.net.URI
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 
-import izumi.functional.bio.BIO._
+import izumi.functional.bio.BIO
 import izumi.functional.bio.BIOExit
 import izumi.functional.bio.BIOExit.{Error, Success, Termination}
 import izumi.idealingua.runtime.rpc
@@ -86,9 +86,9 @@ class ClientWsDispatcher[C <: Http4sContext]
     logger.debug(s"Incoming WS message: $payload")
 
     val result = for {
-      parsed <- BIO.fromEither(parse(payload))
-      _ <- BIO.sync(logger.debug(s"parsed: $parsed"))
-      decoded <- BIO.fromEither(parsed.as[RpcPacket])
+      parsed <- F.fromEither(parse(payload))
+      _ <- F.sync(logger.debug(s"parsed: $parsed"))
+      decoded <- F.fromEither(parsed.as[RpcPacket])
       v <- routeResponse(decoded)
     } yield {
       v
@@ -117,7 +117,7 @@ class ClientWsDispatcher[C <: Http4sContext]
 
         val responsePkt = for {
           maybeResponse <- buzzerMuxer.doInvoke(data, wsClientContextProvider.toContext(p), methodId)
-          maybePacket <- BIO.pure(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
+          maybePacket <- F.pure(maybeResponse.map(r => RpcPacket.buzzerResponse(id, r)))
         } yield {
           maybePacket
         }
@@ -126,13 +126,13 @@ class ClientWsDispatcher[C <: Http4sContext]
           maybePacket <- responsePkt.sandbox.catchAll {
             case BIOExit.Termination(exception, allExceptions, trace) =>
               logger.error(s"${packetInfo -> null}: WS processing terminated, $exception, $allExceptions, $trace")
-              BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+              F.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
             case BIOExit.Error(exception, trace) =>
               logger.error(s"${packetInfo -> null}: WS processing failed, $exception $trace")
-              BIO.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
+              F.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
-          maybeEncoded <- BIO(maybePacket.map(r => printer.pretty(r.asJson)))
-          _ <- BIO {
+          maybeEncoded <- F(maybePacket.map(r => printer.pretty(r.asJson)))
+          _ <- F {
             maybeEncoded match {
               case Some(response) =>
                 logger.debug(s"${method -> "method"}, ${id -> "id"}: Prepared buzzer $response")
@@ -146,16 +146,16 @@ class ClientWsDispatcher[C <: Http4sContext]
 
       case RpcPacket(RPCPacketKind.RpcFail, data, _, Some(ref), _, _, _) =>
         requestState.respond(ref, RawResponse.BadRawResponse())
-        BIO.fail(new IRTGenericFailure(s"RPC failure for $ref: $data"))
+        F.fail(new IRTGenericFailure(s"RPC failure for $ref: $data"))
 
       case RpcPacket(RPCPacketKind.RpcFail, data, _, None, _, _, _) =>
-        BIO.fail(new IRTGenericFailure(s"Missing ref in RPC failure: $data"))
+        F.fail(new IRTGenericFailure(s"Missing ref in RPC failure: $data"))
 
       case RpcPacket(RPCPacketKind.Fail, data, _, _, _, _, _) =>
-        BIO.fail(new IRTGenericFailure(s"Critical RPC failure: $data"))
+        F.fail(new IRTGenericFailure(s"Critical RPC failure: $data"))
 
       case o =>
-        BIO.fail(new IRTMissingHandlerException(s"No buzzer client handler for $o", o))
+        F.fail(new IRTMissingHandlerException(s"No buzzer client handler for $o", o))
     }
   }
 
@@ -172,17 +172,17 @@ class ClientWsDispatcher[C <: Http4sContext]
       .encode(request)
       .flatMap {
         encoded =>
-          val wrapped = BIO.sync(RpcPacket.rpcRequestRndId(request.method, encoded))
+          val wrapped = F.sync(RpcPacket.rpcRequestRndId(request.method, encoded))
 
-          BIO.bracket(wrapped) {
+          F.bracket(wrapped) {
             id =>
               logger.trace(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-              BIO.sync(requestState.forget(id.id.get))
+              F.sync(requestState.forget(id.id.get))
           } {
             w =>
               val pid = w.id.get // guaranteed to be present
 
-              BIO {
+              F {
                 val out = printer.pretty(transformRequest(w).asJson)
                 logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                 requestState.request(pid, request.method)
@@ -199,10 +199,10 @@ class ClientWsDispatcher[C <: Http4sContext]
 
                         case Some(value: RawResponse.BadRawResponse) =>
                           logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                          BIO.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                          F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
                         case None =>
-                          BIO.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                          F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
                       }
                 }
           }

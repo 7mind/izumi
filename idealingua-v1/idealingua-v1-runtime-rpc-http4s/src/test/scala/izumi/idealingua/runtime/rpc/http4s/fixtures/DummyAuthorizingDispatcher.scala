@@ -1,7 +1,6 @@
 package izumi.idealingua.runtime.rpc.http4s.fixtures
 
 import izumi.functional.bio.BIO
-import izumi.functional.bio.BIO._
 import izumi.idealingua.runtime.rpc._
 import izumi.idealingua.runtime.rpc.http4s.{IRTBadCredentialsException, IRTNoCredentialsException}
 import org.http4s.{BasicCredentials, Status}

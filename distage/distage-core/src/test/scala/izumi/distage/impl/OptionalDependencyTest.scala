@@ -20,13 +20,13 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
     assert(x[Identity] == 1)
 
     try DIEffect.fromBIO(null) catch { case _: NullPointerException => }
-    try BIO.apply[Either, Unit](())(null) catch { case _: NullPointerException => }
+    try BIO[Either, Unit](())(null) catch { case _: NullPointerException => }
 
     And("Methods that mention cats/ZIO types directly cannot be referred to in code")
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("DIResource.fromCats(null)")
 //    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
-    BIOAsync.apply[Either](null)
+    BIOAsync[Either](null)
 
     And("Can search for BIO/BIOAsync")
     assertTypeError("implicitly[BIOAsync[Either]]")

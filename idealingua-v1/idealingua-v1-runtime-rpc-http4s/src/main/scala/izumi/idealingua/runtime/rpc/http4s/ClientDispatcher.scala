@@ -1,6 +1,6 @@
 package izumi.idealingua.runtime.rpc.http4s
 
-import izumi.functional.bio.BIO._
+import izumi.functional.bio.BIO
 import izumi.functional.bio.BIOExit
 import izumi.idealingua.runtime.rpc._
 import izumi.logstage.api.IzLogger
@@ -54,7 +54,7 @@ class ClientDispatcher[C <: Http4sContext]
 
     if (resp.status != Status.Ok) {
       logger.info(s"${input.method -> "method"}: unexpected HTTP response, ${resp.status.code -> "code"} ${resp.status.reason -> "reason"}")
-      BIO.fail(IRTUnexpectedHttpStatus(resp.status))
+      F.fail(IRTUnexpectedHttpStatus(resp.status))
     } else {
       resp
       .as[MaterializedStream]
@@ -62,7 +62,7 @@ class ClientDispatcher[C <: Http4sContext]
         body =>
           logger.trace(s"${input.method -> "method"}: Received response: $body")
           val decoded = for {
-            parsed <- c.BIO.fromEither(parse(body))
+            parsed <- c.F.fromEither(parse(body))
             product <- codec.decode(parsed, input.method)
           } yield {
             logger.trace(s"${input.method -> "method"}: decoded response: $product")
@@ -72,11 +72,11 @@ class ClientDispatcher[C <: Http4sContext]
           decoded.sandbox.catchAll {
             case BIOExit.Error(error, trace) =>
               logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error $trace")
-              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on body=$body: error=$error trace=$trace", Option(error)))
+              F.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on body=$body: error=$error trace=$trace", Option(error)))
 
             case BIOExit.Termination(f, _, trace) =>
               logger.info(s"${input.method -> "method"}: decoder failed on $body: $f $trace")
-              BIO.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on body=$body: f=$f trace=$trace", Option(f)))
+              F.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on body=$body: f=$f trace=$trace", Option(f)))
           }
       }
     }

@@ -2,13 +2,12 @@ package izumi.functional.bio
 
 import zio.IO
 
-trait BIOFork[F[_, _]] {
+trait BIOFork[F[_, _]] extends BIOForkInstances {
   def fork[E, A](f: F[E, A]): F[Nothing, BIOFiber[F, E, A]]
 }
 
-object BIOFork {
-  def apply[F[_, _] : BIOFork]: BIOFork[F] = implicitly
-
+sealed trait BIOForkInstances
+object BIOForkInstances {
   implicit object BIOForkZio extends BIOFork[IO] {
     override def fork[E, A](f: IO[E, A]): IO[Nothing, BIOFiber[IO, E, A]] =
       f.fork

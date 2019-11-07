@@ -25,7 +25,7 @@ trait Http4sContext { outer =>
 
   type StreamDecoder = EntityDecoder[MonoIO, MaterializedStream]
 
-  implicit def BIO: BIOAsync[BiIO]
+  implicit def F: BIOAsync[BiIO]
   implicit def CIO: ConcurrentEffect[MonoIO]
   implicit def CIOT: Timer[MonoIO]
 
@@ -58,7 +58,7 @@ trait Http4sContext { outer =>
   final class IMPL[C <: Http4sContext] private[Http4sContext] extends Aux[C#BiIO, C#RequestContext, C#MethodContext, C#ClientId, C#ClientContext, C#ClientMethodContext] {
     override val BIORunner: BIORunner[C#BiIO] = outer.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
 
-    override implicit val BIO: BIOAsync[C#BiIO] = outer.BIO.asInstanceOf[BIOAsync[C#BiIO]]
+    override implicit val F: BIOAsync[C#BiIO] = outer.F.asInstanceOf[BIOAsync[C#BiIO]]
 
     override val dsl: Http4sDsl[C#MonoIO] = outer.dsl.asInstanceOf[Http4sDsl[C#MonoIO]]
 

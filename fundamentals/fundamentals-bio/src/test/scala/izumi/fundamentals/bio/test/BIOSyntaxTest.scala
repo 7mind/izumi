@@ -1,7 +1,6 @@
-package izumi.fundamentals.bio
+package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.BIO._
-import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad}
+import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOPrimitives, F}
 import org.scalatest.WordSpec
 
 import scala.concurrent.duration._
@@ -42,10 +41,14 @@ class BIOSyntaxTest extends WordSpec {
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
     }
+    def xa[F[+_, +_]: BIOMonad: BIOPrimitives]: F[Nothing, Int] = {
+      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+    }
     lazy val a = x
     lazy val b = y[zio.IO](_: BIOAsync[zio.IO])
     lazy val c = z
-    lazy val _ = (a, b, c)
+    lazy val d = xa[zio.IO]
+    lazy val _ = (a, b, c, d)
   }
 
 }
