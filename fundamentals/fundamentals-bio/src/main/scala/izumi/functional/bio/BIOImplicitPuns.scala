@@ -5,6 +5,7 @@ import izumi.functional.bio.BIOImplicitPuns.BIOImplicitPuns1
 import scala.language.implicitConversions
 
 trait BIOImplicitPuns extends BIOImplicitPuns1 {
+
   @inline implicit final def BIOAsync[F[_, +_]: BIOFunctor, E, A](self: F[E, A]): BIOSyntax.BIOFunctorOps[F, E, A] = new BIOSyntax.BIOFunctorOps[F, E, A](self)
   @inline implicit final def BIOAsync[F[+_, +_]: BIOBifunctor, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOBifunctorOps[F, E, A](self)
   @inline implicit final def BIOAsync[F[+_, +_]: BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
@@ -18,10 +19,18 @@ trait BIOImplicitPuns extends BIOImplicitPuns1 {
   @inline implicit final def BIOAsync[F[+_, +_]: BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
   @inline implicit final def BIOAsync[F[+_, +_]: BIOMonad, E, A](self: F[E, F[E, A]])(implicit dummy: DummyImplicit): BIOSyntax.BIOFlattenOps[F, E, A] = new BIOSyntax.BIOFlattenOps[F, E, A](self)
 
+  @inline final def BIOAsync[F[+_, +_]: BIOAsync]: BIOAsync[F] = implicitly
+
+
   @inline implicit final def BIOFork[F[_, _]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
 
-  @inline final def BIOAsync[F[+_, +_]: BIOAsync]: BIOAsync[F] = implicitly
   @inline final def BIOFork[F[_, _]: BIOFork]: BIOFork[F] = implicitly
+
+
+  @inline implicit final def BIOPrimitives[F[+_, +_]: BIOPrimitives](self: BIOFunctor[F]): BIOPrimitives[F] = implicitly[BIOPrimitives[F]]
+
+  @inline final def BIOPrimitives[F[_, _]: BIOPrimitives]: BIOPrimitives[F] = implicitly
+
 }
 
 object BIOImplicitPuns {
