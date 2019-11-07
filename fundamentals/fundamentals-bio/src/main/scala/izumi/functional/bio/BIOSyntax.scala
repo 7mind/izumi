@@ -199,7 +199,7 @@ object BIOSyntax {
     @inline final def BIOMonad[F[+_, +_]: BIOMonad]: BIOMonad[F] = implicitly
   }
   trait BIOImplicitPuns8 extends BIOImplicitPuns9 {
-    @inline implicit final def BIOApplicative[F[+_, +_]: BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOBifunctorOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
+    @inline implicit final def BIOApplicative[F[+_, +_]: BIOApplicative, E, A](self: F[E, A]): BIOSyntax.BIOApplicativeOps[F, E, A] = new BIOSyntax.BIOApplicativeOps[F, E, A](self)
     @inline final def BIOApplicative[F[+_, +_]: BIOApplicative]: BIOApplicative[F] = implicitly
   }
   trait BIOImplicitPuns9 extends BIOImplicitPuns10 {
