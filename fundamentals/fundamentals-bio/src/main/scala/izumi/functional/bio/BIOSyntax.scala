@@ -37,8 +37,6 @@ trait BIOSyntax {
 
   @inline implicit final def ToAsyncOps[F[+_, +_] : BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
 
-  @inline implicit final def ToFlattenOps[F[+_, +_] : BIOMonad, E, A](self: F[E, F[E, A]]): BIOSyntax.BIOFlattenOps[F, E, A] = new BIOSyntax.BIOFlattenOps[F, E, A](self)
-
   @inline implicit final def ToForkOps[F[_, _] : BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
 
 }
@@ -61,8 +59,6 @@ object BIOSyntax {
   }
 
   final class BIOApplicativeOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOApplicative[F]) {
-    /** execute two operations in order, map their results */
-    @inline def map2[E2 >: E, B, C](r2: => F[E2, B])(f: (A, B) => C): F[E2, C] = F.map2(r, r2)(f)
 
     /** execute two operations in order, return result of second operation */
     @inline def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>[E, A, E1, B](r, f0)
@@ -72,6 +68,9 @@ object BIOSyntax {
 
     /** execute two operations in order, return result of both operations */
     @inline def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)
+
+    /** execute two operations in order, map their results */
+    @inline def map2[E2 >: E, B, C](r2: => F[E2, B])(f: (A, B) => C): F[E2, C] = F.map2(r, r2)(f)
 
     @inline def forever: F[E, Nothing] = F.forever(r)
   }
@@ -84,6 +83,8 @@ object BIOSyntax {
     @inline def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E, A, E1, B](r)(f0)
 
     @inline def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
+
+    @inline def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
   }
 
   final class BIOErrorOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOError[F]) {
@@ -160,10 +161,6 @@ object BIOSyntax {
       F.flatMap(timeout(duration): F[E1, Option[A]])(_.fold[F[E1, A]](F.fail(e))(F.pure))
 
     @inline def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race[E1, A1](r)(that)
-  }
-
-  final class BIOFlattenOps[F[+_, +_], E, A](private val r: F[E, F[E, A]])(implicit private val F: BIOMonad[F]) {
-    @inline def flatten: F[E, A] = F.flatten(r)
   }
 
   final class BIOForkOps[F[_, _], E, A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
