@@ -169,9 +169,9 @@ object JsonNetExtension extends CSharpTranslatorExtension {
               case Primitive.TUUID => s"writer.WriteValue($src.ToString());"
               case Primitive.TTime => s"""writer.WriteValue(string.Format("{0:00}:{1:00}:{2:00}.{3:000}", (int)$src.TotalHours, $src.Minutes, $src.Seconds, $src.Milliseconds));"""
               case Primitive.TDate => s"""writer.WriteValue($src.ToString("yyyy-MM-dd"));"""
-              case Primitive.TTs => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TslDefault));"""
-              case Primitive.TTsTz => s"""writer.WriteValue($src.ToString($src.Kind == DateTimeKind.Utc ? JsonNetTimeFormats.TsuDefault : JsonNetTimeFormats.TszDefault));"""
-              case Primitive.TTsU => s"""writer.WriteValue($src.ToUniversalTime().ToString(JsonNetTimeFormats.TsuDefault));"""
+              case Primitive.TTs => s"""writer.WriteValue($src.ToString(JsonNetTimeFormats.TslDefault, CultureInfo.InvariantCulture));"""
+              case Primitive.TTsTz => s"""writer.WriteValue($src.ToString($src.Kind == DateTimeKind.Utc ? JsonNetTimeFormats.TsuDefault : JsonNetTimeFormats.TszDefault, CultureInfo.InvariantCulture));"""
+              case Primitive.TTsU => s"""writer.WriteValue($src.ToUniversalTime().ToString(JsonNetTimeFormats.TsuDefault, CultureInfo.InvariantCulture));"""
             }
 
             case _ => t.id match {
