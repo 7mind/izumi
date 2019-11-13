@@ -191,12 +191,12 @@ Sorry, this page is not ready yet
 Relevant ticket: https://github.com/7mind/izumi/issues/51
 @@@
 
-As of now, an experimental plugin-checking API is available in `distage-app` module.
+As of now, an experimental plugin-checking API is available in `distage-roles` module.
 
-To use it add `distage-app` library:
+To use it add `distage-roles` library:
 
 ```scala
-libraryDependencies += Izumi.R.distage_app
+libraryDependencies += Izumi.R.distage_roles
 ```
 
 or
@@ -204,7 +204,7 @@ or
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-app" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-roles" % "$izumi.version$"
 ```
 
 @@@

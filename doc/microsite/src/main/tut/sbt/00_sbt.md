@@ -14,10 +14,8 @@ To start using Izumi plugins add the following into your `project/plugins.sbt`:
 
 @@@vars
 ```scala
-val izumi_version = "$izumi.version$"
-addSbtPlugin("io.7mind.izumi" % "sbt-izumi" % izumi_version)
-// This is Izumi's Bill of Materials, see below
-addSbtPlugin("io.7mind.izumi" % "sbt-izumi-deps" % izumi_version)
+// This is Izumi Bill of Materials, see below
+addSbtPlugin("io.7mind.izumi" % "sbt-izumi-deps" % "$izumi.version$")
 ```
 @@@
 
