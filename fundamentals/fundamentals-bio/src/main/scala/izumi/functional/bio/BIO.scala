@@ -66,6 +66,7 @@ trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
   @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
   @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
   @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(pure, fail(_))
+  @inline def tapError[E, E1 >: E, A](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
 
   // defaults
   @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))

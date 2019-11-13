@@ -27,6 +27,7 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   @inline override final def void[E, A](r: IO[E, A]): IO[E, Unit] = r.unit
   @inline override final def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
 
+  @inline override final def tapError[E, E1 >: E, A](r: ZIO[R, E, A])(f: E => ZIO[R, E1, Unit]): ZIO[R, E1, A] = r.tapError(f)
   @inline override final def leftMap[E, A, E2](r: IO[E, A])(f: E => E2): IO[E2, A] = r.mapError(f)
   @inline override final def leftFlatMap[E, A, E2](r: IO[E, A])(f: E => IO[Nothing, E2]): IO[E2, A] = r.flatMapError(f)
   @inline override final def flip[E, A](r: IO[E, A]): IO[A, E] = r.flip
