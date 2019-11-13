@@ -329,32 +329,49 @@ class DSLTest extends WordSpec {
       val implXYZ = new ImplXYZ
 
       val definition = new ModuleDef {
-        bind[ImplXYZ]
-          .to[TraitX].named("simple")
-          .to[TraitY]//.named("skdfjls")
-          .to[TraitZ]//.named("slkdjfl")
+        bind[ImplXYZ].named("impl-name")
+          .to[TraitX]("simple")
+          //.to[TraitY]
+          //.to[TraitZ]
       }
+
+      println(s"Test definition = ${definition}")
+      val testModule = Module.make(Set(
+        Bindings.binding[ImplXYZ].named("impl-name"),
+        Bindings.reference[TraitX, ImplXYZ].named("simple")
+      ))
+      println(s"Test module def = $testModule")
+      assert(definition == testModule)
 
       assert(definition === Module.make(
         Set(
-          Bindings.binding[ImplXYZ]
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+          Bindings.binding[ImplXYZ].named("impl-name")
+          , Bindings.reference[TraitX, ImplXYZ].named("simple")
+          //, Bindings.reference[TraitY, ImplXYZ]
+          //, Bindings.reference[TraitZ, ImplXYZ]
         )
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX]("simple2")//.to[TraitY].to[TraitZ]
       }
+      println(s"Test definition = ${definitionEffect}")
+      val testModule2 = Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ))),
+            Bindings.reference[TraitX, ImplXYZ].named("simple2")
+        )
+      )
+      println(s"Test module def = $testModule2")
 
       assert(definitionEffect === Module.make(
         Set(
           SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
             ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)))
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ].named("simple2")
+//          , Bindings.reference[TraitY, ImplXYZ]
+//          , Bindings.reference[TraitZ, ImplXYZ]
         )
       ))
 

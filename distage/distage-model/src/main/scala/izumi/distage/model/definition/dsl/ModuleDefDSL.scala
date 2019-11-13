@@ -9,7 +9,6 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{AddTags, SetId, SetIdFromImplName, SetImpl}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks.discard
@@ -160,13 +159,42 @@ object ModuleDefDSL {
     , protected val key: DIKey.TypeKey
   ) extends MultipleDSLMutBase[I] {
 
-    override def named[T](name: T)(implicit idContract: IdContract[T]): MultipleNamedDSL[I] = {
+    def named[T](name: T)(implicit idContract: IdContract[T]): MultipleNamedDSL[I] = {
       addOp(MultipleInstruction.SetId(name))(new MultipleNamedDSL[I](_, key.named(name)))
     }
 
-    override def to[T >: I : Tag]: MultipleDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleDSL[I](ref, key))
+    override def to[T >: I : Tag]: MultipleBindDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleBindDSL[I](ref, key))
     }
+
+    override def to[T >: I : Tag](name: String): MultipleBindDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
+    }
+
+    def tagged(tags: BindingTag*): MultipleBindDSL[I] =
+      addOp(MultipleInstruction.AddTags(tags.toSet)) {
+        new MultipleBindDSL[I](_, key)
+      }
+  }
+
+  final class MultipleBindDSL[I]
+  (
+    protected val mutableState: MultipleRef
+    , protected val key: DIKey.TypeKey
+  ) extends MultipleDSLMutBase[I] {
+
+    override def to[T >: I : Tag]: MultipleBindDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleBindDSL[I](ref, key))
+    }
+
+    override def to[T >: I : Tag](name: String): MultipleBindDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
+    }
+
+    def tagged(tags: BindingTag*): MultipleBindDSL[I] =
+      addOp(MultipleInstruction.AddTags(tags.toSet)) {
+        new MultipleBindDSL[I](_, key)
+      }
   }
 
   final class MultipleNamedDSL[I]
@@ -175,12 +203,12 @@ object ModuleDefDSL {
     , protected val key: DIKey.IdKey[_]
   ) extends MultipleDSLMutBase[I] {
 
-    override def named[T](name: T)(implicit idContract: IdContract[T]): MultipleNamedDSL[I] = {
-      addOp(MultipleInstruction.SetId(name))(new MultipleNamedDSL[I](_, key))
-    }
-
     override def to[T >: I : Tag]: MultipleNamedDSL[I] = {
       addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleNamedDSL[I](ref, key))
+    }
+
+    override def to[T >: I : Tag](name: String): MultipleNamedDSL[I] = {
+      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleNamedDSL[I](ref, key))
     }
 
     def tagged(tags: BindingTag*): MultipleNamedDSL[I] =
@@ -193,8 +221,7 @@ object ModuleDefDSL {
     protected def mutableState: MultipleRef
 
     def to[T >: I : Tag]: MultipleDSLMutBase[I]
-
-    def named[T](name: T)(implicit idContract: IdContract[T]): MultipleDSLMutBase[I]
+    def to[T >: I : Tag](name: String): MultipleDSLMutBase[I]
 
     protected def addOp[R](op: MultipleInstruction)(newState: MultipleRef => R): R = {
       newState(mutableState.append(op))
