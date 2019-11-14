@@ -1,9 +1,17 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOPrimitives, F}
+import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, F}
+import izumi.fundamentals.bio.test.masking._
 import org.scalatest.WordSpec
 
 import scala.concurrent.duration._
+
+object masking {
+  import izumi.functional.bio.{BIOFork, BIOPrimitives}
+
+  type Primitives[F[_, _]] = BIOPrimitives[F]
+  type Fork[F[_, _]] = BIOFork[F]
+}
 
 class BIOSyntaxTest extends WordSpec {
 
@@ -41,13 +49,15 @@ class BIOSyntaxTest extends WordSpec {
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
       F.map(z[F])(_ => ())
     }
-    def xa[F[+_, +_]: BIOMonad: BIOPrimitives]: F[Nothing, Int] = {
-      F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+    def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: Primitives: Fork]: F[Nothing, Int] = {
+      F.fork[Nothing, Int] {
+        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      }.flatMap(_.join)
     }
     lazy val a = x
     lazy val b = y[zio.IO](_: BIOAsync[zio.IO])
     lazy val c = z
-    lazy val d = xa[zio.IO]
+    lazy val d = `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO]
     lazy val _ = (a, b, c, d)
   }
 

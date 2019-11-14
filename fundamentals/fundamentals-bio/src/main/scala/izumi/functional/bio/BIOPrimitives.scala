@@ -9,7 +9,7 @@ trait BIOPrimitives[F[_, _]] extends BIOPrimitivesInstances {
   def mkSemaphore(permits: Long): F[Nothing, BIOSemaphore[F]]
 }
 
-sealed trait BIOPrimitivesInstances
+private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances {
   implicit val zioPrimitives: BIOPrimitives[IO] = {
     new BIOPrimitives[IO] {

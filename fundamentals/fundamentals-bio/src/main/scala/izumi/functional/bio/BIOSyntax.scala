@@ -18,11 +18,6 @@ trait BIOSyntax extends BIOImplicitPuns {
     *
     */
   def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
-
-  /**
-    * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
-    */
-  def catz: BIOCatsConversions = new BIOCatsConversions {}
 }
 
 object BIOSyntax {
@@ -159,7 +154,6 @@ object BIOSyntax {
     @inline implicit final def BIOFork[F[_, _]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
     @inline final def BIOFork[F[_, _]: BIOFork]: BIOFork[F] = implicitly
 
-    @inline implicit final def BIOPrimitives[F[+_, +_]: BIOPrimitives](self: BIOFunctor[F]): BIOPrimitives[F] = { val _ = self; BIOPrimitives[F] }
     @inline final def BIOPrimitives[F[_, _]: BIOPrimitives]: BIOPrimitives[F] = implicitly
   }
   trait BIOImplicitPuns1 extends BIOImplicitPuns2 {

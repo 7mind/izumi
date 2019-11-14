@@ -3,6 +3,7 @@ package izumi.functional.bio
 import cats.~>
 import izumi.functional.bio.impl.BIOZio
 
+import scala.language.implicitConversions
 import scala.util.Try
 
 /**
@@ -15,10 +16,13 @@ trait BIOFunctor[F[_, +_]] extends BIOFunctorInstances {
   def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
 }
 
-sealed trait BIOFunctorInstances
+private[bio] sealed trait BIOFunctorInstances
 object BIOFunctorInstances {
   // place ZIO instance at the root of hierarchy, so that it's visible when summoning any class in hierarchy
   @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
+
+  @inline implicit def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
+  @inline implicit def AttachBIOFork[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
 }
 
 trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
@@ -123,7 +127,7 @@ trait BIOPanic[F[+_, +_]] extends BIOBracket[F] with BIOPanicSyntax {
   @inline final def orTerminate[A](r: F[Throwable, A]): F[Nothing, A] = catchAll(r)(terminate(_))
 }
 
-sealed trait BIOPanicSyntax
+private[bio] sealed trait BIOPanicSyntax
 object BIOPanicSyntax {
   implicit final class BIOPanicOrTerminateK[F[+_, +_]](private val F: BIOPanic[F]) extends AnyVal {
     def orTerminateK: F[Throwable, ?] ~> F[Nothing, ?] = Lambda[F[Throwable, ?] ~> F[Nothing, ?]](F.orTerminate(_))

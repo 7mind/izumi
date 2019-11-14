@@ -15,7 +15,7 @@ trait Clock[+F[_]] {
 }
 
 object Clock {
-  def apply[F[_] : Clock]: Clock[F] = implicitly
+  def apply[F[_]: Clock]: Clock[F] = implicitly
 
   private[this] final val TZ_UTC: ZoneId = ZoneId.of("UTC")
 

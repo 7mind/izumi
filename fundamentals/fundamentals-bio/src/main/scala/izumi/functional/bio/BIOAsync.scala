@@ -41,7 +41,7 @@ trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOAsyncInstances {
 
 }
 
-sealed trait BIOAsyncInstances
+private[bio] sealed trait BIOAsyncInstances
 object BIOAsyncInstances {
   implicit def BIOAsyncZio[F](implicit clockService: Clock): BIOAsync[ZIO[F, +?, +?]] = new BIOAsyncZio[F](clockService)
 }
