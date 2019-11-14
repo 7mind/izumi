@@ -6,10 +6,9 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruct
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetElementInstruction.ElementAddTags
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.{AddTagsAll, SetIdAll}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction._
-import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.{BindingRef, MultipleRef, SetRef, SingletonInstruction, SingletonRef}
+import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.definition.{Binding, BindingTag, Bindings, ImplDef}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, IdContract, SafeType, Tag, TagK}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
@@ -101,7 +100,11 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.TypeImpl(SafeType.get[T]))
   }
 
-  final protected def bind[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bind[T: Tag](instance: => T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bind(ProviderMagnet.lift(instance))
+  }
+
+  final protected def bindValue[T: Tag](instance: T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.InstanceImpl(SafeType.get[T], instance))
   }
 
@@ -156,7 +159,7 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
   }
 
   private[distage] def bindImpl[T: Tag](implDef: ImplDef)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    val ref = registered(new MultipleRef(SingletonBinding(DIKey.get[T], implDef)))
+    val ref = registered(new MultipleRef(SingletonBinding(DIKey.get[T], implDef, Set.empty, pos.get.position), pos.get.position))
     _multipleDSL[T](ref)
   }
 }
@@ -190,15 +193,15 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
+  final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], pos: SourceFilePosition, ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: collection.Seq[ImplBinding] = {
-      val (init, tags, refs) = ops.foldLeft((initial: ImplBinding, Set.empty[BindingTag], Seq.empty[SingletonBinding[DIKey]])) {
+      val (init, tags, refs) = ops.foldLeft((initial: SingletonBinding[DIKey.BasicKey], Set.empty[BindingTag], Seq.empty[SingletonBinding[DIKey]])) {
         (acc, instr) =>
         instr match {
           case s: MultipleInstruction.SetId[_] => (acc._1.withTarget(DIKey.IdKey(acc._1.key.tpe, s.id)(s.idContract)), acc._2, acc._3)
           case MultipleInstruction.AddTags(tags) => (acc._1, acc._2 ++ tags, acc._3)
           case ImplWithReference(key) =>
-            (acc._1, acc._2, SingletonBinding(key, ImplDef.ReferenceImpl(acc._1.implementation.implType, acc._1.key, weak = false)) +: acc._3)
+            (acc._1, acc._2, SingletonBinding(key, ImplDef.ReferenceImpl(acc._1.implementation.implType, acc._1.key, weak = false), Set.empty, pos) +: acc._3)
         }
       }
 

@@ -163,34 +163,13 @@ object ModuleDefDSL {
       addOp(MultipleInstruction.SetId(name))(new MultipleNamedDSL[I](_, key.named(name)))
     }
 
-    override def to[T >: I : Tag]: MultipleBindDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleBindDSL[I](ref, key))
-    }
-
-    override def to[T >: I : Tag](name: String): MultipleBindDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
-    }
-
     def tagged(tags: BindingTag*): MultipleDSL[I] =
       addOp(MultipleInstruction.AddTags(tags.toSet)) {
         new MultipleDSL[I](_, key)
       }
   }
 
-  final class MultipleBindDSL[I]
-  (
-    protected val mutableState: MultipleRef
-    , protected val key: DIKey.TypeKey
-  ) extends MultipleDSLMutBase[I] {
-
-    override def to[T >: I : Tag]: MultipleBindDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleBindDSL[I](ref, key))
-    }
-
-    override def to[T >: I : Tag](name: String): MultipleBindDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
-    }
-  }
+  final class MultipleBindDSL[I](protected val mutableState: MultipleRef, protected val key: DIKey.TypeKey) extends MultipleDSLMutBase[I]
 
   final class MultipleNamedDSL[I]
   (
@@ -198,20 +177,23 @@ object ModuleDefDSL {
     , protected val key: DIKey.IdKey[_]
   ) extends MultipleDSLMutBase[I] {
 
-    override def to[T >: I : Tag]: MultipleNamedDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleNamedDSL[I](ref, key))
-    }
-
-    override def to[T >: I : Tag](name: String): MultipleNamedDSL[I] = {
-      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleNamedDSL[I](ref, key))
-    }
+    def tagged(tags: BindingTag*): MultipleNamedDSL[I] =
+      addOp(MultipleInstruction.AddTags(tags.toSet)) {
+        new MultipleNamedDSL[I](_, key)
+      }
   }
 
   sealed trait MultipleDSLMutBase[I] {
     protected def mutableState: MultipleRef
+    protected def key: DIKey
 
-    def to[T >: I : Tag]: MultipleDSLMutBase[I]
-    def to[T >: I : Tag](name: String): MultipleDSLMutBase[I]
+    def to[T >: I : Tag]: MultipleDSLMutBase[I] = {
+      addOp(ImplWithReference(DIKey.get[T]))(ref => new MultipleBindDSL[I](ref, DIKey.TypeKey(key.tpe)))
+    }
+
+    def to[T >: I : Tag](name: String): MultipleDSLMutBase[I] = {
+      addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, DIKey.TypeKey(key.tpe)))
+    }
 
     protected def addOp[R](op: MultipleInstruction)(newState: MultipleRef => R): R = {
       newState(mutableState.append(op))
