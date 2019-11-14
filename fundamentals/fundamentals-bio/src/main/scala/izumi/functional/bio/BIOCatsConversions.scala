@@ -4,6 +4,18 @@ import cats.Eval
 import cats.effect.ExitCase
 import izumi.functional.bio.BIOCatsConversions._
 
+/**
+  * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
+  *
+  * {{{
+  *   import izumi.functional.bio.catz._
+  *   import cats.effect.Sync
+  *
+  *   def divideByZero[F[+_, +_]: BIO]: F[Throwable, Int] = {
+  *     Sync[F[Throwable, ?]].delay(10 / 0)
+  *   }
+  * }}}
+  */
 trait BIOCatsConversions extends BIOCatsConversions1 {
   @inline implicit final def BIOToSync[F[+_, +_]](implicit F: BIO[F]): BIOCatsSync[F] = new BIOCatsSync[F](F)
 }

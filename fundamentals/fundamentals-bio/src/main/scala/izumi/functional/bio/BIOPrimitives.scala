@@ -2,14 +2,14 @@ package izumi.functional.bio
 
 import zio.{IO, Promise, Ref, Semaphore}
 
-trait BIOPrimitives[F[_, _]] extends BIOPrimitivesInstances {
+trait BIOPrimitives[F[+_, +_]] extends BIOPrimitivesInstances {
   def mkRef[A](a: A): F[Nothing, BIORef[F, A]]
   def mkLatch[A]: F[Nothing, BIOPromise[F, Nothing, A]]
   def mkPromise[E, A]: F[Nothing, BIOPromise[F, E, A]]
   def mkSemaphore(permits: Long): F[Nothing, BIOSemaphore[F]]
 }
 
-sealed trait BIOPrimitivesInstances
+private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances {
   implicit val zioPrimitives: BIOPrimitives[IO] = {
     new BIOPrimitives[IO] {

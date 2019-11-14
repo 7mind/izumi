@@ -3,7 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.BIOExit.ZIOExit
 import zio.{Fiber, IO}
 
-trait BIOFiber[F[_, _], E, A] {
+trait BIOFiber[F[+_, +_], +E, +A] {
   def join: F[E, A]
   def observe: F[Nothing, BIOExit[E, A]]
   def interrupt: F[Nothing, BIOExit[E, A]]

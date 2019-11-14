@@ -18,11 +18,6 @@ trait BIOSyntax extends BIOImplicitPuns {
     *
     */
   def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
-
-  /**
-    * Automatic converters from BIO* hierarchy to equivalent cats & cats-effect classes.
-    */
-  def catz: BIOCatsConversions = new BIOCatsConversions {}
 }
 
 object BIOSyntax {
@@ -65,14 +60,12 @@ object BIOSyntax {
 
   final class BIOMonadOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonad[F]) extends BIOApplicativeOps(r) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E, A, E1, B](r)(f0)
-
     @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
   }
 
   class BIOErrorOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOError[F]) extends BIOGuaranteeOps(r) {
-
     @inline final def catchAll[E2, A2 >: A](h: E => F[E2, A2]): F[E2, A2] = F.catchAll[E, A, E2, A2](r)(h)
     @inline final def catchSome[E2 >: E, A2 >: A](h: PartialFunction[E, F[E2, A2]]): F[E2, A2] = F.catchSome[E, A, E2, A2](r)(h)
 
@@ -88,7 +81,6 @@ object BIOSyntax {
 
   class BIOMonadErrorOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOMonadError[F]) extends BIOErrorOps(r) {
     @inline final def flatMap[E1 >: E, B](f0: A => F[E1, B]): F[E1, B] = F.flatMap[E, A, E1, B](r)(f0)
-
     @inline final def tap[E1 >: E, B](f0: A => F[E1, Unit]): F[E1, A] = F.flatMap[E, A, E1, A](r)(a => F.map(f0(a))(_ => a))
 
     @inline final def flatten[E1 >: E, A1](implicit ev: A <:< F[E1, A1]): F[E1, A1] = F.flatten(r.widen)
@@ -148,18 +140,24 @@ object BIOSyntax {
     @inline final def race[E1 >: E, A1 >: A](that: F[E1, A1]): F[E1, A1] = F.race[E1, A1](r)(that)
   }
 
-  final class BIOForkOps[F[_, _], E, A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
+  final class BIOForkOps[F[+_, +_], E, A](private val r: F[E, A])(implicit private val F: BIOFork[F]) {
     @inline final def fork: F[Nothing, BIOFiber[F, E, A]] = F.fork(r)
+  }
+
+  final class BIOFork3Ops[F[-_, +_, +_], R, E, A](private val r: F[R, E, A])(implicit private val F: BIOFork3[F]) {
+    @inline final def fork: F[R, Nothing, BIOFiber[F[Any, +?, +?], E, A]] = F.fork(r)
   }
 
   trait BIOImplicitPuns extends BIOImplicitPuns1 {
     @inline implicit final def BIOAsync[F[+_, +_]: BIOAsync, E, A](self: F[E, A]): BIOSyntax.BIOAsyncOps[F, E, A] = new BIOSyntax.BIOAsyncOps[F, E, A](self)
     @inline final def BIOAsync[F[+_, +_]: BIOAsync]: BIOAsync[F] = implicitly
 
-    @inline implicit final def BIOFork[F[_, _]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
-    @inline final def BIOFork[F[_, _]: BIOFork]: BIOFork[F] = implicitly
+    @inline implicit final def BIOFork[F[+_, +_]: BIOFork, E, A](self: F[E, A]): BIOSyntax.BIOForkOps[F, E, A] = new BIOSyntax.BIOForkOps[F, E, A](self)
+    @inline final def BIOFork[F[+_, +_]: BIOFork]: BIOFork[F] = implicitly
 
-    @inline implicit final def BIOPrimitives[F[+_, +_]: BIOPrimitives](self: BIOFunctor[F]): BIOPrimitives[F] = { val _ = self; BIOPrimitives[F] }
+    @inline implicit final def BIOFork3[F[-_, +_, +_]: BIOFork3, R, E, A](self: F[R, E, A]): BIOSyntax.BIOFork3Ops[F, R, E, A] = new BIOSyntax.BIOFork3Ops[F, R, E, A](self)
+    @inline final def BIOFork3[F[-_, +_, +_]: BIOFork3]: BIOFork3[F] = implicitly
+
     @inline final def BIOPrimitives[F[_, _]: BIOPrimitives]: BIOPrimitives[F] = implicitly
   }
   trait BIOImplicitPuns1 extends BIOImplicitPuns2 {
