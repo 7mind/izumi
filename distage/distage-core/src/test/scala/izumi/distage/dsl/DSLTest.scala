@@ -5,11 +5,12 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
 import distage._
+import izumi.distage.injector.MkInjector
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.WordSpec
 
-class DSLTest extends WordSpec {
+class DSLTest extends WordSpec with MkInjector {
 
   import TestTagOps._
 
@@ -331,47 +332,30 @@ class DSLTest extends WordSpec {
       val definition = new ModuleDef {
         bind[ImplXYZ].named("impl-name")
           .to[TraitX]("simple")
-          //.to[TraitY]
-          //.to[TraitZ]
+          .to[TraitY]
+          .to[TraitZ]
       }
-
-      println(s"Test definition = ${definition}")
-      val testModule = Module.make(Set(
-        Bindings.binding[ImplXYZ].named("impl-name"),
-        Bindings.reference[TraitX, ImplXYZ].named("simple")
-      ))
-      println(s"Test module def = $testModule")
-      assert(definition == testModule)
 
       assert(definition === Module.make(
         Set(
           Bindings.binding[ImplXYZ].named("impl-name")
           , Bindings.reference[TraitX, ImplXYZ].named("simple")
-          //, Bindings.reference[TraitY, ImplXYZ]
-          //, Bindings.reference[TraitZ, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
         )
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX]("simple2")//.to[TraitY].to[TraitZ]
+        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX]("simple2").to[TraitY].to[TraitZ]
       }
-      println(s"Test definition = ${definitionEffect}")
-      val testModule2 = Module.make(
-        Set(
-          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
-            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ))),
-            Bindings.reference[TraitX, ImplXYZ].named("simple2")
-        )
-      )
-      println(s"Test module def = $testModule2")
 
       assert(definitionEffect === Module.make(
         Set(
           SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
             ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)))
           , Bindings.reference[TraitX, ImplXYZ].named("simple2")
-//          , Bindings.reference[TraitY, ImplXYZ]
-//          , Bindings.reference[TraitZ, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
         )
       ))
 
@@ -389,6 +373,40 @@ class DSLTest extends WordSpec {
         )
       ))
 
+    }
+
+    "support bindings to multiple interfaces (injector test)" in {
+      import BasicCase6._
+
+      val implXYZ = new ImplXYZ
+
+      val definition = PlannerInput.noGc(new ModuleDef {
+        bind[ImplXYZ](implXYZ).named("my-impl")
+          .to[TraitX]
+          .to[TraitY]("Y")
+      })
+
+      val defWithoutSugar = PlannerInput.noGc(new ModuleDef {
+        make[ImplXYZ].named("my-impl")
+        make[TraitX].using[ImplXYZ]
+        make[TraitY].using[ImplXYZ]("my-impl")
+      })
+
+      val injector = mkInjector()
+      val plan1 = injector.plan(definition)
+      val plan2 = injector.plan(defWithoutSugar)
+      println(s"TEST:: plan1 = \n$plan1")
+      println(s"TEST:: plan2 = \n$plan2")
+      //assert(plan1.toString == plan2.toString)
+      val context = injector.produceUnsafe(plan1)
+
+      // asserts
+//      val instantiated = context.get[ImplXYZ]
+      val instantiatedByName = context.get[ImplXYZ]("my-impl")
+
+      //assert(instantiated eq instantiatedByName)
+      assert(context.get[TraitX].isInstanceOf[ImplXYZ])
+      assert(context.get[TraitY]("Y").isInstanceOf[ImplXYZ])
     }
   }
 

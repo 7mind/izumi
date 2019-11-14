@@ -171,9 +171,9 @@ object ModuleDefDSL {
       addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
     }
 
-    def tagged(tags: BindingTag*): MultipleBindDSL[I] =
+    def tagged(tags: BindingTag*): MultipleDSL[I] =
       addOp(MultipleInstruction.AddTags(tags.toSet)) {
-        new MultipleBindDSL[I](_, key)
+        new MultipleDSL[I](_, key)
       }
   }
 
@@ -190,11 +190,6 @@ object ModuleDefDSL {
     override def to[T >: I : Tag](name: String): MultipleBindDSL[I] = {
       addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleBindDSL[I](ref, key))
     }
-
-    def tagged(tags: BindingTag*): MultipleBindDSL[I] =
-      addOp(MultipleInstruction.AddTags(tags.toSet)) {
-        new MultipleBindDSL[I](_, key)
-      }
   }
 
   final class MultipleNamedDSL[I]
@@ -210,11 +205,6 @@ object ModuleDefDSL {
     override def to[T >: I : Tag](name: String): MultipleNamedDSL[I] = {
       addOp(ImplWithReference(DIKey.get[T].named(name)))(ref => new MultipleNamedDSL[I](ref, key))
     }
-
-    def tagged(tags: BindingTag*): MultipleNamedDSL[I] =
-      addOp(MultipleInstruction.AddTags(tags.toSet)) {
-        new MultipleNamedDSL[I](_, key)
-      }
   }
 
   sealed trait MultipleDSLMutBase[I] {
