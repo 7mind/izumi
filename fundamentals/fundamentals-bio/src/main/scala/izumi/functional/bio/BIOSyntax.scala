@@ -158,7 +158,7 @@ object BIOSyntax {
     @inline implicit final def BIOFork3[F[-_, +_, +_]: BIOFork3, R, E, A](self: F[R, E, A]): BIOSyntax.BIOFork3Ops[F, R, E, A] = new BIOSyntax.BIOFork3Ops[F, R, E, A](self)
     @inline final def BIOFork3[F[-_, +_, +_]: BIOFork3]: BIOFork3[F] = implicitly
 
-    @inline final def BIOPrimitives[F[_, _]: BIOPrimitives]: BIOPrimitives[F] = implicitly
+    @inline final def BIOPrimitives[F[+_, +_]: BIOPrimitives]: BIOPrimitives[F] = implicitly
   }
   trait BIOImplicitPuns1 extends BIOImplicitPuns2 {
     @inline implicit final def BIO[F[+_, +_]: BIO, E, A](self: F[E, A]): BIOSyntax.BIOOps[F, E, A] = new BIOSyntax.BIOOps[F, E, A](self)
