@@ -330,30 +330,30 @@ class DSLTest extends WordSpec with MkInjector {
       val implXYZ = new ImplXYZ
 
       val definition = new ModuleDef {
-        bind[ImplXYZ].named("impl-name")
-          .to[TraitX]("simple")
+        bind[ImplXYZ]
+          .to[TraitX]
           .to[TraitY]
           .to[TraitZ]
       }
 
       assert(definition === Module.make(
         Set(
-          Bindings.binding[ImplXYZ].named("impl-name")
-          , Bindings.reference[TraitX, ImplXYZ].named("simple")
+          Bindings.binding[ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ]
           , Bindings.reference[TraitY, ImplXYZ]
           , Bindings.reference[TraitZ, ImplXYZ]
         )
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX]("simple2").to[TraitY].to[TraitZ]
+        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX].to[TraitY].to[TraitZ]
       }
 
       assert(definitionEffect === Module.make(
         Set(
           SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
             ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)))
-          , Bindings.reference[TraitX, ImplXYZ].named("simple2")
+          , Bindings.reference[TraitX, ImplXYZ]
           , Bindings.reference[TraitY, ImplXYZ]
           , Bindings.reference[TraitZ, ImplXYZ]
         )
@@ -378,33 +378,24 @@ class DSLTest extends WordSpec with MkInjector {
     "support bindings to multiple interfaces (injector test)" in {
       import BasicCase6._
 
-      val implXYZ = new ImplXYZ
-
       val definition = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ](implXYZ).named("my-impl")
+        bind[ImplXYZ].named("my-impl")
           .to[TraitX]
           .to[TraitY]("Y")
       })
 
       val defWithoutSugar = PlannerInput.noGc(new ModuleDef {
         make[ImplXYZ].named("my-impl")
-        make[TraitX].using[ImplXYZ]
-        make[TraitY].using[ImplXYZ]("my-impl")
+        make[TraitX].using[ImplXYZ]("my-impl")
+        make[TraitY].named("Y").using[ImplXYZ]("my-impl")
       })
 
       val injector = mkInjector()
       val plan1 = injector.plan(definition)
       val plan2 = injector.plan(defWithoutSugar)
-      println(s"TEST:: plan1 = \n$plan1")
-      println(s"TEST:: plan2 = \n$plan2")
-      //assert(plan1.toString == plan2.toString)
+      assert(plan1.definition == plan2.definition)
+
       val context = injector.produceUnsafe(plan1)
-
-      // asserts
-//      val instantiated = context.get[ImplXYZ]
-      val instantiatedByName = context.get[ImplXYZ]("my-impl")
-
-      //assert(instantiated eq instantiatedByName)
       assert(context.get[TraitX].isInstanceOf[ImplXYZ])
       assert(context.get[TraitY]("Y").isInstanceOf[ImplXYZ])
     }
