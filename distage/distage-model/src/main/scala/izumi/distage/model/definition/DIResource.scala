@@ -305,13 +305,15 @@ object DIResource {
   }
 
   /**
-    * Class-based proxy for an existing [[cats.effect.Resource]]
+    * Class-based proxy over a [[cats.effect.Resource]] value
     *
     * {{{
     *   class IntRes extends DIResource.OfCats(Resource.pure(1000))
     * }}}
     */
   class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
+
+  class OfZIO[R, E, A](inner: ZManaged[R, E, A]) extends DIResource.Of[zio.ZIO[R, E, ?], A](fromZIO(inner))
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
