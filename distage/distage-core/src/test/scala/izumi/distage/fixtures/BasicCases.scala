@@ -127,4 +127,25 @@ Forest fire, climbin' higher, real life, it can wait""")
     class TestImpl1(val justASet: Set[TestDependency])
   }
 
+  object BasicCase6 {
+    trait TraitX {
+      def x(): String
+    }
+
+    trait TraitY {
+      def y(): String
+    }
+
+    trait TraitZ {
+      def z(): String
+    }
+
+    class ImplXYZ extends TraitX with TraitY with TraitZ {
+      override def x(): String = "X"
+      override def y(): String = "Y"
+      override def z(): String = "Z"
+    }
+
+  }
+
 }

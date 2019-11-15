@@ -3,11 +3,14 @@ package izumi.distage.dsl
 import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
-import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.injector.MkInjector
+import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.WordSpec
 
-class DSLTest extends WordSpec {
+class DSLTest extends WordSpec with MkInjector {
 
   import TestTagOps._
 
@@ -319,6 +322,102 @@ class DSLTest extends WordSpec {
 
       assert(definition1.bindings.map(_.tags.strings) == Set(Set("tag1"), Set("tag2")))
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
+    }
+
+    "support binding to multiple interfaces" in {
+      import BasicCase6._
+
+      val implXYZ = new ImplXYZ
+
+      val definition = new ModuleDef {
+        bind[ImplXYZ]
+          .to[TraitX]
+          .to[TraitY]
+          .to[TraitZ]
+      }
+
+      assert(definition === Module.make(
+        Set(
+          Bindings.binding[ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+      val definitionEffect = new ModuleDef {
+        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionEffect === Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)), Set.empty, SourceFilePosition.unknown)
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+      val definitionResource = new ModuleDef {
+        bindResource[DIResource.Simple[ImplXYZ], ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionResource === Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]])), Set.empty, SourceFilePosition.unknown)
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+    }
+
+    "support bindings to multiple interfaces (injector test)" in {
+      import BasicCase6._
+
+      val definition = PlannerInput.noGc(new ModuleDef {
+        bind[ImplXYZ].named("my-impl")
+          .to[TraitX]
+          .to[TraitY]("Y")
+      })
+
+      val defWithoutSugar = PlannerInput.noGc(new ModuleDef {
+        make[ImplXYZ].named("my-impl")
+        make[TraitX].using[ImplXYZ]("my-impl")
+        make[TraitY].named("Y").using[ImplXYZ]("my-impl")
+      })
+
+      val defWithTags = PlannerInput.noGc(new ModuleDef {
+        bind[ImplXYZ].named("my-impl").tagged("tag1")
+          .to[TraitX]
+          .to[TraitY]
+      })
+
+      val defWithTagsWithoutSugar = PlannerInput.noGc(new ModuleDef {
+        make[ImplXYZ].named("my-impl").tagged("tag1")
+        make[TraitX].tagged("tag1").using[ImplXYZ]("my-impl")
+        make[TraitY].tagged("tag1").using[ImplXYZ]("my-impl")
+      })
+
+      val injector = mkInjector()
+      val plan1 = injector.plan(definition)
+      val plan2 = injector.plan(defWithoutSugar)
+      assert(plan1.definition == plan2.definition)
+
+      val plan3 = injector.plan(defWithTags)
+      val plan4 = injector.plan(defWithTagsWithoutSugar)
+      assert(plan3.definition == plan4.definition)
+
+      val context = injector.produceUnsafe(plan1)
+      val xInstance = context.get[TraitX]
+      val yInstance = context.get[TraitY]("Y")
+      val implInstance = context.get[ImplXYZ]("my-impl")
+
+      assert(xInstance eq implInstance)
+      assert(yInstance eq implInstance)
     }
   }
 
