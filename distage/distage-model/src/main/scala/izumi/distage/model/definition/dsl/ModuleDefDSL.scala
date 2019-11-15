@@ -68,7 +68,7 @@ trait ModuleDefDSL
 
   import AbstractBindingDefDSL._
 
-  override def bindings: Set[Binding] = freeze
+  override final def bindings: Set[Binding] = freeze
 
   private[this] final def freeze: Set[Binding] = {
     ModuleBase.tagwiseMerge(retaggedIncludes ++ frozenState)
@@ -76,13 +76,13 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): ModuleDefDSL.BindDSL[T] =
+  override private[definition] final def _bindDSL[T: Tag](ref: SingletonRef): ModuleDefDSL.BindDSL[T] =
     new ModuleDefDSL.BindDSL[T](ref, ref.key)
 
-  override private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): ModuleDefDSL.MultipleDSL[T] =
+  override private[definition] final def _multipleDSL[T: Tag](ref: MultipleRef): ModuleDefDSL.MultipleDSL[T] =
     new ModuleDefDSL.MultipleDSL[T](ref, ref.key)
 
-  override private[definition] def _setDSL[T: Tag](ref: SetRef): ModuleDefDSL.SetDSL[T] =
+  override private[definition] final def _setDSL[T: Tag](ref: SetRef): ModuleDefDSL.SetDSL[T] =
     new ModuleDefDSL.SetDSL[T](ref)
 
   /**
@@ -641,7 +641,6 @@ object ModuleDefDSL {
       import tag._
       appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[R], DIKey.get[R].named(name), weak = true)), pos)
     }
-
 
     protected def multiSetAdd(newImpl: ImplDef, pos: CodePositionMaterializer): AfterMultiAdd
     protected def appendElement(newImpl: ImplDef, pos: CodePositionMaterializer): AfterAdd

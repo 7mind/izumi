@@ -327,7 +327,8 @@ class DSLTest extends WordSpec with MkInjector {
     "support binding to multiple interfaces" in {
       import BasicCase6._
 
-      val implXYZ = new ImplXYZ
+      val implXYZ: Identity[ImplXYZ] = new ImplXYZ
+      val implXYZResource = DIResource.make(implXYZ)(_ => ())
 
       val definition = new ModuleDef {
         bind[ImplXYZ]
@@ -346,7 +347,7 @@ class DSLTest extends WordSpec with MkInjector {
       ))
 
       val definitionEffect = new ModuleDef {
-        bindEffect[Identity, ImplXYZ](implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+        bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
       }
 
       assert(definitionEffect === Module.make(
@@ -360,13 +361,29 @@ class DSLTest extends WordSpec with MkInjector {
       ))
 
       val definitionResource = new ModuleDef {
-        bindResource[DIResource.Simple[ImplXYZ], ImplXYZ].to[TraitX].to[TraitY].to[TraitZ]
+        bindResource[DIResource.Simple[ImplXYZ]].to[TraitX].to[TraitY].to[TraitZ]
       }
 
       assert(definitionResource === Module.make(
         Set(
-          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
-            ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]])), Set.empty, SourceFilePosition.unknown)
+          SingletonBinding(DIKey.get[ImplXYZ]
+            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]]))
+            , Set.empty, SourceFilePosition.unknown)
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+      val definitionResourceFn = new ModuleDef {
+        bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionResourceFn === Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ]
+            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource))
+            , Set.empty, SourceFilePosition.unknown)
           , Bindings.reference[TraitX, ImplXYZ]
           , Bindings.reference[TraitY, ImplXYZ]
           , Bindings.reference[TraitZ, ImplXYZ]

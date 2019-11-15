@@ -96,6 +96,16 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     _setDSL(setRef)
   }
 
+  /** Same as `make[T].from(implicitly[T])` **/
+  final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
+    registered(new SingletonRef(Bindings.binding(instance))).discard()
+  }
+
+  /** Same as `make[T].named(name).from(implicitly[T])` **/
+  final protected def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
+    registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
+  }
+
   final protected def bind[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.TypeImpl(SafeType.get[T]))
   }
@@ -124,41 +134,30 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T](implicit tag: ResourceTag[R] {type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, Any]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
+    bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R] {type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, Any]](instance: R with DIResourceBase[Any, Any])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
+    bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, T], T](function: ProviderMagnet[R with DIResourceBase[Any, T]])(implicit tag: ResourceTag[R] {type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R with DIResourceBase[Any, Any]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
+    bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
   }
 
-  final protected def bindResource[R0, R <: DIResourceBase[Any, T], T]
-  (function: ProviderMagnet[R0])(implicit adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, T]], tag: ResourceTag[R] {type A = T}, pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindResource[R0, R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R0])(implicit
+                                                                                                    adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, Any]],
+                                                                                                    tag: ResourceTag[R],
+                                                                                                    pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
-    bindImpl[T](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
+    bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
   }
 
-  //  @deprecated("use .setOf", "14.03.2019")
-  //  final protected def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = setOf[T]
-
-  /** Same as `make[T].from(implicitly[T])` **/
-  final protected def addImplicit[T: Tag](implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    registered(new SingletonRef(Bindings.binding(instance))).discard()
-  }
-
-  /** Same as `make[T].named(name).from(implicitly[T])` **/
-  final protected def addImplicit[T: Tag](name: String)(implicit instance: T, pos: CodePositionMaterializer): Unit = {
-    registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
-  }
-
-  private[distage] def bindImpl[T: Tag](implDef: ImplDef)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  private[this] def bindImpl[T: Tag](implDef: ImplDef)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     val ref = registered(new MultipleRef(SingletonBinding(DIKey.get[T], implDef, Set.empty, pos.get.position), pos.get.position))
     _multipleDSL[T](ref)
   }
@@ -214,10 +213,6 @@ object AbstractBindingDefDSL {
       ops += op
       this
     }
-  }
-
-  private final class MultiSetHackId(private val long: Long) extends AnyVal {
-    override def toString: String = s"multi.${long.toString}"
   }
 
   final class SetRef
@@ -304,55 +299,34 @@ object AbstractBindingDefDSL {
   }
 
   sealed trait SingletonInstruction
-
   object SingletonInstruction {
-
     final case class SetImpl(implDef: ImplDef) extends SingletonInstruction
-
     final case class AddTags(tags: Set[BindingTag]) extends SingletonInstruction
-
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends SingletonInstruction
-
     final case class SetIdFromImplName() extends SingletonInstruction
-
   }
 
   sealed trait MultipleInstruction
-
   object MultipleInstruction {
-
     final case class AddTags(tags: Set[BindingTag]) extends MultipleInstruction
-
     final case class SetId[I](id: I)(implicit val idContract: IdContract[I]) extends MultipleInstruction
-
     final case class ImplWithReference(key: DIKey) extends MultipleInstruction
-
   }
 
   sealed trait SetInstruction
-
   object SetInstruction {
-
     final case class AddTagsAll(tags: Set[BindingTag]) extends SetInstruction
-
     final case class SetIdAll[I](id: I)(implicit val idContract: IdContract[I]) extends SetInstruction
-
   }
 
   sealed trait SetElementInstruction
-
   object SetElementInstruction {
-
     final case class ElementAddTags(tags: Set[BindingTag]) extends SetElementInstruction
-
   }
 
   sealed trait MultiSetElementInstruction
-
   object MultiSetElementInstruction {
-
     final case class MultiAddTags(tags: Set[BindingTag]) extends MultiSetElementInstruction
-
   }
 
 }
