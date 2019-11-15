@@ -196,12 +196,12 @@ object AbstractBindingDefDSL {
   final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], pos: SourceFilePosition, ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: collection.Seq[ImplBinding] = {
       val (init, tags, refs) = ops.foldLeft((initial: SingletonBinding[DIKey.BasicKey], Set.empty[BindingTag], Seq.empty[SingletonBinding[DIKey]])) {
-        (acc, instr) =>
+        case ((base, tagAcc, refs), instr) =>
         instr match {
-          case s: MultipleInstruction.SetId[_] => (acc._1.withTarget(DIKey.IdKey(acc._1.key.tpe, s.id)(s.idContract)), acc._2, acc._3)
-          case MultipleInstruction.AddTags(tags) => (acc._1, acc._2 ++ tags, acc._3)
+          case s: MultipleInstruction.SetId[_] => (base.withTarget(DIKey.IdKey(base.key.tpe, s.id)(s.idContract)), tagAcc, refs)
+          case MultipleInstruction.AddTags(tags) => (base, tagAcc ++ tags, refs)
           case ImplWithReference(key) =>
-            (acc._1, acc._2, SingletonBinding(key, ImplDef.ReferenceImpl(acc._1.implementation.implType, acc._1.key, weak = false), Set.empty, pos) +: acc._3)
+            (base, tagAcc, SingletonBinding(key, ImplDef.ReferenceImpl(base.implementation.implType, base.key, weak = false), Set.empty, pos) +: refs)
         }
       }
 
