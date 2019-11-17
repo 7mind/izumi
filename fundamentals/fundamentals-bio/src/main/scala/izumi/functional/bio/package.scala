@@ -32,7 +32,8 @@ package object bio extends BIOSyntax {
    * */
   trait BIOFunctor[F[_, +_]] extends BIOFunctorInstances {
     def map[E, A, B](r: F[E, A])(f: A => B): F[E, B]
-    def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
+    @inline def as[E, A, B](r: F[E, A])(v: => B): F[E, B] = map(r)(_ => v)
+    @inline def void[E, A](r: F[E, A]): F[E, Unit] = map(r)(_ => ())
   }
 
   private[bio] sealed trait BIOFunctorInstances
@@ -91,7 +92,7 @@ package object bio extends BIOSyntax {
     @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
     @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
     @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(pure, fail(_))
-    @inline def tapError[E, E1 >: E, A](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
+    @inline def tapError[E, A, E1 >: E](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
 
     // defaults
     @inline override def bimap[E, A, E2, B](r: F[E, A])(f: E => E2, g: A => B): F[E2, B] = redeem(r)(e => fail(f(e)), a => pure(g(a)))
@@ -102,6 +103,8 @@ package object bio extends BIOSyntax {
     def flatten[E, A](r: F[E, F[E, A]]): F[E, A] = flatMap(r)(identity)
 
     // defaults
+    @inline def tap[E, A, E2 >: E](r: F[E, A])(f: A => F[E2, Unit]): F[E2, A] = flatMap[E, A, E2, A](r)(a => as(f(a))(a))
+
     @inline override def map[E, A, B](r: F[E, A])(f: A => B): F[E, B] = {
       flatMap(r)(a => pure(f(a)))
     }
@@ -125,6 +128,9 @@ package object bio extends BIOSyntax {
   trait BIOMonadError[F[+_, +_]] extends BIOError[F] with BIOMonad[F] {
     @inline def leftFlatMap[E, A, E2](r: F[E, A])(f: E => F[Nothing, E2]): F[E2, A] = {
       redeem(r)(e => flatMap(f(e))(fail(_)), pure)
+    }
+    @inline def tapBoth[E, A, E2 >: E](r: F[E, A])(err: E => F[E2, Unit], succ: A => F[E2, Unit]): F[E2, A] = {
+      tap(tapError[E, A, E2](r)(err))(succ)
     }
   }
 
@@ -182,10 +188,16 @@ package object bio extends BIOSyntax {
     final type Canceler = F[Nothing, Unit]
 
     @inline def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
+    @inline def asyncF[E, A](register: (Either[E, A] => Unit) => F[E, Unit]): F[E, A]
     @inline def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): F[E, A]
-    @inline def `yield`: F[Nothing, Unit]
 
-    @inline def race[E, A](r1: F[E, A])(r2: F[E, A]): F[E, A]
+    @inline def yieldNow: F[Nothing, Unit]
+    @inline def never: F[Nothing, Nothing] = async(_ => ())
+
+    /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
+    @inline def race[E, A](r1: F[E, A], r2: F[E, A]): F[E, A]
+    @inline def racePair[E, A, B](fa: F[E, A], fb: F[E, B]): F[E, Either[(A, BIOFiber[F, E, B]), (BIOFiber[F, E, A], B)]]
+
     @inline def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
     @inline def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
@@ -194,7 +206,8 @@ package object bio extends BIOSyntax {
     @inline def uninterruptible[E, A](r: F[E, A]): F[E, A]
 
     @inline def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
-    @inline final def repeatUntil[E, A](onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int)(action: F[E, Option[A]]): F[E, A] = {
+
+    @inline final def repeatUntil[E, A](action: F[E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[E, A] = {
       def go(n: Int): F[E, A] = {
         flatMap(action) {
           case Some(value) =>

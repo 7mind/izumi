@@ -1,10 +1,10 @@
 package izumi.functional.bio.impl
 
 import izumi.functional.bio.BIOExit.ZIOExit
-import izumi.functional.bio.{BIO, BIOAsync, BIOExit}
-import zio.{ZIO, ZSchedule}
+import izumi.functional.bio.{BIO, BIOAsync, BIOExit, BIOFiber}
 import zio.clock.Clock
 import zio.duration.Duration.fromScala
+import zio.{ZIO, ZSchedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
@@ -26,14 +26,18 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
 
   @inline override final def void[E, A](r: IO[E, A]): IO[E, Unit] = r.unit
   @inline override final def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
+  @inline override final def as[E, A, B](r: IO[E, A])(v: => B): IO[E, B] = r.as(v)
 
-  @inline override final def tapError[E, E1 >: E, A](r: ZIO[R, E, A])(f: E => ZIO[R, E1, Unit]): ZIO[R, E1, A] = r.tapError(f)
+
+  @inline override final def tapError[E, A, E1 >: E](r: IO[E, A])(f: E => IO[E1, Unit]): IO[E1, A] = r.tapError(f)
   @inline override final def leftMap[E, A, E2](r: IO[E, A])(f: E => E2): IO[E2, A] = r.mapError(f)
   @inline override final def leftFlatMap[E, A, E2](r: IO[E, A])(f: E => IO[Nothing, E2]): IO[E2, A] = r.flatMapError(f)
   @inline override final def flip[E, A](r: IO[E, A]): IO[A, E] = r.flip
   @inline override final def bimap[E, A, E2, B](r: IO[E, A])(f: E => E2, g: A => B): IO[E2, B] = r.bimap(f, g)
 
   @inline override final def flatMap[E, A, E1 >: E, B](r: IO[E, A])(f0: A => IO[E1, B]): IO[E1, B] = r.flatMap(f0)
+  @inline override final def tap[E, A, E2 >: E](r: IO[E, A])(f: A => IO[E2, Unit]): IO[E2, A] = r.tap(f)
+  @inline override final def tapBoth[E, A, E2 >: E](r: IO[E, A])(err: E => IO[E2, Unit], succ: A => IO[E2, Unit]): IO[E2, A] = r.tapBoth(err, succ)
   @inline override final def flatten[E, A](r: IO[E, IO[E, A]]): IO[E, A] = ZIO.flatten(r)
   @inline override final def *>[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, B] = f *> next
   @inline override final def <*[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, A] = f <* next
@@ -67,7 +71,8 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
 class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R, +?, +?]] {
   private[this] final type IO[+E, +A] = ZIO[R, E, A]
 
-  @inline override final def `yield`: IO[Nothing, Unit] = ZIO.yieldNow
+  @inline override final def yieldNow: IO[Nothing, Unit] = ZIO.yieldNow
+  @inline override final def never: IO[Nothing, Nothing] = ZIO.never
 
   @inline override final def sleep(duration: Duration): IO[Nothing, Unit] = {
     ZIO.sleep(fromScala(duration)).provide(clockService)
@@ -86,35 +91,30 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
     ZIO.accessM[R](r.provide(_).timeout(fromScala(duration)).provide(clockService))
   }
 
-  @inline override final def race[E, A](r1: IO[E, A])(r2: IO[E, A]): IO[E, A] = {
-    r1.race(r2)
+  @inline override final def race[E, A](r1: IO[E, A], r2: IO[E, A]): IO[E, A] = {
+    r1.raceAttempt(r2)
+  }
+
+  @inline override final def racePair[E, A, B](r1: IO[E, A], r2: IO[E, B]): IO[E, Either[(A, BIOFiber[ZIO[R, +?, +?], E, B]), (BIOFiber[ZIO[R, +?, +?], E, A], B)]] = {
+    (r1 raceWith r2)(
+      { case (l, f) => l.fold(f.interrupt *> ZIO.halt(_), ZIO.succeed).map(lv => Left((lv, BIOFiber.fromZIO(f)))) },
+      { case (r, f) => r.fold(f.interrupt *> ZIO.halt(_), ZIO.succeed).map(rv => Right((BIOFiber.fromZIO(f), rv))) }
+    )
   }
 
   @inline override final def async[E, A](register: (Either[E, A] => Unit) => Unit): IO[E, A] = {
-    ZIO.effectAsync[R, E, A] {
-      cb =>
-        register {
-          case Right(v) =>
-            cb(ZIO.succeed(v))
-          case Left(t) =>
-            cb(ZIO.fail(t))
-        }
-    }
+    ZIO.effectAsync(cb => register(cb apply _.fold(ZIO.fail, ZIO.succeed)))
+  }
+
+  @inline override final def asyncF[E, A](register: (Either[E, A] => Unit) => ZIO[R, E, Unit]): ZIO[R, E, A] = {
+    ZIO.effectAsyncM(cb => register(cb apply _.fold(ZIO.fail, ZIO.succeed)))
   }
 
   @inline override final def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): IO[E, A] = {
-    ZIO.accessM {
-      r =>
-        ZIO.effectAsyncInterrupt[R, E, A] {
-          cb =>
-            val canceler = register {
-              case Right(v) =>
-                cb(ZIO.succeed(v))
-              case Left(t) =>
-                cb(ZIO.fail(t))
-            }
-            Left(canceler.provide(r))
-        }
+    ZIO.effectAsyncInterrupt[R, E, A] {
+      cb =>
+        val canceler = register(cb apply _.fold(ZIO.fail, ZIO.succeed))
+        Left(canceler)
     }
   }
 
