@@ -8,6 +8,7 @@ import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCa
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import distage._
+import izumi.distage.testkit.services.dstest.TestEnvironment
 import zio.clock.Clock
 import zio.duration.Duration
 
@@ -40,11 +41,13 @@ class DistageTestDockerBIO extends DistageBIOSpecScalatest[ZIO] {
     "support docker resources" in {
       (service: PgSvcExample, clock: Clock) =>
         for {
-          _ <- zio.ZIO.sleep(Duration.apply(5, TimeUnit.SECONDS)).provide(clock)
+          _ <- zio.ZIO.effect(println(service.pg.mapping))
+          _ <- zio.ZIO.sleep(Duration.apply(1, TimeUnit.SECONDS)).provide(clock)
         } yield ()
     }
   }
 
+  override protected def env: TestEnvironment = super.env
 }
 
 class DistageTestExample extends DistageSpecScalatest[CIO] with DistageMemoizeExample[CIO] {
