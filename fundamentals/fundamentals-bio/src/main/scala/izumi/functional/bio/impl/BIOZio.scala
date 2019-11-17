@@ -1,12 +1,15 @@
 package izumi.functional.bio.impl
 
+import java.util.concurrent.{CompletionException, CompletionStage}
+
 import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIO, BIOAsync, BIOExit, BIOFiber}
 import zio.clock.Clock
 import zio.duration.Duration.fromScala
-import zio.{ZIO, ZSchedule}
+import zio.{Task, ZIO, ZSchedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{ExecutionException, Future}
 import scala.util.Try
 
 object BIOZio extends BIOZio[Any]
@@ -27,7 +30,6 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   @inline override final def void[E, A](r: IO[E, A]): IO[E, Unit] = r.unit
   @inline override final def map[E, A, B](r: IO[E, A])(f: A => B): IO[E, B] = r.map(f)
   @inline override final def as[E, A, B](r: IO[E, A])(v: => B): IO[E, B] = r.as(v)
-
 
   @inline override final def tapError[E, A, E1 >: E](r: IO[E, A])(f: E => IO[E1, Unit]): IO[E1, A] = r.tapError(f)
   @inline override final def leftMap[E, A, E2](r: IO[E, A])(f: E => E2): IO[E2, A] = r.mapError(f)
@@ -116,6 +118,44 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
         val canceler = register(cb apply _.fold(ZIO.fail, ZIO.succeed))
         Left(canceler)
     }
+  }
+
+  @inline override final def fromFuture[A](future: => Future[A]): IO[Throwable, A] = {
+    ZIO.fromFuture(_ => future)
+  }
+
+  @inline override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): IO[Throwable, A] = {
+    def unwrapDone[T](isFatal: Throwable => Boolean)(f: java.util.concurrent.Future[T]): Task[T] = {
+      try Task.succeed(f.get()) catch catchFromGet(isFatal)
+    }
+    def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
+      case e: CompletionException =>
+        Task.fail(e.getCause)
+      case e: ExecutionException =>
+        Task.fail(e.getCause)
+      case _: InterruptedException =>
+        Task.interrupt
+      case e if !isFatal(e) =>
+        Task.fail(e)
+    }
+    ZIO.effect(javaFuture).flatMap[R, Throwable, A](javaFuture => Task.effectSuspendTotalWith { p =>
+      val cf = javaFuture.toCompletableFuture
+      if (cf.isDone) {
+        unwrapDone(p.fatal)(cf)
+      } else {
+        Task.effectAsync {
+          cb =>
+            val _ = javaFuture.handle[Unit] {
+              (v: A, t: Throwable) =>
+                val io = Option(t).fold[Task[A]](Task.succeed(v)) {
+                  t =>
+                    catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t))
+                }
+                cb(io)
+            }
+        }
+      }
+    })
   }
 
   @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = {
