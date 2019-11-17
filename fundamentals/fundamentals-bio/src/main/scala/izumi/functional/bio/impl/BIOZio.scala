@@ -9,7 +9,7 @@ import zio.duration.Duration.fromScala
 import zio.{Task, ZIO, ZSchedule}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{ExecutionException, Future}
+import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 import scala.util.Try
 
 object BIOZio extends BIOZio[Any]
@@ -120,8 +120,8 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
     }
   }
 
-  @inline override final def fromFuture[A](future: => Future[A]): IO[Throwable, A] = {
-    ZIO.fromFuture(_ => future)
+  @inline override final def fromFuture[A](mkFuture: ExecutionContext => Future[A]): IO[Throwable, A] = {
+    ZIO.fromFuture(mkFuture)
   }
 
   @inline override final def fromFutureJava[A](javaFuture: => CompletionStage[A]): IO[Throwable, A] = {

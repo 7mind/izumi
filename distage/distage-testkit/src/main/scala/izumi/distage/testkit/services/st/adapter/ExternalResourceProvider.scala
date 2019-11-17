@@ -175,20 +175,20 @@ object ExternalResourceProvider {
                   eff <- locator.instances.find(_.key.tpe == effectTag).map(_.value.asInstanceOf[DIEffect[FakeF]])
                   ru <- locator.instances.find(_.key.tpe == runnerTag).map(_.value.asInstanceOf[DIEffectRunner[FakeF]])
                 } yield {
-                  implicit val effect: DIEffect[FakeF] = eff
+                  implicit val F: DIEffect[FakeF] = eff
                   implicit val runner: DIEffectRunner[FakeF] = ru
                   runner.run {
                     for {
-                      _ <- effects.foldLeft(effect.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.fType}..."))) {
+                      _ <- effects.foldLeft(F.maybeSuspend(logger.log(s"Running finalizers in effect type ${rt.fType}..."))) {
                         case (acc, f) =>
                           acc.guarantee {
                             for {
-                              _ <- effect.maybeSuspend(logger.log(s"Closing ${f.key}..."))
-                              _ <- effect.suspendF(f.effect())
+                              _ <- F.maybeSuspend(logger.log(s"Closing ${f.key}..."))
+                              _ <- F.suspendF(f.effect())
                             } yield ()
                           }
                       }
-                      _ <- effect.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.fType}!"))
+                      _ <- F.maybeSuspend(logger.log(s"Finished finalizers in effect type ${rt.fType}!"))
                     } yield ()
                   }
                 }

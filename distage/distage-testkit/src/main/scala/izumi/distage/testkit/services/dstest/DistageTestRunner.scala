@@ -106,13 +106,13 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, effect: DIEffect[F], integLocator: Locator)(f: => F[Unit]): F[Unit] = {
+  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, F: DIEffect[F], integLocator: Locator)(f: => F[Unit]): F[Unit] = {
     integrationChecker.check(plans.subRoots, integLocator) match {
       case Some(value) =>
-        effect.traverse_(testplans) {
+        F.traverse_(testplans) {
           test =>
 
-            effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
+            F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
         }
 
       case None =>
@@ -120,7 +120,7 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit F: DIEffect[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
@@ -129,15 +129,15 @@ class DistageTestRunner[F[_] : TagK](
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        effect.traverse_(testplans.groupBy {
+        F.traverse_(testplans.groupBy {
           t =>
             val id = t._1.meta.id
             SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
         }) {
           case (id, plans) =>
             for {
-              _ <- effect.maybeSuspend(reporter.beginSuite(id))
-              _ <- effect.traverse_(plans) {
+              _ <- F.maybeSuspend(reporter.beginSuite(id))
+              _ <- F.traverse_(plans) {
                 case (test, testplan) =>
                   val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
 
@@ -150,12 +150,12 @@ class DistageTestRunner[F[_] : TagK](
                   // we are ready to run the test, finally
                   testInjector.produceF[F](newtestplan.subplan).use {
                     integLocator =>
-                      check(Seq(test), newtestplan, effect, integLocator) {
+                      check(Seq(test), newtestplan, F, integLocator) {
                         proceedIndividual(test, newtestplan, integLocator)
                       }
                   }
               }
-              _ <- effect.maybeSuspend(reporter.endSuite(id))
+              _ <- F.maybeSuspend(reporter.endSuite(id))
             } yield {
             }
 
@@ -163,14 +163,14 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit effect: DIEffect[F]): F[Unit] = {
+  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit F: DIEffect[F]): F[Unit] = {
     Injector.inherit(integLocator).produceF[F](newtestplan.primary).use {
       testLocator =>
         def doRun(before: Long): F[Unit] = for {
 
           _ <- testLocator.run(test.test)
-          after <- effect.maybeSuspend(System.nanoTime())
-          _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS))))
+          after <- F.maybeSuspend(System.nanoTime())
+          _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS))))
         } yield {
         }
 
@@ -179,13 +179,13 @@ class DistageTestRunner[F[_] : TagK](
           case t: Throwable =>
             val after = System.nanoTime()
             reporter.testStatus(test.meta, TestStatus.Failed(t, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
-            effect.pure(())
+            F.pure(())
         }
 
         for {
-          before <- effect.maybeSuspend(System.nanoTime())
-          _ <- effect.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
-          _ <- effect.definitelyRecoverCause(doRun(before))(doRecover(before))
+          before <- F.maybeSuspend(System.nanoTime())
+          _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
+          _ <- F.definitelyRecoverCause(doRun(before))(doRecover(before))
         } yield ()
     }
   }

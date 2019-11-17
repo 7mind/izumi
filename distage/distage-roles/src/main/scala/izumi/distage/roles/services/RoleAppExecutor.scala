@@ -47,7 +47,7 @@ object RoleAppExecutor {
       } yield ()
     }
 
-    protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit effect: DIEffect[F]): F[Unit] = {
+    protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit F: DIEffect[F]): F[Unit] = {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -65,39 +65,37 @@ object RoleAppExecutor {
       if (rolesToRun.nonEmpty) {
         lateLogger.info(s"Going to run: ${rolesToRun.size -> "roles"}")
 
-        val tt = rolesToRun.map {
+        val roleServices = rolesToRun.map {
           case (task, cfg) =>
 
-            task.start(cfg.roleParameters, cfg.freeArgs)
+            task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
         val finalizer = (_: Unit) => {
           hook.await(lateLogger)
         }
-        val f = tt.foldLeft(finalizer) {
-          case (acc, role) =>
+        val f = roleServices.foldRight(finalizer) {
+          case ((role, res), acc) =>
             _ =>
               val loggedTask = for {
-                _ <- effect.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
-                _ <- role.use(acc)
-                _ <- effect.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+                _ <- F.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
+                _ <- res.use(acc)
+                _ <- F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
               } yield ()
 
-              effect.definitelyRecover(loggedTask) {
+              F.definitelyRecover(loggedTask) {
                 t =>
-                  for {
-                    _ <- effect.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
-                    _ <- effect.fail[Unit](t)
-                  } yield ()
+                  F.maybeSuspend(lateLogger.error(s"Role $role failed: $t"))
+                    .flatMap(_ => F.fail[Unit](t))
               }
         }
         f(())
       } else {
-        effect.maybeSuspend(lateLogger.info("No services to run, exiting..."))
+        F.maybeSuspend(lateLogger.info("No services to run, exiting..."))
       }
     }
 
-    protected def runTasks(index: Map[String, Object])(implicit effect: DIEffect[F]): F[Unit] = {
+    protected def runTasks(index: Map[String, Object])(implicit F: DIEffect[F]): F[Unit] = {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -114,19 +112,19 @@ object RoleAppExecutor {
 
       lateLogger.info(s"Going to run: ${tasksToRun.size -> "tasks"}")
 
-      effect.traverse_(tasksToRun) {
+      F.traverse_(tasksToRun) {
         case (task, cfg) =>
           val loggedTask = for {
-            _ <- effect.maybeSuspend(lateLogger.info(s"Task is about to start: $task"))
+            _ <- F.maybeSuspend(lateLogger.info(s"Task is about to start: $task"))
             _ <- task.start(cfg.roleParameters, cfg.freeArgs)
-            _ <- effect.maybeSuspend(lateLogger.info(s"Task finished: $task"))
+            _ <- F.maybeSuspend(lateLogger.info(s"Task finished: $task"))
           } yield ()
 
-          effect.definitelyRecover(loggedTask) {
+          F.definitelyRecover(loggedTask) {
             error =>
               for {
-                _ <- effect.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
-                _ <- effect.fail[Unit](error)
+                _ <- F.maybeSuspend(lateLogger.error(s"Task failed: $task, $error"))
+                _ <- F.fail[Unit](error)
               } yield ()
           }
       }
