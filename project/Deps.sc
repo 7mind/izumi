@@ -27,6 +27,7 @@ object Izumi {
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val cglib_nodep = Version.VExpr("V.cglib_nodep")
     val scala_java_time = Version.VExpr("V.scala_java_time")
+    val docker_java = Version.VExpr("V.docker_java")
   }
 
   object PV {
@@ -119,6 +120,7 @@ object Izumi {
     val http4s_all = (http4s_server ++ http4s_client)
 
     val asynchttpclient = Library("org.asynchttpclient", "async-http-client", V.asynchttpclient, LibraryType.Invariant)
+    val docker_java = Library("com.github.docker-java", "docker-java", V.docker_java, LibraryType.Invariant)
   }
 
   import Deps._
@@ -439,7 +441,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency in Scope.Compile.all) ++ allMonadsOptional,
+        libs = Seq(scalatest.dependency, docker_java).map(_ in Scope.Compile.all) ++ allMonadsOptional,
         depends =
           Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),

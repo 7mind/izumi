@@ -1,11 +1,15 @@
 package izumi.distage.testkit.distagesuite
 
+import java.util.concurrent.TimeUnit
+
+import zio.{IO => ZIO}
 import cats.effect.{IO => CIO}
-import distage.DIKey
-import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
+import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository, PgSvcExample}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
-import zio.Task
+import distage._
+import zio.clock.Clock
+import zio.duration.Duration
 
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
   override protected def config: TestConfig = {
@@ -24,6 +28,19 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
       service: MockUserRepository[Task] =>
         for {
           _ <- Task(assert(service != null))
+        } yield ()
+    }
+  }
+
+}
+
+class DistageTestDockerBIO extends DistageBIOSpecScalatest[ZIO] {
+
+  "distage test runner" should {
+    "support docker resources" in {
+      (service: PgSvcExample, clock: Clock) =>
+        for {
+          _ <- zio.ZIO.sleep(Duration.apply(5, TimeUnit.SECONDS)).provide(clock)
         } yield ()
     }
   }

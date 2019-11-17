@@ -1209,6 +1209,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scalatest" %% "scalatest" % V.scalatest,
+      "com.github.docker-java" % "docker-java" % V.docker_java,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
       "dev.zio" %% "zio" % V.zio % Optional
