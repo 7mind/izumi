@@ -1,7 +1,7 @@
 package izumi.distage.model.monadic
 
 import cats.effect.ExitCase
-import izumi.distage.model.monadic.FromCats._Sync
+import izumi.distage.model.monadic.LowPriorityDIEffectInstances._Sync
 import izumi.functional.bio.{BIO, BIOExit}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -45,9 +45,7 @@ trait DIEffect[F[_]] {
   }
 }
 
-object DIEffect
-  extends FromCats {
-
+object DIEffect extends LowPriorityDIEffectInstances {
   def apply[F[_] : DIEffect]: DIEffect[F] = implicitly
 
   object syntax {
@@ -132,7 +130,7 @@ object DIEffect
   }
 }
 
-trait FromCats {
+private[monadic] sealed trait LowPriorityDIEffectInstances {
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -175,12 +173,12 @@ trait FromCats {
 
 }
 
-object FromCats {
+object LowPriorityDIEffectInstances {
   /**
-    * 'No more orphans' trick. Late-bind the type used in implicit to let cats-effect be an Optional dependency, but
-    * _still_ provide _non-orphan_ instances if it's on classpath
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
-    * @see https://blog.7mind.io/no-more-orphans.html
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
   sealed abstract class _Sync[R[_[_]]]
   object _Sync {

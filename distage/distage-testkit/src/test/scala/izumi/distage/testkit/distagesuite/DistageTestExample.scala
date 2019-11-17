@@ -1,23 +1,29 @@
 package izumi.distage.testkit.distagesuite
 
-import zio.{IO => ZIO}
 import cats.effect.{IO => CIO}
+import distage.DIKey
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
-import distage._
+import zio.Task
 
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
-  override protected def config: TestConfig = TestConfig(memoizedKeys = Set(DIKey.get[MockCache[CIO]], DIKey.get[MockCache[ZIO[Throwable, ?]]]))
+  override protected def config: TestConfig = {
+    TestConfig(
+      memoizedKeys = Set(
+        DIKey.get[MockCache[CIO]],
+        DIKey.get[MockCache[Task]],
+      ))
+  }
 }
 
-class DistageTestExampleBIO extends DistageBIOSpecScalatest[ZIO] with DistageMemoizeExample[ZIO[Throwable, ?]] {
+class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with DistageMemoizeExample[Task] {
 
   "distage test runner" should {
     "support bifunctor" in {
-      service: MockUserRepository[ZIO[Throwable, ?]] =>
+      service: MockUserRepository[Task] =>
         for {
-          _ <- ZIO(assert(service != null))
+          _ <- Task(assert(service != null))
         } yield ()
     }
   }

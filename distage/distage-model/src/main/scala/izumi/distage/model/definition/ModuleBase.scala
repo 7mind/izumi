@@ -9,21 +9,18 @@ import izumi.fundamentals.collections.IzCollections._
 import scala.collection.immutable.ListSet
 
 trait ModuleBase {
-  def bindings: Set[Binding]
-
   type Self <: ModuleBase
+  def bindings: Set[Binding]
 
   final def keys: Set[DIKey] = bindings.map(_.key)
 
   override final def hashCode(): Int = bindings.hashCode()
-
   override final def equals(obj: Any): Boolean = obj match {
     case m: ModuleBase =>
       m.bindings == this.bindings
     case _ =>
       false
   }
-
   override final def toString: String = bindings.toString()
 }
 
@@ -147,7 +144,12 @@ object ModuleBase {
     out
   }
 
-  /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
   implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_] : CatsPartialOrderHash]: K[T] = {
     import cats.instances.set._
 
@@ -158,7 +160,12 @@ object ModuleBase {
     }.asInstanceOf[K[T]]
   }
 
-  /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
   implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_] : CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
@@ -168,12 +175,10 @@ private object ModuleBaseInstances {
 
   final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T] : ModuleMake] extends BoundedSemilattice[T] {
     def empty: T = ModuleMake[T].empty
-
     def combine(x: T, y: T): T = x ++ y
   }
 
   sealed abstract class CatsBoundedSemilattice[K[_]]
-
   object CatsBoundedSemilattice {
     @inline implicit final def get: CatsBoundedSemilattice[BoundedSemilattice] = null
   }

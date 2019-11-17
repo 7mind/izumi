@@ -94,9 +94,7 @@ class JsonFlattener {
     for {
       p <- maybePaths
       out <- inflateParsed(p)
-    } yield {
-      out
-    }
+    } yield out
   }
 
   private def parsePath(path: String): Either[List[UnpackFailure], (Seq[PathElement], Char)] = {

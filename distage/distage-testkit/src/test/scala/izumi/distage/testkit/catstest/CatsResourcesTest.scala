@@ -4,7 +4,7 @@ import cats.effect.{Bracket, IO, Resource, Sync}
 import izumi.distage.model.GCMode
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
-import izumi.distage.model.monadic.FromCats
+import izumi.distage.model.monadic.LowPriorityDIEffectInstances
 import izumi.distage.testkit.catstest.CatsResourcesTest.{DBConnection, MessageQueueConnection, MyApp, Res, Res1}
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
@@ -28,7 +28,7 @@ object CatsResourcesTest {
 class CatsResourcesTest extends WordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
-    def y[R[_[_]]: FromCats._Sync]() = ()
+    def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
     y()
   }
 

@@ -37,9 +37,7 @@ class CLIParser {
     for {
       roles <- state.freeze()
       _ <- validate(roles)
-    } yield {
-      roles
-    }
+    } yield roles
   }
 
   private def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {

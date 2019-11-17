@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -54,6 +54,7 @@ class DistageTestRunner[F[_] : TagK](
         val runtimeGcRoots: Set[DIKey] = Set(
           DIKey.get[DIEffectRunner[F]],
           DIKey.get[DIEffect[F]],
+          DIKey.get[DIEffectAsync[F]],
         )
 
         val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots))
@@ -90,14 +91,15 @@ class DistageTestRunner[F[_] : TagK](
         injector.produceF[Identity](runtimePlan).use {
           runtimeLocator =>
             val runner = runtimeLocator.get[DIEffectRunner[F]]
-            implicit val effect: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
+            implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
+            implicit val P: DIEffectAsync[F] = runtimeLocator.get[DIEffectAsync[F]]
 
             runner.run {
               // now we produce integration components for our shared plan
               checker.verify(shared.subplan)
               Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
                 sharedIntegrationLocator =>
-                  check(testplans.map(_._1), shared, effect, sharedIntegrationLocator) {
+                  check(testplans.map(_._1), shared, F, sharedIntegrationLocator) {
                     proceed(checker, testplans, shared, sharedIntegrationLocator)
                   }
               }
@@ -106,21 +108,21 @@ class DistageTestRunner[F[_] : TagK](
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, F: DIEffect[F], integLocator: Locator)(f: => F[Unit]): F[Unit] = {
+  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, F: DIEffect[F], integLocator: Locator)(onSuccess: => F[Unit]): F[Unit] = {
     integrationChecker.check(plans.subRoots, integLocator) match {
       case Some(value) =>
         F.traverse_(testplans) {
           test =>
-
             F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
         }
 
       case None =>
-        f
+        onSuccess
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)(implicit F: DIEffect[F]): F[Unit] = {
+  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)
+                     (implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
     Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
@@ -129,7 +131,7 @@ class DistageTestRunner[F[_] : TagK](
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        F.traverse_(testplans.groupBy {
+        P.parTraverse_(testplans.groupBy {
           t =>
             val id = t._1.meta.id
             SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
@@ -137,7 +139,7 @@ class DistageTestRunner[F[_] : TagK](
           case (id, plans) =>
             for {
               _ <- F.maybeSuspend(reporter.beginSuite(id))
-              _ <- F.traverse_(plans) {
+              _ <- P.parTraverse_(plans) {
                 case (test, testplan) =>
                   val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
 
@@ -156,9 +158,7 @@ class DistageTestRunner[F[_] : TagK](
                   }
               }
               _ <- F.maybeSuspend(reporter.endSuite(id))
-            } yield {
-            }
-
+            } yield ()
         }
     }
   }
@@ -166,20 +166,23 @@ class DistageTestRunner[F[_] : TagK](
   private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit F: DIEffect[F]): F[Unit] = {
     Injector.inherit(integLocator).produceF[F](newtestplan.primary).use {
       testLocator =>
-        def doRun(before: Long): F[Unit] = for {
-
-          _ <- testLocator.run(test.test)
-          after <- F.maybeSuspend(System.nanoTime())
-          _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS))))
-        } yield {
+        def doRun(before: Long): F[Unit] = {
+          for {
+            _ <- testLocator.run(test.test)
+            _ <- F.maybeSuspend {
+              val after = System.nanoTime()
+              reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
+            }
+          } yield ()
         }
 
-        def doRecover(before: Long): PartialFunction[Throwable, F[Unit]] = {
+        def doRecover(before: Long): Throwable => F[Unit] = {
           // TODO: here we may also ignore individual tests
-          case t: Throwable =>
-            val after = System.nanoTime()
-            reporter.testStatus(test.meta, TestStatus.Failed(t, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
-            F.pure(())
+          throwable =>
+            F.maybeSuspend {
+              val after = System.nanoTime()
+              reporter.testStatus(test.meta, TestStatus.Failed(throwable, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
+            }
         }
 
         for {
@@ -195,28 +198,22 @@ class DistageTestRunner[F[_] : TagK](
 
 object DistageTestRunner {
 
-  case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
+  final case class TestId(name: String, suiteName: String, suiteId: String, suiteClassName: String)
 
-  case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
+  final case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
 
-  case class TestMeta(id: TestId, pos: CodePosition)
+  final case class TestMeta(id: TestId, pos: CodePosition)
+
+  final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
-
   object TestStatus {
-
     case object Scheduled extends TestStatus
-
     case object Running extends TestStatus
-
-    case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends TestStatus
-
-    case class Succeed(duration: FiniteDuration) extends TestStatus
-
-    case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
+    final case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends TestStatus
+    final case class Succeed(duration: FiniteDuration) extends TestStatus
+    final case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
   }
-
-  case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   trait TestReporter {
     def beginSuite(id: SuiteData): Unit

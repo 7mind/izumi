@@ -34,7 +34,7 @@ class PlanInterpreterDefaultRuntimeImpl
 , resourceStrategy: ResourceStrategy
 
 , failureHandler: ProvisioningFailureInterceptor
-, verifier: ProvisionOperationVerifier
+, verifier: ProvisionOperationVerifier,
 ) extends PlanInterpreter
      with OperationExecutor
      with WiringExecutor {
@@ -108,22 +108,20 @@ class PlanInterpreterDefaultRuntimeImpl
       }
     }
 
-    def processSteps(steps: Vector[ExecutableOp]): F[Unit] = F.traverse_(steps)(processStep)
-
     val (imports, otherSteps) = plan.steps.partition {
       case _: ImportDependency => true
       case _ => false
     }
 
     for {
-      _ <- processSteps(imports)
+      _ <- F.traverse_(imports)(processStep)
       _ <- verifyEffectType[F](otherSteps, addFailure = f => F.maybeSuspend(mutFailures += f))
 
       failedImportsOrEffects <- F.maybeSuspend(mutFailures.nonEmpty)
       res <- if (failedImportsOrEffects) {
         F.maybeSuspend(Left(FailedProvision[F](mutProvisioningContext.toImmutable, plan, parentContext, mutFailures.toVector))): F[Either[FailedProvision[F], LocatorDefaultImpl[F]]]
       } else {
-        processSteps(otherSteps)
+        F.traverse_(otherSteps)(processStep)
           .flatMap { _ =>
             F.maybeSuspend {
               val context = mutProvisioningContext.toImmutable

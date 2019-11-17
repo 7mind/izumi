@@ -19,7 +19,7 @@ object SyncSafe extends LowPrioritySyncSafeInstances0 {
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    * */
+    */
   implicit def fromSync[F[_], R[_[_]]: _Sync](implicit F0: R[F]): SyncSafe[F] = {
     val F = F0.asInstanceOf[Sync[F]]
     new SyncSafe[F] {

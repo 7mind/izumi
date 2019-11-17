@@ -3,7 +3,7 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.{DIEffect, FromCats}
+import izumi.distage.model.monadic.{DIEffect, LowPriorityDIEffectInstances}
 import izumi.functional.bio.{BIO, BIOAsync}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}
@@ -33,10 +33,10 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
     assertTypeError("implicitly[BIO[Either]]")
 
     And("`No More Orphans` type provider is inacessible")
-    FromCats.discard()
+    LowPriorityDIEffectInstances.discard()
     assertTypeError(
       """
-         def y[R[_[_]]: FromCats._Sync]() = ()
+         def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
          y()
       """)
 

@@ -79,8 +79,10 @@ object RoleAppExecutor {
             _ =>
               val loggedTask = for {
                 _ <- F.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
-                _ <- res.use(acc)
-                _ <- F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+                _ <- res.use { _ =>
+                  F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+                    .flatMap(acc)
+                }
               } yield ()
 
               F.definitelyRecover(loggedTask) {

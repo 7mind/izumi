@@ -499,10 +499,9 @@ locator.get[Set[SetElem]].size == 2
 
 ### Cats Integration
 
-Additional cats instances and syntax are available automatically
-without imports if `cats-core` or `cats-effect` are already dependencies of your project. (Note: distage *won't* bring
-`cats` as a dependency if you don't already use it. See [No More Orphans](https://blog.7mind.io/no-more-orphans.html)
-for the technique)
+Additional cats instances and syntax are available automatically without imports, if `cats-core` or `cats-effect` are
+already dependencies of your project. (Note: distage *won't* bring `cats` as a dependency if you don't already use it.
+See [No More Orphans](https://blog.7mind.io/no-more-orphans.html) for description of the technique)
 
 @ref[Cats Resource Bindings](basics.md#resource-bindings-lifecycle) will also work out of the box without any magic imports.
 

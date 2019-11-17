@@ -167,14 +167,12 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], g
 
 object SemiPlan {
 
-  //  implicit def catsKernelStdHashForSemiPlan: Hash[SemiPlan] =
-  //    new Hash[SemiPlan] {
-  //      override def hash(x: SemiPlan): Int = x.hashCode()
-  //
-  //      override def eqv(x: SemiPlan, y: SemiPlan): Boolean = x == y
-  //    }
-
-  /** Optional instance via https://blog.7mind.io/no-more-orphans.html */
+  /**
+    * This instance uses 'no more orphans' trick to provide an Optional instance
+    * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
+    *
+    * Optional instance via https://blog.7mind.io/no-more-orphans.html
+    */
   implicit def optionalCatsMonoidForSemiplan[K[_] : CatsMonoid]: K[SemiPlan] =
     new Monoid[SemiPlan] {
       override def empty: SemiPlan = SemiPlan(ModuleBase.empty, Vector.empty, GCMode.NoGC)
@@ -285,7 +283,7 @@ private object SemiPlanOrderedPlanInstances {
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
-    * */
+    */
   sealed abstract class CatsMonoid[K[_]]
   object CatsMonoid {
     @inline implicit final def get: CatsMonoid[Monoid] = null

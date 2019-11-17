@@ -14,29 +14,17 @@ import scala.collection.immutable.TreeSet
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
 
-  override final protected def runNestedSuites(args: Args): Status = {
+  override final protected def runNestedSuites(args: Args): Status =
     throw new UnsupportedOperationException
-  }
-
-  override protected final def runTests(testName: Option[String], args: Args): Status = {
+  override protected final def runTests(testName: Option[String], args: Args): Status =
     throw new UnsupportedOperationException
-  }
-
-  override protected final def runTest(testName: String, args: Args): Status = {
+  override protected final def runTest(testName: String, args: Args): Status =
     throw new UnsupportedOperationException
-  }
 
   override def testNames: Set[String] = {
-    TreeSet[String]() ++ ownTests.map(_.meta.id.name)
+    TreeSet[String](thisTests.map(_.meta.id.name): _*)
   }
-
-  private def ownTests: Seq[DistageTest[F]] = {
-    monadTests.filter(_.meta.id.suiteId == suiteId)
-  }
-
-  private def monadTests: Seq[DistageTest[F]] = {
-    DistageTestsRegistrySingleton.list[F]
-  }
+  override def tags: Map[String, Set[String]] = Map.empty
 
   override def expectedTestCount(filter: Filter): Int = {
     if (filter.tagsToInclude.isDefined) {
@@ -46,7 +34,13 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
   }
 
-  override def tags: Map[String, Set[String]] = Map.empty
+  private def thisTests: Seq[DistageTest[F]] = {
+    monadTests.filter(_.meta.id.suiteId == suiteId)
+  }
+
+  private def monadTests: Seq[DistageTest[F]] = {
+    DistageTestsRegistrySingleton.list[F]
+  }
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
@@ -73,7 +67,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F](this.getClass)
 
-  override def testDataFor(testName: String, theConfigMap: ConfigMap = ConfigMap.empty): TestData = {
+  override def testDataFor(testName: String, theConfigMap: ConfigMap): TestData = {
     val suiteTags = for {
       a <- this.getClass.getAnnotations
       annotationClass = a.annotationType
@@ -95,6 +89,46 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   private def doRun(tracker: Tracker, testName: Option[String], args: Args): Unit = {
+
+    val dreporter = mkTestReporter(args, tracker)
+
+    val toRun = testName match {
+      case None =>
+        val enabled = args.filter.dynaTags.testTags.toSeq
+          .flatMap {
+            case (suiteId, tests) =>
+
+              tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys
+                .map {
+                  testname =>
+                    (suiteId, testname)
+                }
+          }
+          .toSet
+
+        if (enabled.isEmpty) {
+          monadTests
+        } else {
+          monadTests.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
+        }
+      case Some(tn) =>
+        if (!testNames.contains(tn)) {
+          throw new IllegalArgumentException(Resources.testNotFound(testName))
+        } else {
+          monadTests.filter(_.meta.id.name == tn)
+        }
+    }
+
+    val runner = {
+      val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
+      val checker = new IntegrationChecker.Impl(logger)
+      new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
+    }
+
+    runner.run()
+  }
+
+  private def mkTestReporter(args: Args, tracker: Tracker): TestReporter = {
     def ord(testId: TestMeta) = {
       Quirks.discard(testId)
       tracker.nextOrdinal()
@@ -110,12 +144,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       ))
     }
 
-    val logger = IzLogger.apply(Log.Level.Debug)("phase" -> "test")
-
-    val checker = new IntegrationChecker.Impl(logger)
-
-    val dreporter = new TestReporter {
-
+    new TestReporter {
       override def beginSuite(id: SuiteData): Unit = {
         args.reporter.apply(TestStarting(
           tracker.nextOrdinal(),
@@ -180,40 +209,8 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
               rerunner = Some(test.id.suiteClassName),
             ))
         }
-
       }
     }
-
-    val toRun = testName match {
-      case None =>
-        val enabled = args.filter.dynaTags.testTags.toSeq
-          .flatMap {
-            case (suiteId, tests) =>
-
-              tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys
-                .map {
-                  testname =>
-                    (suiteId, testname)
-                }
-          }
-          .toSet
-
-        if (enabled.isEmpty) {
-          monadTests
-        } else {
-          monadTests.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
-        }
-      case Some(tn) =>
-        if (!testNames.contains(tn)) {
-          throw new IllegalArgumentException(Resources.testNotFound(testName))
-        } else {
-          monadTests.filter(_.meta.id.name == tn)
-        }
-    }
-
-    val runner = new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
-
-    runner.run()
   }
 
   private def addStub(args: Args, tracker: Tracker, failure: Option[Throwable]): Unit = {
@@ -222,13 +219,13 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
     failure match {
       case Some(value) =>
-        args.reporter.apply(TestStarting(
+        args.reporter(TestStarting(
           tracker.nextOrdinal(),
           suiteName, suiteId, Some(suiteId),
           SUITE_FAILED,
           SUITE_FAILED,
         ))
-        args.reporter.apply(TestFailed(
+        args.reporter(TestFailed(
           tracker.nextOrdinal(),
           s"suite failed",
           suiteName, suiteId, Some(suiteId),
@@ -239,13 +236,13 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
         ))
 
       case None =>
-        args.reporter.apply(TestStarting(
+        args.reporter(TestStarting(
           tracker.nextOrdinal(),
           suiteName, suiteId, Some(suiteId),
           FUCK_SCALATEST,
           FUCK_SCALATEST,
         ))
-        args.reporter.apply(TestCanceled(
+        args.reporter(TestCanceled(
           tracker.nextOrdinal(),
           s"ignored",
           suiteName, suiteId, Some(suiteId),

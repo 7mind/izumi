@@ -68,7 +68,7 @@ object ModuleProvider {
     def appModules(): Seq[Module] = {
       val baseMod = new ModuleDef {
         addImplicit[DIEffect[Identity]]
-        make[DIEffectRunner[Identity]].from(DIEffectRunner.IdentityImpl)
+        addImplicit[DIEffectRunner[Identity]]
       }
 
       Seq(baseMod)

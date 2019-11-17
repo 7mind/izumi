@@ -27,7 +27,6 @@ package object bio extends BIOSyntax {
     */
   @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 
-
   /**
    * NOTE: The left type parameter is not forced to be covariant
    * because [[BIOFunctor]] does not yet expose any operations
