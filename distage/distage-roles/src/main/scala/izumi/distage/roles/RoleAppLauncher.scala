@@ -17,6 +17,7 @@ import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
 import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services._
+import izumi.functional.bio.{BIOAsync, BIOPrimitives}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.cli.model.schema.ParserDef
 import izumi.fundamentals.platform.functional.Identity
@@ -241,6 +242,10 @@ object RoleAppLauncher {
 
   abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
     override protected val hook: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+  }
+
+  abstract class LauncherBIO[F[+_, +_]: BIOAsync: BIOPrimitives](implicit tagK: TagK[F[Throwable, ?]]) extends RoleAppLauncher[F[Throwable, ?]] {
+    override protected val hook: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 
   abstract class LauncherIdentity extends RoleAppLauncher[Identity] {
