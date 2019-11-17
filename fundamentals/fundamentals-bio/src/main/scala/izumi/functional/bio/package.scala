@@ -1,10 +1,13 @@
 package izumi.functional
 
+import java.util.concurrent.CompletionStage
+
 import cats.~>
 import izumi.functional.bio.impl.{BIOAsyncZio, BIOZio}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import zio.ZIO
 
+import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.language.implicitConversions
 import scala.util.Try
@@ -190,6 +193,9 @@ package object bio extends BIOSyntax {
     @inline def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
     @inline def asyncF[E, A](register: (Either[E, A] => Unit) => F[E, Unit]): F[E, A]
     @inline def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): F[E, A]
+
+    @inline def fromFuture[A](future: => Future[A]): F[Throwable, A]
+    @inline def fromFutureJava[A](javaFuture: => CompletionStage[A]): F[Throwable, A]
 
     @inline def yieldNow: F[Nothing, Unit]
     @inline def never: F[Nothing, Nothing] = async(_ => ())
