@@ -41,7 +41,7 @@ class DistageTestDockerBIO extends DistageBIOSpecScalatest[ZIO] {
     "support docker resources" in {
       (service: PgSvcExample, clock: Clock) =>
         for {
-          _ <- zio.ZIO.effect(println(service.pg.mapping))
+          _ <- zio.ZIO.effect(println(s"ports: pg=${service.pg} ddb=${service.ddb} "))
           _ <- zio.ZIO.sleep(Duration.apply(1, TimeUnit.SECONDS)).provide(clock)
         } yield ()
     }

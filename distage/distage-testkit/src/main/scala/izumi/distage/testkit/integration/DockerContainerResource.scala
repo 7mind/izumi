@@ -2,8 +2,7 @@ package izumi.distage.testkit.integration
 
 import java.util.concurrent.TimeUnit
 
-import com.github.dockerjava.api.DockerClient
-import com.github.dockerjava.api.model.{Bind, ExposedPort, PortBinding, Ports, Volume}
+import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect.syntax._
@@ -12,7 +11,6 @@ import izumi.distage.testkit.integration.Docker.{ContainerConfig, ContainerId, D
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.fundamentals.platform.network.IzSockets
-import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -65,32 +63,31 @@ object Docker {
   case class HealthCheckConfig()
 
   object ContainerHealthCheck {
-    final def noCheck[T]: ContainerHealthCheck[T] = new ContainerHealthCheck[T] {
-      override def check(container: DockerContainer[T]): HealthCheckResult = HealthCheckResult.Running
-    }
+    final def noCheck[T]: ContainerHealthCheck[T] = (_: DockerContainer[T]) => HealthCheckResult.Running
 
-    final def portCheckHead[T](timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = new ContainerHealthCheck[T] {
-      override def check(container: DockerContainer[T]): HealthCheckResult = {
-        portCheck[T](container.containerConfig.ports.head).check(container)
+    final def portCheckHead[T](timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = (container: DockerContainer[T]) => {
+      container.containerConfig.ports.headOption match {
+        case Some(value) =>
+          portCheck[T](value).check(container)
+        case None =>
+          HealthCheckResult.Running
       }
     }
 
-    final def portCheck[T](exposedPort: DockerPort, timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = new ContainerHealthCheck[T] {
-      override def check(container: DockerContainer[T]): HealthCheckResult = {
-        container.mapping.get(exposedPort) match {
-          case Some(value) =>
-            new PortCheck(timeout.toMillis.intValue()).checkPort("localhost", value, s"open port ${exposedPort} on ${container.id}") match {
-              case _: ResourceCheck.Success =>
-                HealthCheckResult.Running
-              case f: ResourceCheck.Failure =>
-                println(f)
-                HealthCheckResult.Uknnown
-            }
-          case None =>
-            HealthCheckResult.Failed(new RuntimeException(s"Port ${exposedPort} is not mapped!"))
-        }
-
+    final def portCheck[T](exposedPort: DockerPort, timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = (container: DockerContainer[T]) => {
+      container.mapping.get(exposedPort) match {
+        case Some(value) =>
+          new PortCheck(timeout.toMillis.intValue()).checkPort("localhost", value, s"open port ${exposedPort} on ${container.id}") match {
+            case _: ResourceCheck.Success =>
+              HealthCheckResult.Running
+            case f: ResourceCheck.Failure =>
+              println(f)
+              HealthCheckResult.Uknnown
+          }
+        case None =>
+          HealthCheckResult.Failed(new RuntimeException(s"Port ${exposedPort} is not mapped!"))
       }
+
     }
   }
 
@@ -113,7 +110,7 @@ object Docker {
 }
 
 object DockerContainerResource {
-  def make[T, F[_]](conf: ContainerDecl[T], c: DockerClientWrapper[F]):  DIResource[F, DockerContainer[T]] = new DockerContainerResource(c)(c.eff, c.effa, conf)
+  def make[T, F[_]](conf: ContainerDecl[T], c: DockerClientWrapper[F]): DIResource[F, DockerContainer[T]] = new DockerContainerResource(c)(c.eff, c.effa, conf)
 
   def apply[F[_]] = new Aux[F]
 
