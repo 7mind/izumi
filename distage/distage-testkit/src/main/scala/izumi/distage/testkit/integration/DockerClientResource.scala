@@ -6,14 +6,15 @@ import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder}
 import izumi.distage.config.annotations.ConfPath
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import DIEffect.syntax._
 import izumi.distage.testkit.integration.Docker.ContainerId
+import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
 
-class DockerClientResource[F[_] : DIEffect](config: Docker.ClientConfig@ConfPath("docker"), factory: DockerCmdExecFactory) extends DIResource[F, DockerClientWrapper[F]] {
+class DockerClientResource[F[_] : DIEffect : DIEffectAsync](config: Docker.ClientConfig@ConfPath("docker"), factory: DockerCmdExecFactory, logger: IzLogger) extends DIResource[F, DockerClientWrapper[F]] {
   override def acquire: F[DockerClientWrapper[F]] = {
 
     val dcc = DefaultDockerClientConfig.createDefaultConfigBuilder().build()
@@ -32,7 +33,7 @@ class DockerClientResource[F[_] : DIEffect](config: Docker.ClientConfig@ConfPath
       .withDockerCmdExecFactory(factory)
       .build
 
-    DIEffect[F].maybeSuspend(new DockerClientWrapper[F](client, Map("type" -> "distage-testkit", "distage-run" -> UUID.randomUUID().toString)))
+    DIEffect[F].maybeSuspend(new DockerClientWrapper[F](client, Map("type" -> "distage-testkit", "distage-run" -> UUID.randomUUID().toString), logger))
   }
 
   override def release(resource: DockerClientWrapper[F]): F[Unit] = {

@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.{Bind, ExposedPort, PortBinding, Ports, Volume}
+import com.github.dockerjava.core.command.PullImageResultCallback
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
@@ -11,10 +12,11 @@ import izumi.distage.testkit.integration.Docker.{ContainerConfig, ContainerId, D
 import izumi.functional.Value
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.fundamentals.platform.network.IzSockets
+import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration.FiniteDuration
 
-case class DockerContainer[Tag](id: Docker.ContainerId, mapping: Map[Docker.DockerPort, Int])
+case class DockerContainer[Tag](id: Docker.ContainerId, mapping: Map[Docker.DockerPort, Int], containerConfig: ContainerConfig[Tag])
 
 trait ContainerDecl[T] {
   type Tag = T
@@ -67,6 +69,12 @@ object Docker {
       override def check(container: DockerContainer[T]): HealthCheckResult = HealthCheckResult.Running
     }
 
+    final def portCheckHead[T](timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = new ContainerHealthCheck[T] {
+      override def check(container: DockerContainer[T]): HealthCheckResult = {
+        portCheck[T](container.containerConfig.ports.head).check(container)
+      }
+    }
+
     final def portCheck[T](exposedPort: DockerPort, timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = new ContainerHealthCheck[T] {
       override def check(container: DockerContainer[T]): HealthCheckResult = {
         container.mapping.get(exposedPort) match {
@@ -89,8 +97,8 @@ object Docker {
   case class Mount(host: String, container: String)
 
   case class ContainerConfig[T](
-                                 name: String,
-                                 ports: Set[DockerPort],
+                                 image: String,
+                                 ports: Seq[DockerPort],
                                  env: Map[String, String] = Map.empty,
                                  cmd: Seq[String] = Seq.empty,
                                  entrypoint: Seq[String] = Seq.empty,
@@ -98,6 +106,7 @@ object Docker {
                                  user: Option[String] = None,
                                  mounts: Seq[Mount] = Seq.empty,
                                  healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+                                 pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
                                  healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.noCheck[T],
                                )
 
@@ -107,8 +116,8 @@ object DockerContainerResource {
   def apply[F[_]] = new Aux[F]
 
   class Aux[F[_]] {
-    def make[T](conf: ContainerDecl[T]): (DIEffect[F], DIEffectAsync[F], DockerClientWrapper[F]) => DIResource[F, DockerContainer[T]] =
-      (dieffect, dieffectasync, c) => new DockerContainerResource[F, T](c)(dieffect, dieffectasync, conf)
+    def make[T](conf: ContainerDecl[T]): (DockerClientWrapper[F]) => DIResource[F, DockerContainer[T]] =
+      c => new DockerContainerResource[F, T](c)(c.eff, c.effa, conf)
   }
 
 
@@ -145,7 +154,7 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
     import scala.jdk.CollectionConverters._
 
     val baseCmd = client
-      .createContainerCmd(config.name)
+      .createContainerCmd(config.image)
       .withLabels(clientw.labels.asJava)
 
     val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
@@ -155,7 +164,6 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
         .maybeSuspend {
           try {
             val status = client.inspectContainerCmd(c.id.name).exec()
-            println(status)
             if (status.getState.getRunning) {
               config.healthCheck.check(c)
             } else {
@@ -190,11 +198,19 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
           .mut(volumes.nonEmpty)(_.withBinds(volumes.toList.asJava))
           .get
 
+        clientw.logger.info(s"Going to pull `${config.image}`...")
+        client
+          .pullImageCmd(config.image)
+          .exec(new PullImageResultCallback())
+          .awaitCompletion(config.pullTimeout.toMillis, TimeUnit.MILLISECONDS);
+
+        clientw.logger.debug(s"Going to create container from image `${config.image}`...")
         val res = cmd.exec()
+        clientw.logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"} ...")
 
         client.startContainerCmd(res.getId).exec()
 
-        DockerContainer[T](ContainerId(res.getId), ports.toMap)
+        DockerContainer[T](ContainerId(res.getId), ports.toMap, config)
       }
       _ <- await(out)
     } yield {
@@ -204,8 +220,7 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
   }
 
   override def release(resource: DockerContainer[T]): F[Unit] = {
-    DIEffect[F].unit
-    //clientw.destroyContainer(resource.id)
+    clientw.destroyContainer(resource.id)
   }
 
 

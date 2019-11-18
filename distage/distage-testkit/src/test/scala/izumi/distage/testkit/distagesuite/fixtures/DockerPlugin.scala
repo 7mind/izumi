@@ -1,24 +1,41 @@
 package izumi.distage.testkit.distagesuite.fixtures
 
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import izumi.distage.plugins.PluginDef
+import izumi.distage.testkit.distagesuite.fixtures
 import izumi.distage.testkit.integration.Docker.{ContainerConfig, ContainerHealthCheck, DockerPort}
 import izumi.distage.testkit.integration.{ContainerDecl, _}
+import izumi.logstage.api.IzLogger
 
-sealed trait PgContainer
-object PgContainer extends ContainerDecl[PgContainer] {
+sealed trait DynamoContainerDecl
+object DynamoContainerDecl extends ContainerDecl[DynamoContainerDecl] {
   override def config: Config = ContainerConfig(
-    "library/postgres",
-    Set(DockerPort.TCP(5432)),
-    healthCheck = ContainerHealthCheck.portCheck(DockerPort.TCP(5432)),
+    "amazon/dynamodb-local:latest",
+    Seq(DockerPort.TCP(8042)),
+    healthCheck = ContainerHealthCheck.portCheckHead(),
   )
 }
 
-class PgSvcExample(val pg: PgContainer.Type) {
+
+sealed trait PgContainerDecl
+object PgContainerDecl extends ContainerDecl[PgContainerDecl] {
+  override def config: Config = ContainerConfig(
+    "library/postgres:latest",
+    Seq(DockerPort.TCP(5432)),
+    healthCheck = ContainerHealthCheck.portCheckHead(),
+  )
+}
+
+class PgSvcExample(val pg: PgContainerDecl.Type) {
 
 }
 
 object DockerPlugin extends DockerContainerModule[zio.IO[Throwable, *]] with PluginDef {
-  make[PgContainer.Type].fromResource(DockerContainerResource[zio.IO[Throwable, *]].make(PgContainer))
+  make[fixtures.DynamoContainerDecl.Type].fromResource(DockerContainerResource[zio.Task].make(DynamoContainerDecl))
+  make[PgContainerDecl.Type].fromResource {
+    (client: DockerClientWrapper[zio.Task], _: DynamoContainerDecl.Type) =>
+      DockerContainerResource[zio.Task].make(PgContainerDecl)(client)
+  }
 
   make[PgSvcExample]
 }
