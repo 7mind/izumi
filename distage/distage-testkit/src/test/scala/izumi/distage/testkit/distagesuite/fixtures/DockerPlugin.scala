@@ -1,14 +1,15 @@
 package izumi.distage.testkit.distagesuite.fixtures
 
 import izumi.distage.plugins.PluginDef
-import izumi.distage.testkit.integration.Docker.{ContainerConfig, DockerPort}
+import izumi.distage.testkit.integration.Docker.{ContainerConfig, ContainerHealthCheck, DockerPort}
 import izumi.distage.testkit.integration.{ContainerDecl, _}
 
 sealed trait PgContainer
 object PgContainer extends ContainerDecl[PgContainer] {
-  override def config: ContainerConfig = ContainerConfig(
+  override def config: Config = ContainerConfig(
     "library/postgres",
     Set(DockerPort.TCP(5432)),
+    healthCheck = ContainerHealthCheck.portCheck(DockerPort.TCP(5432)),
   )
 }
 

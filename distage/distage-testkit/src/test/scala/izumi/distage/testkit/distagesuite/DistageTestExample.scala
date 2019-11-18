@@ -2,7 +2,7 @@ package izumi.distage.testkit.distagesuite
 
 import java.util.concurrent.TimeUnit
 
-import zio.{IO => ZIO}
+import zio.{Task, IO => ZIO}
 import cats.effect.{IO => CIO}
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository, PgSvcExample}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
