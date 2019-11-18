@@ -113,10 +113,12 @@ object Docker {
 }
 
 object DockerContainerResource {
+  def make[T, F[_]](conf: ContainerDecl[T], c: DockerClientWrapper[F]):  DIResource[F, DockerContainer[T]] = new DockerContainerResource(c)(c.eff, c.effa, conf)
+
   def apply[F[_]] = new Aux[F]
 
   class Aux[F[_]] {
-    def make[T](conf: ContainerDecl[T]): (DockerClientWrapper[F]) => DIResource[F, DockerContainer[T]] =
+    def make[T](conf: ContainerDecl[T]): DockerClientWrapper[F] => DIResource[F, DockerContainer[T]] =
       c => new DockerContainerResource[F, T](c)(c.eff, c.effa, conf)
   }
 

@@ -30,11 +30,11 @@ class PgSvcExample(val pg: PgContainerDecl.Type) {
 
 }
 
-object DockerPlugin extends DockerContainerModule[zio.IO[Throwable, *]] with PluginDef {
+object DockerPlugin extends DockerContainerModule[zio.Task] with PluginDef {
   make[fixtures.DynamoContainerDecl.Type].fromResource(DockerContainerResource[zio.Task].make(DynamoContainerDecl))
   make[PgContainerDecl.Type].fromResource {
     (client: DockerClientWrapper[zio.Task], _: DynamoContainerDecl.Type) =>
-      DockerContainerResource[zio.Task].make(PgContainerDecl)(client)
+      DockerContainerResource.make(PgContainerDecl, client)
   }
 
   make[PgSvcExample]
