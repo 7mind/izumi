@@ -107,7 +107,7 @@ object DockerContainerResource {
   def apply[F[_]] = new Aux[F]
 
   class Aux[F[_]] {
-    def make[T](conf: ContainerDecl[T]): (DIEffect[F], DIEffectAsync[F], DockerClient) => DIResource[F, DockerContainer[T]] =
+    def make[T](conf: ContainerDecl[T]): (DIEffect[F], DIEffectAsync[F], DockerClientWrapper[F]) => DIResource[F, DockerContainer[T]] =
       (dieffect, dieffectasync, c) => new DockerContainerResource[F, T](c)(dieffect, dieffectasync, conf)
   }
 
@@ -116,8 +116,9 @@ object DockerContainerResource {
 
 class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
 (
-  client: DockerClient,
+  clientw: DockerClientWrapper[F],
 ) extends DIResource[F, DockerContainer[T]] {
+  private val client = clientw.client
   private val config = implicitly[ContainerDecl[T]].config
 
   override def acquire: F[DockerContainer[T]] = {
@@ -145,7 +146,7 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
 
     val baseCmd = client
       .createContainerCmd(config.name)
-      .withLabels(Map("type" -> "distage-testkit").asJava)
+      .withLabels(clientw.labels.asJava)
 
     val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
 
@@ -203,20 +204,8 @@ class DockerContainerResource[F[_] : DIEffect : DIEffectAsync, T: ContainerDecl]
   }
 
   override def release(resource: DockerContainer[T]): F[Unit] = {
-    DIEffect[F].maybeSuspend {
-      try {
-        client
-          .stopContainerCmd(resource.id.name)
-          .exec()
-        ()
-      } finally {
-        client
-          .removeContainerCmd(resource.id.name)
-          .withForce(true)
-          .exec()
-        ()
-      }
-    }
+    DIEffect[F].unit
+    //clientw.destroyContainer(resource.id)
   }
 
 

@@ -8,11 +8,11 @@ import izumi.distage.model.monadic.DIEffect
 import izumi.distage.roles.model.IntegrationCheck
 
 class DockerContainerModule[F[_] : DIEffect : TagK] extends ModuleDef {
-  make[DockerClientWrapper].fromResource[DockerClientResource[F]]
-  make[DockerClient].from {
-    wrapper: DockerClientWrapper => wrapper.client
-  }
-  many[IntegrationCheck].ref[DockerClientWrapper]
+  make[DockerClientWrapper[F]].fromResource[DockerClientResource[F]]
+//  make[DockerClient].from {
+//    wrapper: DockerClientWrapper => wrapper.client
+//  }
+  many[IntegrationCheck].ref[DockerClientWrapper[F]]
 
   make[DockerCmdExecFactory].fromResource[DockerExecFactoryResource[F]]
 }
