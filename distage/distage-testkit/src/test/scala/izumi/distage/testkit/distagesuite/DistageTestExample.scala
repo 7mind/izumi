@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import zio.{Task, IO => ZIO}
 import cats.effect.{IO => CIO}
-import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository, PgSvcExample}
+import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, DynamoContainerDecl, MockCache, MockCachedUserService, MockUserRepository, PgContainerDecl, PgSvcExample}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import distage._
@@ -42,12 +42,24 @@ class DistageTestDockerBIO extends DistageBIOSpecScalatest[ZIO] {
       (service: PgSvcExample, clock: Clock) =>
         for {
           _ <- zio.ZIO.effect(println(s"ports: pg=${service.pg} ddb=${service.ddb} "))
-          _ <- zio.ZIO.sleep(Duration.apply(1, TimeUnit.SECONDS)).provide(clock)
+        } yield ()
+    }
+
+    "support memoization" in {
+      (service: PgSvcExample, clock: Clock) =>
+        for {
+          _ <- zio.ZIO.effect(println(s"ports: pg=${service.pg} ddb=${service.ddb} "))
         } yield ()
     }
   }
 
-  override protected def env: TestEnvironment = super.env
+  override protected def config: TestConfig = {
+    TestConfig(
+      memoizedKeys = Set(
+        DIKey.get[DynamoContainerDecl.Type],
+        DIKey.get[PgContainerDecl.Type],
+      ))
+  }
 }
 
 class DistageTestExample extends DistageSpecScalatest[CIO] with DistageMemoizeExample[CIO] {
