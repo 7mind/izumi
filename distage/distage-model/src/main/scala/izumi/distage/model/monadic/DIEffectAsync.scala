@@ -31,7 +31,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit def fromBIOAsync[F[+_, +_]: BIOAsync]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
-        F.parTraverseN(100)(l)(f).void
+        F.parTraverse_(l)(f).void
       }
       override def sleep(duration: FiniteDuration): F[Throwable, Unit] = {
         F.sleep(duration)
