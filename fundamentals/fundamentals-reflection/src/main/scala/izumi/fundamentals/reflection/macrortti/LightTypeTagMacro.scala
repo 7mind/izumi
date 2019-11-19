@@ -1,6 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
-import boopickle.{PickleImpl, Pickler}
+import izumi.thirdparty.internal.boopickle.{PickleImpl, Pickler}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.{DebugProperties, TrivialMacroLogger}
