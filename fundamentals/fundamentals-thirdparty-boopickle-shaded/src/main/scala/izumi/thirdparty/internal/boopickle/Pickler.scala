@@ -5,10 +5,9 @@ import java.util.UUID
 
 import scala.collection.mutable
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-trait Pickler[A] {
+private[izumi] trait Pickler[A] {
   def pickle(obj: A)(implicit state: PickleState): Unit
   def unpickle(implicit state: UnpickleState): A
 
@@ -30,12 +29,12 @@ trait Pickler[A] {
   *
   * Stores nothing in the pickled output.
   */
-final case class ConstPickler[A](a: A) extends Pickler[A] {
+private[izumi] final case class ConstPickler[A](a: A) extends Pickler[A] {
   @inline override def pickle(x: A)(implicit s: PickleState) = ()
   @inline override def unpickle(implicit s: UnpickleState)   = a
 }
 
-trait PicklerHelper {
+private[izumi] trait PicklerHelper {
   protected type P[A] = Pickler[A]
 
   /**
@@ -49,7 +48,7 @@ trait PicklerHelper {
   protected def read[A](implicit state: UnpickleState, u: P[A]): A = u.unpickle
 }
 
-object BasicPicklers extends PicklerHelper with XCompatPicklers {
+private[izumi] object BasicPicklers extends PicklerHelper with XCompatPicklers {
 
   import Constants._
 
@@ -364,7 +363,7 @@ object BasicPicklers extends PicklerHelper with XCompatPicklers {
   * @param deduplicate    Set to `false` if you want to disable deduplication
   * @param dedupImmutable Set to `false` if you want to disable deduplication of immutable values (like Strings)
   */
-final class PickleState(val enc: Encoder, deduplicate: Boolean = true, dedupImmutable: Boolean = true) {
+private[izumi] final class PickleState(val enc: Encoder, deduplicate: Boolean = true, dedupImmutable: Boolean = true) {
 
   /**
     * Object reference for pickled objects (use identity for equality comparison)
@@ -425,7 +424,7 @@ final class PickleState(val enc: Encoder, deduplicate: Boolean = true, dedupImmu
   def toByteBuffers = enc.asByteBuffers
 }
 
-object PickleState {
+private[izumi] object PickleState {
 
   /**
     * Provides a default PickleState if none is available implicitly
@@ -442,7 +441,7 @@ object PickleState {
   * @param deduplicate    Set to `false` if you want to disable deduplication
   * @param dedupImmutable Set to `false` if you want to disable deduplication of immutable values (like Strings)
   */
-final class UnpickleState(val dec: Decoder, deduplicate: Boolean = true, dedupImmutable: Boolean = true) {
+private[izumi] final class UnpickleState(val dec: Decoder, deduplicate: Boolean = true, dedupImmutable: Boolean = true) {
 
   /**
     * Object reference for pickled objects (use identity for equality comparison)
@@ -492,7 +491,7 @@ final class UnpickleState(val dec: Decoder, deduplicate: Boolean = true, dedupIm
   @inline def unpickle[A](implicit u: Pickler[A]): A = u.unpickle(this)
 }
 
-object UnpickleState {
+private[izumi] object UnpickleState {
 
   /**
     * Provides a default UnpickleState if none is available implicitly

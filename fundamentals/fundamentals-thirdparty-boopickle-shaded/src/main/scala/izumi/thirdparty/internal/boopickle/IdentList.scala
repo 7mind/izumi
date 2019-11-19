@@ -5,19 +5,19 @@ import scala.collection.mutable
 /**
   * Specialized fast and cheap to initialize identity list for unpickle state identifier refs
   */
-abstract class IdentList {
+private[izumi] abstract class IdentList {
   @noinline def apply(idx: Int): AnyRef
 
   @noinline def updated(obj: AnyRef): IdentList
 }
 
-object IdentList {
+private[izumi] object IdentList {
 
   private[boopickle] final class Entry(val obj: AnyRef, var next: Entry)
   private[boopickle] val maxSize = 32
 }
 
-object EmptyIdentList extends IdentList {
+private[izumi] object EmptyIdentList extends IdentList {
   override def apply(idx: Int): AnyRef = throw new IndexOutOfBoundsException
 
   override def updated(obj: AnyRef): IdentList = new IdentList1Plus(obj)

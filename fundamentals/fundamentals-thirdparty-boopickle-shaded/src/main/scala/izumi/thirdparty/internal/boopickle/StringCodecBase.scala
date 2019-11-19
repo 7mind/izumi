@@ -2,7 +2,7 @@ package izumi.thirdparty.internal.boopickle
 
 import java.nio.ByteBuffer
 
-abstract class StringCodecFast {
+private[izumi] abstract class StringCodecFast {
 
   /**
     * String decoding function for a special 1-3 byte encoding of 16-bit char values

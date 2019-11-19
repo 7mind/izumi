@@ -2,7 +2,7 @@ package izumi.thirdparty.internal.boopickle
 
 import java.nio.{ByteBuffer, ByteOrder}
 
-class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
+private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
   val stringCodec: StringCodecBase = StringCodec
 
   /**
@@ -177,7 +177,7 @@ class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
   }
 }
 
-class EncoderSpeed(bufferProvider: BufferProvider = DefaultByteBufferProvider.provider) extends Encoder {
+private[izumi] class EncoderSpeed(bufferProvider: BufferProvider = DefaultByteBufferProvider.provider) extends Encoder {
   val stringCodec: StringCodecBase = StringCodec
 
   @inline private def alloc(size: Int): ByteBuffer = bufferProvider.alloc(size)

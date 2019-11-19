@@ -2,7 +2,7 @@ package izumi.thirdparty.internal.boopickle
 
 import java.nio.{ByteBuffer, ByteOrder}
 
-trait BufferProvider {
+private[izumi] trait BufferProvider {
 
   /**
     * Makes sure the ByteBuffer has enough space for new data. If not, allocates a new ByteBuffer
@@ -28,7 +28,7 @@ trait BufferProvider {
   def asByteBuffers: Iterable[ByteBuffer]
 }
 
-abstract class ByteBufferProvider extends BufferProvider {
+private[izumi] abstract class ByteBufferProvider extends BufferProvider {
   import ByteBufferProvider._
   protected val pool                      = BufferPool
   protected var buffers: List[ByteBuffer] = Nil
@@ -70,12 +70,12 @@ abstract class ByteBufferProvider extends BufferProvider {
   }
 }
 
-object ByteBufferProvider {
+private[izumi] object ByteBufferProvider {
   final val initSize   = 512
   final val expandSize = initSize * 8
 }
 
-class HeapByteBufferProvider extends ByteBufferProvider {
+private[izumi] class HeapByteBufferProvider extends ByteBufferProvider {
   override protected def allocate(size: Int) = {
     if (pool.isDisabled)
       ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN)
@@ -104,7 +104,7 @@ class HeapByteBufferProvider extends ByteBufferProvider {
   }
 }
 
-class DirectByteBufferProvider extends ByteBufferProvider {
+private[izumi] class DirectByteBufferProvider extends ByteBufferProvider {
   override protected def allocate(size: Int) = {
     if (pool.isDisabled)
       ByteBuffer.allocateDirect(size).order(ByteOrder.LITTLE_ENDIAN)
@@ -131,6 +131,6 @@ class DirectByteBufferProvider extends ByteBufferProvider {
   }
 }
 
-trait DefaultByteBufferProviderFuncs {
+private[izumi] trait DefaultByteBufferProviderFuncs {
   def provider: ByteBufferProvider
 }

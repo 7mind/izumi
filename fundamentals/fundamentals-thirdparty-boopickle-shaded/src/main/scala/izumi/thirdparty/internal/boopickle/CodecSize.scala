@@ -3,7 +3,7 @@ package izumi.thirdparty.internal.boopickle
 import java.nio.charset.CharacterCodingException
 import java.nio.{ByteBuffer, ByteOrder}
 
-class DecoderSize(val buf: ByteBuffer) extends Decoder {
+private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   val stringCodec: StringCodecBase = StringCodec
 
   /**
@@ -277,7 +277,7 @@ class DecoderSize(val buf: ByteBuffer) extends Decoder {
   }
 }
 
-class EncoderSize(bufferProvider: BufferProvider = DefaultByteBufferProvider.provider) extends Encoder {
+private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBufferProvider.provider) extends Encoder {
   val stringCodec: StringCodecBase = StringCodec
 
   @inline private def alloc(size: Int): ByteBuffer = bufferProvider.alloc(size)

@@ -3,17 +3,17 @@ package izumi.thirdparty.internal.boopickle
 /**
   * Specialized fast and cheap to initialize identity map for pickle state identifier map
   */
-abstract class IdentMap {
+private[izumi] abstract class IdentMap {
   def apply(obj: AnyRef): Option[Int]
 
   def updated(obj: AnyRef): IdentMap
 }
 
-object IdentMap {
+private[izumi] object IdentMap {
   def empty: IdentMap = EmptyIdentMap
 }
 
-object EmptyIdentMap extends IdentMap {
+private[izumi] object EmptyIdentMap extends IdentMap {
   override def apply(obj: AnyRef): Option[Int] = None
 
   override def updated(obj: AnyRef): IdentMap = new IdentMap1(obj)
@@ -41,7 +41,7 @@ private[boopickle] final class IdentMap2(o1: AnyRef, o2: AnyRef) extends IdentMa
   override def updated(obj: AnyRef): IdentMap = new IdentMap3Plus(o1, o2, obj)
 }
 
-object IdentMap3Plus {
+private[izumi] object IdentMap3Plus {
 
   private[boopickle] class Entry(val hash: Int, val obj: AnyRef, val idx: Int, var next: Entry)
 

@@ -3,7 +3,7 @@ package izumi.thirdparty.internal.boopickle
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
-object BufferPool {
+private[izumi] object BufferPool {
 
   // two pools for two different size categories
   private final val poolEntrySize0 = ByteBufferProvider.initSize
@@ -87,6 +87,7 @@ object BufferPool {
               bb.clear()
               pool1(rNext) = bb
               releaseIdx1.compareAndSet(rIdx, rNext)
+              ()
             }
           } else {
             val aIdx  = allocIdx0.get()
@@ -97,6 +98,7 @@ object BufferPool {
               bb.clear()
               pool0(rNext) = bb
               releaseIdx0.compareAndSet(rIdx, rNext)
+              ()
             }
           }
         }

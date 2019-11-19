@@ -2,7 +2,7 @@ package izumi.thirdparty.internal.boopickle
 
 import java.nio.ByteBuffer
 
-trait Decoder {
+private[izumi] trait Decoder {
 
   /**
     * Decodes a single byte
@@ -99,7 +99,7 @@ trait Decoder {
   def readDoubleArray(len: Int): Array[Double]
 }
 
-trait Encoder {
+private[izumi] trait Encoder {
 
   /**
     * Encodes a single byte

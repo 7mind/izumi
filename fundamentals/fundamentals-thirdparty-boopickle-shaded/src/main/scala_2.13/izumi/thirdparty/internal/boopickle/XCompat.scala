@@ -4,7 +4,7 @@ import Constants.NullRef
 import scala.collection.Factory
 import scala.language.higherKinds
 
-trait XCompatImplicitPicklers {
+private[izumi] trait XCompatImplicitPicklers {
   this: PicklerHelper =>
 
   implicit def mapPickler[T: P, S: P, V[_, _] <: scala.collection.Map[_, _]](
@@ -13,7 +13,7 @@ trait XCompatImplicitPicklers {
     BasicPicklers.IterablePickler[T, V]
 }
 
-trait XCompatPicklers {
+private[izumi] trait XCompatPicklers {
   this: PicklerHelper =>
 
   /**

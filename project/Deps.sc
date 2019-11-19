@@ -374,7 +374,12 @@ object Izumi {
         name = Projects.fundamentals.thirdpartyBoopickleShaded,
         libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq.empty,
-        settings = crossScalaSources,
+        settings = crossScalaSources ++ Seq(
+          SettingDef.RawSettingDef(
+          """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
+            FullSettingScope(SettingScope.Compile, Platform.Jvm),
+          ),
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.fundamentalsJsonCirce,

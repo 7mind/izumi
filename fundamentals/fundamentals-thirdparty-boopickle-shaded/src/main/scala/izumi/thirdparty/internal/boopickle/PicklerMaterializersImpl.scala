@@ -2,7 +2,7 @@ package izumi.thirdparty.internal.boopickle
 
 import scala.reflect.macros.blackbox
 
-object PicklerMaterializersImpl {
+private[izumi] object PicklerMaterializersImpl {
 
   private var logmacro = {
     val prop = System.getProperty("boopickle.logmacro")
