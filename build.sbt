@@ -393,14 +393,14 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile"
+    `fundamentals-functional` % "test->compile;compile->compile",
+    `fundamentals-thirdparty-boopickle-shaded` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "io.suzaku" %% "boopickle" % V.boopickle,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
@@ -410,6 +410,88 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
     unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
     unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
     unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    testOptions in Test += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.10") => Seq(
+        "-Xsource:2.13",
+        "-Ypartial-unification",
+        "-Yno-adapted-args",
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard"
+      )
+      case (_, "2.13.1") => Seq(
+        "-Xlint:_,-eta-sam",
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wunused:_",
+        "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalaVersion := crossScalaVersions.value.head,
+    crossScalaVersions := Seq(
+      "2.12.10",
+      "2.13.1"
+    )
+  )
+  .disablePlugins(AssemblyPlugin)
+
+lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundamentals/fundamentals-thirdparty-boopickle-shaded"))
+  .settings(
+    libraryDependencies ++= Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    )
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
+    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
+    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
+    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    unmanagedSourceDirectories in Compile := (unmanagedSourceDirectories in Compile).value.flatMap {
+      dir =>
+       Seq(dir, file(dir.getPath + (CrossVersion.partialVersion(scalaVersion.value) match {
+         case Some((2, 12)) => "_2.12"
+         case Some((2, 13)) => "_2.13"
+         case _             => "_3.0"
+       })))
+    },
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
@@ -2556,6 +2638,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-typesafe-config` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile",
+    `fundamentals-thirdparty-boopickle-shaded` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
     `distage-model` % "test->compile;compile->compile",
     `distage-proxy-cglib` % "test->compile;compile->compile",
@@ -2794,6 +2877,7 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     `fundamentals-bio`,
     `fundamentals-typesafe-config`,
     `fundamentals-reflection`,
+    `fundamentals-thirdparty-boopickle-shaded`,
     `fundamentals-json-circe`
   )
 
@@ -2814,6 +2898,7 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     `fundamentals-bio`,
     `fundamentals-typesafe-config`,
     `fundamentals-reflection`,
+    `fundamentals-thirdparty-boopickle-shaded`,
     `fundamentals-json-circe`
   )
 

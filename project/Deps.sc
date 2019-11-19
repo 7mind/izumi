@@ -8,7 +8,6 @@ object Izumi {
     val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
-    val boopickle = Version.VExpr("V.boopickle")
     val shapeless = Version.VExpr("V.shapeless")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
@@ -84,7 +83,6 @@ object Izumi {
     )
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant) in Scope.Compile.all
-    final val boopickle = Library("io.suzaku", "boopickle", V.boopickle, LibraryType.Auto) in Scope.Compile.all
     final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
@@ -238,6 +236,8 @@ object Izumi {
       final val reflection = ArtifactId("fundamentals-reflection")
       final val fundamentalsJsonCirce = ArtifactId("fundamentals-json-circe")
 
+      final val thirdpartyBoopickleShaded = ArtifactId("fundamentals-thirdparty-boopickle-shaded")
+
       final lazy val basics = Seq(
         platform,
         collections,
@@ -363,11 +363,18 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.reflection,
-        libs = Seq(boopickle, scala_reflect in Scope.Provided.all),
+        libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(
           Projects.fundamentals.platform,
           Projects.fundamentals.functional,
+          Projects.fundamentals.thirdpartyBoopickleShaded,
         ),
+      ),
+      Artifact(
+        name = Projects.fundamentals.thirdpartyBoopickleShaded,
+        libs = Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq.empty,
+        settings = crossScalaSources,
       ),
       Artifact(
         name = Projects.fundamentals.fundamentalsJsonCirce,
