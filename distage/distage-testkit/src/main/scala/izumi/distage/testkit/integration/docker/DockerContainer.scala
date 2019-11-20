@@ -77,16 +77,20 @@ object DockerContainer {
     private val client = clientw.client
     private val config = containerDecl.config
 
+    implicit class DockerPortEx(port: DockerPort) {
+      def toExposedPort: ExposedPort = port match {
+        case DockerPort.TCP(number) =>
+          ExposedPort.tcp(number)
+        case DockerPort.UDP(number) =>
+          ExposedPort.udp(number)
+      }
+    }
+
     override def acquire: F[DockerContainer[T]] = {
       val ports = config.ports.map {
         containerPort =>
           val local = IzSockets.temporaryLocalPort()
-          val bp = containerPort match {
-            case DockerPort.TCP(number) =>
-              ExposedPort.tcp(number)
-            case DockerPort.UDP(number) =>
-              ExposedPort.udp(number)
-          }
+          val bp = containerPort.toExposedPort
           val binding = new PortBinding(Ports.Binding.bindPort(local), bp)
           val stableLabels = Map(
             "distage.reuse" -> config.reuse.toString,
@@ -102,16 +106,20 @@ object DockerContainer {
         val stableLabels = ports.flatMap(p => p._4).toMap
 
         for {
-          containers <- DIEffect[F].maybeSuspend(client.listContainersCmd().withLabelFilter(stableLabels.asJava).withStatusFilter(List("running").asJava).exec()).map(_.asScala)
+          containers <- DIEffect[F].maybeSuspend(client.listContainersCmd().withLabelFilter(stableLabels.asJava).withStatusFilter(List("running").asJava).exec()).map(_.asScala.toList.sortBy(_.getId))
           existing <- containers.find(c => c.getImage == config.image) match {
             case Some(c) =>
-              logger.info(s"Reusing running container ${c.getId}...")
+              val inspection = client.inspectContainerCmd(c.getId).exec()
+
+
+
+              logger.debug(s"Reusing running container ${c.getId}...")
               val existingPorts = config.ports.map {
                 containerPort =>
-                  val id = s"distage.port.${containerPort.protocol}.${containerPort.number}"
-                  containerPort -> Option(c.labels.get(id)).map(Integer.parseInt).getOrElse(throw new RuntimeException(s"Missing port label $id on container ${c.getId}"))
+                  val port = Option(inspection.getNetworkSettings.getPorts.getBindings.get(containerPort.toExposedPort)).flatMap(_.headOption).getOrElse(throw new RuntimeException(s"Missing $containerPort on container ${c.getId}"))
+                  containerPort -> Integer.parseInt(port.getHostPortSpec)
               }
-
+              logger.info(s"Reusing running container ${c.getId} with $existingPorts...")
               DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts.toMap, config))
             case None =>
               doRun(ports)
