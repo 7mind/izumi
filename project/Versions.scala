@@ -12,7 +12,7 @@ object V {
   val cats = "2.0.0"
   val cats_effect = "2.0.0"
   val zio = "1.0.0-RC17"
-  val zio_interop_cats = "2.0.0.0-RC7"
+  val zio_interop_cats = "2.0.0.0-RC8"
 
   val circe = "0.12.3"
   val circe_generic_extras = "0.12.2"
