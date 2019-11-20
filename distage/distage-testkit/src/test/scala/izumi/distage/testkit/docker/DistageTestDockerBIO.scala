@@ -9,19 +9,24 @@ import zio.IO
 
 final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
 
-  "distage test runner" should {
-    "support docker resources" in {
-      service: PgSvcExample =>
-        for {
-          _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} "))
-        } yield ()
-    }
+  def isCI: Boolean = System.getenv().containsKey("CI_BRANCH")
 
-    "support memoization" in {
-      service: PgSvcExample =>
-        for {
-          _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} "))
-        } yield ()
+  // ignore docker tests on CI (nested docker trouble)
+  if (!isCI) {
+    "distage test runner" should {
+      "support docker resources" in {
+        service: PgSvcExample =>
+          for {
+            _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} "))
+          } yield ()
+      }
+
+      "support memoization" in {
+        service: PgSvcExample =>
+          for {
+            _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} "))
+          } yield ()
+      }
     }
   }
 
