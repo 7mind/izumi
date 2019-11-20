@@ -11,6 +11,8 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.Task
 
+import scala.collection.mutable
+
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
   with ZIODIEffectModule
@@ -40,14 +42,17 @@ class MockRedis[F[_]]()
 class MockUserRepository[F[_]](val pg: MockPostgresDriver[F])
 
 class MockCache[F[_]](val redis: MockRedis[F]) extends IntegrationCheck {
-  if (MockCache.instanceCounter.incrementAndGet() > 2) { // one instance per each monad
-    throw new RuntimeException(s"Something is wrong with memoization: ${MockCache.instanceCounter.get()} instances were created")
+  locally {
+    val integer = MockCache.instanceCounter.getOrElseUpdate(redis, new AtomicInteger(0))
+    if (integer.incrementAndGet() > 2) { // one instance per each monad
+      throw new RuntimeException(s"Something is wrong with memoization: $integer instances were created")
+    }
   }
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
 }
 
 object MockCache {
-  val instanceCounter = new AtomicInteger()
+  val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
 class ApplePaymentProvider[F[_]]() extends IntegrationCheck {

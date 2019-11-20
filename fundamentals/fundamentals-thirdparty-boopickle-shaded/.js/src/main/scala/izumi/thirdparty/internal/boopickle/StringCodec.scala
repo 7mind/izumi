@@ -27,7 +27,7 @@ class TextEncoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object
 }
 
 object StringCodec extends StringCodecBase {
-  private lazy val utf8decoder: (Int8Array) => String = {./
+  private lazy val utf8decoder: (Int8Array) => String = {
     val td = new TextDecoder
     // use native TextDecoder
     (data: Int8Array) =>
