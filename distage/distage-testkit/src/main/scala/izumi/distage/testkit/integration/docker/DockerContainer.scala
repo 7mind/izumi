@@ -37,6 +37,9 @@ trait ContainerDef {
     *     .dependOnDocker(ZookeeperDocker)
     * }
     * }}}
+    *
+    * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
+    *
     */
   final def make[F[_] : TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
     tag.discard()
