@@ -9,7 +9,8 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.IntegrationCheck
-import izumi.distage.testkit.integration.docker.Docker.ContainerId
+import izumi.distage.testkit.integration.docker.Docker.{ClientConfig, ContainerId}
+import izumi.functional.Value
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.api.IzLogger
@@ -19,6 +20,7 @@ import scala.jdk.CollectionConverters._
 class DockerClientWrapper[F[_]]
 (
   val client: DockerClient,
+  val clientConfig: ClientConfig,
   val labelsBase: Map[String, String],
   val labelsUnique: Map[String, String],
   logger: IzLogger,
@@ -54,10 +56,15 @@ object DockerClientWrapper {
   (
     factory: DockerCmdExecFactory,
     logger: IzLogger,
+    clientConfig: ClientConfig,
   ) extends DIResource[F, DockerClientWrapper[F]]
     with IntegrationCheck {
 
-    private[this] lazy val dcc = DefaultDockerClientConfig.createDefaultConfigBuilder().build()
+    private[this] lazy val dcc = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
+      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))((c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
+      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))((c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email))
+      .get.build()
+
     private[this] lazy val client = DockerClientBuilder
       .getInstance(dcc)
       .withDockerCmdExecFactory(factory)
@@ -80,6 +87,7 @@ object DockerClientWrapper {
           labelsBase = Map("distage.type" -> "distage-testkit"),
           labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
+          clientConfig = clientConfig,
         )
       }
     }

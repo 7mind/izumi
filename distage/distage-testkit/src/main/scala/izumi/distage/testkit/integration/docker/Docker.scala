@@ -6,9 +6,14 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 
 import scala.concurrent.duration.FiniteDuration
 
+case class ServicePort(hostsV4: Seq[String], listenOnV4: String, number: Int)
+
+object ServicePort {
+  def local(port: Int): ServicePort = ServicePort(Seq("127.0.0.1"), "127.0.0.1", port)
+}
 
 object Docker {
-  case class ServicePort(host: String, number: Int)
+  type ServicePort = izumi.distage.testkit.integration.docker.ServicePort
 
   final case class ContainerId(name: String) extends AnyVal
 
@@ -17,27 +22,49 @@ object Docker {
     def number: Int
     def protocol: String
   }
+
   object DockerPort {
+
     final case class TCP(number: Int) extends DockerPort {
       override def protocol: String = "tcp"
     }
+
     final case class UDP(number: Int) extends DockerPort {
       override def protocol: String = "udp"
     }
+
   }
 
-  final case class ClientConfig(readTimeoutMs: Int, connectTimeoutMs: Int)
+  final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
+
+  final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
+
+  final case class ClientConfig(
+                                 readTimeoutMs: Int,
+                                 connectTimeoutMs: Int,
+                                 allowReuse: Boolean,
+                                 useRemote: Boolean,
+                                 useRegistry: Boolean,
+                                 remote: Option[RemoteDockerConfig],
+                                 registry: Option[DockerRegistryConfig],
+                               )
 
   sealed trait HealthCheckResult
+
   object HealthCheckResult {
+
     case object Running extends HealthCheckResult
+
     case object Uknnown extends HealthCheckResult
+
     final case class Failed(t: Throwable) extends HealthCheckResult
+
   }
 
   trait ContainerHealthCheck[Tag] {
     def check(container: DockerContainer[Tag]): HealthCheckResult
   }
+
   object ContainerHealthCheck {
     def dontCheckPorts[T]: ContainerHealthCheck[T] = _ => HealthCheckResult.Running
 
@@ -55,13 +82,23 @@ object Docker {
       container: DockerContainer[T] =>
         container.mapping.get(exposedPort) match {
           case Some(value) =>
-            new PortCheck(timeout.toMillis.intValue()).checkPort(value.host, value.number, s"open port ${exposedPort} on ${container.id}") match {
-              case _: ResourceCheck.Success =>
-                HealthCheckResult.Running
-              case f: ResourceCheck.Failure =>
-                println(f)
-                HealthCheckResult.Uknnown
+
+            val allChecks = value.hostsV4.map {
+              host =>
+                new PortCheck(timeout.toMillis.intValue()).checkPort(host, value.number, s"open port ${exposedPort} on ${container.id}") match {
+                  case _: ResourceCheck.Success =>
+                    HealthCheckResult.Running
+                  case _: ResourceCheck.Failure =>
+                    HealthCheckResult.Uknnown
+                }
             }
+
+            if (allChecks.contains(HealthCheckResult.Running)) {
+              HealthCheckResult.Running
+            } else {
+              HealthCheckResult.Uknnown
+            }
+
           case None =>
             HealthCheckResult.Failed(new RuntimeException(s"Port ${exposedPort} is not mapped!"))
         }
@@ -79,7 +116,7 @@ object Docker {
                                        cwd: Option[String] = None,
                                        user: Option[String] = None,
                                        mounts: Seq[Mount] = Seq.empty,
-                                       reuse: Boolean = false,
+                                       reuse: Boolean = true,
                                        healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
                                        pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
                                        healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkFirstPort[T](),

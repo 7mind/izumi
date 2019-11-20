@@ -6,6 +6,7 @@ import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.testkit.integration.docker.Docker.ServicePort
+import izumi.distage.testkit.integration.docker.ServicePort
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
@@ -41,7 +42,7 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   // and this one is for production
   make[ServicePort].named("pg").tagged(Env.Prod).from {
     pgPort: Int @ConfPath("postgres.port") =>
-      ServicePort("localhost", pgPort)
+      ServicePort.local(pgPort)
   }
 
   make[PgSvcExample]
