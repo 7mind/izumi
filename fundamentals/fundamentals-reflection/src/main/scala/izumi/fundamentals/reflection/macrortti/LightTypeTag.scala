@@ -2,7 +2,7 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.nio.ByteBuffer
 
-import boopickle.Default.Pickler
+import izumi.thirdparty.internal.boopickle.Default.Pickler
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
@@ -125,7 +125,7 @@ object LightTypeTag {
   }
 
   private[macrortti] val (lttRefSerializer: Pickler[LightTypeTagRef], subtypeDBsSerializer: Pickler[SubtypeDBs]) = {
-    import boopickle.Default._
+    import izumi.thirdparty.internal.boopickle.Default._
 
     implicit lazy val appliedRefSerializer: Pickler[AppliedReference] = generatePickler[AppliedReference]
     implicit lazy val nameRefSerializer: Pickler[NameReference] = generatePickler[NameReference]

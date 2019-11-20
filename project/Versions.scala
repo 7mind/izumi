@@ -11,7 +11,7 @@ object V {
 
   val cats = "2.0.0"
   val cats_effect = "2.0.0"
-  val zio = "1.0.0-RC16"
+  val zio = "1.0.0-RC17"
   val zio_interop_cats = "2.0.0.0-RC8"
 
   val circe = "0.12.3"
@@ -30,12 +30,12 @@ object V {
   // java, we need it bcs http4s ws client isn't ready yet
   val asynchttpclient = "2.10.4"
 
-  val classgraph = "4.8.53"
+  val classgraph = "4.8.54"
   val slf4j = "1.7.29"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
-
   val scala_java_time = "2.0.0-RC3"
+  val docker_java = "3.2.0-rc1"
 }

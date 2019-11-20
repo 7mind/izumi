@@ -205,12 +205,17 @@ package object bio extends BIOSyntax {
 
     @inline def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
     @inline def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
+    @inline def parTraverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
     @inline def sleep(duration: Duration): F[Nothing, Unit]
 
     @inline def uninterruptible[E, A](r: F[E, A]): F[E, A]
 
     @inline def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
+
+    // defaults
+    @inline def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
+    @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
     @inline final def repeatUntil[E, A](action: F[E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[E, A] = {
       def go(n: Int): F[E, A] = {

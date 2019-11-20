@@ -165,4 +165,16 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
   @inline override final def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = {
     ZIO.foreachParN(maxConcurrent)(l)(f)
   }
+
+  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+    ZIO.foreachParN_(maxConcurrent)(l)(f)
+  }
+
+  @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
+    ZIO.foreachPar(l)(f)
+  }
+
+  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
+    ZIO.foreachPar_(l)(f)
+  }
 }

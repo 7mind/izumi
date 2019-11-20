@@ -2,19 +2,22 @@ package izumi.distage.testkit.distagesuite.fixtures
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import cats.effect.IO
+import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
+import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
+import zio.Task
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
   with ZIODIEffectModule
 
-object MockAppCatsIOPlugin extends MockAppPlugin[IO]
-object MockAppZioPlugin extends MockAppPlugin[zio.IO[Throwable, ?]]
+object MockAppCatsIOPlugin extends MockAppPlugin[CIO]
+object MockAppZioPlugin extends MockAppPlugin[Task]
+object MockAppIdPlugin extends MockAppPlugin[Identity]
 
 abstract class MockAppPlugin[F[_] : TagK] extends PluginDef {
   make[MockPostgresDriver[F]]

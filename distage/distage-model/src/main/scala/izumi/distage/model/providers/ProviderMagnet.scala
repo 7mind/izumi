@@ -78,16 +78,26 @@ import scala.language.implicitConversions
   *
   * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
   */
-final case class ProviderMagnet[+R](get: Provider) {
-  def map[B: Tag](f: R => B): ProviderMagnet[B] = {
-    copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[R])))
+final case class ProviderMagnet[+A](get: Provider) {
+  def map[B: Tag](f: A => B): ProviderMagnet[B] = {
+    copy[B](get = get.unsafeMap(SafeType.get[B], (any: Any) => f(any.asInstanceOf[A])))
   }
 
-  def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(R, B)] = {
-    implicit val rTag: Tag[R] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
+  def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
+    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
     rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
 
-    copy[(R, B)](get = get.unsafeZip(SafeType.get[(R, B)], that.get))
+    copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
+  }
+
+  def map2[B: Tag, C: Tag](that: ProviderMagnet[B])(f: (A, B) => C): ProviderMagnet[C] = {
+    zip(that).map[C](f.tupled)
+  }
+
+  /** Add `B` as an unused dependency for this constructor */
+  def addDependency[B: Tag]: ProviderMagnet[A] = {
+    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
+    map2[B, A](ProviderMagnet.identity[B])((a, _) => a)
   }
 }
 

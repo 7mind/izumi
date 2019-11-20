@@ -6,6 +6,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.{BootstrapModuleDef, Module, ModuleDef}
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
+import izumi.distage.monadic.modules.IdentityDIEffectModule
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.config.ContextOptions
@@ -66,10 +67,7 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      val baseMod = new ModuleDef {
-        addImplicit[DIEffect[Identity]]
-        addImplicit[DIEffectRunner[Identity]]
-      }
+      val baseMod = IdentityDIEffectModule
 
       Seq(baseMod)
     }
