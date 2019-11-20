@@ -1,10 +1,13 @@
 package izumi.distage.testkit.distagesuite
 
 import cats.effect.{IO => CIO}
-import distage.DIKey
+import distage._
+import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
@@ -30,66 +33,39 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 }
 
-class DistageTestExample extends DistageSpecScalatest[CIO] with DistageMemoizeExample[CIO] {
-  "distage test runner" should {
-    "test 1" in {
-      service: MockUserRepository[CIO] =>
-        for {
-          _ <- CIO.delay(assert(service != null))
-          _ <- CIO.delay(println("test2"))
-        } yield ()
-    }
+final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
+final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
+final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 
-    "test 2" in {
-      service: MockCachedUserService[CIO] =>
-        for {
-          _ <- CIO.delay(assert(service != null))
-          _ <- CIO.delay(println("test1"))
-        } yield ()
-    }
-
-    "test 3" in {
-      service: MockCachedUserService[CIO] =>
-        CIO.delay(assert(service != null))
-    }
-
-    "test 4 (should be ignored)" in {
-      _: ApplePaymentProvider[CIO] =>
-//        ???
-    }
-  }
-
-}
-
-class DistageTestExample1 extends DistageSpecScalatest[CIO] with DistageMemoizeExample[CIO] {
+abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   "distage test custom runner" should {
     "test 1" in {
-      service: MockUserRepository[CIO] =>
+      service: MockUserRepository[F] =>
         for {
-          _ <- CIO.delay(assert(service != null))
-          _ <- CIO.delay(println("test2"))
+          _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(println("test2"))
         } yield ()
     }
 
     "test 2" in {
-      service: MockCachedUserService[CIO] =>
+      service: MockCachedUserService[F] =>
         for {
-          _ <- CIO.delay(assert(service != null))
-          _ <- CIO.delay(println("test1"))
+          _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(println("test1"))
         } yield ()
     }
 
     "test 3" in {
-      service: MockCachedUserService[CIO] =>
-        CIO.delay(assert(service != null))
+      service: MockCachedUserService[F] =>
+        F.maybeSuspend(assert(service != null))
     }
 
-    "test 4" in {
-      _: ApplePaymentProvider[CIO] =>
-        //???
+    "test 4 (should be ignored)" in {
+      _: ApplePaymentProvider[F] =>
+        ???
     }
   }
 
-
 }
+

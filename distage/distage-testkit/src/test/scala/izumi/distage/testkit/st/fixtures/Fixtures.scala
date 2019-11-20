@@ -9,6 +9,7 @@ import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
+import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
