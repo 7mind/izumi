@@ -12,6 +12,7 @@ object PostgresDocker extends ContainerDef {
     ContainerConfig(
       image = "library/postgres:latest",
       ports = Seq(primaryPort),
+      reuse = true,
     )
   }
 }

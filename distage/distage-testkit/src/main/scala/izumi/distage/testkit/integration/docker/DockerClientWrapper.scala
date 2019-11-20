@@ -19,12 +19,15 @@ import scala.jdk.CollectionConverters._
 class DockerClientWrapper[F[_]]
 (
   val client: DockerClient,
-  val labels: Map[String, String],
+  val labelsBase: Map[String, String],
+  val labelsUnique: Map[String, String],
   logger: IzLogger,
 )(
   implicit
   F: DIEffect[F],
 ) {
+  def labels: Map[String, String] = labelsBase ++ labelsUnique
+
   def destroyContainer(container: ContainerId): F[Unit] = {
     F.maybeSuspend {
       logger.info(s"Going to destroy $container...")
@@ -47,7 +50,7 @@ class DockerClientWrapper[F[_]]
 
 object DockerClientWrapper {
 
-  class Resource[F[_]: DIEffect: DIEffectAsync]
+  class Resource[F[_] : DIEffect : DIEffectAsync]
   (
     factory: DockerCmdExecFactory,
     logger: IzLogger,
@@ -74,7 +77,8 @@ object DockerClientWrapper {
       DIEffect[F].maybeSuspend {
         new DockerClientWrapper[F](
           client = client,
-          labels = Map("type" -> "distage-testkit", "distage-run" -> UUID.randomUUID().toString),
+          labelsBase = Map("distage.type" -> "distage-testkit"),
+          labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
         )
       }
@@ -83,7 +87,7 @@ object DockerClientWrapper {
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
         containers <- DIEffect[F].maybeSuspend(resource.client.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
-        _ <- DIEffect[F].traverse_(containers.asScala)(c => resource.destroyContainer(ContainerId(c.getId)))
+        _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(c => resource.destroyContainer(ContainerId(c.getId)))
         _ <- DIEffect[F].maybeSuspend(resource.client.close())
       } yield ()
     }

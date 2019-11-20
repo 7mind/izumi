@@ -12,9 +12,15 @@ object Docker {
 
   trait DockerPort {
     def number: Int
+    def protocol: String
   }
   object DockerPort {
-    final case class TCP(number: Int) extends DockerPort
+    final case class TCP(number: Int) extends DockerPort {
+      override def protocol: String = "tcp"
+    }
+    final case class UDP(number: Int) extends DockerPort {
+      override def protocol: String = "udp"
+    }
   }
 
   final case class ClientConfig(readTimeoutMs: Int, connectTimeoutMs: Int)
@@ -70,6 +76,7 @@ object Docker {
                                        cwd: Option[String] = None,
                                        user: Option[String] = None,
                                        mounts: Seq[Mount] = Seq.empty,
+                                       reuse: Boolean = false,
                                        healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
                                        pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
                                        healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkFirstPort[T](),

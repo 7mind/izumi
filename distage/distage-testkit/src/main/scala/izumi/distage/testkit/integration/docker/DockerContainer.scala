@@ -14,6 +14,7 @@ import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.logstage.api.IzLogger
+import scala.jdk.CollectionConverters._
 
 trait ContainerDef {
   type Tag
@@ -35,11 +36,12 @@ trait ContainerDef {
     * }
     * }}}
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
+  final def make[F[_] : TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }
 }
+
 object ContainerDef {
   type Aux[T] = ContainerDef {type Tag = T}
 }
@@ -49,6 +51,7 @@ case class DockerContainer[Tag](
                                  mapping: Map[Docker.DockerPort, Int],
                                  containerConfig: ContainerConfig[Tag],
                                )
+
 object DockerContainer {
   def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
     new Resource[F, conf.Tag](conf)(_, _)(_, _)
@@ -58,12 +61,13 @@ object DockerContainer {
     def dependOnDocker(containerDecl: ContainerDef)(implicit tag: distage.Tag[DockerContainer[containerDecl.Tag]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
       self.addDependency[DockerContainer[containerDecl.Tag]]
     }
+
     def dependOnDocker[T2](implicit tag: distage.Tag[DockerContainer[T2]]): ProviderMagnet[DIResource[F, DockerContainer[T]]] = {
       self.addDependency[DockerContainer[T2]]
     }
   }
 
-  class Resource[F[_]: DIEffect: DIEffectAsync, T]
+  class Resource[F[_] : DIEffect : DIEffectAsync, T]
   (
     containerDecl: ContainerDef.Aux[T],
   )(
@@ -74,27 +78,58 @@ object DockerContainer {
     private val config = containerDecl.config
 
     override def acquire: F[DockerContainer[T]] = {
-      val ports = config.ports.map(_ -> IzSockets.temporaryLocalPort())
-
-      val specs = ports.map {
-        case (container, local) =>
-
-          val p = container match {
+      val ports = config.ports.map {
+        containerPort =>
+          val local = IzSockets.temporaryLocalPort()
+          val bp = containerPort match {
             case DockerPort.TCP(number) =>
               ExposedPort.tcp(number)
+            case DockerPort.UDP(number) =>
+              ExposedPort.udp(number)
           }
-          new PortBinding(Ports.Binding.bindPort(local), p)
+          val binding = new PortBinding(Ports.Binding.bindPort(local), bp)
+          val stableLabels = Map(
+            "distage.reuse" -> config.reuse.toString,
+            s"distage.port.${containerPort.protocol}.${containerPort.number}.defined" -> "true",
+          )
+          val labels = Map(
+            s"distage.port.${containerPort.protocol}.${containerPort.number}" -> local.toString,
+          )
+          (containerPort, local, binding, stableLabels, labels)
       }
 
-      val exposed = config.ports.map {
-        case DockerPort.TCP(number) =>
-          ExposedPort.tcp(number)
+      if (config.reuse) {
+        val stableLabels = ports.flatMap(p => p._4).toMap
+
+        for {
+          containers <- DIEffect[F].maybeSuspend(client.listContainersCmd().withLabelFilter(stableLabels.asJava).withStatusFilter(List("running").asJava).exec()).map(_.asScala)
+          existing <- containers.find(c => c.getImage == config.image) match {
+            case Some(c) =>
+              logger.info(s"Reusing running container ${c.getId}...")
+              val existingPorts = config.ports.map {
+                containerPort =>
+                  val id = s"distage.port.${containerPort.protocol}.${containerPort.number}"
+                  containerPort -> Option(c.labels.get(id)).map(Integer.parseInt).getOrElse(throw new RuntimeException(s"Missing port label $id on container ${c.getId}"))
+              }
+
+              DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts.toMap, config))
+            case None =>
+              doRun(ports)
+          }
+        } yield {
+          existing
+        }
+      } else {
+        doRun(ports)
       }
-      import scala.jdk.CollectionConverters._
+    }
+
+    private def doRun(ports: Seq[(DockerPort, Int, PortBinding, Map[String, String], Map[String, String])]) = {
+      val allPortLabels = ports.flatMap(p => p._4 ++ p._5).toMap
 
       val baseCmd = client
         .createContainerCmd(config.image)
-        .withLabels(clientw.labels.asJava)
+        .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
 
@@ -124,8 +159,8 @@ object DockerContainer {
       for {
         out <- DIEffect[F].maybeSuspend {
           val cmd = Value(baseCmd)
-            .mut(exposed.nonEmpty)(_.withExposedPorts(exposed: _*))
-            .mut(specs.nonEmpty)(_.withPortBindings(specs: _*))
+            .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_._3.getExposedPort): _*))
+            .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_._3): _*))
             .mut(config.env.nonEmpty)(_.withEnv(config.env.map {
               case (k, v) => s"$k=$v"
             }.toList.asJava))
@@ -149,14 +184,19 @@ object DockerContainer {
 
           client.startContainerCmd(res.getId).exec()
 
-          DockerContainer[T](ContainerId(res.getId), ports.toMap, config)
+          DockerContainer[T](ContainerId(res.getId), ports.map(p => (p._1, p._2)).toMap, config)
         }
         _ <- await(out)
       } yield out
     }
 
     override def release(resource: DockerContainer[T]): F[Unit] = {
-      clientw.destroyContainer(resource.id)
+      if (!resource.containerConfig.reuse) {
+        clientw.destroyContainer(resource.id)
+      } else {
+        DIEffect[F].unit
+      }
     }
   }
+
 }
