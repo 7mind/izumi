@@ -89,6 +89,8 @@ object DockerContainer {
       }
     }
 
+    case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+
     override def acquire: F[DockerContainer[T]] = {
       val ports = config.ports.map {
         containerPort =>
@@ -102,20 +104,26 @@ object DockerContainer {
           val labels = Map(
             s"distage.port.${containerPort.protocol}.${containerPort.number}" -> local.toString,
           )
-          (containerPort, local, binding, stableLabels, labels)
+          PortDecl(containerPort, local, binding, stableLabels ++ labels)
       }
 
       if (config.reuse && clientw.clientConfig.allowReuse) {
-        val stableLabels = ports.flatMap(p => p._4).toMap
 
         for {
-          containers <- DIEffect[F].maybeSuspend(client.listContainersCmd().withLabelFilter(stableLabels.asJava).withStatusFilter(List("running").asJava).exec()).map(_.asScala.toList.sortBy(_.getId))
-          existing <- containers.find(c => c.getImage == config.image) match {
-            case Some(c) =>
-              logger.debug(s"Reusing running container ${c.getId}...")
-              val existingPorts = mapPorts(c.getId)
+          containers <- DIEffect[F]
+            .maybeSuspend(
+              client.listContainersCmd()
+                .withAncestorFilter(List(config.image).asJava)
+                .withStatusFilter(List("running").asJava)
+                .exec()
+            )
+            .map(_.asScala.toList.sortBy(_.getId))
+          existing <- containers.view
+            .map(c => (c, mapPorts(c.getId).toMap))
+            .find { case (_, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty } match {
+            case Some((c, existingPorts)) =>
               logger.info(s"Reusing running container ${c.getId} with $existingPorts...")
-              DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts.toMap, config, clientw.clientConfig))
+              DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts, config, clientw.clientConfig))
             case None =>
               doRun(ports)
           }
@@ -133,9 +141,8 @@ object DockerContainer {
       existingPorts
     }
 
-    private def doRun(ports: Seq[(DockerPort, Int, PortBinding, Map[String, String], Map[String, String])]) = {
-      val allPortLabels = ports.flatMap(p => p._4 ++ p._5).toMap
-
+    private def doRun(ports: Seq[PortDecl]) = {
+      val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client
         .createContainerCmd(config.image)
         .withLabels((clientw.labels ++ allPortLabels).asJava)
@@ -168,8 +175,8 @@ object DockerContainer {
       for {
         out <- DIEffect[F].maybeSuspend {
           val cmd = Value(baseCmd)
-            .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_._3.getExposedPort): _*))
-            .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_._3): _*))
+            .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
+            .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
             .mut(config.env.nonEmpty)(_.withEnv(config.env.map {
               case (k, v) => s"$k=$v"
             }.toList.asJava))
@@ -219,7 +226,7 @@ object DockerContainer {
             .getOrElse(throw new RuntimeException(s"Missing $containerPort on container ${inspection.getId}"))
 
           val networkAddresses = network.getNetworks.asScala.values.toList
-          containerPort -> ServicePort(networkAddresses.map(_.getIpAddress), port.getHostIp,  Integer.parseInt(port.getHostPortSpec))
+          containerPort -> ServicePort(networkAddresses.map(_.getIpAddress), port.getHostIp, Integer.parseInt(port.getHostPortSpec))
       }
     }
   }
