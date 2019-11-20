@@ -6,7 +6,6 @@ import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.testkit.integration.docker.Docker.ServicePort
-import izumi.distage.testkit.integration.docker.ServicePort
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task

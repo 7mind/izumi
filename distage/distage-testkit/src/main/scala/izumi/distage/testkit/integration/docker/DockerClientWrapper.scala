@@ -84,7 +84,7 @@ object DockerClientWrapper {
       DIEffect[F].maybeSuspend {
         new DockerClientWrapper[F](
           client = client,
-          labelsBase = Map("distage.type" -> "distage-testkit"),
+          labelsBase = Map("distage.type" -> "testkit"),
           labelsUnique = Map("distage.run" -> UUID.randomUUID().toString),
           logger = logger,
           clientConfig = clientConfig,
