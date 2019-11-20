@@ -125,7 +125,7 @@ function init {
 
     export IZUMI_VERSION=$(cat version.sbt | sed -r 's/.*\"(.*)\".**/\1/' | sed -E "s/SNAPSHOT/build."${CI_BUILD_NUMBER}"/")
     export SCALA212=$(cat project/Deps.sc | grep 'val scala212 ' |  sed -r 's/.*\"(.*)\".**/\1/')
-    export SCALA213=$(cat project/Deps.sc | grep 'val scala213coverage ' |  sed -r 's/.*\"(.*)\".**/\1/')
+    export SCALA213=$(cat project/Deps.sc | grep 'val scala213 ' |  sed -r 's/.*\"(.*)\".**/\1/')
 
     printenv
 
