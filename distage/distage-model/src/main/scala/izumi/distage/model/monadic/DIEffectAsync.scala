@@ -6,8 +6,8 @@ import izumi.distage.model.monadic.LowPriorityDIEffectAsyncInstances.{_Parallel,
 import izumi.functional.bio.{BIOAsync, F}
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait DIEffectAsync[F[_]] {
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
@@ -20,7 +20,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
-        l.foreach(a => Future(f(a))(ExecutionContext.global))
+        val future = Future.sequence(l.map(a => Future(f(a))(ExecutionContext.global)))(implicitly, ExecutionContext.global)
+        Await.result(future, Duration.Inf)
       }
       override def sleep(duration: FiniteDuration): Identity[Unit] = {
         Thread.sleep(duration.toMillis)
