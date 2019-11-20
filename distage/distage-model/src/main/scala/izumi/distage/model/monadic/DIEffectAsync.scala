@@ -20,7 +20,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
-        val future = Future.sequence(l.map(a => Future(f(a))(ExecutionContext.global)))(implicitly, ExecutionContext.global)
+        implicit val ec = ExecutionContext.global
+        val future = Future.sequence(l.map(a => Future(f(a))))
         Await.result(future, Duration.Inf)
       }
       override def sleep(duration: FiniteDuration): Identity[Unit] = {
