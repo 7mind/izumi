@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import scala.concurrent.duration.FiniteDuration
 
 object Docker {
-  final case class ServicePort(host: String, number: Int)
+  final case class ServicePort(hostsV4: Seq[String], listenOnV4: String, number: Int)
   object ServicePort {
     def local(port: Int): ServicePort = ServicePort(Seq("127.0.0.1"), "127.0.0.1", port)
   }
