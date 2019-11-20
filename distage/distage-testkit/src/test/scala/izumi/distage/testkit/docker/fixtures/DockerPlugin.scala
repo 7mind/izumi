@@ -11,7 +11,6 @@ import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, Postgres
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
 
-
 class PgSvcExample(val pg: ServicePort@Id("pg"), val ddb: ServicePort@Id("ddb"))
 
 object MonadPlugin extends PluginDef

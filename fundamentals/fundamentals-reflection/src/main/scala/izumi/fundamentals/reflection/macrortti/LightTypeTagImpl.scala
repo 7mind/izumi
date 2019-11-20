@@ -10,6 +10,7 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiter
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 import izumi.fundamentals.reflection.{DebugProperties, SingletonUniverse}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.api.Universe
 
@@ -92,7 +93,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       }
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
-        val tpef = i.dealias.resultType
+        val tpef = norm(i.dealias.resultType)
         val prefix = getPrefix(tpef)
         val targetRef = makeNameReference(i, tpef.typeSymbol, Boundaries.Empty, prefix)
 
@@ -100,7 +101,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
           case a: TypeRefApi =>
             val srcname = symName(a.sym)
             if (srcname != targetRef.ref) {
-              Seq((NameReference(srcname, prefix = getPrefix(i)), targetRef))
+              Seq((NameReference(srcname, prefix = getPrefix(tpef)), targetRef))
             } else {
               Seq.empty
             }
@@ -216,7 +217,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
       // we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       // tpe.etaExpand.resultType.dealias.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
-      val more = tpe.dealias.resultType.typeArgs.flatMap(_.dealias.resultType.typeSymbol.typeSignature match {
+      val more = tpe.dealias.resultType.typeArgs.flatMap(t => norm(t.dealias.resultType.typeSymbol.typeSignature) match {
         case t: TypeBoundsApi =>
           Seq(t.hi, t.lo)
         case _ =>
@@ -317,7 +318,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
 
     def unpack(t: Type, rules: Map[String, LambdaParameter]): AppliedNamedReference = {
-      val tpef = t.dealias.resultType
+      val tpef = norm(t.dealias.resultType)
       val prefix = getPrefix(tpef)
       val typeSymbol = tpef.typeSymbol
       val boundaries = makeBoundaries(tpef)
@@ -540,6 +541,19 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       t.etaExpand.dealias.resultType.dealias.resultType
     } else {
       t.dealias.resultType
+    }
+  }
+
+  /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
+    * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
+  @tailrec
+  protected[this] final def norm(x: Type): Type = {
+    x match {
+      case RefinedType(t :: Nil, m) if m.isEmpty =>
+        logger.log(s"Stripped empty refinement of type $t. member scope $m")
+        norm(t)
+      case AnnotatedType(_, t) => norm(t)
+      case _ => x
     }
   }
 

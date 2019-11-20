@@ -84,6 +84,10 @@ class LightTypeTagTest extends WordSpec {
   trait J3
   trait J[F[_]] extends J1[F] with J2 with J3
 
+  object TPrefix {
+    type T
+  }
+
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
 
@@ -387,6 +391,10 @@ class LightTypeTagTest extends WordSpec {
       assertCompiles("def x1 = { object x { type T <: { type Array } }; LTag[x.T#Array].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] with List[x.T]].discard() }")
       assertCompiles("def x1 = { object x { type F[_] }; LTag[x.F[Int]].discard() }")
+    }
+
+    "resolve prefixes of annotated types" in {
+      assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
     }
 
   }

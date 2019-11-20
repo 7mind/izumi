@@ -6,17 +6,13 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 
 import scala.concurrent.duration.FiniteDuration
 
-case class ServicePort(hostsV4: Seq[String], listenOnV4: String, number: Int)
-
-object ServicePort {
-  def local(port: Int): ServicePort = ServicePort(Seq("127.0.0.1"), "127.0.0.1", port)
-}
-
 object Docker {
-  type ServicePort = izumi.distage.testkit.integration.docker.ServicePort
+  final case class ServicePort(host: String, number: Int)
+  object ServicePort {
+    def local(port: Int): ServicePort = ServicePort(Seq("127.0.0.1"), "127.0.0.1", port)
+  }
 
   final case class ContainerId(name: String) extends AnyVal
-
 
   trait DockerPort {
     def number: Int
@@ -24,15 +20,12 @@ object Docker {
   }
 
   object DockerPort {
-
     final case class TCP(number: Int) extends DockerPort {
       override def protocol: String = "tcp"
     }
-
     final case class UDP(number: Int) extends DockerPort {
       override def protocol: String = "udp"
     }
-
   }
 
   final case class RemoteDockerConfig(host: String, tlsVerify: Boolean, certPath: String, config: String)
@@ -50,21 +43,15 @@ object Docker {
                                )
 
   sealed trait HealthCheckResult
-
   object HealthCheckResult {
-
     case object Running extends HealthCheckResult
-
     case object Uknnown extends HealthCheckResult
-
     final case class Failed(t: Throwable) extends HealthCheckResult
-
   }
 
   trait ContainerHealthCheck[Tag] {
     def check(container: DockerContainer[Tag]): HealthCheckResult
   }
-
   object ContainerHealthCheck {
     def dontCheckPorts[T]: ContainerHealthCheck[T] = _ => HealthCheckResult.Running
 
