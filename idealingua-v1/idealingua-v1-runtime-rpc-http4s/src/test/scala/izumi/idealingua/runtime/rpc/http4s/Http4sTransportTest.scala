@@ -95,7 +95,7 @@ class Http4sTransportTest extends WordSpec {
       .evalMap(_ => Task(f))
       .compile.drain
 
-    BIOR.unsafeRun(io.interruptChildren)
+    BIOR.unsafeRun(io/*.interruptChildren*/)
   }
 
   def checkBadBody(body: String, disp: IRTDispatcher[rt.BiIO] with TestHttpDispatcher): Unit = {

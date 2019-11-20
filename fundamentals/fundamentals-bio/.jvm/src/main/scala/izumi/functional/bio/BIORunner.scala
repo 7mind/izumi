@@ -107,8 +107,6 @@ object BIORunner {
       t.printStackTrace()
       sys.exit(-1)
     }
-
-    override def newWeakHashMap[A, B](): util.Map[A, B] = new util.WeakHashMap[A, B]()
   }
 
   final class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {

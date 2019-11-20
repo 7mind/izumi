@@ -6,7 +6,7 @@ import izumi.functional.bio.BIOExit.ZIOExit
 import izumi.functional.bio.{BIO, BIOAsync, BIOExit, BIOFiber}
 import zio.clock.Clock
 import zio.duration.Duration.fromScala
-import zio.{Task, ZIO, ZSchedule}
+import zio.{Schedule, Task, ZIO}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, ExecutionException, Future}
@@ -82,7 +82,7 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
 
   @inline override final def retryOrElse[A, E, A2 >: A, E2](r: IO[E, A])(duration: FiniteDuration, orElse: => IO[E2, A2]): IO[E2, A2] =
     ZIO.accessM { env =>
-      val zioDuration = ZSchedule.duration(fromScala(duration))
+      val zioDuration = Schedule.duration(fromScala(duration))
 
       r.provide(env)
         .retryOrElse(zioDuration, (_: Any, _: Any) => orElse.provide(env))
