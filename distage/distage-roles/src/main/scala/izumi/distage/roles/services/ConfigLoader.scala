@@ -5,26 +5,29 @@ import java.io.File
 import com.typesafe.config.{Config, ConfigFactory}
 import distage.config.AppConfig
 import izumi.fundamentals.platform.resources.IzResources
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 trait ConfigLoader {
   def buildConfig(): AppConfig
+
+  final def map(f: AppConfig => AppConfig): ConfigLoader = {
+    () => f(buildConfig())
+  }
 }
 
 object ConfigLoader {
 
   class LocalFSImpl(
-                     logger: IzLogger,
-                     primaryConfig: Option[File],
-                     roleConfigs: Map[String, Option[File]],
-                   ) extends ConfigLoader {
+    logger: IzLogger,
+    primaryConfig: Option[File],
+    roleConfigs: Map[String, Option[File]],
+  ) extends ConfigLoader {
 
     import LocalFSImpl._
-    import izumi.fundamentals.platform.strings.IzString._
-
-    import scala.jdk.CollectionConverters._
 
     def buildConfig(): AppConfig = {
       val commonConfigFile = toConfig("common", primaryConfig)

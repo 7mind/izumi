@@ -2,22 +2,27 @@ package izumi.distage.testkit.services.dstest
 
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
-import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.language.CodePositionMaterializer
-import izumi.logstage.api.IzLogger
-import izumi.logstage.api.Log.Level
+import izumi.logstage.api.{IzLogger, Log}
 
-class DistageTestEnvironmentImpl[F[_] : TagK](suiteClass: Class[_]) extends DistageTestEnvironment[F] {
+class SpecEnvironmentImpl[F[_]: TagK]
+(
+  suiteClass: Class[_],
+  override val contextOptions: ContextOptions,
+  override val bootstrapOverrides: BootstrapModule,
+  override val moduleOverrides: ModuleBase,
+  override val bootstrapLogLevel: Log.Level,
+) extends SpecEnvironment[F] {
+
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     val paramsModule = Module.make {
@@ -32,21 +37,8 @@ class DistageTestEnvironmentImpl[F[_] : TagK](suiteClass: Class[_]) extends Dist
     paramsModule overridenBy primaryModule
   }
 
-  def bootstrapOverride: BootstrapModule = BootstrapModule.empty
-
-  def appOverride: ModuleBase = Module.empty
-
-  def bootstrapLogLevel: Level = IzLogger.Level.Info
-
-  def makeLogger(): IzLogger = IzLogger.apply(bootstrapLogLevel)("phase" -> "test")
-
-  def contextOptions(): ContextOptions = {
-    ContextOptions(
-      addGvDump = false,
-      warnOnCircularDeps = true,
-      RewriteRules(),
-      ConfigInjectionOptions(),
-    )
+  def makeLogger(): IzLogger = {
+    IzLogger(bootstrapLogLevel)("phase" -> "test")
   }
 
   def makeConfigLoader(logger: IzLogger): ConfigLoader = {
@@ -64,12 +56,12 @@ class DistageTestEnvironmentImpl[F[_] : TagK](suiteClass: Class[_]) extends Dist
   def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F] = {
     // roles descriptor is not actually required there, we bind it just in case someone wish to inject a class depending on it
     new ModuleProvider.Impl[F](
-      lateLogger,
-      config,
-      roles,
-      options,
-      RawAppArgs.empty,
-      activation,
+      logger = lateLogger,
+      config = config,
+      roles = roles,
+      options = options,
+      args = RawAppArgs.empty,
+      activation = activation,
     )
   }
 }

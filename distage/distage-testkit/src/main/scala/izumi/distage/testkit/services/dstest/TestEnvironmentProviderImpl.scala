@@ -24,6 +24,10 @@ class TestEnvironmentProviderImpl
   protected val pluginOverrides: Option[Seq[String]],
 ) extends TestEnvironmentProvider {
 
+  protected def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
+  override protected def pluginPackages: Seq[String] = pluginOverrides getOrElse thisPackage
+  override protected def pluginBootstrapPackages: Option[Seq[String]] = None
+
   /**
     * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
     */
@@ -88,11 +92,5 @@ class TestEnvironmentProviderImpl
   override protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
     new PluginSource.Impl(bootstrapConfig)
   }
-
-  protected def thisPackage: Seq[String] = Seq(suiteClass.getPackage.getName)
-
-  override protected def pluginPackages: Seq[String] = pluginOverrides getOrElse thisPackage
-
-  override protected def pluginBootstrapPackages: Option[Seq[String]] = None
 
 }

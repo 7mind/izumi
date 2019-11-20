@@ -45,14 +45,13 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
 
   private[this] lazy val tenv0: TestEnvironmentProvider = {
     val c = config
-    import c._
     new TestEnvironmentProviderImpl(
       this.getClass,
-      activation,
-      memoizedKeys,
-      bootstrapOverrides,
-      moduleOverrides,
-      pluginPackages,
+      c.activation,
+      c.memoizedKeys,
+      c.bootstrapOverrides,
+      c.moduleOverrides,
+      c.pluginPackages,
     )
   }
   private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)

@@ -18,12 +18,13 @@ import izumi.fundamentals.platform.language.CodePosition
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_] : TagK](
-                                      reporter: TestReporter,
-                                      integrationChecker: IntegrationChecker,
-                                      runnerEnvironment: DistageTestEnvironment[F],
-                                      tests: Seq[DistageTest[F]],
-                                    ) {
+class DistageTestRunner[F[_]: TagK]
+(
+  reporter: TestReporter,
+  integrationChecker: IntegrationChecker,
+  runnerEnvironment: SpecEnvironment[F],
+  tests: Seq[DistageTest[F]],
+) {
 
   import DistageTestRunner._
 
@@ -31,7 +32,7 @@ class DistageTestRunner[F[_] : TagK](
     val groups = tests.groupBy(_.environment)
 
     val logger = runnerEnvironment.makeLogger()
-    val options = runnerEnvironment.contextOptions()
+    val options = runnerEnvironment.contextOptions
     val loader = runnerEnvironment.makeConfigLoader(logger)
 
     val config = loader.buildConfig()
@@ -45,8 +46,8 @@ class DistageTestRunner[F[_] : TagK](
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
-        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverride
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.appOverride
+        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
+        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
         val injector = Injector.Standard(bsModule)
 
@@ -192,7 +193,6 @@ class DistageTestRunner[F[_] : TagK](
         } yield ()
     }
   }
-
 
 }
 

@@ -1,9 +1,11 @@
 package org.scalatest
 
-import distage.TagK
+import distage.{ModuleBase, TagK}
+import izumi.distage.model.definition.BootstrapModule
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.IntegrationChecker
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestEnvironment, DistageTestEnvironmentImpl, DistageTestRunner}
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment, SpecEnvironmentImpl}
 import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
@@ -11,8 +13,28 @@ import org.scalatest.events._
 
 import scala.collection.immutable.TreeSet
 
+final case class SpecConfig(
+                             contextOptions: ContextOptions = ContextOptions(),
+                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+                             moduleOverrides: ModuleBase = ModuleBase.empty,
+                             bootstrapLogLevel: Log.Level = Log.Level.Info,
+                           )
+
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
+
+  protected def specConfig: SpecConfig = SpecConfig()
+
+  protected lazy val ruenv: SpecEnvironment[F] = {
+    val c = specConfig
+    new SpecEnvironmentImpl[F](
+      this.getClass,
+      c.contextOptions,
+      c.bootstrapOverrides,
+      c.moduleOverrides,
+      c.bootstrapLogLevel,
+    )
+  }
 
   override final protected def runNestedSuites(args: Args): Status =
     throw new UnsupportedOperationException
@@ -64,8 +86,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
     status
   }
-
-  protected lazy val ruenv: DistageTestEnvironment[F] = new DistageTestEnvironmentImpl[F](this.getClass)
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap): TestData = {
     val suiteTags = for {

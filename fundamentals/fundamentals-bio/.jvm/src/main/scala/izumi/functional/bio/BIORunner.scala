@@ -1,6 +1,5 @@
 package izumi.functional.bio
 
-import java.util
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 

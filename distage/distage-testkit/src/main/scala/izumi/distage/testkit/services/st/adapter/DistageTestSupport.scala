@@ -2,7 +2,6 @@ package izumi.distage.testkit.services.st.adapter
 
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
-import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.Binding.SingletonBinding
@@ -11,11 +10,10 @@ import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
-import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services._
 import izumi.distage.testkit.services.dstest.TestEnvironment
@@ -160,14 +158,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     )
   }
 
-  protected def contextOptions(): ContextOptions = {
-    ContextOptions(
-      addGvDump = false,
-      warnOnCircularDeps = true,
-      RewriteRules(),
-      ConfigInjectionOptions(),
-    )
-  }
+  protected def contextOptions(): ContextOptions = ContextOptions()
 
   protected def makePlanner(options: ContextOptions, bsModule: BootstrapModule, activation: AppActivation, logger: IzLogger): RoleAppPlanner[F] = {
     new RoleAppPlanner.Impl[F](options, bsModule, activation, logger)

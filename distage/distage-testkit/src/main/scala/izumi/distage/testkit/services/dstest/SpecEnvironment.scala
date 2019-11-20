@@ -9,22 +9,18 @@ import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.logstage.api.{IzLogger, Log}
 
-trait DistageTestEnvironment[F[_]] {
+trait SpecEnvironment[F[_]] {
+
+  def bootstrapOverrides: BootstrapModule
+  def moduleOverrides: ModuleBase
+
+  def bootstrapLogLevel: Log.Level
+  def makeLogger(): IzLogger
+
+  def contextOptions: ContextOptions
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase
-
-  def bootstrapOverride: BootstrapModule
-
-  def appOverride: ModuleBase
-
-  def bootstrapLogLevel: Log.Level
-
-  def makeLogger(): IzLogger
-
-  def contextOptions(): ContextOptions
-
   def makeConfigLoader(logger: IzLogger): ConfigLoader
-
   def makeModuleProvider(options: ContextOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activation: AppActivation): ModuleProvider[F]
 }

@@ -23,20 +23,20 @@ trait ModuleProvider[F[_]] {
 
 object ModuleProvider {
 
-  class Impl[F[_] : TagK](
-                           logger: IzLogger,
-                           config: AppConfig,
-                           roles: RolesInfo,
-                           options: ContextOptions,
-                           args: RawAppArgs,
-                           activation: AppActivation,
-                         ) extends ModuleProvider[F] {
+  class Impl[F[_]: TagK](
+    logger: IzLogger,
+    config: AppConfig,
+    roles: RolesInfo,
+    options: ContextOptions,
+    args: RawAppArgs,
+    activation: AppActivation,
+  ) extends ModuleProvider[F] {
 
     def bootstrapModules(): Seq[BootstrapModuleDef] = {
       val rolesModule = new BootstrapModuleDef {
-        make[RolesInfo].from(roles)
-        make[RawAppArgs].from(args)
-        make[AppActivation].from(activation)
+        make[RolesInfo].fromValue(roles)
+        make[RawAppArgs].fromValue(args)
+        make[AppActivation].fromValue(activation)
         make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
       }
 
@@ -48,7 +48,7 @@ object ModuleProvider {
       val configModule = new ConfigModule(config, options.configInjectionOptions)
 
       val resourceRewriter = new BootstrapModuleDef {
-        make[RewriteRules].from(options.rewriteRules)
+        make[RewriteRules].fromValue(options.rewriteRules)
         many[PlanningHook].add[ResourceRewriter]
       }
 
@@ -60,7 +60,7 @@ object ModuleProvider {
           resourceRewriter,
           loggerModule,
         ),
-        condModule(options.addGvDump, new GraphDumpBootstrapModule())
+        condModule(options.addGraphVizDump, new GraphDumpBootstrapModule())
       ).flatten
     }
 

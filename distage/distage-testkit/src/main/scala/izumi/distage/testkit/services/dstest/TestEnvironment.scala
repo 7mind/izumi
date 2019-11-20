@@ -7,7 +7,7 @@ import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.roles.services.PruningPlanMergingPolicy
 
 case class TestEnvironment(
-                            baseBsModule: ModuleBase,
+                            private val baseBsModule: ModuleBase,
                             appModule: ModuleBase,
                             roles: RolesInfo,
                             activation: AppActivation,
