@@ -2,6 +2,7 @@ package izumi.distage.testkit.integration.docker
 
 import java.util.concurrent.TimeUnit
 
+import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
@@ -9,11 +10,12 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.testkit.integration.docker.Docker.{ContainerConfig, ContainerId, DockerPort, HealthCheckResult}
+import izumi.distage.testkit.integration.docker.Docker.{ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.logstage.api.IzLogger
+
 import scala.jdk.CollectionConverters._
 
 trait ContainerDef {
@@ -48,7 +50,7 @@ object ContainerDef {
 
 case class DockerContainer[Tag](
                                  id: Docker.ContainerId,
-                                 mapping: Map[Docker.DockerPort, Int],
+                                 mapping: Map[Docker.DockerPort, ServicePort],
                                  containerConfig: ContainerConfig[Tag],
                                )
 
@@ -109,16 +111,8 @@ object DockerContainer {
           containers <- DIEffect[F].maybeSuspend(client.listContainersCmd().withLabelFilter(stableLabels.asJava).withStatusFilter(List("running").asJava).exec()).map(_.asScala.toList.sortBy(_.getId))
           existing <- containers.find(c => c.getImage == config.image) match {
             case Some(c) =>
-              val inspection = client.inspectContainerCmd(c.getId).exec()
-
-
-
               logger.debug(s"Reusing running container ${c.getId}...")
-              val existingPorts = config.ports.map {
-                containerPort =>
-                  val port = Option(inspection.getNetworkSettings.getPorts.getBindings.get(containerPort.toExposedPort)).flatMap(_.headOption).getOrElse(throw new RuntimeException(s"Missing $containerPort on container ${c.getId}"))
-                  containerPort -> Integer.parseInt(port.getHostPortSpec)
-              }
+              val existingPorts = mapPorts(c.getId)
               logger.info(s"Reusing running container ${c.getId} with $existingPorts...")
               DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts.toMap, config))
             case None =>
@@ -130,6 +124,12 @@ object DockerContainer {
       } else {
         doRun(ports)
       }
+    }
+
+    private def mapPorts(containerId: String): Seq[(DockerPort, ServicePort)] = {
+      val inspection = client.inspectContainerCmd(containerId).exec()
+      val existingPorts = mapContainerPorts(inspection)
+      existingPorts
     }
 
     private def doRun(ports: Seq[(DockerPort, Int, PortBinding, Map[String, String], Map[String, String])]) = {
@@ -188,11 +188,14 @@ object DockerContainer {
 
           logger.debug(s"Going to create container from image `${config.image}`...")
           val res = cmd.exec()
-          logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"} ...")
 
+          logger.debug(s"Going to start container ${res.getId -> "id"}...")
           client.startContainerCmd(res.getId).exec()
 
-          DockerContainer[T](ContainerId(res.getId), ports.map(p => (p._1, p._2)).toMap, config)
+          val mappedPorts = mapPorts(res.getId)
+          logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"}, $mappedPorts...")
+
+          DockerContainer[T](ContainerId(res.getId), mappedPorts.toMap, config)
         }
         _ <- await(out)
       } yield out
@@ -203,6 +206,16 @@ object DockerContainer {
         clientw.destroyContainer(resource.id)
       } else {
         DIEffect[F].unit
+      }
+    }
+
+    private def mapContainerPorts(inspection: InspectContainerResponse): Seq[(DockerPort, ServicePort)] = {
+      config.ports.map {
+        containerPort =>
+          val port = Option(inspection.getNetworkSettings.getPorts.getBindings.get(containerPort.toExposedPort))
+            .flatMap(_.headOption)
+            .getOrElse(throw new RuntimeException(s"Missing $containerPort on container ${inspection.getId}"))
+          containerPort -> ServicePort(port.getHostIp, Integer.parseInt(port.getHostPortSpec))
       }
     }
   }

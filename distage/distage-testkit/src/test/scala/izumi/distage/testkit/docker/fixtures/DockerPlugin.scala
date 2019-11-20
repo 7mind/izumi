@@ -5,11 +5,11 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
+import izumi.distage.testkit.integration.docker.Docker.ServicePort
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
 
-case class ServicePort(number: Int)
 
 class PgSvcExample(val pg: ServicePort@Id("pg"), val ddb: ServicePort@Id("ddb"))
 
@@ -31,18 +31,19 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   // these lines are for test scope
   make[ServicePort].named("pg").tagged(Env.Test).from {
     pg: PostgresDocker.Container =>
-      ServicePort(pg.mapping(PostgresDocker.primaryPort))
+      pg.mapping(PostgresDocker.primaryPort)
   }
   make[ServicePort].named("ddb").tagged(Env.Test).from {
     dn: DynamoDocker.Container =>
-      ServicePort(dn.mapping(DynamoDocker.primaryPort))
+      dn.mapping(DynamoDocker.primaryPort)
   }
 
   // and this one is for production
   make[ServicePort].named("pg").tagged(Env.Prod).from {
     pgPort: Int @ConfPath("postgres.port") =>
-      ServicePort(pgPort)
+      ServicePort("localhost", pgPort)
   }
 
   make[PgSvcExample]
+
 }

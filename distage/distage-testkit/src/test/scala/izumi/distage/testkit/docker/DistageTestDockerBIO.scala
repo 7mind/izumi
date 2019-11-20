@@ -13,14 +13,14 @@ final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
     "support docker resources" in {
       service: PgSvcExample =>
         for {
-          _ <- IO(println(s"ports: pg=${service.pg} ddb=${service.ddb} "))
+          _ <- IO(println(s"ports/1: pg=${service.pg} ddb=${service.ddb} "))
         } yield ()
     }
 
     "support memoization" in {
       service: PgSvcExample =>
         for {
-          _ <- IO(println(s"ports: pg=${service.pg} ddb=${service.ddb} "))
+          _ <- IO(println(s"ports/2: pg=${service.pg} ddb=${service.ddb} "))
         } yield ()
     }
   }

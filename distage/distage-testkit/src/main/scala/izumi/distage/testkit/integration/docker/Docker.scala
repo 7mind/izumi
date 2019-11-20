@@ -6,9 +6,12 @@ import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 
 import scala.concurrent.duration.FiniteDuration
 
+
 object Docker {
+  case class ServicePort(host: String, number: Int)
 
   final case class ContainerId(name: String) extends AnyVal
+
 
   trait DockerPort {
     def number: Int
@@ -52,7 +55,7 @@ object Docker {
       container: DockerContainer[T] =>
         container.mapping.get(exposedPort) match {
           case Some(value) =>
-            new PortCheck(timeout.toMillis.intValue()).checkPort("localhost", value, s"open port ${exposedPort} on ${container.id}") match {
+            new PortCheck(timeout.toMillis.intValue()).checkPort(value.host, value.number, s"open port ${exposedPort} on ${container.id}") match {
               case _: ResourceCheck.Success =>
                 HealthCheckResult.Running
               case f: ResourceCheck.Failure =>
