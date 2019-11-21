@@ -43,7 +43,10 @@ final case class TestConfig(
 trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
-  private[this] lazy val tenv0: TestEnvironmentProvider = {
+  private[this] lazy val testEnvProvider: TestEnvironmentProvider = makeTestEnvProvider()
+  final protected lazy val testEnv: TestEnvironment = makeTestEnv()
+
+  protected def makeTestEnvProvider(): TestEnvironmentProvider = {
     val c = config
     new TestEnvironmentProviderImpl(
       this.getClass,
@@ -54,10 +57,9 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
       c.pluginPackages,
     )
   }
-  private[this] lazy val env0: TestEnvironment = tenv.loadEnvironment(logger)
-
-  protected def tenv: TestEnvironmentProvider = tenv0
-  protected def env: TestEnvironment = env0
+  protected def makeTestEnv(): TestEnvironment = {
+    testEnvProvider.loadEnvironment(logger)
+  }
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
@@ -78,7 +80,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   //
 
   protected implicit def convertToWordSpecStringWrapperDS(s: String): DSWordSpecStringWrapper[F] = {
-    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, env)
+    new DSWordSpecStringWrapper(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 }
 

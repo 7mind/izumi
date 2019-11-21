@@ -23,10 +23,13 @@ final case class SpecConfig(
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
 
-  protected def specConfig: SpecConfig = SpecConfig()
+  private[this] lazy val specEnv: SpecEnvironment[F] = makeSpecEnvironment()
 
-  protected lazy val ruenv: SpecEnvironment[F] = {
-    val c = specConfig
+  protected def makeSpecConfig(): SpecConfig = SpecConfig()
+
+  protected def makeSpecEnvironment(): SpecEnvironment[F] = {
+    val c = makeSpecConfig()
+
     new SpecEnvironmentImpl[F](
       this.getClass,
       c.contextOptions,
@@ -35,6 +38,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       c.bootstrapLogLevel,
     )
   }
+
 
   override final protected def runNestedSuites(args: Args): Status =
     throw new UnsupportedOperationException
@@ -142,7 +146,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = {
       val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
       val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](dreporter, checker, ruenv, toRun)
+      new DistageTestRunner[F](dreporter, checker, specEnv, toRun)
     }
 
     runner.run()
@@ -238,7 +242,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val SUITE_FAILED = "Whole suite failed :/"
 
     failure match {
-      case Some(value) =>
+      case Some(_) =>
         args.reporter(TestStarting(
           tracker.nextOrdinal(),
           suiteName, suiteId, Some(suiteId),

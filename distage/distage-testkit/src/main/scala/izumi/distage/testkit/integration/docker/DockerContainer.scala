@@ -10,7 +10,7 @@ import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.testkit.integration.docker.Docker.{ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
@@ -53,10 +53,14 @@ object ContainerDef {
 
 case class DockerContainer[Tag](
                                  id: Docker.ContainerId,
-                                 mapping: Map[Docker.DockerPort, ServicePort],
+                                 name: String,
+                                 ports: Map[Docker.DockerPort, Seq[ServicePort]],
                                  containerConfig: ContainerConfig[Tag],
                                  clientConfig: ClientConfig,
-                               )
+                                 availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
+                               ) {
+  override def toString: String = s"$name:${id.name} ports=${ports.mkString("{", ", ", "}")} available=${availablePorts.mkString("{", ", ", "}")}"
+}
 
 object DockerContainer {
   def resource[F[_]](conf: ContainerDef): (DockerClientWrapper[F], IzLogger, DIEffect[F], DIEffectAsync[F]) => DIResource[F, DockerContainer[conf.Tag]] = {
@@ -121,12 +125,29 @@ object DockerContainer {
                 .exec()
             )
             .map(_.asScala.toList.sortBy(_.getId))
-          existing <- containers.view
-            .map(c => (c, mapPorts(c.getId).toMap))
-            .find { case (_, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty } match {
-            case Some((c, existingPorts)) =>
-              logger.info(s"Reusing running container ${c.getId} with $existingPorts...")
-              DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), existingPorts, config, clientw.clientConfig))
+
+          candidates = containers.view.flatMap {
+            c =>
+              val inspection = client.inspectContainerCmd(c.getId).exec()
+              mapContainerPorts(inspection) match {
+                case Left(value) =>
+                  logger.info(s"Container ${c.getId} missing ports $value so will not be reused")
+                  Seq.empty
+                case Right(value) =>
+                  Seq((c, inspection, value))
+              }
+          }
+            .find { case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty }
+          existing <- candidates match {
+            case Some((c, inspection, existingPorts)) =>
+              for {
+                unverified <- DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), inspection.getName, existingPorts, config, clientw.clientConfig, Map.empty))
+                _ <- DIEffect[F].maybeSuspend(logger.info(s"Verifying running container $unverified..."))
+                container <- await(unverified)
+              } yield {
+                logger.info(s"Will reuse running ${container}")
+                container
+              }
             case None =>
               doRun(ports)
           }
@@ -138,10 +159,30 @@ object DockerContainer {
       }
     }
 
-    private def mapPorts(containerId: String): Seq[(DockerPort, ServicePort)] = {
-      val inspection = client.inspectContainerCmd(containerId).exec()
-      val existingPorts = mapContainerPorts(inspection)
-      existingPorts
+    def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
+      DIEffect[F].maybeSuspend {
+        logger.debug(s"Awaiting until $container gets alive")
+        try {
+          val status = client.inspectContainerCmd(container.id.name).exec()
+          if (status.getState.getRunning) {
+            config.healthCheck.check(logger, container)
+          } else {
+            HealthCheckResult.Failed(new RuntimeException(s"Container exited: ${container.id}, full status: $status"))
+          }
+        } catch {
+          case t: Throwable =>
+            HealthCheckResult.Failed(t)
+        }
+      }.flatMap {
+        case HealthCheckResult.JustRunning =>
+          DIEffect[F].pure(container)
+        case HealthCheckResult.WithPorts(ports) =>
+          DIEffect[F].pure(container.copy(availablePorts = ports))
+        case HealthCheckResult.Failed(t) =>
+          DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
+        case HealthCheckResult.Uknnown =>
+          DIEffectAsync[F].sleep(config.healthCheckInterval).flatMap(_ => await(container))
+      }
     }
 
     private def doRun(ports: Seq[PortDecl]) = {
@@ -151,29 +192,6 @@ object DockerContainer {
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
-
-      def await(c: DockerContainer[T]): F[Unit] = {
-        DIEffect[F].maybeSuspend {
-          try {
-            val status = client.inspectContainerCmd(c.id.name).exec()
-            if (status.getState.getRunning) {
-              config.healthCheck.check(c)
-            } else {
-              HealthCheckResult.Failed(new RuntimeException(s"Container exited: ${c.id}, full status: $status"))
-            }
-          } catch {
-            case t: Throwable =>
-              HealthCheckResult.Failed(t)
-          }
-        }.flatMap {
-          case HealthCheckResult.Running =>
-            DIEffect[F].unit
-          case HealthCheckResult.Failed(t) =>
-            DIEffect[F].fail(new RuntimeException(s"Container failed: ${c.id}", t))
-          case HealthCheckResult.Uknnown =>
-            DIEffectAsync[F].sleep(config.healthCheckInterval).flatMap(_ => await(c))
-        }
-      }
 
       for {
         out <- DIEffect[F].maybeSuspend {
@@ -203,13 +221,21 @@ object DockerContainer {
           logger.debug(s"Going to start container ${res.getId -> "id"}...")
           client.startContainerCmd(res.getId).exec()
 
-          val mappedPorts = mapPorts(res.getId)
-          logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"}, $mappedPorts...")
+          val inspection = client.inspectContainerCmd(res.getId).exec()
+          val maybeMappedPorts = mapContainerPorts(inspection)
 
-          DockerContainer[T](ContainerId(res.getId), mappedPorts.toMap, config, clientw.clientConfig)
+          maybeMappedPorts match {
+            case Left(value) =>
+              throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
+            case Right(mappedPorts) =>
+              logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"}, $mappedPorts...")
+              DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
+          }
         }
-        _ <- await(out)
-      } yield out
+        result <- await(out)
+      } yield {
+        result
+      }
     }
 
     override def release(resource: DockerContainer[T]): F[Unit] = {
@@ -220,18 +246,34 @@ object DockerContainer {
       }
     }
 
-    private def mapContainerPorts(inspection: InspectContainerResponse): Seq[(DockerPort, ServicePort)] = {
-      config.ports.map {
-        containerPort =>
-          val network = inspection.getNetworkSettings
-          val port = Option(network.getPorts.getBindings.get(containerPort.toExposedPort))
-            .flatMap(_.headOption)
-            .getOrElse(throw new RuntimeException(s"Missing $containerPort on container ${inspection.getId}"))
+    private def mapContainerPorts(inspection: InspectContainerResponse): Either[Seq[DockerPort], Map[DockerPort, Seq[ServicePort]]] = {
+      val network = inspection.getNetworkSettings
+      val networkAddresses = network.getNetworks.asScala.values.toList
 
-          val networkAddresses = network.getNetworks.asScala.values.toList
-          containerPort -> ServicePort(networkAddresses.map(_.getIpAddress), port.getHostIp, Integer.parseInt(port.getHostPortSpec))
+      val ports = config.ports.map {
+        containerPort =>
+          val mappings = for {
+            exposed <- Option(network.getPorts.getBindings.get(containerPort.toExposedPort)).toSeq
+            port <- exposed
+          } yield {
+            port
+          }
+          (containerPort, mappings)
       }
+
+      val (good, bad) = ports.partition(_._2.nonEmpty)
+      if (bad.isEmpty) {
+        Right(good.map {
+          case (containerPort, ports) =>
+            containerPort -> ports.map(port => ServicePort(networkAddresses.map(_.getIpAddress), port.getHostIp, Integer.parseInt(port.getHostPortSpec)))
+        }.toMap)
+      } else {
+        Left(bad.map(_._1))
+      }
+
+
     }
   }
+
 
 }

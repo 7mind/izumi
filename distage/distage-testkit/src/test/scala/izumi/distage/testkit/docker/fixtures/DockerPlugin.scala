@@ -30,11 +30,11 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   // these lines are for test scope
   make[ServicePort].named("pg").tagged(Env.Test).from {
     pg: PostgresDocker.Container =>
-      pg.mapping(PostgresDocker.primaryPort)
+      pg.ports(PostgresDocker.primaryPort).head
   }
   make[ServicePort].named("ddb").tagged(Env.Test).from {
     dn: DynamoDocker.Container =>
-      dn.mapping(DynamoDocker.primaryPort)
+      dn.ports(DynamoDocker.primaryPort).head
   }
 
   // and this one is for production

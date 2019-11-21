@@ -12,6 +12,6 @@ abstract class DistageBIOSpecScalatest[F[+_, +_]](implicit val tagMonoIO: TagK[F
     with DistageAbstractScalatestSpec[F[Throwable, ?]] {
 
   protected implicit def convertToWordSpecStringWrapper2(s: String): DSWordSpecStringWrapper2[F] = {
-    new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, s, this, env)
+    new DSWordSpecStringWrapper2(context, distageSuiteName, distageSuiteId, s, this, testEnv)
   }
 }

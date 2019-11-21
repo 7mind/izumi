@@ -5,7 +5,7 @@ import izumi.distage.testkit.integration.docker.ContainerDef
 import izumi.distage.testkit.integration.docker.Docker.{ContainerConfig, DockerPort}
 
 object DynamoDocker extends ContainerDef {
-  val primaryPort: DockerPort = DockerPort.TCP(8042)
+  val primaryPort: DockerPort = DockerPort.TCP(8000)
 
   override def config: Config = {
     ContainerConfig(

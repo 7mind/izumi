@@ -2,14 +2,16 @@ package izumi.distage.testkit.integration.docker
 
 import java.util.concurrent.TimeUnit
 
-import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
-
 import scala.concurrent.duration.FiniteDuration
 
+
 object Docker {
-  final case class ServicePort(hostsV4: Seq[String], listenOnV4: String, number: Int)
+  final case class AvailablePort(hostV4: String, port: Int)
+
+  final case class ServicePort(containerAddressesV4: Seq[String], listenOnV4: String, port: Int)
   object ServicePort {
-    def local(port: Int): ServicePort = ServicePort(Seq("127.0.0.1"), "127.0.0.1", port)
+    def local(port: Int): ServicePort = hostPort("127.0.0.1", port)
+    def hostPort(host: String, port: Int): ServicePort = ServicePort(Seq(host), host, port)
   }
 
   final case class ContainerId(name: String) extends AnyVal
@@ -17,6 +19,7 @@ object Docker {
   trait DockerPort {
     def number: Int
     def protocol: String
+    override def toString: String = s"$protocol:$number"
   }
 
   object DockerPort {
@@ -44,53 +47,14 @@ object Docker {
 
   sealed trait HealthCheckResult
   object HealthCheckResult {
-    case object Running extends HealthCheckResult
+    sealed trait Running extends HealthCheckResult
+    final case class WithPorts(availablePorts: Map[DockerPort, Seq[AvailablePort]]) extends Running
+    case object JustRunning extends Running
     case object Uknnown extends HealthCheckResult
     final case class Failed(t: Throwable) extends HealthCheckResult
   }
 
-  trait ContainerHealthCheck[Tag] {
-    def check(container: DockerContainer[Tag]): HealthCheckResult
-  }
-  object ContainerHealthCheck {
-    def dontCheckPorts[T]: ContainerHealthCheck[T] = _ => HealthCheckResult.Running
 
-    def checkFirstPort[T](timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = {
-      container: DockerContainer[T] =>
-        container.containerConfig.ports.headOption match {
-          case Some(value) =>
-            checkPort[T](value, timeout).check(container)
-          case None =>
-            HealthCheckResult.Running
-        }
-    }
-
-    def checkPort[T](exposedPort: DockerPort, timeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)): ContainerHealthCheck[T] = {
-      container: DockerContainer[T] =>
-        container.mapping.get(exposedPort) match {
-          case Some(value) =>
-
-            val allChecks = value.hostsV4.map {
-              host =>
-                new PortCheck(timeout.toMillis.intValue()).checkPort(host, value.number, s"open port ${exposedPort} on ${container.id}") match {
-                  case _: ResourceCheck.Success =>
-                    HealthCheckResult.Running
-                  case _: ResourceCheck.Failure =>
-                    HealthCheckResult.Uknnown
-                }
-            }
-
-            if (allChecks.contains(HealthCheckResult.Running)) {
-              HealthCheckResult.Running
-            } else {
-              HealthCheckResult.Uknnown
-            }
-
-          case None =>
-            HealthCheckResult.Failed(new RuntimeException(s"Port ${exposedPort} is not mapped!"))
-        }
-    }
-  }
 
   final case class Mount(host: String, container: String)
 
@@ -106,7 +70,8 @@ object Docker {
                                        reuse: Boolean = true,
                                        healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
                                        pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkFirstPort[T](),
+                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
+                                       portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
                                      )
 
 }
