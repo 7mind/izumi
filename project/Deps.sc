@@ -377,7 +377,7 @@ object Izumi {
         settings = crossScalaSources ++ Seq(
           SettingDef.RawSettingDef(
           """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
-            FullSettingScope(SettingScope.Compile, Platform.Jvm),
+            FullSettingScope(SettingScope.Compile, Platform.All),
           ),
         ),
       ),

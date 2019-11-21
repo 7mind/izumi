@@ -492,6 +492,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
          case _             => "_3.0"
        })))
     },
+    scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_"),
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scala-version=${scalaVersion.value}",
       s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
@@ -547,8 +548,7 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
     crossScalaVersions := Seq(
       "2.12.10",
       "2.13.1"
-    ),
-    scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")
+    )
   )
   .disablePlugins(AssemblyPlugin)
 
