@@ -5,12 +5,12 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
-import izumi.distage.testkit.integration.docker.Docker.ServicePort
+import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, ServicePort}
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
 
-class PgSvcExample(val pg: ServicePort@Id("pg"), val ddb: ServicePort@Id("ddb"))
+class PgSvcExample(val pg: AvailablePort@Id("pg"), val ddb: AvailablePort@Id("ddb"))
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
@@ -28,19 +28,19 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   }
 
   // these lines are for test scope
-  make[ServicePort].named("pg").tagged(Env.Test).from {
+  make[AvailablePort].named("pg").tagged(Env.Test).from {
     pg: PostgresDocker.Container =>
-      pg.ports(PostgresDocker.primaryPort).head
+      pg.availablePorts(PostgresDocker.primaryPort).head
   }
-  make[ServicePort].named("ddb").tagged(Env.Test).from {
+  make[AvailablePort].named("ddb").tagged(Env.Test).from {
     dn: DynamoDocker.Container =>
-      dn.ports(DynamoDocker.primaryPort).head
+      dn.availablePorts(DynamoDocker.primaryPort).head
   }
 
   // and this one is for production
-  make[ServicePort].named("pg").tagged(Env.Prod).from {
+  make[AvailablePort].named("pg").tagged(Env.Prod).from {
     pgPort: Int @ConfPath("postgres.port") =>
-      ServicePort.local(pgPort)
+      AvailablePort.local(pgPort)
   }
 
   make[PgSvcExample]

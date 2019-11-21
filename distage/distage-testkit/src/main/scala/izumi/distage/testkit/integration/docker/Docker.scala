@@ -7,12 +7,12 @@ import scala.concurrent.duration.FiniteDuration
 
 object Docker {
   final case class AvailablePort(hostV4: String, port: Int)
+  object AvailablePort {
+    def local(port: Int): AvailablePort = hostPort("127.0.0.1", port)
+    def hostPort(host: String, port: Int): AvailablePort = AvailablePort(host, port)
+  }
 
   final case class ServicePort(containerAddressesV4: Seq[String], listenOnV4: String, port: Int)
-  object ServicePort {
-    def local(port: Int): ServicePort = hostPort("127.0.0.1", port)
-    def hostPort(host: String, port: Int): ServicePort = ServicePort(Seq(host), host, port)
-  }
 
   final case class ContainerId(name: String) extends AnyVal
 
