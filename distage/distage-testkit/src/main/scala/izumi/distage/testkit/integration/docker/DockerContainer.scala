@@ -142,10 +142,8 @@ object DockerContainer {
             case Some((c, inspection, existingPorts)) =>
               for {
                 unverified <- DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), inspection.getName, existingPorts, config, clientw.clientConfig, Map.empty))
-                _ <- DIEffect[F].maybeSuspend(logger.debug(s"Verifying running container $unverified..."))
                 container <- await(unverified)
               } yield {
-                logger.info(s"Will reuse running ${container}")
                 container
               }
             case None =>
@@ -160,6 +158,7 @@ object DockerContainer {
     }
 
     def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
+
       DIEffect[F].maybeSuspend {
         logger.debug(s"Awaiting until $container gets alive")
         try {
@@ -175,9 +174,12 @@ object DockerContainer {
         }
       }.flatMap {
         case HealthCheckResult.JustRunning =>
+          logger.info(s"$container looks alive...")
           DIEffect[F].pure(container)
         case HealthCheckResult.WithPorts(ports) =>
-          DIEffect[F].pure(container.copy(availablePorts = ports))
+          val out = container.copy(availablePorts = ports)
+          logger.info(s"${out -> "container"} looks good...")
+        DIEffect[F].pure(out)
         case HealthCheckResult.Failed(t) =>
           DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
         case HealthCheckResult.Uknnown =>
@@ -229,7 +231,7 @@ object DockerContainer {
               throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
             case Right(mappedPorts) =>
               val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
-              logger.info(s"Created $container from ${config.image}...")
+              logger.debug(s"Created $container from ${config.image}...")
               container
           }
         }
