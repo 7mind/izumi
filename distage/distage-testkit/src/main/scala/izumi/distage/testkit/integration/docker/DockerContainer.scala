@@ -142,7 +142,7 @@ object DockerContainer {
             case Some((c, inspection, existingPorts)) =>
               for {
                 unverified <- DIEffect[F].pure(DockerContainer[T](ContainerId(c.getId), inspection.getName, existingPorts, config, clientw.clientConfig, Map.empty))
-                _ <- DIEffect[F].maybeSuspend(logger.info(s"Verifying running container $unverified..."))
+                _ <- DIEffect[F].maybeSuspend(logger.debug(s"Verifying running container $unverified..."))
                 container <- await(unverified)
               } yield {
                 logger.info(s"Will reuse running ${container}")
@@ -228,8 +228,9 @@ object DockerContainer {
             case Left(value) =>
               throw new RuntimeException(s"Created container from `${config.image}` with ${res.getId -> "id"}, but ports are missing: $value!")
             case Right(mappedPorts) =>
-              logger.info(s"Created container from `${config.image}` with ${res.getId -> "id"}, $mappedPorts...")
-              DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
+              val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
+              logger.info(s"Created $container from ${config.image}...")
+              container
           }
         }
         result <- await(out)
