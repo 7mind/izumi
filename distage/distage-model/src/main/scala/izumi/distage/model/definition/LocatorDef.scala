@@ -77,7 +77,7 @@ trait LocatorDef
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
-          s"""Binding $b is not an instance binding, only forms `make[X].from(instance)` and `many[X].add(y).add(z)`
+          s"""Binding $b is not an instance binding, only forms `make[X].fromValue(instance)` and `many[X].addValue(y).addValue(z)`
              |are supported, binding was defined at ${b.origin}""".stripMargin, b)
     }
 

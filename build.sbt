@@ -966,7 +966,8 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.typesafe" % "config" % V.typesafe_config
+      "com.typesafe" % "config" % V.typesafe_config,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1049,7 +1050,8 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1136,7 +1138,8 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "io.github.classgraph" % "classgraph" % V.classgraph
+      "io.github.classgraph" % "classgraph" % V.classgraph,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1228,7 +1231,8 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional
+      "dev.zio" %% "zio" % V.zio % Optional,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -1320,7 +1324,8 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       "com.github.docker-java" % "docker-java" % V.docker_java,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional
+      "dev.zio" %% "zio" % V.zio % Optional,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(

@@ -138,10 +138,9 @@ trait Tags extends UniverseGeneric { self =>
     /** For construction from [[TagLambdaMacro]] */
     type HKTagRef[T] = HKTag[T]
 
-    // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
-    //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
+    implicit final def tagFromTypeTag[T](implicit l: LTag[T]): Tag[T] = Tag(null, l.tag)
     // https://github.com/scala/bug/issues/11715
-    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
+//    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
   }
 
   trait LowPriorityTagInstances {

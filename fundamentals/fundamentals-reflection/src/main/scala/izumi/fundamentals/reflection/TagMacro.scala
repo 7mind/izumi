@@ -52,11 +52,11 @@ class TagMacro(val c: blackbox.Context) {
   // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
   //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
   // https://github.com/scala/bug/issues/11715
-  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](t: c.Expr[DIU#ScalaReflectTypeTag[T]])(implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
+  def FIXMEgetLTagAlso[DIU <: Tags with Singleton, T](implicit w: c.WeakTypeTag[T]): c.Expr[DIU#Tag[T]] = {
     val ltagMacro = new LightTypeTagMacro0[c.type](c)
     val ltag = ltagMacro.makeParsedLightTypeTag[T](w)
     c.Expr[DIU#Tag[T]] {
-      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w]($t, $ltag)"
+      q"${c.prefix.asInstanceOf[Expr[DIU#TagObject]]}.apply[$w](null, $ltag)"
     }
   }
 

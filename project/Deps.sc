@@ -423,31 +423,31 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(typesafe_config),
+        libs = Seq(typesafe_config) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
       ),
       Artifact(
         name = Projects.distage.rolesApi,
-        libs = Seq.empty,
+        libs = Seq.empty ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner),
+        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
       ),
       Artifact(
         name = Projects.distage.roles,
-        libs = allMonadsOptional,
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency, docker_java).map(_ in Scope.Compile.all) ++ allMonadsOptional,
+        libs = Seq(scalatest.dependency, docker_java).map(_ in Scope.Compile.all) ++ allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends =
           Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),

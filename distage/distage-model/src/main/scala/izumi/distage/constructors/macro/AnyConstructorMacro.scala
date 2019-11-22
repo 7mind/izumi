@@ -1,8 +1,7 @@
 package izumi.distage.constructors.`macro`
 
-import izumi.distage.constructors.{AnyConstructor, ConcreteConstructor}
-import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import izumi.distage.constructors.AnyConstructor
+import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
 
 import scala.reflect.macros.blackbox
