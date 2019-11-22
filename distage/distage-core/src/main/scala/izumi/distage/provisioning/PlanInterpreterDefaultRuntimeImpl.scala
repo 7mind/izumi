@@ -23,11 +23,8 @@ class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
 , proxyStrategy: ProxyStrategy
-, factoryStrategy: FactoryStrategy
-, traitStrategy: TraitStrategy
 , factoryProviderStrategy: FactoryProviderStrategy
 , providerStrategy: ProviderStrategy
-, classStrategy: ClassStrategy
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
 , effectStrategy: EffectStrategy
@@ -176,22 +173,13 @@ class PlanInterpreterDefaultRuntimeImpl
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, op)
 
-      case op: WiringOp.InstantiateClass =>
-        classStrategy.instantiateClass(context, op)
-
-      case op: WiringOp.InstantiateTrait =>
-        traitStrategy.makeTrait(context, op)
-
       case op: WiringOp.CallFactoryProvider =>
         factoryProviderStrategy.callFactoryProvider(context, this, op)
-
-      case op: WiringOp.InstantiateFactory =>
-        factoryStrategy.makeFactory(context, this, op)
     }
   }
 
   private[this] def interpretResult[F[_] : TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    result match {
+    (result.asInstanceOf[NewObjectOp { type F0[A] = F[A] }]) match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)
@@ -213,9 +201,6 @@ class PlanInterpreterDefaultRuntimeImpl
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
         active.instances += (target -> instance)
-
-      case NewObjectOp.DoNothing() =>
-        ()
     }
   }
 

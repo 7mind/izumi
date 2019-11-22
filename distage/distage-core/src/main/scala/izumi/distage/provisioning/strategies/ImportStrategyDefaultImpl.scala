@@ -16,14 +16,13 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
         Seq(NewObjectOp.NewImport(target, v))
       // FIXME: TODO: support FactoryStrategyMacro [remove]
       case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
-        Seq(NewObjectOp.DoNothing())
+        Seq.empty
       case _ =>
         throw new MissingInstanceException(s"Instance is not available in the object graph: $target. " +
           s"required by refs: $references", target)
     }
   }
 }
-
 
 class ImportStrategyFailingImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[NewObjectOp] = {

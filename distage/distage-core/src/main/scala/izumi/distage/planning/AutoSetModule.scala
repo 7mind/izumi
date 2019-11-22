@@ -5,8 +5,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 import izumi.distage.model.planning.PlanningHook
 
 /**
-  * Auto-Sets collect all bindings with static types <: `T`
-  * into a summonable `Set[T]`
+  * Auto-Sets collect all bindings with static types of _implementations_
+  * that are `_ <: T` into a summonable `Set[T]`
   *
   * @see same concept in MacWire: https://github.com/softwaremill/macwire#multi-wiring-wireset
   */

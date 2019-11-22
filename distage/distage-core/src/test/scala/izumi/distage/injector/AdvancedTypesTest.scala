@@ -1,6 +1,7 @@
 package izumi.distage.injector
 
 import distage._
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
@@ -167,7 +168,15 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle abstract `with` types" in {
     import TypesCase3._
 
+    // FIXME should work ???
+//    class Definition[T: Tag, G <: T with Trait1 : Tag, C <: T with Trait4 : Tag] extends ModuleDef {
+//      make[Dep]
+//      make[T with Trait4].from[C]
+//      make[T with Trait1].from[G]
+//    }
     class Definition[T: Tag, G <: T with Trait1 : Tag, C <: T with Trait4 : Tag] extends ModuleDef {
+      implicit val a: AnyConstructor[T with Trait4] = null
+      implicit val b: AnyConstructor[T with Trait1] = null
       make[Dep]
       make[T with Trait4].from[C]
       make[T with Trait1].from[G]
@@ -194,7 +203,13 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle generic parameters in abstract `with` types" in {
     import TypesCase3._
 
+    // FIXME should work ???
+//    class Definition[T <: Dep : Tag, K >: Trait5[T] : Tag] extends ModuleDef {
+//      make[T]
+//      make[Trait3[T] with K].from[Trait5[T]]
+//    }
     class Definition[T <: Dep : Tag, K >: Trait5[T] : Tag] extends ModuleDef {
+      implicit val p: AnyConstructor[Trait3[T] with K] = null
       make[T]
       make[Trait3[T] with K].from[Trait5[T]]
     }

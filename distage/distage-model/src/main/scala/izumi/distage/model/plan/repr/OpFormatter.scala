@@ -57,12 +57,6 @@ object OpFormatter {
 
             case w: WiringOp =>
               w match {
-                case InstantiateClass(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
-                case InstantiateTrait(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
-                case InstantiateFactory(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
                 case CallProvider(target, wiring, origin) =>
                   formatOp(target, wiring, origin)
                 case CallFactoryProvider(target, wiring, origin) =>

@@ -8,6 +8,7 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
@@ -46,20 +47,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val plan = injector.plan(definition)
 
       val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
-
-      assert(context.get[Int] == 12)
-    }
-
-    "work with constructor binding" in {
-      val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
-        make[Int].fromEffect[Suspend2[Nothing, ?], Int, IntSuspend]
-      }, GCMode(DIKey.get[Int]))
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -128,6 +115,8 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
           .addEffect(Suspend2('a'))
           .addEffect(Suspend2('b'))
 
+        // FIXME: ???
+        implicit val a: AnyConstructor[Unit] = null
         make[Unit].fromEffect {
           (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
             ref.update(_ ++ set).void

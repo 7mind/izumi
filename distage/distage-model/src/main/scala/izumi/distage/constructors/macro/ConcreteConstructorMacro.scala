@@ -31,6 +31,20 @@ object ConcreteConstructorMacro {
            |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
     }
 
+    // ???
+    targetType match {
+      case t: SingletonTypeApi =>
+        val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
+        val term = t match {
+          case t: ThisTypeApi => This(t.sym)
+          case _ => q"${t.termSymbol}"
+        }
+        return c.Expr[ConcreteConstructor[T]] {
+          q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($providerMagnet.pure($term)) }"
+        }
+      case _ =>
+    }
+
     val paramLists = reflectionProvider.constructorParameterLists(SafeType(targetType))
 
     val fnArgsNamesLists = paramLists.map(_.map {

@@ -1,5 +1,6 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
 import izumi.distage.model.definition._
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultiSetElementInstruction.MultiAddTags
@@ -273,8 +274,8 @@ object ModuleDefDSL {
   }
 
   trait BindDSLBase[T, AfterBind] {
-    final def from[I <: T : Tag]: AfterBind =
-      bind(ImplDef.TypeImpl(SafeType.get[I]))
+    final def from[I <: T : Tag: AnyConstructor]: AfterBind =
+      from(AnyConstructor[I].provider)
 
     final def from[I <: T : Tag](instance: => I): AfterBind =
       from(ProviderMagnet.lift(instance))
@@ -375,10 +376,6 @@ object ModuleDefDSL {
     final def using[I <: T : Tag](name: String): AfterBind =
       bind(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = false))
 
-
-    final def fromEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I] : Tag]: AfterBind =
-      bind(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
-
     /**
       * Bind to a result of executing a purely-functional effect
       *
@@ -454,9 +451,8 @@ object ModuleDefDSL {
       * @see - [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
       *      - [[DIResource]]
       */
-    final def fromResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R]): AfterBind = {
-      import tag._
-      bind(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
+    final def fromResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R]): AfterBind = {
+      fromResource[R](AnyConstructor[R].provider)
     }
 
     final def fromResource[R <: DIResourceBase[Any, T]](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R]): AfterBind = {
@@ -495,8 +491,8 @@ object ModuleDefDSL {
 
   trait SetDSLBase[T, AfterAdd, AfterMultiAdd] {
 
-    final def add[I <: T : Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.TypeImpl(SafeType.get[I]), pos)
+    final def add[I <: T : Tag: AnyConstructor](implicit pos: CodePositionMaterializer): AfterAdd =
+      add[I](AnyConstructor[I].provider)
 
     final def add[I <: T : Tag](instance: => I)(implicit pos: CodePositionMaterializer): AfterAdd =
       add(ProviderMagnet.lift(instance))
@@ -568,9 +564,6 @@ object ModuleDefDSL {
       appendElement(ImplDef.ReferenceImpl(SafeType.get[I], DIKey.get[I].named(name), weak = true), pos)
 
 
-    final def addEffect[F[_]: TagK, I <: T : Tag, EFF <: F[I]: Tag](implicit pos: CodePositionMaterializer): AfterAdd =
-      appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])), pos)
-
     final def addEffect[F[_]: TagK, I <: T : Tag](instance: F[I])(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[I]], instance)), pos)
 
@@ -602,9 +595,8 @@ object ModuleDefDSL {
       appendElement(ImplDef.EffectImpl(SafeType.get[I], SafeType.getK[F], ImplDef.ReferenceImpl(SafeType.get[EFF], DIKey.get[EFF].named(name), weak = true)), pos)
 
 
-    final def addResource[R <: DIResourceBase[Any, T]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
-      import tag._
-      appendElement(ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])), pos)
+    final def addResource[R <: DIResourceBase[Any, T]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {
+      addResource[R](AnyConstructor[R].provider)
     }
 
     final def addResource[R <: DIResourceBase[Any, T]](instance: R with DIResourceBase[Any, T])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): AfterAdd = {

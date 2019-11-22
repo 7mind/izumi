@@ -9,8 +9,8 @@ import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMa
 import scala.reflect.macros.blackbox
 
 object TraitConstructorMacro {
-
-  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
+  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] =
+    mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
 
   def mkTraitConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[TraitConstructor[T]] = {
     import c.universe._

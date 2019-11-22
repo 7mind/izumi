@@ -408,17 +408,17 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Compile.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.proxyCglib,
-        libs = Seq(cglib_nodep),
+        libs = Seq(cglib_nodep) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq(cglib_nodep),
+        libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
       ),
       Artifact(

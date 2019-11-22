@@ -11,15 +11,12 @@ trait WithDISymbolInfo {
     def name: String
 
     def finalResultType: SafeType
-
     def definingClass: SafeType
 
     def isByName: Boolean
-
     def wasGeneric: Boolean
 
     def annotations: List[u.Annotation]
-
     //def typeSignatureArgs: List[SymbolInfo]
 
     override def toString: String = name
@@ -32,7 +29,7 @@ trait WithDISymbolInfo {
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
-    case class Runtime protected (underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+    case class Runtime protected(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: SafeType = definingClass.use(tpe => SafeType(underlying.typeSignatureIn(tpe).finalResultType))

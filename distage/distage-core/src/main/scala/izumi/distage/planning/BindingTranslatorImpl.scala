@@ -18,7 +18,6 @@ trait BindingTranslator {
 class BindingTranslatorImpl(
                              protected val reflectionProvider: ReflectionProvider.Runtime,
                              protected val hook: PlanningHook,
-
                            ) extends BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps = {
     binding match {
@@ -79,13 +78,13 @@ class BindingTranslatorImpl(
     val userBinding = OperationOrigin.UserBinding(binding)
     wiring match {
       case w: Constructor =>
-        WiringOp.InstantiateClass(target, w, userBinding)
+        throw new Exception("WiringOp.InstantiateClass(target, w, Some(binding))")
 
       case w: AbstractSymbol =>
-        WiringOp.InstantiateTrait(target, w, userBinding)
+        throw new Exception("WiringOp.InstantiateTrait(target, w, Some(binding))")
 
       case w: Factory =>
-        WiringOp.InstantiateFactory(target, w, userBinding)
+        throw new Exception("WiringOp.InstantiateFactory(target, w, Some(binding))")
 
       case w: FactoryFunction =>
         WiringOp.CallFactoryProvider(target, w, userBinding)
@@ -116,9 +115,6 @@ class BindingTranslatorImpl(
 
   private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): PureWiring = {
     implementation match {
-      case i: ImplDef.TypeImpl =>
-        reflectionProvider.symbolToWiring(i.implType)
-
       case p: ImplDef.ProviderImpl =>
         reflectionProvider.providerToWiring(p.function)
 

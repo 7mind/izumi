@@ -1,12 +1,13 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.LoggerHook
+import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.provisioning.FactoryTools
 
 class FactoryProviderStrategyDefaultImpl
 (
@@ -52,10 +53,15 @@ class FactoryProviderStrategyDefaultImpl
 
       loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
 
-      val res: Seq[NewObjectOp] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(op.target, wireWith, op.origin))
+      val res: Seq[NewObjectOp] = executor.execute(extendedContext, mkExecutableOp(op.target, method.wireWith0, op.origin))
       loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
 
       res
     }
+
+  private[this] def mkExecutableOp(key: RuntimeDIUniverse.DIKey, w: RuntimeDIUniverse.Wiring.SingletonWiring.Function, binding: Option[Binding]): WiringOp = {
+    val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
+    WiringOp.CallProvider(target, w, binding)
+  }
 }
 

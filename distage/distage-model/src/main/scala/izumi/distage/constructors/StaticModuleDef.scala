@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.language.CodePositionMaterializer
 trait StaticModuleDef extends ModuleDef with StaticDSL {
 
   final def stat[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): Unit = {
-    super.make[T](Tag[T], pos).stat[T]
+    make[T]
   }
 
 }

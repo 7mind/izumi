@@ -97,11 +97,8 @@ object BootstrapLocator {
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
-      factoryStrategy = new FactoryStrategyFailingImpl,
-      traitStrategy = new TraitStrategyFailingImpl,
       factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl(loggerHook),
       providerStrategy = new ProviderStrategyDefaultImpl,
-      classStrategy = new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool),
       importStrategy = new ImportStrategyDefaultImpl,
       instanceStrategy = new InstanceStrategyDefaultImpl,
       effectStrategy = new EffectStrategyDefaultImpl,
@@ -138,7 +135,6 @@ object BootstrapLocator {
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
     make[FactoryProviderStrategy].from[FactoryProviderStrategyDefaultImpl]
-    make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
@@ -154,17 +150,12 @@ object BootstrapLocator {
     make[BindingTranslator].from[BindingTranslatorImpl]
 
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
-    make[FactoryStrategy].from[FactoryStrategyDefaultImpl]
-    make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
   final val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
   final val noReflectionBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
-    make[ClassStrategy].from[ClassStrategyFailingImpl]
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
-    make[TraitStrategy].from[TraitStrategyFailingImpl]
   }
 }
 

@@ -145,6 +145,7 @@ trait WithDIWiring {
       // TODO: wireWith should be Wiring.UnaryWiring.Function - generate providers in-place in distage-static,
       //  instead of generating code that uses runtime reflection
       case class FactoryMethod(factoryMethod: SymbolInfo, wireWith: Wiring.SingletonWiring, methodArguments: Seq[DIKey]) {
+        def wireWith0: Wiring.SingletonWiring.Function = ???
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
       }
     }

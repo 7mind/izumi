@@ -20,25 +20,6 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
     strategies.DeferredInit(dispatcher, proxy)
   }
 
-  override def makeTraitProxy(factoryContext: TraitContext, proxyContext: ProxyContext): AnyRef = {
-    val dispatcher = new CgLibTraitMethodInterceptor(factoryContext.index, factoryContext.context)
-    mkDynamic(dispatcher, proxyContext)
-  }
-
-  override def makeFactoryProxy(factoryContext: FactoryContext, proxyContext: ProxyContext): AnyRef = {
-    import factoryContext._
-    val dispatcher = new CgLibFactoryMethodInterceptor(
-      factoryMethodIndex
-      , dependencyMethodIndex
-      , narrowedContext
-      , executor
-      , op
-      , mirrorProvider
-    )
-
-    mkDynamic(dispatcher, proxyContext)
-  }
-
   private def mkDynamic(dispatcher: Callback, proxyContext: ProxyContext): AnyRef = {
     import proxyContext._
     val enhancer = new Enhancer()

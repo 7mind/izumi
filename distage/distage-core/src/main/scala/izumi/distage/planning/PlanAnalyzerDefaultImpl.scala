@@ -50,6 +50,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
     }
   }
 
+  private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
+
   private type RefFilter = Accumulator => DIKey => Boolean
 
   private type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean

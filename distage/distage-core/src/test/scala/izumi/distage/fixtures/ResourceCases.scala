@@ -122,8 +122,6 @@ object ResourceCases {
     override def release: Unit = ()
   }
 
-  class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
-
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())
     def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))

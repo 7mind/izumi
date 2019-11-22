@@ -1,5 +1,6 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
@@ -35,7 +36,7 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindingRef
   }
 
-  final protected def make[T: Tag](implicit pos: CodePositionMaterializer): BindDSL[T] = {
+  final protected def make[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): BindDSL[T] = {
     val ref = registered(new SingletonRef(Bindings.binding[T]))
     _bindDSL[T](ref)
   }
@@ -106,8 +107,8 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     registered(new SingletonRef(Bindings.binding(instance), mutable.Queue(SingletonInstruction.SetId(name)))).discard()
   }
 
-  final protected def bind[T: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    bindImpl[T](ImplDef.TypeImpl(SafeType.get[T]))
+  final protected def bind[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+    bind[T](AnyConstructor[T].provider)
   }
 
   final protected def bind[T: Tag](instance: => T)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
@@ -122,10 +123,6 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
   }
 
-  final protected def bindEffect[F[_] : TagK, T: Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
-    bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
-  }
-
   final protected def bindEffect[F[_] : TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
   }
@@ -134,9 +131,8 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, Any]](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
-    import tag._
-    bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
+  final protected def bindResource[R <: DIResourceBase[Any, Any]: AnyConstructor](implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
+    bindResource[R](AnyConstructor[R].provider)
   }
 
   final protected def bindResource[R <: DIResourceBase[Any, Any]](instance: R with DIResourceBase[Any, Any])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {

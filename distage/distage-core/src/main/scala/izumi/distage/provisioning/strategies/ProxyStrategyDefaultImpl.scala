@@ -129,12 +129,6 @@ class ProxyStrategyDefaultImpl(
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {
     makeProxy.op match {
-      case op: WiringOp.InstantiateTrait =>
-        op.target.tpe
-      case op: WiringOp.InstantiateClass =>
-        op.target.tpe
-      case op: WiringOp.InstantiateFactory =>
-        op.target.tpe
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
         //op.target.symbol

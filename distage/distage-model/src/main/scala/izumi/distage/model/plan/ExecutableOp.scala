@@ -9,9 +9,6 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.annotation.tailrec
 
-
-
-
 sealed trait ExecutableOp {
   def target: DIKey
   def origin: OperationOrigin
@@ -35,10 +32,9 @@ object ExecutableOp {
   }
 
   object WiringOp {
-    final case class InstantiateClass(target: DIKey, wiring: SingletonWiring.Constructor, origin: OperationOrigin) extends WiringOp
-    final case class InstantiateTrait(target: DIKey, wiring: SingletonWiring.AbstractSymbol, origin: OperationOrigin) extends WiringOp
-    final case class InstantiateFactory(target: DIKey, wiring: Factory, origin: OperationOrigin) extends WiringOp
     final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
+    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
+    final case clas    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
     final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
     final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: OperationOrigin) extends WiringOp
