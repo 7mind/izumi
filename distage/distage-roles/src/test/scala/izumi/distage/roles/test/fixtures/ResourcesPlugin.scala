@@ -8,14 +8,16 @@ import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin._
 
-class ResourcesPluginBase extends ModuleDef {
+class ConflictPlugin extends PluginDef {
   make[Conflict].tagged(Env.Prod).from[Conflict1]
   make[Conflict].tagged(Env.Test).from[Conflict2]
   make[Conflict].from[Conflict3]
 
   make[UnsolvableConflict].from[UnsolvableConflict1]
   make[UnsolvableConflict].from[UnsolvableConflict2]
+}
 
+class ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
   make[Resource2]
   make[Resource3]

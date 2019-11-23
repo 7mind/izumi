@@ -23,7 +23,8 @@ trait ModuleProvider[F[_]] {
 
 object ModuleProvider {
 
-  class Impl[F[_]: TagK](
+  class Impl[F[_]: TagK]
+  (
     logger: IzLogger,
     config: AppConfig,
     roles: RolesInfo,
@@ -60,7 +61,7 @@ object ModuleProvider {
           resourceRewriter,
           loggerModule,
         ),
-        condModule(options.addGraphVizDump, new GraphDumpBootstrapModule())
+        if (options.addGraphVizDump) Seq(new GraphDumpBootstrapModule()) else Seq.empty,
       ).flatten
     }
 
@@ -68,10 +69,6 @@ object ModuleProvider {
       val baseMod = IdentityDIEffectModule
 
       Seq(baseMod)
-    }
-
-    private def condModule(condition: Boolean, module: => distage.BootstrapModuleDef): Seq[BootstrapModuleDef] = {
-      if (condition) Seq(module) else Seq.empty
     }
 
   }

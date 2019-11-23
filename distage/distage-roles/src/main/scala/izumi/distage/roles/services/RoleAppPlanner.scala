@@ -59,13 +59,18 @@ object RoleAppPlanner {
       check.verify(appPlan.subplan)
       check.verify(appPlan.primary)
 
-      AppStartupPlans(
+      val plans = AppStartupPlans(
         runtime = runtimePlan,
         integration = appPlan.subplan,
         integrationKeys = appPlan.subRoots,
         app = appPlan.primary,
         injector = injector,
       )
+
+      println("INT:" + plans.integration.render())
+      println("APP:" + plans.app.render())
+
+      plans
     }
   }
 
