@@ -59,9 +59,9 @@ object RoleAppPlanner {
       check.verify(appPlan.side.plan)
       check.verify(appPlan.primary.plan)
 
-      logger.info(s"${appPlan.shared.plan.render() -> "shared plan"}")
-      logger.info(s"${appPlan.side.plan.render() -> "integration plan"}")
-      logger.info(s"${appPlan.primary.plan.render() -> "primary plan"}")
+//      logger.info(s"${appPlan.shared.plan.render() -> "shared plan"}")
+//      logger.info(s"${appPlan.side.plan.render() -> "integration plan"}")
+//      logger.info(s"${appPlan.primary.plan.render() -> "primary plan"}")
 
       AppStartupPlans(
         runtimePlan,

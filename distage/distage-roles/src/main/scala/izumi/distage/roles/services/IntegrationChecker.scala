@@ -12,10 +12,10 @@ import izumi.logstage.api.IzLogger
 import scala.util.control.NonFatal
 
 trait IntegrationChecker {
-  def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]]
+  def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]]
 
   final def checkOrFail(integrationComponents: Set[DIKey], integrationLocator: Locator): Unit = {
-    check(integrationComponents, integrationLocator).fold(()) {
+    collectFailures(integrationComponents, integrationLocator).fold(()) {
       failures =>
         throw new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures)
     }
@@ -28,7 +28,7 @@ object IntegrationChecker {
   class Impl(
               logger: IzLogger,
             ) extends IntegrationChecker {
-    def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]] = {
+    def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]] = {
       val integrations = integrationComponents.map {
         ick =>
           integrationLocator.lookupInstance[Any](ick) match {

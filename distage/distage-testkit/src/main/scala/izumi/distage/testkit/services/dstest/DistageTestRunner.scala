@@ -99,7 +99,7 @@ class DistageTestRunner[F[_] : TagK]
 
                   Injector.inherit(sharedLocator).produceF[F](shared.side.plan).use {
                     sharedIntegrationLocator =>
-                      check(testplans.map(_._1), shared, F, sharedIntegrationLocator) {
+                      ifIntegChecksOk(F, sharedIntegrationLocator)(testplans.map(_._1), shared) {
                         proceed(checker, testplans, shared, sharedLocator)
                       }
                   }
@@ -110,8 +110,10 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan, F: DIEffect[F], integLocator: Locator)(onSuccess: => F[Unit]): F[Unit] = {
-    integrationChecker.check(plans.side.roots, integLocator) match {
+  private def ifIntegChecksOk(F: DIEffect[F], integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit]): F[Unit] = {
+    val failures = integrationChecker.collectFailures(plans.side.roots, integLocator)
+
+    failures match {
       case Some(value) =>
         F.traverse_(testplans) {
           test =>
@@ -157,7 +159,9 @@ class DistageTestRunner[F[_] : TagK]
                     sharedLocator =>
                       Injector.inherit(sharedLocator).produceF[F](newtestplan.side.plan).use {
                         integLocator =>
-                          check(Seq(test), newtestplan, F, integLocator)(proceedIndividual(test, newtestplan, sharedLocator))
+                          ifIntegChecksOk(F, integLocator)(Seq(test), newtestplan) {
+                            proceedIndividual(test, newtestplan, sharedLocator)
+                          }
                       }
                   }
               }
