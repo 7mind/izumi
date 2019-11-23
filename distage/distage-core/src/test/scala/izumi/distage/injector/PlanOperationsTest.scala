@@ -5,8 +5,8 @@ import izumi.distage.model.PlannerInput
 import org.scalatest.WordSpec
 
 
-
 class PlanOperationsTest extends WordSpec with MkInjector {
+
   import PlanOperationsTest._
 
   "maintain correct operation order" in {
@@ -21,26 +21,29 @@ class PlanOperationsTest extends WordSpec with MkInjector {
     }, primary ++ sub)
 
     val injector = mkInjector()
-    val plan = injector.plan(definition)
 
     val split = injector.triSplitPlan(definition.bindings, primary)(_ => sub)
 
-    println(split.shared.plan.render())
-    println("---")
-    println(split.side.plan.render())
-    println("---")
-    println(split.primary.plan.render())
-    //assert(plan.steps.exists(_.isInstanceOf[ImportDependency]))
+    assert(Set[DIKey](DIKey.get[SharedComponent0], DIKey.get[SharedComponent1]).diff(split.shared.plan.index.keySet).isEmpty)
+    assert((primary ++ sub).intersect(split.shared.plan.index.keySet).isEmpty)
+    assert(primary.intersect(split.side.plan.index.keySet).isEmpty)
+    assert(sub.intersect(split.primary.plan.index.keySet).isEmpty)
 
-
-
+    assert(split.primary.plan.index.keySet.intersect(split.side.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent1]))
+    assert(split.primary.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent1]))
+    assert(split.side.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent1]))
   }
 
 }
 
 object PlanOperationsTest {
+
   case class SharedComponent0()
+
   case class SharedComponent1(com0: SharedComponent0)
+
   case class IntegrationComponent(sharedComponent1: SharedComponent1)
+
   case class PrimaryComponent(sharedComponent1: SharedComponent1)
+
 }

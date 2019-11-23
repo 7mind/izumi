@@ -111,7 +111,7 @@ trait Planner {
     //    val ephemerals = _appModule.bindings.map(_.key).diff(appModule.bindings.map(_.key))
     //    println(ephemerals)
 
-    val sharedKeys = /*ephemerals ++*/ extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
+    val sharedKeys = extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
 
     val sharedPlan = toSubplanNoRewrite(appModule, sharedKeys)
     val sharedModule = appModule.filter(sharedPlan.index.keySet)
