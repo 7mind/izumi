@@ -39,7 +39,7 @@ trait Locator {
   def get[T: Tag](id: String): T
 
   protected[distage] def finalizers[F[_] : TagK]: collection.Seq[Finalizer[F]]
-  protected[distage] def lookup[T: Tag](key: DIKey): Option[TypedRef[T]]
+  protected[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
 
   def index: Map[DIKey, Any] = {
     instances.map(i => i.key -> i.value).toMap

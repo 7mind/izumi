@@ -40,7 +40,7 @@ trait LocatorDef
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
-  override protected def unsafeLookup(key: DIKey): Option[Any] = {
+  override protected def lookupLocalUnsafe(key: DIKey): Option[Any] = {
     frozenMap.get(key)
   }
 

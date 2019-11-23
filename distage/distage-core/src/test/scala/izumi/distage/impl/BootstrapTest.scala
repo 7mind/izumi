@@ -14,8 +14,8 @@ class BootstrapTest extends WordSpec {
       val context = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap)
 
       val maybeRef = context.find[PlanAnalyzer]
-      val ref = context.lookup[PlanAnalyzer](DIKey.get[PlanAnalyzer])
-      val refBySuper = context.lookup[Any](DIKey.get[PlanAnalyzer])
+      val ref = context.lookupLocal[PlanAnalyzer](DIKey.get[PlanAnalyzer])
+      val refBySuper = context.lookupLocal[Any](DIKey.get[PlanAnalyzer])
 
       assert(maybeRef.exists(_.isInstanceOf[PlanAnalyzerDefaultImpl]))
       assert(ref.exists(_.value.isInstanceOf[PlanAnalyzerDefaultImpl]))
@@ -27,8 +27,9 @@ class BootstrapTest extends WordSpec {
         context.get[PlanAnalyzer]("another.one")
       }
 
-      val badRef = context.lookup[Long](DIKey.get[PlanAnalyzer])
-      assert(badRef.isEmpty)
+      intercept[AssertionError] {
+        context.lookupLocal[Long](DIKey.get[PlanAnalyzer])
+      }
 
       val noRef = context.find[PlanAnalyzer]("another.one")
       assert(noRef.isEmpty)

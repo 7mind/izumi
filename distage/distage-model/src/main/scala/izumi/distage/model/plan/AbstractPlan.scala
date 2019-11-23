@@ -160,7 +160,7 @@ final case class SemiPlan(definition: ModuleBase, steps: Vector[ExecutableOp], g
   }
 
   override def locateImports(locator: Locator): SemiPlan = {
-    resolveImports(Function.unlift(i => locator.lookup[Any](i.target)))
+    resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
   }
 
 }
@@ -220,7 +220,7 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
   }
 
   override def locateImports(locator: Locator): OrderedPlan = {
-    resolveImports(Function.unlift(i => locator.lookup[Any](i.target)))
+    resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
   }
 }
 

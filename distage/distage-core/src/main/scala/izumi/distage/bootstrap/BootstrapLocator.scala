@@ -47,7 +47,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 
   override protected[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
 
-  override protected def unsafeLookup(key: RuntimeDIUniverse.DIKey): Option[Any] = {
+  override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] = {
     Option(_instances.get()) match {
       case Some(_) =>
         index.get(key)
