@@ -8,7 +8,7 @@ import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import izumi.distage.model.{Locator, SplittedPlan}
+import izumi.distage.model.{Locator, TriSplittedPlan}
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
@@ -18,7 +18,7 @@ import izumi.fundamentals.platform.language.CodePosition
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_]: TagK]
+class DistageTestRunner[F[_] : TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker,
@@ -77,14 +77,9 @@ class DistageTestRunner[F[_]: TagK]
 
         logger.info(s"Memoized components in env $sharedKeys")
 
-        val shared = injector.splitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val shared = injector.triSplitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
-
-        //        println(shared.primary.render())
-        //        println("===")
-        //        println(shared.subplan.render())
-        //        println("===")
 
         checker.verify(runtimePlan)
 
@@ -97,20 +92,26 @@ class DistageTestRunner[F[_]: TagK]
 
             runner.run {
               // now we produce integration components for our shared plan
-              checker.verify(shared.subplan)
-              Injector.inherit(runtimeLocator).produceF[F](shared.subplan).use {
-                sharedIntegrationLocator =>
-                  check(testplans.map(_._1), shared, F, sharedIntegrationLocator) {
-                    proceed(checker, testplans, shared, sharedIntegrationLocator)
+              checker.verify(shared.side.plan)
+
+              Injector.inherit(runtimeLocator).produceF[F](shared.shared.plan).use {
+                sharedLocator =>
+
+                  Injector.inherit(sharedLocator).produceF[F](shared.side.plan).use {
+                    sharedIntegrationLocator =>
+                      check(testplans.map(_._1), shared, F, sharedIntegrationLocator) {
+                        proceed(checker, testplans, shared, sharedLocator)
+                      }
                   }
               }
+
             }
         }
     }
   }
 
-  private def check(testplans: Seq[DistageTest[F]], plans: SplittedPlan, F: DIEffect[F], integLocator: Locator)(onSuccess: => F[Unit]): F[Unit] = {
-    integrationChecker.check(plans.subRoots, integLocator) match {
+  private def check(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan, F: DIEffect[F], integLocator: Locator)(onSuccess: => F[Unit]): F[Unit] = {
+    integrationChecker.check(plans.side.roots, integLocator) match {
       case Some(value) =>
         F.traverse_(testplans) {
           test =>
@@ -122,13 +123,13 @@ class DistageTestRunner[F[_]: TagK]
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: SplittedPlan, sharedIntegrationLocator: Locator)
+  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)
                      (implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
-    checker.verify(shared.primary)
-    Injector.inherit(sharedIntegrationLocator).produceF[F](shared.primary).use {
-      sharedLocator =>
-        val testInjector = Injector.inherit(sharedLocator)
+    checker.verify(shared.primary.plan)
+    Injector.inherit(parent).produceF[F](shared.primary.plan).use {
+      mainSharedLocator =>
+        val testInjector = Injector.inherit(mainSharedLocator)
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
@@ -142,19 +143,22 @@ class DistageTestRunner[F[_]: TagK]
               _ <- F.maybeSuspend(reporter.beginSuite(id))
               _ <- P.parTraverse_(plans) {
                 case (test, testplan) =>
-                  val allSharedKeys = sharedLocator.allInstances.map(_.key).toSet
+                  val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-                  val newtestplan = testInjector.splitExistingPlan(shared.reducedModule.drop(allSharedKeys), testplan.keys -- allSharedKeys, allSharedKeys, testplan) {
+                  val newtestplan = testInjector.triSplitExistingPlan(shared.primary.module.drop(allSharedKeys), testplan.keys -- allSharedKeys, allSharedKeys, testplan) {
                     _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   }
 
-                  checker.verify(newtestplan.subplan)
-                  checker.verify(newtestplan.primary)
+                  checker.verify(newtestplan.primary.plan)
+                  checker.verify(newtestplan.side.plan)
+                  checker.verify(newtestplan.shared.plan)
+
                   // we are ready to run the test, finally
-                  testInjector.produceF[F](newtestplan.subplan).use {
-                    integLocator =>
-                      check(Seq(test), newtestplan, F, integLocator) {
-                        proceedIndividual(test, newtestplan, integLocator)
+                  testInjector.produceF[F](newtestplan.shared.plan).use {
+                    sharedLocator =>
+                      Injector.inherit(sharedLocator).produceF[F](newtestplan.side.plan).use {
+                        integLocator =>
+                          check(Seq(test), newtestplan, F, integLocator)(proceedIndividual(test, newtestplan, sharedLocator))
                       }
                   }
               }
@@ -164,8 +168,9 @@ class DistageTestRunner[F[_]: TagK]
     }
   }
 
-  private def proceedIndividual(test: DistageTest[F], newtestplan: SplittedPlan, integLocator: Locator)(implicit F: DIEffect[F]): F[Unit] = {
-    Injector.inherit(integLocator).produceF[F](newtestplan.primary).use {
+  private def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
+    Injector.inherit(parent)
+      .produceF[F](newtestplan.primary.plan).use {
       testLocator =>
         def doRun(before: Long): F[Unit] = {
           for {
@@ -207,12 +212,19 @@ object DistageTestRunner {
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
+
   object TestStatus {
+
     case object Scheduled extends TestStatus
+
     case object Running extends TestStatus
+
     final case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends TestStatus
+
     final case class Succeed(duration: FiniteDuration) extends TestStatus
+
     final case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
+
   }
 
   trait TestReporter {

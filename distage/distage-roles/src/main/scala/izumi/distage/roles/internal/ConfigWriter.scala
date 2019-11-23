@@ -138,9 +138,10 @@ class ConfigWriter[F[_] : DIEffect]
       getConfig(plan) getOrElse ConfigFactory.empty()
     }
 
-    if (plans.app.steps.exists(_.target == roleDIKey)) {
-      getConfig(plans.app)
-        .map(_.withFallback(getConfigOrEmpty(plans.integration)))
+    if (plans.app.primary.plan.steps.exists(_.target == roleDIKey)) {
+      getConfig(plans.app.primary.plan)
+        .map(_.withFallback(getConfigOrEmpty(plans.app.side.plan)))
+        .map(_.withFallback(getConfigOrEmpty(plans.app.shared.plan)))
         .map(_.withFallback(getConfigOrEmpty(plans.runtime)))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")

@@ -1,6 +1,7 @@
 package izumi.distage.roles.services
 
 import distage.{BootstrapModule, DIKey, Injector, TagK, _}
+import izumi.distage.model.TriSplittedPlan
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.model.plan.OrderedPlan
@@ -17,9 +18,7 @@ trait RoleAppPlanner[F[_]] {
 object RoleAppPlanner {
   case class AppStartupPlans(
                               runtime: OrderedPlan,
-                              integration: OrderedPlan,
-                              integrationKeys: Set[DIKey],
-                              app: OrderedPlan,
+                              app: TriSplittedPlan,
                               injector: Injector,
                             )
 
@@ -50,25 +49,21 @@ object RoleAppPlanner {
       )
       val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-      val appPlan = injector.splitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
+      val appPlan = injector.triSplitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimePlan)
-      check.verify(appPlan.subplan)
-      check.verify(appPlan.primary)
+      check.verify(appPlan.shared.plan)
+      check.verify(appPlan.side.plan)
+      check.verify(appPlan.primary.plan)
 
-      val plans = AppStartupPlans(
-        runtime = runtimePlan,
-        integration = appPlan.subplan,
-        integrationKeys = appPlan.subRoots,
-        app = appPlan.primary,
-        injector = injector,
+      AppStartupPlans(
+        runtimePlan,
+        appPlan,
+        injector
       )
-
-      println("INT:" + plans.integration.render())
-      println("APP:" + plans.app.render())
 
       plans
     }

@@ -86,6 +86,11 @@ object ModuleBase {
       T.make(Set(binding)) ++ moduleDef
     }
 
+    def filter(preserve: Set[DIKey]): T = {
+      val filtered = moduleDef.bindings.filterNot(b => preserve.contains(b.key))
+      T.make(filtered)
+    }
+
     def drop(ignored: Set[DIKey]): T = {
       val filtered = moduleDef.bindings.filterNot(b => ignored.contains(b.key))
       T.make(filtered)
