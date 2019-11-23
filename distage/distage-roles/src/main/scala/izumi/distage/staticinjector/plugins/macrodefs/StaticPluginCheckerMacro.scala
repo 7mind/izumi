@@ -18,6 +18,7 @@ import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.roles.RoleAppLauncher
+import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import izumi.distage.staticinjector.plugins.ModuleRequirements
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
@@ -140,7 +141,7 @@ object StaticPluginCheckerMacro {
     val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
     val logger = IzLogger.NullLogger
-    val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(RoleAppLauncher.Options.use.name.long, a)).toVector))
+    val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
     val activation = new ActivationParser().parseActivation(logger, args, module, Map.empty, Map.empty)
     val policy: PlanMergingPolicy = new PruningPlanMergingPolicy(logger, activation)
 

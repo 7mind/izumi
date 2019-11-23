@@ -27,9 +27,7 @@ class ResourceRewriter(
       defn
         .flatMap(rewrite[AutoCloseable](fromAutoCloseable(logger, _)))
         .flatMap(rewrite[ExecutorService](fromExecutorService(logger, _)))
-    } else {
-      defn
-    }
+    } else defn
   }
 
   private def rewrite[TGT: Tag](convert: TGT => DIResource[Identity, TGT])(b: Binding): Seq[Binding] = {
@@ -37,7 +35,7 @@ class ResourceRewriter(
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, set = false) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, isSet = false) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -49,7 +47,7 @@ class ResourceRewriter(
             }
 
           case binding: Binding.SetElementBinding =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, set = true) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, isSet = true) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
@@ -67,7 +65,7 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, set: Boolean): RewriteResult = {
+  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, isSet: Boolean): RewriteResult = {
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
@@ -79,9 +77,7 @@ class ResourceRewriter(
               DontChange
 
             case _: ImplDef.InstanceImpl =>
-              if (rules.warnOnExternal) {
-                logger.warn(s"External entity $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! Because it's not an explicit DIResource")
-              }
+              logger.warn(s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit DIResource (define as function binding to force conversion)")
               DontChange
 
             case ImplDef.ProviderImpl(_, function) =>
@@ -92,7 +88,7 @@ class ResourceRewriter(
               val implTypeKey = DIKey.TypeKey(implType)
               val newKey = DIKey.IdKey(
                 tpe = implType,
-                id = ResId(if (set) DIKey.SetElementKey(key, implTypeKey, Some(implDef)) else implTypeKey)
+                id = ResId(if (isSet) DIKey.SetElementKey(key, implTypeKey, Some(implDef)) else implTypeKey)
               )
 
               val parameter = {
@@ -158,10 +154,7 @@ object ResourceRewriter {
     implicit val idContract: IdContract[ResId] = new RuntimeDIUniverse.IdContractImpl[ResId]
   }
 
-  final case class RewriteRules(
-                                 applyRewrites: Boolean = true,
-                                 warnOnExternal: Boolean = true,
-                               )
+  final case class RewriteRules(applyRewrites: Boolean = true)
 
   /** Like [[DIResource.fromAutoCloseable]], but with added logging */
   def fromAutoCloseable[A <: AutoCloseable](logger: IzLogger, acquire: => A): DIResource[Identity, A] = {

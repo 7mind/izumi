@@ -64,30 +64,29 @@ class ForwardingRefResolverDefaultImpl
     }
   }
 
-    protected def iniProxiesJustInTime(proxies: mutable.HashSet[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
-      // more expensive eager just-in-time policy
-      val passed = mutable.HashSet[DIKey]()
-      val proxyOps = resolvedSteps.flatMap {
-        op =>
-          passed.add(op.target)
+  protected def iniProxiesJustInTime(proxies: mutable.HashSet[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {
+    // more expensive eager just-in-time policy
+    val passed = mutable.HashSet[DIKey]()
+    val proxyOps = resolvedSteps.flatMap {
+      op =>
+        passed.add(op.target)
 
-          val completedProxies = proxies.filter(_.forwardRefs.diff(passed).isEmpty)
-          val inits = completedProxies.map {
-            proxy =>
-              ProxyOp.InitProxy(proxy.target, proxy.forwardRefs, proxy, op.origin)
-          }.toVector
+        val completedProxies = proxies.filter(_.forwardRefs.diff(passed).isEmpty)
+        val inits = completedProxies.map {
+          proxy =>
+            ProxyOp.InitProxy(proxy.target, proxy.forwardRefs, proxy, op.origin)
+        }.toVector
 
-          completedProxies.foreach {
-            i =>
-              proxies.remove(i)
-          }
+        completedProxies.foreach {
+          i =>
+            proxies.remove(i)
+        }
 
-          op +: inits
-      }
-      assert(proxies.isEmpty)
-      proxyOps
+        op +: inits
     }
-
+    assert(proxies.isEmpty)
+    proxyOps
+  }
 
   protected def allUsagesAreByName(index: Map[DIKey, Vector[ExecutableOp]], target: DIKey, usages: Set[DIKey]): Boolean = {
     val usedByOps = (usages + target).flatMap(index.apply)

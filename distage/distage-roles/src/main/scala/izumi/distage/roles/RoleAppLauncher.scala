@@ -30,6 +30,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.global
 import scala.reflect.ClassTag
 
+trait RoleAppLauncher {
+  def launch(parameters: RawAppArgs): Unit
+}
+
 /**
   * Application flow:
   * 1. Parse commandline parameters
@@ -49,21 +53,17 @@ import scala.reflect.ClassTag
   * 15. Close autocloseables
   * 16. Shutdown executors
   */
-abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
-
-  private val loggers = new EarlyLoggers()
-
-  protected def bootstrapConfig: BootstrapConfig
-
-  protected val hook: AppShutdownStrategy[F]
+abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher {
+  protected def pluginSource: PluginSource
+  protected def shutdownStrategy: AppShutdownStrategy[F]
 
   protected def referenceLibraryInfo: Seq[LibraryReference] = Vector.empty
 
-  final def launch(parameters: RawAppArgs): Unit = {
-    val earlyLogger = loggers.makeEarlyLogger(parameters)
+  def launch(parameters: RawAppArgs): Unit = {
+    val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters)
     showBanner(earlyLogger, referenceLibraryInfo)
 
-    val plugins = makePluginLoader(bootstrapConfig).load()
+    val plugins = pluginSource.load()
     val roles = loadRoles(parameters, earlyLogger, plugins)
 
     // default PlanMergingPolicy will be applied to bootstrap module, so any non-trivial conflict in bootstrap bindings will fail the app
@@ -72,7 +72,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     earlyLogger.info(s"Loaded ${defBs.bindings.size -> "bootstrap bindings"}...")
 
     val config = makeConfigLoader(earlyLogger, parameters).buildConfig()
-    val lateLogger = loggers.makeLateLogger(parameters, earlyLogger, config)
+    val lateLogger = EarlyLoggers.makeLateLogger(parameters, earlyLogger, config)
 
     val mergeStrategy = makeMergeStrategy(lateLogger, parameters, roles)
     val defApp = mergeStrategy.merge(plugins.app)
@@ -129,7 +129,7 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
   }
 
   protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
-    new RoleAppExecutor.Impl[F](hook, roles, injector, lateLogger, parameters)
+    new RoleAppExecutor.Impl[F](shutdownStrategy, roles, injector, lateLogger, parameters)
   }
 
   protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
@@ -214,10 +214,6 @@ abstract class RoleAppLauncher[F[_] : TagK : DIEffect] {
     }
   }
 
-  protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
-    new PluginSource.Impl(bootstrapConfig)
-  }
-
   protected def makeConfigLoader(logger: IzLogger, parameters: RawAppArgs): ConfigLoader = {
     val maybeGlobalConfig = Options.configParam.findValue(parameters.globalParameters).asFile
 
@@ -240,16 +236,16 @@ object RoleAppLauncher {
     final val use = arg("use", "u", "activate a choice on functionality axis", "<axis>:<choice>")
   }
 
-  abstract class LauncherF[F[_] : TagK : DIEffect : LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncher[F] {
-    override protected val hook: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
+  abstract class LauncherF[F[_]: TagK: DIEffect: LiftIO](executionContext: ExecutionContext = global) extends RoleAppLauncherImpl[F] {
+    override protected val shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: BIOAsync: BIOPrimitives](implicit tagK: TagK[F[Throwable, ?]]) extends RoleAppLauncher[F[Throwable, ?]] {
-    override protected val hook: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
+  abstract class LauncherBIO[F[+_, +_]: BIOAsync: BIOPrimitives](implicit tagK: TagK[F[Throwable, ?]]) extends RoleAppLauncherImpl[F[Throwable, ?]] {
+    override protected val shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 
-  abstract class LauncherIdentity extends RoleAppLauncher[Identity] {
-    override protected val hook: AppShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
+  abstract class LauncherIdentity extends RoleAppLauncherImpl[Identity] {
+    override protected val shutdownStrategy: AppShutdownStrategy[Identity] = new JvmExitHookLatchShutdownStrategy
   }
 
 }

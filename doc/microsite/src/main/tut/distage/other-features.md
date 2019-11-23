@@ -411,7 +411,7 @@ class C(val b: B) extends PrintResource("C")
 
 val resources = Injector(new BootstrapModuleDef {
   many[PlanningHook]
-    .add(new AssignableFromAutoSetHook[PrintResource])
+    .add(new AutoSetHook[PrintResource])
 }).produce(new ModuleDef {
   make[C]
   make[B]

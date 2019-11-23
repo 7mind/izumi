@@ -12,11 +12,8 @@ trait PlanMergingPolicy {
 object PlanMergingPolicy {
 
   sealed trait DIKeyConflictResolution
-
   object DIKeyConflictResolution {
-
     final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
-
     final case class Failed(candidates: Set[ExecutableOp], explanation: String) extends DIKeyConflictResolution
   }
 

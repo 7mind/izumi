@@ -7,15 +7,14 @@ trait PluginLoader {
 }
 
 object PluginLoader {
-  /**
-    * Create a [[PluginLoader]] that scans classpath according to [[PluginConfig]]
-    * */
+  /** Create a [[PluginLoader]] that scans classpath according to [[PluginConfig]] */
   def apply(pluginConfig: PluginConfig): PluginLoader = new PluginLoaderDefaultImpl(pluginConfig)
 
-  /**
-    * Create a [[PluginLoader]] that simply returns specified plugins
-    */
+  /** Create a [[PluginLoader]] that simply returns specified plugins */
   def apply(plugins: Seq[PluginBase]): PluginLoader = new PluginLoaderPredefImpl(plugins)
+
+  /** Create a [[PluginLoader]] that simply returns specified plugin */
+  def apply(plugins: PluginBase): PluginLoader = new PluginLoaderPredefImpl(Seq(plugins))
 
   def empty: PluginLoader = PluginLoaderNullImpl
 

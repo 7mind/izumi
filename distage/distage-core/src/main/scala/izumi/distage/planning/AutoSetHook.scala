@@ -15,7 +15,7 @@ import scala.collection.immutable.ListSet
   * Usage:
   *
   * {{{
-  *   val collectCloseables = new AssignableFromAutoSetHook[AutoCloseable, AutoCloseable](identity)
+  *   val collectCloseables = new AutoSetHook[AutoCloseable, AutoCloseable](identity)
   *
   *   val injector = Injector(new BootstrapModuleDef {
   *     many[PlanningHook]
@@ -45,13 +45,13 @@ import scala.collection.immutable.ListSet
   *   }
   * }}}
   *
-  * Auto-Sets are NOT subject to [[gc.TracingDIGC Garbage Collection]], they are assembled *after* garbage collection is done,
-  * as such they can't contain garbage by construction.
-  *
-  **/
-class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING) extends PlanningHook {
+  * Auto-Sets are NOT subject to [[gc.TracingDIGC Garbage Collection]], they are assembled
+  * *after* garbage collection is done, as such they can't contain garbage by construction
+  * and they cannot be designated as GC root keys.
+  */
+class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BINDING) extends PlanningHook {
   protected val instanceType: SafeType = SafeType.get[INSTANCE]
-  protected val setElemetType: SafeType = SafeType.get[BINDING]
+  protected val setElementType: SafeType = SafeType.get[BINDING]
   protected val setKey: DIKey = DIKey.get[Set[BINDING]]
 
   override def phase45PreForwardingCleanup(plan: SemiPlan): SemiPlan = {
@@ -78,9 +78,14 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
     val newMembers = scala.collection.mutable.ArrayBuffer[DIKey]()
 
     val newSteps = plan.steps.flatMap {
-      op =>
+      // do not process top-level references to avoid duplicates (the target of reference will be included anyway)
+      case op @ (_: ExecutableOp.WiringOp.ReferenceKey | _: ExecutableOp.ProxyOp.InitProxy) =>
+        Seq(op)
+
+      case op =>
         op.target match {
           case `setKey` =>
+            // throw out previous set if any
             op match {
               case op: ExecutableOp.CreateSet =>
                 newMembers ++= op.members
@@ -93,7 +98,7 @@ class AssignableFromAutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: I
             Seq(op)
 
           case _ if ExecutableOp.instanceType(op) <:< instanceType =>
-            if (instanceType == setElemetType) {
+            if (instanceType == setElementType) {
               newMembers += op.target
               Seq(op)
             } else {

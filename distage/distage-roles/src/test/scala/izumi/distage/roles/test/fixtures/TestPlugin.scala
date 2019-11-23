@@ -5,14 +5,12 @@ import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.internal.{ConfigWriter, Help}
-import izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.roles.test.fixtures.Fixture._
+import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 
 class TestPlugin extends PluginDef {
-
-  import TestPlugin._
-
   tag(Env.Prod)
 
   addImplicit[DIEffect[IO]]
@@ -42,14 +40,11 @@ class TestPlugin extends PluginDef {
 }
 
 object TestPlugin {
-
   trait NotCloseable
-
   final val versionProperty = "launcher-version-test"
 
   class InheritedCloseable extends NotCloseable with AutoCloseable {
     override def close(): Unit = {}
   }
-
 }
 

@@ -2,20 +2,24 @@ package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.{ExecutorService, Executors}
 
+import izumi.distage.fixtures.ResourceCases.ClassResourceCase.Res
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.test.fixtures.Junk._
+import izumi.distage.roles.test.fixtures.Fixture._
+import izumi.distage.roles.test.fixtures.ResourcesPlugin._
 
 class ResourcesPlugin extends PluginDef {
-  import ResourcesPlugin._
   make[InitCounter]
+
   make[Conflict].tagged(Env.Prod).from[Conflict1]
   make[Conflict].tagged(Env.Test).from[Conflict2]
   make[Conflict].from[Conflict3]
+
   make[UnsolvableConflict].from[UnsolvableConflict1]
   make[UnsolvableConflict].from[UnsolvableConflict2]
 
   make[ExecutorService].from(Executors.newCachedThreadPool())
+//  make[Resource].from[Resource1]
   make[Resource1]
   make[Resource2]
   make[Resource3]
@@ -24,6 +28,7 @@ class ResourcesPlugin extends PluginDef {
   make[Resource6]
 
   many[Resource]
+//    .ref[Resource]
     .ref[Resource1]
     .ref[Resource2]
     .ref[Resource3]
@@ -41,5 +46,4 @@ object ResourcesPlugin {
   trait UnsolvableConflict
   class UnsolvableConflict1 extends UnsolvableConflict
   class UnsolvableConflict2 extends UnsolvableConflict
-
 }

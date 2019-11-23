@@ -40,7 +40,7 @@ class CLIParser {
     } yield roles
   }
 
-  private def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {
+  private[this] def validate(arguments: RawAppArgs): Either[ParserError, Unit] = {
     val bad = arguments.roles.groupBy(_.role).filter(_._2.size > 1)
     if (bad.nonEmpty) {
       Left(ParserError.DuplicatedRoles(bad.keySet))
@@ -51,19 +51,12 @@ class CLIParser {
 }
 
 object CLIParser {
-
   sealed trait ParserError
-
   object ParserError {
-
     final case class DanglingArgument(processed: Vector[String], arg: String) extends ParserError
-
     final case class DanglingSplitter(processed: Vector[String]) extends ParserError
-
     final case class DuplicatedRoles(bad: Set[String]) extends ParserError
-
   }
-
 }
 
 

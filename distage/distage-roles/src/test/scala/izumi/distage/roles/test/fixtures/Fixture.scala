@@ -5,18 +5,18 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 
 import scala.collection.mutable
 
-object Junk {
+object Fixture {
   trait Dummy
 
-case class TestServiceConf(
-                              intval: Int
-                              , strval: String
-                              , overridenInt: Int
-                              , systemPropInt: Int
-                              , systemPropList: List[Int]
+  case class TestServiceConf(
+                              intval: Int,
+                              strval: String,
+                              overridenInt: Int,
+                              systemPropInt: Int,
+                              systemPropList: List[Int],
                             )
 
-class InitCounter {
+  class InitCounter {
     val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()

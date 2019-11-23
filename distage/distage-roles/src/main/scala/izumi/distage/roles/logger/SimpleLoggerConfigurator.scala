@@ -2,6 +2,7 @@ package izumi.distage.roles.logger
 
 import com.typesafe.config.Config
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.distage.roles.logger.SimpleLoggerConfigurator.SinksConfig
 import izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
@@ -16,8 +17,6 @@ import scala.util.{Failure, Success, Try}
 class SimpleLoggerConfigurator(
                                 exceptionLogger: IzLogger,
                               ) {
-
-  import SimpleLoggerConfigurator._
 
   // TODO: this is a temporary solution until we finish full-scale logger configuration support
   def makeLogRouter(config: Config, root: Log.Level, json: Boolean): LogRouter = {

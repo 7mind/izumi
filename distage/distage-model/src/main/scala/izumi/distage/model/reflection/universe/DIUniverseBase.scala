@@ -8,5 +8,4 @@ trait DIUniverseBase extends UniverseGeneric {
   type TypeNative = u.Type
   type Symb = u.Symbol
   type MethodSymb = u.MethodSymbol
-
 }

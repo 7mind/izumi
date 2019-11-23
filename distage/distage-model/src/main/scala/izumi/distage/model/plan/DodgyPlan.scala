@@ -4,8 +4,7 @@ import izumi.distage.model.GCMode
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.DodgyPlan._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.ImmutableMultiMap
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.Quirks
@@ -20,7 +19,7 @@ final class DodgyPlan(
 
   private val ops = new mutable.ArrayBuffer[TraceableOp]()
 
-  def freeze: ImmutableMultiMap[universe.RuntimeDIUniverse.DIKey, TraceableOp] = {
+  def freeze: ImmutableMultiMap[DIKey, TraceableOp] = {
     ops.map(op => op.key -> op).toMultimap
   }
 

@@ -4,6 +4,13 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
+import distage.Locator
+import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.definition.ModuleDef
+import izumi.distage.roles
+import izumi.distage.roles.RoleAppMain
+import izumi.distage.roles.services.PluginSource
+import izumi.distage.roles.test.fixtures.Fixture.{InitCounter, Resource1, Resource2}
 import izumi.distage.roles.test.fixtures.{AdoptedAutocloseablesCase, TestPlugin, TestRole00}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import org.scalatest.WordSpec
@@ -13,18 +20,43 @@ class RoleAppTest extends WordSpec
   private val prefix = "target/configwriter"
 
   private val overrides = Map(
-    "testservice.systemPropInt" -> "265"
-    , "testservice.systemPropList.0" -> "111"
-    , "testservice.systemPropList.1" -> "222"
+    "testservice.systemPropInt" -> "265",
+    "testservice.systemPropList.0" -> "111",
+    "testservice.systemPropList.1" -> "222",
   )
+
+  object TestEntrypoint extends RoleAppMain.Silent(new TestLauncher)
 
   "Role Launcher" should {
     "be able to start roles" in {
-      TestEntrypoint.main(Array(
-        "-ll", "critical",
-        ":"+ AdoptedAutocloseablesCase.id,
-        ":"+ TestRole00.id,
+      val initCounter = new InitCounter
+      var locator0: LocatorRef = null
+      lazy val locator: Locator = locator0.get
+
+      new RoleAppMain.Silent({
+        new TestLauncher {
+          override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
+            l.copy(app = Seq(l.app.merge overridenBy new ModuleDef {
+              make[InitCounter].from {
+                locatorRef: LocatorRef =>
+                  locator0 = locatorRef
+                  initCounter
+              }
+            }))
+          }
+        }
+      }).main(Array(
+        "-ll", "info",
+        ":" + AdoptedAutocloseablesCase.id,
+        ":" + TestRole00.id,
       ))
+
+      println(initCounter.startedCloseables)
+      println(initCounter.closedCloseables)
+      println(initCounter.checkedResources)
+
+      assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
+      assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
     }
 
     "produce config dumps and support minimization" in {
@@ -48,8 +80,7 @@ class RoleAppTest extends WordSpec
     }
   }
 
-private def cfg(role: String, version: ArtifactVersion) = {
-    val justConfig = Paths.get(prefix, s"$role-${version.version}.json").toFile
-    justConfig
+  private def cfg(role: String, version: ArtifactVersion) = {
+    Paths.get(prefix, s"$role-${version.version}.json").toFile
   }
 }

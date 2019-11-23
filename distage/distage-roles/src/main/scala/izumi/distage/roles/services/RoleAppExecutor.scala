@@ -18,13 +18,13 @@ trait RoleAppExecutor[F[_]] {
 
 object RoleAppExecutor {
 
-  class Impl[F[_] : TagK](
-                           protected val hook: AppShutdownStrategy[F],
-                           roles: RolesInfo,
-                           injector: Injector,
-                           lateLogger: IzLogger,
-                           parameters: RawAppArgs,
-                         ) extends RoleAppExecutor[F] {
+  class Impl[F[_]: TagK](
+                          hook: AppShutdownStrategy[F],
+                          roles: RolesInfo,
+                          injector: Injector,
+                          lateLogger: IzLogger,
+                          parameters: RawAppArgs,
+                        ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {
       try {

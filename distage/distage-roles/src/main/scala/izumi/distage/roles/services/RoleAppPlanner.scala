@@ -23,12 +23,12 @@ object RoleAppPlanner {
                               injector: Injector,
                             )
 
-  class Impl[F[_] : TagK](
-                           options: ContextOptions,
-                           bsModule: BootstrapModule,
-                           activation: AppActivation,
-                           logger: IzLogger,
-                         ) extends RoleAppPlanner[F] { self =>
+  class Impl[F[_]: TagK](
+                          options: ContextOptions,
+                          bsModule: BootstrapModule,
+                          activation: AppActivation,
+                          logger: IzLogger,
+                        ) extends RoleAppPlanner[F] { self =>
 
     private val injector = Injector.Standard(bsModule)
 
@@ -60,11 +60,11 @@ object RoleAppPlanner {
       check.verify(appPlan.primary)
 
       AppStartupPlans(
-        runtimePlan,
-        appPlan.subplan,
-        appPlan.subRoots,
-        appPlan.primary,
-        injector
+        runtime = runtimePlan,
+        integration = appPlan.subplan,
+        integrationKeys = appPlan.subRoots,
+        app = appPlan.primary,
+        injector = injector,
       )
     }
   }

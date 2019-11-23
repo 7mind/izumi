@@ -1,17 +1,16 @@
 package izumi.distage.roles.services
 
 import izumi.distage.config.model.AppConfig
+import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.logger.SimpleLoggerConfigurator
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.Log.Level
 import izumi.logstage.api.{IzLogger, Log}
 
-class EarlyLoggers() {
+object EarlyLoggers {
 
-  import izumi.distage.roles.RoleAppLauncher._
-
-  private val defaultLogLevel = Log.Level.Info
-  private val defaultLogFormatJson = false
+  private[this] final val defaultLogLevel = Log.Level.Info
+  private[this] final val defaultLogFormatJson = false
 
   def makeEarlyLogger(parameters: RawAppArgs): IzLogger = {
     val rootLogLevel = getRootLogLevel(parameters)

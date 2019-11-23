@@ -18,7 +18,7 @@ import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.{Quirks, unused}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -37,8 +37,7 @@ class ConfigWriter[F[_] : DIEffect]
 )
   extends RoleTask[F] {
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
-    Quirks.discard(freeArgs)
+  override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     val config = ConfigWriter.parse(roleParameters)
     DIEffect[F].maybeSuspend(writeReferenceConfig(config))
   }

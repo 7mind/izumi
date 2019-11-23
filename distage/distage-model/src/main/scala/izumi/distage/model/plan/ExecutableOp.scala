@@ -16,10 +16,9 @@ sealed trait ExecutableOp {
 }
 
 object ExecutableOp {
+  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: Option[Binding]) extends ExecutableOp
 
   sealed trait InstantiationOp extends ExecutableOp
-
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: Option[Binding]) extends ExecutableOp
   final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp
 
   sealed trait WiringOp extends InstantiationOp {
@@ -27,7 +26,6 @@ object ExecutableOp {
     def wiring: PureWiring
     def origin: Option[Binding]
   }
-
   object WiringOp {
     final case class InstantiateClass(target: DIKey, wiring: SingletonWiring.Constructor, origin: Option[Binding]) extends WiringOp
     final case class InstantiateTrait(target: DIKey, wiring: SingletonWiring.AbstractSymbol, origin: Option[Binding]) extends WiringOp
@@ -42,7 +40,6 @@ object ExecutableOp {
     def effectWiring: PureWiring
     def wiring: Wiring.MonadicWiring
   }
-
   object MonadicOp {
     final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: Option[Binding]) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
@@ -53,7 +50,6 @@ object ExecutableOp {
   }
 
   sealed trait ProxyOp extends ExecutableOp
-
   object ProxyOp {
     final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding], byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
@@ -68,7 +64,7 @@ object ExecutableOp {
         w.wiring match {
           case u: Wiring.SingletonWiring =>
             u.instanceType
-          case _ =>
+          case _: Wiring.Factory | _: Wiring.FactoryFunction =>
             w.target.tpe
         }
       case p: MakeProxy =>

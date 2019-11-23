@@ -62,22 +62,26 @@ Note:
 Syntax Reference
 ------------
 
-1) Simple variable:
+1. Simple variable:
    ```scala
    logger.info(s"My message: $argument")
    ```
-2) Chain:
+
+2. Chain:
    ```scala
    logger.info(s"My message: ${call.method} ${access.value}")
    ```
-3) Named expression:
+
+3. Named expression:
    ```scala
    logger.info(s"My message: ${Some.expression -> "argname"}")
    ```
-4) Invisible name expression:
+
+4. Invisible named expression:
    ```scala
    logger.info(s"My message: ${Some.expression -> "argname" -> null}")
    ```
+
 5) De-camelcased name:
    ```scala
    logger.info(${camelCaseName-> ' '})
@@ -87,7 +91,7 @@ Dependencies
 ------------
 
 ```scala
-// LogStage API, you need it to use the logger
+// LogStage core
 libraryDependencies += Izumi.R.logstage_core
 
 // Optional
@@ -110,10 +114,10 @@ or
 @@@vars
 ```scala
 val izumi_version = "$izumi.version$"
-// LogStage API, you need it to use the logger
+// LogStage core
 libraryDependencies += "io.7mind.izumi" %% "logstage-core" % izumi_version
 
-// optional
+// Optional
 libraryDependencies ++= Seq(
   // Json output
   "io.7mind.izumi" %% "logstage-rendering-circe" % izumi_version,
@@ -222,9 +226,9 @@ SLF4J Router
 
 When not configured, `logstage-adapter-slf4j` will log messages with level `>= Info` to `stdout`.
 
-Due to the global mutable nature of `slf4j` to configure slf4j logging you'll
-have to mutate a global singleton. To change its settings, replace its `LogRouter`
-with the same one you use elsewhere in your application. 
+Due to the global mutable nature of `slf4j`, to configure slf4j logging you'll
+have to mutate a global singleton `StaticLogRouter`. Replace its `LogRouter`
+with the same one you use elsewhere in your application to use the same configuration for Slf4j. 
 
 ```scala mdoc:reset
 import logstage._

@@ -8,6 +8,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.PlanMergingPolicyDefaultImpl
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.distage.roles.model.AppActivation
+import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 class PruningPlanMergingPolicy(
@@ -16,19 +17,13 @@ class PruningPlanMergingPolicy(
                               ) extends PlanMergingPolicyDefaultImpl {
   private val activeTags = activation.active.values.toSet
 
-  import izumi.fundamentals.platform.strings.IzString._
-
   override protected def resolveConflict(plan: DodgyPlan, key: RuntimeDIUniverse.DIKey, operations: Set[DodgyPlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)
-    val filtered = operations
-      .filter {
-        op =>
-          op.binding.tags
-            .collect({
-              case BindingTag.AxisTag(t) => t
-            })
-            .forall(t => activeTags.contains(t))
-      }
+    val filtered = operations.filter {
+      _.binding.tags
+        .collect { case BindingTag.AxisTag(t) => t }
+        .forall(t => activeTags.contains(t))
+    }
 
     val (explicitlyEnabled, noTags) = filtered.partition(_.binding.tags.nonEmpty)
 
@@ -97,14 +92,14 @@ class PruningPlanMergingPolicy(
     ops
       .toSeq
       .map {
-        f =>
-          val bindingTags = f.binding.tags.collect({
+        op =>
+          val bindingTags = op.binding.tags.collect({
             case BindingTag.AxisTag(t) => t
           }).diff(activeTags)
-          val alreadyActiveTags = f.binding.tags.collect({
+          val alreadyActiveTags = op.binding.tags.collect({
             case BindingTag.AxisTag(t) => t
           }).intersect(activeTags)
-          s"${f.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
+          s"${op.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
       }
   }
 }

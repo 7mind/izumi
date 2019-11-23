@@ -1,12 +1,11 @@
 package izumi.distage.injector
 
-import org.scalatest.WordSpec
+import distage.{BootstrapModuleDef, Injector, ModuleDef}
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.planning.AssignableFromAutoSetHook
-import distage.{BootstrapModuleDef, Injector, ModuleDef}
-import izumi.distage.fixtures.SetCases.SetCase3.{ServiceA, ServiceB, ServiceC, ServiceD}
+import izumi.distage.planning.AutoSetHook
+import org.scalatest.WordSpec
 
 class AutoSetTest extends WordSpec with MkInjector {
 
@@ -21,9 +20,8 @@ class AutoSetTest extends WordSpec with MkInjector {
     }
 
     val injector = Injector.Standard(new BootstrapModuleDef {
-      many[AutoCloseable]
       many[PlanningHook]
-        .add(new AssignableFromAutoSetHook[Ordered, Ordered](identity))
+        .add(new AutoSetHook[Ordered, Ordered](identity))
     })
 
     val autoset = injector.produceUnsafe(PlannerInput.noGc(definition)).get[Set[Ordered]]
@@ -42,9 +40,8 @@ class AutoSetTest extends WordSpec with MkInjector {
     }
 
     val injector = Injector.Standard(new BootstrapModuleDef {
-      many[AutoCloseable]
       many[PlanningHook]
-        .add(new AssignableFromAutoSetHook[Int, Int](identity))
+        .add(new AutoSetHook[Int, Int](identity))
     })
 
     val autoset = injector.produceUnsafe(PlannerInput.noGc(definition)).get[Set[Int]]

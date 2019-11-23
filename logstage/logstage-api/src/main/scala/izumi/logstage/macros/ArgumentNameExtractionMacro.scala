@@ -18,7 +18,7 @@ object ArgumentNameExtractionMacro {
        |   logger.info(s"My message: $${call.method} $${access.value}")
        |3) Named expression:
        |   logger.info(s"My message: $${Some.expression -> "argname"}")
-       |4) Invisible name expression:
+       |4) Invisible named expression:
        |   logger.info(s"My message: $${Some.expression -> "argname" -> null}")
        |5) De-camelcased name:
        |   logger.info($${camelCaseName-> ' '})

@@ -2,11 +2,12 @@ package izumi.distage.roles.internal
 
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.roles.RoleAppLauncher
+import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema._
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
 class Help[F[_] : DIEffect]
@@ -15,8 +16,7 @@ class Help[F[_] : DIEffect]
   activation: AppActivation,
 ) extends RoleTask[F] {
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): F[Unit] = {
-    Quirks.discard(roleParameters, freeArgs)
+  override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     DIEffect[F].maybeSuspend(showHelp())
   }
 
@@ -53,7 +53,7 @@ class Help[F[_] : DIEffect]
          |$activations""".stripMargin
 
     val help = ParserSchemaFormatter.makeDocs(
-      ParserSchema(GlobalArgsSchema(RoleAppLauncher.Options, Some(baseDoc), Some(notes)), descriptors)
+      ParserSchema(GlobalArgsSchema(Options, Some(baseDoc), Some(notes)), descriptors)
     )
 
     println(help)
