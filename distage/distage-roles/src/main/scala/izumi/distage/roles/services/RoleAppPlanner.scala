@@ -59,13 +59,17 @@ object RoleAppPlanner {
       check.verify(appPlan.side.plan)
       check.verify(appPlan.primary.plan)
 
+      println(appPlan.shared.plan.render())
+      println("///")
+      println(appPlan.side.plan.render())
+      println("///")
+      println(appPlan.primary.plan.render())
+
       AppStartupPlans(
         runtimePlan,
         appPlan,
         injector
       )
-
-      plans
     }
   }
 

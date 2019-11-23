@@ -31,14 +31,16 @@ object IntegrationChecker {
     def check(integrationComponents: Set[DIKey], integrationLocator: Locator): Option[Seq[ResourceCheck.Failure]] = {
       val integrations = integrationComponents.map {
         ick =>
-          integrationLocator.lookup[IntegrationCheck](ick) match {
+          integrationLocator.lookupInstance[Any](ick) match {
             case Some(ic) =>
-              ic.value
+              ic
             case None =>
-              throw new DiAppBootstrapException(s"Inconsistent locator state: integration component $ick is missing from plan")
+              println(integrationLocator.index)
+              println(integrationLocator.parent.get.index)
+              throw new DiAppBootstrapException(s"Inconsistent locator state: integration component $ick is missing from locator")
           }
       }
-      failingIntegrations(integrations)
+      failingIntegrations(integrations.asInstanceOf[Set[IntegrationCheck]])
     }
 
     private def failingIntegrations(integrations: Set[IntegrationCheck]): Option[Seq[ResourceCheck.Failure]] = {

@@ -25,7 +25,7 @@ class ResourcesPluginBase extends ModuleDef {
   make[Resource5]
   make[Resource6]
 
-  many[Resource]
+  many[Resource0]
     .ref[Resource2]
     .ref[Resource3]
     .ref[Resource4]
@@ -37,7 +37,7 @@ class ResourcesPlugin extends ResourcesPluginBase with PluginDef {
   make[InitCounter]
 
   make[Resource1]
-  many[Resource]
+  many[Resource0]
     .ref[Resource1]
 }
 

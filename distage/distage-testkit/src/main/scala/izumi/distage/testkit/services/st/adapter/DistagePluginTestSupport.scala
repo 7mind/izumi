@@ -107,7 +107,7 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   }
 
   protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource = {
-    new PluginSource.Impl(bootstrapConfig)
+    PluginSource(bootstrapConfig)
   }
 
 }

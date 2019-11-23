@@ -2,6 +2,7 @@ package izumi.distage
 
 import izumi.distage.model._
 import izumi.distage.model.definition.DIResource.DIResourceBase
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.{AbstractPlan, DodgyPlan, OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
@@ -15,6 +16,15 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
 
   override def freeze(plan: DodgyPlan): SemiPlan = {
     planner.freeze(plan)
+  }
+
+
+  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+    planner.planNoRewrite(input)
+  }
+
+  override def rewrite(module: ModuleBase): ModuleBase = {
+    planner.rewrite(module)
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {

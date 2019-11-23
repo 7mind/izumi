@@ -77,6 +77,10 @@ trait Planner {
   def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
 
   // plan lifecycle
+  def planNoRewrite(input: PlannerInput): OrderedPlan
+
+  def rewrite(module: ModuleBase): ModuleBase
+
   def prepare(input: PlannerInput): DodgyPlan
 
   def freeze(plan: DodgyPlan): SemiPlan
@@ -85,14 +89,20 @@ trait Planner {
 
   final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = plan(PlannerInput(input, gcMode))
 
-  final def triSplitExistingPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], disabled: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
+  final def triSplitExistingPlan(_appModule: ModuleBase, primaryRoots: Set[DIKey], disabled: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     assert(primaryRoots.diff(primaryPlan.keys).isEmpty)
+
+    val appModule = rewrite(_appModule)
+    val ephemerals = _appModule.bindings.map(_.key).diff(appModule.bindings.map(_.key))
+    println(ephemerals)
+
+
     // here we extract integration checks out of our shared components plan and build it
     val subplanRoots = extractSubRoots(primaryPlan)
     val extractedSubplan = toSubplan(appModule, subplanRoots)
     val extractedPrimaryPlan = toSubplan(appModule, primaryRoots)
 
-    val sharedKeys = extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
+    val sharedKeys = ephemerals ++ extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
 
     val sharedPlan = toSubplan(appModule, sharedKeys)
     val sharedModule = appModule.filter(sharedPlan.index.keySet)
@@ -102,7 +112,8 @@ trait Planner {
     val subplan = toSubplan(noSharedComponentsModule, subplanRoots)
     val primplan = toSubplan(noSharedComponentsModule, primaryRoots)
 
-    //assert(primplan.index.keySet.intersect(subplan.index.keySet).forall(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency]))
+//    val conflicts = primplan.index.keySet.intersect(subplan.index.keySet).filterNot(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency])
+//    assert(conflicts.isEmpty, s"conflicts: ${conflicts}")
 
     TriSplittedPlan(
       Subplan(subplan, subplanRoots, noSharedComponentsModule.drop(primplan.index.keySet)),
@@ -115,7 +126,7 @@ trait Planner {
   private def toSubplan(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey]) = {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
-      plan(PlannerInput(appModule, extractedRoots))
+      planNoRewrite(PlannerInput(appModule, extractedRoots))
     } else {
       OrderedPlan.empty
     }
@@ -125,36 +136,5 @@ trait Planner {
 
     triSplitExistingPlan(appModule, primaryRoots, Set.empty, primaryPlan)(extractSubRoots)
   }
-
-//  final def splitExistingPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], disabled: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
-//    assert(primaryRoots.diff(primaryPlan.keys).isEmpty)
-//    // here we extract integration checks out of our shared components plan and build it
-//    val extractedRoots = extractSubRoots(primaryPlan)
-//
-//    val extractedSubplan = toSubplan(appModule, extractedRoots)
-//
-//    val reduced = appModule.drop(extractedSubplan.keys)
-//
-//    // and here we build our final plan for shared components, with integration components excluded
-//    val primaryPlanWithoutExtractedPart = if (extractedRoots.nonEmpty || disabled.nonEmpty) {
-//      val partsLeft = primaryRoots -- extractedRoots -- disabled
-//      if (partsLeft.isEmpty) {
-//        OrderedPlan.empty
-//      } else {
-//        plan(PlannerInput(reduced, partsLeft))
-//      }
-//    } else {
-//      primaryPlan
-//    }
-//
-//    SplittedPlan(extractedSubplan, extractedRoots, primaryPlanWithoutExtractedPart, reduced)
-//  }
-//
-//  final def splitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): SplittedPlan = {
-//    val primaryPlan = toSubplan(appModule, primaryRoots)
-//
-//    splitExistingPlan(appModule, primaryRoots, Set.empty, primaryPlan)(extractSubRoots)
-//  }
-
 
 }

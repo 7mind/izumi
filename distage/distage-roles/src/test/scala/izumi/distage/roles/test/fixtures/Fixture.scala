@@ -22,9 +22,9 @@ object Fixture {
     val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()
   }
 
-  trait Resource
+  trait Resource0
 
-  class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
+  class Resource1(val closeable: Resource2, counter: InitCounter) extends Resource0 with AutoCloseable with IntegrationCheck {
     counter.startedCloseables += this
 
     override def close(): Unit = counter.closedCloseables += this
@@ -35,7 +35,7 @@ object Fixture {
     }
   }
 
-  class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource with AutoCloseable with IntegrationCheck {
+  class Resource2(val roleComponent: Resource3, counter: InitCounter) extends Resource0 with AutoCloseable with IntegrationCheck {
     counter.startedCloseables += this
 
     override def close(): Unit = counter.closedCloseables += this
@@ -46,16 +46,16 @@ object Fixture {
     }
   }
 
-  case class Resource3(roleComponent: Resource4, counter: InitCounter) extends Resource
+  case class Resource3(roleComponent: Resource4, counter: InitCounter) extends Resource0
 
-  case class Resource4(closeable: Resource5, counter: InitCounter) extends Resource
+  case class Resource4(closeable: Resource5, counter: InitCounter) extends Resource0
 
-  case class Resource5(roleComponent: Resource6, counter: InitCounter) extends Resource with AutoCloseable {
+  case class Resource5(roleComponent: Resource6, counter: InitCounter) extends Resource0 with AutoCloseable {
     counter.startedCloseables += this
 
     override def close(): Unit = counter.closedCloseables += this
   }
 
-  case class Resource6(counter: InitCounter) extends Resource
+  case class Resource6(counter: InitCounter) extends Resource0
 
 }

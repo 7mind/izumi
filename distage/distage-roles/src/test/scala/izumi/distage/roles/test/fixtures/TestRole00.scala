@@ -36,7 +36,7 @@ class TestRole00[F[_]: DIEffect]
   val resource: TestRole00Resource[F],
   logger: IzLogger,
   notCloseable: NotCloseable,
-  val resources: Set[Resource],
+  val resources: Set[Resource0],
   val conflict: Conflict,
   val es: ExecutorService,
 ) extends RoleService[F] {

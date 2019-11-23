@@ -10,6 +10,7 @@ import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
 import distage.DIKey
+import izumi.distage.model.definition.ModuleBase
 
 final class PlannerDefaultImpl
 (
@@ -26,10 +27,22 @@ final class PlannerDefaultImpl
   extends Planner {
 
   override def plan(input: PlannerInput): OrderedPlan = {
-    Value(prepare(input))
+    Value(input)
+      .map(p => p.copy(bindings = rewrite(p.bindings)))
+      .map(planNoRewrite)
+      .get
+  }
+
+  override def planNoRewrite(input: PlannerInput): OrderedPlan = {
+    Value(input)
+      .map(prepare)
       .map(freeze)
       .map(finish)
       .get
+  }
+
+  override def rewrite(module: ModuleBase): ModuleBase= {
+    hook.hookDefinition(module)
   }
 
   override def freeze(plan: DodgyPlan): SemiPlan = {
@@ -46,17 +59,14 @@ final class PlannerDefaultImpl
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {
-    hook
-      .hookDefinition(input.bindings)
-      .bindings
-      .foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
-        case (currentPlan, binding) =>
-          Value(bindingTranslator.computeProvisioning(currentPlan, binding))
-            .eff(sanityChecker.assertProvisionsSane)
-            .map(next => currentPlan.append(binding, next))
-            .eff(planningObserver.onSuccessfulStep)
-            .get
-      }
+      input.bindings.bindings.foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
+      case (currentPlan, binding) =>
+        Value(bindingTranslator.computeProvisioning(currentPlan, binding))
+          .eff(sanityChecker.assertProvisionsSane)
+          .map(next => currentPlan.append(binding, next))
+          .eff(planningObserver.onSuccessfulStep)
+          .get
+    }
   }
 
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
