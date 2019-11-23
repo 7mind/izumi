@@ -11,7 +11,6 @@ import izumi.fundamentals.platform.functional.Identity
 /** Executes instructions in [[OrderedPlan]] to produce a [[Locator]] */
 trait Producer {
   protected[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator]
-
   protected[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 
   final def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {

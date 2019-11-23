@@ -24,18 +24,15 @@ object RoleAppExecutor {
                           injector: Injector,
                           lateLogger: IzLogger,
                           parameters: RawAppArgs,
+                          startupPlanExecutor: StartupPlanExecutor,
                         ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {
       try {
-        makeStartupExecutor().execute(appPlan, Filters.all[F])(doRun)
+        startupPlanExecutor.execute(appPlan, Filters.all[F])(doRun)
       } finally {
         hook.release()
       }
-    }
-
-    protected def makeStartupExecutor(): StartupPlanExecutor = {
-      StartupPlanExecutor.default(lateLogger, injector)
     }
 
     protected def doRun(locator: Locator, effect: DIEffect[F]): F[Unit] = {

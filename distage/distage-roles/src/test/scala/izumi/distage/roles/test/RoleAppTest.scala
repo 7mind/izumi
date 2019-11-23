@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import distage.plugins.{PluginBase, PluginDef}
-import distage.{DIKey, Locator, SafeType}
+import distage.{DIKey, Injector, Locator, SafeType}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, BootstrapModuleDef, ModuleDef}
 import izumi.distage.model.plan.ExecutableOp
@@ -14,7 +14,7 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
-import izumi.distage.roles.services.{PluginSource, ResourceRewriter, RoleAppPlanner}
+import izumi.distage.roles.services.{IntegrationChecker, PluginSource, ResourceRewriter, RoleAppPlanner}
 import izumi.distage.roles.test.fixtures.Fixture.{InitCounter, Resource, Resource1, Resource2}
 import izumi.distage.roles.test.fixtures._
 import izumi.fundamentals.platform.functional.Identity
@@ -117,6 +117,8 @@ class RoleAppTest extends WordSpec
       )
 
       val definition = new ResourcesPluginBase() ++ new ModuleDef {
+        //        make[Resource1].named("res")
+        //        make[Resource].fromResource(ResourceRewriter.fromAutoCloseable(IzLogger(), _: Resource1 @Id("res")))
         make[Resource].from[Resource1]
         many[Resource].ref[Resource]
         make[InitCounter]
@@ -135,6 +137,62 @@ class RoleAppTest extends WordSpec
       }
 
       assert(res1CreatorIntegration.flatMap(a => res1CreatorApp.map(a -> _)).isEmpty)
+    }
+
+    "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
+      val logger = IzLogger()
+      val initCounter = new InitCounter
+      val definition = new ResourcesPluginBase {
+        make[Resource].from[Resource1]
+        many[Resource].ref[Resource]
+        make[InitCounter].fromValue(initCounter)
+      }
+      val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
+        ContextOptions(),
+        BootstrapModule.empty,
+        AppActivation.empty,
+        logger,
+      )
+      val integrationChecker = new IntegrationChecker.Impl(logger)
+
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource]]), definition)
+      Injector().produce(plans.integration).use {
+        locator =>
+          integrationChecker.checkOrFail(plans.integrationKeys, locator)
+
+          assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
+          assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+      }
+    }
+
+    "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
+      val logger = IzLogger()
+      val initCounter = new InitCounter
+      val definition = new ResourcesPluginBase {
+        make[Resource1]
+        make[Resource].using[Resource1]
+        make[Resource with AutoCloseable].using[Resource1]
+        many[Resource]
+          .ref[Resource]
+          .ref[Resource with AutoCloseable]
+        make[InitCounter].fromValue(initCounter)
+      }
+      val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
+        ContextOptions(),
+        BootstrapModule.empty,
+        AppActivation.empty,
+        logger,
+      )
+      val integrationChecker = new IntegrationChecker.Impl(logger)
+
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource]]), definition)
+      Injector().produce(plans.integration).use {
+        locator =>
+          integrationChecker.checkOrFail(plans.integrationKeys, locator)
+
+          assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
+          assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+      }
     }
 
     "produce config dumps and support minimization" in {

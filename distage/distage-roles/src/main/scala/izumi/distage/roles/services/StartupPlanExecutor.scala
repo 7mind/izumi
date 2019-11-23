@@ -9,7 +9,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
 
 trait StartupPlanExecutor {
-  def execute[F[_] : TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit
+  def execute[F[_]: TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit
 }
 
 object StartupPlanExecutor {
@@ -30,7 +30,7 @@ object StartupPlanExecutor {
               injector: Injector,
               integrationChecker: IntegrationChecker,
             ) extends StartupPlanExecutor {
-    final def execute[F[_] : TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
+    def execute[F[_]: TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
       injector.produceFX[Identity](appPlan.runtime, filters.filterId)
         .use {
           runtimeLocator =>

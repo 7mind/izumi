@@ -93,7 +93,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val appPlan = planner.makePlan(roots, appModule)
     lateLogger.info(s"Planning finished. ${appPlan.app.keys.size -> "main ops"}, ${appPlan.integration.keys.size -> "integration ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
-    val r = makeExecutor(parameters, roles, lateLogger, appPlan.injector)
+    val injector = appPlan.injector
+    val r = makeExecutor(parameters, roles, lateLogger, injector, makeStartupExecutor(lateLogger, injector))
     r.runPlan(appPlan)
   }
 
@@ -128,8 +129,12 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     new RoleAppPlanner.Impl[F](options, bsModule, activation, lateLogger)
   }
 
-  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector): RoleAppExecutor[F] = {
-    new RoleAppExecutor.Impl[F](shutdownStrategy, roles, injector, lateLogger, parameters)
+  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector, startupPlanExecutor: StartupPlanExecutor): RoleAppExecutor[F] = {
+    new RoleAppExecutor.Impl[F](shutdownStrategy, roles, injector, lateLogger, parameters, startupPlanExecutor)
+  }
+
+  protected def makeStartupExecutor(lateLogger: IzLogger, injector: Injector): StartupPlanExecutor = {
+    StartupPlanExecutor.default(lateLogger, injector)
   }
 
   protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
