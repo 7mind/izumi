@@ -18,7 +18,6 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.freeze(plan)
   }
 
-
   override def planNoRewrite(input: PlannerInput): OrderedPlan = {
     planner.planNoRewrite(input)
   }

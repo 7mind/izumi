@@ -94,8 +94,6 @@ trait Planner {
 
     val appModule = rewrite(_appModule)
     val ephemerals = _appModule.bindings.map(_.key).diff(appModule.bindings.map(_.key))
-    println(ephemerals)
-
 
     // here we extract integration checks out of our shared components plan and build it
     val subplanRoots = extractSubRoots(primaryPlan)

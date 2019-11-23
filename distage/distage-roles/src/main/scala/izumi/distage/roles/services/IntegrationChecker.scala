@@ -35,8 +35,6 @@ object IntegrationChecker {
             case Some(ic) =>
               ic
             case None =>
-              println(integrationLocator.index)
-              println(integrationLocator.parent.get.index)
               throw new DiAppBootstrapException(s"Inconsistent locator state: integration component $ick is missing from locator")
           }
       }
