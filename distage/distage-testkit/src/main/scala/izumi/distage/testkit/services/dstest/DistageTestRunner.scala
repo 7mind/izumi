@@ -145,9 +145,8 @@ class DistageTestRunner[F[_] : TagK]
                 case (test, testplan) =>
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
-                  val newtestplan = testInjector.triSplitExistingPlan(shared.primary.module.drop(allSharedKeys), testplan.keys -- allSharedKeys, allSharedKeys, testplan) {
-                    _.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-                  }
+                  val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
+                  val newtestplan = testInjector.triPlan(shared.primary.module.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
                   checker.verify(newtestplan.primary.plan)
                   checker.verify(newtestplan.side.plan)

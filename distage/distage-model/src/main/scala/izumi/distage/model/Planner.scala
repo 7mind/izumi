@@ -15,16 +15,20 @@ sealed trait GCMode {
       GCMode.GCRoots(aRoots ++ bRoots)
   }
 }
+
 object GCMode {
   def apply(key: DIKey, more: DIKey*): GCMode = GCRoots(more.toSet + key)
 
   final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")
+
     override def toSet: Set[DIKey] = roots
   }
+
   case object NoGC extends GCMode {
     override def toSet: Set[DIKey] = Set.empty
   }
+
 }
 
 /**
@@ -64,10 +68,10 @@ object PlannerInput {
 case class Subplan(plan: OrderedPlan, roots: Set[DIKey], module: ModuleBase)
 
 case class TriSplittedPlan(
-                          side: Subplan,
-                          primary: Subplan,
-                          shared: Subplan,
-                       )
+                            side: Subplan,
+                            primary: Subplan,
+                            shared: Subplan,
+                          )
 
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
@@ -89,29 +93,36 @@ trait Planner {
 
   final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = plan(PlannerInput(input, gcMode))
 
-  final def triSplitExistingPlan(_appModule: ModuleBase, primaryRoots: Set[DIKey], disabled: Set[DIKey], primaryPlan: OrderedPlan)(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
+  final def triSplitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
+    val rewritten = rewrite(appModule)
+    val primaryPlan = toSubplanNoRewrite(appModule, primaryRoots)
     assert(primaryRoots.diff(primaryPlan.keys).isEmpty)
-
-    val appModule = rewrite(_appModule)
-    val ephemerals = _appModule.bindings.map(_.key).diff(appModule.bindings.map(_.key))
 
     // here we extract integration checks out of our shared components plan and build it
     val subplanRoots = extractSubRoots(primaryPlan)
-    val extractedSubplan = toSubplan(appModule, subplanRoots)
-    val extractedPrimaryPlan = toSubplan(appModule, primaryRoots)
+    triPlan(rewritten, primaryRoots, subplanRoots)
+  }
 
-    val sharedKeys = ephemerals ++ extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
+  final def triPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
+    val extractedSubplan = toSubplanNoRewrite(appModule, subplanRoots)
+    val extractedPrimaryPlan = toSubplanNoRewrite(appModule, primaryRoots)
 
-    val sharedPlan = toSubplan(appModule, sharedKeys)
+    //val appModule = rewrite(_appModule)
+    //    val ephemerals = _appModule.bindings.map(_.key).diff(appModule.bindings.map(_.key))
+    //    println(ephemerals)
+
+    val sharedKeys = /*ephemerals ++*/ extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
+
+    val sharedPlan = toSubplanNoRewrite(appModule, sharedKeys)
     val sharedModule = appModule.filter(sharedPlan.index.keySet)
 
     val noSharedComponentsModule = appModule.drop(sharedKeys)
 
-    val subplan = toSubplan(noSharedComponentsModule, subplanRoots)
-    val primplan = toSubplan(noSharedComponentsModule, primaryRoots)
+    val subplan = toSubplanNoRewrite(noSharedComponentsModule, subplanRoots)
+    val primplan = toSubplanNoRewrite(noSharedComponentsModule, primaryRoots)
 
-//    val conflicts = primplan.index.keySet.intersect(subplan.index.keySet).filterNot(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency])
-//    assert(conflicts.isEmpty, s"conflicts: ${conflicts}")
+    //    val conflicts = primplan.index.keySet.intersect(subplan.index.keySet).filterNot(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency])
+    //    assert(conflicts.isEmpty, s"conflicts: ${conflicts}")
 
     TriSplittedPlan(
       Subplan(subplan, subplanRoots, noSharedComponentsModule.drop(primplan.index.keySet)),
@@ -120,19 +131,16 @@ trait Planner {
     )
   }
 
+  private def toSubplanNoRewrite(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
+    toSubplan(appModule, extractedRoots, planNoRewrite)
+  }
 
-  private def toSubplan(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey]) = {
+  private def toSubplan(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan= {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
-      planNoRewrite(PlannerInput(appModule, extractedRoots))
+      plan(PlannerInput(appModule, extractedRoots))
     } else {
       OrderedPlan.empty
     }
   }
-  final def triSplitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
-    val primaryPlan = toSubplan(appModule, primaryRoots)
-
-    triSplitExistingPlan(appModule, primaryRoots, Set.empty, primaryPlan)(extractSubRoots)
-  }
-
 }
