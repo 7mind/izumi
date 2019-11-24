@@ -65,6 +65,11 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
       _: ApplePaymentProvider[F] =>
         ???
     }
+
+    "test 5 (should be ingored)" skip {
+      _: MockCachedUserService[F] =>
+       ???
+    }
   }
 
 }

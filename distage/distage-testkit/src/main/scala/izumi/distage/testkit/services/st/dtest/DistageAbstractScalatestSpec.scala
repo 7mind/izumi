@@ -3,6 +3,7 @@ package izumi.distage.testkit.services.st.dtest
 import distage.{BootstrapModule, DIKey, Module, Tag, TagK, TagKK}
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, StandardAxis}
+import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._
@@ -126,6 +127,26 @@ object DistageAbstractScalatestSpec {
     def in[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       takeFunAny(function, pos.get)
     }
+
+    def skip(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
+      Quirks.discard(function)
+      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+    }
+
+    final def skip[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
+      Quirks.discard(function)
+      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+    }
+
+    def skip(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      Quirks.discard(function)
+      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+    }
+
+    def skip[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
+      Quirks.discard(function)
+      takeFunAny((_: T) => (), pos.get)
+    }
   }
 
   class DSWordSpecStringWrapper2[F[+ _, + _]](
@@ -137,6 +158,7 @@ object DistageAbstractScalatestSpec {
                                                env: TestEnvironment,
                                              )(
                                                implicit override val tagBIO: TagKK[F],
+                                               val tagK: TagK[F[Throwable, *]],
                                              ) extends DISyntaxBIOBase[F] {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
@@ -156,6 +178,16 @@ object DistageAbstractScalatestSpec {
 
     final def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       take2(function, pos.get)
+    }
+
+    def skip(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
+      Quirks.discard(function)
+      takeAs1((eff: DIEffect[F[Throwable, *]]) => eff.unit, pos.get)
+    }
+
+    final def skip[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      Quirks.discard(function)
+      takeAs1((eff: DIEffect[F[Throwable, *]]) => eff.unit, pos.get)
     }
   }
 
