@@ -1,5 +1,7 @@
 
 
+enablePlugins(SbtgenVerificationPlugin)
+
 disablePlugins(AssemblyPlugin)
 
 lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals-collections"))
