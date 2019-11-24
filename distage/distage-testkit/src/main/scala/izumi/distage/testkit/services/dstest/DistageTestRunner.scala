@@ -229,11 +229,13 @@ object DistageTestRunner {
 
     case object Running extends TestStatus
 
-    final case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends TestStatus
+    sealed trait FinalStatus extends TestStatus
 
-    final case class Succeed(duration: FiniteDuration) extends TestStatus
+    final case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends FinalStatus
 
-    final case class Failed(t: Throwable, duration: FiniteDuration) extends TestStatus
+    final case class Succeed(duration: FiniteDuration) extends FinalStatus
+
+    final case class Failed(t: Throwable, duration: FiniteDuration) extends FinalStatus
 
   }
 

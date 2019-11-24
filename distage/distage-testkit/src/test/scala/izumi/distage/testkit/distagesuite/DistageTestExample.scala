@@ -33,10 +33,6 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 }
 
-final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
-final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
-final class DistageTestExampleId extends DistageTestExampleBase[Identity]
-
 abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   "distage test custom runner" should {
@@ -79,3 +75,50 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
 }
 
+//final class DistageTestExampleId extends DistageTestExampleBase[Identity]
+//final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
+final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
+
+
+abstract class DistageTestExampleBase1[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+
+  "distage test custom runner" should {
+    "xtest 1" in {
+      service: MockUserRepository[F] =>
+        for {
+          _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(println("xtest2"))
+        } yield ()
+    }
+
+    "xtest 2" in {
+      service: MockCachedUserService[F] =>
+        for {
+          _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(println("xtest1"))
+        } yield ()
+    }
+
+    "xtest 3" in {
+      service: MockCachedUserService[F] =>
+        F.maybeSuspend(assert(service != null))
+    }
+
+    "xtest 4 (should be ignored)" in {
+      _: ApplePaymentProvider[F] =>
+        ???
+    }
+
+    "xtest 5 (should be ingored)" skip {
+      _: MockCachedUserService[F] =>
+        ???
+    }
+
+    "xtest 6 (should be ingored)" in {
+      _: MockCachedUserService[F] =>
+        assume(false)
+    }
+  }
+
+}
+final class DistageTestExampleZIO1 extends DistageTestExampleBase[Task]
