@@ -70,6 +70,11 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
       _: MockCachedUserService[F] =>
        ???
     }
+
+    "test 6 (should be ingored)" in {
+      _: MockCachedUserService[F] =>
+        assume(false)
+    }
   }
 
 }

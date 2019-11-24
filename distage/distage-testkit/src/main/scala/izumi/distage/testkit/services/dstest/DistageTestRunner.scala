@@ -24,6 +24,7 @@ class DistageTestRunner[F[_] : TagK]
   integrationChecker: IntegrationChecker[F],
   runnerEnvironment: SpecEnvironment[F],
   tests: Seq[DistageTest[F]],
+  isTestSkipException: Throwable => Boolean,
 ) {
 
   import DistageTestRunner._
@@ -171,13 +172,19 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
+
   private def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
     Injector.inherit(parent)
       .produceF[F](newtestplan.primary.plan).use {
       testLocator =>
         def doRun(before: Long): F[Unit] = {
           for {
-            _ <- testLocator.run(test.test)
+            _ <- F.definitelyRecover(testLocator.run(test.test).flatMap(_ => F.unit)) {
+              case s if isTestSkipException(s) =>
+                F.unit
+              case o =>
+                F.fail(o)
+            }
             _ <- F.maybeSuspend {
               val after = System.nanoTime()
               reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS)))

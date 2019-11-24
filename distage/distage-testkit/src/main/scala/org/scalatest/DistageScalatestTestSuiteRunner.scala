@@ -10,6 +10,7 @@ import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
+import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
 
@@ -146,7 +147,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = {
       val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
       val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](dreporter, checker, specEnv, toRun)
+      new DistageTestRunner[F](dreporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException])
     }
 
     runner.run()
