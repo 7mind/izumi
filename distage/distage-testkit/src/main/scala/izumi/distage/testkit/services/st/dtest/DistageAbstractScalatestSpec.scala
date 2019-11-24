@@ -17,7 +17,7 @@ import scala.language.implicitConversions
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
-    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos)))
+    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function))))
   }
 }
 

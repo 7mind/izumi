@@ -217,7 +217,7 @@ object DistageTestRunner {
 
   final case class DistageTest[F[_]](test: ProviderMagnet[F[_]], environment: TestEnvironment, meta: TestMeta)
 
-  final case class TestMeta(id: TestId, pos: CodePosition)
+  final case class TestMeta(id: TestId, pos: CodePosition, uid: Long)
 
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
