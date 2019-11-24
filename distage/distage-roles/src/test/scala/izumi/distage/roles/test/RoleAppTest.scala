@@ -8,6 +8,7 @@ import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, ModuleDef}
+import izumi.distage.monadic.modules.IdentityDIEffectModule
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
@@ -55,9 +56,9 @@ class RoleAppTest extends WordSpec
         ":" + TestRole00.id,
       ))
 
-      println(initCounter.startedCloseables)
-      println(initCounter.closedCloseables)
-      println(initCounter.checkedResources)
+//      println(initCounter.startedCloseables)
+//      println(initCounter.closedCloseables)
+//      println(initCounter.checkedResources)
 
       assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
       assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
@@ -95,9 +96,9 @@ class RoleAppTest extends WordSpec
 
 
 
-      println(initCounter.startedCloseables)
-      println(initCounter.closedCloseables)
-      println(initCounter.checkedResources)
+//      println(initCounter.startedCloseables)
+//      println(initCounter.closedCloseables)
+//      println(initCounter.checkedResources)
 
       assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
       assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
@@ -106,28 +107,30 @@ class RoleAppTest extends WordSpec
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
       val logger = IzLogger()
       val initCounter = new InitCounter
-      val definition = new ResourcesPluginBase {
+      val definition = (new ResourcesPluginBase {
         make[Resource0].from[Resource1]
         many[Resource0].ref[Resource0]
         make[InitCounter].fromValue(initCounter)
-      }
+      } ++ IdentityDIEffectModule)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
         BootstrapModule.empty,
         AppActivation.empty,
         logger,
       )
-      val integrationChecker = new IntegrationChecker.Impl(logger)
+      val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
       val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
-      Injector().produce(plans.app.shared.plan).use {
-        Injector.inherit(_).produce(plans.app.side.plan).use {
-          locator =>
-            integrationChecker.checkOrFail(plans.app.side.roots, locator)
+      Injector().produce(plans.runtime).use {
+        Injector.inherit(_).produce(plans.app.shared.plan).use {
+          Injector.inherit(_).produce(plans.app.side.plan).use {
+            locator =>
+              integrationChecker.checkOrFail(plans.app.side.roots, locator)
 
-            assert(initCounter.startedCloseables.size == 3)
-            assert(initCounter.checkedResources.size == 2)
-            assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+              assert(initCounter.startedCloseables.size == 3)
+              assert(initCounter.checkedResources.size == 2)
+              assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+          }
         }
       }
     }
@@ -143,24 +146,26 @@ class RoleAppTest extends WordSpec
           .ref[Resource0]
           .ref[Resource0 with AutoCloseable]
         make[InitCounter].fromValue(initCounter)
-      }
+      } ++ IdentityDIEffectModule
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
         BootstrapModule.empty,
         AppActivation.empty,
         logger,
       )
-      val integrationChecker = new IntegrationChecker.Impl(logger)
+      val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
       val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
-      Injector().produce(plans.app.shared.plan).use {
-        Injector.inherit(_).produce(plans.app.side.plan).use {
-          locator =>
-            integrationChecker.checkOrFail(plans.app.side.roots, locator)
+      Injector().produce(plans.runtime).use {
+        Injector.inherit(_).produce(plans.app.shared.plan).use {
+          Injector.inherit(_).produce(plans.app.side.plan).use {
+            locator =>
+              integrationChecker.checkOrFail(plans.app.side.roots, locator)
 
-            assert(initCounter.startedCloseables.size == 3)
-            assert(initCounter.checkedResources.size == 2)
-            assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+              assert(initCounter.startedCloseables.size == 3)
+              assert(initCounter.checkedResources.size == 2)
+              assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+          }
         }
       }
     }

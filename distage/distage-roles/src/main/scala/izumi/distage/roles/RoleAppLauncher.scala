@@ -129,11 +129,11 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     new RoleAppPlanner.Impl[F](options, bsModule, activation, lateLogger)
   }
 
-  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector, startupPlanExecutor: StartupPlanExecutor): RoleAppExecutor[F] = {
+  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector, startupPlanExecutor: StartupPlanExecutor[F]): RoleAppExecutor[F] = {
     new RoleAppExecutor.Impl[F](shutdownStrategy, roles, injector, lateLogger, parameters, startupPlanExecutor)
   }
 
-  protected def makeStartupExecutor(lateLogger: IzLogger, injector: Injector): StartupPlanExecutor = {
+  protected def makeStartupExecutor(lateLogger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
     StartupPlanExecutor.default(lateLogger, injector)
   }
 

@@ -11,6 +11,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 trait DIEffectAsync[F[_]] {
   def parTraverse_[A](l: Iterable[A])(f: A => F[Unit]): F[Unit]
+  def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]]
   def sleep(duration: FiniteDuration): F[Unit]
 }
 
@@ -20,12 +21,17 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
-        implicit val ec = ExecutionContext.global
-        val future = Future.sequence(l.map(a => Future(f(a))))
-        Await.result(future, Duration.Inf)
+
+        parTraverse(l)(f)
       }
       override def sleep(duration: FiniteDuration): Identity[Unit] = {
         Thread.sleep(duration.toMillis)
+      }
+
+      override def parTraverse[A, B](l: Iterable[A])(f: A => Identity[B]): Identity[List[B]] = {
+        implicit val ec = ExecutionContext.global
+        val future = Future.sequence(l.map(a => Future(f(a))))
+        Await.result(future, Duration.Inf).toList
       }
     }
   }
@@ -33,10 +39,13 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit def fromBIOAsync[F[+_, +_]: BIOAsync]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
-        F.parTraverse_(l)(f).void
+        F.parTraverse_(l)(f)
       }
       override def sleep(duration: FiniteDuration): F[Throwable, Unit] = {
         F.sleep(duration)
+      }
+      override def parTraverse[A, B](l: Iterable[A])(f: A => F[Throwable, B]): F[Throwable, List[B]] = {
+        F.parTraverse(l)(f)
       }
     }
   }
@@ -57,6 +66,9 @@ private[monadic] sealed trait LowPriorityDIEffectAsyncInstances {
       }
       override def sleep(duration: FiniteDuration): F[Unit] = {
         T.asInstanceOf[Timer[F]].sleep(duration)
+      }
+      override def parTraverse[A, B](l: Iterable[A])(f: A => F[B]): F[List[B]] = {
+        Parallel.parTraverse(l.toList)(f)(cats.instances.list.catsStdInstancesForList, P.asInstanceOf[Parallel[F]])
       }
     }
   }

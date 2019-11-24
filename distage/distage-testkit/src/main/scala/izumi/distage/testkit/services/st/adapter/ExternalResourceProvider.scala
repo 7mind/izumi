@@ -4,7 +4,7 @@ import distage.{DIKey, Locator, SafeType, TagK}
 import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.{DIResource, LocatorDef}
-import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.testkit.services.SyncCache
@@ -121,6 +121,7 @@ object ExternalResourceProvider {
           new LocatorDef {
             addImplicit[DIEffectRunner[Identity]]
             addImplicit[DIEffect[Identity]]
+            addImplicit[DIEffectAsync[Identity]]
           }
         }
       )

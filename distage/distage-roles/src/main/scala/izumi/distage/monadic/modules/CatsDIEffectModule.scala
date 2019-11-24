@@ -9,10 +9,11 @@ import izumi.distage.monadic.modules.CatsDIEffectModule.PublicIOApp
 trait CatsDIEffectModule extends ModuleDef {
   addImplicit[DIEffectRunner[IO]]
   addImplicit[DIEffect[IO]]
+
   make[DIEffectAsync[IO]].from {
     (P0: Parallel[IO], T0: Timer[IO]) =>
-      implicit val P = P0
-      implicit val T = T0
+      implicit val P: Parallel[IO] = P0
+      implicit val T: Timer[IO] = T0
       DIEffectAsync[IO]
   }
 

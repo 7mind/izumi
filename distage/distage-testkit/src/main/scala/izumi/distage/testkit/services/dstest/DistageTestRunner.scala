@@ -21,7 +21,7 @@ import scala.concurrent.duration.FiniteDuration
 class DistageTestRunner[F[_] : TagK]
 (
   reporter: TestReporter,
-  integrationChecker: IntegrationChecker,
+  integrationChecker: IntegrationChecker[F],
   runnerEnvironment: SpecEnvironment[F],
   tests: Seq[DistageTest[F]],
 ) {
@@ -111,17 +111,17 @@ class DistageTestRunner[F[_] : TagK]
   }
 
   private def ifIntegChecksOk(F: DIEffect[F], integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit]): F[Unit] = {
-    val failures = integrationChecker.collectFailures(plans.side.roots, integLocator)
-
-    failures match {
-      case Some(value) =>
+    implicit val FF: DIEffect[F] = F
+    integrationChecker.collectFailures(plans.side.roots, integLocator).flatMap {
+      case Left(value) =>
         F.traverse_(testplans) {
           test =>
             F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
         }
 
-      case None =>
+      case Right(_) =>
         onSuccess
+
     }
   }
 

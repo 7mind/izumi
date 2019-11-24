@@ -24,7 +24,7 @@ object RoleAppExecutor {
                           injector: Injector,
                           lateLogger: IzLogger,
                           parameters: RawAppArgs,
-                          startupPlanExecutor: StartupPlanExecutor,
+                          startupPlanExecutor: StartupPlanExecutor[F],
                         ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {

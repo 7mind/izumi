@@ -84,7 +84,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     verifyTotalSuppression()
     try {
       makeExecutor(plan.injector, logger)
-        .execute[F](plan, filters) {
+        .execute(plan, filters) {
           (locator, effect) =>
             implicit val F: DIEffect[F] = effect
 
@@ -164,7 +164,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     new RoleAppPlanner.Impl[F](options, bsModule, activation, logger)
   }
 
-  protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor = {
+  protected def makeExecutor(injector: Injector, logger: IzLogger): StartupPlanExecutor[F] = {
     StartupPlanExecutor.default(logger, injector)
   }
 

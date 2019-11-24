@@ -3,7 +3,7 @@ package izumi.distage.roles.services
 import distage.{BootstrapModule, DIKey, Injector, TagK, _}
 import izumi.distage.model.TriSplittedPlan
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
-import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
@@ -46,7 +46,9 @@ object RoleAppPlanner {
       val runtimeGcRoots: Set[DIKey] = Set(
         DIKey.get[DIEffectRunner[F]],
         DIKey.get[DIEffect[F]],
+        DIKey.get[DIEffectAsync[F]],
       )
+
       val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
       val appPlan = injector.triSplitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
@@ -59,6 +61,9 @@ object RoleAppPlanner {
       check.verify(appPlan.side.plan)
       check.verify(appPlan.primary.plan)
 
+//      import izumi.fundamentals.platform.strings.IzString._
+//      logger.info(s"${fullAppModule.bindings.niceList() -> "app module"}")
+//      logger.info(s"${runtimePlan.render() -> "runtime plan"}")
 //      logger.info(s"${appPlan.shared.plan.render() -> "shared plan"}")
 //      logger.info(s"${appPlan.side.plan.render() -> "integration plan"}")
 //      logger.info(s"${appPlan.primary.plan.render() -> "primary plan"}")

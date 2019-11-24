@@ -2,7 +2,8 @@ package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.monadic.modules.CatsDIEffectModule
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.internal.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._
@@ -10,11 +11,8 @@ import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotClos
 import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 
-class TestPlugin extends PluginDef {
+class TestPlugin extends CatsDIEffectModule with PluginDef {
   tag(Env.Prod)
-
-  addImplicit[DIEffect[IO]]
-  addImplicit[DIEffectRunner[IO]]
 
   private val version = Option(System.getProperty(TestPlugin.versionProperty)) match {
     case Some(value) =>

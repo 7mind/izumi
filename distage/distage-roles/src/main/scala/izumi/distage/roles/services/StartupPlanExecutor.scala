@@ -2,21 +2,21 @@ package izumi.distage.roles.services
 
 import distage.{Injector, TagK}
 import izumi.distage.model.Locator
+import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger
-import DIEffect.syntax._
 
-trait StartupPlanExecutor {
-  def execute[F[_]: TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit
+trait StartupPlanExecutor[F[_]] {
+  def execute(appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit
 }
 
 object StartupPlanExecutor {
-  def default(logger: IzLogger, injector: Injector): StartupPlanExecutor = {
-    val checker = new IntegrationChecker.Impl(logger)
-    new StartupPlanExecutor.Impl(injector, checker)
+  def default[F[_]:TagK](logger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
+    val checker = new IntegrationChecker.Impl[F](logger)
+    new StartupPlanExecutor.Impl[F](injector, checker)
   }
 
   final case class Filters[F[_]](
@@ -28,11 +28,11 @@ object StartupPlanExecutor {
     def all[F[_]]: Filters[F] = Filters[F](FinalizersFilter.all, FinalizersFilter.all)
   }
 
-  class Impl(
+  class Impl[F[_]: TagK](
               injector: Injector,
-              integrationChecker: IntegrationChecker,
-            ) extends StartupPlanExecutor {
-    def execute[F[_]: TagK](appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
+              integrationChecker: IntegrationChecker[F],
+            ) extends StartupPlanExecutor[F] {
+    def execute(appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
       injector.produceFX[Identity](appPlan.runtime, filters.filterId)
         .use {
           runtimeLocator =>
@@ -50,7 +50,7 @@ object StartupPlanExecutor {
                       .produceFX[F](appPlan.app.side.plan, filters.filterF)
                       .use {
                         integrationLocator =>
-                          effect.maybeSuspend(integrationChecker.checkOrFail(appPlan.app.side.roots, integrationLocator))
+                          integrationChecker.checkOrFail(appPlan.app.side.roots, integrationLocator)
                       }
                       .flatMap {
                         _ =>
