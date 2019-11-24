@@ -117,7 +117,7 @@ class DistageTestRunner[F[_] : TagK]
       case Left(value) =>
         F.traverse_(testplans) {
           test =>
-            F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(value)))
+            F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Ignored(value)))
         }
 
       case Right(_) =>
@@ -136,7 +136,7 @@ class DistageTestRunner[F[_] : TagK]
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        P.parTraverse_(testplans.groupBy {
+        val tests = P.parTraverse_(testplans.groupBy {
           t =>
             val id = t._1.meta.id
             SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
@@ -169,6 +169,12 @@ class DistageTestRunner[F[_] : TagK]
               _ <- F.maybeSuspend(reporter.endSuite(id))
             } yield ()
         }
+
+        F.definitelyRecover(tests.flatMap(_ => F.maybeSuspend(reporter.endAll()))) {
+          f =>
+            F.maybeSuspend(reporter.onFailure(f)).flatMap(_ => F.fail(f))
+        }
+
     }
   }
 
@@ -179,15 +185,17 @@ class DistageTestRunner[F[_] : TagK]
       testLocator =>
         def doRun(before: Long): F[Unit] = {
           for {
-            _ <- F.definitelyRecover(testLocator.run(test.test).flatMap(_ => F.unit)) {
+            _ <- F.definitelyRecover(testLocator.run(test.test).flatMap {
+              _ =>
+                F.maybeSuspend {
+                  val after = System.nanoTime()
+                  reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
+                }
+            }) {
               case s if isTestSkipException(s) =>
-                F.unit
+                F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage)))
               case o =>
                 F.fail(o)
-            }
-            _ <- F.maybeSuspend {
-              val after = System.nanoTime()
-              reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
             }
           } yield ()
         }
@@ -229,17 +237,23 @@ object DistageTestRunner {
 
     case object Running extends TestStatus
 
-    sealed trait FinalStatus extends TestStatus
+    sealed trait Done extends TestStatus
 
-    final case class Cancelled(checks: Seq[ResourceCheck.Failure]) extends FinalStatus
+    final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
-    final case class Succeed(duration: FiniteDuration) extends FinalStatus
+    sealed trait Finished extends Done
 
-    final case class Failed(t: Throwable, duration: FiniteDuration) extends FinalStatus
+    final case class Cancelled(clue: String) extends Finished
+
+    final case class Succeed(duration: FiniteDuration) extends Finished
+
+    final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
 
   }
 
   trait TestReporter {
+    def onFailure(f: Throwable): Unit
+    def endAll(): Unit
     def beginSuite(id: SuiteData): Unit
     def endSuite(id: SuiteData): Unit
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit

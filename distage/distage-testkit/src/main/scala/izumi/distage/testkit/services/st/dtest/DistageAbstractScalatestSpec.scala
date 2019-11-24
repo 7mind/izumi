@@ -12,6 +12,7 @@ import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
+import org.scalatest.exceptions.TestCanceledException
 
 import scala.language.implicitConversions
 
@@ -130,22 +131,30 @@ object DistageAbstractScalatestSpec {
 
     def skip(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       Quirks.discard(function)
-      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
     final def skip[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
       Quirks.discard(function)
-      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
     def skip(function: ProviderMagnet[_])(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       Quirks.discard(function)
-      takeIO((eff: DIEffect[F]) => eff.unit, pos.get)
+      takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
     def skip[T: Tag](function: T => _)(implicit pos: CodePositionMaterializer, dummyImplicit: DummyImplicit): Unit = {
       Quirks.discard(function)
-      takeFunAny((_: T) => (), pos.get)
+      takeFunAny((_: T) => cancelNow(), pos.get)
+    }
+
+    private def cancel(eff: DIEffect[F]) = {
+      eff.maybeSuspend(cancelNow())
+    }
+
+    private def cancelNow() = {
+      throw new TestCanceledException("test skipped!", 0)
     }
   }
 
@@ -182,12 +191,20 @@ object DistageAbstractScalatestSpec {
 
     def skip(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
       Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => eff.unit, pos.get)
+      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
     }
 
     final def skip[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => eff.unit, pos.get)
+      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
+    }
+
+    private def cancel(eff: DIEffect[F[Throwable, *]]) = {
+      eff.maybeSuspend(cancelNow())
+    }
+
+    private def cancelNow() = {
+      throw new TestCanceledException("test skipped!", 0)
     }
   }
 

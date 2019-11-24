@@ -7,7 +7,6 @@ import izumi.distage.roles.services.IntegrationChecker
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment, SpecEnvironmentImpl}
 import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
-import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
 import org.scalatest.exceptions.TestCanceledException
@@ -161,7 +160,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   private def addStub(args: Args, failure: Option[Throwable]): Unit = {
     val tracker = args.tracker
-    val FUCK_SCALATEST = "Scalatest is not good for your mental health"
+    val FUCK_SCALATEST = "Scalatest and IDEA aren't so nice"
     val SUITE_FAILED = "Whole suite failed :/"
 
     failure match {

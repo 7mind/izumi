@@ -7,7 +7,6 @@ import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
-import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
@@ -69,7 +68,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "test 6 (should be ingored)" in {
       _: MockCachedUserService[F] =>
-        assume(false)
+        assume(false, "xxx")
     }
   }
 
