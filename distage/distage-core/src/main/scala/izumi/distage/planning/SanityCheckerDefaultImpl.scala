@@ -11,8 +11,7 @@ import scala.collection.mutable
 class SanityCheckerDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer
-)
-  extends SanityChecker {
+) extends SanityChecker {
 
   override def assertFinalPlanSane(plan: OrderedPlan): Unit = {
     assertNoDuplicateOps(plan.steps)

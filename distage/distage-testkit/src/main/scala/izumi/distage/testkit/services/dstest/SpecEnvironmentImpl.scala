@@ -25,7 +25,8 @@ class SpecEnvironmentImpl[F[_]: TagK]
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    val paramsModule = Module.make {
+    // ???
+    /*val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
@@ -34,7 +35,7 @@ class SpecEnvironmentImpl[F[_]: TagK]
         }
     }
 
-    paramsModule overridenBy primaryModule
+    paramsModule overridenBy */primaryModule
   }
 
   def makeLogger(): IzLogger = {

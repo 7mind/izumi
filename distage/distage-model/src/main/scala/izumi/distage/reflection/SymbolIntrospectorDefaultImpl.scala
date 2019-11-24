@@ -2,7 +2,6 @@ package izumi.distage.reflection
 
 import izumi.distage.model.reflection.SymbolIntrospector
 import izumi.distage.model.reflection.universe.DIUniverse
-import izumi.fundamentals.reflection.AnnotationTools
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
@@ -47,8 +46,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
   }
 
-  override def isConcrete(symb: u.SafeType): Boolean = {
-    val tpe = symb.tpe
+  override def isConcrete(tpe: u.TypeNative): Boolean = {
     tpe match {
       case _: u.u.RefinedTypeApi =>
         // 1. refinements never have a valid constructor unless they are tautological and can be substituted by a class
@@ -57,57 +55,49 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
         false
 
       case _ =>
-        isConcrete(tpe)
+        tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract
     }
   }
 
-  protected def isConcrete(tpe: u.TypeNative): Boolean = ReflectionLock.synchronized {
-    tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract
-  }
-
-  override def isWireableAbstract(symb: u.SafeType): Boolean = ReflectionLock.synchronized {
-    val tpe = symb.tpe
+  override def isWireableAbstract(tpe: u.TypeNative): Boolean = ReflectionLock.synchronized {
     val abstractMembers = tpe.members.filter(_.isAbstract)
 
     // no mistake here. Wireable astract is a abstract class or class with an abstract parent having all abstract members wireable
     tpe match {
       case rt: u.u.RefinedTypeApi =>
-        rt.parents.exists(_.typeSymbol.isAbstract) && abstractMembers.forall(m => isWireableMethod(symb, m))
+        rt.parents.exists(_.typeSymbol.isAbstract) && abstractMembers.forall(m => isWireableMethod(tpe, m))
 
       case t =>
-        t.typeSymbol.isClass && t.typeSymbol.isAbstract && abstractMembers.forall(m => isWireableMethod(symb, m))
+        t.typeSymbol.isClass && t.typeSymbol.isAbstract && abstractMembers.forall(m => isWireableMethod(tpe, m))
     }
   }
 
 
-  override def isFactory(symb: u.SafeType): Boolean = ReflectionLock.synchronized {
-    symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
-      val abstracts = symb.tpe.members.filter(_.isAbstract)
-      abstracts.exists(isFactoryMethod(symb, _)) &&
-        abstracts.forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+  override def isFactory(tpe: u.TypeNative): Boolean = ReflectionLock.synchronized {
+    tpe.typeSymbol.isClass && tpe.typeSymbol.isAbstract && {
+      val abstracts = tpe.members.filter(_.isAbstract)
+      abstracts.exists(isFactoryMethod(tpe, _)) &&
+        abstracts.forall(m => isFactoryMethod(tpe, m) || isWireableMethod(tpe, m))
     }
   }
 
-  override def isWireableMethod(tpe: u.SafeType, decl: u.Symb): Boolean = ReflectionLock.synchronized {
+  override def isWireableMethod(tpe: u.TypeNative, decl: u.Symb): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       decl.asMethod.paramLists.isEmpty && u.SafeType(decl.asMethod.returnType) != tpe
     }
   }
 
-  override def isFactoryMethod(tpe: u.SafeType, decl: u.Symb): Boolean = ReflectionLock.synchronized {
+  override def isFactoryMethod(tpe: u.TypeNative, decl: u.Symb): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
-      paramLists.nonEmpty && paramLists.forall(list => !list.contains(decl.asMethod.returnType) && !list.contains(tpe))
+      paramLists.nonEmpty && paramLists.forall { list =>
+        !list.exists(_.typeSignature =:= decl.asMethod.returnType) && !list.exists(_.typeSignature =:= tpe)
+      }
     }
   }
 
-  override def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation] = ReflectionLock.synchronized {
+  override def findSymbolAnnotation(annType: u.TypeNative, symb: u.SymbolInfo): Option[u.u.Annotation] = ReflectionLock.synchronized {
     symb.findUniqueAnnotation(annType)
-  }
-
-  override def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation] = ReflectionLock.synchronized {
-    val univ: u.u.type = u.u // intellij
-    AnnotationTools.findTypeAnnotation(univ)(annType.tpe, tpe.tpe)
   }
 
   private def findConstructor(tpe: u.SafeType): u.u.Symbol = {

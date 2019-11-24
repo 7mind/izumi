@@ -12,25 +12,21 @@ trait SymbolIntrospector {
   def selectConstructor(tpe: u.SafeType): Option[SelectedConstructor]
   def selectNonImplicitParameters(symb: u.MethodSymb): List[List[u.Symb]]
 
-  def isConcrete(tpe: u.SafeType): Boolean
-  def isWireableAbstract(tpe: u.SafeType): Boolean
-  def isFactory(tpe: u.SafeType): Boolean
-  def isWireableMethod(tpe: u.SafeType, decl: u.Symb): Boolean
-  def isFactoryMethod(tpe: u.SafeType, decl: u.Symb): Boolean
+  def isConcrete(tpe: u.TypeNative): Boolean
+  def isWireableAbstract(tpe: u.TypeNative): Boolean
+  def isFactory(tpe: u.TypeNative): Boolean
+  def isWireableMethod(tpe: u.TypeNative, decl: u.Symb): Boolean
+  def isFactoryMethod(tpe: u.TypeNative, decl: u.Symb): Boolean
 
-  def findSymbolAnnotation(annType: u.SafeType, symb: u.SymbolInfo): Option[u.u.Annotation]
-  def findTypeAnnotation(annType: u.SafeType, tpe: u.SafeType): Option[u.u.Annotation]
-
-  def canBeProxied(tpe: u.SafeType): Boolean = {
-    !tpe.use(_.typeSymbol.isFinal)
-  }
-
-  def hasByNameParameter(sym: u.MethodSymb): Boolean = {
-    sym.paramLists.exists(_.exists(v => v.isTerm && v.asTerm.isByNameParam))
-  }
+  def findSymbolAnnotation(annType: u.TypeNative, symb: u.SymbolInfo): Option[u.u.Annotation]
 }
 
 object SymbolIntrospector {
+
+  @deprecated("proxy runtime not wokr", "???")
+  def canBeProxied[U <: DIUniverse](tpe: U#SafeType): Boolean = {
+    !tpe.use(_.typeSymbol.isFinal)
+  }
 
   trait Runtime extends SymbolIntrospector {
     override val u: RuntimeDIUniverse.type = RuntimeDIUniverse

@@ -3,7 +3,7 @@ package izumi.fundamentals.reflection.macrortti
 import izumi.thirdparty.internal.boopickle.{PickleImpl, Pickler}
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
-import izumi.fundamentals.reflection.{DebugProperties, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{DebugProperties, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -31,7 +31,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   @inline final def makeStrongTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
     val tpe = weakTypeOf[T]
-    if (allPartsStrong(tpe)) {
+    if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
       val res = makeParsedLightTypeTagImpl(tpe)
       c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
     } else {
@@ -75,26 +75,4 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
     c.Expr[LightTypeTag](q"$lightTypeTag.parse($strRef : _root_.java.lang.String, $strDBs : _root_.java.lang.String)")
   }
 
-  protected final def allPartsStrong(tpe: Type): Boolean = {
-    def selfStrong = !tpe.typeSymbol.isParameter
-    def prefixStrong = {
-      tpe match {
-        case t: TypeRefApi =>
-          allPartsStrong(t.pre)
-        case _ =>
-          true
-      }
-    }
-    def argsStrong = tpe.typeArgs.forall(allPartsStrong)
-    def intersectionStructStrong = {
-      tpe match {
-        case t: RefinedTypeApi =>
-          t.parents.forall(allPartsStrong) &&
-            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
-        case _ =>
-          true
-      }
-    }
-    selfStrong && prefixStrong && argsStrong && intersectionStructStrong
-  }
 }

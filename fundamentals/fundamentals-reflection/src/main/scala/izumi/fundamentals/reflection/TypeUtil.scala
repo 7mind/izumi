@@ -1,7 +1,7 @@
 package izumi.fundamentals.reflection
 
 object TypeUtil {
-  def isAssignableFrom(tpe: Class[_], obj: AnyRef): Boolean = {
+  def isAssignableFrom(tpe: Class[_], obj: Any): Boolean = {
     def instanceClass = obj.getClass
 
     if (obj == null) {

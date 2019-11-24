@@ -2,6 +2,7 @@ package izumi.distage.impl
 
 import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
@@ -391,10 +392,17 @@ class LightTypeTagTest extends WordSpec {
       assertCompiles("def x1 = { object x { type T <: { type Array } }; LTag[x.T#Array].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] with List[x.T]].discard() }")
       assertCompiles("def x1 = { object x { type F[_] }; LTag[x.F[Int]].discard() }")
+      assertCompiles("def x1 = { object x { type F[_[_]]; type Id[A] = A }; LTag[x.F[x.Id]].discard() }")
     }
 
     "resolve prefixes of annotated types" in {
       assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
+    }
+
+    "allPartsStrong for typelambda" in {
+      import scala.reflect.runtime.{universe => ru}
+      val res = ReflectionUtil.allPartsStrong[ru.type](ru.typeOf[Id[C]].typeConstructor)
+      assert(res)
     }
 
   }

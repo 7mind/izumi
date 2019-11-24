@@ -73,9 +73,8 @@ object Injector {
     }
   }
 
-  trait InjectorBootstrap {
+  private[Injector] trait InjectorBootstrap {
     def apply(): Injector
-
     def apply(overrides: BootstrapModule*): Injector
   }
 

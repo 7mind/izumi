@@ -9,24 +9,26 @@ import izumi.distage.model.planning._
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Wiring}
+import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps
 }
 
-class BindingTranslatorImpl(
-                             protected val reflectionProvider: ReflectionProvider.Runtime,
-                             protected val hook: PlanningHook,
-                           ) extends BindingTranslator {
+class BindingTranslatorImpl
+(
+  reflectionProvider: ReflectionProvider.Runtime,
+  hook: PlanningHook,
+) extends BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps = {
     binding match {
       case singleton: SingletonBinding[_] =>
         val newOp = provisionSingleton(singleton)
 
         NextOps(
-          sets = Map.empty
-          , provisions = Seq(newOp)
+          sets = Map.empty,
+          provisions = Seq(newOp),
         )
 
       case set: SetElementBinding =>
@@ -116,13 +118,22 @@ class BindingTranslatorImpl(
   private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): PureWiring = {
     implementation match {
       case p: ImplDef.ProviderImpl =>
-        reflectionProvider.providerToWiring(p.function)
+        providerToWiring(p.function)
 
       case i: ImplDef.InstanceImpl =>
         SingletonWiring.Instance(i.implType, i.instance)
 
       case r: ImplDef.ReferenceImpl =>
         SingletonWiring.Reference(r.implType, r.key, r.weak)
+    }
+  }
+
+  private[this] def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized {
+    function match {
+      case factory: Provider.FactoryProvider@unchecked =>
+        Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
+      case _ =>
+        Wiring.SingletonWiring.Function(function, function.associations)
     }
   }
 

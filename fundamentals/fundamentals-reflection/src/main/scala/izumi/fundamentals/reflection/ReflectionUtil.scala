@@ -17,7 +17,7 @@ class RefinedTypeException(message: String, cause: Throwable = null) extends Ref
 class MethodMirrorException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
 
 object ReflectionUtil {
-  val mm: ru.Mirror = scala.reflect.runtime.currentMirror
+  lazy val mm: ru.Mirror = scala.reflect.runtime.currentMirror
 
   def toJavaMethod(definingClass: ru.Type, methodSymbol: ru.Symbol): Method = {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
@@ -84,6 +84,30 @@ object ReflectionUtil {
       case _ =>
         None
     }
+  }
+
+  final def allPartsStrong[U <: SingletonUniverse](tpe: U#Type): Boolean = {
+    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.contains(tpe.typeSymbol)
+    def prefixStrong = {
+      tpe match {
+        case t: U#TypeRefApi =>
+          allPartsStrong(t.pre.dealias)
+        case _ =>
+          true
+      }
+    }
+    def argsStrong = tpe.typeArgs.forall(allPartsStrong)
+
+    def intersectionStructStrong = {
+      tpe match {
+        case t: U#RefinedTypeApi =>
+          t.parents.forall(allPartsStrong) &&
+            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
+        case _ =>
+          true
+      }
+    }
+    selfStrong && prefixStrong && argsStrong && intersectionStructStrong
   }
 
   /**

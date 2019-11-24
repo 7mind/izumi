@@ -149,6 +149,7 @@ object LightTypeTag {
     both.toMultimap.mapValues(_.flatten).toMap
   }
 
+  // FIXME: ??? remove
   private[izumi] object ReflectionLock
 
 }

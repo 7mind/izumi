@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 import distage.TagK
 import izumi.distage._
-import izumi.distage.commons.{TraitInitTool, UnboxingTool}
 import izumi.distage.model._
 import izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
@@ -91,9 +90,8 @@ object BootstrapLocator {
   }
 
   final val bootstrapProducer: PlanInterpreter = {
-    val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
-    val unboxingTool = new UnboxingTool(mirrorProvider)
-    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
+    val loggerHook = LoggerHook.Null // TODO: add user-controllable logs
+    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider)
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
@@ -117,11 +115,9 @@ object BootstrapLocator {
     make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
     make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
 
-    make[LoggerHook].from[LoggerHookDefaultImpl]
+    make[LoggerHook].from[LoggerHook.Null.type]
     make[MirrorProvider].from[MirrorProvider.Impl.type]
 
-    make[UnboxingTool]
-    make[TraitInitTool]
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
     make[DIGarbageCollector].from[TracingDIGC.type]

@@ -21,7 +21,6 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl(
                                 reflectionProvider: ReflectionProvider.Runtime
-                                , introspector: SymbolIntrospector.Runtime
                                 , proxyProvider: ProxyProvider
                                 , mirror: MirrorProvider
                               ) extends ProxyStrategy {
@@ -54,7 +53,7 @@ class ProxyStrategyDefaultImpl(
       DeferredInit(proxy, proxy)
     } else {
       val tpe = proxyTargetType(makeProxy)
-      if (!introspector.canBeProxied(tpe)) {
+      if (!SymbolIntrospector.canBeProxied(tpe)) {
         throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
       }
       makeCogenProxy(context, tpe, makeProxy)
@@ -69,7 +68,8 @@ class ProxyStrategyDefaultImpl(
 
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
     val params = if (hasDeps(tpe)) {
-      val params = reflectionProvider.constructorParameters(tpe)
+      // FIXME: Proxy classtag params ???
+      val params: Seq[Association.Parameter] = ??? // reflectionProvider.constructorParameters(tpe)
 
       val args = params.map {
         param =>

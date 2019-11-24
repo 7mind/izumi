@@ -18,23 +18,21 @@ object AnyConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
 
-    import macroUniverse._
-
-    val safe = SafeType(weakTypeOf[T])
+    val tpe = weakTypeOf[T]
 
     try {
-      if (symbolIntrospector.isConcrete(safe)) {
+      if (symbolIntrospector.isConcrete(tpe)) {
         ConcreteConstructorMacro.mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
-      } else if (symbolIntrospector.isFactory(safe)) {
+      } else if (symbolIntrospector.isFactory(tpe)) {
         FactoryConstructorMacro.mkFactoryConstructor[T](c)
-      } else if (symbolIntrospector.isWireableAbstract(safe)) {
+      } else if (symbolIntrospector.isWireableAbstract(tpe)) {
         TraitConstructorMacro.mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
       } else {
         c.abort(
           c.enclosingPosition
           ,
           s"""
-             |The impossible happened! Cannot generate implementation for class $safe!
+             |The impossible happened! Cannot generate implementation for class $tpe!
              |Because it's neither a concrete class, nor a factory, nor a trait!
          """.stripMargin
         )

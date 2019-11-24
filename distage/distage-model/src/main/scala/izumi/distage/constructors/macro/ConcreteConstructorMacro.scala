@@ -4,7 +4,7 @@ import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
-import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -25,7 +25,7 @@ object ConcreteConstructorMacro {
 
     val targetType = weakTypeOf[T]
 
-    if (!symbolIntrospector.isConcrete(SafeType(targetType))) {
+    if (!symbolIntrospector.isConcrete(targetType)) {
       c.abort(c.enclosingPosition,
         s"""Tried to derive constructor function for class $targetType, but the class is an
            |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
@@ -55,7 +55,7 @@ object ConcreteConstructorMacro {
 
         p.wireWith.tpe.use {
           tpe =>
-            q"$mods val $name: $tpe" -> name
+            q"$mods val $name: ${ReflectionUtil.deannotate[c.universe.type](tpe)}" -> name
         }
 
     })

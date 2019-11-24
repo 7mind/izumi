@@ -5,6 +5,7 @@ import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
 import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.ModuleDef
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.dsl.TestTagOps._
 
 @ExposedTestScope
@@ -23,6 +24,8 @@ class DependingPlugin extends SneakyPlugin {
 @ExposedTestScope
 object DependingPlugin {
   val module: ModuleDef = new ModuleDef {
+    // FIXME: make[] redundant generator ???
+    implicit val a: AnyConstructor[Unit] = null
     make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals generates conflicting exception on merge
   }
 }

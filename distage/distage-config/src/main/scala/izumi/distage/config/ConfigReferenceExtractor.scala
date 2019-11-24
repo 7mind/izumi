@@ -81,7 +81,7 @@ class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvi
   }
 
   protected def findAnno[T: TypeTag](association: Association): Option[Annotation] = {
-    association.context.symbol.findUniqueAnnotation(SafeType.get[T])
+    association.context.symbol.findUniqueAnnotation(typeOf[T])
   }
 
   protected def findArgument(ann: Annotation): Option[String] = {

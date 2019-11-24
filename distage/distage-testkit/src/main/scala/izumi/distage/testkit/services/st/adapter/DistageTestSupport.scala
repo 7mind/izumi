@@ -188,7 +188,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    val paramsModule = Module.make {
+    /*val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
@@ -197,6 +197,6 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
         }
     }
 
-    paramsModule overridenBy primaryModule
+    paramsModule overridenBy*/ primaryModule
   }
 }

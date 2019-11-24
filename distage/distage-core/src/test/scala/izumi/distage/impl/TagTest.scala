@@ -30,16 +30,16 @@ final case class testTag[T: Tag]() {
 }
 
 // https://github.com/scala/bug/issues/11139
-final case class testTag2[T/*: Tag*/ ]() {
-  type X = List[T]
-  val res = Tag[X]
-}
+//final case class testTag2[T/*: Tag*/ ]() {
+//  type X = List[T]
+//  val res = Tag[X]
+//}
 
 // https://github.com/scala/bug/issues/111397
-final case class testTag3[F[_]/* : TagK*/ ]() {
-  type X = OptionT[F, Int]
-  val res = SafeType.get[X]
-}
+//final case class testTag3[F[_]/* : TagK*/ ]() {
+//  type X = OptionT[F, Int]
+//  val res = SafeType.get[X]
+//}
 
 class TagTest extends WordSpec with X[String] {
 
@@ -131,11 +131,12 @@ class TagTest extends WordSpec with X[String] {
       }
     }
 
-    "Work for any abstract type with available TypeTag when obscured by empty refinement" in {
-      def testTag[T: TypeTag] = Tag[T {}]
-
-      assert(testTag[String].toSafe == safe[String])
-    }
+    // ???
+//    "Work for any abstract type with available TypeTag when obscured by empty refinement" in {
+//      def testTag[T: TypeTag] = Tag[T {}]
+//
+//      assert(testTag[String].toSafe == safe[String])
+//    }
 
     "Work for any abstract type with available Tag when obscured by empty refinement" in {
       def testTag[T: Tag] = Tag[T {}]
@@ -178,8 +179,9 @@ class TagTest extends WordSpec with X[String] {
     "progression test: Can't dealias transparent type members when a tag for them is summoned _inside_ the class due to a scala bug https://github.com/scala/bug/issues/11139" in {
       intercept[TestFailedException] {
         assert(testTag[String]().res.toSafe == safe[Either[Int, String]])
-        assert(testTag2[String]().res.toSafe == safe[List[String]])
-        assert(testTag3[List]().res == safe[OptionT[List, Int]])
+        // ???
+//        assert(testTag2[String]().res.toSafe == safe[List[String]])
+//        assert(testTag3[List]().res == safe[OptionT[List, Int]])
       }
     }
 

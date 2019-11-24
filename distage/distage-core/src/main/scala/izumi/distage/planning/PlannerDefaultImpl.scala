@@ -140,8 +140,8 @@ final class PlannerDefaultImpl
         case (fst, snd) =>
           val fsto = index(fst)
           val sndo = index(snd)
-          val fstp = symbolIntrospector.canBeProxied(fsto.target.tpe)
-          val sndp = symbolIntrospector.canBeProxied(sndo.target.tpe)
+          val fstp = SymbolIntrospector.canBeProxied(fsto.target.tpe)
+          val sndp = SymbolIntrospector.canBeProxied(sndo.target.tpe)
 
           if (fstp && !sndp) {
             true
@@ -171,7 +171,7 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: InstantiationOp if !symbolIntrospector.canBeProxied(op.target.tpe) =>
+        case op: InstantiationOp if !SymbolIntrospector.canBeProxied(op.target.tpe) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
           best
@@ -201,11 +201,13 @@ final class PlannerDefaultImpl
     OrderedPlan(sortedOps.toVector, roots, topology)
   }
 
+  // FIXME: ??? borken by-name detection
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
-    val fstoTpe = fsto.instanceType
-    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
-    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
-    hasByName
+    false
+//    val fstoTpe = ExecutableOp.instanceType(fsto)
+//    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
+//    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
+//    hasByName
   }
 
 }

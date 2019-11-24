@@ -14,7 +14,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   protected def keyProvider: DependencyKeyProvider.Aux[u.type]
   protected def symbolIntrospector: SymbolIntrospector.Aux[u.type]
 
-  def symbolToWiring(symbl: SafeType): Wiring.PureWiring = ReflectionLock.synchronized {
+  override def symbolToWiring(symbl: SafeType): Wiring.PureWiring = ReflectionLock.synchronized {
     symbl match {
       case FactorySymbol(_, factoryMethods, dependencyMethods) =>
         val mw = factoryMethods.map(_.asMethod).map {
@@ -28,7 +28,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val alreadyInSignature = symbolIntrospector
               .selectNonImplicitParameters(factoryMethod)
               .flatten
-              .map(p => keyProvider.keyFromParameter(context, SymbolInfo(p, symbl, wasGeneric = false)))
+              .map(p => keyProvider.keyFromParameter(context, SymbolInfo.Runtime(p, symbl, wasGeneric = false)))
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
 
@@ -54,15 +54,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
       case o =>
         mkConstructorWiring(o)
-    }
-  }
-
-  override def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized  {
-    function match {
-      case factory: Provider.FactoryProvider@unchecked =>
-        Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
-      case _ =>
-        Wiring.SingletonWiring.Function(function, function.associations)
     }
   }
 
@@ -106,7 +97,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
     val declaredAbstractMethods = symbl.tpe.members
       .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
-      .filter(symbolIntrospector.isWireableMethod(symbl, _))
+      .filter(symbolIntrospector.isWireableMethod(symbl.tpe, _))
       .map(_.asMethod)
     declaredAbstractMethods.map(methodToAssociation(symbl, _))
   }
@@ -118,21 +109,21 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   protected object ConcreteSymbol {
-    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector.isConcrete)
+    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector isConcrete _.tpe)
   }
 
   protected object AbstractSymbol {
-    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector.isWireableAbstract)
+    def unapply(arg: SafeType): Option[SafeType] = Some(arg).filter(symbolIntrospector isWireableAbstract _.tpe)
   }
 
   protected object FactorySymbol {
     def unapply(arg: SafeType): Option[(SafeType, Seq[Symb], Seq[MethodSymb])] =
       Some(arg)
-        .filter(symbolIntrospector.isFactory)
+        .filter(symbolIntrospector isFactory _.tpe)
         .map(f => (
           f
-          , f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f, m)).toSeq
-          , f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f, m)).map(_.asMethod).toSeq
+          , f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f.tpe, m)).toSeq
+          , f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f.tpe, m)).map(_.asMethod).toSeq
         ))
   }
 

@@ -83,30 +83,6 @@ class ResourceRewriter(
             case ImplDef.ProviderImpl(_, function) =>
               val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[TGT]))
               ReplaceImpl(ImplDef.ProviderImpl(resourceType, newImpl))
-
-            case implDef@ImplDef.TypeImpl(_) =>
-              val implTypeKey = DIKey.TypeKey(implType)
-              val newKey = DIKey.IdKey(
-                tpe = implType,
-                id = ResId(if (isSet) DIKey.SetElementKey(key, implTypeKey, Some(implDef)) else implTypeKey)
-              )
-
-              val parameter = {
-                val symbolInfo = SymbolInfo.Static(name = "x$1", finalResultType = implType, annotations = Nil, definingClass = implType, isByName = false, wasGeneric = false)
-                val debugInfo = DependencyContext.ConstructorParameterContext(implType, symbolInfo)
-                Association.Parameter(context = debugInfo, name = "x$1", tpe = implType, wireWith = newKey, isByName = false, wasGeneric = false)
-              }
-
-              val fn = Provider.ProviderImpl(
-                associations = Seq(parameter),
-                fun = {
-                  s: Seq[Any] =>
-                    convert(s.head.asInstanceOf[TGT])
-                },
-                ret = resourceType
-              )
-
-              ReplaceImplMoveOrigToResourceKey(ImplDef.ProviderImpl(resourceType, fn), newKey)
           }
         } else {
           DontChange

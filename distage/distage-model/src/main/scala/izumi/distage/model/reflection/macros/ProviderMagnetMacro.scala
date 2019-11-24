@@ -111,7 +111,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
   }
 
   private def association(ret: SafeType)(p: Symb): Association.Parameter =
-    keyProvider.associationFromParameter(SymbolInfo(p, ret, p.typeSignature.typeSymbol.isParameter))
+    keyProvider.associationFromParameter(SymbolInfo.Runtime(p, ret, p.typeSignature.typeSymbol.isParameter))
 
   def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: SafeType): ExtractedInfo = {
     val lambdaKeys: List[Association.Parameter] =
@@ -154,7 +154,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
 
   def analyzeValRef(sig: Type, ret: SafeType): ExtractedInfo = {
     val associations = sig.typeArgs.init.map(SafeType(_)).map {
-      tpe =>
+      tpe: SafeType =>
         val symbol = SymbolInfo.Static(
           c.freshName(tpe.tpe.typeSymbol.name.toString)
           , tpe
