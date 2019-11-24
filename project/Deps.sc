@@ -178,8 +178,8 @@ object Izumi {
     object root {
       final val id = ArtifactId("izumi")
       final val plugins = Plugins(
-        Seq.empty,
-        Seq(Plugin("AssemblyPlugin", Platform.All)),
+        enabled = Seq(Plugin("SbtgenVerificationPlugin")),
+        disabled = Seq(Plugin("AssemblyPlugin")),
       )
       final val settings = Seq()
 
