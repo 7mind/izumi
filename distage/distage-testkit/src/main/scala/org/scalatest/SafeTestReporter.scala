@@ -64,6 +64,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
         }
         finish()
     }
+    ()
   }
 
   private def reportStatus(test: TestMeta, testStatus: TestStatus): Unit = {

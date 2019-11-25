@@ -7,13 +7,13 @@ import java.util.UUID
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.model.Locator.LocatorRef
-import izumi.distage.model.definition.{BootstrapModule, ModuleDef}
+import izumi.distage.model.definition.BootstrapModule
 import izumi.distage.monadic.modules.IdentityDIEffectModule
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.services.{IntegrationChecker, PluginSource, RoleAppPlanner}
-import izumi.distage.roles.test.fixtures.Fixture.{XXX_ResourceEffectsRecorder, Resource0, Resource1, Resource2}
+import izumi.distage.roles.test.fixtures.Fixture.{Resource0, Resource1, Resource2, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion

@@ -17,10 +17,10 @@ import izumi.functional.Renderable
 // TODO: we need to parameterize plans with op types to avoid possibility of having proxy ops in semiplan
 sealed trait AbstractPlan {
   def definition: ModuleBase
+  def gcMode: GCMode
 
   def steps: Seq[ExecutableOp]
 
-  def gcMode: GCMode
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
 

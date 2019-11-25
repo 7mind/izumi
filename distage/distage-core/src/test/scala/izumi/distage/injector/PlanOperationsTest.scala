@@ -2,6 +2,7 @@ package izumi.distage.injector
 
 import distage._
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.WordSpec
 
 
@@ -9,9 +10,16 @@ class PlanOperationsTest extends WordSpec with MkInjector {
 
   import PlanOperationsTest._
 
+  private val icKey: DIKey = DIKey.get[IntegrationComponent]
+  private val pcKey: DIKey = DIKey.get[PrimaryComponent]
+
+  private val sc0: DIKey = DIKey.get[SharedComponent0]
+  private val sc1: DIKey = DIKey.get[SharedComponent1]
+  private val sc2: DIKey = DIKey.get[SharedComponent2]
+
   "support plan trisplit" in {
-    val primary = Set[DIKey](DIKey.get[PrimaryComponent])
-    val sub = Set[DIKey](DIKey.get[IntegrationComponent])
+    val primary = Set(pcKey)
+    val sub = Set(icKey)
 
     val definition = PlannerInput(new ModuleDef {
       make[PrimaryComponent]
@@ -25,21 +33,50 @@ class PlanOperationsTest extends WordSpec with MkInjector {
 
     val split = injector.triSplitPlan(definition.bindings, primary)(_ => sub)
 
-    assert(Set[DIKey](DIKey.get[SharedComponent0], DIKey.get[SharedComponent2]).diff(split.shared.plan.index.keySet).isEmpty)
+    assert(Set[DIKey](DIKey.get[SharedComponent0], sc2).diff(split.shared.plan.index.keySet).isEmpty)
+
     assert((primary ++ sub).intersect(split.shared.plan.index.keySet).isEmpty)
     assert(primary.intersect(split.side.plan.index.keySet).isEmpty)
     assert(sub.intersect(split.primary.plan.index.keySet).isEmpty)
 
-//    println(split.shared.plan.render())
-//    println("///")
-//    println(split.side.plan.render())
-//    println("///")
-//    println(split.primary.plan.render())
-
-    assert(split.primary.plan.index.keySet.intersect(split.side.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent2]))
-    assert(split.primary.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent2]))
-    assert(split.side.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set[DIKey](DIKey.get[SharedComponent2]))
+    assert(split.primary.plan.index.keySet.intersect(split.side.plan.index.keySet) == Set(sc2))
+    assert(split.primary.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set(sc2))
+    assert(split.side.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set(sc2))
   }
+
+
+  "support ghost components in trisplit" in {
+    val primary = Set(pcKey, icKey)
+    val sub = Set(icKey)
+
+    val definition = PlannerInput(new ModuleDef {
+      make[PrimaryComponent]
+      make[IntegrationComponent]
+      make[SharedComponent0]
+      make[SharedComponent1]
+      make[SharedComponent2]
+    }, primary ++ sub)
+
+    val injector = mkInjector()
+
+    val split = injector.triSplitPlan(definition.bindings, primary)(_ => sub)
+
+    val sideIndex = split.side.plan.index
+    val primaryIndex = split.primary.plan.index
+    val sharedIndex = split.shared.plan.index
+
+    assert(primaryIndex.keySet.intersect(sideIndex.keySet).intersect(sharedIndex.keySet) == Set(icKey))
+
+    assert(sharedIndex.keySet == Set(sc0, sc1, sc2, icKey))
+
+    assert(sideIndex.keySet == Set(icKey))
+    assert(sideIndex.get(icKey).exists(_.isInstanceOf[ImportDependency]))
+
+    assert(primaryIndex.keySet == Set(icKey, pcKey, sc2))
+    assert(primaryIndex.get(icKey).exists(_.isInstanceOf[ImportDependency]))
+    assert(primaryIndex.get(sc2).exists(_.isInstanceOf[ImportDependency]))
+  }
+
 
 }
 

@@ -75,7 +75,12 @@ object OpFormatter {
 
         case ImportDependency(target, references, origin) =>
           val pos = formatBindingPosition(origin)
-          s"${formatKey(target)} $pos := import $target // required for ${references.map(formatKey).mkString(" and ")}"
+          val hint = if (references.nonEmpty) {
+            s"// required for ${references.map(formatKey).mkString(" and ")}"
+          } else {
+            " // no dependees"
+          }
+          s"${formatKey(target)} $pos := import $target $hint".trim
 
         case p: ProxyOp =>
           p match {

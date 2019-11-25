@@ -73,6 +73,20 @@ case class TriSplittedPlan(
                             shared: Subplan,
                           )
 
+object TriSplittedPlan {
+  implicit class TriPlanEx(split: TriSplittedPlan) {
+    def render(): String = {
+      import izumi.fundamentals.platform.strings.IzString._
+      Seq(
+        split.shared.plan.render().listing("Shared Plan"),
+        split.side.plan.render().listing("Side Plan"),
+        split.primary.plan.render().listing("Primary Plan"),
+      ).mkString("\n")
+    }
+  }
+
+}
+
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner {
