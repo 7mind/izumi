@@ -72,11 +72,6 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
     val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
-//        println(plan.app.shared.plan.render())
-//        println("///")
-//        println(plan.app.side.plan.render())
-//        println("///")
-//        println(plan.app.primary.plan.render())
     erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
       plan.injector.produceF[Identity](plan.runtime)
     ))

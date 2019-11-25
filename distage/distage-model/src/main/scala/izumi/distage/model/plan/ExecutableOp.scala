@@ -93,39 +93,39 @@ object ExecutableOp {
     }
   }
 
-  @tailrec
-  def underlyingInstanceType(op: ExecutableOp): SafeType = {
-    op match {
-      case op: ImportDependency =>
-        op.target.tpe
-      case op: InstantiationOp =>
-        op match {
-          case op: CreateSet =>
-            op.target.tpe
-          case op: WiringOp =>
-            op.wiring match {
-              case u: Wiring.SingletonWiring =>
-                u.instanceType
-              case _: Wiring.Factory | _: Wiring.FactoryFunction =>
-                op.target.tpe
-            }
-          case op: MonadicOp =>
-            op match {
-              case eff: MonadicOp.ExecuteEffect =>
-                underlyingInstanceType(eff.effectOp)
-              case res: MonadicOp.AllocateResource =>
-                underlyingInstanceType(res.effectOp)
-            }
-        }
-      case op: ProxyOp =>
-        op match {
-          case p: MakeProxy =>
-            underlyingInstanceType(p.op)
-          case p: ProxyOp.InitProxy =>
-            underlyingInstanceType(p.proxy)
-        }
-    }
-  }
+//  @tailrec
+//  def underlyingInstanceType(op: ExecutableOp): SafeType = {
+//    op match {
+//      case op: ImportDependency =>
+//        op.target.tpe
+//      case op: InstantiationOp =>
+//        op match {
+//          case op: CreateSet =>
+//            op.target.tpe
+//          case op: WiringOp =>
+//            op.wiring match {
+//              case u: Wiring.SingletonWiring =>
+//                u.instanceType
+//              case _: Wiring.Factory | _: Wiring.FactoryFunction =>
+//                op.target.tpe
+//            }
+//          case op: MonadicOp =>
+//            op match {
+//              case eff: MonadicOp.ExecuteEffect =>
+//                underlyingInstanceType(eff.effectOp)
+//              case res: MonadicOp.AllocateResource =>
+//                underlyingInstanceType(res.effectOp)
+//            }
+//        }
+//      case op: ProxyOp =>
+//        op match {
+//          case p: MakeProxy =>
+//            underlyingInstanceType(p.op)
+//          case p: ProxyOp.InitProxy =>
+//            underlyingInstanceType(p.proxy)
+//        }
+//    }
+//  }
 
 }
 

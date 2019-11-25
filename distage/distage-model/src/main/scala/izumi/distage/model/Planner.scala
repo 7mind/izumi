@@ -98,10 +98,7 @@ trait Planner {
     val primaryPlan = toSubplanNoRewrite(rewritten, primaryRoots)
 
     // here we extract integration checks out of our shared components plan and build it
-    val subplanRoots = extractSubRoots(primaryPlan) //extractSubRoots(toSubplanNoRewrite(appModule, primaryRoots))
-//    import izumi.fundamentals.platform.strings.IzString._
-//    println(primaryPlan.render())
-//    println(s"collected: ${subplanRoots.niceList()}")
+    val subplanRoots = extractSubRoots(primaryPlan)
     triPlan(rewritten, primaryPlan, primaryRoots, subplanRoots)
   }
 
@@ -119,19 +116,9 @@ trait Planner {
 
     val noSharedComponentsModule = appModule.drop(sharedKeys)
     val primplan = extractedPrimaryPlan.replaceWithImports(sharedKeys)
-//    val primplan = toSubplanNoRewrite(noSharedComponentsModule, primaryRoots)
 
-//    println(s"removal: ${sharedKeys}")
     val subModule = noSharedComponentsModule.drop(primplan.index.keySet)
     val subplan = extractedSubplan.replaceWithImports(sharedKeys)
-
-//    println(s"esp: ${extractedSubplan.render()}")
-//    println(s"espf: ${subplan.render()}")
-
-    //    val subplan = toSubplanNoRewrite(subModule, subplanRoots)
-
-    //    val conflicts = primplan.index.keySet.intersect(subplan.index.keySet).filterNot(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency])
-    //    assert(conflicts.isEmpty, s"conflicts: ${conflicts}")
 
     val sharedModule = appModule.preserveOnly(sharedPlan.index.keySet)
     val primModule = noSharedComponentsModule.drop(subplan.index.keySet)

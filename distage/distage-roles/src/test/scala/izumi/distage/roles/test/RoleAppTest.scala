@@ -13,7 +13,7 @@ import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.services.{IntegrationChecker, PluginSource, RoleAppPlanner}
-import izumi.distage.roles.test.fixtures.Fixture.{InitCounter, Resource0, Resource1, Resource2}
+import izumi.distage.roles.test.fixtures.Fixture.{XXX_ResourceEffectsRecorder, Resource0, Resource1, Resource2}
 import izumi.distage.roles.test.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
@@ -32,23 +32,27 @@ class RoleAppTest extends WordSpec
 
   object TestEntrypoint extends RoleAppMain.Silent(new TestLauncher)
 
+  class XXX_TestWhiteboxProbe extends PluginDef {
+    val resources = new XXX_ResourceEffectsRecorder
+    private var locator0: LocatorRef = null
+    lazy val locator: Locator = locator0.get
+
+    make[XXX_ResourceEffectsRecorder].from(resources)
+    make[XXX_LocatorLeak].from {
+      locatorRef: LocatorRef =>
+        locator0 = locatorRef
+        XXX_LocatorLeak(locator0)
+    }
+  }
+
   "Role Launcher" should {
     "be able to start roles" in {
-      val initCounter = new InitCounter
-      var locator0: LocatorRef = null
-      lazy val locator: Locator = locator0.get
+      val probe = new XXX_TestWhiteboxProbe()
 
       new RoleAppMain.Silent({
         new TestLauncher {
           override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
-            l.copy(app = Seq(l.app.merge overridenBy new ModuleDef {
-              make[InitCounter].from(initCounter)
-              make[LocatorLeak].from {
-                locatorRef: LocatorRef =>
-                  locator0 = locatorRef
-                  LocatorLeak(locator0)
-              }
-            }))
+            l.copy(app = Seq(l.app.merge overridenBy probe))
           }
         }
       }).main(Array(
@@ -57,18 +61,13 @@ class RoleAppTest extends WordSpec
         ":" + TestRole00.id,
       ))
 
-      //      println(initCounter.startedCloseables)
-      //      println(initCounter.closedCloseables)
-      //      println(initCounter.checkedResources)
-
-      assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
-      assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+      assert(probe.resources.startedCloseables == probe.resources.closedCloseables.reverse)
+      assert(probe.resources.checkedResources.toSet == Set(probe.locator.get[Resource1], probe.locator.get[Resource2]))
     }
 
     "start roles regression test" in {
-      val initCounter = new InitCounter
-      var locator0: LocatorRef = null
-      lazy val locator: Locator = locator0.get
+      val probe = new XXX_TestWhiteboxProbe()
+
 
       new RoleAppMain.Silent({
         new TestLauncher {
@@ -81,13 +80,9 @@ class RoleAppTest extends WordSpec
               new PluginDef {
                 make[Resource0].from[Resource1]
                 many[Resource0].ref[Resource0]
-                make[InitCounter].from(initCounter)
-                make[LocatorLeak].from {
-                  locatorRef: LocatorRef =>
-                    locator0 = locatorRef
-                    LocatorLeak(locator0)
-                }
-              }))
+              },
+              probe
+            ))
           }
         }
       }).main(Array(
@@ -97,23 +92,18 @@ class RoleAppTest extends WordSpec
       ))
 
 
-
-      //      println(initCounter.startedCloseables)
-      //      println(initCounter.closedCloseables)
-      //      println(initCounter.checkedResources)
-
-      assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
-      //assert(initCounter.checkedResources.toSet.size == 2)
-      assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+      assert(probe.resources.startedCloseables == probe.resources.closedCloseables.reverse)
+      assert(probe.resources.checkedResources.toSet.size == 2)
+      assert(probe.resources.checkedResources.toSet == Set(probe.locator.get[Resource0], probe.locator.get[Resource2]))
     }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
       val logger = IzLogger()
-      val initCounter = new InitCounter
+      val initCounter = new XXX_ResourceEffectsRecorder
       val definition = (new ResourcesPluginBase {
         make[Resource0].from[Resource1]
         many[Resource0].ref[Resource0]
-        make[InitCounter].fromValue(initCounter)
+        make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
@@ -140,7 +130,7 @@ class RoleAppTest extends WordSpec
 
     "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
       val logger = IzLogger()
-      val initCounter = new InitCounter
+      val initCounter = new XXX_ResourceEffectsRecorder
       val definition = new ResourcesPluginBase {
         make[Resource1]
         make[Resource0].using[Resource1]
@@ -148,7 +138,7 @@ class RoleAppTest extends WordSpec
         many[Resource0]
           .ref[Resource0]
           .ref[Resource0 with AutoCloseable]
-        make[InitCounter].fromValue(initCounter)
+        make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),

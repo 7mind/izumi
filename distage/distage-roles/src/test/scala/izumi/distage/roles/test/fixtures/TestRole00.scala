@@ -29,20 +29,20 @@ object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
 
-case class LocatorLeak(locatorRef: LocatorRef)
+case class XXX_LocatorLeak(locatorRef: LocatorRef)
 
 class TestRole00[F[_]: DIEffect]
 (
   val conf: TestServiceConf@ConfPath("testservice"),
   val dummies: Set[Dummy],
-  val counter: InitCounter,
+  val counter: XXX_ResourceEffectsRecorder,
   val resource: TestRole00Resource[F],
   logger: IzLogger,
   notCloseable: NotCloseable,
   val resources: Set[Resource0],
   val conflict: Conflict,
   val es: ExecutorService,
-  val ref: LocatorLeak
+  val ref: XXX_LocatorLeak
 
 ) extends RoleService[F] {
   notCloseable.discard()

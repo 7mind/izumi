@@ -34,7 +34,7 @@ class ResourcesPluginBase extends ModuleDef {
 }
 
 class ResourcesPlugin extends ResourcesPluginBase with PluginDef {
-  make[InitCounter]
+  make[XXX_ResourceEffectsRecorder]
 
   make[Resource1]
   many[Resource0]

@@ -137,8 +137,10 @@ class ConfigWriter[F[_] : DIEffect]
     }
 
     if (plans.app.primary.plan.steps.exists(_.target == roleDIKey)) {
-      val cfg = getConfig(plans.app.primary.plan).orElse(getConfig(plans.app.shared.plan)).orElse(getConfig(plans.app.side.plan))
-      println(cfg)
+      val cfg = getConfig(plans.app.primary.plan)
+        .orElse(getConfig(plans.app.shared.plan))
+        .orElse(getConfig(plans.app.side.plan))
+
       cfg
         .map(_.withFallback(getConfigOrEmpty(plans.app.side.plan)))
         .map(_.withFallback(getConfigOrEmpty(plans.app.shared.plan)))

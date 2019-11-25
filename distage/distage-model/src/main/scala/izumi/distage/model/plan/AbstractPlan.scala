@@ -95,8 +95,6 @@ sealed trait AbstractPlan {
     steps.filter {
       op =>
         val maybeChild = ExecutableOp.instanceType(op)
-        //val maybeChild = ExecutableOp.underlyingInstanceType(op)
-        //println(s"$maybeChild vs $parent => ${maybeChild <:< parent}")
         maybeChild <:< parent
     }
   }
@@ -222,23 +220,11 @@ final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp]
         }
       case s => Seq(s)
     }
-//    val mode = gcMode match {
-//      case GCMode.GCRoots(roots) =>
-//        val keys1 = roots.diff(keys)
-//        if (keys1.isEmpty) {
-//          GCMode.GCRoots(keys1)
-//        } else {
-//          assert(newSteps.isEmpty)
-//          GCMode.NoGC
-//        }
-//
-//      case GCMode.NoGC =>
-//        GCMode.NoGC
-//    }
+
     OrderedPlan(
       definition.drop(keys),
       newSteps,
-      GCMode.NoGC,
+      gcMode,
       topology.removeKeys(keys),
     )
   }
