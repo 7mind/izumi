@@ -2,6 +2,7 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
@@ -65,6 +66,8 @@ object ConcreteConstructorMacro {
 
     val fn = q"(..$args) => new $targetType(...$argNamesLists)"
 
+//    val providerMagnetMacro = new ProviderMagnetMacro(c)
+//    val provided = providerMagnetMacro.impl[T](generateUnsafeWeakSafeTypes, fn.asInstanceOf[providerMagnetMacro.c.Tree]).asInstanceOf[c.Expr[ProviderMagnet[T]]]
     val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
 
     val provided =
@@ -72,7 +75,6 @@ object ConcreteConstructorMacro {
         q"{ $providerMagnet.generateUnsafeWeakSafeTypes[$targetType]($fn) }"
       else
         q"{ $providerMagnet.apply[$targetType]($fn) }"
-
     val res = c.Expr[ConcreteConstructor[T]] {
       q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($provided) }"
     }

@@ -334,13 +334,13 @@ object ModuleDefDSL {
       * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
       *
       * {{{
-      *     case class X(i: Int @Id("special"))
+      *   case class X(i: Int @Id("special"))
       *
-      *     make[X].from(X.apply _) // summons special Int
+      *   make[X].from(X.apply _) // summons special Int
       * }}}
       *
       * Using intermediate vals will lose annotations when converting a method into a function value,
-      * prefer using annotated method directly as method reference (method _)`:
+      * prefer using annotated method directly as method reference `(method _)`:
       *
       * {{{
       *   def constructorMethod(@Id("special") i: Int): Unit = ()

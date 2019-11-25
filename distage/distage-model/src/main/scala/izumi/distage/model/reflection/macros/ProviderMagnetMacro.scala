@@ -1,5 +1,6 @@
 package izumi.distage.model.reflection.macros
 
+import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
@@ -7,43 +8,41 @@ import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
-final class ProviderMagnetMacroGenerateUnsafeWeakSafeTypes(override val c: blackbox.Context) extends ProviderMagnetMacro(c) {
-  override protected def generateUnsafeWeakSafeTypes: Boolean = true
-}
-
 /**
-  * To see macro debug output during compilation, set `-Dizumi.debug.macro.rtti=true` java property! e.g.
+  * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.providermagnet=true` java property! e.g.
   * {{{
-  * sbt -Dizumi.debug.macro.rtti=true compile
+  * sbt -Dizumi.debug.macro.distage.providermagnet=true compile
   * }}}
   */
 // TODO: bench and optimize
 class ProviderMagnetMacro(val c: blackbox.Context) {
 
-  protected def generateUnsafeWeakSafeTypes: Boolean = false
-
   final val macroUniverse = StaticDIUniverse(c)
 
-  private final val logger = TrivialMacroLogger.make[this.type](c, izumi.fundamentals.reflection.DebugProperties.`izumi.debug.macro.rtti`)
+  private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.providermagnet`)
   private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
   private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
-  private final val tools =
-    if (generateUnsafeWeakSafeTypes)
-      DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
-    else
-      DIUniverseLiftables(macroUniverse)
 
-  import tools.{liftableParameter, liftableSafeType}
   import c.universe._
   import macroUniverse._
 
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
-  def impl[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = {
-    val argTree = fun.tree
+  def generateUnsafeWeakSafeTypes[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = implImpl[R](generateUnsafeWeakSafeTypes = true, fun.tree)
+  def impl[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = implImpl[R](generateUnsafeWeakSafeTypes = false, fun.tree)
+
+  def implImpl[R: c.WeakTypeTag](generateUnsafeWeakSafeTypes: Boolean, fun: c.Tree): c.Expr[ProviderMagnet[R]] = {
     val ret = SafeType(weakTypeOf[R])
 
-    val ExtractedInfo(associations, isValReference) = analyze(argTree, ret)
+    val tools =
+      if (generateUnsafeWeakSafeTypes)
+        DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
+      else
+        DIUniverseLiftables(macroUniverse)
+
+    import tools.{liftableParameter, liftableSafeType}
+
+    val ExtractedInfo(associations, isValReference) = analyze(fun, ret)
 
     val casts = associations.zipWithIndex.map {
       case (st, i) =>
@@ -77,14 +76,14 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     logger.log(
       s"""DIKeyWrappedFunction info:
          | generateUnsafeWeakSafeTypes: $generateUnsafeWeakSafeTypes\n
-         | Symbol: ${argTree.symbol}\n
-         | IsMethodSymbol: ${Option(argTree.symbol).exists(_.isMethod)}\n
+         | Symbol: ${fun.symbol}\n
+         | IsMethodSymbol: ${Option(fun.symbol).exists(_.isMethod)}\n
          | Extracted Annotations: ${associations.flatMap(_.context.symbol.annotations)}\n
          | Extracted DIKeys: ${associations.map(_.wireWith)}\n
          | IsValReference: $isValReference\n
-         | argument: ${showCode(argTree)}\n
-         | argumentTree: ${showRaw(argTree)}\n
-         | argumentType: ${argTree.tpe}
+         | argument: ${showCode(fun)}\n
+         | argumentTree: ${showRaw(fun)}\n
+         | argumentType: ${fun.tpe}
          | Result code: ${showCode(result.tree)}""".stripMargin
     )
 

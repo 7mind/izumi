@@ -1,8 +1,7 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
-import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, SymbolInfo, Tag}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
@@ -24,6 +23,7 @@ import scala.language.implicitConversions
   * }}}
   *
   * Method reference:
+  *
   * {{{
   *   def constructor(@Id("special") i: Int): Unit = ()
   *
@@ -33,6 +33,7 @@ import scala.language.implicitConversions
   * }}}
   *
   * Function value with annotated signature:
+  *
   * {{{
   *   val constructor: (Int @Id("special"), String @Id("special")) => Unit = (_, _) => ()
   *
@@ -51,33 +52,33 @@ import scala.language.implicitConversions
   * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
   * not preserve parameter annotations from case class definitions:
   *
-  *   {{{
-  *   case class X(@Id("special") i: Int)
+  * {{{
+  *  case class X(@Id("special") i: Int)
   *
-  *   make[X].from(X.apply _) // summons regular Int
-  *   make[X].from(new X(_)) // summons special Int
-  *   }}}
+  *  make[X].from(X.apply _) // summons regular Int
+  *  make[X].from(new X(_)) // summons special Int
+  * }}}
   *
   * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
   *
-  *   {{{
-  *     case class X(i: Int @Id("special"))
+  * {{{
+  *   case class X(i: Int @Id("special"))
   *
-  *     make[X].from(X.apply _) // summons special Int
-  *   }}}
+  *   make[X].from(X.apply _) // summons special Int
+  * }}}
   *
-  * Using intermediate vals` will lose annotations when converting a method into a function value,
+  * Using intermediate vals will lose annotations when converting a method into a function value,
   * prefer using annotated method directly as method reference `(method _)`:
   *
-  *   {{{
+  * {{{
   *   def constructorMethod(@Id("special") i: Int): Unit = ()
   *
   *   val constructor = constructorMethod _
   *
   *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
-  *   }}}
+  * }}}
   *
-  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
   */
 final case class ProviderMagnet[+A](get: Provider) {
   def map[B: Tag](f: A => B): ProviderMagnet[B] = {
@@ -163,6 +164,6 @@ object ProviderMagnet {
     )
   }
 
-  def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacroGenerateUnsafeWeakSafeTypes.impl[R]
+  def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacro.generateUnsafeWeakSafeTypes[R]
 
 }

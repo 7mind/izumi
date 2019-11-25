@@ -103,6 +103,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "handle opaque references with type annotations" in {
+      def xa(d: AnyRef)(implicit t: scala.reflect.runtime.universe.TypeTag[d.type]) = println(t.tpe.widen)
       val fn = ProviderMagnet.apply(deftypeannfn _).get
 
       assert(fn.diKeys contains DIKey.get[String].named("deftypeann"))
@@ -244,6 +245,10 @@ class ProviderMagnetTest extends WordSpec {
     "fail on multiple conflicting annotations on the same parameter" in {
       assertTypeError("ProviderMagnet.apply(defconfannfn _)")
       assertTypeError("ProviderMagnet.apply(defconfannfn2 _)")
+    }
+
+    "progression test: Can't expand functions with implicit arguments" in {
+      assertTypeError("ProviderMagnet.apply(defimplicitfn _)")
     }
   }
 

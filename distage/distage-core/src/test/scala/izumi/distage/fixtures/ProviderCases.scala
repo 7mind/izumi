@@ -16,6 +16,8 @@ object ProviderCases {
 
     def defconfannfn2(@Id("confargann1") @Id("confargann2") y: String): String = y
 
+    def defimplicitfn(implicit y: String): String = y
+
     val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
     val testVal2: Boolean => String = { x: Boolean @Id("valbodytypeann") => x.toString }

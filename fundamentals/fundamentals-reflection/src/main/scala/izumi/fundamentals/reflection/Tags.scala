@@ -46,7 +46,7 @@ trait Tags extends UniverseGeneric { self =>
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
-    def tpe: TypeTag[T]
+    def tpe: TypeTag[T] = null
 
     // FIXME: ???
     def classTag: ClassTag[_] = ???
@@ -176,7 +176,7 @@ trait Tags extends UniverseGeneric { self =>
     */
   trait HKTag[T] extends TagInterface[T, TypeTag] {
     /** Internal `TypeTag` holding the `typeConstructor` of type `T` */
-    def tpe: TypeTag[_]
+    def tpe: TypeTag[_] = null
     def tag: LightTypeTag
 
     override final def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
@@ -199,18 +199,8 @@ trait Tags extends UniverseGeneric { self =>
       }
     }
 
-    implicit def hktagFromTypeTag[T](implicit k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
+    implicit def hktagFromTypeTag[T](implicit l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
-        override val tpe: TypeTag[_] = {
-          val ctorCreator = new TypeCreator {
-            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-              val t = k.migrate(m).tpe.decls.head.info
-              t.typeConstructor
-            }
-          }
-
-          TypeTag(k.mirror, ctorCreator)
-        }
         override val tag: LightTypeTag = l.tag
       }
     }
@@ -227,7 +217,7 @@ trait Tags extends UniverseGeneric { self =>
       *
       * TODO: report scalac bug
       */
-    implicit def hktagFixupArgStruct[T]: HKTag[T] = macro TagMacro.fixupHKTagArgStruct[self.type, T]
+//    implicit def hktagFixupArgStruct[T]: HKTag[T] = macro TagMacro.fixupHKTagArgStruct[self.type, T]
   }
 
   /**
