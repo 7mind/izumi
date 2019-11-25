@@ -95,6 +95,8 @@ sealed trait AbstractPlan {
     steps.filter {
       op =>
         val maybeChild = ExecutableOp.instanceType(op)
+        //val maybeChild = ExecutableOp.underlyingInstanceType(op)
+        //println(s"$maybeChild vs $parent => ${maybeChild <:< parent}")
         maybeChild <:< parent
     }
   }
@@ -202,6 +204,44 @@ object SemiPlan {
 }
 
 final case class OrderedPlan(definition: ModuleBase, steps: Vector[ExecutableOp], gcMode: GCMode, topology: PlanTopology) extends AbstractPlan {
+  /**
+    * Be careful, don't use this method blindly, it can disrupt graph connectivity when used improperly.
+    *
+    * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
+    */
+  def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
+    val roots = gcMode.toSet
+    val newSteps = steps.flatMap {
+      case s if keys.contains(s.target) =>
+        val dependees = topology.dependees.direct(s.target)
+        if (dependees.diff(keys).nonEmpty || roots.contains(s.target)) {
+          val dependees = topology.dependees.transitive(s.target).diff(keys)
+          Seq(ImportDependency(s.target, dependees, s.origin))
+        } else {
+          Seq.empty
+        }
+      case s => Seq(s)
+    }
+//    val mode = gcMode match {
+//      case GCMode.GCRoots(roots) =>
+//        val keys1 = roots.diff(keys)
+//        if (keys1.isEmpty) {
+//          GCMode.GCRoots(keys1)
+//        } else {
+//          assert(newSteps.isEmpty)
+//          GCMode.NoGC
+//        }
+//
+//      case GCMode.NoGC =>
+//        GCMode.NoGC
+//    }
+    OrderedPlan(
+      definition.drop(keys),
+      newSteps,
+      GCMode.NoGC,
+      topology.removeKeys(keys),
+    )
+  }
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlan.resolveImports(AbstractPlan.importToInstances(f), steps))
   }

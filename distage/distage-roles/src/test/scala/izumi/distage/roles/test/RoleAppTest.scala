@@ -42,10 +42,11 @@ class RoleAppTest extends WordSpec
         new TestLauncher {
           override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
             l.copy(app = Seq(l.app.merge overridenBy new ModuleDef {
-              make[InitCounter].from {
+              make[InitCounter].from(initCounter)
+              make[LocatorLeak].from {
                 locatorRef: LocatorRef =>
                   locator0 = locatorRef
-                  initCounter
+                  LocatorLeak(locator0)
               }
             }))
           }
@@ -56,9 +57,9 @@ class RoleAppTest extends WordSpec
         ":" + TestRole00.id,
       ))
 
-//      println(initCounter.startedCloseables)
-//      println(initCounter.closedCloseables)
-//      println(initCounter.checkedResources)
+      //      println(initCounter.startedCloseables)
+      //      println(initCounter.closedCloseables)
+      //      println(initCounter.checkedResources)
 
       assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
       assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
@@ -80,10 +81,11 @@ class RoleAppTest extends WordSpec
               new PluginDef {
                 make[Resource0].from[Resource1]
                 many[Resource0].ref[Resource0]
-                make[InitCounter].from {
+                make[InitCounter].from(initCounter)
+                make[LocatorLeak].from {
                   locatorRef: LocatorRef =>
                     locator0 = locatorRef
-                    initCounter
+                    LocatorLeak(locator0)
                 }
               }))
           }
@@ -96,11 +98,12 @@ class RoleAppTest extends WordSpec
 
 
 
-//      println(initCounter.startedCloseables)
-//      println(initCounter.closedCloseables)
-//      println(initCounter.checkedResources)
+      //      println(initCounter.startedCloseables)
+      //      println(initCounter.closedCloseables)
+      //      println(initCounter.checkedResources)
 
       assert(initCounter.startedCloseables == initCounter.closedCloseables.reverse)
+      //assert(initCounter.checkedResources.toSet.size == 2)
       assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
     }
 
@@ -174,20 +177,24 @@ class RoleAppTest extends WordSpec
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
         TestEntrypoint.main(Array(
-          "-ll", "critical",
+          "-ll", "info",
           ":configwriter", "-t", prefix
         ))
       }
 
       val cfg1 = cfg("configwriter", version)
-      val cfg2 = cfg("configwriter-minimized", version)
-      val cfg3 = cfg("testrole00-minimized", version)
+      val cfg11 = cfg("configwriter-minimized", version)
+
+      val cfg2 = cfg("testrole00", version)
+      val cfg21 = cfg("testrole00-minimized", version)
 
       assert(cfg1.exists())
+      assert(cfg11.exists())
       assert(cfg2.exists())
-      assert(cfg3.exists())
-      assert(cfg1.length() > cfg2.length())
-      assert(new String(Files.readAllBytes(cfg3.toPath), UTF_8).contains("integrationOnlyCfg"))
+      assert(cfg21.exists())
+
+      assert(cfg1.length() > cfg11.length())
+      assert(new String(Files.readAllBytes(cfg21.toPath), UTF_8).contains("integrationOnlyCfg"))
     }
   }
 

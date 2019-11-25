@@ -3,6 +3,7 @@ package izumi.distage.roles.test.fixtures
 import java.util.concurrent.ExecutorService
 
 import izumi.distage.config.annotations.ConfPath
+import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
@@ -28,6 +29,8 @@ object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
 
+case class LocatorLeak(locatorRef: LocatorRef)
+
 class TestRole00[F[_]: DIEffect]
 (
   val conf: TestServiceConf@ConfPath("testservice"),
@@ -39,6 +42,8 @@ class TestRole00[F[_]: DIEffect]
   val resources: Set[Resource0],
   val conflict: Conflict,
   val es: ExecutorService,
+  val ref: LocatorLeak
+
 ) extends RoleService[F] {
   notCloseable.discard()
 
