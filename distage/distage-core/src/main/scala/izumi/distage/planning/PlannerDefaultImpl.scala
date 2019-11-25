@@ -55,7 +55,7 @@ final class PlannerDefaultImpl
 
   // TODO: add tests
   override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
+    order(SemiPlan(/*a.definition ++ b.definition, */(a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {
@@ -115,7 +115,7 @@ final class PlannerDefaultImpl
         ImportDependency(root, Set.empty, None)
     }.toVector
 
-    SemiPlan(plan.definition, missingRoots ++ allOps, plan.gcMode)
+    SemiPlan(/*plan.definition, */missingRoots ++ allOps, plan.gcMode)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -184,7 +184,7 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.gcMode, topology)
+    OrderedPlan(/*completedPlan.definition,*/ sortedOps.toVector, completedPlan.gcMode, topology)
   }
 
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {

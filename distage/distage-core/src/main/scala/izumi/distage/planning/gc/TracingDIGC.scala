@@ -116,7 +116,7 @@ object TracingDIGC extends DIGarbageCollector {
           Module.make(oldDefn.filter(reachable contains _.key))
         }
 
-        SemiPlan(updatedDefn, collected.nodes, plan.gcMode)
+        SemiPlan(/*updatedDefn, */collected.nodes, plan.gcMode)
 
       case GCMode.NoGC =>
         plan

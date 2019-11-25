@@ -8,6 +8,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.annotation.tailrec
 
+sealed trait OperationOrigin
+
 sealed trait ExecutableOp {
   def target: DIKey
   def origin: Option[Binding]
@@ -17,7 +19,9 @@ sealed trait ExecutableOp {
 
 object ExecutableOp {
 
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: Option[Binding]) extends ExecutableOp
+  final case class ImportDependency(target: DIKey, references: Set[DIKey], _origin: Option[Binding]) extends ExecutableOp {
+    override def origin: Option[Binding] = None
+  }
 
   sealed trait InstantiationOp extends ExecutableOp
 

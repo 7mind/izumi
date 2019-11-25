@@ -51,7 +51,7 @@ trait LocatorDef
 
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
-        ReferenceInstance(key, Instance(key.tpe, value), None)
+        ReferenceInstance(key, Instance(key.tpe, value), Some(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)))
     }.toVector
 
     val moduleDef = Module.make(
@@ -61,7 +61,7 @@ trait LocatorDef
       }.toSet
     )
 
-    OrderedPlan(moduleDef, ops, GCMode.NoGC, topology)
+    OrderedPlan(/*moduleDef,*/ ops, GCMode.NoGC, topology)
   }
 
   override def parent: Option[Locator] = None

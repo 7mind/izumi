@@ -17,6 +17,9 @@ class PlanOperationsTest extends WordSpec with MkInjector {
   private val sc1: DIKey = DIKey.get[SharedComponent1]
   private val sc2: DIKey = DIKey.get[SharedComponent2]
 
+
+  private val injector = mkInjector()
+
   "support plan trisplit" in {
     val primary = Set(pcKey)
     val sub = Set(icKey)
@@ -29,11 +32,9 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent2]
     }, primary ++ sub)
 
-    val injector = mkInjector()
-
     val split = injector.triSplitPlan(definition.bindings, primary)(_ => sub)
 
-    assert(Set[DIKey](DIKey.get[SharedComponent0], sc2).diff(split.shared.plan.index.keySet).isEmpty)
+    assert(Set(sc0, sc1, sc2).diff(split.shared.plan.index.keySet).isEmpty)
 
     assert((primary ++ sub).intersect(split.shared.plan.index.keySet).isEmpty)
     assert(primary.intersect(split.side.plan.index.keySet).isEmpty)
@@ -57,8 +58,6 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent2]
     }, primary ++ sub)
 
-    val injector = mkInjector()
-
     val split = injector.triSplitPlan(definition.bindings, primary)(_ => sub)
 
     val sideIndex = split.side.plan.index
@@ -77,7 +76,32 @@ class PlanOperationsTest extends WordSpec with MkInjector {
     assert(primaryIndex.get(sc2).exists(_.isInstanceOf[ImportDependency]))
   }
 
+  "support plan separation" in {
+    val primary = Set(pcKey)
+    val sub = Set(icKey)
 
+    val definition = PlannerInput(new ModuleDef {
+      make[PrimaryComponent]
+      make[IntegrationComponent]
+      make[SharedComponent0]
+      make[SharedComponent1]
+      make[SharedComponent2]
+    }, primary ++ sub)
+
+    val srcPlan = injector.plan(definition)
+
+    def verifySingleImport(key: DIKey): Unit = {
+      val plan = srcPlan.replaceWithImports(Set(key))
+      assert(plan.index.get(key).exists(_.isInstanceOf[ImportDependency]))
+      assert(plan.index.values.collect({ case i: ImportDependency => i }).size == 1)
+      assert(!plan.definition.keys.contains(key))
+      ()
+    }
+
+    verifySingleImport(icKey)
+    verifySingleImport(sc0)
+    verifySingleImport(sc1)
+  }
 }
 
 object PlanOperationsTest {

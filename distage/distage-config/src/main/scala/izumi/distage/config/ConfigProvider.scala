@@ -54,7 +54,7 @@ class ConfigProvider
       case TranslationResult.Success(op, _) => op
     }
 
-    val newPlan = SemiPlan(plan.definition, ops :+ usedConfigOp, plan.gcMode)
+    val newPlan = SemiPlan(/*plan.definition,*/ ops :+ usedConfigOp, plan.gcMode)
     newPlan
   }
 

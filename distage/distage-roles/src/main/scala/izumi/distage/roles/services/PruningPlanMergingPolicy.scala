@@ -81,7 +81,7 @@ class PruningPlanMergingPolicy(
         logger.debug(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, ${erased.keys.niceList() -> "erased conflicts"}")
         //logger.warn(s"Pruning strategy successfully resolved ${issues.size -> "conlicts"}, ${erased.size -> "erased"}, continuing...")
         val allResolved = (resolved.values.flatten ++ good.values.flatten).toVector
-        SemiPlan(plan.definition, allResolved, plan.gcMode)
+        SemiPlan(/*plan.definition,*/ allResolved, plan.gcMode)
       }
     } else {
       throwOnIssues(issues)
