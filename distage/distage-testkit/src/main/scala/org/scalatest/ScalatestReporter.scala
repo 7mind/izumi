@@ -74,7 +74,7 @@ class ScalatestReporter(args: Args, suiteName: String, suiteId: String) extends 
           duration = Some(duration.toMillis),
           rerunner = Some(test.id.suiteClassName),
         ))
-      case TestStatus.Cancelled(clue) =>
+      case TestStatus.Cancelled(clue, duration) =>
         args.reporter.apply(TestCanceled(
           ord(test),
           s"cancelled: $clue",
@@ -83,6 +83,7 @@ class ScalatestReporter(args: Args, suiteName: String, suiteId: String) extends 
           testName,
           scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+          duration = Some(duration.toMillis),
           rerunner = Some(test.id.suiteClassName),
         ))
       case TestStatus.Ignored(checks) =>

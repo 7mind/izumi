@@ -189,11 +189,16 @@ class DistageTestRunner[F[_] : TagK]
               _ =>
                 F.maybeSuspend {
                   val after = System.nanoTime()
-                  reporter.testStatus(test.meta, TestStatus.Succeed(FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
+                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
+                  reporter.testStatus(test.meta, TestStatus.Succeed(testDuration))
                 }
             }) {
               case s if isTestSkipException(s) =>
-                F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage)))
+                F.maybeSuspend {
+                  val after = System.nanoTime()
+                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
+                  reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration))
+                }
               case o =>
                 F.fail(o)
             }
@@ -243,7 +248,7 @@ object DistageTestRunner {
 
     sealed trait Finished extends Done
 
-    final case class Cancelled(clue: String) extends Finished
+    final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
 
     final case class Succeed(duration: FiniteDuration) extends Finished
 
