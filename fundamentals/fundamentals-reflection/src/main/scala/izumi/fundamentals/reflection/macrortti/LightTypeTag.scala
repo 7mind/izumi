@@ -2,10 +2,10 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.nio.ByteBuffer
 
-import izumi.thirdparty.internal.boopickle.Default.Pickler
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
+import izumi.thirdparty.internal.boopickle.Default.Pickler
 
 abstract class LightTypeTag
 (
@@ -25,48 +25,89 @@ abstract class LightTypeTag
     this == other
   }
 
-  def combine(o: LightTypeTag*): LightTypeTag = {
+  /**
+    * Parameterize this type tag with `args` if it describes an unapplied type lambda
+    *
+    * If there are less `args` given than this type takes parameters, it will remain a type
+    * lambda taking remaining arguments:
+    *
+    * {{{
+    *   F[?, ?, ?].combine(A, B) = F[A, B, ?]
+    * }}}
+    */
+  def combine(args: LightTypeTag*): LightTypeTag = {
 
     def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      o.foldLeft(idb) {
+      args.foldLeft(idb) {
         case (acc, v) =>
           LightTypeTag.mergeIDBs(acc, v.idb)
       }
     }
+
     def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      o.foldLeft(basesdb) {
+      args.foldLeft(basesdb) {
         case (acc, v) =>
           LightTypeTag.mergeIDBs(acc, v.basesdb)
       }
     }
 
-    LightTypeTag(ref.combine(o.map(_.ref)), mergedBases, mergedInhDb)
+    LightTypeTag(ref.combine(args.map(_.ref)), mergedBases, mergedInhDb)
   }
 
-  def combineNonPos(o: Option[LightTypeTag]*): LightTypeTag = {
+  /**
+    * Parameterize this type tag with `args` if it describes an unapplied type lambda
+    *
+    * The resulting type lambda will take parameters in places where `args` was None:
+    *
+    * {{{
+    *   F[?, ?, ?].combine(Some(A), None, Some(C)) = F[A, ?, C]
+    * }}}
+    */
+  def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
 
     def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      o.foldLeft(idb) {
+      args.foldLeft(idb) {
         case (acc, v) =>
           LightTypeTag.mergeIDBs(acc, v.map(_.idb).getOrElse(Map.empty))
       }
     }
 
     def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      o.foldLeft(basesdb) {
+      args.foldLeft(basesdb) {
         case (acc, v) =>
           LightTypeTag.mergeIDBs(acc, v.map(_.basesdb).getOrElse(Map.empty))
       }
     }
 
-    LightTypeTag(ref.combineNonPos(o.map(_.map(_.ref))), mergedBases, mergedInhDb)
+    LightTypeTag(ref.combineNonPos(args.map(_.map(_.ref))), mergedBases, mergedInhDb)
   }
 
+  /**
+    * Strip all args from type tag of parameterized type and its supertypes
+    * Useful for very rough type-constructor / class-only comparisons.
+    *
+    * NOTE: This DOES NOT RESTORE TYPE CONSTRUCTOR/LAMBDA and is
+    *       NOT equivalent to .typeConstructor call in scala-reflect
+    *       - You won't be able to call [[combine]] on result type
+    *       and partially applied types will not work correctly
+    */
+  def withoutArgs: LightTypeTag = {
+    LightTypeTag(ref.withoutArgs, basesdb.mapValues(_.map(_.withoutArgs)).toMap, idb)
+  }
+
+  /**
+    * Extract arguments applied to this type constructor
+    */
+  def typeArgs: List[LightTypeTag] = {
+    ref.typeArgs.map(LightTypeTag(_, basesdb, idb))
+  }
+
+  /** Render to string, omitting package names */
   override def toString: String = {
     ref.toString
   }
 
-  /** Fully-qualified printing of a type, use [[toString]] for a printing that omits package names */
+  /** Fully-qualified rendering of a type, use [[toString]] for a rendering that omits package names */
   def repr: String = {
     import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     ref.render()

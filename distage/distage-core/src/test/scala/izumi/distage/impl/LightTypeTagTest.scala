@@ -6,6 +6,9 @@ import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
+import scala.collection.immutable.ListSet
+import scala.collection.{BitSet, immutable, mutable}
+
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
   def blockingYieldOpCount: Int = Int.MaxValue
@@ -53,8 +56,8 @@ class LightTypeTagTest extends WordSpec {
   trait I2 extends I1
 
   trait F1[+A]
-
   trait F2[+A] extends F1[A]
+  trait F3 extends F2[Int]
 
   trait FT1[+A[+ _[+ _]]]
 
@@ -73,6 +76,8 @@ class LightTypeTagTest extends WordSpec {
   type NestedTL2[A, B, G[_]] = FM2[G[S[B, A]]]
 
   type Const[A, B] = B
+
+  type XS <: { type X }
 
   trait H1
   trait H2 extends H1
@@ -195,6 +200,12 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[F2[I2]], LTT[F1[I1]])
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
       assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertSame(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
 
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
@@ -349,6 +360,10 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
     }
 
+    "support type alias and refinement subtype checks" in {
+      assertChild(LTT[XS], LTT[{type X}])
+    }
+
     "support literal types" in {
       assertRepr(literalLtt("str"), "\"str\"")
       assertSame(literalLtt("str2"), literalLtt("str2"))
@@ -403,6 +418,38 @@ class LightTypeTagTest extends WordSpec {
       import scala.reflect.runtime.{universe => ru}
       val res = ReflectionUtil.allPartsStrong[ru.type](ru.typeOf[Id[C]].typeConstructor)
       assert(res)
+    }
+
+    "`withoutArgs` comparison works" in {
+      assert(LTT[Set[Int]].ref.withoutArgs == LTT[Set[Any]].ref.withoutArgs)
+      assert(LTT[Either[Int, String]].ref.withoutArgs == LTT[Either[Boolean, List[Int]]].ref.withoutArgs)
+
+      assertSame(LTT[Set[Int]].withoutArgs, LTT[Set[Any]].withoutArgs)
+
+      assertChild(LTT[mutable.LinkedHashSet[Int]].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+      assertChild(LTT[ListSet[Int]].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+      assertChild(LTT[ListSet[Int]].withoutArgs, LTT[immutable.Set[Any]].withoutArgs)
+      assertChild(LTT[BitSet].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+    }
+
+    "`typeArgs` works" in {
+      assertSame(LTT[Set[Int]].typeArgs.head, LTT[collection.Set[Int]].typeArgs.head)
+      assertChild(LTT[Set[Int]].typeArgs.head, LTT[collection.Set[AnyVal]].typeArgs.head)
+
+      assert(`LTT[_,_]`[Either].typeArgs.isEmpty)
+      assert(`LTT[_]`[Either[String, ?]].typeArgs == List(LTT[String]))
+      assert(`LTT[_[_]]`[T0[List, ?[_]]].typeArgs == List(`LTT[_]`[List]))
+    }
+
+    "progression test: wildcards are not supported" in {
+      assertDifferent(LTT[Set[Int]], LTT[Set[_]])
+    }
+
+    "progression test: subtype check fails when child type has absorbed a covariant type parameter of the supertype" in {
+      assertChild(LTT[Set[Int]], LTT[Iterable[AnyVal]])
+      val tagF3 = LTT[F3]
+      assertChild(tagF3, LTT[F2[Int]])
+      assertDifferent(tagF3, LTT[F2[AnyVal]])
     }
 
   }

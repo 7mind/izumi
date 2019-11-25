@@ -113,8 +113,8 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
         ctx.isChild(s.reference, t.reference) && t.decls.diff(s.decls).isEmpty
       case (s: Refinement, t: LightTypeTagRef) =>
         ctx.isChild(s.reference, t)
-      case (_: LightTypeTagRef, _: Refinement) =>
-        false
+      case (s: AbstractReference, t: Refinement) =>
+        oneOfKnownParentsIsInheritedFrom(ctx)(s, t)
     }
     logger.log(s"${if (result) "✅" else "⛔️"} $selfT <:< $thatT == $result")
     result

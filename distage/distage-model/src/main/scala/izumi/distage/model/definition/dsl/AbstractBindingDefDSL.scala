@@ -175,7 +175,8 @@ object AbstractBindingDefDSL {
             case s: SetId[_] =>
               val key = DIKey.IdKey(b.key.tpe, s.id)(s.idContract)
               b.withTarget(key)
-            case _: SetIdFromImplName => b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.use(_.toString.toLowerCase)))
+            case _: SetIdFromImplName =>
+              b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.use(_.toString.toLowerCase)))
           }
       }
     )

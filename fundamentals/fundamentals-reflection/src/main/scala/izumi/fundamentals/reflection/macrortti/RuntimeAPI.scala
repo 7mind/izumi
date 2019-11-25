@@ -40,7 +40,7 @@ private[izumi] object RuntimeAPI {
   }
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
-    val newParams = lambda.input.filterNot(p => parameters.contains(p.name))
+    val newParams = lambda.input.filterNot(parameters contains _.name)
 
     val rewriter = new Rewriter(parameters)((_, _, v) => v)
     val replaced = rewriter.replaceRefs(lambda.output)
@@ -49,19 +49,6 @@ private[izumi] object RuntimeAPI {
       replaced
     } else {
       val out = Lambda(newParams, replaced)
-//      val renamed = newParams.zipWithIndex.map {
-//        case (p, idx) =>
-//          p.name -> idx.toString
-//      }
-//      val nr = newParams.zipWithIndex.map {
-//        case (_, idx) =>
-//          LambdaParameter(idx.toString)
-//      }
-//      val rewriter = new Rewriter(renamed.toMap)((self, n, v) => {
-//        NameReference(v, self.replaceBoundaries(n.boundaries), self.replacePrefix(n.prefix))
-//      })
-//
-//      val out = Lambda(nr, rewriter.replaceRefs(replaced))
       assert(out.allArgumentsReferenced, s"bad lambda: $out, ${out.paramRefs}, ${out.referenced}")
       out
     }
@@ -112,7 +99,6 @@ private[izumi] object RuntimeAPI {
 
     private def replaceNamed(reference: AppliedNamedReference): AbstractReference = {
       reference match {
-
         case n@NameReference(ref, boundaries, prefix) =>
           rules.get(ref.name) match {
             case Some(value) =>

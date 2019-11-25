@@ -6,7 +6,7 @@ import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTag
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
-import scala.reflect.api
+import scala.reflect.{ClassTag, api}
 import scala.reflect.api.{TypeCreator, Universe}
 
 trait Tags extends UniverseGeneric { self =>
@@ -47,6 +47,9 @@ trait Tags extends UniverseGeneric { self =>
   trait Tag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
     def tpe: TypeTag[T]
+
+    // FIXME: ???
+    def classTag: ClassTag[_] = ???
 
     override final def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
   }
