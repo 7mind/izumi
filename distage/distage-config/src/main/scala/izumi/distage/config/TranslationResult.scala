@@ -1,6 +1,6 @@
 package izumi.distage.config
 
-import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.{ExecutableOp, OperationOrigin}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.typesafe.config.{ConfigOrigin, ConfigValue}
@@ -17,11 +17,13 @@ object TranslationResult {
 
     protected def origin: String = {
       op.origin match {
-        case Some(v) =>
-          s"${v.origin.toString} ($target)"
-        case None =>
+        case d: OperationOrigin.Defined =>
+          s"${d.binding.origin.toString} ($target)"
+
+        case OperationOrigin.Unknown =>
           target.toString
       }
+
     }
   }
 

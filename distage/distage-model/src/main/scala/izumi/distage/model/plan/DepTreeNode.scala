@@ -73,9 +73,20 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
     }
   }
 
+  private def renderOrigin(origin: OperationOrigin): String = {
+    origin match {
+      case OperationOrigin.UserBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.SyntheticBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.Unknown =>
+        ""
+    }
+  }
+
 
   private def renderKey(key: DIKey): String = {
-    s"${minimizer.render(key)} ${plan.index.get(key).flatMap(_.origin).map(_.origin).getOrElse("")}"
+    s"${minimizer.render(key)} ${plan.index.get(key).map(op => renderOrigin(op.origin)).getOrElse("")}"
   }
 
   private def collectKeys(node: DepTreeNode): Set[DIKey] = {

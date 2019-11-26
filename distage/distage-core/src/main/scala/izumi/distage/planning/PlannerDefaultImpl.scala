@@ -103,8 +103,8 @@ final class PlannerDefaultImpl
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
-          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).flatMap(_.origin)
-          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin)
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.toSynthetic)
+          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
       }
       .toMap
 
@@ -112,7 +112,7 @@ final class PlannerDefaultImpl
     val roots = plan.gcMode.toSet
     val missingRoots: Vector[ExecutableOp] = roots.diff(allOps.map(_.target).toSet).map {
       root =>
-        ImportDependency(root, Set.empty, None)
+        ImportDependency(root, Set.empty, OperationOrigin.Unknown)
     }.toVector
 
     SemiPlan(/*plan.definition, */missingRoots ++ allOps, plan.gcMode)

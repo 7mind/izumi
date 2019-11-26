@@ -5,7 +5,7 @@ import izumi.distage.config.annotations._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.ConfigTranslationException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, OperationOrigin, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -61,13 +61,13 @@ class ConfigProvider
   private def resolvedConfigOp(config: AppConfig, updatedSteps: Vector[TranslationResult]): ExecutableOp.WiringOp.ReferenceInstance = {
     val paths = updatedSteps.collect {
       case TranslationResult.Success(_, path) => path
-
     }
     val resolvedConfig = ResolvedConfig(config, paths.toSet)
     val target = DIKey.get[ResolvedConfig]
     ExecutableOp.WiringOp.ReferenceInstance(
-      target
-      , Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig), None
+      target,
+      Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig),
+      OperationOrigin.Unknown,
     )
   }
 

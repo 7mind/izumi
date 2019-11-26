@@ -17,7 +17,6 @@ import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
-import izumi.distage.roles.RoleAppLauncher
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import izumi.distage.staticinjector.plugins.ModuleRequirements

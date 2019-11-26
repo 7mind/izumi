@@ -1,8 +1,7 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.definition.Binding
-import izumi.distage.model.plan.ExecutableOp.ProxyOp._
 import izumi.distage.model.plan.ExecutableOp.MonadicOp._
+import izumi.distage.model.plan.ExecutableOp.ProxyOp._
 import izumi.distage.model.plan.ExecutableOp.WiringOp._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
@@ -16,8 +15,15 @@ trait OpFormatter {
 }
 
 object OpFormatter {
-  def formatBindingPosition(origin: Option[Binding]): String = {
-    origin.fold("(<unknown>)")(_.origin.toString)
+  def formatBindingPosition(origin: OperationOrigin): String = {
+    origin match {
+      case OperationOrigin.UserBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.SyntheticBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.Unknown =>
+        "(<unknown>)"
+    }
   }
 
   class Impl
@@ -26,8 +32,8 @@ object OpFormatter {
   , typeFormatter: TypeFormatter
   ) extends OpFormatter {
 
-    import typeFormatter.formatType
     import keyFormatter.formatKey
+    import typeFormatter.formatType
 
     override def format(op: ExecutableOp): String = {
       op match {
@@ -105,7 +111,7 @@ object OpFormatter {
       }
     }
 
-    private def formatOp(target: DIKey, deps: Wiring, origin: Option[Binding]): String = {
+    private def formatOp(target: DIKey, deps: Wiring, origin: OperationOrigin): String = {
       val op = formatWiring(deps)
       val pos = formatBindingPosition(origin)
       s"${formatKey(target)} $pos := $op"

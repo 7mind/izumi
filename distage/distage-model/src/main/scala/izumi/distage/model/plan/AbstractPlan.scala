@@ -16,7 +16,7 @@ import izumi.functional.Renderable
 
 
 sealed trait AbstractPlan extends ExtendedPlanAPI {
-  final def definition: ModuleBase = ModuleBase.make(steps.flatMap(_.origin.toSeq).toSet)
+  def definition: ModuleBase
 
   def gcMode: GCMode
 
@@ -135,7 +135,7 @@ final case class OrderedPlan(/*protected val definition: ModuleBase, */steps: Ve
         val dependees = topology.dependees.direct(s.target)
         if (dependees.diff(keys).nonEmpty || roots.contains(s.target)) {
           val dependees = topology.dependees.transitive(s.target).diff(keys)
-          Seq(ImportDependency(s.target, dependees, s.origin))
+          Seq(ImportDependency(s.target, dependees, s.origin.toSynthetic))
         } else {
           Seq.empty
         }

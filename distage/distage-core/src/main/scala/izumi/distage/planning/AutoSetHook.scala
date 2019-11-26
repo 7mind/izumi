@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, OperationOrigin, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -115,7 +115,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     }
 
     val newSetKeys = ListSet.newBuilder.++=(newMembers).result()
-    val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
+    val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, OperationOrigin.Unknown)
 
     plan.copy(steps = newSteps :+ newSetOp)
   }

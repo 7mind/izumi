@@ -35,7 +35,7 @@ class BindingTranslatorImpl(
         val setKey = set.key.set
 
         val next = computeProvisioning(currentPlan, SingletonBinding(elementKey, set.implementation, set.tags, set.origin))
-        val oldSet = next.sets.getOrElse(target, CreateSet(setKey, target.tpe, Set.empty, Some(binding)))
+        val oldSet = next.sets.getOrElse(target, CreateSet(setKey, target.tpe, Set.empty, OperationOrigin.UserBinding(binding)))
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
@@ -44,7 +44,7 @@ class BindingTranslatorImpl(
         )
 
       case set: EmptySetBinding[_] =>
-        val newSet = CreateSet(set.key, set.key.tpe, Set.empty, Some(binding))
+        val newSet = CreateSet(set.key, set.key.tpe, Set.empty, OperationOrigin.UserBinding(binding))
 
         NextOps(
           sets = Map(set.key -> newSet)
@@ -67,35 +67,36 @@ class BindingTranslatorImpl(
         pureWiringToWiringOp(target, binding, w)
 
       case w: MonadicWiring.Effect =>
-        MonadicOp.ExecuteEffect(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
+        MonadicOp.ExecuteEffect(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, OperationOrigin.UserBinding(binding))
 
       case w: MonadicWiring.Resource =>
-        MonadicOp.AllocateResource(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, Some(binding))
+        MonadicOp.AllocateResource(target, pureWiringToWiringOp(w.effectDIKey, binding, w.effectWiring), w, OperationOrigin.UserBinding(binding))
     }
   }
 
   private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: PureWiring): WiringOp = {
+    val userBinding = OperationOrigin.UserBinding(binding)
     wiring match {
       case w: Constructor =>
-        WiringOp.InstantiateClass(target, w, Some(binding))
+        WiringOp.InstantiateClass(target, w, userBinding)
 
       case w: AbstractSymbol =>
-        WiringOp.InstantiateTrait(target, w, Some(binding))
+        WiringOp.InstantiateTrait(target, w, userBinding)
 
       case w: Factory =>
-        WiringOp.InstantiateFactory(target, w, Some(binding))
+        WiringOp.InstantiateFactory(target, w, userBinding)
 
       case w: FactoryFunction =>
-        WiringOp.CallFactoryProvider(target, w, Some(binding))
+        WiringOp.CallFactoryProvider(target, w, userBinding)
 
       case w: Function =>
-        WiringOp.CallProvider(target, w, Some(binding))
+        WiringOp.CallProvider(target, w, userBinding)
 
       case w: Instance =>
-        WiringOp.ReferenceInstance(target, w, Some(binding))
+        WiringOp.ReferenceInstance(target, w, userBinding)
 
       case w: Reference =>
-        WiringOp.ReferenceKey(target, w, Some(binding))
+        WiringOp.ReferenceKey(target, w, userBinding)
     }
   }
 

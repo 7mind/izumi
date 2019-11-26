@@ -1,9 +1,8 @@
 package izumi.distage.planning.gc
 
 import izumi.distage.model.GCMode
-import izumi.distage.model.definition.Module
 import izumi.distage.model.exceptions.UnsupportedOpException
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, ProxyOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp._
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -110,11 +109,11 @@ object TracingDIGC extends DIGarbageCollector {
         assert(roots.nonEmpty)
         val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
 
-        val updatedDefn = {
-          val oldDefn = plan.definition.bindings
-          val reachable = collected.reachable
-          Module.make(oldDefn.filter(reachable contains _.key))
-        }
+//        val updatedDefn = {
+//          val oldDefn = plan.definition.bindings
+//          val reachable = collected.reachable
+//          Module.make(oldDefn.filter(reachable contains _.key))
+//        }
 
         SemiPlan(/*updatedDefn, */collected.nodes, plan.gcMode)
 

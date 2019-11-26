@@ -51,7 +51,8 @@ trait LocatorDef
 
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
-        ReferenceInstance(key, Instance(key.tpe, value), Some(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)))
+        val origin = OperationOrigin.SyntheticBinding(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown))
+        ReferenceInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
     val moduleDef = Module.make(

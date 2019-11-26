@@ -8,46 +8,65 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.annotation.tailrec
 
-sealed trait OperationOrigin
+sealed trait OperationOrigin {
+  def toSynthetic: OperationOrigin.Synthetic
+}
+object OperationOrigin {
+  sealed trait Defined extends OperationOrigin {
+    def binding: Binding
+  }
+
+  case class UserBinding(binding: Binding) extends Defined {
+    override def toSynthetic: Synthetic = SyntheticBinding(binding)
+  }
+
+  sealed trait Synthetic extends OperationOrigin
+
+  case class SyntheticBinding(binding: Binding) extends Synthetic with Defined {
+    override def toSynthetic: Synthetic = this
+  }
+
+  case object Unknown extends Synthetic {
+    override def toSynthetic: Synthetic = this
+  }
+}
 
 sealed trait ExecutableOp {
   def target: DIKey
-  def origin: Option[Binding]
+  def origin: OperationOrigin
 
   override final def toString: String = new OpFormatter.Impl(KeyFormatter.Full, TypeFormatter.Full).format(this)
 }
 
 object ExecutableOp {
 
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], _origin: Option[Binding]) extends ExecutableOp {
-    override def origin: Option[Binding] = None
-  }
+  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: OperationOrigin.Synthetic) extends ExecutableOp
 
   sealed trait InstantiationOp extends ExecutableOp
 
-  final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: Option[Binding]) extends InstantiationOp
+  final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: OperationOrigin) extends InstantiationOp
 
   sealed trait WiringOp extends InstantiationOp {
     def target: DIKey
     def wiring: PureWiring
-    def origin: Option[Binding]
+    def origin: OperationOrigin
   }
 
   object WiringOp {
 
-    final case class InstantiateClass(target: DIKey, wiring: SingletonWiring.Constructor, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateClass(target: DIKey, wiring: SingletonWiring.Constructor, origin: OperationOrigin) extends WiringOp
 
-    final case class InstantiateTrait(target: DIKey, wiring: SingletonWiring.AbstractSymbol, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateTrait(target: DIKey, wiring: SingletonWiring.AbstractSymbol, origin: OperationOrigin) extends WiringOp
 
-    final case class InstantiateFactory(target: DIKey, wiring: Factory, origin: Option[Binding]) extends WiringOp
+    final case class InstantiateFactory(target: DIKey, wiring: Factory, origin: OperationOrigin) extends WiringOp
 
-    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: Option[Binding]) extends WiringOp
+    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
 
-    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: Option[Binding]) extends WiringOp
+    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
 
-    final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: Option[Binding]) extends WiringOp
+    final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
 
-    final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: Option[Binding]) extends WiringOp
+    final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: OperationOrigin) extends WiringOp
 
   }
 
@@ -58,11 +77,11 @@ object ExecutableOp {
 
   object MonadicOp {
 
-    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: Option[Binding]) extends MonadicOp {
+    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: OperationOrigin) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
 
-    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: Option[Binding]) extends MonadicOp {
+    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: OperationOrigin) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
 
@@ -72,11 +91,11 @@ object ExecutableOp {
 
   object ProxyOp {
 
-    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: Option[Binding], byNameAllowed: Boolean) extends ProxyOp {
+    final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: OperationOrigin, byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
     }
 
-    final case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy, origin: Option[Binding]) extends ProxyOp
+    final case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy, origin: OperationOrigin) extends ProxyOp
 
   }
 
