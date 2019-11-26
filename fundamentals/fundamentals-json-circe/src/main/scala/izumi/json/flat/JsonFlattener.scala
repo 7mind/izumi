@@ -25,6 +25,7 @@ class JsonFlattener {
   private final val escapeChar = '\\'
   private final val escape = new IzEscape(controlChars, escapeChar)
 
+
   def flatten(node: Json): Seq[(String, String)] = {
     flatten(node, Seq.empty)
   }
@@ -34,12 +35,14 @@ class JsonFlattener {
       Seq(makePath(prefix, "null") -> "null"),
       b => Seq(makePath(prefix, "bool") -> b.toString),
       n => {
-        n.toBigInt.map {
-          bi =>
-            Seq(makePath(prefix, "long") -> bi.toString)
-        }.getOrElse {
-          Seq(makePath(prefix, "float") -> n.toBigDecimal.map(_.toString()).getOrElse(n.toDouble.toString))
-        }
+        n.toBigInt
+          .map {
+            bi =>
+              Seq(makePath(prefix, "long") -> bi.toString)
+          }
+          .getOrElse {
+            Seq(makePath(prefix, "float") -> n.toBigDecimal.map(_.toString()).getOrElse(n.toDouble.toString))
+          }
 
       },
       s => Seq(makePath(prefix, "str") -> s),
@@ -77,6 +80,7 @@ class JsonFlattener {
     }
     s"${prefix.mkString(".")}:$tpe"
   }
+
 
   def inflate(pairs: Seq[(String, String)]): Either[List[UnpackFailure], Json] = {
     val maybePaths = pairs.map {
@@ -160,6 +164,7 @@ class JsonFlattener {
     }
   }
 
+
   private def inflateParsed(pairs: Seq[(Seq[PathElement], Char, String)]): Either[List[UnpackFailure], Json] = {
     val grouped = pairs.groupBy(_._1.headOption)
 
@@ -221,13 +226,12 @@ class JsonFlattener {
           case LongT => Json.fromLong(value.toLong)
           case FloatT => Json.fromBigDecimal(BigDecimal.apply(value))
           case StringT => Json.fromString(value)
-          case AggT =>
-            value match {
-              case "obj" =>
-                Json.obj()
-              case "arr" =>
-                Json.arr()
-            }
+          case AggT => value match {
+            case "obj" =>
+              Json.obj()
+            case "arr" =>
+              Json.arr()
+          }
         }
       }
     } catch {

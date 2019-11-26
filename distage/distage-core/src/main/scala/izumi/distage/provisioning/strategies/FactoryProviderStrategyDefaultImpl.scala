@@ -8,9 +8,10 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, W
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.provisioning.FactoryTools
 
-class FactoryProviderStrategyDefaultImpl(
+class FactoryProviderStrategyDefaultImpl
+(
   loggerHook: LoggerHook
-) extends FactoryProviderStrategy {
+) extends FactoryProviderStrategy  {
   def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
@@ -21,10 +22,8 @@ class FactoryProviderStrategyDefaultImpl(
           case _ if key.wireWith == DIKey.get[FactoryExecutor] =>
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
-            throw new InvalidPlanException(
-              "The impossible happened! Tried to instantiate class," +
-              s" but the dependency has not been initialized: Class: $op.target, dependency: $key"
-            )
+            throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
+                s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
         }
     }
 
@@ -32,16 +31,11 @@ class FactoryProviderStrategyDefaultImpl(
     Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
-  private def mkExecutor(
-    context: ProvisioningKeyProvider,
-    executor: WiringExecutor,
-    factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod],
-    op: WiringOp.CallFactoryProvider
-  ): FactoryExecutor =
+  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], op: WiringOp.CallFactoryProvider): FactoryExecutor =
     (idx, args) => {
       loggerHook.log(s"FactoryExecutor: Start! Looking up method index $idx in $factoryIndex")
 
-      val method @ Wiring.FactoryFunction.FactoryMethod(_, wireWith, methodArguments) = factoryIndex(idx)
+      val method@Wiring.FactoryFunction.FactoryMethod(_, wireWith, methodArguments) = factoryIndex(idx)
 
       loggerHook.log(s"FactoryExecutor: Executing method $method with ${args.toList} in context $context")
 
@@ -64,3 +58,4 @@ class FactoryProviderStrategyDefaultImpl(
       res
     }
 }
+

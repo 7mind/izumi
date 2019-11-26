@@ -3,6 +3,7 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.collections
 import izumi.fundamentals.collections.WildcardPrefixTree.PathElement
 
+
 case class WildcardPrefixTree[K, V](values: Seq[V], children: Map[PathElement[K], WildcardPrefixTree[K, V]]) {
   def findSubtrees(prefix: List[K]): Seq[WildcardPrefixTree[K, V]] = {
     prefix match {
@@ -30,10 +31,12 @@ object WildcardPrefixTree {
   def build[P, V](pairs: Seq[(Seq[Option[P]], V)]): WildcardPrefixTree[P, V] = {
     val (currentValues, subValues) = pairs.partition(_._1.isEmpty)
 
-    val next = subValues.collect {
-      case (k :: tail, v) =>
-        (k, (tail, v))
-    }.groupBy(_._1)
+    val next = subValues
+      .collect {
+        case (k :: tail, v) =>
+          (k, (tail, v))
+      }
+      .groupBy(_._1)
       .toSeq
       .map {
         case (k, group) =>

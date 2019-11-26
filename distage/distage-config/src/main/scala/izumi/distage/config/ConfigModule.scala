@@ -20,9 +20,9 @@ import izumi.fundamentals.typesafe.config.{RuntimeConfigReader, RuntimeConfigRea
   * }}}
   */
 case class ConfigInjectionOptions(
-  enableScalars: Boolean = true,
-  transformer: ConfigValueTransformer = ConfigValueTransformer.Null,
-)
+                                   enableScalars: Boolean = true,
+                                   transformer: ConfigValueTransformer = ConfigValueTransformer.Null,
+                                 )
 
 object ConfigInjectionOptions {
   def make(transformer: PartialFunction[(ConfigImport, Any), Any]): ConfigInjectionOptions = {

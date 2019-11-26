@@ -26,13 +26,11 @@ object RawEnum {
   object Aux {
     def apply(v: Seq[EnumOp]): Aux = {
       import EnumOp._
-      Aux(
-        RawEnum(
-          v.collect({ case Extend(i) => i }).toList,
-          v.collect({ case AddMember(i) => i }).toList,
-          v.collect({ case RemoveMember(i) => i }).toList
-        )
-      )
+      Aux(RawEnum(
+        v.collect({ case Extend(i) => i }).toList
+        , v.collect({ case AddMember(i) => i }).toList
+        , v.collect({ case RemoveMember(i) => i }).toList
+      ))
     }
   }
 }

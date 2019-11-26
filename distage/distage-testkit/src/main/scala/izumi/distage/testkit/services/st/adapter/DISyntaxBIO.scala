@@ -6,7 +6,7 @@ import distage.Tag
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer}
 
 @deprecated("Use dstest", "2019/Jul/18")
-trait DISyntaxBIO[F[+_, +_]] extends DISyntaxBIOBase[F] {
+trait DISyntaxBIO[F[+ _, + _]] extends DISyntaxBIOBase[F] {
   this: DISyntax[F[Throwable, ?]] =>
 
   override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = dio(fAsThrowable)

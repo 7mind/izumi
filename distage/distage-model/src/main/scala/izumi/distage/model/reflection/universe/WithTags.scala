@@ -2,8 +2,7 @@ package izumi.distage.model.reflection.universe
 
 import izumi.fundamentals.reflection.Tags
 
-trait WithTags {
-  self: DIUniverseBase =>
+trait WithTags { self: DIUniverseBase =>
   val tags: (Tags { val u: self.u.type }) with Singleton
 
   final type Tag[T] = tags.Tag[T]

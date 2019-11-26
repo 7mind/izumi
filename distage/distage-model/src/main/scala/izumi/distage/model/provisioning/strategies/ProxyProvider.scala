@@ -24,17 +24,18 @@ object ProxyParams {
 }
 
 case class TraitContext(
-  index: TraitIndex,
-  context: ProvisioningKeyProvider
-)
+                         index: TraitIndex
+                       , context: ProvisioningKeyProvider
+                       )
+
 
 case class FactoryContext(
-  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod],
-  dependencyMethodIndex: TraitIndex,
-  narrowedContext: ProvisioningKeyProvider,
-  executor: WiringExecutor,
-  op: WiringOp.InstantiateFactory
-)
+                           factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
+                         , dependencyMethodIndex: TraitIndex
+                         , narrowedContext: ProvisioningKeyProvider
+                         , executor: WiringExecutor
+                         , op: WiringOp.InstantiateFactory
+                         )
 
 case class CycleContext(deferredKey: RuntimeDIUniverse.DIKey)
 

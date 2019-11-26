@@ -45,7 +45,7 @@ class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: ID
     }
   }
 
-  private def readManifest[T <: BuildManifest: ClassTag: Decoder: Encoder](default: T): T = {
+  private def readManifest[T <: BuildManifest : ClassTag : Decoder : Encoder](default: T): T = {
     val defaultJson = default.asJson.deepMerge(patch)
     val defaultMfFile = Paths.get("manifests", s"${lang.toString.toLowerCase}.json").toFile
 
@@ -73,9 +73,7 @@ class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: ID
 
       case RawMf.Default(json, d, suppressed) =>
         if (!suppressed) {
-          log.log(
-            s"No manifest defined for $lang and default manifest file `${d.toPath}` is missing, using default (you may suppress this message by using `-m @` switch):"
-          )
+          log.log(s"No manifest defined for $lang and default manifest file `${d.toPath}` is missing, using default (you may suppress this message by using `-m @` switch):")
           log.log(json.toString())
           log.log("")
         }
@@ -102,6 +100,7 @@ class ManifestReader(log: CompilerLog, shutdown: Shutdown, patch: Json, lang: ID
         value
     }
   }
+
 
   private def readMfFromFile(path: File): RawMf = {
     Try(parse(IzFiles.readString(path))) match {

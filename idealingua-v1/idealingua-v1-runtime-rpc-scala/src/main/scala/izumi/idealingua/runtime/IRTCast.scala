@@ -9,6 +9,7 @@ trait IRTExtend[From, To] {
   def next(f: From): INSTANTIATOR
 }
 
+
 trait IRTConversions[From] {
   protected def _value: From
   def to[T](implicit converter: IRTCast[From, T]): T = converter.convert(_value)

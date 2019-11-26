@@ -19,7 +19,7 @@ import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 
 @deprecated("Use dstest", "2019/Jul/18")
-abstract class DistagePluginTestSupport[F[_]: TagK] extends DistageTestSupport[F] {
+abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[F] {
 
   /**
     * This may be used as an implementation of [[pluginPackages]] in simple cases.
@@ -63,9 +63,9 @@ abstract class DistagePluginTestSupport[F[_]: TagK] extends DistageTestSupport[F
     val roles = loadRoles(logger)
     val appActivation = AppActivation(env.availableActivations, activation)
     val defBs = env.bsModule overridenBy new BootstrapModuleDef {
-        make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
-        make[AppActivation].from(appActivation)
-      }
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
+      make[AppActivation].from(appActivation)
+    }
     TestEnvironment(
       defBs,
       env.appModule,
@@ -78,8 +78,7 @@ abstract class DistagePluginTestSupport[F[_]: TagK] extends DistageTestSupport[F
   protected def memoizePlugins: Boolean = {
     import izumi.fundamentals.platform.strings.IzString._
 
-    System
-      .getProperty("izumi.distage.testkit.plugins.memoize")
+    System.getProperty("izumi.distage.testkit.plugins.memoize")
       .asBoolean(true)
   }
 
@@ -112,3 +111,6 @@ abstract class DistagePluginTestSupport[F[_]: TagK] extends DistageTestSupport[F
   }
 
 }
+
+
+

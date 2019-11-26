@@ -9,8 +9,7 @@ import scala.language.experimental.macros
 import scala.reflect.api
 import scala.reflect.api.{TypeCreator, Universe}
 
-trait Tags extends UniverseGeneric {
-  self =>
+trait Tags extends UniverseGeneric { self =>
 
   import ReflectionUtil.WeakTypeTagMigrate
   import u._
@@ -44,9 +43,7 @@ trait Tags extends UniverseGeneric {
     * (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
     * * Further details at [[https://github.com/7mind/izumi/pull/369]]
     */
-  @implicitNotFound(
-    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
-  )
+  @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
   trait Tag[T] extends TagInterface[T, TypeTag] {
     def tag: LightTypeTag
     def tpe: TypeTag[T]
@@ -242,11 +239,11 @@ trait Tags extends UniverseGeneric {
     */
   type TagK[K[_]] = HKTag[{ type Arg[A] = K[A] }]
   type TagKK[K[_, _]] = HKTag[{ type Arg[A, B] = K[A, B] }]
-  type TagK3[K[_, _, _]] = HKTag[{ type Arg[A, B, C] = K[A, B, C] }]
+  type TagK3[K[_, _, _]] = HKTag[{ type Arg[A, B, C] = K[A, B, C]}]
 
-  type TagT[K[_[_]]] = HKTag[{ type Arg[A[_]] = K[A] }]
+  type TagT[K[_[_]]] = HKTag[{ type Arg[A[_]] = K[A]}]
   type TagTK[K[_[_], _]] = HKTag[{ type Arg[A[_], B] = K[A, B] }]
-  type TagTKK[K[_[_], _, _]] = HKTag[{ type Arg[A[_], B, C] = K[A, B, C] }]
+  type TagTKK[K[_[_], _, _]] = HKTag[{ type  Arg[A[_], B, C] = K[A, B, C] }]
   type TagTK3[K[_[_], _, _, _]] = HKTag[{ type Arg[A[_], B, C, D] = K[A, B, C, D] }]
 
   object TagK {
@@ -258,7 +255,7 @@ trait Tags extends UniverseGeneric {
       *     TagK[Option]
       * }}}
       **/
-    def apply[K[_]: TagK]: TagK[K] = {
+    def apply[K[_] : TagK]: TagK[K] = {
       implicitly
     }
   }

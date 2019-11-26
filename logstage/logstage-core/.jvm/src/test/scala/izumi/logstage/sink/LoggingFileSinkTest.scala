@@ -130,8 +130,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
         (sink, logger) =>
           (1 to fileSize * filesLimit).foreach {
-            i =>
-              logger.info(s"dummy message: $i")
+            i => logger.info(s"dummy message: $i")
           }
           val curState1 = sink.sinkState.get()
           assert(curState1.forRotate.isEmpty)
@@ -153,6 +152,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       }
     }
 
+
     "perform continuing writing when rotation is enabled " in {
 
       val fileSize = 2
@@ -161,10 +161,7 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       val svc = fileSvcUtils.provideSvc(dummyFolder)
 
       svc.withPreparedData {
-        (0 until filesLimit).map {
-          i =>
-            (i, (1 to fileSize).map(idx => idx.toString).toList)
-        }.toList
+        (0 until filesLimit).map { i => (i, (1 to fileSize).map(idx => idx.toString).toList) }.toList
       }
 
       withFileLogger(withRotation(policy, fileSize = fileSize, filesLimit = filesLimit, fileService = svc)) {
@@ -185,13 +182,13 @@ trait LoggingFileSinkTest[T <: LogFile] extends WordSpec with GivenWhenThen {
       withFileLogger(withoutRotation(policy, fileSize = fileSize, fileService = svc, broken = true)) {
         (sink, logger) =>
           (0 until fileSize) foreach {
-            i =>
-              logger.info(s"dummy $i")
+            i => logger.info(s"dummy $i")
           }
           assert(sink.asInstanceOf[FileSinkBrokenImpl[T]].recoveredMessages.lengthCompare(2 * fileSize) == 0)
       }
     }
   }
+
 
 }
 
@@ -199,9 +196,11 @@ class DummyFileSinkTest extends LoggingFileSinkTest[DummyFile] {
   override val fileSvcUtils: FileServiceUtils[DummyFile] = (path: String) => new DummyFileServiceImpl(path)
 }
 
+
 class RealFileSinkTest extends LoggingFileSinkTest[RealFile] {
   override val fileSvcUtils: FileServiceUtils[RealFile] = (path: String) => new FileServiceImpl(path)
 }
+
 
 object LoggingFileSinkTest {
 
@@ -214,20 +213,13 @@ object LoggingFileSinkTest {
       Random.nextInt(until)
     }
 
-  def dummySink[F <: LogFile](
-    renderingPolicy: RenderingPolicy,
-    r: FileRotation,
-    fileSize: Int,
-    fileService: FileService[F],
-    broken: Boolean,
-    softLimit: Boolean
-  ): FileSink[F] = {
+  def dummySink[F <: LogFile](renderingPolicy: RenderingPolicy, r: FileRotation, fileSize: Int, fileService: FileService[F], broken: Boolean, softLimit : Boolean): FileSink[F] = {
 
     val cfg = (if (softLimit) {
-                 FileSinkConfig.soft(_: Int)
-               } else {
-                 FileSinkConfig.inBytes(_: Int)
-               })(fileSize)
+      FileSinkConfig.soft(_ : Int)
+    } else {
+      FileSinkConfig.inBytes(_ : Int)
+    })(fileSize)
 
     if (broken) {
       new FileSinkBrokenImpl(renderingPolicy, fileService, r, cfg)
@@ -237,23 +229,23 @@ object LoggingFileSinkTest {
   }
 
   def withoutRotation[F <: LogFile](
-    renderingPolicy: RenderingPolicy,
-    fileSize: Int,
-    fileService: FileService[F],
-    broken: Boolean = false,
-    softLimit: Boolean = true
-  ): FileSink[F] = {
+                                     renderingPolicy: RenderingPolicy
+                                     , fileSize: Int
+                                     , fileService: FileService[F]
+                                     , broken: Boolean = false
+                                     , softLimit: Boolean = true
+                                   ): FileSink[F] = {
     dummySink(renderingPolicy, FileRotation.DisabledRotation, fileSize, fileService, broken, softLimit)
   }
 
   def withRotation[F <: LogFile](
-    renderingPolicy: RenderingPolicy,
-    fileSize: Int,
-    fileService: FileService[F],
-    filesLimit: Int,
-    broken: Boolean = false,
-    softLimit: Boolean = true
-  ): FileSink[F] = {
+                                  renderingPolicy: RenderingPolicy
+                                  , fileSize: Int
+                                  , fileService: FileService[F]
+                                  , filesLimit: Int
+                                  , broken: Boolean = false
+                                  , softLimit: Boolean = true
+                                ): FileSink[F] = {
     dummySink(renderingPolicy, FileRotation.FileLimiterRotation(filesLimit), fileSize, fileService, broken, softLimit)
   }
 
@@ -268,22 +260,18 @@ object LoggingFileSinkTest {
     }
   }
 
-  class FileSinkTestImpl[F <: LogFile](
-    override val renderingPolicy: RenderingPolicy,
-    override val fileService: FileService[F],
-    override val rotation: FileRotation,
-    override val config: FileSinkConfig
-  ) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
+  class FileSinkTestImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+                                       , override val fileService: FileService[F]
+                                       , override val rotation: FileRotation
+                                       , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
 
     override def recoverOnFail(e: String): Unit = println
   }
 
-  class FileSinkBrokenImpl[F <: LogFile](
-    override val renderingPolicy: RenderingPolicy,
-    override val fileService: FileService[F],
-    override val rotation: FileRotation,
-    override val config: FileSinkConfig
-  ) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
+  class FileSinkBrokenImpl[F <: LogFile](override val renderingPolicy: RenderingPolicy
+                                         , override val fileService: FileService[F]
+                                         , override val rotation: FileRotation
+                                         , override val config: FileSinkConfig) extends FileSink[F](renderingPolicy, fileService, rotation, config) {
 
     val recoveredMessages: ListBuffer[String] = ListBuffer.empty[String]
 

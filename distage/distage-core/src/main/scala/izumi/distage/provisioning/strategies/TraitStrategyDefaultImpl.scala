@@ -8,7 +8,8 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.fundamentals.platform.language.Quirks
 
-class TraitStrategyDefaultImpl(
+class TraitStrategyDefaultImpl
+(
   proxyProvider: ProxyProvider,
   mirror: MirrorProvider,
   traitInit: TraitInitTool,

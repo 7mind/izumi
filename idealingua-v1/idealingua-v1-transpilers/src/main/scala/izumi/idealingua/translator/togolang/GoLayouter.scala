@@ -7,7 +7,9 @@ import izumi.idealingua.translator.{ExtendedModule, Layouted, Translated, Transl
 
 class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
 
+
   override def layout(outputs: Seq[Translated]): Layouted = {
+
 
     val modules = outputs.flatMap {
       out =>
@@ -31,6 +33,7 @@ class GoLayouter(options: GoTranslatorOptions) extends TranslationLayouter {
         allModules
 
     }
+
 
     Layouted(out)
   }

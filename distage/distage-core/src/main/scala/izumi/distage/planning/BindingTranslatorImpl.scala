@@ -15,17 +15,18 @@ trait BindingTranslator {
 }
 
 class BindingTranslatorImpl(
-  protected val reflectionProvider: ReflectionProvider.Runtime,
-  protected val hook: PlanningHook,
-) extends BindingTranslator {
+                             protected val reflectionProvider: ReflectionProvider.Runtime,
+                             protected val hook: PlanningHook,
+
+                           ) extends BindingTranslator {
   def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
     binding match {
       case singleton: SingletonBinding[_] =>
         val newOp = provisionSingleton(singleton)
 
         NextOps(
-          sets = Map.empty,
-          provisions = Seq(newOp)
+          sets = Map.empty
+          , provisions = Seq(newOp)
         )
 
       case set: SetElementBinding =>
@@ -38,16 +39,16 @@ class BindingTranslatorImpl(
         val newSet = oldSet.copy(members = oldSet.members + elementKey)
 
         NextOps(
-          sets = next.sets.updated(target, newSet),
-          provisions = next.provisions
+          sets = next.sets.updated(target, newSet)
+          , provisions = next.provisions
         )
 
       case set: EmptySetBinding[_] =>
         val newSet = CreateSet(set.key, set.key.tpe, Set.empty, Some(binding))
 
         NextOps(
-          sets = Map(set.key -> newSet),
-          provisions = Seq.empty
+          sets = Map(set.key -> newSet)
+          , provisions = Seq.empty
         )
     }
   }

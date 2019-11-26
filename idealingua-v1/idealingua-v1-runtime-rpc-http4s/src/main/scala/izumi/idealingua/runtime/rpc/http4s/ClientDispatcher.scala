@@ -10,13 +10,15 @@ import io.circe.parser.parse
 import org.http4s._
 import org.http4s.client.blaze._
 
-class ClientDispatcher[C <: Http4sContext](
-  val c: C#IMPL[C],
-  logger: IzLogger,
-  printer: circe.Printer,
-  baseUri: Uri,
-  codec: IRTClientMultiplexor[C#BiIO]
-) extends IRTDispatcher[C#BiIO] {
+class ClientDispatcher[C <: Http4sContext]
+(
+  val c: C#IMPL[C]
+, logger: IzLogger
+, printer: circe.Printer
+, baseUri: Uri
+, codec: IRTClientMultiplexor[C#BiIO]
+)
+  extends IRTDispatcher[C#BiIO] {
   import c._
 
   def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
@@ -24,14 +26,15 @@ class ClientDispatcher[C <: Http4sContext](
 
     logger.trace(s"${request.method -> "method"}: Goint to perform $request")
 
-    codec.encode(request).flatMap {
-      encoded =>
-        val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
-        val req = buildRequest(baseUri, request, outBytes)
+    codec.encode(request)
+      .flatMap {
+        encoded =>
+          val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
+          val req = buildRequest(baseUri, request, outBytes)
 
-        logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
-        runRequest(handler, req)
-    }
+          logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
+          runRequest(handler, req)
+      }
   }
 
   protected def runRequest[T](handler: Response[MonoIO] => MonoIO[T], req: Request[MonoIO]): BiIO[Throwable, T] = {
@@ -42,7 +45,7 @@ class ClientDispatcher[C <: Http4sContext](
     }
   }
 
-  protected def blazeClientBuilder(defaultBuilder: BlazeClientBuilder[MonoIO]): BlazeClientBuilder[MonoIO] = {
+  protected def blazeClientBuilder(defaultBuilder: BlazeClientBuilder[MonoIO]) : BlazeClientBuilder[MonoIO] = {
     defaultBuilder
   }
 
@@ -54,28 +57,28 @@ class ClientDispatcher[C <: Http4sContext](
       F.fail(IRTUnexpectedHttpStatus(resp.status))
     } else {
       resp
-        .as[MaterializedStream]
-        .flatMap {
-          body =>
-            logger.trace(s"${input.method -> "method"}: Received response: $body")
-            val decoded = for {
-              parsed <- c.F.fromEither(parse(body))
-              product <- codec.decode(parsed, input.method)
-            } yield {
-              logger.trace(s"${input.method -> "method"}: decoded response: $product")
-              product
-            }
+      .as[MaterializedStream]
+      .flatMap {
+        body =>
+          logger.trace(s"${input.method -> "method"}: Received response: $body")
+          val decoded = for {
+            parsed <- c.F.fromEither(parse(body))
+            product <- codec.decode(parsed, input.method)
+          } yield {
+            logger.trace(s"${input.method -> "method"}: decoded response: $product")
+            product
+          }
 
-            decoded.sandbox.catchAll {
-              case BIOExit.Error(error, trace) =>
-                logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error $trace")
-                F.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on body=$body: error=$error trace=$trace", Option(error)))
+          decoded.sandbox.catchAll {
+            case BIOExit.Error(error, trace) =>
+              logger.info(s"${input.method -> "method"}: decoder returned failure on $body: $error $trace")
+              F.fail(new IRTUnparseableDataException(s"${input.method}: decoder returned failure on body=$body: error=$error trace=$trace", Option(error)))
 
-              case BIOExit.Termination(f, _, trace) =>
-                logger.info(s"${input.method -> "method"}: decoder failed on $body: $f $trace")
-                F.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on body=$body: f=$f trace=$trace", Option(f)))
-            }
-        }
+            case BIOExit.Termination(f, _, trace) =>
+              logger.info(s"${input.method -> "method"}: decoder failed on $body: $f $trace")
+              F.fail(new IRTUnparseableDataException(s"${input.method}: decoder failed on body=$body: f=$f trace=$trace", Option(f)))
+          }
+      }
     }
   }
 

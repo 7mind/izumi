@@ -9,7 +9,7 @@ import zio.{IO, UIO, ZIO}
 trait BlockingIO[F[_, _]] {
 
   /** Execute a blocking action in `Blocking` thread pool, current task will be safely parked until the blocking task finishes **/
-  def shiftBlocking[E, A](f: F[E, A]): F[E, A]
+  def shiftBlocking[E, A](f: F[E ,A]): F[E, A]
 
   /** Execute a blocking impure task in `Blocking` thread pool, current task will be safely parked until the blocking task finishes **/
   def syncBlocking[A](f: => A): F[Throwable, A]
@@ -38,7 +38,7 @@ object BlockingIO {
   }
 
   implicit final def blockingIOZIO(implicit serviceBlocking: Blocking): BlockingIO[IO] = new BlockingIO[IO] {
-    override def shiftBlocking[E, A](f: IO[E, A]): IO[E, A] = serviceBlocking.blocking.blocking(f)
+    override def shiftBlocking[E, A](f: IO[E ,A]): IO[E, A] = serviceBlocking.blocking.blocking(f)
     override def syncBlocking[A](f: => A): IO[Throwable, A] = serviceBlocking.blocking.blocking(IO(f))
     override def syncInterruptibleBlocking[A](f: => A): IO[Throwable, A] = serviceBlocking.blocking.effectBlocking(f)
   }

@@ -55,6 +55,7 @@ class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
     s"${method.name.capitalize}$badAltSuffix"
   }
 
+
   def toPositiveBranchName(id: AdtId): String = {
     Quirks.discard(id)
     goodAltBranchName
@@ -64,6 +65,7 @@ class TypespaceToolsImpl(ts: Typespace) extends TypespaceTools {
     Quirks.discard(id)
     badAltBranchName
   }
+
 
   def toDtoName(id: TypeId): String = {
     id match {

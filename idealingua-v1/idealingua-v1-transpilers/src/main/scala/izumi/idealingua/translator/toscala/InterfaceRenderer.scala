@@ -27,6 +27,7 @@ class InterfaceRenderer(ctx: STContext) {
              ..$impl
          }"""
 
+
     val toolBases = List(rt.Conversions.parameterize(List(t.typeFull)).init())
 
     val tools = t.within(s"${i.id.name}Extensions")
@@ -42,6 +43,7 @@ class InterfaceRenderer(ctx: STContext) {
     }
 
     val ifDecls = (rt.generated +: supers.map(conv.toScala)).map(_.init())
+
 
     val qqInterface =
       q"""trait ${t.typeName} extends ..$ifDecls {

@@ -29,8 +29,10 @@ object BasicNamingConventionsRule extends VerificationRule {
         }
 
         singleChar ++
-        noncapitalized ++
-        reserved
+          noncapitalized ++
+          reserved
     }
   }
 }
+
+

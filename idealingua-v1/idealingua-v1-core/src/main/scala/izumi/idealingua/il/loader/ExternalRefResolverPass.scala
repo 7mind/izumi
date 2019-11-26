@@ -8,6 +8,7 @@ import izumi.idealingua.model.problems.RefResolverIssue
 
 import scala.collection.mutable
 
+
 private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   // we need mutable state to handle cyclic references (even though they aren't supported by go we still handle them)
   private val processed = mutable.HashMap[DomainId, DomainMeshResolved]()
@@ -43,6 +44,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
         .filterNot(i => processed.contains(i.id))
         .map {
           imprt =>
+
             for {
               imported <- findDomain(domains, imprt.id)
             } yield {
@@ -83,7 +85,8 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
         Left(allImportIssues)
       }
 
-    }).fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
+    })
+      .fold(issues => Left(issues), result => result.fold(issues => Left(issues), domain => Right(domain)))
   }
 
   private def resolveOverlay(forDomain: DomainId)(result: ModelParsingResult): Either[Vector[RefResolverIssue], LoadedModel] = {
@@ -117,27 +120,29 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   }
 
   private def loadModel(forDomain: DomainId, includePath: Inclusion, stack: Seq[Inclusion]): Either[Vector[RefResolverIssue], LoadedModel] = {
-    findModel(forDomain, includePath).map {
-      case ModelParsingResult.Success(modelPath, model) =>
-        val modelOverlay = findOverlay(modelPath).map(resolveOverlay(forDomain))
+    findModel(forDomain, includePath)
+      .map {
+        case ModelParsingResult.Success(modelPath, model) =>
+          val modelOverlay = findOverlay(modelPath).map(resolveOverlay(forDomain))
 
-        val subincludes = model.includes
-          .map(i => loadModel(forDomain, i, stack :+ i))
+          val subincludes = model.includes
+            .map(i => loadModel(forDomain, i, stack :+ i))
 
-        merge(model, subincludes ++ modelOverlay.toSeq)
+          merge(model, subincludes ++ modelOverlay.toSeq)
 
-      case f: ModelParsingResult.Failure =>
-        Left(Vector(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
+        case f: ModelParsingResult.Failure =>
+          Left(Vector(RefResolverIssue.UnparseableInclusion(forDomain, stack.toList, f)))
 
-    }.getOrElse {
-      val diagnostic = domains.models.results.map {
-        case ModelParsingResult.Success(path, _) =>
-          s"OK: $path"
-        case ModelParsingResult.Failure(path, message) =>
-          s"KO: $path, problem: $message"
       }
-      Left(Vector(RefResolverIssue.MissingInclusion(forDomain, stack.toList, includePath, diagnostic.toList)))
-    }
+      .getOrElse {
+        val diagnostic = domains.models.results.map {
+          case ModelParsingResult.Success(path, _) =>
+            s"OK: $path"
+          case ModelParsingResult.Failure(path, message) =>
+            s"KO: $path, problem: $message"
+        }
+        Left(Vector(RefResolverIssue.MissingInclusion(forDomain, stack.toList, includePath, diagnostic.toList)))
+      }
   }
 
   private def merge(model: ParsedModel, subincludes: Seq[Either[Vector[RefResolverIssue], LoadedModel]]): Either[Vector[RefResolverIssue], LoadedModel] = {
@@ -170,10 +175,13 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   }
 
   private def findDomain(domains: UnresolvedDomains, include: DomainId): Either[RefResolverIssue, Option[DomainParsingResult.Success]] = {
-    val matching = domains.domains.results.collect {
-      case s: DomainParsingResult.Success =>
-        s
-    }.filter(_.domain.decls.id == include)
+    val matching = domains.domains
+      .results
+      .collect {
+        case s: DomainParsingResult.Success =>
+          s
+      }
+      .filter(_.domain.decls.id == include)
 
     if (matching.size > 1) {
       Left(RefResolverIssue.DuplicatedDomainsDuringLookup(include, matching.map(_.path).toList))

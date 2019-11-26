@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import scala.concurrent.duration.FiniteDuration
 
+
 object Docker {
   final case class AvailablePort(hostV4: String, port: Int)
   object AvailablePort {
@@ -35,14 +36,14 @@ object Docker {
   final case class DockerRegistryConfig(url: String, username: String, password: String, email: String)
 
   final case class ClientConfig(
-    readTimeoutMs: Int,
-    connectTimeoutMs: Int,
-    allowReuse: Boolean,
-    useRemote: Boolean,
-    useRegistry: Boolean,
-    remote: Option[RemoteDockerConfig],
-    registry: Option[DockerRegistryConfig],
-  )
+                                 readTimeoutMs: Int,
+                                 connectTimeoutMs: Int,
+                                 allowReuse: Boolean,
+                                 useRemote: Boolean,
+                                 useRegistry: Boolean,
+                                 remote: Option[RemoteDockerConfig],
+                                 registry: Option[DockerRegistryConfig],
+                               )
 
   sealed trait HealthCheckResult
   object HealthCheckResult {
@@ -53,22 +54,24 @@ object Docker {
     final case class Failed(t: Throwable) extends HealthCheckResult
   }
 
+
+
   final case class Mount(host: String, container: String)
 
   final case class ContainerConfig[T](
-    image: String,
-    ports: Seq[DockerPort],
-    env: Map[String, String] = Map.empty,
-    cmd: Seq[String] = Seq.empty,
-    entrypoint: Seq[String] = Seq.empty,
-    cwd: Option[String] = None,
-    user: Option[String] = None,
-    mounts: Seq[Mount] = Seq.empty,
-    reuse: Boolean = true,
-    healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
-    pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
-    healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
-    portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
-  )
+                                       image: String,
+                                       ports: Seq[DockerPort],
+                                       env: Map[String, String] = Map.empty,
+                                       cmd: Seq[String] = Seq.empty,
+                                       entrypoint: Seq[String] = Seq.empty,
+                                       cwd: Option[String] = None,
+                                       user: Option[String] = None,
+                                       mounts: Seq[Mount] = Seq.empty,
+                                       reuse: Boolean = true,
+                                       healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
+                                       pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
+                                       healthCheck: ContainerHealthCheck[T] = ContainerHealthCheck.checkAllPorts[T],
+                                       portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS)
+                                     )
 
 }

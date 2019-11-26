@@ -22,4 +22,7 @@ class IzZipTest extends WordSpec {
     }
   }
 
+
 }
+
+

@@ -8,12 +8,13 @@ class RStructure(context: IDLRenderingContext) extends Renderable[Structure] {
 
   override def render(structure: Structure): String = {
     Seq(
-      renderComposite(structure.superclasses.interfaces, "& "),
-      renderComposite(structure.superclasses.concepts, "+ "),
-      renderComposite(structure.superclasses.removedConcepts, "- "),
-      renderAggregate(structure.fields, ""),
-      renderAggregate(structure.removedFields, "- ")
-    ).filterNot(_.isEmpty)
+      renderComposite(structure.superclasses.interfaces, "& ")
+      , renderComposite(structure.superclasses.concepts, "+ ")
+      , renderComposite(structure.superclasses.removedConcepts, "- ")
+      , renderAggregate(structure.fields, "")
+      , renderAggregate(structure.removedFields, "- ")
+    )
+      .filterNot(_.isEmpty)
       .mkString("\n")
   }
 
@@ -30,5 +31,6 @@ class RStructure(context: IDLRenderingContext) extends Renderable[Structure] {
       .map(t => s"$prefix$t")
       .mkString("\n")
   }
+
 
 }

@@ -53,6 +53,7 @@ class CompositeRenderer(ctx: STContext) {
 
     val qqTools = q""" implicit class ${tools.typeName}(override protected val _value: ${struct.t.typeFull}) extends ..$toolBases { }"""
 
+
     val qqCompositeCompanion =
       q"""object ${struct.t.termName} {
           ..$mirrorInterface

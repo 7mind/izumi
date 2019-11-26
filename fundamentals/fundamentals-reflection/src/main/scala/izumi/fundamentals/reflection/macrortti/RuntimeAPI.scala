@@ -29,15 +29,12 @@ private[izumi] object RuntimeAPI {
           case IntersectionReference(refs) =>
             refs.flatMap(unpack)
           case Refinement(reference, decls) =>
-            unpack(reference) ++ decls.flatMap(
-              d =>
-                d match {
-                  case RefinementDecl.Signature(_, input, output) =>
-                    unpack(output) ++ input.flatMap(unpack)
-                  case RefinementDecl.TypeMember(_, ref) =>
-                    unpack(ref)
-                }
-            )
+            unpack(reference) ++ decls.flatMap(d => d match {
+              case RefinementDecl.Signature(_, input, output) =>
+                unpack(output) ++ input.flatMap(unpack)
+              case RefinementDecl.TypeMember(_, ref) =>
+                unpack(ref)
+            })
         }
     }
   }
@@ -99,6 +96,7 @@ private[izumi] object RuntimeAPI {
           val replaced = refs.map(replaceNamed).map(r => ensureAppliedNamed(reference, r))
           IntersectionReference(replaced)
         case Refinement(base, decls) =>
+
           val rdecls = decls.map {
             case RefinementDecl.Signature(name, input, output) =>
               RefinementDecl.Signature(name, input.map(p => ensureApplied(reference, replaceRefs(p))), ensureApplied(reference, replaceRefs(output)))
@@ -115,7 +113,7 @@ private[izumi] object RuntimeAPI {
     private def replaceNamed(reference: AppliedNamedReference): AbstractReference = {
       reference match {
 
-        case n @ NameReference(ref, boundaries, prefix) =>
+        case n@NameReference(ref, boundaries, prefix) =>
           rules.get(ref.name) match {
             case Some(value) =>
               complete(this, n, value)

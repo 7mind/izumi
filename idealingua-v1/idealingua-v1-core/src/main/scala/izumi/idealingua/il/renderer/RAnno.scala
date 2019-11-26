@@ -8,7 +8,7 @@ class RAnno(context: IDLRenderingContext) extends Renderable[Anno] {
   override def render(anno: Anno): String = {
     val vals = anno.values.map {
       case (name, v: ConstValue.Typed) =>
-        s"$name: ${v.typeId.render()} = ${(v: ConstValue).render()}"
+        s"$name: ${v.typeId.render()} = ${(v:ConstValue).render()}"
       case (name, v) =>
         s"$name = ${v.render()}"
     }.mkString(", ")

@@ -13,14 +13,12 @@ import scala.util.matching.Regex
   * https://github.com/Ldpe2G/Graphviz4S/blob/master/src/main/scala/com/liangdp/graphviz4s/Dot.scala
   */
 abstract class GraphVizDotML(
-  var name: String = null,
-  var comment: String = null,
-  var strict: Boolean = false,
-  var graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  var nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  var edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  val body: ArrayBuffer[String] = ArrayBuffer[String]()
-) {
+                              var name: String = null, var comment: String = null,
+                              var strict: Boolean = false,
+                              var graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+                              var nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+                              var edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+                              val body: ArrayBuffer[String] = ArrayBuffer[String]()) {
 
   protected def _head: String
   protected def _edge: String // = "\t\t%s -> %s %s"
@@ -53,15 +51,10 @@ abstract class GraphVizDotML(
     val tmpAttr = if (attrs == null) mutable.Map[String, String]() else attrs
     if (label != null) {
       s"""[label=${quote(label)} """ +
-      s"""${(tmpAttr foldLeft "") {
-        (acc, elem) =>
-          s"$acc ${elem._1}=${quote(elem._2)}"
-      }}]"""
-    } else {
-      s"""[${(tmpAttr foldLeft "") {
-        (acc, elem) =>
-          s"$acc ${elem._1}=${quote(elem._2)}"
-      }}]"""
+        s"""${(tmpAttr foldLeft ""){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
+    }
+    else {
+      s"""[${(tmpAttr foldLeft ""){ (acc, elem) => s"$acc ${elem._1}=${quote(elem._2)}"}}]"""
     }
   }
 
@@ -82,7 +75,8 @@ abstract class GraphVizDotML(
     * @param label Caption to be displayed near the edge.
     * @param attrs Any additional edge attributes (must be strings).
     */
-  def edge(tailName: String, headName: String, label: String = null, attrs: mutable.Map[String, String] = null): Unit = {
+  def edge(tailName: String, headName: String,
+           label: String = null, attrs: mutable.Map[String, String] = null): Unit = {
     this.body += _edge.format(quote(tailName), quote(headName), attribute(label, attrs))
   }
 
@@ -112,7 +106,8 @@ abstract class GraphVizDotML(
     */
   def attr(kw: String, attrs: mutable.Map[String, String] = null): Unit = {
     val list = List("graph", "node", "edge")
-    require(list.contains(kw.toLowerCase), s"attr statement must target graph, node, or edge: $kw")
+    require(list.contains(kw.toLowerCase),
+      s"attr statement must target graph, node, or edge: $kw")
     val line = "\t%s %s".format(kw, this.attribute(null, attrs))
     this.body += line
   }
@@ -195,14 +190,13 @@ abstract class GraphVizDotML(
   * @param body ArrayBuffer of lines to add to the graph body.
   */
 class Graph(
-  name: String = null,
-  comment: String = null,
-  strict: Boolean = false,
-  graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  body: ArrayBuffer[String] = ArrayBuffer[String]()
-) extends GraphVizDotML(name, comment, strict, graphAttr, nodeAttr, edgeAttr, body) {
+             name: String = null, comment: String = null,
+             strict: Boolean = false,
+             graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+             nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+             edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+             body: ArrayBuffer[String] = ArrayBuffer[String]())
+  extends GraphVizDotML(name, comment, strict, graphAttr, nodeAttr, edgeAttr, body){
 
   override def _head: String = "graph %s{"
   override def _edge: String = "\t\t%s -- %s %s"
@@ -213,14 +207,13 @@ class Graph(
   * Directed graph source code in the DOT language.
   */
 class Digraph(
-  name: String = null,
-  comment: String = null,
-  strict: Boolean = false,
-  graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
-  body: ArrayBuffer[String] = ArrayBuffer[String]()
-) extends GraphVizDotML(name, comment, strict, graphAttr, nodeAttr, edgeAttr, body) {
+               name: String = null, comment: String = null,
+               strict: Boolean = false,
+               graphAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+               nodeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+               edgeAttr: mutable.Map[String, String] = mutable.Map[String, String](),
+               body: ArrayBuffer[String] = ArrayBuffer[String]())
+  extends GraphVizDotML(name, comment, strict, graphAttr, nodeAttr, edgeAttr, body){
 
   override def _head: String = "digraph %s{"
   override def _edge: String = "\t\t%s -> %s %s"

@@ -8,34 +8,35 @@ import izumi.fundamentals.platform.cli.model.schema.{GlobalArgsSchema, ParserDef
 import izumi.fundamentals.platform.cli.{CLIParser, ParserFailureHandler}
 
 case class LanguageOpts(
-  id: String,
-  withRuntime: Boolean,
-  manifest: Option[File],
-  credentials: Option[File],
-  extensions: List[String],
-  overrides: Map[String, String],
-)
+                         id: String,
+                         withRuntime: Boolean,
+                         manifest: Option[File],
+                         credentials: Option[File],
+                         extensions: List[String],
+                         overrides: Map[String, String],
+                       )
+
 
 case class IDLCArgs(
-  source: Path,
-  overlay: Path,
-  target: Path,
-  languages: List[LanguageOpts],
-  init: Option[Path],
-  versionOverlay: Option[Path],
-  overrides: Map[String, String],
-  publish: Boolean = false
-)
+                     source: Path,
+                     overlay: Path,
+                     target: Path,
+                     languages: List[LanguageOpts],
+                     init: Option[Path],
+                     versionOverlay: Option[Path],
+                     overrides: Map[String, String],
+                     publish: Boolean = false
+                   )
 
 object IDLCArgs {
   def default: IDLCArgs = IDLCArgs(
-    Paths.get("source"),
-    Paths.get("overlay"),
-    Paths.get("target"),
-    List.empty,
-    None,
-    None,
-    Map.empty
+    Paths.get("source")
+    , Paths.get("overlay")
+    , Paths.get("target")
+    , List.empty
+    , None
+    , None
+    , Map.empty
   )
 
   object P extends ParserDef {
@@ -45,6 +46,7 @@ object IDLCArgs {
     final val overlayVersionFile = arg("overlay-version", "v", "version file", "<path>")
     final val define = arg("define", "d", "define value", "const.name=value")
     final val publish = flag("publish", "p", "build and publish generated code")
+
 
   }
 
@@ -68,18 +70,13 @@ object IDLCArgs {
 
     val globalArgs = GlobalArgsSchema(P, None, None)
 
-    val roleHelp = ParserSchemaFormatter.makeDocs(
-      ParserSchema(
-        globalArgs,
-        Seq(
-          RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>"), None, freeArgsAllowed = true),
-          RoleParserSchema("scala", LP, Some("scala target"), None, freeArgsAllowed = false),
-          RoleParserSchema("go", LP, Some("go target"), None, freeArgsAllowed = false),
-          RoleParserSchema("csharp", LP, Some("C#/Unity target"), None, freeArgsAllowed = false),
-          RoleParserSchema("typescript", LP, Some("Typescript target"), None, freeArgsAllowed = false),
-        )
-      )
-    )
+    val roleHelp = ParserSchemaFormatter.makeDocs(ParserSchema(globalArgs, Seq(
+      RoleParserSchema("init", IP, Some("setup project template. Invoke as :init <path>"), None, freeArgsAllowed = true),
+      RoleParserSchema("scala", LP, Some("scala target"), None, freeArgsAllowed = false),
+      RoleParserSchema("go", LP, Some("go target"), None, freeArgsAllowed = false),
+      RoleParserSchema("csharp", LP, Some("C#/Unity target"), None, freeArgsAllowed = false),
+      RoleParserSchema("typescript", LP, Some("Typescript target"), None, freeArgsAllowed = false),
+    )))
 
     if (parsed.roles.isEmpty || parsed.roles.exists(_.role == "help")) {
       println(roleHelp)
@@ -133,12 +130,11 @@ object IDLCArgs {
   }
 
   private def parseDefs(parameters: RawEntrypointParams) = {
-    LP.define
-      .findValues(parameters).map {
-        v =>
-          val parts = v.value.split('=')
-          parts.head -> parts.tail.mkString("=")
-      }.toMap
+    LP.define.findValues(parameters).map {
+      v =>
+        val parts = v.value.split('=')
+        parts.head -> parts.tail.mkString("=")
+    }.toMap
   }
 
 }

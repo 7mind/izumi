@@ -27,3 +27,5 @@ class IDLRenderingContext(val domain: DomainDefinition, val options: IDLRenderin
   implicit def typeid[T <: TypeId]: Renderable[T] = (value: T) => new RTypeId(IDLRenderingContext.this).render(value)
 
 }
+
+

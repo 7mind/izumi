@@ -61,6 +61,6 @@ sealed trait PlanTopology {
 }
 
 final case class PlanTopologyImmutable(
-  dependees: DependencyGraph,
-  dependencies: DependencyGraph
-) extends PlanTopology
+                                        dependees: DependencyGraph
+                                        , dependencies: DependencyGraph
+                                      ) extends PlanTopology

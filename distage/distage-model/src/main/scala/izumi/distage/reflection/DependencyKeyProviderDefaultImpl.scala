@@ -24,12 +24,12 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
     val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
 
     Association.Parameter(
-      context,
-      parameterSymbol.name,
-      parameterSymbol.finalResultType,
-      keyFromParameter(context, parameterSymbol),
-      parameterSymbol.isByName,
-      parameterSymbol.wasGeneric
+      context
+      , parameterSymbol.name
+      , parameterSymbol.finalResultType
+      , keyFromParameter(context, parameterSymbol)
+      , parameterSymbol.isByName
+      , parameterSymbol.wasGeneric
     )
   }
 
@@ -64,10 +64,11 @@ trait DependencyKeyProviderDefaultImpl extends DependencyKeyProvider {
 
 object DependencyKeyProviderDefaultImpl {
 
-  class Runtime(
+  class Runtime
+  (
     override val symbolIntrospector: SymbolIntrospector.Runtime
   ) extends DependencyKeyProvider.Runtime
-    with DependencyKeyProviderDefaultImpl {
+       with DependencyKeyProviderDefaultImpl {
     // workaround for a scalac bug that fails at runtime if `typeOf` is called or a `TypeTag` is summoned in source code
     // when the universe is abstract (a parameter, not a singleton runtime.universe: JavaUniverse), generates runtime exceptions like
     //
@@ -102,3 +103,4 @@ object DependencyKeyProviderDefaultImpl {
   }
 
 }
+

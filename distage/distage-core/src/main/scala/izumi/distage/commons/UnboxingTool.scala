@@ -21,7 +21,7 @@ class UnboxingTool(mirrorProvider: MirrorProvider) {
 
   protected def getUnboxMethod(info: Type): Method = {
     val symbol = info.typeSymbol.asType
-    val fields @ (field :: _) = symbol.toType.decls.collect { case ts: TermSymbol if ts.isParamAccessor && ts.isMethod => ts }.toList
+    val fields@(field :: _) = symbol.toType.decls.collect { case ts: TermSymbol if ts.isParamAccessor && ts.isMethod => ts }.toList
     assert(fields.length == 1, s"$symbol: $fields")
     mirrorProvider.mirror.runtimeClass(symbol.asClass).getDeclaredMethod(field.name.toString)
   }

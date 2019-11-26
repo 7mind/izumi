@@ -4,6 +4,7 @@ import izumi.functional.Renderable
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.idealingua.model.il.ast.typed._
 
+
 class RService(context: IDLRenderingContext) extends Renderable[Service] {
   override def render(service: Service): String = {
     val out =

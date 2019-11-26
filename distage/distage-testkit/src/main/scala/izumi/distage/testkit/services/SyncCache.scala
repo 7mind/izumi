@@ -56,11 +56,11 @@ class SyncCache[K, V] {
 object PluginsCache {
   case class CacheKey(config: BootstrapConfig)
   case class CacheValue(
-    plugins: PluginSource.AllLoadedPlugins,
-    bsModule: ModuleBase,
-    appModule: ModuleBase,
-    availableActivations: Map[AxisBase, Set[AxisValue]],
-  )
+                         plugins: PluginSource.AllLoadedPlugins,
+                         bsModule: ModuleBase,
+                         appModule: ModuleBase,
+                         availableActivations: Map[AxisBase, Set[AxisValue]],
+                       )
 
   object Instance extends SyncCache[CacheKey, CacheValue] {
     // sbt in nofork mode runs each module in it's own classloader thus we have separate cache per module per run

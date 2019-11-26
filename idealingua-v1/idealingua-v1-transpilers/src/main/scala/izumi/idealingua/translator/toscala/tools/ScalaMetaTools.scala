@@ -26,6 +26,7 @@ trait ScalaMetaTools {
       }
     }
 
+
     def modifyDefinitions(modify: (List[Stat]) => List[Stat]): T = {
       val extended = defn match {
         case o: Defn.Object =>
@@ -75,4 +76,6 @@ trait ScalaMetaTools {
   }
 }
 
-object ScalaMetaTools extends ScalaMetaTools {}
+object ScalaMetaTools extends ScalaMetaTools {
+
+}

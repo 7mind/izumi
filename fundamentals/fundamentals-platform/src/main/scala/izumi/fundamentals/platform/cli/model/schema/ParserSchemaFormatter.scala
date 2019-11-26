@@ -20,6 +20,7 @@ object ParserSchemaFormatter {
     sb.toString()
   }
 
+
   private[this] def formatRoleHelp(rb: RoleParserSchema): String = {
     val sb = new StringBuilder()
     if (withColors) {

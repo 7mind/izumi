@@ -129,9 +129,10 @@ object ProviderMagnet {
   def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[_] =
     new ProviderMagnet[Any](
       Provider.ProviderImpl(
-        associations = Seq.empty,
-        ret = key.tpe,
-        fun = _ => throw new TODOBindingException(s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
+        associations = Seq.empty
+        , ret = key.tpe
+        , fun = _ => throw new TODOBindingException(
+          s"Tried to instantiate a 'TODO' binding for $key defined at ${pos.get}!", key, pos)
       )
     )
 
@@ -142,8 +143,8 @@ object ProviderMagnet {
 
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false)),
-        fun = (_: Seq[Any]).head.asInstanceOf[A]
+        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false))
+      , fun = (_: Seq[Any]).head.asInstanceOf[A]
       )
     )
   }
@@ -155,8 +156,8 @@ object ProviderMagnet {
   def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq.empty,
-        fun = (_: Seq[Any]) => a
+        associations = Seq.empty
+        , fun = (_: Seq[Any]) => a
       )
     )
   }

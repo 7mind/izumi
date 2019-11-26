@@ -28,12 +28,12 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
   override def makeFactoryProxy(factoryContext: FactoryContext, proxyContext: ProxyContext): AnyRef = {
     import factoryContext._
     val dispatcher = new CgLibFactoryMethodInterceptor(
-      factoryMethodIndex,
-      dependencyMethodIndex,
-      narrowedContext,
-      executor,
-      op,
-      mirrorProvider
+      factoryMethodIndex
+      , dependencyMethodIndex
+      , narrowedContext
+      , executor
+      , op
+      , mirrorProvider
     )
 
     mkDynamic(dispatcher, proxyContext)
@@ -57,6 +57,7 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
         enhancer.setInterfaces(Array(classOf[DistageProxy]))
     }
 
+
     enhancer.setCallback(dispatcher)
 
     val result = params match {
@@ -73,12 +74,7 @@ class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
 
       case Failure(f) =>
         throw new CgLibInstantiationOpException(
-          s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: class=$runtimeClass, params=$params, exception=${f.getMessage}",
-          runtimeClass,
-          params,
-          op,
-          f
-        )
+          s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: class=$runtimeClass, params=$params, exception=${f.getMessage}", runtimeClass, params, op, f)
     }
   }
 }

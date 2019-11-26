@@ -18,7 +18,8 @@ import izumi.fundamentals.platform.language.CodePosition
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_]: TagK](
+class DistageTestRunner[F[_] : TagK]
+(
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
   runnerEnvironment: SpecEnvironment[F],
@@ -43,6 +44,7 @@ class DistageTestRunner[F[_]: TagK](
 
     groups.foreach {
       case (env, group) =>
+
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
@@ -69,11 +71,10 @@ class DistageTestRunner[F[_]: TagK](
         }
 
         // here we find all the shared components in each of our individual tests
-        val sharedKeys = testplans
-            .map(_._2).flatMap {
-              plan =>
-                plan.steps.filter(env memoizedKeys _.target).map(_.target)
-            }.toSet -- runtimeGcRoots
+        val sharedKeys = testplans.map(_._2).flatMap {
+          plan =>
+            plan.steps.filter(env memoizedKeys _.target).map(_.target)
+        }.toSet -- runtimeGcRoots
 
         logger.info(s"Memoized components in env $sharedKeys")
 
@@ -96,6 +97,7 @@ class DistageTestRunner[F[_]: TagK](
 
               Injector.inherit(runtimeLocator).produceF[F](shared.shared.plan).use {
                 sharedLocator =>
+
                   Injector.inherit(sharedLocator).produceF[F](shared.side.plan).use {
                     sharedIntegrationLocator =>
                       ifIntegChecksOk(F, sharedIntegrationLocator)(testplans.map(_._1), shared) {
@@ -124,10 +126,8 @@ class DistageTestRunner[F[_]: TagK](
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)(
-    implicit F: DIEffect[F],
-    P: DIEffectAsync[F]
-  ): F[Unit] = {
+  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)
+                     (implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary.plan)
     Injector.inherit(parent).produceF[F](shared.primary.plan).use {
@@ -178,48 +178,48 @@ class DistageTestRunner[F[_]: TagK](
     }
   }
 
+
   private def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
-    Injector
-      .inherit(parent)
+    Injector.inherit(parent)
       .produceF[F](newtestplan.primary.plan).use {
-        testLocator =>
-          def doRun(before: Long): F[Unit] = {
-            for {
-              _ <- F.definitelyRecover(testLocator.run(test.test).flatMap {
-                _ =>
-                  F.maybeSuspend {
-                    val after = System.nanoTime()
-                    val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-                    reporter.testStatus(test.meta, TestStatus.Succeed(testDuration))
-                  }
-              }) {
-                case s if isTestSkipException(s) =>
-                  F.maybeSuspend {
-                    val after = System.nanoTime()
-                    val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
-                    reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration))
-                  }
-                case o =>
-                  F.fail(o)
-              }
-            } yield ()
-          }
-
-          def doRecover(before: Long): Throwable => F[Unit] = {
-            // TODO: here we may also ignore individual tests
-            throwable =>
-              F.maybeSuspend {
-                val after = System.nanoTime()
-                reporter.testStatus(test.meta, TestStatus.Failed(throwable, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
-              }
-          }
-
+      testLocator =>
+        def doRun(before: Long): F[Unit] = {
           for {
-            before <- F.maybeSuspend(System.nanoTime())
-            _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
-            _ <- F.definitelyRecoverCause(doRun(before))(doRecover(before))
+            _ <- F.definitelyRecover(testLocator.run(test.test).flatMap {
+              _ =>
+                F.maybeSuspend {
+                  val after = System.nanoTime()
+                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
+                  reporter.testStatus(test.meta, TestStatus.Succeed(testDuration))
+                }
+            }) {
+              case s if isTestSkipException(s) =>
+                F.maybeSuspend {
+                  val after = System.nanoTime()
+                  val testDuration = FiniteDuration(after - before, TimeUnit.NANOSECONDS)
+                  reporter.testStatus(test.meta, TestStatus.Cancelled(s.getMessage, testDuration))
+                }
+              case o =>
+                F.fail(o)
+            }
           } yield ()
-      }
+        }
+
+        def doRecover(before: Long): Throwable => F[Unit] = {
+          // TODO: here we may also ignore individual tests
+          throwable =>
+            F.maybeSuspend {
+              val after = System.nanoTime()
+              reporter.testStatus(test.meta, TestStatus.Failed(throwable, FiniteDuration(after - before, TimeUnit.NANOSECONDS)))
+            }
+        }
+
+        for {
+          before <- F.maybeSuspend(System.nanoTime())
+          _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
+          _ <- F.definitelyRecoverCause(doRun(before))(doRecover(before))
+        } yield ()
+    }
   }
 
 }

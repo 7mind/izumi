@@ -46,11 +46,13 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
     val t = toScala(id)
     val tpe = t.typeFull
 
+
     val enc = implementors.map {
       c =>
         p"""case v: ${t.within(c.typename).typeFull} => Map(${Lit.String(c.wireId)} -> v.value).asJsonObject"""
 
     }
+
 
     val dec = implementors.map {
       c =>
@@ -90,8 +92,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
                }
              )
           }
-      """
-    )
+      """)
     val init = toScala(id).sibling(boilerplate.name).init()
     product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn)
   }
@@ -114,6 +115,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
         p"""case v: ${toScala(c).typeFull} => Map(${Lit.String(c.wireId)} -> v).asJsonObject"""
 
     }
+
 
     val dec = implementors.map {
       c =>
@@ -151,8 +153,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
                }
              )
           }
-      """
-    )
+      """)
     val init = toScala(interface.id).sibling(boilerplate.name).init()
     product.copy(companionBase = product.companionBase.prependBase(init), more = product.more :+ boilerplate.defn)
   }
@@ -177,8 +178,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
               final def apply(key: String): Option[$tpe] = Try(${t.termFull}.parse(key)).toOption
             }
           }
-      """
-    )
+      """)
   }
 
   protected def withDerivedClass(ctx: STContext, sc: StructContext): CirceTrait = {
@@ -251,8 +251,7 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
               v => v.as[${ftpe.typeFull}].map(d => ${stype.termName}(d))
             }
           }
-      """
-      )
+      """)
     } else {
       CirceTrait(
         s"${name}Circe",
@@ -263,10 +262,10 @@ trait CirceTranslatorExtensionBase extends ScalaTranslatorExtension {
             implicit val ${Pat.Var(Term.Name(s"encode$name"))}: Encoder.AsObject[$tpe] = deriveEncoder[$tpe]
             implicit val ${Pat.Var(Term.Name(s"decode$name"))}: Decoder[$tpe] = deriveDecoder[$tpe]
           }
-      """
-      )
+      """)
     }
   }
+
 
 }
 

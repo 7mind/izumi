@@ -11,7 +11,8 @@ import scala.reflect.runtime.{currentMirror, universe => ru}
 import scala.util.{Failure, Try}
 import izumi.fundamentals.platform.strings.IzString._
 
-class RuntimeConfigReaderDefaultImpl(
+class RuntimeConfigReaderDefaultImpl
+(
   override val codecs: Map[SafeType0[ru.type], ConfigReader[_]]
 ) extends RuntimeConfigReader {
 
@@ -24,16 +25,15 @@ class RuntimeConfigReaderDefaultImpl(
     */
   override def readConfigAsCaseClass(config: Config, tpe: SafeType0[ru.type]): Any = {
     val typesafeConfigRawTypes = Set(
-      SafeType0.get[Config],
-      SafeType0.get[ConfigValue],
-      SafeType0.get[ConfigObject],
-      SafeType0.get[ConfigList]
+      SafeType0.get[Config]
+    , SafeType0.get[ConfigValue]
+    , SafeType0.get[ConfigObject]
+    , SafeType0.get[ConfigList]
     )
-    val maybeReader =
-      if (typesafeConfigRawTypes contains tpe)
-        codecs.get(tpe)
-      else
-        None
+    val maybeReader = if (typesafeConfigRawTypes contains tpe)
+      codecs.get(tpe)
+    else
+      None
 
     val reader = maybeReader getOrElse deriveCaseClassReader(tpe)
 
@@ -66,126 +66,126 @@ class RuntimeConfigReaderDefaultImpl(
       case _ if tpe.use(_.typeSymbol.isAbstract) && tpe.use(_.typeSymbol.isClass) && tpe.use(_.typeSymbol.asClass.isSealed) =>
         deriveSealedTraitReader(tpe)
       case _ =>
-        throw new ConfigReadException(s"""Only case classes can be read in config, but type $tpe is a trait or an abstract class.
-                                         | When trying to derive case class reader for $tpe""".stripMargin)
+        throw new ConfigReadException(
+          s"""Only case classes can be read in config, but type $tpe is a trait or an abstract class.
+             | When trying to derive case class reader for $tpe""".stripMargin)
     }
   }
 
   def deriveCaseClassReader(targetType: SafeType0[ru.type]): ConfigReader[_] =
-    cv =>
-      Try {
-        cv match {
-          case obj: ConfigObject =>
-            targetType.use {
-              tpe =>
-                val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
-                val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
-                  p =>
-                    p.name.decodedName.toString -> p.typeSignatureIn(tpe).finalResultType
+    cv => Try {
+      cv match {
+        case obj: ConfigObject =>
+          targetType.use {
+            tpe =>
+              val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
+              val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
+                p =>
+                  p.name.decodedName.toString -> p.typeSignatureIn(tpe).finalResultType
+              }
+
+              val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
+                (e, param) => param match {
+                  case (name, typ) =>
+                    val value = obj.get(name)
+
+                    val res = anyReader(SafeType0(typ))(value).fold(
+                      exc => Left(s"Couldn't parse field `$name` of case class $tpe because of exception: ${exc.getMessage}")
+                      , Right(_)
+                    )
+
+                    res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
                 }
+              }
 
-                val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-                  (e, param) =>
-                    param match {
-                      case (name, typ) =>
-                        val value = obj.get(name)
-
-                        val res = anyReader(SafeType0(typ))(value).fold(
-                          exc => Left(s"Couldn't parse field `$name` of case class $tpe because of exception: ${exc.getMessage}"),
-                          Right(_)
-                        )
-
-                        res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
-                    }
-                }
-
-                val parsedArgs = parsedResult.fold(
-                  errors =>
-                    throw new ConfigReadException(
-                      s"""Couldn't read config object as a case class $targetType, there were errors when trying to parse it's fields from value: $obj
-                         |The errors were:
-                         |  ${errors.niceList()}
+              val parsedArgs = parsedResult.fold(
+                errors => throw new ConfigReadException(
+                  s"""Couldn't read config object as a case class $targetType, there were errors when trying to parse it's fields from value: $obj
+                     |The errors were:
+                     |  ${errors.niceList()}
                """.stripMargin
-                    ),
-                  identity
                 )
+                , identity
+              )
 
-                val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
-                val constructor = reflectedClass.reflectConstructor(constructorSymbol)
+              val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
+              val constructor = reflectedClass.reflectConstructor(constructorSymbol)
 
-                constructor.apply(parsedArgs: _*)
-            }
+              constructor.apply(parsedArgs: _*)
+          }
 
-          case _ =>
-            throw new ConfigReadException(s"""
-                                             |Can't read config value as a case class $targetType, config value is a primitive, not an object.
-                                             | ConfigValue was: $cv""".stripMargin)
-        }
+        case _ =>
+          throw new ConfigReadException(
+            s"""
+               |Can't read config value as a case class $targetType, config value is a primitive, not an object.
+               | ConfigValue was: $cv""".stripMargin)
       }
+    }
 
   def deriveSealedTraitReader(targetType: SafeType0[ru.type]): ConfigReader[_] = {
-    cv =>
-      Try {
-        cv.valueType() match {
-          case ConfigValueType.OBJECT | ConfigValueType.STRING =>
-            import RuntimeConfigReaderDefaultImpl._
+    cv => Try {
+      cv.valueType() match {
+        case ConfigValueType.OBJECT | ConfigValueType.STRING =>
+          import RuntimeConfigReaderDefaultImpl._
 
-            val (subclasses, names) = {
-              targetType.use {
-                tpe =>
-                  val ctors = ctorsOf(tpe)
-                  ctors -> ctors.map(c => nameAsString(nameOf(c)))
-              }
+          val (subclasses, names) = {
+            targetType.use {
+              tpe =>
+                val ctors = ctorsOf(tpe)
+                ctors -> ctors.map(c => nameAsString(nameOf(c)))
             }
-            val namedSubclasses = subclasses zip names
+          }
+          val namedSubclasses = subclasses zip names
 
-            val maybeObj = if (cv.valueType() == ConfigValueType.OBJECT) {
-              val obj = cv.asInstanceOf[ConfigObject]
-              if (obj.size() != 1) throw new ConfigReadException(s"""
-                                                                    |Can't read config value as a sealed trait $targetType, config object does not contain a constructor of $targetType!
-                                                                    | Expected exactly one key that is one of: ${names.mkString(", ")}
-                                                                    | Config value was: $cv
+          val maybeObj = if (cv.valueType() == ConfigValueType.OBJECT) {
+            val obj = cv.asInstanceOf[ConfigObject]
+            if (obj.size() != 1) throw new ConfigReadException(
+              s"""
+                 |Can't read config value as a sealed trait $targetType, config object does not contain a constructor of $targetType!
+                 | Expected exactly one key that is one of: ${names.mkString(", ")}
+                 | Config value was: $cv
                 """.stripMargin)
 
-              Some(obj)
-            } else None
+            Some(obj)
+          } else None
 
-            val str = if (cv.valueType() == ConfigValueType.STRING) {
-              anyReader(SafeType0.get[String])(cv).get
-            } else {
-              cv.asInstanceOf[ConfigObject].keySet().iterator().next()
-            }
+          val str = if (cv.valueType() == ConfigValueType.STRING) {
+            anyReader(SafeType0.get[String])(cv).get
+          } else {
+            cv.asInstanceOf[ConfigObject].keySet().iterator().next()
+          }
 
-            val res = namedSubclasses.collectFirst {
-              case (tpe, name) if name == str =>
-                maybeObj match {
-                  case Some(obj) => Right((tpe, obj.get(str)))
-                  case None => Left(tpe)
-                }
-            }
-            res match {
-              case Some(Left(tpe)) if tpe.typeSymbol.asClass.isModuleClass =>
-                mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
-              case Some(Right((tpe, _))) if tpe.typeSymbol.asClass.isModuleClass =>
-                mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
-              case Some(Right((tpe, value))) =>
-                deriveCaseClassReader(SafeType0(tpe))(value).get
-              case None =>
-                throw new ConfigReadException(
-                  s"""
-                     |Can't read config value as a sealed trait $targetType, string does not match any case object in sealed trait
-                     | Expected a string or an object representing one of case children of $targetType: ${names.mkString(", ")}"}
-                     | Config value was: $cv
+          val res = namedSubclasses.collectFirst{
+            case (tpe, name) if name == str =>
+              maybeObj match {
+                case Some(obj) => Right((tpe, obj.get(str)))
+                case None => Left(tpe)
+              }
+          }
+          res match {
+            case Some(Left(tpe)) if tpe.typeSymbol.asClass.isModuleClass =>
+              mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
+            case Some(Right((tpe, _))) if tpe.typeSymbol.asClass.isModuleClass =>
+              mirror.reflectModule(tpe.typeSymbol.asClass.module.asModule).instance
+            case Some(Right((tpe, value))) =>
+              deriveCaseClassReader(SafeType0(tpe))(value).get
+            case None =>
+              throw new ConfigReadException(
+                s"""
+                   |Can't read config value as a sealed trait $targetType, string does not match any case object in sealed trait
+                   | Expected a string or an object representing one of case children of $targetType: ${names.mkString(", ")}"}
+                   | Config value was: $cv
                  """.stripMargin
-                )
-            }
+              )
+          }
 
-          case _ =>
-            throw new ConfigReadException(s"""
-                                             |Can't read config value as a sealed trait $targetType, config value is a primitive, not an object.
-                                             | ConfigValue was: $cv""".stripMargin)
-        }
+        case _ =>
+          throw new ConfigReadException(
+            s"""
+               |Can't read config value as a sealed trait $targetType, config value is a primitive, not an object.
+               | ConfigValue was: $cv""".stripMargin)
       }
+    }
   }
 
   def listReader[T](listType: ru.Type)(reader: (ru.Type, ConfigList) => Try[T]): ConfigReader[T] = {
@@ -197,8 +197,9 @@ class RuntimeConfigReaderDefaultImpl(
       reader(listType, asList)
 
     case cv =>
-      Failure(new ConfigReadException(s"""Can't read config value as a list $listType, config value is not a list.
-                                         | ConfigValue was: $cv""".stripMargin))
+      Failure(new ConfigReadException(
+        s"""Can't read config value as a list $listType, config value is not a list.
+           | ConfigValue was: $cv""".stripMargin))
   }
 
   def isList(configObject: ConfigObject): Boolean = {
@@ -206,49 +207,46 @@ class RuntimeConfigReaderDefaultImpl(
   }
 
   def optionReader(optionType: ru.Type): ConfigReader[Option[_]] = {
-    cv =>
-      Try {
-        if (cv == null || cv.valueType == ConfigValueType.NULL) {
-          None
-        } else {
-          val tyParam = SafeType0(optionType.typeArgs.head)
-          Option(anyReader(tyParam)(cv).get)
-        }
+    cv => Try {
+      if (cv == null || cv.valueType == ConfigValueType.NULL) {
+        None
+      } else {
+        val tyParam = SafeType0(optionType.typeArgs.head)
+        Option(anyReader(tyParam)(cv).get)
       }
+    }
   }
 
   def tupleReader(tpe: ru.Type, cl: ConfigList): Try[_] = Try {
     val constructorSymbol = tpe.decl(ru.termNames.CONSTRUCTOR).asTerm.alternatives.head.asMethod
-    val params = constructorSymbol
-      .typeSignatureIn(tpe).paramLists.flatten.map {
-        _.typeSignatureIn(tpe).finalResultType
-      }.zipWithIndex
+    val params = constructorSymbol.typeSignatureIn(tpe).paramLists.flatten.map {
+      _.typeSignatureIn(tpe).finalResultType
+    }.zipWithIndex
 
     val parsedResult = params.foldLeft[Either[Queue[String], Queue[Any]]](Right(Queue.empty)) {
-      (e, param) =>
-        param match {
-          case (typ, idx) =>
-            val value = Try(cl.get(idx))
+      (e, param) => param match {
+        case (typ, idx) =>
 
-            val res = value
-              .flatMap(anyReader(SafeType0(typ))(_)).fold(
-                exc => Left(s"Couldn't parse parameter #$idx of a tuple $tpe because of exception: ${exc.getMessage}"),
-                Right(_)
-              )
+          val value = Try(cl.get(idx))
 
-            res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
-        }
+          val res = value.flatMap(anyReader(SafeType0(typ))(_)).fold(
+            exc =>
+              Left(s"Couldn't parse parameter #$idx of a tuple $tpe because of exception: ${exc.getMessage}")
+            , Right(_)
+          )
+
+          res.fold(msg => Left(e.left.getOrElse(Queue.empty) :+ msg), v => e.map(_ :+ v))
+      }
     }
 
     val parsedArgs = parsedResult.fold(
-      errors =>
-        throw new ConfigReadException(
-          s"""Couldn't read config object as a tuple $tpe, there were errors when trying to parse it's fields from value: $cl
-             |The errors were:
-             |  ${errors.niceList()}
+      errors => throw new ConfigReadException(
+        s"""Couldn't read config object as a tuple $tpe, there were errors when trying to parse it's fields from value: $cl
+           |The errors were:
+           |  ${errors.niceList()}
          """.stripMargin
-        ),
-      identity
+      )
+      , identity
     )
 
     val reflectedClass = mirror.reflectClass(tpe.typeSymbol.asClass)
@@ -258,28 +256,28 @@ class RuntimeConfigReaderDefaultImpl(
   }
 
   private[this] val tupleTypes: Seq[ru.Type] = Seq(
-    SafeType0.get[Tuple1[_]].use(_.erasure),
-    SafeType0.get[Tuple2[_, _]].use(_.erasure),
-    SafeType0.get[Tuple3[_, _, _]].use(_.erasure),
-    SafeType0.get[Tuple4[_, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple5[_, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple6[_, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple7[_, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple8[_, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple9[_, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple10[_, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple11[_, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple12[_, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple13[_, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple14[_, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure),
-    SafeType0.get[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+    SafeType0.get[Tuple1[_]].use(_.erasure)
+  , SafeType0.get[Tuple2[_, _]].use(_.erasure)
+  , SafeType0.get[Tuple3[_, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple4[_, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple5[_, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple6[_, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple7[_, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple8[_, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple9[_, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple10[_, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple11[_, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple12[_, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple13[_, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple14[_, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple15[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple16[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple17[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple18[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple19[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple20[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple21[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
+  , SafeType0.get[Tuple22[_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _]].use(_.erasure)
   )
 }
 
@@ -296,39 +294,36 @@ object RuntimeConfigReaderDefaultImpl {
   private[RuntimeConfigReaderDefaultImpl] def nameAsString(name: Name): String = name.decodedName.toString.trim
   private[RuntimeConfigReaderDefaultImpl] def nameOf(tpe: Type) = tpe.typeSymbol.name
 
+
   private[this] def abort(s: String): Nothing =
     throw new ConfigReadException(s"Couldn't determine trait subclasses: $s")
 
   private[this] def distinctCtorsOfAux(tpe: Type, hk: Boolean): List[Type] = {
-    def distinct[A](list: List[A])(eq: (A, A) => Boolean): List[A] =
-      list
-        .foldLeft(List.empty[A]) {
-          (acc, x) =>
-            if (!acc.exists(eq(x, _))) x :: acc
-            else acc
-        }.reverse
+    def distinct[A](list: List[A])(eq: (A, A) => Boolean): List[A] = list.foldLeft(List.empty[A]) { (acc, x) =>
+        if (!acc.exists(eq(x, _))) x :: acc
+        else acc
+    }.reverse
     distinct(ctorsOfAux(tpe, hk))(_ =:= _)
   }
 
   private[this] def ctorsOfAux(tpe: Type, hk: Boolean): List[Type] = {
     def collectCtors(classSym: ClassSymbol): List[ClassSymbol] = {
-      classSym.knownDirectSubclasses.toList flatMap {
-        child0 =>
-          val child = child0.asClass
-          child.typeSignature // Workaround for <https://issues.scala-lang.org/browse/SI-7755>
-          if (isCaseClassLike(child) || isCaseObjectLike(child))
-            List(child)
-          else if (child.isSealed)
-            collectCtors(child)
-          else
-            abort(s"$child is not case class like or a sealed trait")
+      classSym.knownDirectSubclasses.toList flatMap { child0 =>
+        val child = child0.asClass
+        child.typeSignature // Workaround for <https://issues.scala-lang.org/browse/SI-7755>
+        if (isCaseClassLike(child) || isCaseObjectLike(child))
+          List(child)
+        else if (child.isSealed)
+          collectCtors(child)
+        else
+          abort(s"$child is not case class like or a sealed trait")
       }
     }
 
     val basePre = prefix(tpe)
     val baseSym = classSym(tpe)
     val baseTpe =
-      if (!hk) tpe
+      if(!hk) tpe
       else {
         val tc = tpe.typeConstructor
         val paramSym = tc.typeParams.head
@@ -339,45 +334,43 @@ object RuntimeConfigReaderDefaultImpl {
 
     val ctorSyms = collectCtors(baseSym).sortBy(_.fullName)
     val ctors =
-      ctorSyms flatMap {
-        sym =>
-          def normalizeTermName(name: Name): TermName =
-            TermName(name.toString.stripSuffix(" "))
+      ctorSyms flatMap { sym =>
+        def normalizeTermName(name: Name): TermName =
+          TermName(name.toString.stripSuffix(" "))
 
-          def substituteArgs: List[Type] = {
-            val subst = internal.thisType(sym).baseType(baseSym).typeArgs
-            sym.typeParams.map {
-              param =>
-                val paramTpe = param.asType.toType
-                baseArgs(subst.indexWhere(_.typeSymbol == paramTpe.typeSymbol))
+        def substituteArgs: List[Type] = {
+          val subst = internal.thisType(sym).baseType(baseSym).typeArgs
+          sym.typeParams.map { param =>
+            val paramTpe = param.asType.toType
+            baseArgs(subst.indexWhere(_.typeSymbol == paramTpe.typeSymbol))
+          }
+        }
+
+        val suffix = ownerChain(sym).dropWhile(_ != basePre.typeSymbol)
+        val ctor =
+          if(suffix.isEmpty) {
+            if(sym.isModuleClass) {
+              val moduleSym = sym.asClass.module
+              val modulePre = prefix(moduleSym.typeSignatureIn(basePre))
+              internal.singleType(modulePre, moduleSym)
+            } else
+              appliedType(sym.toTypeIn(basePre), substituteArgs)
+          } else {
+            if(sym.isModuleClass) {
+              val path = suffix.tail.map(sym => normalizeTermName(sym.name))
+              val (modulePre, moduleSym) = mkDependentRef(basePre, path)
+              internal.singleType(modulePre, moduleSym)
+            } else if(isAnonOrRefinement(sym)) {
+              val path = suffix.tail.init.map(sym => normalizeTermName(sym.name))
+              val (valPre, valSym) = mkDependentRef(basePre, path)
+              internal.singleType(valPre, valSym)
+            } else {
+              val path = suffix.tail.init.map(sym => normalizeTermName(sym.name)) :+ suffix.last.name.toTypeName
+              val (subTpePre, subTpeSym) = mkDependentRef(basePre, path)
+              internal.typeRef(subTpePre, subTpeSym, substituteArgs)
             }
           }
-
-          val suffix = ownerChain(sym).dropWhile(_ != basePre.typeSymbol)
-          val ctor =
-            if (suffix.isEmpty) {
-              if (sym.isModuleClass) {
-                val moduleSym = sym.asClass.module
-                val modulePre = prefix(moduleSym.typeSignatureIn(basePre))
-                internal.singleType(modulePre, moduleSym)
-              } else
-                appliedType(sym.toTypeIn(basePre), substituteArgs)
-            } else {
-              if (sym.isModuleClass) {
-                val path = suffix.tail.map(sym => normalizeTermName(sym.name))
-                val (modulePre, moduleSym) = mkDependentRef(basePre, path)
-                internal.singleType(modulePre, moduleSym)
-              } else if (isAnonOrRefinement(sym)) {
-                val path = suffix.tail.init.map(sym => normalizeTermName(sym.name))
-                val (valPre, valSym) = mkDependentRef(basePre, path)
-                internal.singleType(valPre, valSym)
-              } else {
-                val path = suffix.tail.init.map(sym => normalizeTermName(sym.name)) :+ suffix.last.name.toTypeName
-                val (subTpePre, subTpeSym) = mkDependentRef(basePre, path)
-                internal.typeRef(subTpePre, subTpeSym, substituteArgs)
-              }
-            }
-          if (ctor <:< baseTpe) Some(ctor) else None
+        if(ctor <:< baseTpe) Some(ctor) else None
       }
     if (ctors.isEmpty)
       abort(s"Sealed trait $tpe has no case class subtypes")
@@ -414,7 +407,7 @@ object RuntimeConfigReaderDefaultImpl {
 
     sym.isCaseClass ||
     (!sym.isAbstract && !sym.isTrait && !(sym == symbolOf[Object]) &&
-    sym.knownDirectSubclasses.isEmpty && checkCtor)
+     sym.knownDirectSubclasses.isEmpty && checkCtor)
   }
 
   private[this] def isCaseObjectLike(sym: ClassSymbol): Boolean = sym.isModuleClass
@@ -422,7 +415,7 @@ object RuntimeConfigReaderDefaultImpl {
   private[this] def ownerChain(sym: Symbol): List[Symbol] = {
     @tailrec
     def loop(sym: Symbol, acc: List[Symbol]): List[Symbol] =
-      if (sym.owner == NoSymbol) acc
+      if(sym.owner == NoSymbol) acc
       else loop(sym.owner, sym :: acc)
 
     loop(sym, Nil)
@@ -430,10 +423,7 @@ object RuntimeConfigReaderDefaultImpl {
 
   private[this] def accessiblePrimaryCtorOf(tpe: Type): Option[Symbol] = {
     for {
-      ctor <- tpe.decls.find {
-        sym =>
-          sym.isMethod && sym.asMethod.isPrimaryConstructor
-      }
+      ctor <- tpe.decls.find { sym => sym.isMethod && sym.asMethod.isPrimaryConstructor }
       if !ctor.isJava || productCtorsOf(tpe).size == 1
     } yield ctor
   }
@@ -442,7 +432,7 @@ object RuntimeConfigReaderDefaultImpl {
 
   private[this] def fieldsOf(tpe: Type): List[(TermName, Type)] = {
     val tSym = tpe.typeSymbol
-    if (tSym.isClass && isAnonOrRefinement(tSym)) Nil
+    if(tSym.isClass && isAnonOrRefinement(tSym)) Nil
     else
       tpe.decls.sorted collect {
         case sym: TermSymbol if isCaseAccessorLike(sym) =>

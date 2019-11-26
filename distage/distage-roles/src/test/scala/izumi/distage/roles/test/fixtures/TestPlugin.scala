@@ -45,3 +45,4 @@ object TestPlugin {
     override def close(): Unit = {}
   }
 }
+

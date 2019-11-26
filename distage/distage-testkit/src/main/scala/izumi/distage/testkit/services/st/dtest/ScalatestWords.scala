@@ -5,23 +5,14 @@ import org.scalactic.source
 import org.scalactic.source.Position
 
 @org.scalatest.Finders(value = Array("org.scalatest.finders.WordSpecFinder"))
-trait ScalatestWords extends DSShouldVerb with DSMustVerb with DSCanVerb {
+trait ScalatestWords extends DSShouldVerb with DSMustVerb with DSCanVerb  {
   protected implicit val subjectRegistrationFunction1: DSStringVerbBlockRegistration = new DSStringVerbBlockRegistration {
     def apply(left: String, verb: String, pos: source.Position, f: () => Unit): Unit = {
       registerBranch(left, Some(verb), verb, "apply", 6, -2, pos, f)
     }
   }
 
-  def registerBranch(
-    description: String,
-    childPrefix: Option[String],
-    verb: String,
-    methodName: String,
-    stackDepth: Int,
-    adjustment: Int,
-    pos: source.Position,
-    fun: () => Unit
-  ): Unit
+  def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit
 }
 
 object ScalatestWords {
@@ -47,6 +38,7 @@ object ScalatestWords {
   abstract class DSSubjectWithAfterWordRegistration {
     def apply(subject: String, verb: String, resultOfAfterWordApplication: DSResultOfAfterWordApplication, pos: source.Position): Unit
   }
+
 
   trait DSShouldVerb {
 
@@ -77,6 +69,7 @@ object ScalatestWords {
         val pos: Position = position
       }
   }
+
 
   trait DSCanVerb {
 
@@ -137,5 +130,6 @@ object ScalatestWords {
         val pos: Position = position
       }
   }
+
 
 }

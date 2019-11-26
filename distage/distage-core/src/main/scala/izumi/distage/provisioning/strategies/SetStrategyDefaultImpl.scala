@@ -40,3 +40,5 @@ class SetStrategyDefaultImpl extends SetStrategy {
     Seq(NewObjectOp.NewInstance(op.target, newSet))
   }
 }
+
+

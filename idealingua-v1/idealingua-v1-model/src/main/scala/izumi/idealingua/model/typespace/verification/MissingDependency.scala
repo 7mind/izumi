@@ -18,6 +18,7 @@ object MissingDependency {
     override def toString: String = s"[field $definedIn::${tpe.name} :$missing]"
   }
 
+
   final case class DepParameter(definedIn: TypeId, missing: TypeId) extends MissingDependency {
     override def toString: String = s"[param $definedIn::$missing]"
   }
@@ -25,6 +26,7 @@ object MissingDependency {
   final case class DepServiceParameter(definedIn: ServiceId, method: String, missing: TypeId) extends MissingDependency {
     override def toString: String = s"[sparam $definedIn::$missing]"
   }
+
 
   final case class DepInterface(definedIn: TypeId, missing: InterfaceId) extends MissingDependency {
     override def toString: String = s"[interface $definedIn::$missing]"

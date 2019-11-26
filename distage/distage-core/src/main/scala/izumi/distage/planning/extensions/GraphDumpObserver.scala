@@ -16,7 +16,8 @@ import distage._
 
 import scala.collection.mutable
 
-final class GraphDumpObserver(
+final class GraphDumpObserver
+(
   planAnalyzer: PlanAnalyzer
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
@@ -92,6 +93,7 @@ final class GraphDumpObserver(
 
     goodKeys.foreach {
       k =>
+
         val rootStyle = if (roots.contains(k)) {
           Map("fillcolor" -> "gold", "peripheries" -> "2")
         } else {
@@ -173,13 +175,13 @@ final class GraphDumpObserver(
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
                 "factoryfun"
             }
-          case op: ExecutableOp.MonadicOp =>
-            op match {
-              case _: MonadicOp.ExecuteEffect =>
-                "effect"
-              case _: MonadicOp.AllocateResource =>
-                "resource"
-            }
+        case op: ExecutableOp.MonadicOp =>
+          op match {
+            case _: MonadicOp.ExecuteEffect =>
+              "effect"
+            case _: MonadicOp.AllocateResource =>
+              "resource"
+          }
         }
 
       case ExecutableOp.ImportDependency(_, _, _) =>
@@ -199,6 +201,7 @@ final class GraphDumpObserver(
 
         }
 
+
     }
     attrs.put("label", s"$name:=$label").discard()
   }
@@ -208,3 +211,4 @@ final class GraphDumpObserver(
 object GraphDumpObserver {
   final class RenderedDot(val raw: String) extends AnyVal
 }
+

@@ -9,13 +9,14 @@ import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK, identityEffectType}
 
-class EffectStrategyDefaultImpl extends EffectStrategy {
+class EffectStrategyDefaultImpl
+  extends EffectStrategy {
 
   override def executeEffect[F[_]: TagK](
-    context: ProvisioningKeyProvider,
-    executor: OperationExecutor,
-    op: MonadicOp.ExecuteEffect
-  )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewInstance]] = {
+                                          context: ProvisioningKeyProvider
+                                        , executor: OperationExecutor
+                                        , op: MonadicOp.ExecuteEffect
+                                        )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewInstance]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.wiring.effectHKTypeCtor
 
@@ -26,8 +27,7 @@ class EffectStrategyDefaultImpl extends EffectStrategy {
 
     val ExecuteEffect(target, actionOp, _, _) = op
 
-    executor
-      .execute(context, actionOp)
+    executor.execute(context, actionOp)
       .flatMap(_.toList match {
         case NewObjectOp.NewInstance(_, action0) :: Nil if isEffect =>
           val action = action0.asInstanceOf[F[Any]]

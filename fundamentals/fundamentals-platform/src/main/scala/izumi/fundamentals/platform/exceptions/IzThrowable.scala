@@ -68,3 +68,4 @@ class IzThrowable(t: Throwable, acceptedPackages: Set[String]) {
 object IzThrowable {
   implicit def toRichThrowable(throwable: Throwable): IzThrowable = new IzThrowable(throwable, Set.empty)
 }
+

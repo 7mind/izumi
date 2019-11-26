@@ -26,7 +26,10 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 
 @deprecated("Use dstest", "2019/Jul/18")
-abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F]) extends DISyntax[F] with IgnoreSupport with SuppressionSupport {
+abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
+  extends DISyntax[F]
+    with IgnoreSupport
+    with SuppressionSupport {
 
   private lazy val erpInstance = externalResourceProvider
 
@@ -35,15 +38,16 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F]) extends DISy
   protected def memoizationContextId: MemoizationContextId
 
   protected final def doMemoize(locator: Locator): Unit = {
-    val fmap = locator
-      .finalizers[F].zipWithIndex.map {
-        case (f, idx) =>
-          f.key -> OrderedFinalizer(f, idx)
-      }.toMap
-    locator.allInstances.foreach {
-      ref =>
-        externalResourceProvider.process(memoizationContextId, MemoizedInstance[Any](ref, fmap.get(ref.key)))
-    }
+    val fmap = locator.finalizers[F].zipWithIndex.map {
+      case (f, idx) =>
+        f.key -> OrderedFinalizer(f, idx)
+    }.toMap
+    locator
+      .allInstances
+      .foreach {
+        ref =>
+          externalResourceProvider.process(memoizationContextId, MemoizedInstance[Any](ref, fmap.get(ref.key)))
+      }
   }
 
   override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
@@ -68,11 +72,9 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F]) extends DISy
 
     val plan = planner.makePlan(allRoots, withMemoized overridenBy appOverride)
 
-    erpInstance.registerShutdownRuntime[F](
-      PreparedShutdownRuntime[F](
-        plan.injector.produceF[Identity](plan.runtime)
-      )
-    )
+    erpInstance.registerShutdownRuntime[F](PreparedShutdownRuntime[F](
+      plan.injector.produceF[Identity](plan.runtime)
+    ))
 
     val filters = Filters[F](
       finalizers => finalizers.filterNot(f => erpInstance.isMemoized(memoizationContextId, f.key)),

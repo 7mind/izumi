@@ -38,7 +38,7 @@ trait Locator {
   def get[T: Tag]: T
   def get[T: Tag](id: String): T
 
-  protected[distage] def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
+  protected[distage] def finalizers[F[_] : TagK]: collection.Seq[Finalizer[F]]
   protected[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
 
   def index: Map[DIKey, Any] = {
@@ -64,9 +64,9 @@ trait Locator {
   final def run[T](function: ProviderMagnet[T]): T = {
     val fn = function.get
     fn.fun(fn.diKeys.map {
-        key =>
-          lookupInstanceOrThrow[Any](key)
-      }).asInstanceOf[T]
+      key =>
+        lookupInstanceOrThrow[Any](key)
+    }).asInstanceOf[T]
   }
 
   final def runOption[T](function: ProviderMagnet[T]): Option[T] = {

@@ -18,6 +18,7 @@ object GreeterRunnerExample {
     val json2 = req2.asJson
     println(json2)
 
+
     val invoked1 = multiplexor.doInvoke(json1, (), greeter.greet.signature.id)
     val invoked2 = multiplexor.doInvoke(json1, (), greeter.alternative.signature.id)
 
@@ -26,5 +27,6 @@ object GreeterRunnerExample {
     println(io.unsafeRunSync(invoked1))
     println(io.unsafeRunSync(invoked2))
   }
+
 
 }

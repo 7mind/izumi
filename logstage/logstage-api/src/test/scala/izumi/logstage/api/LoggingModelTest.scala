@@ -2,6 +2,7 @@ package izumi.logstage.api
 
 import org.scalatest.WordSpec
 
+
 class LoggingModelTest extends WordSpec {
 
   "Log levels" should {

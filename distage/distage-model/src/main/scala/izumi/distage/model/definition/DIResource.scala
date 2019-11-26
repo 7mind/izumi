@@ -168,14 +168,13 @@ object DIResource {
   }
 
   def fromExecutorService[A <: ExecutorService](acquire: => A): DIResource[Identity, A] = {
-    makeSimple(acquire) {
-      es =>
-        if (!(es.isShutdown || es.isTerminated)) {
-          es.shutdown()
-          if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
-            es.shutdownNow().discard()
-          }
+    makeSimple(acquire) { es =>
+      if (!(es.isShutdown || es.isTerminated)) {
+        es.shutdown()
+        if (!es.awaitTermination(1, TimeUnit.SECONDS)) {
+          es.shutdownNow().discard()
         }
+      }
     }
   }
 
@@ -191,8 +190,7 @@ object DIResource {
     new Zio[R, E, A] {
       override def acquire: ZIO[R, E, (A, ZIO[R, Nothing, Unit])] = {
         managed.reserve.uninterruptible.flatMap {
-          reservation =>
-            reservation.acquire.map(a => a -> reservation.release(Exit.succeed(a)).unit)
+          reservation => reservation.acquire.map(a => a -> reservation.release(Exit.succeed(a)).unit)
         }
       }
     }
@@ -217,19 +215,10 @@ object DIResource {
   implicit final class DIResourceZIOSyntax[R, E, A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
-      ZManaged(
-        resource.acquire.map(
-          r =>
-            Reservation(
-              zio.ZIO.effectTotal(resource.extract(r)),
-              _ =>
-                resource.release(r).orDieWith {
-                  case e: Throwable => e
-                  case any => new RuntimeException(s"DIResource finalizer: $any")
-                }
-            )
-        )
-      )
+      ZManaged(resource.acquire.map(r => Reservation(zio.ZIO.effectTotal(resource.extract(r)), _ => resource.release(r).orDieWith {
+        case e: Throwable => e
+        case any => new RuntimeException(s"DIResource finalizer: $any")
+      })))
     }
   }
 
@@ -246,13 +235,9 @@ object DIResource {
 
   trait Simple[A] extends DIResource[Identity, A]
 
-  trait Mutable[+A] extends DIResource.Self[Identity, A] {
-    this: A =>
-  }
+  trait Mutable[+A] extends DIResource.Self[Identity, A] { this: A => }
 
-  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] {
-    this: A =>
-  }
+  trait MutableNoClose[+A] extends DIResource.SelfNoClose[Identity, A] { this: A => }
 
   abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
@@ -265,7 +250,7 @@ object DIResource {
     *   )(release = _ => IO.unit)
     * }}}
     */
-  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused", "") dummy: Boolean = false) extends DIResource[F, A] {
+  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused","") dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
@@ -288,7 +273,7 @@ object DIResource {
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
     * }}}
     */
-  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused", "") dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()
@@ -330,16 +315,14 @@ object DIResource {
 
   class OfZIO[R, E, A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
 
-  trait Self[+F[_], +A] extends DIResourceBase[F, A] {
-    this: A =>
+  trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>
     override final type InnerResource = Unit
     override final def release(resource: Unit): F[Unit] = release
     override final def extract(resource: Unit): A = this
     def release: F[Unit]
   }
 
-  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends DIResourceBase.NoClose[F, A] {
-    this: A =>
+  abstract class SelfNoClose[+F[_]: DIEffect, +A] extends DIResourceBase.NoClose[F, A] { this: A =>
     override type InnerResource = Unit
     override final def extract(resource: Unit): A = this
   }
@@ -357,8 +340,7 @@ object DIResource {
   }
 
   /** Generalized [[DIResource]] */
-  trait DIResourceBase[+F[_], +OuterResource] {
-    self =>
+  trait DIResourceBase[+F[_], +OuterResource] { self =>
     type InnerResource
     def acquire: F[InnerResource]
     def release(resource: InnerResource): F[Unit]
@@ -369,12 +351,10 @@ object DIResource {
     final def evalMap[G[x] >: F[x]: DIEffect, B](f: OuterResource => G[B]): DIResourceBase[G, B] = evalMapImpl[G, OuterResource, B](this)(f)
 
     /** Wrap acquire action of this resource in another effect, e.g. for logging purposes */
-    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] =
-      logAcquireImpl[G, OuterResource](this: this.type)(f)
+    final def logAcquire[G[x] >: F[x]](f: (=> G[InnerResource]) => G[InnerResource]): DIResourceBase[G, OuterResource] = logAcquireImpl[G, OuterResource](this: this.type)(f)
 
     /** Wrap release action of this resource in another effect, e.g. for logging purposes */
-    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] =
-      logReleaseImpl[G, OuterResource](this: this.type)(f)
+    final def logRelease[G[x] >: F[x]](f: (InnerResource => G[Unit], InnerResource) => G[Unit]): DIResourceBase[G, OuterResource] = logReleaseImpl[G, OuterResource](this: this.type)(f)
 
     final def void: DIResourceBase[F, Unit] = map(_ => ())
   }
@@ -452,7 +432,7 @@ object DIResource {
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
+  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R , E, A]] = {
     providerFromZIOProvider(ProviderMagnet.pure(managed))
   }
 
@@ -474,7 +454,7 @@ object DIResource {
   }
 
   @inline
-  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
 
     def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
       F.bracketCase(acquire = acquire)(release = {
@@ -549,7 +529,7 @@ object DIResource {
   object ResourceTag extends ResourceTagLowPriority {
     def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
-    implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] { type F[X] = F0[X]; type A = A0 } = {
+    implicit def resourceTag[R <: DIResourceBase[F0, A0] : Tag, F0[_] : TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
       new ResourceTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -576,8 +556,7 @@ object DIResource {
       *
       * TODO: include link to IJ bug tracker
       */
-    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] =
-      macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
+    implicit final def fakeResourceTagMacroIntellijWorkaround[R <: DIResourceBase[Any, Any]]: ResourceTag[R] = macro ResourceTag.fakeResourceTagMacroIntellijWorkaroundImpl[R]
   }
 
 }

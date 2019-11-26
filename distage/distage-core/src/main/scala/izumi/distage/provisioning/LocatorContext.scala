@@ -7,9 +7,9 @@ import izumi.distage.model.reflection.universe
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 final case class LocatorContext(
-  provision: Provision[Any],
-  locator: Locator
-) extends ProvisioningKeyProvider {
+                                 provision: Provision[Any]
+                               , locator: Locator
+                               ) extends ProvisioningKeyProvider {
 
   override def fetchUnsafe(key: universe.RuntimeDIUniverse.DIKey): Option[Any] = provision.get(key)
 

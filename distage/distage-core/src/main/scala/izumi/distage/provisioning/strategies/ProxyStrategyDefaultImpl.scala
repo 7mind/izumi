@@ -20,28 +20,27 @@ trait FakeSet[A] extends Set[A]
   * - Untested on constructors accepting primitive values, will fail most likely
   */
 class ProxyStrategyDefaultImpl(
-  reflectionProvider: ReflectionProvider.Runtime,
-  introspector: SymbolIntrospector.Runtime,
-  proxyProvider: ProxyProvider,
-  mirror: MirrorProvider
-) extends ProxyStrategy {
+                                reflectionProvider: ReflectionProvider.Runtime
+                                , introspector: SymbolIntrospector.Runtime
+                                , proxyProvider: ProxyProvider
+                                , mirror: MirrorProvider
+                              ) extends ProxyStrategy {
   def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
-        executor
-          .execute(context, initProxy.proxy.op).flatMap(_.toList match {
-            case NewObjectOp.NewInstance(_, instance) :: Nil =>
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(_ => Seq.empty)
-            case (r @ NewObjectOp.NewResource(_, instance, _)) :: Nil =>
-              val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-              F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
-                .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
-            case r =>
-              throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
-          })
+        executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
+          case NewObjectOp.NewInstance(_, instance) :: Nil =>
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq.empty)
+          case (r@NewObjectOp.NewResource(_, instance, _)) :: Nil =>
+            val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
+            F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
+              .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
+          case r =>
+            throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
+        })
       case _ =>
         throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
     }
@@ -62,10 +61,11 @@ class ProxyStrategyDefaultImpl(
     }
 
     Seq(
-      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy),
-      NewObjectOp.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
+      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy)
+      , NewObjectOp.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
     )
   }
+
 
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
     val params = if (hasDeps(tpe)) {
@@ -82,11 +82,7 @@ class ProxyStrategyDefaultImpl(
                 case Some(v) =>
                   v.asInstanceOf[AnyRef]
                 case None =>
-                  throw new MissingRefException(
-                    s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.wireWith}",
-                    Set(p.wireWith),
-                    None
-                  )
+                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.wireWith}", Set(p.wireWith), None)
               }
           }
 
@@ -102,11 +98,10 @@ class ProxyStrategyDefaultImpl(
           (parameterType, value)
       }
 
-      val argClasses = args
-        .map(_._1)
+      val argClasses = args.map(_._1)
         .map {
           t =>
-            mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
+          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
         }
         .toArray
       val argValues = args.map(_._2).toArray
@@ -164,3 +159,4 @@ class ProxyStrategyDefaultImpl(
   }
 
 }
+

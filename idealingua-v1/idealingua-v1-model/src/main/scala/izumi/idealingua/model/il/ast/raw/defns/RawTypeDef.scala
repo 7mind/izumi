@@ -5,7 +5,9 @@ import izumi.idealingua.model.common.{AbstractIndefiniteId, TypeId}
 import izumi.idealingua.model.il.ast.raw.defns.RawAdt.Member
 import izumi.idealingua.model.il.ast.raw.typeid.ParsedId
 
+
 sealed trait RawTypeDef
+
 
 case class InterpContext(parts: Seq[String], parameters: Seq[AbstractIndefiniteId])
 
@@ -14,6 +16,7 @@ object RawTypeDef {
   sealed trait WithId extends RawTypeDef {
     def id: TypeId
   }
+
 
   final case class Interface(id: InterfaceId, struct: RawStructure, meta: RawNodeMeta) extends WithId
 
@@ -34,3 +37,6 @@ object RawTypeDef {
   final case class DeclaredType(id: AbstractIndefiniteId, meta: RawNodeMeta) extends RawTypeDef
 
 }
+
+
+

@@ -12,7 +12,7 @@ import izumi.distage.testkit.st.TestkitTest.NotAddedClass
 import izumi.distage.testkit.st.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 
-abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
+abstract class TestkitTest[F[_] : TagK] extends TestkitSelftest[F] {
   "testkit" must {
     "load plugins" in dio {
       (service: TestService1, locatorRef: LocatorRef, eff: DIEffect[F]) =>
@@ -66,12 +66,11 @@ abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
   }
 
   override protected def contextOptions(): ContextOptions = {
-    super
-      .contextOptions().copy(configInjectionOptions = ConfigInjectionOptions.make {
-        // here we may patternmatch on config value context and rewrite it
-        case (ConfigProvider.ConfigImport(_: ConfPathId, _), c: TestConfig) =>
-          c.copy(overriden = 3)
-      })
+    super.contextOptions().copy(configInjectionOptions = ConfigInjectionOptions.make {
+      // here we may patternmatch on config value context and rewrite it
+      case (ConfigProvider.ConfigImport(_: ConfPathId, _), c: TestConfig) =>
+        c.copy(overriden = 3)
+    })
   }
 
   override protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {

@@ -22,7 +22,7 @@ class LogstageCirceRenderingTest extends WordSpec {
       val renderedMessages = sink.fetchRendered()
       assert(renderedMessages.nonEmpty)
 
-      renderedMessages.foreach {
+      renderedMessages.foreach{
         s =>
           parse(s) match {
             case Left(value) =>
@@ -43,6 +43,7 @@ class LogstageCirceRenderingTest extends WordSpec {
 
   }
 
+
   def setupJsonLogger(debug: Boolean): (IzLogger, TestSink) = {
     val jsonPolicy = new LogstageCirceRenderingPolicy(prettyPrint = true)
     val testSink = new TestSink(Some(jsonPolicy))
@@ -57,3 +58,5 @@ class LogstageCirceRenderingTest extends WordSpec {
   }
 
 }
+
+

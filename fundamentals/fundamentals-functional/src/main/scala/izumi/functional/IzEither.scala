@@ -38,7 +38,7 @@ trait IzEither {
   }
 
   implicit final class EitherBiSplit[L, R, Col[x] <: Iterable[x]](e: Col[Either[L, R]]) {
-    def lrPartition(implicit bl: Factory[L, Col[L]], br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
+    def lrPartition(implicit bl: Factory[L, Col[L]],  br: Factory[R, Col[R]]): (Col[L], Col[R]) = {
       val left = e.collect {
         case Left(l) => l
       }

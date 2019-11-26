@@ -55,6 +55,7 @@ trait TranslationLayouter {
     }
   }
 
+
   protected def renderVersion(version: ProjectVersion): String = {
     val baseVersion = version.version
 

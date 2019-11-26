@@ -13,9 +13,9 @@ private[bio] sealed trait BIOPrimitivesInstances
 object BIOPrimitivesInstances {
   implicit val zioPrimitives: BIOPrimitives[IO] = {
     new BIOPrimitives[IO] {
-      override def mkRef[A](a: A): IO[Nothing, BIORef[IO, A]] = Ref.make(a).map(BIORef.fromZIO)
-      override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]] = mkPromise[Nothing, Unit]
-      override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]] = Promise.make[E, A].map(BIOPromise.fromZIO)
+      override def mkRef[A](a: A): IO[Nothing, BIORef[IO, A]]                = Ref.make(a).map(BIORef.fromZIO)
+      override def mkLatch: IO[Nothing, BIOPromise[IO, Nothing, Unit]]       = mkPromise[Nothing, Unit]
+      override def mkPromise[E, A]: IO[Nothing, BIOPromise[IO, E, A]]        = Promise.make[E, A].map(BIOPromise.fromZIO)
       override def mkSemaphore(permits: Long): IO[Nothing, BIOSemaphore[IO]] = Semaphore.make(permits).map(BIOSemaphore.fromZIO)
     }
   }

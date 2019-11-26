@@ -122,15 +122,15 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
   }
 
-  final protected def bindEffect[F[_]: TagK, T: Tag, EFF <: F[T]: Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_] : TagK, T: Tag, EFF <: F[T] : Tag](implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[EFF])))
   }
 
-  final protected def bindEffect[F[_]: TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_] : TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
   }
 
-  final protected def bindEffect[F[_]: TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected def bindEffect[F[_] : TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
@@ -139,26 +139,20 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.TypeImpl(SafeType.get[R])))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, Any]](
-    instance: R with DIResourceBase[Any, Any]
-  )(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
+  final protected def bindResource[R <: DIResourceBase[Any, Any]](instance: R with DIResourceBase[Any, Any])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[R], instance)))
   }
 
-  final protected def bindResource[R <: DIResourceBase[Any, Any]](
-    function: ProviderMagnet[R with DIResourceBase[Any, Any]]
-  )(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
+  final protected def bindResource[R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R with DIResourceBase[Any, Any]])(implicit tag: ResourceTag[R], pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
   }
 
-  final protected def bindResource[R0, R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R0])(
-    implicit
-    adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, Any]],
-    tag: ResourceTag[R],
-    pos: CodePositionMaterializer
-  ): MultipleDSL[tag.A] = {
+  final protected def bindResource[R0, R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R0])(implicit
+                                                                                                    adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, Any]],
+                                                                                                    tag: ResourceTag[R],
+                                                                                                    pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
   }
@@ -198,17 +192,16 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], pos: SourceFilePosition, ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty)
-    extends BindingRef {
+  final class MultipleRef(initial: SingletonBinding[DIKey.TypeKey], pos: SourceFilePosition, ops: mutable.Queue[MultipleInstruction] = mutable.Queue.empty) extends BindingRef {
     override def interpret: collection.Seq[ImplBinding] = {
       val (init, tags, refs) = ops.foldLeft((initial: SingletonBinding[DIKey.BasicKey], Set.empty[BindingTag], Seq.empty[SingletonBinding[DIKey]])) {
         case ((base, tagAcc, refs), instr) =>
-          instr match {
-            case s: MultipleInstruction.SetId[_] => (base.withTarget(DIKey.IdKey(base.key.tpe, s.id)(s.idContract)), tagAcc, refs)
-            case MultipleInstruction.AddTags(tags) => (base, tagAcc ++ tags, refs)
-            case ImplWithReference(key) =>
-              (base, tagAcc, SingletonBinding(key, ImplDef.ReferenceImpl(base.implementation.implType, base.key, weak = false), Set.empty, pos) +: refs)
-          }
+        instr match {
+          case s: MultipleInstruction.SetId[_] => (base.withTarget(DIKey.IdKey(base.key.tpe, s.id)(s.idContract)), tagAcc, refs)
+          case MultipleInstruction.AddTags(tags) => (base, tagAcc ++ tags, refs)
+          case ImplWithReference(key) =>
+            (base, tagAcc, SingletonBinding(key, ImplDef.ReferenceImpl(base.implementation.implType, base.key, weak = false), Set.empty, pos) +: refs)
+        }
       }
 
       init.addTags(tags) :: refs.reverse.map(_.addTags(tags)).toList
@@ -222,7 +215,8 @@ object AbstractBindingDefDSL {
     }
   }
 
-  final class SetRef(
+  final class SetRef
+  (
     initial: EmptySetBinding[DIKey.TypeKey],
     setOps: mutable.Queue[SetInstruction] = mutable.Queue.empty,
     elems: mutable.Queue[SetElementRef] = mutable.Queue.empty,

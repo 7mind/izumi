@@ -3,6 +3,7 @@ package izumi.idealingua.model.il.ast.typed
 import izumi.idealingua.model.common.TypeId._
 import izumi.idealingua.model.common._
 
+
 sealed trait TypeDef {
   def id: TypeId
 
@@ -34,3 +35,4 @@ object TypeDef {
   //final case class ForeignType(id: IndefiniteId, mapping: Map[String, String], meta: NodeMeta) extends TypeDef
 
 }
+

@@ -12,7 +12,8 @@ import izumi.fundamentals.graphs.Toposort
 import distage.DIKey
 import izumi.distage.model.definition.ModuleBase
 
-final class PlannerDefaultImpl(
+final class PlannerDefaultImpl
+(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
   gc: DIGarbageCollector,
@@ -22,7 +23,8 @@ final class PlannerDefaultImpl(
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
   symbolIntrospector: SymbolIntrospector.Runtime,
-) extends Planner {
+)
+  extends Planner {
 
   override def plan(input: PlannerInput): OrderedPlan = {
     Value(input)
@@ -39,7 +41,7 @@ final class PlannerDefaultImpl(
       .get
   }
 
-  override def rewrite(module: ModuleBase): ModuleBase = {
+  override def rewrite(module: ModuleBase): ModuleBase= {
     hook.hookDefinition(module)
   }
 
@@ -57,7 +59,7 @@ final class PlannerDefaultImpl(
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {
-    input.bindings.bindings.foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
+      input.bindings.bindings.foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
       case (currentPlan, binding) =>
         Value(bindingTranslator.computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -95,7 +97,9 @@ final class PlannerDefaultImpl(
 
   private[this] def addImports(plan: SemiPlan): SemiPlan = {
     val topology = analyzer.topology(plan.steps)
-    val imports = topology.dependees.graph
+    val imports = topology
+      .dependees
+      .graph
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
@@ -106,11 +110,10 @@ final class PlannerDefaultImpl(
 
     val allOps = (imports.values ++ plan.steps).toVector
     val roots = plan.gcMode.toSet
-    val missingRoots: Vector[ExecutableOp] = roots
-      .diff(allOps.map(_.target).toSet).map {
-        root =>
-          ImportDependency(root, Set.empty, None)
-      }.toVector
+    val missingRoots: Vector[ExecutableOp] = roots.diff(allOps.map(_.target).toSet).map {
+      root =>
+        ImportDependency(root, Set.empty, None)
+    }.toVector
 
     SemiPlan(plan.definition, missingRoots ++ allOps, plan.gcMode)
   }
@@ -168,9 +171,9 @@ final class PlannerDefaultImpl(
     }
 
     val sortedKeys = new Toposort().cycleBreaking(
-      topology.dependencies.graph,
-      Seq.empty,
-      break
+      topology.dependencies.graph
+      , Seq.empty
+      , break
     ) match {
       case Left(value) =>
         throw new SanityCheckFailedException(s"Integrity check failed: cyclic reference not detected while it should be, ${value.issues}")

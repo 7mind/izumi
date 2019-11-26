@@ -30,14 +30,8 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
     import CircularCase1._
 
     val definition: ModuleBase = new StaticModuleDef {
-      make[Circular2].from {
-        c: Circular1 =>
-          new Circular2(c)
-      }
-      make[Circular1].from {
-        c: Circular2 =>
-          new Circular1 { override val arg: Circular2 = c }
-      }
+      make[Circular2].from { c: Circular1 => new Circular2(c) }
+      make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
     }
 
     val injector = mkInjectorWithProxy()

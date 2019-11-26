@@ -7,7 +7,8 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
 
-abstract class LightTypeTag(
+abstract class LightTypeTag
+(
   bases: () => Map[AbstractReference, Set[AbstractReference]],
   db: () => Map[NameReference, Set[NameReference]],
 ) extends Serializable {
@@ -101,10 +102,10 @@ object LightTypeTag {
   }
 
   final class ParsedLightTypeTag(
-    private val refString: String,
-    bases: () => Map[AbstractReference, Set[AbstractReference]],
-    db: () => Map[NameReference, Set[NameReference]],
-  ) extends LightTypeTag(bases, db) {
+                                  private val refString: String,
+                                  bases: () => Map[AbstractReference, Set[AbstractReference]],
+                                  db: () => Map[NameReference, Set[NameReference]],
+                                ) extends LightTypeTag(bases, db) {
     override lazy val ref: LightTypeTagRef = {
       lttRefSerializer.unpickle(ByteBuffer.wrap(refString.getBytes("ISO-8859-1")))
     }

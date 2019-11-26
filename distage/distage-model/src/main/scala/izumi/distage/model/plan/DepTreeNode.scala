@@ -31,6 +31,7 @@ final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: 
   }
 }
 
+
 class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
   val minimizer = new KeyMinimizer(collectKeys(node))
 
@@ -71,6 +72,7 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
 
     }
   }
+
 
   private def renderKey(key: DIKey): String = {
     s"${minimizer.render(key)} ${plan.index.get(key).flatMap(_.origin).map(_.origin).getOrElse("")}"

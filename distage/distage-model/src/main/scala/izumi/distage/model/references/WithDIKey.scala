@@ -4,7 +4,9 @@ import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithTags}
 
 trait WithDIKey {
-  this: DIUniverseBase with WithDISafeType with WithTags =>
+  this: DIUniverseBase
+    with WithDISafeType
+    with WithTags =>
 
   sealed trait DIKey {
     def tpe: SafeType

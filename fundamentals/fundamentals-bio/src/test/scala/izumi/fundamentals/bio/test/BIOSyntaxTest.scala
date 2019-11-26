@@ -54,8 +54,8 @@ class BIOSyntaxTest extends WordSpec {
     }
     def `attach BIOPrimitives & BIOFork methods even when they aren't imported`[F[+_, +_]: BIOMonad: Primitives: Fork]: F[Nothing, Int] = {
       F.fork[Any, Nothing, Int] {
-          F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
-        }.flatMap(_.join)
+        F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))
+      }.flatMap(_.join)
     }
     def `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[F[-_, +_, +_]: BIOMonad3: Primitives3: Fork3]: F[Any, Nothing, Int] = {
       F.fork(F.mkRef(4).flatMap(r => r.update(_ + 5) *> r.get.map(_ - 1))).flatMap(_.join)

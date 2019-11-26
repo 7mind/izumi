@@ -17,7 +17,8 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 
-class DockerClientWrapper[F[_]](
+class DockerClientWrapper[F[_]]
+(
   val client: DockerClient,
   val clientConfig: ClientConfig,
   val labelsBase: Map[String, String],
@@ -51,7 +52,8 @@ class DockerClientWrapper[F[_]](
 
 object DockerClientWrapper {
 
-  class Resource[F[_]: DIEffect: DIEffectAsync](
+  class Resource[F[_] : DIEffect : DIEffectAsync]
+  (
     factory: DockerCmdExecFactory,
     logger: IzLogger,
     clientConfig: ClientConfig,
@@ -59,12 +61,8 @@ object DockerClientWrapper {
     with IntegrationCheck {
 
     private[this] lazy val dcc = Value(DefaultDockerClientConfig.createDefaultConfigBuilder())
-      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))(
-        (c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config)
-      )
-      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))(
-        (c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email)
-      )
+      .mut(clientConfig.remote.filter(_ => clientConfig.useRemote))((c, b) => b.withDockerHost(c.host).withDockerTlsVerify(c.tlsVerify).withDockerCertPath(c.certPath).withDockerConfig(c.config))
+      .mut(clientConfig.registry.filter(_ => clientConfig.useRegistry))((c, b) => b.withRegistryUrl(c.url).withRegistryUsername(c.username).withRegistryPassword(c.password).withRegistryEmail(c.email))
       .get.build()
 
     private[this] lazy val client = DockerClientBuilder
@@ -97,9 +95,7 @@ object DockerClientWrapper {
     override def release(resource: DockerClientWrapper[F]): F[Unit] = {
       for {
         containers <- DIEffect[F].maybeSuspend(resource.client.listContainersCmd().withLabelFilter(resource.labels.asJava).exec())
-        _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(
-          c => resource.destroyContainer(ContainerId(c.getId))
-        )
+        _ <- DIEffect[F].traverse_(containers.asScala.filterNot(_.getLabels.getOrDefault("distage.reuse", "false") == "true"))(c => resource.destroyContainer(ContainerId(c.getId)))
         _ <- DIEffect[F].maybeSuspend(resource.client.close())
       } yield ()
     }

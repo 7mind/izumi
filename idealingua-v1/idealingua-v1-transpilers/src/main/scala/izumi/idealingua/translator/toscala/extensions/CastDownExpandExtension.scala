@@ -6,11 +6,13 @@ import izumi.idealingua.translator.toscala.products.CogenProduct.InterfaceProduc
 
 import scala.meta._
 
+
 object CastDownExpandExtension extends ScalaTranslatorExtension {
 
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     val constructors = ctx.typespace.structure.conversions(interface.id).map {
       t =>
+
         val constructorCode = ctx.tools.makeConstructor(t)
         val constructorSignature = ctx.tools.makeParams(t)
 
@@ -43,5 +45,6 @@ object CastDownExpandExtension extends ScalaTranslatorExtension {
 
     product.copy(companionBase = product.companionBase.appendDefinitions(constructors))
   }
+
 
 }

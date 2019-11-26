@@ -41,10 +41,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       )
       val testDependencyOp = testDependencyPlan.steps.last
 
-      val plan2 = injector.finish(testDependencyPlan.traverse[Id] {
-        _ =>
-          testDependencyOp
-      })
+      val plan2 = injector.finish(testDependencyPlan.traverse[Id] { _ => testDependencyOp })
 
       assert(plan2.steps === testDependencyPlan.steps)
 

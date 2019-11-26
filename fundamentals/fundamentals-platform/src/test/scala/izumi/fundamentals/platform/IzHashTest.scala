@@ -1,3 +1,4 @@
+
 package izumi.fundamentals.platform
 
 import org.scalatest.WordSpec
@@ -21,3 +22,4 @@ class IzHashTest extends WordSpec {
     }
   }
 }
+

@@ -22,11 +22,11 @@ object BIORunner {
   def createZIO(platform: Platform): ZIORunner = new ZIORunner(platform)
 
   def createZIO(
-    cpuPool: ThreadPoolExecutor,
-    handler: FailureHandler = FailureHandler.Default,
-    yieldEveryNFlatMaps: Int = 1024,
-    tracingConfig: TracingConfig = TracingConfig.enabled
-  ): ZIORunner = {
+                 cpuPool: ThreadPoolExecutor
+               , handler: FailureHandler = FailureHandler.Default
+               , yieldEveryNFlatMaps: Int = 1024
+               , tracingConfig: TracingConfig = TracingConfig.enabled
+               ): ZIORunner = {
     new ZIORunner(new ZIOPlatform(cpuPool, handler, yieldEveryNFlatMaps, tracingConfig))
   }
 
@@ -40,7 +40,8 @@ object BIORunner {
     final case class Custom(handler: BIOExit.Failure[Any] => Unit) extends FailureHandler
   }
 
-  class ZIORunner(
+  class ZIORunner
+  (
     val platform: Platform
   ) extends BIORunner[IO] {
 
@@ -74,11 +75,12 @@ object BIORunner {
     }
   }
 
-  class ZIOPlatform(
-    cpuPool: ThreadPoolExecutor,
-    handler: FailureHandler,
-    yieldEveryNFlatMaps: Int,
-    tracingConfig: TracingConfig
+  class ZIOPlatform
+  (
+    cpuPool: ThreadPoolExecutor
+  , handler: FailureHandler
+  , yieldEveryNFlatMaps: Int
+  , tracingConfig: TracingConfig
   ) extends Platform {
 
     override val executor: Executor = Executor.fromThreadPoolExecutor(_ => yieldEveryNFlatMaps)(cpuPool)
@@ -113,7 +115,7 @@ object BIORunner {
 
     private val threadGroup = new ThreadGroup(parentGroup, name)
     private val threadCount = new AtomicInteger(1)
-    private val threadHash = Integer.toUnsignedString(this.hashCode())
+    private val threadHash  = Integer.toUnsignedString(this.hashCode())
 
     override def newThread(r: Runnable): Thread = {
       val newThreadNumber = threadCount.getAndIncrement()

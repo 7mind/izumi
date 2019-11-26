@@ -8,6 +8,7 @@ import org.scalatest.WordSpec
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+
 class IzFilesTest extends WordSpec {
 
   "File tools" should {
@@ -22,7 +23,7 @@ class IzFilesTest extends WordSpec {
   "Resource tools" should {
     "support concurrent queries" in {
       import scala.concurrent.ExecutionContext.Implicits.global
-      val seq = (0 to 200).map {
+      val seq = (0 to 200).map{
         _ =>
           Future(IzResources.getPath("reflect.properties"))
       }

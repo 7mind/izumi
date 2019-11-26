@@ -57,9 +57,7 @@ object Binding {
     override def addTags(moreTags: Set[BindingTag]): SingletonBinding[K] = withTags(this.tags ++ moreTags)
   }
 
-  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition)
-    extends ImplBinding
-    with SetBinding {
+  final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
     override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     protected[this] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
@@ -73,7 +71,7 @@ object Binding {
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
   }
 
-  implicit final class WithImplementation[R](private val binding: ImplBinding { def withImplDef(implDef: ImplDef): R }) extends AnyVal {
+  implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
     def withImpl[T: Tag]: R =
       binding.withImplDef(ImplDef.TypeImpl(SafeType.get[T]))
 
@@ -85,3 +83,4 @@ object Binding {
   }
 
 }
+

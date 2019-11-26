@@ -20,4 +20,5 @@ class IzStringEscapeTest extends WordSpec {
     }
   }
 
+
 }

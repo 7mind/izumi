@@ -3,7 +3,10 @@ package izumi.distage.model.plan
 import izumi.distage.model.reflection.universe._
 
 trait WithDIDependencyContext {
-  this: DIUniverseBase with WithDISafeType with WithDICallable with WithDISymbolInfo =>
+  this: DIUniverseBase
+    with WithDISafeType
+    with WithDICallable
+    with WithDISymbolInfo =>
 
   sealed trait DependencyContext {
     def definingClass: SafeType

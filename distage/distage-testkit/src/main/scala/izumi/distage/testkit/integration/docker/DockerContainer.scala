@@ -41,24 +41,24 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
+  final def make[F[_] : TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }
 }
 
 object ContainerDef {
-  type Aux[T] = ContainerDef { type Tag = T }
+  type Aux[T] = ContainerDef {type Tag = T}
 }
 
 case class DockerContainer[Tag](
-  id: Docker.ContainerId,
-  name: String,
-  ports: Map[Docker.DockerPort, Seq[ServicePort]],
-  containerConfig: ContainerConfig[Tag],
-  clientConfig: ClientConfig,
-  availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
-) {
+                                 id: Docker.ContainerId,
+                                 name: String,
+                                 ports: Map[Docker.DockerPort, Seq[ServicePort]],
+                                 containerConfig: ContainerConfig[Tag],
+                                 clientConfig: ClientConfig,
+                                 availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
+                               ) {
   override def toString: String = s"$name:${id.name} ports=${ports.mkString("{", ", ", "}")} available=${availablePorts.mkString("{", ", ", "}")}"
 }
 
@@ -77,7 +77,8 @@ object DockerContainer {
     }
   }
 
-  class Resource[F[_]: DIEffect: DIEffectAsync, T](
+  class Resource[F[_] : DIEffect : DIEffectAsync, T]
+  (
     containerDecl: ContainerDef.Aux[T],
   )(
     clientw: DockerClientWrapper[F],
@@ -118,8 +119,7 @@ object DockerContainer {
         for {
           containers <- DIEffect[F]
             .maybeSuspend(
-              client
-                .listContainersCmd()
+              client.listContainersCmd()
                 .withAncestorFilter(List(config.image).asJava)
                 .withStatusFilter(List("running").asJava)
                 .exec()
@@ -136,7 +136,8 @@ object DockerContainer {
                 case Right(value) =>
                   Seq((c, inspection, value))
               }
-          }.find { case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty }
+          }
+            .find { case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty }
           existing <- candidates match {
             case Some((c, inspection, existingPorts)) =>
               for {
@@ -178,7 +179,7 @@ object DockerContainer {
         case HealthCheckResult.WithPorts(ports) =>
           val out = container.copy(availablePorts = ports)
           logger.info(s"${out -> "container"} looks good...")
-          DIEffect[F].pure(out)
+        DIEffect[F].pure(out)
         case HealthCheckResult.Failed(t) =>
           DIEffect[F].fail(new RuntimeException(s"Container failed: ${container.id}", t))
         case HealthCheckResult.Uknnown =>
@@ -273,7 +274,9 @@ object DockerContainer {
         Left(bad.map(_._1))
       }
 
+
     }
   }
+
 
 }

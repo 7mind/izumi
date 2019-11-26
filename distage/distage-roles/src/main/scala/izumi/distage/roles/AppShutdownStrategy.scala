@@ -43,7 +43,7 @@ class JvmExitHookLatchShutdownStrategy extends AppShutdownStrategy[Identity] {
   }
 }
 
-class ImmediateExitShutdownStrategy[F[_]: DIEffect] extends AppShutdownStrategy[F] {
+class ImmediateExitShutdownStrategy[F[_] : DIEffect] extends AppShutdownStrategy[F] {
   def await(logger: IzLogger): F[Unit] = {
     DIEffect[F].maybeSuspend {
       logger.info("Exiting immediately...")
@@ -116,17 +116,16 @@ class BIOShutdownStrategy[F[+_, +_]: BIOAsync] extends AppShutdownStrategy[F[Thr
 
     val f = shutdownPromise.future
 
-    F.fromFuture {
-      implicit ec =>
-        f.map[Unit] {
-          _ =>
-            try {
-              Runtime.getRuntime.removeShutdownHook(shutdownHook)
-            } catch {
-              case _: IllegalStateException =>
-            }
-            logger.info("Going to shut down...")
-        }
+    F.fromFuture { implicit ec =>
+      f.map[Unit] {
+        _ =>
+          try {
+            Runtime.getRuntime.removeShutdownHook(shutdownHook)
+          } catch {
+            case _: IllegalStateException =>
+          }
+          logger.info("Going to shut down...")
+      }
     }
   }
 }

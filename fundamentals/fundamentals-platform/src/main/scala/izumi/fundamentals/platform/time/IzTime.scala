@@ -17,7 +17,8 @@ trait IzTimeSafe {
 
   // formatters with 3 decimal positions for nanos
   final lazy val ISO_LOCAL_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive
       .append(ISO_LOCAL_DATE)
       .appendLiteral('T')
       .append(ISO_LOCAL_TIME_3NANO)
@@ -42,15 +43,15 @@ trait IzTimeSafe {
   }
 
   final lazy val ISO_OFFSET_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
-      .append(ISO_LOCAL_TIME_3NANO)
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive.append(ISO_LOCAL_TIME_3NANO)
       .appendOffsetId
       .toFormatter()
   }
 
   final val ISO_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
-      .append(ISO_LOCAL_DATE_TIME_3NANO)
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive.append(ISO_LOCAL_DATE_TIME_3NANO)
       .appendOffsetId
       .optionalStart
       .appendLiteral('[')
@@ -65,7 +66,8 @@ trait IzTimeSafe {
   }
 
   final val ISO_TIME_3NANO = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive
       .append(ISO_LOCAL_TIME_3NANO)
       .optionalStart
       .appendOffsetId
@@ -108,7 +110,8 @@ trait IzTime extends IzTimeSafe {
   }
 
   final lazy val ISO_OFFSET_DATE_TIME_3NANO: DateTimeFormatter = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive
+    new DateTimeFormatterBuilder()
+      .parseCaseInsensitive
       .append(ISO_LOCAL_DATE_TIME_3NANO)
       .parseLenient
       .appendOffsetId

@@ -22,9 +22,10 @@ trait Codecs {
 
   implicit def decProjectNamingRule: Decoder[ProjectNamingRule] = deriveDecoder
 
+
   //
   implicit def decScalaProjectLayout: Decoder[ScalaProjectLayout] = semiauto.deriveEnumerationDecoder
-
+  
   implicit def decSbtOptions: Decoder[SbtOptions] = deriveDecoder
 
   implicit def decScalaBuildManifest: Decoder[ScalaBuildManifest] = deriveDecoder
@@ -32,22 +33,22 @@ trait Codecs {
   implicit def decTs: Decoder[TypeScriptBuildManifest] = deriveDecoder
 
   implicit def decTypeScriptProjectLayout: Decoder[TypeScriptProjectLayout] = semiauto.deriveEnumerationDecoder
-
+  
   implicit def decYarnOptions: Decoder[YarnOptions] = deriveDecoder
-
+  
   implicit def decGo: Decoder[GoLangBuildManifest] = deriveDecoder
-
+  
   implicit def decGoProjectLayout: Decoder[GoProjectLayout] = semiauto.deriveEnumerationDecoder
-
-  implicit def decGoRepositoryOptions: Decoder[GoRepositoryOptions] = deriveDecoder
-
+  
+  implicit def decGoRepositoryOptions: Decoder[GoRepositoryOptions] = deriveDecoder  
+  
   implicit def decCs: Decoder[CSharpBuildManifest] = deriveDecoder
 
   implicit def decCSharpProjectLayout: Decoder[CSharpProjectLayout] = semiauto.deriveEnumerationDecoder
 
-  implicit def decNugetOptions: Decoder[NugetOptions] = deriveDecoder
+  implicit def decNugetOptions: Decoder[NugetOptions] = deriveDecoder  
   //
-
+  
   implicit def encMFUrl: Encoder[MFUrl] = deriveEncoder
 
   implicit def encLicense: Encoder[License] = deriveEncoder
@@ -59,6 +60,7 @@ trait Codecs {
   implicit def encPublisher: Encoder[Publisher] = deriveEncoder
 
   implicit def encProjectNamingRule: Encoder[ProjectNamingRule] = deriveEncoder
+
 
   //
   implicit def encScalaProjectLayout: Encoder[ScalaProjectLayout] = semiauto.deriveEnumerationEncoder
@@ -95,4 +97,6 @@ trait Codecs {
   implicit def encVersionOverlay: Encoder[VersionOverlay] = deriveEncoder
 }
 
-object Codecs extends Codecs {}
+object Codecs extends Codecs {
+
+}

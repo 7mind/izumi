@@ -1,6 +1,8 @@
 package izumi.idealingua.model.common
 
-sealed trait StreamDirection {}
+sealed trait StreamDirection {
+
+}
 
 object StreamDirection {
   final case object ToServer extends StreamDirection

@@ -12,6 +12,7 @@ import scala.meta._
 
 object CastUpExtension extends ScalaTranslatorExtension {
 
+
   override def handleComposite(ctx: STContext, struct: StructContext, product: CompositeProduct): CompositeProduct = {
     val ext = generateUpcasts(ctx, struct.struct)
     product.copy(companionBase = product.companionBase.appendDefinitions(ext))
@@ -21,7 +22,7 @@ object CastUpExtension extends ScalaTranslatorExtension {
   override def handleInterface(ctx: STContext, interface: Interface, product: InterfaceProduct): InterfaceProduct = {
     import ctx.conv._
     val struct = ctx.typespace.structure.structure(interface).toScala
-    val ext = generateUpcasts(ctx, struct)
+    val ext = generateUpcasts(ctx,  struct)
     product.copy(companionBase = product.companionBase.appendDefinitions(ext))
   }
 

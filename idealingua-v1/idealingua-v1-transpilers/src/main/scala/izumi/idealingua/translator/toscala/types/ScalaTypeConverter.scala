@@ -12,12 +12,13 @@ import izumi.idealingua.model.typespace.structures.{PlainStruct, Struct}
 import scala.meta._
 import scala.reflect.{ClassTag, classTag}
 
+
 class ScalaTypeConverter(domain: DomainId) {
   protected def toScalaField(field: ExtendedField): ScalaField = {
     ScalaField(
-      Term.Name(field.field.name),
-      ScalaTypeConverter.this.toScala(field.field.typeId).typeFull,
-      field
+      Term.Name(field.field.name)
+      , ScalaTypeConverter.this.toScala(field.field.typeId).typeFull
+      , field
     )
   }
 
@@ -35,6 +36,7 @@ class ScalaTypeConverter(domain: DomainId) {
       new ScalaStruct(fields, good, soft, all)
     }
   }
+
 
   implicit class ScalaTypeOps(st: ScalaType) {
     def sibling(name: TypeName): ScalaType = {
@@ -60,6 +62,7 @@ class ScalaTypeConverter(domain: DomainId) {
         toScala(JavaType(id.path.toPackage, id.name))
     }
   }
+
 
   def toScala[T: ClassTag]: ScalaType = {
     toScala(classTag[T].runtimeClass)
@@ -87,18 +90,19 @@ class ScalaTypeConverter(domain: DomainId) {
     val withRoot = javaType.withRoot
     val minimized = javaType.minimize(domain)
     ScalaTypeImpl(
-      toSelectTerm(withRoot),
-      toSelect(withRoot),
-      toSelectTerm(minimized),
-      toSelect(minimized),
-      Term.Name(javaType.name),
-      Type.Name(javaType.name),
-      javaType,
-      domain,
-      args.map(toScala(_).typeFull),
-      args.map(toScala(_).termFull)
+      toSelectTerm(withRoot)
+      , toSelect(withRoot)
+      , toSelectTerm(minimized)
+      , toSelect(minimized)
+      , Term.Name(javaType.name)
+      , Type.Name(javaType.name)
+      , javaType
+      , domain
+      , args.map(toScala(_).typeFull)
+      , args.map(toScala(_).termFull)
     )
   }
+
 
   private def toPrimitive(id: Primitive): JavaType = id match {
     case Primitive.TBool =>
@@ -179,3 +183,6 @@ class ScalaTypeConverter(domain: DomainId) {
     }
   }
 }
+
+
+

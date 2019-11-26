@@ -28,3 +28,7 @@ object DefMethod {
 
   final case class RPCMethod(name: String, signature: Signature, meta: NodeMeta) extends DefMethod
 }
+
+
+
+

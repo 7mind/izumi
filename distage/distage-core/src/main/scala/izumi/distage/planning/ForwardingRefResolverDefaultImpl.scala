@@ -9,7 +9,8 @@ import distage.Id
 
 import scala.collection.mutable
 
-class ForwardingRefResolverDefaultImpl(
+class ForwardingRefResolverDefaultImpl
+(
   protected val planAnalyzer: PlanAnalyzer,
   protected val reflectionProvider: ReflectionProvider.Runtime,
   @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
@@ -23,23 +24,27 @@ class ForwardingRefResolverDefaultImpl(
 
     val proxies = mutable.Stack[ProxyOp.MakeProxy]()
 
-    val resolvedSteps = plan.toSemi.steps.collect { case i: InstantiationOp => i }.flatMap {
-      case step if reftable.dependencies.contains(step.target) =>
-        val target = step.target
-        val allDependees = usagesTable.dependees.direct(target)
+    val resolvedSteps = plan
+      .toSemi
+      .steps
+      .collect { case i: InstantiationOp => i }
+      .flatMap {
+        case step if reftable.dependencies.contains(step.target) =>
+          val target = step.target
+          val allDependees = usagesTable.dependees.direct(target)
 
-        val onlyByNameUsages = allUsagesAreByName(index, target, allDependees)
-        val byNameAllowed = onlyByNameUsages
+          val onlyByNameUsages = allUsagesAreByName(index, target, allDependees)
+          val byNameAllowed = onlyByNameUsages
 
-        val missingDeps = reftable.dependencies.direct(target)
-        val op = ProxyOp.MakeProxy(step, missingDeps, step.origin, byNameAllowed)
+          val missingDeps = reftable.dependencies.direct(target)
+          val op = ProxyOp.MakeProxy(step, missingDeps, step.origin, byNameAllowed)
 
-        proxies.push(op)
-        Seq(op)
+          proxies.push(op)
+          Seq(op)
 
-      case step =>
-        Seq(step)
-    }
+        case step =>
+          Seq(step)
+      }
 
     val proxyOps = if (initProxiesAsap) {
       iniProxiesJustInTime(mutable.HashSet.newBuilder.++=(proxies).result(), resolvedSteps)

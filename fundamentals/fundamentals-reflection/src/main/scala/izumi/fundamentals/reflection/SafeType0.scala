@@ -6,11 +6,11 @@ import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTag
 import scala.reflect.runtime.{universe => ru}
 
 // TODO: hotspots, hashcode on keys is inefficient
-class SafeType0[U <: SingletonUniverse] protected (
-  @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
-  val tpe: U#Type,
-  val tag: LightTypeTag,
-) {
+class SafeType0[U <: SingletonUniverse] protected(
+                                                   @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
+                                                   val tpe: U#Type,
+                                                   val tag: LightTypeTag,
+                                                 ) {
   override final val hashCode: Int = {
     tag.hashCode()
   }
@@ -21,7 +21,7 @@ class SafeType0[U <: SingletonUniverse] protected (
 
   override final def equals(obj: Any): Boolean = {
     obj match {
-      case that: SafeType0[U] @unchecked =>
+      case that: SafeType0[U]@unchecked =>
         tag =:= that.tag
       case _ =>
         false
@@ -55,5 +55,5 @@ object SafeType0 {
     new SafeType0[ru.type](tpe, LightTypeTagImpl.makeLightTypeTag(ru)(tpe))
   }
 
-  def get[T: ru.TypeTag: LTag.Weak]: SafeType0[ru.type] = new SafeType0[ru.type](ru.typeOf[T], LTag.Weak[T].tag)
+  def get[T: ru.TypeTag : LTag.Weak]: SafeType0[ru.type] = new SafeType0[ru.type](ru.typeOf[T], LTag.Weak[T].tag)
 }

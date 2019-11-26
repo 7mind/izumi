@@ -21,15 +21,17 @@ trait ZIODIEffectModule extends ModuleDef {
 
   make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
   make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
-  make[ThreadPoolExecutor].named("zio.cpu").fromResource {
-    logger: IzLogger =>
-      val coresOr2 = Runtime.getRuntime.availableProcessors() max 2
-      ResourceRewriter.fromExecutorService(logger, Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
-  }
-  make[ThreadPoolExecutor].named("zio.io").fromResource {
-    logger: IzLogger =>
-      ResourceRewriter.fromExecutorService(logger, Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
-  }
+  make[ThreadPoolExecutor].named("zio.cpu")
+    .fromResource {
+      logger: IzLogger =>
+        val coresOr2 = Runtime.getRuntime.availableProcessors() max 2
+        ResourceRewriter.fromExecutorService(logger, Executors.newFixedThreadPool(coresOr2).asInstanceOf[ThreadPoolExecutor])
+    }
+  make[ThreadPoolExecutor].named("zio.io")
+    .fromResource {
+      logger: IzLogger =>
+        ResourceRewriter.fromExecutorService(logger, Executors.newCachedThreadPool().asInstanceOf[ThreadPoolExecutor])
+    }
 
   make[BlockingIO[IO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.io") =>
@@ -52,8 +54,7 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOPanic[IO]]
   addImplicit[BIO[IO]]
   make[BIOAsync[IO]].from {
-    implicit r: zio.clock.Clock =>
-      BIOAsync[IO]
+    implicit r: zio.clock.Clock => BIOAsync[IO]
   }
 
   make[zio.clock.Clock].fromValue(zio.clock.Clock.Live)
@@ -61,7 +62,10 @@ trait ZIODIEffectModule extends ModuleDef {
   make[TracingConfig].fromValue(TracingConfig.enabled)
   make[BIORunner[IO]].using[ZIORunner]
   make[ZIORunner].from {
-    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"), logger: IzLogger, tracingConfig: TracingConfig) =>
+    (cpuPool: ThreadPoolExecutor @Id("zio.cpu"),
+     logger: IzLogger,
+     tracingConfig: TracingConfig,
+    ) =>
       val handler = FailureHandler.Custom {
         case BIOExit.Error(error, trace) =>
           logger.warn(s"Fiber errored out due to unhandled $error $trace")

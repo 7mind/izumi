@@ -66,16 +66,18 @@ object CodePositionMaterializer {
     val st = mutable.ArrayBuffer[c.Symbol]()
     rec(c.internal.enclosingOwner, st)
 
-    val normalizedName = st.tail.map {
-      case s if s.isPackage => s.name
-      case s if goodSymbol(s) => s.name
-      case s =>
-        if (s.isClass) {
+    val normalizedName = st
+      .tail
+      .map {
+        case s if s.isPackage => s.name
+        case s if goodSymbol(s) => s.name
+        case s => if (s.isClass) {
           s.asClass.baseClasses.find(goodSymbol).map(_.name).getOrElse(s.pos.line)
         } else {
           s.pos.line
         }
-    }.map(_.toString.trim)
+      }
+      .map(_.toString.trim)
       .mkString(".")
 
     CodePosition(

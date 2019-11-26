@@ -31,17 +31,19 @@ trait ParserTestTools {
         assert(index == str.length, s"Seems like value wasn't parsed completely: $v")
         v
       case Parsed.Failure(lp, idx, e) =>
-        throw new IllegalStateException(s"""Parsing failed at ${e.startIndex}..$idx:
-                                           |  label  : $lp
-                                           |  message: ${e.trace().msg}
-                                           |  trace  : ${e.trace()}
-                                           |  stack  : ${e.stack}
-                                           |  input  : ${e.input}
-                                           |  parser : ${e.originalParser}
-                                           |  """.stripMargin)
+        throw new IllegalStateException(
+          s"""Parsing failed at ${e.startIndex}..$idx:
+             |  label  : $lp
+             |  message: ${e.trace().msg}
+             |  trace  : ${e.trace()}
+             |  stack  : ${e.stack}
+             |  input  : ${e.input}
+             |  parser : ${e.originalParser}
+             |  """.stripMargin)
     }
 
   }
+
 
   def assertDomainParses(str: String): Unit = {
     val parsed = assertParseable(ctx.defParsers.fullDomainDef(_), str)

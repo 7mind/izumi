@@ -5,9 +5,9 @@ import izumi.idealingua.translator.togolang.extensions.{GoLangTranslatorExtensio
 import izumi.idealingua.translator.togolang.tools.ModuleTools
 
 class GLTContext(
-  val typespace: Typespace,
-  extensions: Seq[GoLangTranslatorExtension]
-) {
+                  val typespace: Typespace
+                  , extensions: Seq[GoLangTranslatorExtension]
+                ) {
 
   final val modules = new ModuleTools()
 

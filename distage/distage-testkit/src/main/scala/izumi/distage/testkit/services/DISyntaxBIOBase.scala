@@ -6,7 +6,7 @@ import izumi.functional.bio.BIOError
 import distage.{Tag, TagKK}
 import izumi.fundamentals.platform.language.CodePosition
 
-trait DISyntaxBIOBase[F[+_, +_]] {
+trait DISyntaxBIOBase[F[+ _, + _]] {
 
   implicit def tagBIO: TagKK[F]
 
@@ -16,12 +16,12 @@ trait DISyntaxBIOBase[F[+_, +_]] {
     val fAsThrowable: ProviderMagnet[F[Throwable, _]] = function
       .zip(ProviderMagnet.identity[BIOError[F]])
       .map[F[Throwable, _]] {
-        case (effect, bio) =>
-          bio.leftMap(effect) {
-            case t: Throwable => t
-            case otherError: Any => BIOBadBranch(otherError)
-          }
-      }
+      case (effect, bio) =>
+        bio.leftMap(effect) {
+          case t: Throwable => t
+          case otherError: Any => BIOBadBranch(otherError)
+        }
+    }
 
     takeAs1(fAsThrowable, pos)
   }
@@ -38,5 +38,6 @@ trait DISyntaxBIOBase[F[+_, +_]] {
 
 object DISyntaxBIOBase {
 
-  final case class BIOBadBranch[A](error: A) extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error", null, true, false)
+  final case class BIOBadBranch[A](error: A)
+    extends RuntimeException(s"Test failed, unexpectedly got bad branch. Cause: $error", null, true, false)
 }

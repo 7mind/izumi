@@ -5,13 +5,14 @@ import izumi.idealingua.translator.toscala.types.runtime.Import
 
 import scala.meta.{Defn, Term}
 
+
 final case class CogenProduct[T <: Defn](
-  defn: T,
-  companionBase: Defn.Object,
-  tools: Defn.Class,
-  more: List[Defn] = List.empty,
-  preamble: String = ""
-) extends AccompaniedCogenProduct[T] {
+                                          defn: T
+                                          , companionBase: Defn.Object
+                                          , tools: Defn.Class
+                                          , more: List[Defn] = List.empty
+                                          , preamble: String = ""
+                                        ) extends AccompaniedCogenProduct[T] {
   override def companion: Defn.Object = {
     import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
     val implicitClass = filterEmptyClasses(List(tools))
@@ -24,14 +25,16 @@ object CogenProduct {
   type CompositeProduct = CogenProduct[Defn.Class]
   type IdentifierProudct = CogenProduct[Defn.Class]
 
+
   final case class TraitProduct(defn: Defn.Trait, more: List[Defn] = List.empty, preamble: String = "") extends MultipleCogenProduct[Defn.Trait]
 
-  final case class EnumProduct(
-    defn: Defn.Trait,
-    companionBase: Defn.Object,
-    elements: List[(Term.Name, Defn)],
-    more: List[Defn] = List.empty,
-    preamble: String = ""
+  final case class EnumProduct
+  (
+    defn: Defn.Trait
+    , companionBase: Defn.Object
+    , elements: List[(Term.Name, Defn)]
+    , more: List[Defn] = List.empty
+    , preamble: String = ""
   ) extends AccompaniedCogenProduct[Defn.Trait] {
     override def companion: Defn.Object = {
       import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
@@ -39,24 +42,26 @@ object CogenProduct {
     }
   }
 
-  final case class AdtElementProduct[T <: Defn](
-    name: TypeName,
-    defn: T,
-    companion: Defn.Object,
-    converters: List[Defn.Def],
-    evenMore: List[Defn] = List.empty,
-    preamble: String = ""
+  final case class AdtElementProduct[T <: Defn]
+  (
+    name: TypeName
+    , defn: T
+    , companion: Defn.Object
+    , converters: List[Defn.Def]
+    , evenMore: List[Defn] = List.empty
+    , preamble: String = ""
   ) extends AccompaniedCogenProduct[T] {
 
     override def more: List[Defn] = evenMore ++ converters
   }
 
-  final case class AdtProduct(
-    defn: Defn.Trait,
-    companionBase: Defn.Object,
-    elements: List[AdtElementProduct[Defn.Class]],
-    more: List[Defn] = List.empty,
-    preamble: String = ""
+  final case class AdtProduct
+  (
+    defn: Defn.Trait
+    , companionBase: Defn.Object
+    , elements: List[AdtElementProduct[Defn.Class]]
+    , more: List[Defn] = List.empty
+    , preamble: String = ""
   ) extends AccompaniedCogenProduct[Defn.Trait] {
     override def companion: Defn.Object = {
       import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
@@ -64,14 +69,15 @@ object CogenProduct {
     }
   }
 
-  final case class CogenServiceProduct(
-    server: Defn.Trait,
-    client: Defn.Trait,
-    clientWrapped: CogenServiceProduct.Pair[Defn.Class],
-    serverWrapped: CogenServiceProduct.Pair[Defn.Class],
-    methods: Defn.Object,
-    marshallers: Defn.Object,
-    imports: List[Import]
+  final case class CogenServiceProduct
+  (
+    server: Defn.Trait
+    , client: Defn.Trait
+    , clientWrapped: CogenServiceProduct.Pair[Defn.Class]
+    , serverWrapped: CogenServiceProduct.Pair[Defn.Class]
+    , methods: Defn.Object
+    , marshallers: Defn.Object
+    , imports: List[Import]
 
     //    service: CogenServiceProduct.Pair[Defn.Trait]
     //    , client: CogenServiceProduct.Pair[Defn.Trait]
@@ -85,8 +91,8 @@ object CogenProduct {
 
     def render: List[Defn] = {
       List(server, client) ++
-      List(serverWrapped, clientWrapped).flatMap(_.render) ++
-      List(methods, marshallers)
+        List(serverWrapped, clientWrapped).flatMap(_.render) ++
+        List(methods, marshallers)
     }
   }
 

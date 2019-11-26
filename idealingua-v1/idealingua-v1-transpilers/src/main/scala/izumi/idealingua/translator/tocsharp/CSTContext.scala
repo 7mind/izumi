@@ -5,9 +5,9 @@ import izumi.idealingua.translator.tocsharp.extensions.{CSharpTranslatorExtensio
 import izumi.idealingua.translator.tocsharp.tools.ModuleTools
 
 class CSTContext(
-  val typespace: Typespace,
-  extensions: Seq[CSharpTranslatorExtension]
-) {
+                  val typespace: Typespace
+                  , extensions: Seq[CSharpTranslatorExtension]
+                ) {
 
   final val modules = new ModuleTools()
 

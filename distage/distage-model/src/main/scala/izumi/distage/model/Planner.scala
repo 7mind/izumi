@@ -44,9 +44,9 @@ object GCMode {
   *                 designating all DIKeys as roots.
   */
 final case class PlannerInput(
-  bindings: ModuleBase,
-  mode: GCMode,
-)
+                               bindings: ModuleBase,
+                               mode: GCMode,
+                             )
 
 object PlannerInput {
   def noGc(bindings: ModuleBase): PlannerInput = {
@@ -68,10 +68,11 @@ object PlannerInput {
 case class Subplan(plan: OrderedPlan, roots: Set[DIKey], module: ModuleBase)
 
 case class TriSplittedPlan(
-  side: Subplan,
-  primary: Subplan,
-  shared: Subplan,
-)
+                            side: Subplan,
+                            primary: Subplan,
+                            shared: Subplan,
+                          )
+
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner {
@@ -136,7 +137,7 @@ trait Planner {
     toSubplan(appModule, extractedRoots, planNoRewrite)
   }
 
-  private def toSubplan(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan = {
+  private def toSubplan(appModule: ModuleBase, extractedRoots: Set[RuntimeDIUniverse.DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan= {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
       plan(PlannerInput(appModule, extractedRoots))

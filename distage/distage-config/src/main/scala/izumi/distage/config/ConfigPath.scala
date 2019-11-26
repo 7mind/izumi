@@ -11,17 +11,17 @@ case class ConfigPath(parts: Seq[String]) {
   override def toString: String = s"cfg:$toPath"
 }
 
+
 case class ResolvedConfig(
-  source: AppConfig,
-  requiredPaths: Set[ConfigPath]
-) {
+                           source: AppConfig
+                         , requiredPaths: Set[ConfigPath]
+                         ) {
 
   final def minimized(): Config = {
     val paths = requiredPaths.map(_.toPath)
 
     ConfigFactory.parseMap {
-      source.config
-        .root().unwrapped().asScala
+      source.config.root().unwrapped().asScala
         .filterKeys(key => paths.exists(_.startsWith(key)))
         .toMap
         .asJava

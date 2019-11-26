@@ -28,6 +28,7 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
+
   override def hasConstructor(tpe: u.SafeType): Boolean = ReflectionLock.synchronized {
     val constructor = findConstructor(tpe)
     constructor.isConstructor
@@ -78,11 +79,12 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
     }
   }
 
+
   override def isFactory(symb: u.SafeType): Boolean = ReflectionLock.synchronized {
     symb.tpe.typeSymbol.isClass && symb.tpe.typeSymbol.isAbstract && {
       val abstracts = symb.tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod(symb, _)) &&
-      abstracts.forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
+        abstracts.forall(m => isFactoryMethod(symb, m) || isWireableMethod(symb, m))
     }
   }
 
@@ -115,7 +117,9 @@ trait SymbolIntrospectorDefaultImpl extends SymbolIntrospector {
 
 object SymbolIntrospectorDefaultImpl {
 
-  class Runtime extends SymbolIntrospector.Runtime with SymbolIntrospectorDefaultImpl
+  class Runtime
+    extends SymbolIntrospector.Runtime
+      with SymbolIntrospectorDefaultImpl
 
   object Static {
     def apply(macroUniverse: DIUniverse): SymbolIntrospector.Static[macroUniverse.type] =

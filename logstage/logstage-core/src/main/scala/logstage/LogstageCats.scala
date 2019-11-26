@@ -22,11 +22,10 @@ object LogstageCats {
     }
   }
 
-  private[logstage] abstract class WrappedLogIO[F[_]](
+  private[logstage] abstract class WrappedLogIO[F[_]]
+  (
     logger: AbstractLogger,
-  )(F: SyncSafe[F])
-    extends UnsafeLogIOSyncSafeInstance[F](logger)(F)
-    with LogIO[F] {
+  )(F: SyncSafe[F]) extends UnsafeLogIOSyncSafeInstance[F](logger)(F) with LogIO[F] {
 
     protected[this] def wrap[A](f: AbstractLogger => A): F[A]
 

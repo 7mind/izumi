@@ -47,10 +47,7 @@ class ProvidersTest extends WordSpec with MkInjector {
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[TestDependency].named("classdeftypeann1")
-      make[TestClass].from {
-        t: TestDependency @Id("classdeftypeann1") =>
-          new TestClass(t)
-      }
+      make[TestClass].from { t: TestDependency@Id("classdeftypeann1") => new TestClass(t) }
     })
 
     val injector = mkInjector()
@@ -67,8 +64,7 @@ class ProvidersTest extends WordSpec with MkInjector {
 
     class Definition extends ModuleDef {
       make[TestDependency].from {
-        () =>
-          new TestDependency
+        () => new TestDependency
       }
     }
 

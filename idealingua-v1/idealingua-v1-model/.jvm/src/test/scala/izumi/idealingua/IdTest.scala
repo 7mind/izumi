@@ -11,10 +11,10 @@ class IdTest extends WordSpec {
   "Identifiers" should {
     "support complex serialization" in {
       val id = ComplexID(
-        BucketID(UUID.randomUUID(), UUID.randomUUID(), "test"),
-        UserWithEnumId(UUID.randomUUID(), UUID.randomUUID(), DepartmentEnum.Engineering),
-        UUID.randomUUID(),
-        "field"
+        BucketID(UUID.randomUUID(), UUID.randomUUID(), "test")
+        , UserWithEnumId(UUID.randomUUID(), UUID.randomUUID(), DepartmentEnum.Engineering)
+        , UUID.randomUUID()
+        , "field"
       )
 
       val serialized = id.toString
@@ -23,6 +23,7 @@ class IdTest extends WordSpec {
     }
   }
 }
+
 
 object IdTest {
   sealed trait DepartmentEnum extends IDLEnumElement
@@ -37,6 +38,7 @@ object IdTest {
     final case object Engineering extends DepartmentEnum { override def toString: String = "Engineering" }
     final case object Sales extends DepartmentEnum { override def toString: String = "Sales" }
   }
+
 
   final case class UserWithEnumId(value: UUID, company: UUID, dept: DepartmentEnum) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
@@ -55,6 +57,7 @@ object IdTest {
     }
   }
 
+
   final case class BucketID(app: UUID, user: UUID, bucket: String) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
       import izumi.idealingua.runtime.model.IDLIdentifier._
@@ -72,6 +75,7 @@ object IdTest {
     }
   }
 
+
   final case class ComplexID(bucket: BucketID, user: UserWithEnumId, uid: UUID, str: String) extends IDLGeneratedType with IDLIdentifier {
     override def toString: String = {
       import izumi.idealingua.runtime.model.IDLIdentifier._
@@ -85,12 +89,7 @@ object IdTest {
       import izumi.idealingua.runtime.model.IDLIdentifier._
       val withoutPrefix = s.substring(s.indexOf("#") + 1)
       val parts = withoutPrefix.split(':').map(part => unescape(part))
-      ComplexID(
-        bucket = BucketID.parse(parts(0)),
-        str = parsePart[String](parts(1), classOf[String]),
-        uid = parsePart[UUID](parts(2), classOf[UUID]),
-        user = UserWithEnumId.parse(parts(3))
-      )
+      ComplexID(bucket = BucketID.parse(parts(0)), str = parsePart[String](parts(1), classOf[String]), uid = parsePart[UUID](parts(2), classOf[UUID]), user = UserWithEnumId.parse(parts(3)))
     }
   }
 }

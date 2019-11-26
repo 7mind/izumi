@@ -11,7 +11,8 @@ import izumi.fundamentals.graphs.AbstractGCTracer
 
 import scala.collection.mutable
 
-class TracingDIGC(
+class TracingDIGC
+(
   roots: Set[DIKey],
   fullIndex: Map[DIKey, ExecutableOp],
   override val ignoreMissingDeps: Boolean,
@@ -29,8 +30,7 @@ class TracingDIGC(
           case c: CreateSet =>
             c.members.filterNot {
               key =>
-                index
-                  .get(key)
+                index.get(key)
                   .collect {
                     case o: ExecutableOp.WiringOp =>
                       o.wiring
@@ -60,23 +60,26 @@ class TracingDIGC(
 
     val prefiltered = pruned.nodes.map {
       case c: CreateSet =>
-        val weakMembers = c.members.map {
-          m =>
-            val setMemberOp = if (ignoreMissingDeps) {
-              fullIndex.get(m)
-            } else {
-              Some(fullIndex(m))
-            }
-            (m, setMemberOp)
-        }.collect {
-          case (k, Some(op: ExecutableOp.WiringOp)) =>
-            (k, op.wiring)
-          case (k, Some(op: ExecutableOp.MonadicOp)) =>
-            (k, op.effectWiring)
-        }.collect {
-          case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>
-            (k, r)
-        }
+        val weakMembers = c.members
+          .map {
+            m =>
+              val setMemberOp = if (ignoreMissingDeps) {
+                fullIndex.get(m)
+              } else {
+                Some(fullIndex(m))
+              }
+              (m, setMemberOp)
+          }
+          .collect {
+            case (k, Some(op: ExecutableOp.WiringOp)) =>
+              (k, op.wiring)
+            case (k, Some(op: ExecutableOp.MonadicOp)) =>
+              (k, op.effectWiring)
+          }
+          .collect {
+            case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>
+              (k, r)
+          }
 
         val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => newTraced.contains(kv._2.key))
 

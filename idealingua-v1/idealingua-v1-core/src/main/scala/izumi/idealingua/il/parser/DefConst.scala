@@ -8,22 +8,25 @@ import izumi.idealingua.model.il.ast.raw.defns.RawTopLevelDefn.TLDConsts
 import fastparse._
 import fastparse.NoWhitespace._
 
+
+
 class DefConst(context: IDLParserContext) extends Identifiers {
 
   import DefConst._
   import context._
 
-  def defAnno[_: P]: P[RawAnno] = P(defPositions.positioned("@" ~ idShort ~ "(" ~ inline ~ constantsNoDoc ~ inline ~ ")")).map {
-    case (pos, (id, value)) =>
-      defns.RawAnno(id.name, value, pos)
-  }
+  def defAnno[_: P]: P[RawAnno] = P(defPositions.positioned("@" ~ idShort ~ "(" ~ inline ~ constantsNoDoc ~ inline ~ ")"))
+    .map {
+      case (pos, (id, value)) =>
+        defns.RawAnno(id.name, value, pos)
+    }
 
   def defAnnos[_: P]: P[Seq[RawAnno]] = P(defAnno.rep(min = 1, sep = any) ~ NLC ~ inline).?.map(_.toSeq.flatten)
 
-  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ enclosedConsts).map {
-    v =>
-      TLDConsts(RawConstBlock(v.toList))
-  }
+  def constBlock[_: P]: P[TLDConsts] = kw(kw.consts, inline ~ enclosedConsts)
+    .map {
+      v => TLDConsts(RawConstBlock(v.toList))
+    }
 
   def constValue[_: P]: P[Aux] = P(("(" ~ inline ~ anyValue ~ inline ~ ")") | anyValue)
 
@@ -36,60 +39,62 @@ class DefConst(context: IDLParserContext) extends Identifiers {
 
   private def constants[_: P]: P[Seq[RawConst]] = P(const.rep(sep = sepStruct) ~ sepStruct.?)
 
-  private def constantsNoDoc[_: P]: P[RawVal.CMap] =
-    P(constNoDoc.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
-      .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
+  private def constantsNoDoc[_: P]: P[RawVal.CMap] = P(constNoDoc.rep(min = 0, sep = sepStruct) ~ sepStruct.?)
+    .map(v => RawVal.CMap(v.map(c => (c.id.name, c.const)).toMap))
 
-  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ constValue)).map {
-    case (pos, (name, tpe, value: Aux.ObjAux)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, value.value, RawConstMeta(pos))
-      }
+  private def constNoDoc[_: P]: P[RawConst] = P(defPositions.positioned(idShort ~ (inline ~ ":" ~ inline ~ idGeneric).? ~ inline ~ "=" ~ inline ~ constValue))
+    .map {
+      case (pos, (name, tpe, value: Aux.ObjAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
 
-    case (pos, (name, tpe, value: Aux.ListAux)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, value.value, RawConstMeta(pos))
-      }
+      case (pos, (name, tpe, value: Aux.ListAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
 
-    case (pos, (name, tpe, Aux.Just(rv))) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, rv, RawConstMeta(pos))
-      }
+      case (pos, (name, tpe, Aux.Just(rv))) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, rv, RawConstMeta(pos))
+        }
 
-    case (pos, (name, tpe, value: Aux.TObjAux)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, value.value, RawConstMeta(pos))
-      }
+      case (pos, (name, tpe, value: Aux.TObjAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedObject(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
 
-    case (pos, (name, tpe, value: Aux.TListAux)) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, value.value, RawConstMeta(pos))
-      }
+      case (pos, (name, tpe, value: Aux.TListAux)) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTypedList(typename, value.value.value), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, value.value, RawConstMeta(pos))
+        }
 
-    case (pos, (name, tpe, Aux.TJust(rv))) =>
-      tpe match {
-        case Some(typename) =>
-          RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
-        case None =>
-          RawConst(name.toConstId, rv, RawConstMeta(pos))
-      }
 
-  }
+      case (pos, (name, tpe, Aux.TJust(rv))) =>
+        tpe match {
+          case Some(typename) =>
+            RawConst(name.toConstId, RawVal.CTyped(typename, rv), RawConstMeta(pos))
+          case None =>
+            RawConst(name.toConstId, rv, RawConstMeta(pos))
+        }
+
+    }
+
 
   private def justValue[_: P]: P[Aux] = P(literal | objdef | listdef)
 
@@ -112,25 +117,24 @@ class DefConst(context: IDLParserContext) extends Identifiers {
       }
   }
 
+
   private def anyValue[_: P]: P[Aux] = P(typedValue | justValue)
+
 
   private def literal[_: P]: P[Aux.Just] = {
     import Literals.Literals._
-    NoCut(
-      P(
-        ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
-        ("-".? ~ Int).!.map {
-          v =>
-            if (v.toUpperCase.endsWith("L")) {
-              RawVal.CLong(v.toLong)
-            } else {
-              RawVal.CInt(v.toInt)
-            }
+    NoCut(P(
+      ("-".? ~ Float).!.map(_.toDouble).map(RawVal.CFloat) |
+        ("-".? ~ Int).!.map { v =>
+          if (v.toUpperCase.endsWith("L")) {
+            RawVal.CLong(v.toLong)
+          } else {
+            RawVal.CInt(v.toInt)
+          }
         } |
         Bool.!.map(_.toBoolean).map(RawVal.CBool) |
         Str.map(RawVal.CString)
-      )
-    ).map(Aux.Just)
+    )).map(Aux.Just)
   }
 
   private def objdef[_: P]: P[Aux.ObjAux] = enclosedConsts.map {
@@ -141,10 +145,11 @@ class DefConst(context: IDLParserContext) extends Identifiers {
   private def listElements[_: P]: P[Seq[Aux]] = P(constValue.rep(sep = sep.sepStruct) ~ sep.sepStruct.?)
 
   private def listdef[_: P]: P[Aux.ListAux] = {
-    structure.aggregates.enclosedB(listElements).map {
-      v =>
-        Aux.ListAux(RawVal.CList(v.map(_.value).toList))
-    }
+    structure.aggregates.enclosedB(listElements)
+      .map {
+        v =>
+          Aux.ListAux(RawVal.CList(v.map(_.value).toList))
+      }
   }
 }
 

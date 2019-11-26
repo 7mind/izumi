@@ -2,6 +2,7 @@ package izumi.idealingua.model.loader
 
 import izumi.idealingua.model.il.ast.raw.domains.ParsedDomain
 
+
 sealed trait DomainParsingResult {
   def path: FSPath
 }

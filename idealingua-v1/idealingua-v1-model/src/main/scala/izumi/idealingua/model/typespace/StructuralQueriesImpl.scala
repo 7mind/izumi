@@ -34,6 +34,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
         i.struct.superclasses
     }
 
+
     val all = extractor.extractFields(defn)
 
     val conflicts = findConflicts(all)
@@ -103,11 +104,13 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
     converters(id, implementors)
   }
 
+
   override def structuralParents(interface: Struct): List[Struct] = {
     val thisStructure = structure(interface.id)
     val allStructuralParents = List(interface.id) ++ ts.inheritance.allParents(interface.id)
 
-    allStructuralParents.distinct
+    allStructuralParents
+      .distinct
       .map(structure)
       .filter(_.all.map(_.field).diff(thisStructure.all.map(_.field)).isEmpty)
   }
@@ -115,7 +118,8 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
   def sameSignature(tid: StructureId): List[DTO] = {
     val sig = signature(ts.resolver.get(tid))
 
-    ts.types.structures
+    ts.types
+      .structures
       .filterNot(_.id == tid)
       .filter(another => sig == signature(another))
       .filterNot(_.id == tid)
@@ -143,6 +147,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
       List.empty
     }
 
+
     val mcdef = struct.id match {
       case dto: DTOId if !ts.types.isInterfaceEphemeral(dto) =>
         val mirrorId = ts.tools.defnId(dto)
@@ -151,13 +156,11 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
         val constructorCode = struct.all
           .map(f => SigParam(f.field.name, source, Some(f.field.name)))
 
-        List(
-          ConverterDef(
-            struct.id,
-            constructorCode,
-            List(source)
-          )
-        )
+        List(ConverterDef(
+          struct.id
+          , constructorCode
+          , List(source)
+        ))
       case _ =>
         List.empty
     }
@@ -213,7 +216,8 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
             .filterNot(f => localNames.contains(f.name))
             .intersect(all)
 
-          val mixinInstanceFieldsCandidates = istruct.unambigiousInherited
+          val mixinInstanceFieldsCandidates = istruct
+            .unambigiousInherited
             .map(_.defn.definedBy)
             .collect({ case i: StructureId => i })
             .flatMap(mi => structure(ts.resolver.get(mi)).all)
@@ -242,6 +246,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
           val outerFields = localFields.toList.map(f => SigParam(f.name, SigParamSource(f.typeId, f.name), None)) ++
             mixinInstanceFields.map(f => SigParam(f.field.name, SigParamSource(f.defn.definedBy, ts.tools.idToParaName(f.defn.definedBy)), Some(f.field.name)))
 
+
           val fieldsToAssign = (innerFields.map(_.targetFieldName) ++ outerFields.map(_.targetFieldName)).toSet
           assert(
             all.map(_.name) == fieldsToAssign,
@@ -259,6 +264,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
       }
   }
 
+
   protected def signature(defn: WithStructure): List[Field] = {
     structure(defn).all.map(_.field).sortBy(_.name)
   }
@@ -273,9 +279,9 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
 
     // TODO: pass definition instead of id
     ConverterDef(
-      targetId,
-      allFields,
-      outerParams
+      targetId
+      , allFields
+      , outerParams
     )
   }
 }

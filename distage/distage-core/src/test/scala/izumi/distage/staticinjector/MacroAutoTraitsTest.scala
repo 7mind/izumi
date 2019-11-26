@@ -105,14 +105,14 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
     import TraitCase5._
 
     val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[TestTraitAny { def dep: Dep }]
+      stat[TestTraitAny {def dep: Dep}]
       stat[Dep]
     })
 
     val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
-    val instantiated = context.get[TestTraitAny { def dep: Dep }]
+    val instantiated = context.get[TestTraitAny {def dep: Dep}]
 
     assert(instantiated.dep eq context.get[Dep])
   }

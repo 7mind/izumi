@@ -9,3 +9,7 @@ trait IzHash {
 
   final def hash(str: String): String = hash(str.getBytes(StandardCharsets.UTF_8)).toHex
 }
+
+
+
+

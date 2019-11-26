@@ -45,6 +45,7 @@ object CyclicUsageRule extends VerificationRule {
 
       definition match {
         case _: Enumeration =>
+
         case d: Interface =>
           d.struct.fields.filterNot(_.typeId.isInstanceOf[Builtin]).map(_.typeId).foreach(checkField)
           d.struct.superclasses.interfaces.foreach(i => extractAllFields(ts.apply(i), deps, foundCycles))
@@ -66,5 +67,6 @@ object CyclicUsageRule extends VerificationRule {
     }
 
   }
+
 
 }

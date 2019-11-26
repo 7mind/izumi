@@ -36,5 +36,5 @@ trait IncludesDSL {
 object IncludesDSL {
   sealed trait IncludeRef
   final case class IncludeApplyTags(bindings: Set[Binding]) extends IncludeRef
-  final case class Include(bindings: Set[Binding]) extends IncludeRef
+  final case class Include(bindings: Set[Binding])  extends IncludeRef
 }

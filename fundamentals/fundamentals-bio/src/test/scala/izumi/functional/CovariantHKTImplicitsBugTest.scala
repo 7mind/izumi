@@ -6,11 +6,13 @@ class CovariantHKTImplicitsBugTest extends WordSpec with GivenWhenThen {
 
   "progression test: covariant HKT implicits are broken" in {
     And("quite broken")
-    assertTypeError("""
+    assertTypeError(
+      """
         val alg: SomeAlg[IO] = SomeAlg.mk()
       """)
     And("really broken")
-    assertTypeError("""
+    assertTypeError(
+      """
         val alg: SomeAlg[IO] = SomeAlg.mk[IO]()
       """)
   }
@@ -20,13 +22,13 @@ class CovariantHKTImplicitsBugTest extends WordSpec with GivenWhenThen {
 
   case class IO[+A]()
   object IO {
-    implicit val monoInstance: MonoIO[IO] = new MonoIO[IO] {}
+    implicit val monoInstance: MonoIO[IO] = new MonoIO[IO]{}
   }
 
   trait AnyIO[+F[_]]
   object AnyIO {
-    implicit def fromMono[F[_]: MonoIO]: AnyIO[F] = new AnyIO[F] {}
-    implicit def fromBIO[F[+_, _]: BifunctorIO]: AnyIO[F[Nothing, ?]] = new AnyIO[F[Nothing, ?]] {}
+    implicit def fromMono[F[_]: MonoIO]: AnyIO[F] = new AnyIO[F]{}
+    implicit def fromBIO[F[+_, _]: BifunctorIO]: AnyIO[F[Nothing, ?]] = new AnyIO[F[Nothing, ?]]{}
   }
 
   class SomeAlg[+F[_]]

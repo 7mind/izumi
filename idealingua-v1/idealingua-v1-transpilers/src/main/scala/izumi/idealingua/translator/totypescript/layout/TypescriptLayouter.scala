@@ -11,6 +11,7 @@ import io.circe.Json
 import io.circe.literal._
 import io.circe.syntax._
 
+
 class TypescriptLayouter(options: TypescriptTranslatorOptions) extends TranslationLayouter {
   private val naming = new TypescriptNamingConvention(options.manifest)
 
@@ -24,7 +25,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
       val inBundleSubdir = buildBundlePackageModules(outputs)
 
       addPrefix(inSubdir ++ inRtSubdir ++ inBundleSubdir, Seq("packages")) ++
-      buildRootModules(options.manifest)
+        buildRootModules(options.manifest)
 
     } else {
       modules ++ rt ++ buildRootModules(options.manifest)
@@ -36,14 +37,15 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
   private def applyLayout(translated: Translated): Seq[ExtendedModule.DomainModule] = {
     val ts = translated.typespace
     val modules = translated.modules ++ (
-        if (options.manifest.layout == TypeScriptProjectLayout.YARN)
-          List(
-            buildIndexModule(ts),
-            buildPackageModule(ts),
-          )
-        else
-          List(buildIndexModule(ts))
+      if (options.manifest.layout == TypeScriptProjectLayout.YARN)
+        List(
+          buildIndexModule(ts),
+          buildPackageModule(ts),
+        )
+      else
+        List(buildIndexModule(ts))
       )
+
 
     val mm = if (options.manifest.layout == TypeScriptProjectLayout.YARN) {
       modules.map {
@@ -55,6 +57,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     }
     mm.map(m => ExtendedModule.DomainModule(translated.typespace.domain.id, m))
   }
+
 
   private def buildRootModules(mf: TypeScriptBuildManifest): Seq[ExtendedModule.RuntimeModule] = {
     val rootDir = if (mf.layout == TypeScriptProjectLayout.YARN) {
@@ -115,17 +118,21 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     ).map(ExtendedModule.RuntimeModule)
   }
 
+
   private def toScopedId(id: ModuleId): ModuleId = {
     val path = Seq(options.manifest.yarn.scope, naming.makeName(id))
 
     ModuleId(path, id.name)
   }
 
+
   private def buildPackageModule(ts: Typespace): Module = {
-    val allDeps = ts.domain.meta.directImports.map {
+    val allDeps = ts.domain.meta.directImports
+      .map {
         i =>
           ManifestDependency(naming.toScopedId(i.id.toPackage), mfVersion)
       } :+ ManifestDependency(naming.irtDependency, mfVersion)
+
 
     val name = naming.toScopedId(ts.domain.id.toPackage)
 
@@ -133,6 +140,7 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
     val content = generatePackage(mf, Some("index"), name)
     Module(ModuleId(ts.domain.id.toPackage, "package.json"), content.toString())
   }
+
 
   private def buildIRTPackageModule(): Module = {
     val content = generatePackage(options.manifest, Some("index"), naming.irtDependency)
@@ -185,9 +193,11 @@ class TypescriptLayouter(options: TypescriptTranslatorOptions) extends Translati
        }
      """
 
+
     main match {
       case Some(value) =>
-        base.deepMerge(json"""{"main": ${s"$value.js"}, "typings": ${s"$value.d.ts"}}""")
+        base.deepMerge(
+          json"""{"main": ${s"$value.js"}, "typings": ${s"$value.d.ts"}}""")
       case None =>
         base
     }

@@ -44,15 +44,13 @@ class RDomain(context: IDLRenderingContext) extends Renderable[DomainDefinition]
     if (i.identifiers.isEmpty) {
       s"import ${i.id.render()}"
     } else {
-      val ids = i.identifiers.map {
-        i =>
-          i.as match {
-            case Some(value) =>
-              s"${i.name} as $value"
-            case None =>
-              i.name
-          }
-      }
+      val ids = i.identifiers.map {i =>
+        i.as match {
+          case Some(value) =>
+            s"${i.name} as $value"
+          case None =>
+            i.name
+        }}
       s"import ${i.id.render()}.${ids.mkString("{", ", ", "}")}"
     }
   }

@@ -7,8 +7,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 trait EffectStrategy {
   def executeEffect[F[_]: TagK: DIEffect](
-    context: ProvisioningKeyProvider,
-    executor: OperationExecutor,
-    op: MonadicOp.ExecuteEffect
-  ): F[Seq[NewObjectOp.NewInstance]]
+                                          context: ProvisioningKeyProvider
+                                        , executor: OperationExecutor
+                                        , op: MonadicOp.ExecuteEffect
+                                        ): F[Seq[NewObjectOp.NewInstance]]
 }

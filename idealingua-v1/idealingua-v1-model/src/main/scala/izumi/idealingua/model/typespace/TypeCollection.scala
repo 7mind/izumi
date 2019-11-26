@@ -21,7 +21,9 @@ class CMap[K, V](context: AnyRef, val underlying: Map[K, V]) {
 trait TypeCollectionData {
   def all: Seq[TypeDef]
 
+
   def structures: Seq[WithStructure]
+
 
   def interfaceEphemerals: Seq[DTO]
 
@@ -29,13 +31,16 @@ trait TypeCollectionData {
 
   def interfaceEphemeralsReversed: Map[DTOId, InterfaceId]
 
+
   def dtoEphemerals: Seq[Interface]
 
   def dtoEphemeralIndex: Map[DTOId, Interface]
 
+
   def services: Map[ServiceId, Service]
 
   def serviceEphemerals: Seq[TypeDef]
+
 
   def buzzers: Map[BuzzerId, Buzzer]
 
@@ -55,11 +60,12 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
   }
 
   val interfaceEphemeralIndex: Map[InterfaceId, DTO] = {
-    ts.domain.types.collect {
-      case i: Interface =>
-        val iid = DTOId(i.id, ts.tools.toDtoName(i.id))
-        i.id -> DTO(iid, Structure.interfaces(List(i.id)), NodeMeta.empty)
-    }.toMap
+    ts.domain.types
+      .collect {
+        case i: Interface =>
+          val iid = DTOId(i.id, ts.tools.toDtoName(i.id))
+          i.id -> DTO(iid, Structure.interfaces(List(i.id)), NodeMeta.empty)
+      }.toMap
   }
 
   val interfaceEphemeralsReversed: Map[DTOId, InterfaceId] = {
@@ -67,11 +73,12 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
   }
 
   val dtoEphemeralIndex: Map[DTOId, Interface] = {
-    (ts.domain.types ++ serviceEphemerals ++ buzzerEphemerals).collect {
-      case i: DTO =>
-        val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
-        i.id -> Interface(iid, i.struct, NodeMeta.empty)
-    }.toMap
+    (ts.domain.types ++ serviceEphemerals ++ buzzerEphemerals)
+      .collect {
+        case i: DTO =>
+          val iid = InterfaceId(i.id, ts.tools.toInterfaceName(i.id))
+          i.id -> Interface(iid, i.struct, NodeMeta.empty)
+      }.toMap
 
   }
 
@@ -81,17 +88,18 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
 
   val all: Seq[TypeDef] = {
     val definitions = Seq(
-      ts.domain.types,
-      serviceEphemerals,
-      buzzerEphemerals,
-      interfaceEphemerals,
-      dtoEphemerals
+      ts.domain.types
+      , serviceEphemerals
+      , buzzerEphemerals
+      , interfaceEphemerals
+      , dtoEphemerals
     ).flatten
 
     verified(definitions)
   }
 
   val structures: Seq[WithStructure] = all.collect { case t: WithStructure => t }
+
 
   private def makeServiceEphemerals(src: Iterable[Service]): Seq[TypeDef] = {
     (for {
@@ -139,14 +147,12 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
 
       case o: Output.Alternative =>
         val (success, successId) = toOutDef(serviceId, baseName, ts.tools.goodAltSuffix, o.success) //outputEphemeral(serviceId, baseName, ts.tools.goodAltSuffix, o.success)
-        val (failure, failureId) = toOutDef(serviceId, baseName, ts.tools.badAltSuffix, o.failure) //outputEphemeral(serviceId, baseName, ts.tools.badAltSuffix, o.failure)
-        val adtId = AdtId(serviceId, s"$baseName$suffix")
-        val altAdt = Output.Algebraic(
-          List(
-            AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)), NodeMeta.empty),
-            AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)), NodeMeta.empty)
-          )
-        )
+      val (failure, failureId) = toOutDef(serviceId, baseName, ts.tools.badAltSuffix, o.failure) //outputEphemeral(serviceId, baseName, ts.tools.badAltSuffix, o.failure)
+      val adtId = AdtId(serviceId, s"$baseName$suffix")
+        val altAdt = Output.Algebraic(List(
+          AdtMember(successId, Some(ts.tools.toPositiveBranchName(adtId)), NodeMeta.empty)
+          , AdtMember(failureId, Some(ts.tools.toNegativeBranchName(adtId)), NodeMeta.empty)
+        ))
         val alt = outputEphemeral(serviceId, baseName, suffix, altAdt)
         success ++ failure ++ alt
     }
@@ -164,6 +170,7 @@ class TypeCollection(ts: Typespace) extends TypeCollectionData {
   }
 
   def isInterfaceEphemeral(dto: DTOId): Boolean = interfaceEphemeralsReversed.contains(dto)
+
 
   def domainIndex: Map[TypeId, TypeDef] = {
     ts.domain.types.map(t => (t.id, t)).toMap

@@ -6,6 +6,7 @@ import java.util.function
 import izumi.logstage.api.Log
 import izumi.logstage.api.config.{LogConfigService, LogEntryConfig, LoggerConfig, LoggerPathConfig}
 
+
 class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService {
   override def threshold(e: Log.LoggerId): Log.Level = {
     configFor(e).threshold
@@ -21,6 +22,7 @@ class LogConfigServiceImpl(loggerConfig: LoggerConfig) extends LogConfigService 
 
   // this should be efficient but may take some memory. Most likely we should use prefix tree here
   private[this] val configCache = new ConcurrentHashMap[String, LoggerPathConfig](1024)
+
 
   private[this] val findConfig: function.Function[String, LoggerPathConfig] = {
     id: String =>

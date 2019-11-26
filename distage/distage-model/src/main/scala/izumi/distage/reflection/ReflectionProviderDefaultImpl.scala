@@ -37,11 +37,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             val excessiveSymbols = alreadyInSignature.toSet -- methodTypeWireable.requiredKeys
 
             if (excessiveSymbols.nonEmpty) {
-              throw new UnsupportedDefinitionException(s"""Augmentation failure.
-                                                          |  * Type $symbl has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
-                                                          |  * But method signature contains unrequired symbols: $excessiveSymbols
-                                                          |  * Only the following symbols are requird: ${methodTypeWireable.requiredKeys}
-                                                          |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
+              throw new UnsupportedDefinitionException(
+                s"""Augmentation failure.
+                   |  * Type $symbl has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
+                   |  * But method signature contains unrequired symbols: $excessiveSymbols
+                   |  * Only the following symbols are requird: ${methodTypeWireable.requiredKeys}
+                   |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
             }
 
             Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
@@ -56,9 +57,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized {
+  override def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized  {
     function match {
-      case factory: Provider.FactoryProvider @unchecked =>
+      case factory: Provider.FactoryProvider@unchecked =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
       case _ =>
         Wiring.SingletonWiring.Function(function, function.associations)
@@ -103,7 +104,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   private def traitMethods(symbl: SafeType): Seq[Association.AbstractMethod] = {
     // empty paramLists means parameterless method, List(List()) means nullarg unit method()
-    val declaredAbstractMethods = symbl.tpe.members.sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
+    val declaredAbstractMethods = symbl.tpe.members
+      .sorted // preserve same order as definition ordering because we implicitly depend on it elsewhere
       .filter(symbolIntrospector.isWireableMethod(symbl, _))
       .map(_.asMethod)
     declaredAbstractMethods.map(methodToAssociation(symbl, _))
@@ -127,31 +129,28 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     def unapply(arg: SafeType): Option[(SafeType, Seq[Symb], Seq[MethodSymb])] =
       Some(arg)
         .filter(symbolIntrospector.isFactory)
-        .map(
-          f =>
-            (
-              f,
-              f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f, m)).toSeq,
-              f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f, m)).map(_.asMethod).toSeq
-            )
-        )
+        .map(f => (
+          f
+          , f.tpe.members.filter(m => symbolIntrospector.isFactoryMethod(f, m)).toSeq
+          , f.tpe.members.filter(m => symbolIntrospector.isWireableMethod(f, m)).map(_.asMethod).toSeq
+        ))
   }
 
 }
 
 object ReflectionProviderDefaultImpl {
 
-  class Runtime(
-    override val keyProvider: DependencyKeyProvider.Runtime,
-    override val symbolIntrospector: SymbolIntrospector.Runtime
+  class Runtime
+  (
+    override val keyProvider: DependencyKeyProvider.Runtime
+    , override val symbolIntrospector: SymbolIntrospector.Runtime
   ) extends ReflectionProvider.Runtime
     with ReflectionProviderDefaultImpl
 
   object Static {
-    def apply(macroUniverse: DIUniverse)(
-      keyprovider: DependencyKeyProvider.Static[macroUniverse.type],
-      symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]
-    ): ReflectionProvider.Static[macroUniverse.type] =
+    def apply(macroUniverse: DIUniverse)
+             (keyprovider: DependencyKeyProvider.Static[macroUniverse.type]
+              , symbolintrospector: SymbolIntrospector.Static[macroUniverse.type]): ReflectionProvider.Static[macroUniverse.type] =
       new ReflectionProviderDefaultImpl {
         override final val u: macroUniverse.type = macroUniverse
         override final val keyProvider: keyprovider.type = keyprovider

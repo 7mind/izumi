@@ -32,9 +32,9 @@ trait ExternalResourceProvider {
 
 object ExternalResourceProvider {
 
-  case class OrderedFinalizer[+F[_]](finalizer: Finalizer[F @uncheckedVariance], order: Int)
+  case class OrderedFinalizer[+F[_]](finalizer: Finalizer[F@uncheckedVariance], order: Int)
 
-  case class MemoizedInstance[+F[_]](ref: IdentifiedRef, finalizer: Option[OrderedFinalizer[F @uncheckedVariance]])
+  case class MemoizedInstance[+F[_]](ref: IdentifiedRef, finalizer: Option[OrderedFinalizer[F@uncheckedVariance]])
 
   case class PreparedShutdownRuntime[+F[_]](runner: DIResourceBase[Identity, Locator], fType: SafeType, fTag: TagK[F @uncheckedVariance])
 
@@ -67,8 +67,8 @@ object ExternalResourceProvider {
   def singleton[F[_]: TagK](memoize: IdentifiedRef => Boolean): Singleton[F] = new Singleton[F](memoize)
 
   class Singleton[F[_]: TagK](
-    memoize: IdentifiedRef => Boolean
-  ) extends ExternalResourceProvider {
+                               memoize: IdentifiedRef => Boolean
+                             ) extends ExternalResourceProvider {
 
     import Singleton.{MemoizationKey, cache, registerRT}
 
@@ -132,22 +132,22 @@ object ExternalResourceProvider {
     }
 
     /**
-      * Fake HKT to use in-place of (unknown at compile-time) user effect type
-      *
-      * NOTE: DO NOT move this into an `object` or inside `stop()`, since then
-      * scala-reflect will start generating TypeTags for it and break it. Whether or not
-      * scala-reflect generates a TypeTag for an abstract member type is inconsistent
-      * and depends on the type's placement
-      * @see TagTest "Handle abstract types instead of parameters"
-      * */
+     * Fake HKT to use in-place of (unknown at compile-time) user effect type
+     *
+     * NOTE: DO NOT move this into an `object` or inside `stop()`, since then
+     * scala-reflect will start generating TypeTags for it and break it. Whether or not
+     * scala-reflect generates a TypeTag for an abstract member type is inconsistent
+     * and depends on the type's placement
+     * @see TagTest "Handle abstract types instead of parameters"
+     * */
     private[Singleton] type FakeF[T]
 
     private def stop(): Unit = {
 
       runtimes.enumerate().foreach {
         case (rtType, rt) =>
-          val effects = cache
-            .enumerate()
+
+          val effects = cache.enumerate()
             .filter {
               case (k, _) =>
                 rtType == k.fType
@@ -171,6 +171,7 @@ object ExternalResourceProvider {
           if (effects.nonEmpty) {
             rt.runner.use {
               locator =>
+
                 val shutdown = for {
                   eff <- locator.instances.find(_.key.tpe == effectTag).map(_.value.asInstanceOf[DIEffect[FakeF]])
                   ru <- locator.instances.find(_.key.tpe == runnerTag).map(_.value.asInstanceOf[DIEffectRunner[FakeF]])
@@ -204,6 +205,7 @@ object ExternalResourceProvider {
       }
 
     }
+
 
   }
 

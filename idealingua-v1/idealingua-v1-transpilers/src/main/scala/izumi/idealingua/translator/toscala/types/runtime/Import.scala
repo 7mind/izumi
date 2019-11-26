@@ -20,10 +20,12 @@ object Import {
       val end = if (members.size == 1 && members.head._2.isEmpty) {
         members.head._1
       } else {
-        members.map {
-          case (m, None) => m
-          case (m, Some(n)) => s"$m => $n"
-        }.mkString("{ ", ", ", " }")
+        members
+          .map {
+            case (m, None) => m
+            case (m, Some(n)) => s"$m => $n"
+          }
+          .mkString("{ ", ", ", " }")
       }
 
       val parts = "_root_" +: pkg.pkgParts :+ end

@@ -9,9 +9,10 @@ import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 import scala.collection.mutable
 
-protected[distage] class CgLibTraitMethodInterceptor(
-  index: TraitIndex,
-  context: ProvisioningKeyProvider
+protected[distage] class CgLibTraitMethodInterceptor
+(
+  index: TraitIndex
+  , context: ProvisioningKeyProvider
 ) extends MethodInterceptor {
 
   private val fields = mutable.HashMap[String, Any]()

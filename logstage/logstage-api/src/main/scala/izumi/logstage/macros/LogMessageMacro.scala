@@ -31,6 +31,7 @@ object LogMessageMacro {
 
       sealed trait AbstractElement extends Chunk
 
+
       case class Element(lit: c.universe.Literal) extends Primary with AbstractElement {
         override def tree: c.Tree = lit
       }
@@ -124,9 +125,9 @@ object LogMessageMacro {
 
       private def toChunk(head: c.universe.Tree): Chunk.Primary = {
         val chunk = head match {
-          case t @ Literal(Constant(_: String)) =>
+          case t@Literal(Constant(_: String)) =>
             Chunk.Element(t)
-          case t @ Literal(Constant(_)) =>
+          case t@Literal(Constant(_)) =>
             Chunk.Argument(t)
           case argexpr =>
             Chunk.Argument(argexpr)
@@ -141,10 +142,7 @@ object LogMessageMacro {
         val sc = lst.makeStringContext
         reifyContext(c)(sc, namedArgs)
 
-      case Apply(
-          Select(stringContext @ Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")),
-          args: List[c.Tree]
-          ) =>
+      case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
         // qq causes a weird warning here
         //case q"scala.StringContext.apply($stringContext).s(..$args)" =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
@@ -156,20 +154,18 @@ object LogMessageMacro {
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
-        c.warning(
-          other.pos,
+        c.warning(other.pos,
           s"""Complex expression found as an input for a logger: ${other.toString()} ; ${showRaw(other)}.
              |
              |But Logstage expects you to use string interpolations instead, such as:
              |${ArgumentNameExtractionMacro.example}
-             |""".stripMargin
-        )
+             |""".stripMargin)
 
         val emptyArgs = reify(List.empty)
         /* reify {
           val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
           ...
-         */
+        */
         val sc = q"StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
     }
@@ -179,8 +175,8 @@ object LogMessageMacro {
     import c.universe._
     reify {
       Message(
-        c.Expr[StringContext](stringContext).splice,
-        namedArgs.splice
+        c.Expr[StringContext](stringContext).splice
+        , namedArgs.splice
       )
     }
   }

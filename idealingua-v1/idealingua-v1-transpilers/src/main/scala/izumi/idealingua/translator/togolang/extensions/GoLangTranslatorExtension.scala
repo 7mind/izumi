@@ -19,3 +19,5 @@ trait GoLangTranslatorExtension extends TranslatorExtension {
 //    product
 //  }
 }
+
+

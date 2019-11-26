@@ -9,15 +9,13 @@ import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, Te
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import zio.Task
 
-trait DistageMemoizeExample[F[_]] {
-  this: DistageAbstractScalatestSpec[F] =>
+trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
   override protected def config: TestConfig = {
     TestConfig(
       memoizedKeys = Set(
         DIKey.get[MockCache[CIO]],
         DIKey.get[MockCache[Task]],
-      )
-    )
+      ))
   }
 }
 
@@ -65,7 +63,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "test 5 (should be ingored)" skip {
       _: MockCachedUserService[F] =>
-        ???
+       ???
     }
 
     "test 6 (should be ingored)" in {
@@ -79,6 +77,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 //final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 //final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
+
 
 abstract class DistageTestExampleBase1[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 

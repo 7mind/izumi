@@ -5,7 +5,14 @@ import izumi.distage.model.reflection.universe._
 import izumi.fundamentals.platform.language.Quirks._
 
 trait WithDIWiring {
-  this: DIUniverseBase with WithDISafeType with WithDICallable with WithDIKey with WithDIAssociation with WithDIDependencyContext with WithDISymbolInfo =>
+  this: DIUniverseBase
+    with WithDISafeType
+    with WithDICallable
+    with WithDIKey
+    with WithDIAssociation
+    with WithDIDependencyContext
+    with WithDISymbolInfo
+  =>
 
   sealed trait Wiring {
     def instanceType: SafeType
@@ -94,13 +101,13 @@ trait WithDIWiring {
       override final def instanceType: SafeType = factoryType
 
       override def requiredKeys: Set[DIKey] = {
-        super.requiredKeys ++ factoryMethods.flatMap(_.wireWith.prefix.toSeq).toSet
+        super.requiredKeys ++factoryMethods.flatMap(_.wireWith.prefix.toSeq).toSet
       }
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Factory =
         this.copy(
-          fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a))),
-          factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+          fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a)))
+          , factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
         )
     }
 
@@ -111,10 +118,10 @@ trait WithDIWiring {
     }
 
     case class FactoryFunction(
-      provider: Provider,
-      factoryIndex: Map[Int, FactoryFunction.FactoryMethod],
-      providerArguments: Seq[Association.Parameter]
-    ) extends PureWiring {
+                                provider: Provider
+                              , factoryIndex: Map[Int, FactoryFunction.FactoryMethod]
+                              , providerArguments: Seq[Association.Parameter]
+                              ) extends PureWiring {
       private[this] final val factoryMethods: Seq[FactoryFunction.FactoryMethod] = factoryIndex.values.toSeq
 
       override final def associations: Seq[Association] = {

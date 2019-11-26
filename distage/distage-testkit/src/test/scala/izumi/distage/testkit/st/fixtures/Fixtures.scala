@@ -1,5 +1,6 @@
 package izumi.distage.testkit.st.fixtures
 
+
 import java.util.concurrent.atomic.AtomicInteger
 
 import izumi.distage.config.annotations.ConfPath
@@ -65,9 +66,9 @@ case class TestConfig(provided: Int, overriden: Int)
 case class TestConfig1(x: Int, y: Int)
 
 class TestService2(
-  @ConfPath("test") val cfg: TestConfig,
-  @ConfPath("missing-test-section") val cfg1: TestConfig
-)
+                    @ConfPath("test") val cfg: TestConfig
+                    , @ConfPath("missing-test-section") val cfg1: TestConfig
+                  )
 
 trait Conflict
 case class Conflict1() extends Conflict
@@ -84,9 +85,12 @@ class TestPlugin01 extends PluginDef {
   make[UnsolvableConflict].from[UnsolvableConflict2]
 }
 
-object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
+object MonadPlugin extends PluginDef
+  with CatsDIEffectModule
+  with ZIODIEffectModule
 
-object TestPlugin00 extends PluginDef {
+object TestPlugin00
+  extends PluginDef {
   make[TestService1]
   make[TestService2]
   make[TestResource1]
@@ -99,3 +103,5 @@ object TestPlugin00 extends PluginDef {
   make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
 
 }
+
+

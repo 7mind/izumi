@@ -28,8 +28,9 @@ object TestTask00 extends RoleDescriptor {
   override final val id = "testtask00"
 }
 
-class TestRole00[F[_]: DIEffect](
-  val conf: TestServiceConf @ConfPath("testservice"),
+class TestRole00[F[_]: DIEffect]
+(
+  val conf: TestServiceConf@ConfPath("testservice"),
   val dummies: Set[Dummy],
   val counter: InitCounter,
   val resource: TestRole00Resource[F],
@@ -41,15 +42,14 @@ class TestRole00[F[_]: DIEffect](
 ) extends RoleService[F] {
   notCloseable.discard()
 
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] =
-    DIResource.make(DIEffect[F].maybeSuspend {
-      logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
-    }) {
-      _ =>
-        DIEffect[F].maybeSuspend {
-          logger.info(s"[TestRole00] exiting role...")
-        }
-    }
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole00] started: $roleParameters, $freeArgs, $dummies, $conflict")
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole00] exiting role...")
+      }
+  }
 }
 
 object TestRole00 extends RoleDescriptor {
@@ -60,23 +60,23 @@ object TestRole00 extends RoleDescriptor {
   final case class IntegrationOnlyCfg(flag: Boolean)
 
   final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck)
-  final class TestRole00ResourceIntegrationCheck(
-    private val cfg: IntegrationOnlyCfg @ConfPath("integrationOnlyCfg"),
+  final class TestRole00ResourceIntegrationCheck
+  (
+    private val cfg: IntegrationOnlyCfg@ConfPath("integrationOnlyCfg"),
   ) extends IntegrationCheck {
     override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
   }
 }
 
 class TestRole01[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] =
-    DIResource.make(DIEffect[F].maybeSuspend {
-      logger.info(s"[TestRole01] started: $roleParameters, $freeArgs")
-    }) {
-      _ =>
-        DIEffect[F].maybeSuspend {
-          logger.info(s"[TestRole01] exiting role...")
-        }
-    }
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole01] started: $roleParameters, $freeArgs")
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole01] exiting role...")
+      }
+  }
 }
 
 object TestRole01 extends RoleDescriptor {
@@ -86,17 +86,17 @@ object TestRole01 extends RoleDescriptor {
 }
 
 class TestRole02[F[_]: DIEffect](logger: IzLogger) extends RoleService[F] {
-  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] =
-    DIResource.make(DIEffect[F].maybeSuspend {
-      logger.info(s"[TestRole02] started: $roleParameters, $freeArgs")
-    }) {
-      _ =>
-        DIEffect[F].maybeSuspend {
-          logger.info(s"[TestRole02] exiting role...")
-        }
-    }
+  override def start(roleParameters: RawEntrypointParams, freeArgs: Vector[String]): DIResource[F, Unit] = DIResource.make(DIEffect[F].maybeSuspend {
+    logger.info(s"[TestRole02] started: $roleParameters, $freeArgs")
+  }) {
+    _ =>
+      DIEffect[F].maybeSuspend {
+        logger.info(s"[TestRole02] exiting role...")
+      }
+  }
 }
 
 object TestRole02 extends RoleDescriptor {
   override final val id = "testrole02"
 }
+

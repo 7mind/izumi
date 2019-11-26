@@ -1,5 +1,6 @@
 package izumi.idealingua.model.common
 
+
 sealed trait AbstractIndefiniteId {
   def pkg: Package
 
@@ -7,6 +8,7 @@ sealed trait AbstractIndefiniteId {
 
   override def toString: TypeName = s"{${getClass.getSimpleName}}${pkg.mkString(".")}#$name"
 }
+
 
 final case class IndefiniteId(pkg: Package, name: TypeName) extends AbstractIndefiniteId
 
@@ -20,6 +22,7 @@ object IndefiniteId {
 }
 
 final case class IndefiniteGeneric(pkg: Package, name: TypeName, args: List[AbstractIndefiniteId]) extends AbstractIndefiniteId
+
 
 sealed trait TypeId {
   def path: TypePath
@@ -44,6 +47,7 @@ sealed trait ScalarId extends TypeId {
 sealed trait TimeTypeId {
   this: ScalarId =>
 }
+
 
 object TypeId {
 
@@ -75,6 +79,7 @@ object TypeId {
 
   final case class EnumId(path: TypePath, name: TypeName) extends ScalarId
 
+
   final case class ServiceId(domain: DomainId, name: TypeName)
 
   final case class BuzzerId(domain: DomainId, name: TypeName)
@@ -90,6 +95,7 @@ sealed trait Builtin extends TypeId {
 
   override def name: TypeName = aliases.head
 
+
   override def path: TypePath = TypePath(DomainId.Builtin, Seq.empty)
 
   override def toString: TypeName = s"#$name"
@@ -99,9 +105,13 @@ object Builtin {
   final val prelude: Package = Seq.empty
 }
 
-sealed trait Primitive extends Builtin with ScalarId {}
+sealed trait Primitive extends Builtin with ScalarId {
 
-sealed trait PrimitiveId extends Primitive {}
+}
+
+sealed trait PrimitiveId extends Primitive {
+
+}
 
 object Primitive {
 
@@ -144,6 +154,7 @@ object Primitive {
   case object TUInt64 extends PrimitiveId {
     override def aliases: List[TypeName] = List("u64", "ulong", "uint64")
   }
+
 
   case object TFloat extends Primitive {
     override def aliases: List[TypeName] = List("f32", "flt", "float")
@@ -197,41 +208,49 @@ object Primitive {
   }
 
   final val mappingId = Set(
-    TBool,
-    TString,
-    TInt8,
-    TInt16,
-    TInt32,
-    TInt64,
-    TUInt8,
-    TUInt16,
-    TUInt32,
-    TUInt64,
-    TUUID,
-  ).flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    TBool
+    , TString
+
+    , TInt8
+    , TInt16
+    , TInt32
+    , TInt64
+
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
+
+
+    , TUUID
+    ,
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
     .toMap
 
   final val mapping = Set(
-    TBool,
-    TString,
-    TInt8,
-    TInt16,
-    TInt32,
-    TInt64,
-    TUInt8,
-    TUInt16,
-    TUInt32,
-    TUInt64,
-    TDouble,
-    TFloat,
-    TUUID,
-    TTime,
-    TDate,
-    TTsTz,
-    TTsU,
-    TTs,
-    TBLOB,
-  ).flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    TBool
+    , TString
+    , TInt8
+    , TInt16
+    , TInt32
+    , TInt64
+    , TUInt8
+    , TUInt16
+    , TUInt32
+    , TUInt64
+    , TDouble
+    , TFloat
+    , TUUID
+    , TTime
+    , TDate
+    , TTsTz
+    , TTsU
+    , TTs
+    , TBLOB
+    ,
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
     .toMap
 }
 
@@ -276,6 +295,7 @@ object Generic {
     def aliases: List[TypeName] = List("opt", "option")
   }
 
+
   final case class TMap(keyType: ScalarId, valueType: TypeId) extends Generic {
     override def args: List[TypeId] = List(keyType, valueType)
 
@@ -286,11 +306,15 @@ object Generic {
     def aliases: List[TypeName] = List("map", "dict")
   }
 
+
   final val all = Set(
-    TList,
-    TSet,
-    TOption,
-    TMap
-  ).flatMap(tpe => tpe.aliases.map(a => a -> tpe))
+    TList
+    , TSet
+    , TOption
+    , TMap
+  )
+    .flatMap(tpe => tpe.aliases.map(a => a -> tpe))
     .toMap
 }
+
+

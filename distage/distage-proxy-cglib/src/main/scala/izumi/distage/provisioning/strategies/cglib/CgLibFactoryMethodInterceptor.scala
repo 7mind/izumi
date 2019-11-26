@@ -14,13 +14,14 @@ import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibCallException
 import izumi.fundamentals.reflection.TypeUtil
 import net.sf.cglib.proxy.MethodProxy
 
-protected[distage] class CgLibFactoryMethodInterceptor(
-  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod],
-  dependencyMethodIndex: TraitIndex,
-  narrowedContext: ProvisioningKeyProvider,
-  executor: WiringExecutor,
-  op: WiringOp.InstantiateFactory,
-  mirror: MirrorProvider
+protected[distage] class CgLibFactoryMethodInterceptor
+(
+  factoryMethodIndex: Map[Method, RuntimeDIUniverse.Wiring.Factory.FactoryMethod]
+, dependencyMethodIndex: TraitIndex
+, narrowedContext: ProvisioningKeyProvider
+, executor: WiringExecutor
+, op: WiringOp.InstantiateFactory
+, mirror: MirrorProvider
 ) extends CgLibTraitMethodInterceptor(dependencyMethodIndex, narrowedContext) {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
@@ -39,9 +40,9 @@ protected[distage] class CgLibFactoryMethodInterceptor(
   private def mkExecutor(arguments: Array[AnyRef], wiringWithContext: Factory.FactoryMethod): JustExecutor = {
     if (arguments.length != wiringWithContext.methodArguments.length) {
       throw new CgLibCallException(
-        s"Divergence between constructor arguments count: ${arguments.toSeq} vs ${wiringWithContext.methodArguments} ",
-        arguments.toSeq,
-        wiringWithContext.methodArguments
+        s"Divergence between constructor arguments count: ${arguments.toSeq} vs ${wiringWithContext.methodArguments} "
+        , arguments.toSeq
+        , wiringWithContext.methodArguments
       )
     }
 
@@ -59,9 +60,9 @@ protected[distage] class CgLibFactoryMethodInterceptor(
 
     if (unmatchedTypes.nonEmpty) {
       throw new CgLibCallException(
-        s"Divergence between constructor arguments types and provided values: $unmatchedTypes",
-        arguments.toSeq,
-        wiringWithContext.methodArguments
+        s"Divergence between constructor arguments types and provided values: $unmatchedTypes"
+        , arguments.toSeq
+        , wiringWithContext.methodArguments
       )
     }
 
@@ -79,3 +80,5 @@ protected[distage] object CgLibFactoryMethodInterceptor {
     def execute(step: ExecutableOp.WiringOp): AnyRef
   }
 }
+
+

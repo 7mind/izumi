@@ -6,14 +6,14 @@ import izumi.idealingua.model.common.{Generic, TypeId}
 import izumi.idealingua.model.typespace.Typespace
 
 final case class GoLangStruct(
-  name: String,
-  typeId: TypeId,
-  implements: List[InterfaceId] = List.empty,
-  fields: List[GoLangField] = List.empty,
-  imports: GoLangImports,
-  ts: Typespace = null,
-  ignoreSlices: List[InterfaceId] = List.empty
-) {
+                          name: String,
+                          typeId: TypeId,
+                          implements: List[InterfaceId] = List.empty,
+                          fields: List[GoLangField] = List.empty,
+                          imports: GoLangImports,
+                          ts: Typespace = null,
+                          ignoreSlices: List[InterfaceId] = List.empty
+                       ) {
   def render(rtti: Boolean = true, withTest: Boolean = true): String = {
     val test =
       s"""
@@ -25,20 +25,20 @@ final case class GoLangStruct(
        """.stripMargin
 
     val res =
-      s"""// $name structure
-         |type $name struct {
-         |${implements.map(intf => s"// Implements interface: ${intf.name}").mkString("\n").shift(4)}
-         |${fields.map(f => f.renderMember()).mkString("\n").shift(4)}
-         |}
-         |
-         |${fields.map(f => f.renderMethods()).filterNot(_.isEmpty).mkString("\n")}
-         |
-         |func New$name(${fields.map(f => f.renderMemberName(false) + " " + f.tp.renderType()).mkString(", ")}) *$name {
-         |    res := &$name{}
-         |${fields.map(f => f.renderAssign("res", f.renderMemberName(false), serialized = false, optional = true)).mkString("\n").shift(4)}
-         |    return res
-         |}
-         |${if (withTest) test else ""}
+    s"""// $name structure
+       |type $name struct {
+       |${implements.map(intf => s"// Implements interface: ${intf.name}").mkString("\n").shift(4)}
+       |${fields.map(f => f.renderMember()).mkString("\n").shift(4)}
+       |}
+       |
+       |${fields.map(f => f.renderMethods()).filterNot(_.isEmpty).mkString("\n")}
+       |
+       |func New$name(${fields.map(f => f.renderMemberName(false) + " " + f.tp.renderType()).mkString(", ")}) *$name {
+       |    res := &$name{}
+       |${fields.map(f => f.renderAssign("res", f.renderMemberName(false), serialized = false, optional = true)).mkString("\n").shift(4)}
+       |    return res
+       |}
+       |${if (withTest) test else ""}
      """.stripMargin
 
     if (rtti) {
@@ -50,24 +50,8 @@ final case class GoLangStruct(
 
   def renderSlices(): String = {
     val refined = implements.filterNot(ignoreSlices.contains)
-    s"""${refined
-         .map(
-           intf =>
-             renderSlice(
-               s"To${intf.name + ts.tools.implId(intf).name}Serialized",
-               s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized",
-               getInterfaceFields(intf)
-             )
-         ).mkString("\n")}
-       |${refined
-         .map(
-           intf =>
-             renderLoadSlice(
-               s"Load${intf.name + ts.tools.implId(intf).name}Serialized",
-               s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized",
-               getInterfaceFields(intf)
-             )
-         ).mkString("\n")}
+    s"""${refined.map(intf => renderSlice(s"To${intf.name + ts.tools.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
+       |${refined.map(intf => renderLoadSlice(s"Load${intf.name + ts.tools.implId(intf).name}Serialized", s"${imports.withImport(intf) + intf.name + ts.tools.implId(intf).name}Serialized", getInterfaceFields(intf))).mkString("\n")}
      """.stripMargin
   }
 
@@ -79,11 +63,11 @@ final case class GoLangStruct(
   private def renderRuntimeNames(consts: Boolean = false, methods: Boolean = false, holderName: String = null): String = {
     val pkg = typeId.path.toPackage.mkString(".")
     val constSection =
-      s"""const (
-         |    rtti${name}PackageName = "$pkg"
-         |    rtti${name}ClassName = "${typeId.name}"
-         |    rtti${name}FullClassName = "${typeId.wireId}"
-         |)
+    s"""const (
+       |    rtti${name}PackageName = "$pkg"
+       |    rtti${name}ClassName = "${typeId.name}"
+       |    rtti${name}FullClassName = "${typeId.wireId}"
+       |)
      """.stripMargin
 
     if (consts && !methods) {
@@ -91,27 +75,27 @@ final case class GoLangStruct(
     }
 
     val methodsSection =
-      s"""// GetPackageName provides package where $name belongs
-         |func (v *$name) GetPackageName() string {
-         |    return rtti${if (holderName == null) name else holderName}PackageName
-         |}
-         |
-         |// GetClassName provides short class name for RTTI purposes
-         |func (v *$name) GetClassName() string {
-         |    return rtti${if (holderName == null) name else holderName}ClassName
-         |}
-         |
-         |// GetFullClassName provides full-qualified class name
-         |func (v *$name) GetFullClassName() string {
-         |    return rtti${if (holderName == null) name else holderName}FullClassName
-         |}
+    s"""// GetPackageName provides package where $name belongs
+       |func (v *$name) GetPackageName() string {
+       |    return rtti${if(holderName == null) name else holderName}PackageName
+       |}
+       |
+       |// GetClassName provides short class name for RTTI purposes
+       |func (v *$name) GetClassName() string {
+       |    return rtti${if(holderName == null) name else holderName}ClassName
+       |}
+       |
+       |// GetFullClassName provides full-qualified class name
+       |func (v *$name) GetFullClassName() string {
+       |    return rtti${if(holderName == null) name else holderName}FullClassName
+       |}
      """.stripMargin
 
-    if (!consts) {
-      methodsSection
-    } else {
-      consts + "\n" + methodsSection
-    }
+      if (!consts) {
+        methodsSection
+      } else {
+        consts + "\n" + methodsSection
+      }
   }
 
   private def isFieldPolymorph(f: GoLangField): Boolean = {
@@ -128,8 +112,7 @@ final case class GoLangStruct(
 
   def renderSlice(method: String, slice: String, fields: List[GoLangField]): String = {
     s"""func (v *$name) $method() (*$slice, error) {
-       |${getRefinedFields(fields, polymorph = true)
-         .map(pf => pf.renderPolymorphSerializedVar(s"ps${pf.renderMemberName(true)}", s"v.${pf.renderMemberName(false)}")).mkString("\n").shift(4)}
+       |${getRefinedFields(fields, polymorph = true).map(pf => pf.renderPolymorphSerializedVar(s"ps${pf.renderMemberName(true)}", s"v.${pf.renderMemberName(false)}")).mkString("\n").shift(4)}
        |    return &$slice{
        |${getRefinedFields(fields, polymorph = true).map(f => s"${f.renderMemberName(true)}: ps${f.renderMemberName(true)},").mkString("\n").shift(8)}
        |${getRefinedFields(fields, polymorph = false).map(f => s"${f.renderMemberName(true)}: v.${f.renderSerializedVar()},").mkString("\n").shift(8)}
@@ -151,10 +134,7 @@ final case class GoLangStruct(
 
   def renderSerialized(): String = {
     s"""type ${name}Serialized struct {
-       |${fields
-         .map(
-           f => s"${f.renderMemberName(true)} ${f.tp.renderType(true)} `json:" + "\"" + f.name + (if (f.tp.id.isInstanceOf[Generic.TOption]) ",omitempty" else "") + "\"`"
-         ).mkString("\n").shift(4)}
+       |${fields.map(f => s"${f.renderMemberName(true)} ${f.tp.renderType(true)} `json:" + "\"" + f.name + (if (f.tp.id.isInstanceOf[Generic.TOption]) ",omitempty" else "") + "\"`").mkString("\n").shift(4)}
        |}
        |
        |${renderSlice("Serialize", s"${name}Serialized", fields)}
@@ -182,12 +162,12 @@ final case class GoLangStruct(
 
 object GoLangStruct {
   def apply(
-    name: String,
-    typeId: TypeId,
-    implements: List[InterfaceId] = List.empty,
-    fields: List[GoLangField] = List.empty,
-    imports: GoLangImports,
-    ts: Typespace = null,
-    ignoreSlices: List[InterfaceId] = List.empty
-  ): GoLangStruct = new GoLangStruct(name, typeId, implements, fields, imports, ts, ignoreSlices)
+             name: String,
+             typeId: TypeId,
+             implements: List[InterfaceId] = List.empty,
+             fields: List[GoLangField] = List.empty,
+             imports: GoLangImports,
+             ts: Typespace = null,
+             ignoreSlices: List[InterfaceId] = List.empty
+           ): GoLangStruct = new GoLangStruct(name, typeId, implements, fields, imports, ts, ignoreSlices)
 }

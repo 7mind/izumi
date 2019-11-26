@@ -41,6 +41,8 @@ final case class CompilerOutput(targetDir: Path, allFiles: Seq[Path]) {
 
   def relativeOutputs: Seq[String] = allFiles.map(p => absoluteTargetDir.relativize(p.toAbsolutePath).toString)
 }
+
+
 @ExposedTestScope
 object IDLTestTools {
   def hasDocker: Boolean = IzFiles.haveExecutables("docker")
@@ -49,6 +51,7 @@ object IDLTestTools {
   def loadDefs(): Seq[LoadedDomain.Success] = loadDefs("/defs/any")
 
   def loadDefs(base: String): Seq[LoadedDomain.Success] = loadDefs(makeLoader(base), makeResolver(base))
+
 
   def makeLoader(base: String): LocalModelLoaderContext = {
     val src = new File(getClass.getResource(base).toURI).toPath
@@ -66,6 +69,7 @@ object IDLTestTools {
     new ModelResolver(rules)
   }
 
+
   def loadDefs(context: LocalModelLoaderContext, resolver: ModelResolver): Seq[LoadedDomain.Success] = {
     val loaded = context.loader.load()
     val resolved = resolver.resolve(loaded).ifWarnings(w => System.err.println(w)).throwIfFailed()
@@ -78,16 +82,12 @@ object IDLTestTools {
     resolved.successful
   }
 
-  def compilesScala(
-    id: String,
-    domains: Seq[LoadedDomain.Success],
-    layout: ScalaProjectLayout,
-    extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions
-  ): Boolean = {
+  def compilesScala(id: String, domains: Seq[LoadedDomain.Success], layout: ScalaProjectLayout, extensions: Seq[ScalaTranslatorExtension] = ScalaTranslator.defaultExtensions): Boolean = {
     val mf = ScalaBuildManifest.example
     val manifest = mf.copy(layout = ScalaProjectLayout.SBT, sbt = mf.sbt.copy(projectNaming = mf.sbt.projectNaming.copy(dropFQNSegments = Some(1))))
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Scala, extensions, manifest))
     val classpath: String = IzJvm.safeClasspath()
+
 
     val cmd = layout match {
       case ScalaProjectLayout.PLAIN =>
@@ -136,26 +136,28 @@ object IDLTestTools {
     }
 
     val dcp = Seq(
-        "docker",
-        "run",
-        "--rm"
-      ) ++ cpe ++
+      "docker",
+      "run",
+      "--rm"
+    ) ++ cpe ++
       Seq(
-        "-v",
-        s"'${out.absoluteTargetDir}:/work:Z'",
+        "-v", s"'${out.absoluteTargetDir}:/work:Z'",
         "septimalmind/izumi-env",
+
         "scalac",
         "-J-Xmx2g",
         "-language:higherKinds",
+
+
         "-unchecked",
         "-feature",
         "-deprecation",
+
         "-Xlint:_",
       ) ++
       flags ++
       Seq(
-        "-classpath",
-        scp,
+        "-classpath", scp,
       ) ++ out.relativeOutputs.filter(_.endsWith(".scala")).map(t => s"'$t'")
 
     dcp
@@ -163,22 +165,15 @@ object IDLTestTools {
 
   private def directRun(out: CompilerOutput, classpath: String) = {
     Seq(
-      "scalac",
-      "-deprecation",
-      "-opt-warnings:_",
-      "-d",
-      out.phase2Relative.toString,
-      "-classpath",
-      classpath
+      "scalac"
+      , "-deprecation"
+      , "-opt-warnings:_"
+      , "-d", out.phase2Relative.toString
+      , "-classpath", classpath
     ) ++ out.relativeOutputs.filter(_.endsWith(".scala"))
   }
 
-  def compilesTypeScript(
-    id: String,
-    domains: Seq[LoadedDomain.Success],
-    layout: TypeScriptProjectLayout,
-    extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions
-  ): Boolean = {
+  def compilesTypeScript(id: String, domains: Seq[LoadedDomain.Success], layout: TypeScriptProjectLayout, extensions: Seq[TypeScriptTranslatorExtension] = TypeScriptTranslator.defaultExtensions): Boolean = {
     val manifest = TypeScriptBuildManifest.example.copy(layout = layout)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Typescript, extensions, manifest))
 
@@ -192,6 +187,7 @@ object IDLTestTools {
       return false
     }
 
+
     val tscCmd = layout match {
       case TypeScriptProjectLayout.YARN =>
         Seq("yarn", "build")
@@ -203,12 +199,7 @@ object IDLTestTools {
     exitCode == 0
   }
 
-  def compilesCSharp(
-    id: String,
-    domains: Seq[LoadedDomain.Success],
-    layout: CSharpProjectLayout,
-    extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions
-  ): Boolean = {
+  def compilesCSharp(id: String, domains: Seq[LoadedDomain.Success], layout: CSharpProjectLayout, extensions: Seq[CSharpTranslatorExtension] = CSharpTranslator.defaultExtensions): Boolean = {
     val mf = CSharpBuildManifest.example
     val manifest = mf.copy(layout = layout)
 
@@ -230,10 +221,10 @@ object IDLTestTools {
         IzFiles.recreateDirs(refsDir)
 
         val refsSrc = s"refs/${lang.toString.toLowerCase()}"
-        val refDlls = IzResources
-          .copyFromClasspath(refsSrc, refsDir).files
+        val refDlls = IzResources.copyFromClasspath(refsSrc, refsDir).files
           .filter(f => f.toFile.isFile && f.toString.endsWith(".dll")).map(f => out.absoluteTargetDir.relativize(f.toAbsolutePath))
         IzResources.copyFromClasspath(refsSrc, out.phase2)
+
 
         val outname = "test-output.dll"
         val refs = s"/reference:${refDlls.mkString(",")}"
@@ -248,12 +239,7 @@ object IDLTestTools {
     }
   }
 
-  def compilesGolang(
-    id: String,
-    domains: Seq[LoadedDomain.Success],
-    layout: GoProjectLayout,
-    extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions
-  ): Boolean = {
+  def compilesGolang(id: String, domains: Seq[LoadedDomain.Success], layout: GoProjectLayout, extensions: Seq[GoLangTranslatorExtension] = GoLangTranslator.defaultExtensions): Boolean = {
     val mf = GoLangBuildManifest.example
     val manifest = mf.copy(layout = layout)
     val out = compiles(id, domains, CompilerOptions(IDLLanguage.Go, extensions, manifest))
@@ -274,6 +260,7 @@ object IDLTestTools {
 
     val cmdBuild = Seq("go", "install", "-pkgdir", out.phase2.toString, "./...")
     val cmdTest = Seq("go", "test", "./...")
+
 
     val exitCodeBuild = run(goSrc, cmdBuild, env, "go-build")
     val exitCodeTest = run(goSrc, cmdTest, env, "go-test")
@@ -301,6 +288,7 @@ object IDLTestTools {
     IzFiles.recreateDirs(runDir, domainsDir, compilerDir)
     IzFiles.refreshSymlink(targetDir.resolve(stablePrefix), runDir)
 
+
     val products = new TypespaceCompilerFSFacade(domains)
       .compile(compilerDir, UntypedCompilerOptions(options.language, options.extensions, options.manifest, options.withBundledRuntime))
       .compilationProducts
@@ -313,6 +301,7 @@ object IDLTestTools {
     out
   }
 
+
   private def rerenderDomains(domainsDir: Path, domains: Seq[LoadedDomain.Success]): Unit = {
     domains.foreach {
       d =>
@@ -321,8 +310,10 @@ object IDLTestTools {
     }
   }
 
+
   private def dropOldRunsData(tmpdir: Path, stablePrefix: String, vmPrefix: String): Unit = {
-    tmpdir.toFile
+    tmpdir
+      .toFile
       .listFiles()
       .toList
       .filter(f => f.isDirectory && f.getName.startsWith(stablePrefix) && !f.getName.startsWith(vmPrefix))
@@ -335,9 +326,9 @@ object IDLTestTools {
   protected def run(workDir: Path, cmd: Seq[String], env: Map[String, String], cname: String): Int = {
     val cmdscript = workDir.getParent.resolve(s"$cname.sh").toAbsolutePath
     val commands = Seq(
-        "#!/bin/bash -xe",
-        s"cd ${workDir.toAbsolutePath}",
-      ) ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq("env") ++ Seq(cmd.mkString("", " \\\n  ", "\n"))
+      "#!/bin/bash -xe",
+      s"cd ${workDir.toAbsolutePath}",
+    ) ++ env.map(kv => s"export ${kv._1}=${kv._2}") ++ Seq("env") ++ Seq(cmd.mkString("", " \\\n  ", "\n"))
 
     val cmdSh = commands.mkString("\n")
 

@@ -1,8 +1,11 @@
 package izumi.idealingua.model.il.ast.raw.defns
 
+
 sealed trait RawTopLevelDefn
 
+
 object RawTopLevelDefn {
+
 
   sealed trait TypeDefn extends RawTopLevelDefn
 

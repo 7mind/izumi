@@ -1,3 +1,4 @@
+
 package izumi.fundamentals.collections
 
 import izumi.fundamentals.collections.IzCollections._
@@ -17,3 +18,5 @@ class IzCollectionsTest extends WordSpec {
     }
   }
 }
+
+

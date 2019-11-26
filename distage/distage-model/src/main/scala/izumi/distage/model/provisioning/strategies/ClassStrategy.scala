@@ -6,3 +6,4 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 trait ClassStrategy {
   def instantiateClass(context: ProvisioningKeyProvider, op: WiringOp.InstantiateClass): Seq[NewObjectOp.NewInstance]
 }
+

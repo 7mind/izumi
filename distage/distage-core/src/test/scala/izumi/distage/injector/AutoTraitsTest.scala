@@ -71,14 +71,14 @@ class AutoTraitsTest extends WordSpec with MkInjector {
       import TraitCase5._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[TestTraitAny { def dep: Dep }]
+        make[TestTraitAny {def dep: Dep}]
         make[Dep]
       })
 
       val injector = mkInjector()
       val plan = injector.plan(definition)
       val context = injector.produceUnsafe(plan)
-      val instantiated = context.get[TestTraitAny { def dep: Dep }]
+      val instantiated = context.get[TestTraitAny {def dep: Dep}]
 
       assert(instantiated.dep eq context.get[Dep])
     }

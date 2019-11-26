@@ -6,3 +6,4 @@ import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, W
 trait FactoryStrategy {
   def makeFactory(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.InstantiateFactory): Seq[NewObjectOp]
 }
+

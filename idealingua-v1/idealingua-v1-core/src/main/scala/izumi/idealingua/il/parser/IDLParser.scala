@@ -7,8 +7,8 @@ import izumi.idealingua.model.loader.FSPath
 import fastparse._
 
 case class IDLParserContext(
-  file: FSPath
-) {
+                             file: FSPath
+                           ) {
   protected[parser] val defMember = new DefMember(this)
   protected[parser] val defDomain = new DefDomain(this)
   protected[parser] val defSignature = new DefSignature(this)
@@ -23,6 +23,7 @@ case class IDLParserContext(
 
 }
 
+
 class IDLParser(context: IDLParserContext) {
 
   import context._
@@ -34,5 +35,6 @@ class IDLParser(context: IDLParserContext) {
   def parseModel(input: String): Parsed[ParsedModel] = {
     parse(input, defParsers.modelDef(_))
   }
+
 
 }

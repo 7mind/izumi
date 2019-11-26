@@ -45,10 +45,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
 
   final def makeHKTagRaw[ArgStruct](argStruct: Type): c.Expr[LTag.WeakHK[ArgStruct]] = {
     def badShapeError(t: TypeApi) = {
-      c.abort(
-        c.enclosingPosition,
-        s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LightTagK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})"
-      )
+      c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LightTagK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
     }
 
     argStruct match {
@@ -93,7 +90,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C) {
       tpe match {
         case t: RefinedTypeApi =>
           t.parents.forall(allPartsStrong) &&
-          t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
+            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature))
         case _ =>
           true
       }

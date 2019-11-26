@@ -7,6 +7,7 @@ import izumi.idealingua.runtime.rpc.{IRTMethodName, IRTMethodSignature, IRTWrapp
 import izumi.idealingua.runtime.{IRTCast, IRTConversions, IRTExtend}
 import izumi.idealingua.translator.toscala.types.ScalaType
 
+
 object IDLRuntimeTypes {
 
   val model: Pkg = Pkg.of[TypeId]

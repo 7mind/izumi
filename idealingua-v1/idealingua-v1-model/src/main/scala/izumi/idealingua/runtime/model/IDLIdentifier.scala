@@ -3,6 +3,7 @@ package izumi.idealingua.runtime.model
 import java.net.{URLDecoder, URLEncoder}
 import java.util.UUID
 
+
 trait IDLIdentifier extends Any {
   this: IDLGeneratedType =>
 }
@@ -39,3 +40,4 @@ object IDLIdentifier {
     ret.asInstanceOf[T]
   }
 }
+

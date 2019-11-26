@@ -34,3 +34,5 @@ class Slf4jAdapterTest extends WordSpec {
   }
 
 }
+
+

@@ -18,13 +18,13 @@ object IDLLanguage {
 
   def parse(s: String): IDLLanguage = {
     s.trim.toLowerCase match {
-      case Scala.toString =>
+      case Scala.toString  =>
         Scala
-      case Go.toString =>
+      case Go.toString  =>
         Go
-      case Typescript.toString =>
+      case Typescript.toString  =>
         Typescript
-      case CSharp.toString =>
+      case CSharp.toString  =>
         CSharp
     }
   }

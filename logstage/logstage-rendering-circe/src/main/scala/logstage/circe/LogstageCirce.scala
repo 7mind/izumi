@@ -12,3 +12,4 @@ trait LogstageCirce {
   @inline implicit final def ToConsoleSinkJsonCtor(consoleSink: ConsoleSink.type): ConsoleSinkJsonCtor = new ConsoleSinkJsonCtor(consoleSink)
 
 }
+

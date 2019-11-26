@@ -35,9 +35,9 @@ class ModuleTools() {
       code
     } else {
       s"""// Auto-generated, any modifications may be overwritten in the future.
-         |${if (header.length > 0) s"\n$header\n" else ""}
+         |${ if (header.length > 0) s"\n$header\n" else ""}
          |namespace ${pkg.map(p => p.capitalize).mkString(".")} {
-         |$code
+         |${code}
          |}
        """.stripMargin
     }

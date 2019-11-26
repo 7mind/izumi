@@ -25,8 +25,7 @@ object ReflectionUtil {
     definingClass match {
       case r: ru.RefinedTypeApi =>
         throw new MethodMirrorException(
-          s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}"
-        )
+          s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}")
 
       case o =>
         toJavaMethod(mm.runtimeClass(o), method) match {
@@ -41,10 +40,9 @@ object ReflectionUtil {
   def toJavaMethod(clazz: Class[_], methodSymbol: ru.MethodSymbol): Try[Method] = {
     Try {
       val mirror = ru.runtimeMirror(clazz.getClassLoader)
-      val privateMirror = mirror.asInstanceOf[{
-          def methodToJava(sym: Symbols#MethodSymbol): Method
-        }
-      ]
+      val privateMirror = mirror.asInstanceOf[ {
+        def methodToJava(sym: Symbols#MethodSymbol): Method
+      }]
       val javaMethod = privateMirror.methodToJava(methodSymbol.asInstanceOf[Symbols#MethodSymbol])
       javaMethod
     }
@@ -118,3 +116,4 @@ object ReflectionUtil {
     def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
   }
 }
+

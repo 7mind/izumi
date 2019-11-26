@@ -4,6 +4,7 @@ import distage._
 import izumi.distage.model.PlannerInput
 import org.scalatest.WordSpec
 
+
 class PlanOperationsTest extends WordSpec with MkInjector {
 
   import PlanOperationsTest._

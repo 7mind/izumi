@@ -24,7 +24,8 @@ final case class ServiceContext(ctx: STContext, svc: Service) {
 
   val typeName: TypeName = svc.id.name
 
-  private val pkg: Term.Ref = svc.id.domain.toPackage.foldLeft(Term.Name("_root_"): Term.Ref) {
+
+  private val pkg: Term.Ref = svc.id.domain.toPackage.foldLeft(Term.Name("_root_") : Term.Ref) {
     case (acc, v) =>
       Term.Select(acc, Term.Name(v))
   }

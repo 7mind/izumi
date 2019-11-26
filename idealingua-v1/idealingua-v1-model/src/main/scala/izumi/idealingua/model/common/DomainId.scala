@@ -12,3 +12,6 @@ object DomainId {
   final val Builtin = DomainId(Seq.empty, "/")
   final val Undefined = DomainId(Seq.empty, ".")
 }
+
+
+

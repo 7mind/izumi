@@ -5,7 +5,7 @@ import izumi.idealingua.runtime.rpc._
 import izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterServiceServerWrapped}
 import izumi.r2.idealingua.test.impls.AbstractGreeterServer
 
-class DummyServices[F[+_, +_]: BIO, Ctx] {
+class DummyServices[F[+ _, + _] : BIO, Ctx] {
 
   object Server {
     private val greeterService = new AbstractGreeterServer.Impl[F, Ctx]

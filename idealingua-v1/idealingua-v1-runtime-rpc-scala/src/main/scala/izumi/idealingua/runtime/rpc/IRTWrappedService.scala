@@ -1,7 +1,6 @@
 package izumi.idealingua.runtime.rpc
 
-trait IRTWrappedService[F[_, _], -C] {
-  self =>
+trait IRTWrappedService[F[_, _], -C] { self =>
   def serviceId: IRTServiceId
 
   def allMethods: Map[IRTMethodId, IRTMethodWrapper[F, C]]

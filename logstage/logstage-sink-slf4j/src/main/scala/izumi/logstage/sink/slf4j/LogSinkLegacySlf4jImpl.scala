@@ -9,7 +9,8 @@ import org.slf4j
 import org.slf4j.Marker
 import org.slf4j.helpers.BasicMarkerFactory
 
-class LogSinkLegacySlf4jImpl(
+class LogSinkLegacySlf4jImpl
+(
   policy: RenderingPolicy
 ) extends LogSink {
   override def flush(e: Log.Entry): Unit = {

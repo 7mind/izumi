@@ -65,15 +65,6 @@ class BasicLoggingTest extends WordSpec {
   }
 
   private def render(p: StringRenderingPolicy, m: Message) = {
-    p.render(
-      Entry(
-        m,
-        Context(
-          StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)),
-          DynamicContext(Level.Warn, ThreadData("test", 0), 0),
-          CustomContext(Seq.empty)
-        )
-      )
-    )
+    p.render(Entry(m, Context(StaticExtendedContext(LoggerId("test"), SourceFilePosition("test.scala", 0)), DynamicContext(Level.Warn, ThreadData("test", 0), 0), CustomContext(Seq.empty))))
   }
 }

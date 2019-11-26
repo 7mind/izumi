@@ -51,14 +51,13 @@ object FactoryConstructorMacro {
 
     val (dependencyArgs, dependencyMethods) = dependencies.map {
       case AbstractMethod(ctx, name, _, key) =>
-        key.tpe.use {
-          tpe =>
-            val methodName: TermName = TermName(name)
-            val argName: TermName = c.freshName(methodName)
+        key.tpe.use { tpe =>
+          val methodName: TermName = TermName(name)
+          val argName: TermName = c.freshName(methodName)
 
-            val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
+          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-            (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+          (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
         }
     }.unzip
 
@@ -66,7 +65,8 @@ object FactoryConstructorMacro {
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {
-      case (method @ Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
+      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
+
         val (methodArgs, executorArgs) = methodArguments.map {
           diKey =>
             val name = TermName(c.freshName())
@@ -78,7 +78,8 @@ object FactoryConstructorMacro {
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val methodDef = factoryMethod.finalResultType.use(resultTypeOfMethod => q"""
+        val methodDef = factoryMethod.finalResultType.use(resultTypeOfMethod =>
+          q"""
           override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
             val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
 

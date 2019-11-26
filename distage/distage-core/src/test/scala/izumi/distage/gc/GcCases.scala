@@ -118,6 +118,7 @@ object GcCases {
 
   }
 
+
   object InjectorCase8 {
 
     trait Component
@@ -190,12 +191,15 @@ object GcCases {
       }
     }
 
+
   }
 
   object InjectorCase13 {
 
     class T1()
-    class Box[A](private val a: A) extends AnyVal {}
+    class Box[A](private val a: A) extends AnyVal {
+
+    }
     class Circular1(c1: => Circular1, c2: => Circular2, val q: Box[T1]) {
       def nothing(): Unit = {
         c1.discard()

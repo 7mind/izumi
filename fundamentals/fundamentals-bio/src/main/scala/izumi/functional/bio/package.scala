@@ -28,10 +28,10 @@ package object bio extends BIOSyntax {
   @inline override final def F[F[+_, +_]](implicit F: BIOFunctor[F]): F.type = F
 
   /**
-    * NOTE: The left type parameter is not forced to be covariant
-    * because [[BIOFunctor]] does not yet expose any operations
-    * on it.
-    * */
+   * NOTE: The left type parameter is not forced to be covariant
+   * because [[BIOFunctor]] does not yet expose any operations
+   * on it.
+   * */
   trait BIOFunctor[F[_, +_]] extends BIOFunctorInstances {
     def map[E, A, B](r: F[E, A])(f: A => B): F[E, B]
     @inline def as[E, A, B](r: F[E, A])(v: => B): F[E, B] = map(r)(_ => v)
@@ -43,11 +43,10 @@ package object bio extends BIOSyntax {
     // place ZIO instance at the root of hierarchy, so that it's visible when summoning any class in hierarchy
     @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
 
-    @inline implicit def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type =
-      BIOPrimitives
+    @inline implicit def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
 
-    @inline implicit def AttachBIOFork[F[+_, +_]](@deprecated("unused", "") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
-    @inline implicit def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused", "") self: BIOFunctor[F[Any, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type = BIOFork
+    @inline implicit def AttachBIOFork[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
+    @inline implicit def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused","") self: BIOFunctor[F[Any, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type = BIOFork
   }
 
   trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
@@ -78,11 +77,11 @@ package object bio extends BIOSyntax {
     @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
   }
 
-  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F] {
+  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
     def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A]
   }
 
-  trait BIOError[F[+_, +_]] extends BIOGuarantee[F] {
+  trait BIOError[F[+_ ,+_]] extends BIOGuarantee[F] {
     def fail[E](v: => E): F[E, Nothing]
     def redeem[E, A, E2, B](r: F[E, A])(err: E => F[E2, B], succ: A => F[E2, B]): F[E2, B]
     def catchSome[E, A, E2 >: E, A2 >: A](r: F[E, A])(f: PartialFunction[E, F[E2, A2]]): F[E2, A2]
@@ -94,7 +93,7 @@ package object bio extends BIOSyntax {
     @inline def redeemPure[E, A, B](r: F[E, A])(err: E => B, succ: A => B): F[Nothing, B] = redeem(r)(err.andThen(pure), succ.andThen(pure))
     @inline def attempt[E, A](r: F[E, A]): F[Nothing, Either[E, A]] = redeemPure(r)(Left(_), Right(_))
     @inline def catchAll[E, A, E2, A2 >: A](r: F[E, A])(f: E => F[E2, A2]): F[E2, A2] = redeem(r)(f, pure)
-    @inline def flip[E, A](r: F[E, A]): F[A, E] = redeem(r)(pure, fail(_))
+    @inline def flip[E, A](r: F[E, A]) : F[A, E] = redeem(r)(pure, fail(_))
     @inline def tapError[E, A, E1 >: E](r: F[E, A])(f: E => F[E1, Unit]): F[E1, A] = catchAll(r)(e => *>(f(e), fail(e)))
 
     // defaults
@@ -252,10 +251,13 @@ package object bio extends BIOSyntax {
     implicit object BIOForkZio extends BIOFork3[ZIO] {
       override def fork[R, E, A](f: ZIO[R, E, A]): ZIO[R, Nothing, BIOFiber[ZIO[Any, +?, +?], E, A]] =
         f
-        // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
-        //  unless wrapped in `interruptible`
-        //  see: https://github.com/zio/zio/issues/945
-        .interruptible.nonDaemon.fork.daemon
+          // FIXME: ZIO Bug / feature (interruption inheritance) breaks behavior in bracket/DIResource
+          //  unless wrapped in `interruptible`
+          //  see: https://github.com/zio/zio/issues/945
+          .interruptible
+          .nonDaemon
+          .fork
+          .daemon
           .map(BIOFiber.fromZIO)
     }
   }
@@ -264,7 +266,7 @@ package object bio extends BIOSyntax {
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {
-    def apply[F[_, _]: SyncSafe2]: SyncSafe2[F] = implicitly
+    def apply[F[_, _] : SyncSafe2]: SyncSafe2[F] = implicitly
   }
 
   type Clock2[F[_, _]] = Clock[F[Nothing, ?]]
@@ -277,3 +279,4 @@ package object bio extends BIOSyntax {
     def apply[F[_, _]: Entropy2]: Entropy2[F] = implicitly
   }
 }
+

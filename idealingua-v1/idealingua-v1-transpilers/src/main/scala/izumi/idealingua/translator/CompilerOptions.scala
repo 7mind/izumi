@@ -40,12 +40,14 @@ sealed trait AbstractCompilerOptions[E <: TranslatorExtension, M <: BuildManifes
   def providedRuntime: Option[ProvidedRuntime]
 }
 
-final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest](
-  language: IDLLanguage,
-  extensions: Seq[E],
-  manifest: M,
-  withBundledRuntime: Boolean = true,
-  providedRuntime: Option[ProvidedRuntime] = None
+
+final case class CompilerOptions[E <: TranslatorExtension, M <: BuildManifest]
+(
+  language: IDLLanguage
+  , extensions: Seq[E]
+  , manifest: M
+  , withBundledRuntime: Boolean = true
+  , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[E, M]
 
 object CompilerOptions {
@@ -54,7 +56,7 @@ object CompilerOptions {
   type CSharpTranslatorOptions = CompilerOptions[CSharpTranslatorExtension, CSharpBuildManifest]
   type ScalaTranslatorOptions = CompilerOptions[ScalaTranslatorExtension, ScalaBuildManifest]
 
-  def from[E <: TranslatorExtension: ClassTag, M <: BuildManifest: ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
+  def from[E <: TranslatorExtension : ClassTag, M <: BuildManifest : ClassTag](options: UntypedCompilerOptions): CompilerOptions[E, M] = {
     val extensions = options.extensions.collect {
       case e: E => e
     }
@@ -65,12 +67,13 @@ object CompilerOptions {
   }
 }
 
-final case class UntypedCompilerOptions(
-  language: IDLLanguage,
-  extensions: Seq[TranslatorExtension],
-  manifest: BuildManifest,
-  withBundledRuntime: Boolean = true,
-  providedRuntime: Option[ProvidedRuntime] = None
+final case class UntypedCompilerOptions
+(
+  language: IDLLanguage
+  , extensions: Seq[TranslatorExtension]
+  , manifest: BuildManifest
+  , withBundledRuntime: Boolean = true
+  , providedRuntime: Option[ProvidedRuntime] = None
 ) extends AbstractCompilerOptions[TranslatorExtension, BuildManifest] {
   override def toString: String = {
     val rtRepr = Option(withBundledRuntime).filter(_ == true).map(_ => "+rtb").getOrElse("-rtb")
@@ -79,3 +82,9 @@ final case class UntypedCompilerOptions(
     Seq(language, rtRepr, rtfRepr, extRepr).mkString(" ")
   }
 }
+
+
+
+
+
+

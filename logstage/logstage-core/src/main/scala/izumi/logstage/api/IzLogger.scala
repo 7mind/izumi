@@ -7,9 +7,10 @@ import izumi.logstage.sink.ConsoleSink
 
 import scala.language.implicitConversions
 
-class IzLogger(
-  override val router: LogRouter,
-  override val customContext: Log.CustomContext
+class IzLogger
+(
+  override val router: LogRouter
+, override val customContext: Log.CustomContext
 ) extends RoutingLogger {
 
   def apply(context: CustomContext): IzLogger = withCustomContext(context)

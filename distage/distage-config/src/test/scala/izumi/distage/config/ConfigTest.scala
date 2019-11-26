@@ -101,12 +101,11 @@ class ConfigTest extends WordSpec {
 
       assert(context.get[Service[ListCaseClass]].conf.mylist.isInstanceOf[IndexedSeq[_]])
       assert(context.get[Service[ListCaseClass]].conf.mylist.head.isInstanceOf[ListSet[_]])
-      assert(
-        context.get[Service[ListCaseClass]].conf.mylist.head ==
+      assert(context.get[Service[ListCaseClass]].conf.mylist.head ==
         Set(
-          Wrapper(HostPort(80, "localhost")),
-          Wrapper(HostPort(8080, "localhost")),
-          Wrapper(HostPort(8888, "localhost"))
+          Wrapper(HostPort(80, "localhost"))
+          , Wrapper(HostPort(8080, "localhost"))
+          , Wrapper(HostPort(8888, "localhost"))
         )
       )
     }
@@ -137,8 +136,7 @@ class ConfigTest extends WordSpec {
     }
 
     "resolve backticks" in {
-      val context = Injector
-        .Standard(mkConfigModule("backticks-test.conf"))
+      val context = Injector.Standard(mkConfigModule("backticks-test.conf"))
         .produceUnsafe(TestConfigReaders.backticksDefinition)
 
       assert(context.get[Service[BackticksCaseClass]].conf == BackticksCaseClass(true))
@@ -146,13 +144,11 @@ class ConfigTest extends WordSpec {
 
     "resolve config sealed traits (with progression test for https://github.com/scala/bug/issues/11645)" in {
       val context1 =
-        Injector
-          .Standard(mkConfigModule("sealed-test1.conf"))
+        Injector.Standard(mkConfigModule("sealed-test1.conf"))
           .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       val context2 =
-        Injector
-          .Standard(mkConfigModule("sealed-test2.conf"))
+        Injector.Standard(mkConfigModule("sealed-test2.conf"))
           .produceUnsafe(TestConfigReaders.sealedDefinition)
 
       assert(context1.get[Service[SealedCaseClass]].conf == SealedCaseClass(SealedTrait.CaseClass1(1, "1", true, Yes)))
@@ -205,3 +201,4 @@ class ConfigTest extends WordSpec {
   }
 
 }
+

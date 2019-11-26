@@ -26,11 +26,9 @@ object ConcreteConstructorMacro {
     val targetType = weakTypeOf[T]
 
     if (!symbolIntrospector.isConcrete(SafeType(targetType))) {
-      c.abort(
-        c.enclosingPosition,
+      c.abort(c.enclosingPosition,
         s"""Tried to derive constructor function for class $targetType, but the class is an
-           |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin
-      )
+           |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
     }
 
     val paramLists = reflectionProvider.constructorParameterLists(SafeType(targetType))
@@ -69,3 +67,4 @@ object ConcreteConstructorMacro {
     res
   }
 }
+

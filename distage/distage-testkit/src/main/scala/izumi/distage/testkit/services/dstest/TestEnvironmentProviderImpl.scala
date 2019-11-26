@@ -14,7 +14,8 @@ import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 
-class TestEnvironmentProviderImpl(
+class TestEnvironmentProviderImpl
+(
   suiteClass: Class[_],
   override protected val activation: Map[AxisBase, AxisValue],
   protected val memoizedKeys: Set[DIKey],
@@ -66,8 +67,7 @@ class TestEnvironmentProviderImpl(
   override protected def memoizePlugins: Boolean = {
     import izumi.fundamentals.platform.strings.IzString._
 
-    System
-      .getProperty("izumi.distage.testkit.plugins.memoize")
+    System.getProperty("izumi.distage.testkit.plugins.memoize")
       .asBoolean(true)
   }
 

@@ -3,6 +3,7 @@ package izumi.idealingua.model.publishing.manifests
 import izumi.idealingua.model.publishing.BuildManifest
 import izumi.idealingua.model.publishing.BuildManifest.{Common, ManifestDependency}
 
+
 sealed trait GoProjectLayout
 
 object GoProjectLayout {
@@ -16,9 +17,9 @@ object GoProjectLayout {
 }
 
 case class GoRepositoryOptions(
-  dependencies: List[ManifestDependency],
-  repository: String,
-)
+                                dependencies: List[ManifestDependency],
+                                repository: String,
+                       )
 
 object GoRepositoryOptions {
   def example: GoRepositoryOptions = GoRepositoryOptions(
@@ -27,12 +28,13 @@ object GoRepositoryOptions {
   )
 }
 
+
 case class GoLangBuildManifest(
-  common: Common,
-  layout: GoProjectLayout,
-  repository: GoRepositoryOptions,
-  enableTesting: Boolean
-) extends BuildManifest
+                                common: Common,
+                                layout: GoProjectLayout,
+                                repository: GoRepositoryOptions,
+                                enableTesting: Boolean
+                              ) extends BuildManifest
 
 object GoLangBuildManifest {
   def example: GoLangBuildManifest = {

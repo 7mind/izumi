@@ -12,6 +12,7 @@ class IdRenderer(ctx: STContext) {
   import ctx._
   import conv._
 
+
   def renderIdentifier(i: Identifier): RenderableCogenProduct = {
     val fields = typespace.structure.structure(i).toScala
     val decls = fields.all.toParams
@@ -26,7 +27,8 @@ class IdRenderer(ctx: STContext) {
 
     val sortedFields = fields.all.sortBy(_.field.field.name)
 
-    val parsers = sortedFields.zipWithIndex
+    val parsers = sortedFields
+      .zipWithIndex
       .map({ case (field, idx) => (field, idx, field.field.field.typeId) })
       .map {
         case (field, idx, t: EnumId) =>
@@ -44,6 +46,7 @@ class IdRenderer(ctx: STContext) {
     val superClasses = List(rt.generated.init(), rt.tIDLIdentifier.init())
 
     val errorInterp = Term.Interpolate(Term.Name("s"), List(Lit.String("Serialized form of "), Lit.String(s" should start with $typeName#")), List(Term.Name("name")))
+
 
     val qqCompanion =
       q"""object ${t.termName} {
@@ -67,6 +70,7 @@ class IdRenderer(ctx: STContext) {
               $interp
             }
          }"""
+
 
     ext.extend(i, CogenProduct(qqIdentifier, qqCompanion, qqTools, List.empty), _.handleIdentifier)
   }

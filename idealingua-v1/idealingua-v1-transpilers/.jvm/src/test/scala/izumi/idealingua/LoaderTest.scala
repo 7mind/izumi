@@ -7,6 +7,7 @@ import izumi.idealingua.il.loader.{FilesystemEnumerator, LocalFilesystemEnumerat
 import izumi.idealingua.il.renderer.{IDLRenderer, IDLRenderingOptions}
 import org.scalatest.WordSpec
 
+
 class LoaderTest extends WordSpec {
 
   "IL loader" should {
@@ -19,11 +20,11 @@ class LoaderTest extends WordSpec {
   "FS enumerator" should {
     "be able to find files in jars" in {
       val classpath = IzJvm.safeClasspath().split(':')
-      val enumerator =
-        new LocalFilesystemEnumerator(Seq(Paths.get("/tmp/nonexistent")), classpath.filter(_.contains("fastparse")).map(p => Paths.get(p).toFile), Set(".MF"))
+      val enumerator = new LocalFilesystemEnumerator(Seq(Paths.get("/tmp/nonexistent")), classpath.filter(_.contains("fastparse")).map(p => Paths.get(p).toFile), Set(".MF"))
       assert(enumerator.enumerate().size == 1)
     }
   }
+
 
   private def testIn(base: String): Unit = {
     val loader = IDLTestTools.makeLoader(base)
@@ -63,4 +64,6 @@ class LoaderTest extends WordSpec {
     }
   }
 
+
 }
+

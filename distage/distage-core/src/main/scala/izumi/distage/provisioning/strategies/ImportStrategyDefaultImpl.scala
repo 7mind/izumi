@@ -18,14 +18,12 @@ class ImportStrategyDefaultImpl extends ImportStrategy {
       case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
         Seq(NewObjectOp.DoNothing())
       case _ =>
-        throw new MissingInstanceException(
-          s"Instance is not available in the object graph: $target. " +
-          s"required by refs: $references",
-          target
-        )
+        throw new MissingInstanceException(s"Instance is not available in the object graph: $target. " +
+          s"required by refs: $references", target)
     }
   }
 }
+
 
 class ImportStrategyFailingImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[NewObjectOp] = {
@@ -35,3 +33,4 @@ class ImportStrategyFailingImpl extends ImportStrategy {
     throw new MissingInstanceException(s"Imports are disabled and instance is not available in the object graph: $target. required by refs: $references", target)
   }
 }
+

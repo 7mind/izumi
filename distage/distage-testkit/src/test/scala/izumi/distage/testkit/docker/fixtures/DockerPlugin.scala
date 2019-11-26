@@ -10,9 +10,11 @@ import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, Postgres
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
 
-class PgSvcExample(val pg: AvailablePort @Id("pg"), val ddb: AvailablePort @Id("ddb"))
+class PgSvcExample(val pg: AvailablePort@Id("pg"), val ddb: AvailablePort@Id("ddb"))
 
-object MonadPlugin extends PluginDef with CatsDIEffectModule with ZIODIEffectModule
+object MonadPlugin extends PluginDef
+  with CatsDIEffectModule
+  with ZIODIEffectModule
 
 object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
   make[DynamoDocker.Container].fromResource {
@@ -21,8 +23,7 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
 
   // this container will start once `DynamoContainer` is up and running
   make[PostgresDocker.Container].fromResource {
-    PostgresDocker
-      .make[Task]
+    PostgresDocker.make[Task]
       .dependOnDocker(DynamoDocker)
   }
 

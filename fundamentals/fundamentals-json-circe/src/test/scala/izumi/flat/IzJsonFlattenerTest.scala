@@ -1,3 +1,4 @@
+
 package izumi.flat
 
 import izumi.json.flat.JsonFlattener
@@ -19,9 +20,11 @@ class IzJsonFlattenerTest extends WordSpec {
     }
   }
 
+
   private def check(original: Json): Assertion = {
     val flattened = new JsonFlattener().flatten(original)
     val inflated = new JsonFlattener().inflate(flattened)
     assert(inflated.contains(original))
   }
 }
+

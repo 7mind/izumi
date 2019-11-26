@@ -11,13 +11,14 @@ import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, Provisi
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK, identityEffectType}
 import izumi.fundamentals.platform.functional.Identity
 
-class ResourceStrategyDefaultImpl extends ResourceStrategy {
+class ResourceStrategyDefaultImpl
+  extends ResourceStrategy {
 
   override def allocateResource[F[_]: TagK](
-    context: ProvisioningKeyProvider,
-    executor: OperationExecutor,
-    op: MonadicOp.AllocateResource
-  )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewResource[F]]] = {
+                                             context: ProvisioningKeyProvider
+                                           , executor: OperationExecutor
+                                           , op: MonadicOp.AllocateResource
+                                           )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewResource[F]]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.wiring.effectHKTypeCtor
 
@@ -28,8 +29,7 @@ class ResourceStrategyDefaultImpl extends ResourceStrategy {
 
     val AllocateResource(target, actionOp, _, _) = op
 
-    executor
-      .execute(context, actionOp)
+    executor.execute(context, actionOp)
       .flatMap(_.toList match {
         case NewObjectOp.NewInstance(_, resource0) :: Nil if isEffect =>
           val resource = resource0.asInstanceOf[DIResourceBase[F, Any]]

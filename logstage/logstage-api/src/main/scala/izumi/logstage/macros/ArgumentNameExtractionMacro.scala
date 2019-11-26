@@ -6,6 +6,7 @@ import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 import izumi.fundamentals.platform.strings.IzString._
 
+
 object ArgumentNameExtractionMacro {
 
   import ExtractedName._
@@ -23,6 +24,7 @@ object ArgumentNameExtractionMacro {
        |   logger.info($${camelCaseName-> ' '})
        |""".stripMargin
 
+
   protected[macros] def recoverArgNames(c: blackbox.Context)(args: Seq[c.Expr[Any]]): c.Expr[List[LogArg]] = {
     import c.universe._
 
@@ -37,7 +39,7 @@ object ArgumentNameExtractionMacro {
     object Arrow {
       def unapply(arg: c.universe.Tree): Option[TypeApply] = {
         arg match {
-          case t @ TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())) => Some(t)
+          case t@TypeApply(Select(Select(Ident(TermName("scala")), _), TermName("ArrowAssoc")), List(TypeTree())) => Some(t)
           case _ => None
         }
       }
@@ -46,21 +48,20 @@ object ArgumentNameExtractionMacro {
     object ArrowPair {
       def unapply(arg: c.universe.Tree): Option[(c.universe.Tree, c.universe.Tree)] = {
         arg match {
-          case Apply(
-              TypeApply(
-                Select(
-                  Apply(Arrow(_), leftExpr :: Nil),
-                  _ /*TermName("$minus$greater")*/
-                ),
-                List(TypeTree())
-              ),
-              List(rightExpr)
-              ) =>
-            Some((leftExpr, rightExpr))
+          case Apply(TypeApply(
+          Select(
+          Apply(Arrow(_), leftExpr :: Nil),
+          _ /*TermName("$minus$greater")*/
+          )
+          , List(TypeTree())
+          )
+          , List(rightExpr)
+          ) => Some((leftExpr, rightExpr))
           case _ => None
         }
       }
     }
+
 
     object ArrowArg {
       def unapply(arg: c.universe.Tree): Option[(c.Expr[Any], ExtractedName)] = {
@@ -69,7 +70,7 @@ object ArgumentNameExtractionMacro {
             Some((c.Expr(expr), NChar(char)))
           case ArrowPair(expr, Literal(Constant(name: String))) => // ${value -> "name"}
             Some((c.Expr(expr), NString(name)))
-          case ArrowPair(expr @ NameSeq(names), Literal(Constant(null))) => // ${value -> null}
+          case ArrowPair(expr@NameSeq(names), Literal(Constant(null))) => // ${value -> null}
             Some((c.Expr(expr), NString(names.last)))
           case _ =>
             None
@@ -93,6 +94,8 @@ object ArgumentNameExtractionMacro {
       def unapply(arg: c.universe.Tree): Option[Seq[String]] = {
         extract(arg, Seq.empty)
       }
+
+
       @tailrec
       private def extract(arg: c.universe.Tree, acc: Seq[String]): Option[Seq[String]] = {
         arg match {
@@ -147,14 +150,12 @@ object ArgumentNameExtractionMacro {
                     reifiedExtracted(c)(expr, Seq(ch.toString))
                 }
               case NChar(ch) =>
-                c.abort(
-                  param.tree.pos,
+                c.abort(param.tree.pos,
                   s"""Unsupported mapping: $ch
                      |
                      |You have the following ways to assign a name:
                      |$example
-                     |""".stripMargin
-                )
+                     |""".stripMargin)
 
               case NString(s) =>
                 reifiedExtracted(c)(expr, Seq(s))
@@ -163,29 +164,25 @@ object ArgumentNameExtractionMacro {
           case HiddenArrowArg(expr, name) => // ${x -> "name" -> null }
             reifiedExtractedHidden(c)(expr, name.str)
 
-          case t @ c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
-            c.warning(
-              t.pos,
+          case t@c.universe.Literal(c.universe.Constant(v)) => // ${2+2}
+            c.warning(t.pos,
               s"""Constant expression as a logger argument: $v, this makes no sense.
                  |
                  |But Logstage expects you to use string interpolations instead, such as:
                  |$example
-                 |""".stripMargin
-            )
+                 |""".stripMargin)
 
             reifiedPrefixed(c)(param, "UNNAMED")
 
           case v =>
-            c.warning(
-              v.pos,
+            c.warning(v.pos,
               s"""Expression as a logger argument: $v
                  |
                  |But Logstage expects you to use string interpolations instead, such as:
                  |$example
                  |
                  |Tree: ${c.universe.showRaw(v)}
-                 |""".stripMargin
-            )
+                 |""".stripMargin)
             reifiedPrefixedValue(c)(c.Expr[String](Literal(Constant(c.universe.showCode(v)))), param, "EXPRESSION")
         }
     }
@@ -194,6 +191,7 @@ object ArgumentNameExtractionMacro {
       q"List(..$expressions)"
     }
   }
+
 
   private def reifiedPrefixed(c: blackbox.Context)(param: c.Expr[Any], prefix: String): c.universe.Expr[LogArg] = {
     reifiedPrefixedValue(c)(param, param, prefix)
@@ -206,6 +204,7 @@ object ArgumentNameExtractionMacro {
       LogArg(Seq(s"${prefixRepr.splice}:${param.splice}"), value.splice, hiddenName = false)
     }
   }
+
 
   private def reifiedExtractedHidden(c: blackbox.Context)(param: c.Expr[Any], s: String): c.universe.Expr[LogArg] = {
     import c.universe._
@@ -224,3 +223,4 @@ object ArgumentNameExtractionMacro {
   }
 
 }
+

@@ -10,3 +10,4 @@ trait ProxyStrategy {
 
   def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp]
 }
+

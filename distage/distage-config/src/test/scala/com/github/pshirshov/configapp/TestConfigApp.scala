@@ -16,24 +16,25 @@ case class HostPort(port: Int, host: String)
 
 // application services
 class DataPuller1(
-  @AutoConf val target: HostPort,
-  @AutoConf val source: HostPort
-) extends TestAppService {
+                   @AutoConf val target: HostPort
+                   , @AutoConf val source: HostPort
+                 ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 class DataPuller2(
-  @AutoConf val target: HostPort,
-  @AutoConf val source: HostPort
-) extends TestAppService {
+                   @AutoConf val target: HostPort
+                   , @AutoConf val source: HostPort
+                 ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
+
 class DataPuller3(
-  @Conf("cassandra") val target: HostPort,
-  @ConfPath("datasource.google") val source: HostPort,
-  @ConfPath("scalars.s") val s: String
-) extends TestAppService {
+                   @Conf("cassandra") val target: HostPort
+                   , @ConfPath("datasource.google") val source: HostPort
+                   , @ConfPath("scalars.s") val s: String
+                 ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
@@ -84,6 +85,6 @@ object TestConfigApp {
 
   final val setDefinition = PlannerInput.noGc(new ModuleDef {
     many[TestAppService]
-      .add[DataPuller1]
+        .add[DataPuller1]
   })
 }

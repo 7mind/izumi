@@ -4,7 +4,9 @@ import izumi.distage.model.provisioning.strategies.ByNameDispatcher
 import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithTags}
 
 trait WithDITypedRef {
-  this: DIUniverseBase with WithDISafeType with WithTags =>
+  this: DIUniverseBase
+    with WithDISafeType
+    with WithTags =>
 
   case class TypedRef[+T](private val v: T, symbol: SafeType) {
     def value: T = {

@@ -81,8 +81,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val definition = new StaticModuleDef {
       make[Int].named("depInt").from(5)
       make[ConcreteProduct].from {
-        (conf: TestConf @AutoConf, i: Int @Id("depInt")) =>
-          ConcreteProduct(conf, i * 10)
+        (conf: TestConf@AutoConf, i: Int@Id("depInt")) => ConcreteProduct(conf, i * 10)
       }
     }
     val plan = injector.plan(PlannerInput.noGc(definition))

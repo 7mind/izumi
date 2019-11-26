@@ -8,12 +8,12 @@ import izumi.idealingua.model.typespace.Typespace
 import izumi.idealingua.model.typespace.structures.Struct
 import izumi.idealingua.translator.tocsharp.CSharpImports
 
-final case class CSharpClass(
-  id: TypeId,
-  name: String,
-  fields: Seq[CSharpField],
-  implements: List[InterfaceId] = List.empty
-)(implicit im: CSharpImports, ts: Typespace) {
+final case class CSharpClass (
+                              id: TypeId,
+                              name: String,
+                              fields: Seq[CSharpField],
+                              implements: List[InterfaceId] = List.empty
+                             )(implicit im: CSharpImports, ts: Typespace) {
 
   def renderHeader(): String = {
     val impls = if (implements.isEmpty) "" else " : " + implements.map(i => i.name).mkString(", ")
@@ -21,27 +21,25 @@ final case class CSharpClass(
   }
 
   def render(withWrapper: Boolean, withSlices: Boolean, withRTTI: Boolean, withCTORs: Option[String] = None): String = {
-    val indent = if (withWrapper) 4 else 0
+      val indent = if (withWrapper) 4 else 0
 
-    val ctorWithParams =
-      s"""public $name(${fields.map(f => s"${f.tp.renderType(true)} ${f.renderMemberName(capitalize = false, uncapitalize = true)}").mkString(", ")}) {
-         |${fields.map(f => s"this.${f.renderMemberName()} = ${f.renderMemberName(capitalize = false, uncapitalize = true)};").mkString("\n").shift(4)}
-         |}
+      val ctorWithParams =
+        s"""public $name(${fields.map(f => s"${f.tp.renderType(true)} ${f.renderMemberName(capitalize = false, uncapitalize = true)}").mkString(", ")}) {
+           |${fields.map(f => s"this.${f.renderMemberName()} = ${f.renderMemberName(capitalize = false, uncapitalize = true)};").mkString("\n").shift(4)}
+           |}
          """.stripMargin
 
-    val pkg = id.path.toPackage.mkString(".")
-    val rtti =
-      s"""public static readonly string RTTI_PACKAGE = "$pkg";
-         |public static readonly string RTTI_CLASSNAME = "${id.name}";
-         |public static readonly string RTTI_FULLCLASSNAME = "${id.wireId}";
-         |public string GetPackageName() { return $name.RTTI_PACKAGE; }
-         |public string GetClassName() { return $name.RTTI_CLASSNAME; }
-         |public string GetFullClassName() { return $name.RTTI_FULLCLASSNAME; }
+      val pkg = id.path.toPackage.mkString(".")
+      val rtti =
+        s"""public static readonly string RTTI_PACKAGE = "$pkg";
+           |public static readonly string RTTI_CLASSNAME = "${id.name}";
+           |public static readonly string RTTI_FULLCLASSNAME = "${id.wireId}";
+           |public string GetPackageName() { return $name.RTTI_PACKAGE; }
+           |public string GetClassName() { return $name.RTTI_CLASSNAME; }
+           |public string GetFullClassName() { return $name.RTTI_FULLCLASSNAME; }
          """.stripMargin
 
-    val ctors =
-      if (withCTORs.isEmpty) ""
-      else
+      val ctors = if (withCTORs.isEmpty) "" else
         s"""private static Dictionary<string, Func<object>> __ctors = new Dictionary<string, Func<object>>();
            |public static void Register(string id, System.Func<object> ctor) {
            |    $name.__ctors[id] = ctor;
@@ -87,18 +85,17 @@ final case class CSharpClass(
            |}
          """.stripMargin
 
-    val content =
-      s"""${if (withRTTI) rtti else ""}
-         |${fields.map(f => f.renderMember(false)).mkString("\n")}
-         |
-         |public $name() {
-         |${fields
-           .map(f => if (f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(4)}
-         |}
-         |
-         |${if (!fields.isEmpty) ctorWithParams else ""}
-         |${if (withSlices) ("\n" + renderSlices()) else ""}
-         |${if (withCTORs.isDefined) ctors else ""}
+      val content =
+        s"""${if (withRTTI) rtti else ""}
+           |${fields.map(f => f.renderMember(false)).mkString("\n")}
+           |
+           |public $name() {
+           |${fields.map(f => if(f.tp.getInitValue.isDefined) f.renderMemberName() + " = " + f.tp.getInitValue.get + ";" else "").filterNot(_.isEmpty).mkString("\n").shift(4)}
+           |}
+           |
+           |${if (!fields.isEmpty) ctorWithParams else ""}
+           |${if (withSlices) ("\n" + renderSlices()) else ""}
+           |${if (withCTORs.isDefined) ctors else ""}
          """.stripMargin
 
     s"""${if (withWrapper) s"${renderHeader()} {" else ""}
@@ -131,27 +128,29 @@ final case class CSharpClass(
 }
 
 object CSharpClass {
-  def apply(id: TypeId, name: String, fields: Seq[CSharpField], implements: List[InterfaceId] = List.empty)(implicit im: CSharpImports, ts: Typespace): CSharpClass =
-    new CSharpClass(id, name, fields, implements)
+  def apply(
+             id: TypeId,
+             name: String,
+             fields: Seq[CSharpField],
+             implements: List[InterfaceId] = List.empty)
+           (implicit im: CSharpImports, ts: Typespace): CSharpClass = new CSharpClass(id, name, fields, implements)
 
-  def apply(id: TypeId, name: String, st: Struct, implements: List[InterfaceId])(implicit im: CSharpImports, ts: Typespace): CSharpClass =
-    new CSharpClass(
-      id,
-      name,
-      st.all
-        .groupBy(_.field.name)
-        .map(
-          f =>
-            CSharpField(
-              if (f._2.head.defn.variance.nonEmpty) f._2.head.defn.variance.last else f._2.head.field,
-              name,
-              if (f._2.length > 1) f._2.map(ef => ef.defn.definedBy.name)
-              else Seq.empty
-            )
-        ).toSeq,
-      st.superclasses.interfaces ++ implements
-    )
+  def apply(id: TypeId,
+            name: String,
+            st: Struct,
+            implements: List[InterfaceId])
+           (implicit im: CSharpImports, ts: Typespace): CSharpClass =
+    new CSharpClass(id, name, st.all.groupBy(_.field.name)
+      .map(f =>
+        CSharpField(
+          if (f._2.head.defn.variance.nonEmpty) f._2.head.defn.variance.last else f._2.head.field, name,
+          if (f._2.length > 1) f._2.map(ef => ef.defn.definedBy.name) else Seq.empty)).toSeq,
+      st.superclasses.interfaces ++ implements)
 
-  def apply(id: TypeId, st: SimpleStructure)(implicit im: CSharpImports, ts: Typespace): CSharpClass =
-    new CSharpClass(id, id.name, st.fields.map(f => CSharpField(f, id.name, Seq.empty)), List.empty)
+  def apply(id: TypeId,
+            st: SimpleStructure)
+           (implicit im: CSharpImports, ts: Typespace): CSharpClass =
+    new CSharpClass(id, id.name, st.fields.map(f =>
+        CSharpField(f, id.name, Seq.empty)),
+        List.empty)
 }

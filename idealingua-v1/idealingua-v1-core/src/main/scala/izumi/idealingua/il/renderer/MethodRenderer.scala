@@ -7,9 +7,12 @@ import izumi.idealingua.model.il.ast.typed.{AdtMember, DefMethod, SimpleStructur
 
 class MethodRenderer(context: IDLRenderingContext)(
   implicit evSimpleStructure: Renderable[SimpleStructure],
+
   evTypeId: Renderable[TypeId],
+
   evAdtMember: Renderable[AdtMember],
 ) {
+
 
   def renderMethod(kw: String, tpe: DefMethod): String = {
     tpe match {

@@ -11,17 +11,17 @@ import scala.collection.mutable
 class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   def topology(ops: Seq[ExecutableOp]): PlanTopology = {
     computeTopology(
-      ops,
-      (_) => (_) => false,
-      _ => true
+      ops
+      , (_) => (_) => false
+      , _ => true
     )
   }
 
   def topologyFwdRefs(plan: Iterable[ExecutableOp]): PlanTopology = {
     computeTopology(
-      plan,
-      (acc) => (key) => acc.contains(key),
-      _._2.nonEmpty
+      plan
+      , (acc) => (key) => acc.contains(key)
+      , _._2.nonEmpty
     )
   }
 
@@ -52,17 +52,16 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
   private type PostFilter = ((DIKey, mutable.Set[DIKey])) => Boolean
 
   private def computeTopology(plan: Iterable[ExecutableOp], refFilter: RefFilter, postFilter: PostFilter): PlanTopology = {
-    val dependencies = plan.toList
-      .foldLeft(new Accumulator) {
-        case (acc, op: InstantiationOp) =>
-          val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
-          acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
-          acc
+    val dependencies = plan.toList.foldLeft(new Accumulator) {
+      case (acc, op: InstantiationOp) =>
+        val filtered = requirements(op).filterNot(refFilter(acc)) // it's important NOT to update acc before we computed deps
+        acc.getOrElseUpdate(op.target, mutable.Set.empty) ++= filtered
+        acc
 
-        case (acc, op) =>
-          acc.getOrElseUpdate(op.target, mutable.Set.empty)
-          acc
-      }
+      case (acc, op) =>
+        acc.getOrElseUpdate(op.target, mutable.Set.empty)
+        acc
+    }
       .filter(postFilter)
       .mapValues(_.toSet).toMap
 

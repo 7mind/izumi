@@ -14,6 +14,7 @@ class AbstractDIGcTest extends WordSpec {
     Node(NodeId("5"), Set(NodeId("5"))),
   )
 
+
   "abstract GC" should {
     "not loop forever on circular dependencies" in {
       val gc = new TestGCTracer(false)
@@ -56,7 +57,9 @@ object AbstractDIGcTest {
 
   case class Node(id: NodeId, deps: Set[NodeId])
 
-  class TestGCTracer(override val ignoreMissingDeps: Boolean) extends AbstractGCTracer[NodeId, Node] {
+
+  class TestGCTracer(override val ignoreMissingDeps: Boolean) extends AbstractGCTracer[NodeId, Node]{
+
 
     override protected def prePrune(pruned: Pruned): Pruned = {
       pruned
