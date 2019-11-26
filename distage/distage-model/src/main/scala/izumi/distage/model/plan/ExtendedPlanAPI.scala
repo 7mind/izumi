@@ -8,15 +8,15 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-trait ExtendedPlanAPI {
-  this: AbstractPlan =>
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
+trait ExtendedPlanAPI[OpType <: ExecutableOp] {
+  this: AbstractPlan[OpType] =>
+  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]
 
-  def resolveImport[T: Tag](instance: T): AbstractPlan
+  def resolveImport[T: Tag](instance: T): AbstractPlan[OpType]
 
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
+  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan[OpType]
 
-  def locateImports(locator: Locator): AbstractPlan
+  def locateImports(locator: Locator): AbstractPlan[OpType]
 
   /** Get all imports (unresolved dependencies).
     *
@@ -68,7 +68,7 @@ trait ExtendedPlanAPI {
     SemiPlan(steps.collect(f), gcMode)
   }
 
-  final def ++(that: AbstractPlan): SemiPlan = {
+  final def ++(that: AbstractPlan[OpType]): SemiPlan = {
     val SemiPlan(steps, gcMode) = toSemi
     val that0 = that.toSemi
     SemiPlan(steps ++ that0.steps, gcMode)
@@ -86,8 +86,6 @@ trait ExtendedPlanAPI {
   final def foldLeft[T](z: T, f: (T, ExecutableOp) => T): T = {
     steps.foldLeft(z)(f)
   }
-
-
 
   def toSemi: SemiPlan = {
     val safeSteps = steps.flatMap {

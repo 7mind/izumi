@@ -3,8 +3,8 @@ package izumi.distage.model.plan
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-trait WithLazyIndex {
-  this: AbstractPlan =>
+trait WithLazyIndex[OpType <: ExecutableOp] {
+  this: AbstractPlan[OpType] =>
   def index: Map[DIKey, ExecutableOp] = lazyIndex
   def definition: ModuleBase = lazyDefn
 

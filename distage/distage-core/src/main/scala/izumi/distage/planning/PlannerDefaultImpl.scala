@@ -54,7 +54,7 @@ final class PlannerDefaultImpl
   }
 
   // TODO: add tests
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
+  override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
     order(SemiPlan((a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
