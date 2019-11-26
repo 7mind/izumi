@@ -24,16 +24,6 @@ sealed trait AbstractPlan extends ExtendedPlanAPI {
 
   def index: Map[RuntimeDIUniverse.DIKey, ExecutableOp]
 
-
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
-
-  def resolveImport[T: Tag](instance: T): AbstractPlan
-
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
-
-  def locateImports(locator: Locator): AbstractPlan
-
-
   override def toString: String = {
     steps.map(_.toString).mkString("\n")
   }
@@ -59,7 +49,7 @@ sealed trait ExtendedPlan extends AbstractPlan with WithLazyIndex
   *
   * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
   */
-final case class SemiPlan(/*protected val definition: ModuleBase,*/ steps: Vector[ExecutableOp], gcMode: GCMode) extends ExtendedPlan {
+final case class SemiPlan(steps: Vector[ExecutableOp], gcMode: GCMode) extends ExtendedPlan {
 
   override def toSemi: SemiPlan = this
 
@@ -96,7 +86,7 @@ object SemiPlan {
     */
   implicit def optionalCatsMonoidForSemiplan[K[_] : CatsMonoid]: K[SemiPlan] =
     new Monoid[SemiPlan] {
-      override def empty: SemiPlan = SemiPlan(/*ModuleBase.empty, */Vector.empty, GCMode.NoGC)
+      override def empty: SemiPlan = SemiPlan(Vector.empty, GCMode.NoGC)
 
       override def combine(x: SemiPlan, y: SemiPlan): SemiPlan = x ++ y
     }.asInstanceOf[K[SemiPlan]]
@@ -122,7 +112,7 @@ object SemiPlan {
 
 }
 
-final case class OrderedPlan(/*protected val definition: ModuleBase, */steps: Vector[ExecutableOp], gcMode: GCMode, topology: PlanTopology) extends ExtendedPlan {
+final case class OrderedPlan(steps: Vector[ExecutableOp], gcMode: GCMode, topology: PlanTopology) extends ExtendedPlan {
   /**
     * Be careful, don't use this method blindly, it can disrupt graph connectivity when used improperly.
     *
@@ -144,7 +134,6 @@ final case class OrderedPlan(/*protected val definition: ModuleBase, */steps: Ve
     }
 
     OrderedPlan(
-      //definition.drop(keys),
       newSteps,
       gcMode,
       topology.removeKeys(keys),
@@ -176,7 +165,7 @@ final case class OrderedPlan(/*protected val definition: ModuleBase, */steps: Ve
 object OrderedPlan {
   implicit val defaultFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 
-  def empty: OrderedPlan = OrderedPlan(/*ModuleBase.empty, */Vector.empty, GCMode.NoGC, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
+  def empty: OrderedPlan = OrderedPlan(Vector.empty, GCMode.NoGC, PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required)))
 
   implicit final class PlanSyntax(private val plan: OrderedPlan) extends AnyVal {
     def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
@@ -196,10 +185,10 @@ object OrderedPlan {
     import cats.syntax.traverse._
 
     def traverse[F[_] : Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
-      plan.steps.traverse(f).map(SemiPlan(/*plan.definition,*/ _, plan.gcMode))
+      plan.steps.traverse(f).map(SemiPlan(_, plan.gcMode))
 
     def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
-      plan.steps.traverse(f).map(s => SemiPlan(/*plan.definition,*/ s.flatten, plan.gcMode))
+      plan.steps.traverse(f).map(s => SemiPlan(s.flatten, plan.gcMode))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 

@@ -1,5 +1,6 @@
 package izumi.distage.model.plan
 
+import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
@@ -9,6 +10,14 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait ExtendedPlanAPI {
   this: AbstractPlan =>
+  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
+
+  def resolveImport[T: Tag](instance: T): AbstractPlan
+
+  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
+
+  def locateImports(locator: Locator): AbstractPlan
+
   /** Get all imports (unresolved dependencies).
     *
     * Note, presence of imports does not automatically mean that a plan is invalid,
@@ -19,7 +28,7 @@ trait ExtendedPlanAPI {
     steps.collect { case i: ImportDependency => i }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    SemiPlan(/*definition, */steps = AbstractPlan.resolveImports(f, steps.toVector), gcMode)
+    SemiPlan(steps = AbstractPlan.resolveImports(f, steps.toVector), gcMode)
   }
 
   final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
@@ -45,24 +54,24 @@ trait ExtendedPlanAPI {
   }
 
   final def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
-    val SemiPlan(/*definition, */steps, gcMode) = toSemi
-    SemiPlan(/*definition, */steps.map(f), gcMode)
+    val SemiPlan(steps, gcMode) = toSemi
+    SemiPlan(steps.map(f), gcMode)
   }
 
   final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
-    val SemiPlan(/*definition, */steps, gcMode) = toSemi
-    SemiPlan(/*definition, */steps.flatMap(f), gcMode)
+    val SemiPlan(steps, gcMode) = toSemi
+    SemiPlan(steps.flatMap(f), gcMode)
   }
 
   final def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
-    val SemiPlan(/*definition, */steps, gcMode) = toSemi
-    SemiPlan(/*definition, */steps.collect(f), gcMode)
+    val SemiPlan(steps, gcMode) = toSemi
+    SemiPlan(steps.collect(f), gcMode)
   }
 
   final def ++(that: AbstractPlan): SemiPlan = {
-    val SemiPlan(/*definition, */steps, gcMode) = toSemi
+    val SemiPlan(steps, gcMode) = toSemi
     val that0 = that.toSemi
-    SemiPlan(/*definition ++ (that0: AbstractPlan).definition,*/ steps ++ that0.steps, gcMode)
+    SemiPlan(steps ++ that0.steps, gcMode)
   }
 
   final def collectChildren[T: Tag]: Seq[ExecutableOp] = {
@@ -88,6 +97,6 @@ trait ExtendedPlanAPI {
         Seq(i.op)
       case o => Seq(o)
     }
-    SemiPlan(/*definition,*/ safeSteps.toVector, gcMode)
+    SemiPlan(safeSteps.toVector, gcMode)
   }
 }

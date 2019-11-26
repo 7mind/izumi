@@ -1,7 +1,6 @@
 package izumi.distage.testkit.services.st.adapter
 
 import org.scalatest.TestCancellation
-import org.scalatest.exceptions.TestCanceledException
 
 @deprecated("Use dstest", "2019/Jul/18")
 private[testkit] trait IgnoreSupport {

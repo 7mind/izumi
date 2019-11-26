@@ -55,14 +55,7 @@ trait LocatorDef
         ReferenceInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
-    val moduleDef = Module.make(
-      frozenInstances.map {
-        case IdentifiedRef(key, value) =>
-          Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
-      }.toSet
-    )
-
-    OrderedPlan(/*moduleDef,*/ ops, GCMode.NoGC, topology)
+    OrderedPlan(ops, GCMode.NoGC, topology)
   }
 
   override def parent: Option[Locator] = None

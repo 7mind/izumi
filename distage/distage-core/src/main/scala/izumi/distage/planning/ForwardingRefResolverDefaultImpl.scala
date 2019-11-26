@@ -53,7 +53,7 @@ class ForwardingRefResolverDefaultImpl
     }
 
     val imports = plan.steps.collect({ case i: ImportDependency => i })
-    OrderedPlan(/*plan.definition, */imports ++ proxyOps, plan.gcMode, plan.topology)
+    OrderedPlan(imports ++ proxyOps, plan.gcMode, plan.topology)
   }
 
   protected def initProxiesAtTheEnd(proxies: List[ProxyOp.MakeProxy], resolvedSteps: Seq[ExecutableOp]): Seq[ExecutableOp] = {

@@ -107,15 +107,9 @@ object TracingDIGC extends DIGarbageCollector {
     plan.gcMode match {
       case GCMode.GCRoots(roots) =>
         assert(roots.nonEmpty)
+
         val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-
-//        val updatedDefn = {
-//          val oldDefn = plan.definition.bindings
-//          val reachable = collected.reachable
-//          Module.make(oldDefn.filter(reachable contains _.key))
-//        }
-
-        SemiPlan(/*updatedDefn, */collected.nodes, plan.gcMode)
+        SemiPlan(collected.nodes, plan.gcMode)
 
       case GCMode.NoGC =>
         plan
