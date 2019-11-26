@@ -2,7 +2,7 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.GCMode
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.plan.ExecutableOp.InstantiationOp
+import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 
@@ -11,9 +11,9 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends ExtendedPlanAPI[OpType
 
   def gcMode: GCMode
 
-  def steps: Seq[ExecutableOp]
+  def steps: Seq[OpType]
 
-  def index: Map[RuntimeDIUniverse.DIKey, ExecutableOp]
+  def index: Map[RuntimeDIUniverse.DIKey, OpType]
 
   override def toString: String = {
     steps.map(_.toString).mkString("\n")
@@ -31,9 +31,9 @@ sealed trait ExtendedPlan[OpType <: ExecutableOp] extends AbstractPlan[OpType] w
   * You can turn into an [[OrderedPlan]] via [[izumi.distage.model.Planner.finish]]
   */
 final case class SemiPlan(
-                           steps: Vector[ExecutableOp],
+                           steps: Vector[SemiplanOp],
                            gcMode: GCMode
-                         ) extends ExtendedPlan[InstantiationOp] with SemiPlanOps
+                         ) extends ExtendedPlan[SemiplanOp] with SemiPlanOps
 
 object SemiPlan extends SemiPlanExtensions
 

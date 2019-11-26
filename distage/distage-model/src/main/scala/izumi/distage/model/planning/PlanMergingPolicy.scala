@@ -1,7 +1,8 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, TraceableOp}
-import izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
+import izumi.distage.model.plan.ExecutableOp.SemiplanOp
+import izumi.distage.model.plan.{DodgyPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.Quirks
 
@@ -13,8 +14,8 @@ object PlanMergingPolicy {
 
   sealed trait DIKeyConflictResolution
   object DIKeyConflictResolution {
-    final case class Successful(op: Set[ExecutableOp]) extends DIKeyConflictResolution
-    final case class Failed(candidates: Set[ExecutableOp], explanation: String) extends DIKeyConflictResolution
+    final case class Successful(op: Set[SemiplanOp]) extends DIKeyConflictResolution
+    final case class Failed(candidates: Set[SemiplanOp], explanation: String) extends DIKeyConflictResolution
   }
 
   trait WithResolve {

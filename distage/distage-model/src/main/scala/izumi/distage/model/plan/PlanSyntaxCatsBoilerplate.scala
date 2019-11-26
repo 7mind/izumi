@@ -2,7 +2,7 @@ package izumi.distage.model.plan
 
 import cats.Applicative
 import cats.kernel.Monoid
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -46,6 +46,17 @@ private[plan] object SemiPlanOrderedPlanInstances {
       case i: ImportDependency =>
         f.lift(i).map {
           _.map[ExecutableOp](instance => ReferenceInstance(i.target, Instance(i.target.tpe, instance), i.origin))
+        } getOrElse Applicative[F].pure(i)
+      case op =>
+        Applicative[F].pure(op)
+    }
+
+  @inline
+  final def resolveImportsImpl1[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]], steps: Vector[SemiplanOp]): F[Vector[SemiplanOp]] =
+    steps.traverse {
+      case i: ImportDependency =>
+        f.lift(i).map {
+          _.map[SemiplanOp](instance => ReferenceInstance(i.target, Instance(i.target.tpe, instance), i.origin))
         } getOrElse Applicative[F].pure(i)
       case op =>
         Applicative[F].pure(op)

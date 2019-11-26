@@ -79,7 +79,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
 
     val newSteps = plan.steps.flatMap {
       // do not process top-level references to avoid duplicates (the target of reference will be included anyway)
-      case op @ (_: ExecutableOp.WiringOp.ReferenceKey | _: ExecutableOp.ProxyOp.InitProxy) =>
+      case op: ExecutableOp.WiringOp.ReferenceKey =>
         Seq(op)
 
       case op =>

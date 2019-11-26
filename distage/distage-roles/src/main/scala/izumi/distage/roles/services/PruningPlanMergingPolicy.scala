@@ -2,7 +2,8 @@ package izumi.distage.roles.services
 
 import distage.DIKey
 import izumi.distage.model.definition.BindingTag
-import izumi.distage.model.plan.{DodgyPlan, ExecutableOp, SemiPlan}
+import izumi.distage.model.plan.ExecutableOp.SemiplanOp
+import izumi.distage.model.plan.{DodgyPlan, SemiPlan}
 import izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.PlanMergingPolicyDefaultImpl
@@ -32,9 +33,9 @@ class PruningPlanMergingPolicy(
         logger.debug(s"Untagged conflicts were filtered out in $key: ${noTags.niceList() -> "filtered conflicts"}")
         //logger.warn(s"Untagged alternatives for conflict in $key were filtered out, continuing...")
       }
-      DIKeyConflictResolution.Successful(explicitlyEnabled.map(_.op: ExecutableOp))
+      DIKeyConflictResolution.Successful(explicitlyEnabled.map(_.op: SemiplanOp))
     } else if (noTags.size == 1) {
-      DIKeyConflictResolution.Successful(noTags.map(_.op: ExecutableOp))
+      DIKeyConflictResolution.Successful(noTags.map(_.op: SemiplanOp))
     } else if (filtered.nonEmpty) {
       val hints = makeHints(filtered)
       DIKeyConflictResolution.Failed(operations.map(_.op), s"${filtered.size} options left, possible disambiguations: ${hints.niceList()}")
@@ -44,7 +45,7 @@ class PruningPlanMergingPolicy(
     }
   }
 
-  override protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[ExecutableOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+  override protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[SemiplanOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
     logger.debug(s"Not enough data to solve conflicts, will try to prune: ${formatIssues(issues) -> "issues"}")
 
     val ops = resolved.values.flatten.toVector

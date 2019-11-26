@@ -2,7 +2,7 @@ package izumi.distage.model.plan
 
 import cats.Applicative
 import izumi.distage.model.GCMode
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.OrderedPlanExtensions.{OrderedPlanExts, OrderedPlanSyntax}
 import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.resolveImportsImpl
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -37,11 +37,11 @@ private[plan] object OrderedPlanExtensions {
     import cats.syntax.functor._
     import cats.syntax.traverse._
 
-    def traverse[F[_] : Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
-      plan.steps.traverse(f).map(SemiPlan(_, plan.gcMode))
+    def traverse[F[_] : Applicative](f: SemiplanOp => F[SemiplanOp]): F[SemiPlan] =
+      plan.toSemi.steps.traverse(f).map(SemiPlan(_, plan.gcMode))
 
-    def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
-      plan.steps.traverse(f).map(s => SemiPlan(s.flatten, plan.gcMode))
+    def flatMapF[F[_] : Applicative](f: SemiplanOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
+      plan.toSemi.steps.traverse(f).map(s => SemiPlan(s.flatten, plan.gcMode))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 

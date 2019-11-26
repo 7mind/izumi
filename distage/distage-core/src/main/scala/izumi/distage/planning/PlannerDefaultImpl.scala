@@ -55,7 +55,7 @@ final class PlannerDefaultImpl
 
   // TODO: add tests
   override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
-    order(SemiPlan((a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
+    order(SemiPlan((a.toSemi.steps ++ b.toSemi.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
   override def prepare(input: PlannerInput): DodgyPlan = {
@@ -110,7 +110,7 @@ final class PlannerDefaultImpl
 
     val allOps = (imports.values ++ plan.steps).toVector
     val roots = plan.gcMode.toSet
-    val missingRoots: Vector[ExecutableOp] = roots.diff(allOps.map(_.target).toSet).map {
+    val missingRoots = roots.diff(allOps.map(_.target).toSet).map {
       root =>
         ImportDependency(root, Set.empty, OperationOrigin.Unknown)
     }.toVector

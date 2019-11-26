@@ -9,6 +9,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import distage._
+import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import org.scalatest.{GivenWhenThen, WordSpec}
 
 class CatsExtensionsTest extends WordSpec with GivenWhenThen {
@@ -39,7 +40,7 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
           make[TestDependency1].from(TestDependency1Eq(_: NotInContext): TestDependency1)
         })
       )
-      val testDependencyOp = testDependencyPlan.steps.last
+      val testDependencyOp = testDependencyPlan.steps.last.asInstanceOf[SemiplanOp]
 
       val plan2 = injector.finish(testDependencyPlan.traverse[Id] { _ => testDependencyOp })
 

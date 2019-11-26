@@ -3,9 +3,9 @@ package izumi.distage.model.plan
 import cats.Applicative
 import cats.kernel.Monoid
 import izumi.distage.model.GCMode
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.SemiPlanExtensions.SemiPlanExts
-import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl}
+import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl1 }
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 
 import scala.language.implicitConversions
@@ -34,10 +34,10 @@ private[plan] object SemiPlanExtensions {
   import cats.syntax.traverse._
 
   final class SemiPlanExts(private val plan: SemiPlan) extends AnyVal {
-    def traverse[F[_] : Applicative](f: ExecutableOp => F[ExecutableOp]): F[SemiPlan] =
+    def traverse[F[_] : Applicative](f: SemiplanOp => F[SemiplanOp]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => plan.copy(steps = s))
 
-    def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[ExecutableOp]]): F[SemiPlan] =
+    def flatMapF[F[_] : Applicative](f: SemiplanOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
       plan.steps.traverse(f).map(s => plan.copy(steps = s.flatten))
 
     def resolveImportF[T]: ResolveImportFSemiPlanPartiallyApplied[T] = new ResolveImportFSemiPlanPartiallyApplied(plan)
@@ -45,6 +45,6 @@ private[plan] object SemiPlanExtensions {
     def resolveImportF[F[_] : Applicative, T: Tag](f: F[T]): F[SemiPlan] = resolveImportF[T](f)
 
     def resolveImportsF[F[_] : Applicative](f: PartialFunction[ImportDependency, F[Any]]): F[SemiPlan] =
-      resolveImportsImpl(f, plan.steps).map(s => plan.copy(steps = s))
+      resolveImportsImpl1(f, plan.steps).map(s => plan.copy(steps = s))
   }
 }

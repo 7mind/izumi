@@ -4,6 +4,7 @@ import izumi.distage.model.plan.{ExecutableOp, OperationOrigin}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.typesafe.config.{ConfigOrigin, ConfigValue}
+import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 sealed trait TranslationResult
@@ -27,11 +28,11 @@ object TranslationResult {
     }
   }
 
-  final case class Success(op: ExecutableOp, path: ConfigPath) extends TranslationResult
+  final case class Success(op: SemiplanOp, path: ConfigPath) extends TranslationResult
 
-  final case class Passthrough(op: ExecutableOp) extends TranslationResult
+  final case class Passthrough(op: SemiplanOp) extends TranslationResult
 
-  final case class MissingConfigValue(op: ExecutableOp, paths: Seq[(ConfigPath, Throwable)], configOrigin: ConfigOrigin) extends TranslationFailure {
+  final case class MissingConfigValue(op: SemiplanOp, paths: Seq[(ConfigPath, Throwable)], configOrigin: ConfigOrigin) extends TranslationFailure {
     override def toString: String = {
       import izumi.fundamentals.platform.strings.IzString._
       val tried = paths.map {
@@ -46,11 +47,11 @@ object TranslationResult {
     }
   }
 
-  final case class ExtractionFailure(op: ExecutableOp, tpe: SafeType, path: String, config: ConfigValue, configOrigin: ConfigOrigin, f: Throwable) extends TranslationFailure {
+  final case class ExtractionFailure(op: SemiplanOp, tpe: SafeType, path: String, config: ConfigValue, configOrigin: ConfigOrigin, f: Throwable) extends TranslationFailure {
     override def toString: String = s"$origin: cannot read $tpe out of $path ==> $config: ${f.stackTrace}\nWhen reading from ConfigOrigin: $configOrigin"
   }
 
-  final case class Failure(op: ExecutableOp, configOrigin: ConfigOrigin, f: Throwable) extends TranslationFailure {
+  final case class Failure(op: SemiplanOp, configOrigin: ConfigOrigin, f: Throwable) extends TranslationFailure {
     override def toString: String = s"$origin: unexpected exception: ${f.stackTrace}\nWhen reading from ConfigOrigin: $configOrigin"
   }
 
