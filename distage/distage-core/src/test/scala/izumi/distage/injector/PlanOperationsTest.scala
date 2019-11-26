@@ -32,7 +32,11 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent2]
     }, primary ++ sub)
 
-    val split = injector.trisectByPredicate(definition.bindings, primary)(_ => sub)
+    val split = injector.trisectByPredicate(definition.bindings, primary) {
+      baseplan =>
+        assert(sub.intersect(baseplan.index.keySet).isEmpty)
+        sub
+    }
 
     assert(Set(sc0, sc1, sc2).diff(split.shared.plan.index.keySet).isEmpty)
 

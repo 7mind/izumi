@@ -3,7 +3,7 @@ package izumi.distage.model
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
-
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner extends PlannerExtendedAPI {
@@ -23,6 +23,8 @@ trait Planner extends PlannerExtendedAPI {
   def freeze(plan: PrePlan): SemiPlan
 
   def finish(semiPlan: SemiPlan): OrderedPlan
+
+  def truncate(plan: OrderedPlan, roots: Set[DIKey]): OrderedPlan
 }
 
 

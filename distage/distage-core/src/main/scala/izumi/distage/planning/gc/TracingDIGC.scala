@@ -11,12 +11,12 @@ import scala.collection.mutable
 class TracingDIGC[OpType <: ExecutableOp]
 (
   roots: Set[DIKey],
-  fullIndex: Map[DIKey, SemiplanOp],
+  fullIndex: Map[DIKey, OpType],
   override val ignoreMissingDeps: Boolean,
-) extends AbstractGCTracer[DIKey, SemiplanOp] {
+) extends AbstractGCTracer[DIKey, OpType] {
 
   @inline
-  override protected def extractDependencies(index: Map[DIKey, SemiplanOp], node: SemiplanOp): Set[DIKey] = {
+  override protected def extractDependencies(index: Map[DIKey, OpType], node: OpType): Set[DIKey] = {
     node match {
       case op: ExecutableOp.InstantiationOp =>
         op match {
@@ -90,12 +90,12 @@ class TracingDIGC[OpType <: ExecutableOp]
         o
     }
 
-    Pruned(prefiltered, newTraced.toSet)
+    Pruned(prefiltered.map(_.asInstanceOf[OpType]), newTraced.toSet)
   }
 
   override protected def isRoot(node: DIKey): Boolean = roots.contains(node)
 
-  override protected def id(node: SemiplanOp): DIKey = node.target
+  override protected def id(node: OpType): DIKey = node.target
 }
 
 object TracingDIGC extends DIGarbageCollector {

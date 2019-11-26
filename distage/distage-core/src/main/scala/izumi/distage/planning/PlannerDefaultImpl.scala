@@ -10,7 +10,9 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.SymbolIntrospector
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.{Planner, PlannerInput}
+import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
 
@@ -27,6 +29,19 @@ final class PlannerDefaultImpl
   symbolIntrospector: SymbolIntrospector.Runtime,
 )
   extends Planner {
+
+
+  override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
+    if (roots.isEmpty) {
+      OrderedPlan.empty
+    } else {
+      println(roots)
+      println(plan.index.keySet)
+      assert(roots.diff(plan.index.keySet).isEmpty)
+      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
+      OrderedPlan(collected.nodes, GCMode.GCRoots(roots), analyzer.topology(collected.nodes))
+    }
+  }
 
   override def plan(input: PlannerInput): OrderedPlan = {
     Value(input)

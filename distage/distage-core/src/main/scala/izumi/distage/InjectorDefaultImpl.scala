@@ -8,6 +8,7 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{AbstractPlan, ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
@@ -37,6 +38,11 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
 
   override def finish(semiPlan: SemiPlan): OrderedPlan = {
     planner.finish(semiPlan)
+  }
+
+
+  override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
+    planner.truncate(plan, roots)
   }
 
   override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
