@@ -1,6 +1,5 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}

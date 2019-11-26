@@ -131,7 +131,7 @@ class ClientWsDispatcher[C <: Http4sContext]
               logger.error(s"${packetInfo -> null}: WS processing failed, $exception $trace")
               F.pure(Some(rpc.RpcPacket.buzzerFail(Some(id), exception.getMessage)))
           }
-          maybeEncoded <- F(maybePacket.map(r => printer.pretty(r.asJson)))
+          maybeEncoded <- F(maybePacket.map(r => printer.print(r.asJson)))
           _ <- F {
             maybeEncoded match {
               case Some(response) =>
@@ -183,7 +183,7 @@ class ClientWsDispatcher[C <: Http4sContext]
               val pid = w.id.get // guaranteed to be present
 
               F {
-                val out = printer.pretty(transformRequest(w).asJson)
+                val out = printer.print(transformRequest(w).asJson)
                 logger.debug(s"${request.method -> "method"}, ${pid -> "id"}: Prepared request $encoded")
                 requestState.request(pid, request.method)
                 send(out)
