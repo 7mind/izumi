@@ -97,7 +97,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
           case s: DIKey.SetElementKey if s.set == setKey =>
             Seq(op)
 
-          case _ if ExecutableOp.instanceType(op) <:< instanceType =>
+          case _ if op.instanceType <:< instanceType =>
             if (instanceType == setElementType) {
               newMembers += op.target
               Seq(op)

@@ -5,6 +5,11 @@ import izumi.distage.model.GCMode
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.OrderedPlanExtensions.{OrderedPlanExts, OrderedPlanSyntax}
 import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.resolveImportsImpl
+import izumi.distage.model.plan.repr.{CompactPlanFormatter, DepTreeRenderer}
+import izumi.distage.model.plan.topology.DepTreeNode.DepNode
+import izumi.distage.model.plan.topology.DependencyGraph
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
+import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.functional.Renderable
 

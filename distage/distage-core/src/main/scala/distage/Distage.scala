@@ -63,7 +63,7 @@ trait Distage {
   type BootstrapModule = model.definition.BootstrapModule
   val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 
-  val CompactPlanFormatter: model.plan.CompactPlanFormatter.type = model.plan.CompactPlanFormatter
+  val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
 
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

@@ -161,8 +161,6 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: ProxyOp =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is proxy O_o: $keys", op)
         case op: InstantiationOp if !symbolIntrospector.canBeProxied(op.target.tpe) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
@@ -188,7 +186,7 @@ final class PlannerDefaultImpl
   }
 
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
-    val fstoTpe = ExecutableOp.instanceType(fsto)
+    val fstoTpe = fsto.instanceType
     val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
     val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
     hasByName

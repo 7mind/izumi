@@ -59,7 +59,7 @@ trait ExtendedPlanAPI[OpType <: ExecutableOp] {
     val parent = SafeType.get[T]
     steps.filter {
       op =>
-        val maybeChild = ExecutableOp.instanceType(op)
+        val maybeChild = op.instanceType
         maybeChild <:< parent
     }
   }

@@ -61,7 +61,7 @@ package object distage extends Distage {
   override type BootstrapModule = model.definition.BootstrapModule
   override val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 
-  override val CompactPlanFormatter: model.plan.CompactPlanFormatter.type = model.plan.CompactPlanFormatter
+  override val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
 
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

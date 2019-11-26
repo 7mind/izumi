@@ -1,6 +1,7 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.plan.{ExecutableOp, PlanTopology}
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable

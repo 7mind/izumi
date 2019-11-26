@@ -2,6 +2,7 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -69,31 +70,30 @@ object ExecutableOp {
   }
 
   object MonadicOp {
-
     final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: OperationOrigin) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
-
     final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: OperationOrigin) extends MonadicOp {
       override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
     }
-
   }
 
   sealed trait ProxyOp extends ExecutableOp
 
   object ProxyOp {
-
     final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: OperationOrigin, byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target
     }
-
     final case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy, origin: OperationOrigin) extends ProxyOp
+  }
+
+  implicit class ExecutableOpExt(val op: ExecutableOp) extends AnyVal {
+    def instanceType: SafeType = opInstanceType(op)
 
   }
 
   @tailrec
-  def instanceType(op: ExecutableOp): SafeType = {
+  private[this] def opInstanceType(op: ExecutableOp): SafeType = {
     op match {
       case w: WiringOp =>
         w.wiring match {
@@ -103,7 +103,7 @@ object ExecutableOp {
             w.target.tpe
         }
       case p: MakeProxy =>
-        instanceType(p.op)
+        opInstanceType(p.op)
       case o =>
         o.target.tpe
     }

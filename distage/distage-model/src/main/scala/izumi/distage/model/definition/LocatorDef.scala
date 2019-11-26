@@ -11,6 +11,9 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.topology.DependencyGraph
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
+import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe

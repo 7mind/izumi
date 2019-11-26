@@ -3,7 +3,7 @@ package izumi.distage.injector
 import izumi.distage.fixtures.BasicCases.BasicCase1.{Impl1, JustTrait}
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.plan.CompactPlanFormatter._
+import izumi.distage.model.plan.repr.CompactPlanFormatter._
 import izumi.functional.Renderable._
 import distage.ModuleDef
 import org.scalatest.WordSpec

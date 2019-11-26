@@ -3,6 +3,8 @@ package izumi.distage.model.plan
 import izumi.distage.model.GCMode
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
+import izumi.distage.model.plan.impl.PlanLazyOps
+import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 
@@ -23,7 +25,7 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends ExtendedPlanAPI[OpType
 
 object AbstractPlan extends AbstractPlanOps
 
-sealed trait ExtendedPlan[OpType <: ExecutableOp] extends AbstractPlan[OpType] with WithLazyIndex[OpType]
+sealed trait ExtendedPlan[OpType <: ExecutableOp] extends AbstractPlan[OpType] with PlanLazyOps[OpType]
 
 /**
   * An unordered plan.

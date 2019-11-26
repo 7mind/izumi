@@ -1,10 +1,11 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.topology
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.plan.topology.DepTreeNode.DepNode
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
-import scala.collection.compat._
+
 
 case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) {
   def dropDepsOf(keys: Set[DIKey]): DependencyGraph = {
@@ -61,39 +62,14 @@ case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) 
   }
 }
 
-/**
-  * This class represents direct node dependencies and allows to retrive full transitive dependencies for a node
-  */
-sealed trait PlanTopology {
-  def removeKeys(keys: Set[DIKey]): PlanTopology
+object DependencyGraph {
+  sealed trait DependencyKind
 
-  def dependees: DependencyGraph
+  object DependencyKind {
 
-  def dependencies: DependencyGraph
+    final case object Depends extends DependencyKind
 
-  /**
-    * This method is relatively expensive
-    *
-    * @return full set of all the keys transitively depending on key
-    */
-  def transitiveDependees(key: DIKey): Set[DIKey] = dependees.transitive(key)
+    final case object Required extends DependencyKind
 
-  /**
-    * This method is relatively expensive
-    *
-    * @return full set of all the keys transitively depending on key
-    */
-  def transitiveDependencies(key: DIKey): Set[DIKey] = dependencies.transitive(key)
-}
-
-final case class PlanTopologyImmutable(
-                                        dependees: DependencyGraph
-                                        , dependencies: DependencyGraph
-                                      ) extends PlanTopology {
-  override def removeKeys(keys: Set[RuntimeDIUniverse.DIKey]): PlanTopology = {
-    PlanTopologyImmutable(
-      dependees.dropDepsOf(keys),
-      dependencies.dropDepsOf(keys),
-    )
   }
 }
