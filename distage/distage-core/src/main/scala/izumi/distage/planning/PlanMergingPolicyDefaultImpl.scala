@@ -4,6 +4,7 @@ import distage.DIKey
 import izumi.distage.model.exceptions.ConflictingDIKeyBindingsException
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.model.planning.PlanMergingPolicy.{DIKeyConflictResolution, WithResolve}
 import izumi.fundamentals.platform.language.Quirks
@@ -13,7 +14,7 @@ import scala.collection.mutable
 
 class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
 
-  override final def freeze(plan: DodgyPlan): SemiPlan = {
+  override final def freeze(plan: PrePlan): SemiPlan = {
     val resolved = mutable.HashMap[DIKey, Set[SemiplanOp]]()
     val issues = mutable.HashMap[DIKey, DIKeyConflictResolution.Failed]()
 
@@ -35,7 +36,7 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
   }
 
 
-  protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[SemiplanOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+  protected def handleIssues(plan: PrePlan, resolved: Map[DIKey, Set[SemiplanOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
     Quirks.discard(plan, resolved)
     throwOnIssues(issues)
   }

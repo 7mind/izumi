@@ -8,7 +8,7 @@ import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 
-sealed trait AbstractPlan[OpType <: ExecutableOp] extends ExtendedPlanAPI[OpType] {
+sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAPI[OpType] {
   def definition: ModuleBase
 
   def gcMode: GCMode

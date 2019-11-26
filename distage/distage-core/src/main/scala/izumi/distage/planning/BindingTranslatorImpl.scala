@@ -3,7 +3,8 @@ package izumi.distage.planning
 import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{Binding, ImplDef}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, MonadicOp, WiringOp}
-import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.{NextOps, PrePlan}
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
@@ -11,7 +12,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 
 trait BindingTranslator {
-  def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps
+  def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps
 }
 
 class BindingTranslatorImpl(
@@ -19,7 +20,7 @@ class BindingTranslatorImpl(
                              protected val hook: PlanningHook,
 
                            ) extends BindingTranslator {
-  def computeProvisioning(currentPlan: DodgyPlan, binding: Binding): NextOps = {
+  def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps = {
     binding match {
       case singleton: SingletonBinding[_] =>
         val newOp = provisionSingleton(singleton)

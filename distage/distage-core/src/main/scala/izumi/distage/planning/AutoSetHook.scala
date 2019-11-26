@@ -1,7 +1,8 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.plan.{ExecutableOp, OperationOrigin, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._

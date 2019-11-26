@@ -1,7 +1,8 @@
 package izumi.distage.model.plan.impl
 
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.plan.{AbstractPlan, ExecutableOp, OperationOrigin}
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.{AbstractPlan, ExecutableOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait PlanLazyOps[OpType <: ExecutableOp] {

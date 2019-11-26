@@ -1,13 +1,14 @@
 package izumi.distage.model.planning
 
-import izumi.distage.model.plan.DodgyPlan.{JustOp, SetOp, TraceableOp}
+import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import izumi.distage.model.plan.{DodgyPlan, SemiPlan}
+import izumi.distage.model.plan.SemiPlan
+import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
-  def freeze(plan: DodgyPlan): SemiPlan
+  def freeze(plan: PrePlan): SemiPlan
 }
 
 object PlanMergingPolicy {
@@ -20,7 +21,7 @@ object PlanMergingPolicy {
 
   trait WithResolve {
     this: PlanMergingPolicy =>
-    final protected def resolve(plan: DodgyPlan, key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
+    final protected def resolve(plan: PrePlan, key: DIKey, operations: Set[TraceableOp]): DIKeyConflictResolution = {
       operations match {
         case s if s.size == 1 =>
           DIKeyConflictResolution.Successful(Set(s.head.op))
@@ -40,7 +41,7 @@ object PlanMergingPolicy {
       }
     }
 
-    protected def resolveConflict(plan: DodgyPlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
+    protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
       Quirks.discard(key, plan)
       DIKeyConflictResolution.Failed(operations.map(_.op), "Default policy cannot handle multiple bindings")
     }

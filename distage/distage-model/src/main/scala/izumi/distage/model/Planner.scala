@@ -2,6 +2,7 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
@@ -99,9 +100,9 @@ trait Planner {
 
   def rewrite(module: ModuleBase): ModuleBase
 
-  def prepare(input: PlannerInput): DodgyPlan
+  def prepare(input: PlannerInput): PrePlan
 
-  def freeze(plan: DodgyPlan): SemiPlan
+  def freeze(plan: PrePlan): SemiPlan
 
   def finish(semiPlan: SemiPlan): OrderedPlan
 

@@ -6,6 +6,8 @@ import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.SymbolIntrospector
 import izumi.distage.model.{Planner, PlannerInput}
@@ -45,7 +47,7 @@ final class PlannerDefaultImpl
     hook.hookDefinition(module)
   }
 
-  override def freeze(plan: DodgyPlan): SemiPlan = {
+  override def freeze(plan: PrePlan): SemiPlan = {
     Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
@@ -58,8 +60,8 @@ final class PlannerDefaultImpl
     order(SemiPlan((a.toSemi.steps ++ b.toSemi.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
-  override def prepare(input: PlannerInput): DodgyPlan = {
-      input.bindings.bindings.foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
+  override def prepare(input: PlannerInput): PrePlan = {
+      input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
       case (currentPlan, binding) =>
         Value(bindingTranslator.computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)

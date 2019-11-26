@@ -5,7 +5,7 @@ import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-trait ExtendedPlanAPI[OpType <: ExecutableOp] {
+trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
   this: AbstractPlan[OpType] =>
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]
 
@@ -23,8 +23,6 @@ trait ExtendedPlanAPI[OpType <: ExecutableOp] {
     * */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
-
-
 
   final def keys: Set[DIKey] = {
     steps.map(_.target).toSet

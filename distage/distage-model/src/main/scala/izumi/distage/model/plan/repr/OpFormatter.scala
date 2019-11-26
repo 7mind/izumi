@@ -4,7 +4,8 @@ import izumi.distage.model.plan.ExecutableOp.MonadicOp._
 import izumi.distage.model.plan.ExecutableOp.ProxyOp._
 import izumi.distage.model.plan.ExecutableOp.WiringOp._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
-import izumi.distage.model.plan.{ExecutableOp, OperationOrigin}
+import izumi.distage.model.plan.ExecutableOp
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._

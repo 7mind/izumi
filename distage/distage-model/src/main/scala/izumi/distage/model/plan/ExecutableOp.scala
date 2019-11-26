@@ -2,6 +2,7 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
@@ -9,28 +10,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.annotation.tailrec
 
-sealed trait OperationOrigin {
-  def toSynthetic: OperationOrigin.Synthetic
-}
-object OperationOrigin {
-  sealed trait Defined extends OperationOrigin {
-    def binding: Binding
-  }
 
-  case class UserBinding(binding: Binding) extends Defined {
-    override def toSynthetic: Synthetic = SyntheticBinding(binding)
-  }
 
-  sealed trait Synthetic extends OperationOrigin
-
-  case class SyntheticBinding(binding: Binding) extends Synthetic with Defined {
-    override def toSynthetic: Synthetic = this
-  }
-
-  case object Unknown extends Synthetic {
-    override def toSynthetic: Synthetic = this
-  }
-}
 
 sealed trait ExecutableOp {
   def target: DIKey

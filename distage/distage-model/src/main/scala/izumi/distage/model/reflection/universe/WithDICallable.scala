@@ -1,7 +1,8 @@
 package izumi.distage.model.reflection.universe
 
 import izumi.distage.model.exceptions.DIException
-import izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
+import izumi.distage.model.plan.operations.WithDIWiring
+import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIWiring}
 import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait WithDICallable {

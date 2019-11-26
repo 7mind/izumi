@@ -1,7 +1,8 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.{Binding, ModuleBase}
-import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
@@ -24,7 +25,7 @@ final class PlanningHookAggregate
     }
   }
 
-  override def phase00PostCompletion(plan: DodgyPlan): DodgyPlan = {
+  override def phase00PostCompletion(plan: PrePlan): PrePlan = {
     hooks.foldLeft(plan) {
       case (acc, hook) =>
         hook.phase00PostCompletion(acc)

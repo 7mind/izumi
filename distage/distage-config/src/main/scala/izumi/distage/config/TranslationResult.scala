@@ -1,10 +1,11 @@
 package izumi.distage.config
 
-import izumi.distage.model.plan.{ExecutableOp, OperationOrigin}
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import com.typesafe.config.{ConfigOrigin, ConfigValue}
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 
 sealed trait TranslationResult

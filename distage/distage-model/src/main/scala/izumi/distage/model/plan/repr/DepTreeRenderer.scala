@@ -3,7 +3,8 @@ package izumi.distage.model.plan.repr
 import izumi.distage.model.plan.topology.DepTreeNode
 import izumi.distage.model.plan.topology.DepTreeNode._
 import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
-import izumi.distage.model.plan.{OperationOrigin, OrderedPlan}
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable

@@ -3,7 +3,8 @@ package izumi.distage.roles.services
 import distage.DIKey
 import izumi.distage.model.definition.BindingTag
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import izumi.distage.model.plan.{DodgyPlan, SemiPlan}
+import izumi.distage.model.plan.SemiPlan
+import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanMergingPolicy.DIKeyConflictResolution
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.PlanMergingPolicyDefaultImpl
@@ -18,7 +19,7 @@ class PruningPlanMergingPolicy(
                               ) extends PlanMergingPolicyDefaultImpl {
   private val activeTags = activation.active.values.toSet
 
-  override protected def resolveConflict(plan: DodgyPlan, key: RuntimeDIUniverse.DIKey, operations: Set[DodgyPlan.JustOp]): DIKeyConflictResolution = {
+  override protected def resolveConflict(plan: PrePlan, key: RuntimeDIUniverse.DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)
     val filtered = operations.filter {
       _.binding.tags
@@ -45,7 +46,7 @@ class PruningPlanMergingPolicy(
     }
   }
 
-  override protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[SemiplanOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
+  override protected def handleIssues(plan: PrePlan, resolved: Map[DIKey, Set[SemiplanOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
     logger.debug(s"Not enough data to solve conflicts, will try to prune: ${formatIssues(issues) -> "issues"}")
 
     val ops = resolved.values.flatten.toVector
@@ -89,7 +90,7 @@ class PruningPlanMergingPolicy(
     }
   }
 
-  private def makeHints(ops: Set[DodgyPlan.JustOp]): Seq[String] = {
+  private def makeHints(ops: Set[PrePlan.JustOp]): Seq[String] = {
     ops
       .toSeq
       .map {

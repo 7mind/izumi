@@ -5,12 +5,13 @@ import izumi.distage.config.annotations._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.config.model.exceptions.ConfigTranslationException
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.model.plan.{ExecutableOp, OperationOrigin, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.typesafe.config.RuntimeConfigReader
 import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
+import izumi.distage.model.plan.operations.OperationOrigin
 
 import scala.util.Try
 import scala.util.control.NonFatal
