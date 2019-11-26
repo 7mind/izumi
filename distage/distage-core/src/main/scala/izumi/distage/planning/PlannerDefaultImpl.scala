@@ -37,7 +37,7 @@ final class PlannerDefaultImpl
     } else {
       assert(roots.diff(plan.index.keySet).isEmpty)
       val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-      OrderedPlan(collected.nodes, GCMode.GCRoots(roots), analyzer.topology(collected.nodes))
+      OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
     }
   }
 
@@ -56,7 +56,7 @@ final class PlannerDefaultImpl
       .get
   }
 
-  override def rewrite(module: ModuleBase): ModuleBase= {
+  override def rewrite(module: ModuleBase): ModuleBase = {
     hook.hookDefinition(module)
   }
 
@@ -68,13 +68,8 @@ final class PlannerDefaultImpl
       .get
   }
 
-  // TODO: add tests
-  override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
-    order(SemiPlan((a.toSemi.steps ++ b.toSemi.steps).toVector, a.gcMode ++ b.gcMode))
-  }
-
   override def prepare(input: PlannerInput): PrePlan = {
-      input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
+    input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
       case (currentPlan, binding) =>
         Value(bindingTranslator.computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -197,7 +192,13 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    OrderedPlan(sortedOps.toVector, completedPlan.gcMode, topology)
+    val roots = completedPlan.gcMode match {
+      case GCMode.GCRoots(roots) =>
+        roots
+      case GCMode.NoGC =>
+        topology.effectiveRoots
+    }
+    OrderedPlan(sortedOps.toVector, roots, topology)
   }
 
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {

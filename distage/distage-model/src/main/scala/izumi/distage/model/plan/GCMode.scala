@@ -4,17 +4,18 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 sealed trait GCMode {
   def toSet: Set[DIKey]
-
-  final def ++(that: GCMode): GCMode = (this, that) match {
-    case (GCMode.NoGC, _) => GCMode.NoGC
-    case (_, GCMode.NoGC) => GCMode.NoGC
-    case (GCMode.GCRoots(aRoots), GCMode.GCRoots(bRoots)) =>
-      GCMode.GCRoots(aRoots ++ bRoots)
-  }
 }
 
 object GCMode {
   def apply(key: DIKey, more: DIKey*): GCMode = GCRoots(more.toSet + key)
+
+  def fromSet(roots: Set[DIKey]): GCMode = {
+    if (roots.isEmpty) {
+      NoGC
+    } else {
+      GCRoots(roots)
+    }
+  }
 
   final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")

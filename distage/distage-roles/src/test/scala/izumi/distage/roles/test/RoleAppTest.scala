@@ -118,7 +118,7 @@ class RoleAppTest extends WordSpec
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side.gcMode.toSet, locator)
+              integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
               assert(initCounter.startedCloseables.size == 3)
               assert(initCounter.checkedResources.size == 2)
@@ -153,7 +153,7 @@ class RoleAppTest extends WordSpec
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side.gcMode.toSet, locator)
+              integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
               assert(initCounter.startedCloseables.size == 3)
               assert(initCounter.checkedResources.size == 2)

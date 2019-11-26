@@ -5,7 +5,7 @@ import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.initial.PrePlan
-import izumi.distage.model.plan.{AbstractPlan, ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -43,10 +43,6 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
 
   override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
     planner.truncate(plan, roots)
-  }
-
-  override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
-    planner.merge(a, b)
   }
 
   override protected[distage] def produceFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator] = {

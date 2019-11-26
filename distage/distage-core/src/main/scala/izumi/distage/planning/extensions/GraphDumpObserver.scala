@@ -4,16 +4,16 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
+import distage._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
-import izumi.distage.model.plan.{GCMode, OrderedPlan => _, SemiPlan => _, _}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.repr.KeyMinimizer
+import izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import izumi.fundamentals.graphs.dotml.Digraph
 import izumi.fundamentals.platform.language.Quirks._
-import distage._
-import izumi.distage.model.plan.initial.PrePlan
-import izumi.distage.model.plan.repr.KeyMinimizer
 
 import scala.collection.mutable
 
@@ -85,12 +85,7 @@ final class GraphDumpObserver
     val missingKeysSeq = missingKeys.toSeq
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
-    val roots = finalPlan.gcMode match {
-      case GCMode.GCRoots(roots) =>
-        roots
-      case GCMode.NoGC =>
-        Set.empty[DIKey]
-    }
+    val roots = finalPlan.declaredRoots
 
     goodKeys.foreach {
       k =>

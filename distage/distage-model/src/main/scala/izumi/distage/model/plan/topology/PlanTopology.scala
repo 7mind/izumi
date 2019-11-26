@@ -1,5 +1,6 @@
 package izumi.distage.model.plan.topology
 
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 
@@ -26,9 +27,15 @@ sealed trait PlanTopology {
     * @return full set of all the keys transitively depending on key
     */
   def transitiveDependencies(key: DIKey): Set[DIKey] = dependencies.transitive(key)
+
+  def effectiveRoots: Set[DIKey] = {
+    dependees.graph.toSeq.filter(_._2.isEmpty).map(_._1).toSet
+  }
 }
 
 object PlanTopology {
+
+  def empty: PlanTopologyImmutable = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required))
 
   final case class PlanTopologyImmutable(
                                           dependees: DependencyGraph
@@ -40,6 +47,8 @@ object PlanTopology {
         dependencies.dropDepsOf(keys),
       )
     }
+
+
   }
 
 }

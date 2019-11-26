@@ -1,8 +1,9 @@
 package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.model.plan.{AbstractPlan, OrderedPlan}
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
+import izumi.distage.model.plan.{AbstractPlan, GCMode, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait OrderedPlanOps {
@@ -13,11 +14,10 @@ trait OrderedPlanOps {
     * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
     */
   def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
-    val roots = gcMode.toSet
     val newSteps = steps.flatMap {
       case s if keys.contains(s.target) =>
         val dependees = topology.dependees.direct(s.target)
-        if (dependees.diff(keys).nonEmpty || roots.contains(s.target)) {
+        if (dependees.diff(keys).nonEmpty || declaredRoots.contains(s.target)) {
           val dependees = topology.dependees.transitive(s.target).diff(keys)
           Seq(ImportDependency(s.target, dependees, s.origin.toSynthetic))
         } else {
@@ -29,7 +29,7 @@ trait OrderedPlanOps {
 
     OrderedPlan(
       newSteps,
-      gcMode,
+      declaredRoots,
       topology.removeKeys(keys),
     )
   }
@@ -53,5 +53,20 @@ trait OrderedPlanOps {
 
   override def locateImports(locator: Locator): OrderedPlan = {
     resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
+  }
+
+  override def toSemi: SemiPlan = {
+    val safeSteps: Seq[SemiplanOp] = steps.flatMap{
+      case s: SemiplanOp =>
+        Seq(s)
+      case s: ProxyOp =>
+        s match {
+          case m: MakeProxy =>
+            Seq(m.op)
+          case _: InitProxy =>
+            Seq.empty
+        }
+    }
+    SemiPlan(safeSteps.toVector, GCMode.fromSet(declaredRoots))
   }
 }

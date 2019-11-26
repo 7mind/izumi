@@ -114,7 +114,7 @@ class DistageTestRunner[F[_] : TagK]
 
   private def ifIntegChecksOk(F: DIEffect[F], integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit]): F[Unit] = {
     implicit val FF: DIEffect[F] = F
-    integrationChecker.collectFailures(plans.side.gcMode.toSet, integLocator).flatMap {
+    integrationChecker.collectFailures(plans.side.declaredRoots, integLocator).flatMap {
       case Left(value) =>
         F.traverse_(testplans) {
           test =>

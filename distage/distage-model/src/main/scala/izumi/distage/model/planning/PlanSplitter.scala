@@ -30,9 +30,9 @@ trait PlanSplitter {
     val primplan = baseplan.replaceWithImports(sharedKeys)
     val subplan = extractedSubplan.replaceWithImports(sharedKeys)
 
-    assert(subplan.gcMode.toSet == subplanRoots)
-    assert(primplan.gcMode.toSet == primaryRoots)
-    assert(sharedPlan.gcMode.toSet == sharedKeys)
+    assert(subplan.declaredRoots == subplanRoots)
+    assert(primplan.declaredRoots == primaryRoots)
+    assert(sharedPlan.declaredRoots == sharedKeys)
 
     TriSplittedPlan(
       subplan,

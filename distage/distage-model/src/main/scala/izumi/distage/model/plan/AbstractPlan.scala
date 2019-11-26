@@ -4,17 +4,15 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.impl.{AbstractPlanOps, OrderedPlanExtensions, OrderedPlanOps, PlanLazyOps, SemiPlanExtensions, SemiPlanOps}
 import izumi.distage.model.plan.topology.PlanTopology
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 
 sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAPI[OpType] {
   def definition: ModuleBase
 
-  def gcMode: GCMode
-
   def steps: Seq[OpType]
 
-  def index: Map[RuntimeDIUniverse.DIKey, OpType]
+  def index: Map[DIKey, OpType]
 
   override def toString: String = {
     steps.map(_.toString).mkString("\n")
@@ -45,7 +43,7 @@ object SemiPlan extends SemiPlanExtensions
   */
 final case class OrderedPlan(
                               steps: Vector[ExecutableOp],
-                              gcMode: GCMode,
+                              declaredRoots: Set[DIKey],
                               topology: PlanTopology
                             ) extends ExtendedPlan[ExecutableOp] with OrderedPlanOps
 

@@ -50,7 +50,7 @@ object StartupPlanExecutor {
                       .produceFX[F](appPlan.app.side, filters.filterF)
                       .use {
                         integrationLocator =>
-                          integrationChecker.checkOrFail(appPlan.app.side.gcMode.toSet, integrationLocator)
+                          integrationChecker.checkOrFail(appPlan.app.side.declaredRoots, integrationLocator)
                       }
                       .flatMap {
                         _ =>

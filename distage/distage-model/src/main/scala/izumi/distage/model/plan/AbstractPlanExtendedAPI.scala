@@ -1,8 +1,7 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.Locator
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
@@ -66,18 +65,6 @@ trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
     steps.foldLeft(z)(f)
   }
 
-  def toSemi: SemiPlan = {
-    val safeSteps: Seq[SemiplanOp] = steps.flatMap{
-      case s: SemiplanOp =>
-        Seq(s)
-      case s: ProxyOp =>
-        s match {
-          case m: MakeProxy =>
-            Seq(m.op)
-          case _: InitProxy =>
-            Seq.empty
-        }
-    }
-    SemiPlan(safeSteps.toVector, gcMode)
-  }
+  def toSemi: SemiPlan
+
 }

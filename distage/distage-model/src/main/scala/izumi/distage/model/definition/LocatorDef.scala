@@ -59,7 +59,7 @@ trait LocatorDef
         ReferenceInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
-    OrderedPlan(ops, GCMode.NoGC, topology)
+    OrderedPlan(ops, ops.map(_.target).toSet, topology)
   }
 
   override def parent: Option[Locator] = None
