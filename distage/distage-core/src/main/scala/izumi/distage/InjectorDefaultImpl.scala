@@ -4,7 +4,7 @@ import izumi.distage.model._
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.plan.{AbstractPlan, DodgyPlan, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{AbstractPlan, DodgyPlan, ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
@@ -38,7 +38,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.finish(semiPlan)
   }
 
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
+  override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
     planner.merge(a, b)
   }
 

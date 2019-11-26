@@ -1,22 +1,19 @@
 package izumi.distage.model.plan
 
 import izumi.distage.model.Locator
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
-import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
-import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-trait ExtendedPlanAPI {
-  this: AbstractPlan =>
-  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan
+trait ExtendedPlanAPI[OpType <: ExecutableOp] {
+  this: AbstractPlan[OpType] =>
+  def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]
 
-  def resolveImport[T: Tag](instance: T): AbstractPlan
+  def resolveImport[T: Tag](instance: T): AbstractPlan[OpType]
 
-  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan
+  def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan[OpType]
 
-  def locateImports(locator: Locator): AbstractPlan
+  def locateImports(locator: Locator): AbstractPlan[OpType]
 
   /** Get all imports (unresolved dependencies).
     *
@@ -27,23 +24,7 @@ trait ExtendedPlanAPI {
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
 
-  final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[ExecutableOp]]): SemiPlan = {
-    SemiPlan(steps = AbstractPlan.resolveImports(f, steps.toVector), gcMode)
-  }
 
-  final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {
-    resolveImportsOp {
-      case i if i.target.tpe == function.get.ret =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
-    }
-  }
-
-  final def providerImport[T](id: String)(function: ProviderMagnet[T]): SemiPlan = {
-    resolveImportsOp {
-      case i if i.target == DIKey.IdKey(function.get.ret, id) =>
-        Seq(CallProvider(i.target, SingletonWiring.Function(function.get, function.get.associations), i.origin))
-    }
-  }
 
   final def keys: Set[DIKey] = {
     steps.map(_.target).toSet
@@ -53,22 +34,22 @@ trait ExtendedPlanAPI {
     steps.filter(_.target == DIKey.get[T])
   }
 
-  final def map(f: ExecutableOp => ExecutableOp): SemiPlan = {
+  final def map(f: SemiplanOp => SemiplanOp): SemiPlan = {
     val SemiPlan(steps, gcMode) = toSemi
     SemiPlan(steps.map(f), gcMode)
   }
 
-  final def flatMap(f: ExecutableOp => Seq[ExecutableOp]): SemiPlan = {
+  final def flatMap(f: SemiplanOp => Seq[SemiplanOp]): SemiPlan = {
     val SemiPlan(steps, gcMode) = toSemi
     SemiPlan(steps.flatMap(f), gcMode)
   }
 
-  final def collect(f: PartialFunction[ExecutableOp, ExecutableOp]): SemiPlan = {
+  final def collect(f: PartialFunction[SemiplanOp, SemiplanOp]): SemiPlan = {
     val SemiPlan(steps, gcMode) = toSemi
     SemiPlan(steps.collect(f), gcMode)
   }
 
-  final def ++(that: AbstractPlan): SemiPlan = {
+  final def ++(that: AbstractPlan[OpType]): SemiPlan = {
     val SemiPlan(steps, gcMode) = toSemi
     val that0 = that.toSemi
     SemiPlan(steps ++ that0.steps, gcMode)
@@ -87,15 +68,17 @@ trait ExtendedPlanAPI {
     steps.foldLeft(z)(f)
   }
 
-
-
   def toSemi: SemiPlan = {
-    val safeSteps = steps.flatMap {
-      case _: InitProxy =>
-        Seq.empty
-      case i: MakeProxy =>
-        Seq(i.op)
-      case o => Seq(o)
+    val safeSteps: Seq[SemiplanOp] = steps.flatMap{
+      case s: SemiplanOp =>
+        Seq(s)
+      case s: ProxyOp =>
+        s match {
+          case m: MakeProxy =>
+            Seq(m.op)
+          case _: InitProxy =>
+            Seq.empty
+        }
     }
     SemiPlan(safeSteps.toVector, gcMode)
   }

@@ -40,9 +40,10 @@ sealed trait ExecutableOp {
 
 object ExecutableOp {
 
-  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: OperationOrigin.Synthetic) extends ExecutableOp
+  sealed trait SemiplanOp extends ExecutableOp
+  final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: OperationOrigin.Synthetic) extends SemiplanOp
 
-  sealed trait InstantiationOp extends ExecutableOp
+  sealed trait InstantiationOp extends SemiplanOp
 
   final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: OperationOrigin) extends InstantiationOp
 

@@ -92,7 +92,7 @@ object TriSplittedPlan {
 trait Planner {
   def plan(input: PlannerInput): OrderedPlan
 
-  def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
+  def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan
 
   // plan lifecycle
   def planNoRewrite(input: PlannerInput): OrderedPlan

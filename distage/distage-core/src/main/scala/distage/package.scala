@@ -1,4 +1,5 @@
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.{model, planning}
 
@@ -40,7 +41,7 @@ package object distage extends Distage {
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
   override type SemiPlan = model.plan.SemiPlan
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
-  override type AbstractPlan = model.plan.AbstractPlan
+  override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   override type Id = model.definition.Id
   override type With[T] = model.definition.With[T]

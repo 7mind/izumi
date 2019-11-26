@@ -1,6 +1,7 @@
 package distage
 
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.{model, planning}
 
@@ -42,7 +43,7 @@ trait Distage {
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
   type SemiPlan = model.plan.SemiPlan
   val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
-  type AbstractPlan = model.plan.AbstractPlan
+  type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   type Id = model.definition.Id
   type With[T] = model.definition.With[T]
