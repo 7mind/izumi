@@ -34,10 +34,9 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
     val ot = other.ref
     val logger = TrivialLogger.make[this.type]("izumi.debug.rtti", Config())
 
-    logger.log(
-      s"""⚙️ Inheritance check: $self vs $other
-         |⚡️bases: ${bdb.mapValues(_.niceList().shift(2)).niceList()}
-         |⚡️inheritance: ${ib.mapValues(_.niceList().shift(2)).niceList()}""".stripMargin)
+    logger.log(s"""⚙️ Inheritance check: $self vs $other
+                  |⚡️bases: ${bdb.mapValues(_.niceList().shift(2)).niceList()}
+                  |⚡️inheritance: ${ib.mapValues(_.niceList().shift(2)).niceList()}""".stripMargin)
 
     isChild(Ctx(List.empty, logger))(st, ot)
   }
@@ -145,19 +144,20 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
       val allParents = safeParentsOf(self)
-      val moreParents = bdb.collect({
-        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({
-          case l: Lambda if l.input.size == self.parameters.size => l
-        })
-          .map(l => l.combine(self.parameters.map(_.ref)))
-      }).flatten
+      val moreParents = bdb
+        .collect({
+          case (l: Lambda, b) if isSame(l.output, self.asName) =>
+            b.collect({
+                case l: Lambda if l.input.size == self.parameters.size => l
+              })
+              .map(l => l.combine(self.parameters.map(_.ref)))
+        }).flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
-      (allParents ++ moreParents)
-        .exists {
-          l =>
-            val maybeParent = l
-            ctx.isChild(maybeParent, that)
-        }
+      (allParents ++ moreParents).exists {
+        l =>
+          val maybeParent = l
+          ctx.isChild(maybeParent, that)
+      }
     } else {
       false
     }
@@ -185,11 +185,10 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
     out ++= direct
 
     val nextNames = direct.map(_.asName)
-    nextNames.diff(tested)
-      .foreach {
-        b =>
-          parentsOf(b.asName, out, tested)
-      }
+    nextNames.diff(tested).foreach {
+      b =>
+        parentsOf(b.asName, out, tested)
+    }
 
   }
 

@@ -35,26 +35,32 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
       result += "context" -> ctx.asJson
     }
 
-    val eventInfo = Json.fromFields(Seq(
-      "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
-      "logger" -> Json.fromString(entry.context.static.id.id),
-      "line" -> Json.fromInt(entry.context.static.position.line),
-      "file" -> Json.fromString(entry.context.static.position.file),
-      "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
-      "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
-      "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
-      "thread" -> Json.fromFields(Seq(
-        "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
-        "name" -> Json.fromString(entry.context.dynamic.threadData.threadName)
-      )),
-    ))
+    val eventInfo = Json.fromFields(
+      Seq(
+        "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
+        "logger" -> Json.fromString(entry.context.static.id.id),
+        "line" -> Json.fromInt(entry.context.static.position.line),
+        "file" -> Json.fromString(entry.context.static.position.file),
+        "level" -> Json.fromString(entry.context.dynamic.level.toString.toLowerCase),
+        "timestamp" -> Json.fromLong(entry.context.dynamic.tsMillis),
+        "datetime" -> Json.fromString(entry.context.dynamic.tsMillis.asEpochMillisUtc.isoFormatUtc),
+        "thread" -> Json.fromFields(
+          Seq(
+            "id" -> Json.fromLong(entry.context.dynamic.threadData.threadId),
+            "name" -> Json.fromString(entry.context.dynamic.threadData.threadName)
+          )
+        ),
+      )
+    )
 
     val tail = Seq(
       "meta" -> eventInfo,
-      "text" -> Json.fromFields(Seq(
-        "template" -> Json.fromString(formatted.template),
-        "message" -> Json.fromString(formatted.message),
-      ))
+      "text" -> Json.fromFields(
+        Seq(
+          "template" -> Json.fromString(formatted.template),
+          "message" -> Json.fromString(formatted.message),
+        )
+      )
     )
     result ++= tail
 
@@ -84,12 +90,10 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
   @inline private[this] def repr(parameter: RenderedParameter): Json = {
     val mapStruct: PartialFunction[Any, Json] = {
       case a: Iterable[_] =>
-        val params = a
-          .map {
-            v =>
-              mapListElement.apply(v)
-          }
-          .toList
+        val params = a.map {
+          v =>
+            mapListElement.apply(v)
+        }.toList
         Json.arr(params: _*)
       case _ =>
         Json.fromString(parameter.repr)
@@ -118,11 +122,13 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     case a: Long =>
       Json.fromLong(a)
     case a: Throwable =>
-      Json.fromFields(Seq(
-        "type" -> Json.fromString(a.getClass.getName)
-        , "message" -> Json.fromString(a.getMessage)
-        , "stacktrace" -> Json.fromString(a.stackTrace)
-      ))
+      Json.fromFields(
+        Seq(
+          "type" -> Json.fromString(a.getClass.getName),
+          "message" -> Json.fromString(a.getMessage),
+          "stacktrace" -> Json.fromString(a.stackTrace)
+        )
+      )
   }
 
   private val mapToString: PartialFunction[Any, Json] = {

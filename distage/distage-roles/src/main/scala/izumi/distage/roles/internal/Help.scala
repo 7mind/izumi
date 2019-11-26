@@ -10,8 +10,7 @@ import izumi.fundamentals.platform.cli.model.schema._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
-class Help[F[_] : DIEffect]
-(
+class Help[F[_]: DIEffect](
   roleInfo: RolesInfo,
   activation: AppActivation,
 ) extends RoleTask[F] {
@@ -21,16 +20,13 @@ class Help[F[_] : DIEffect]
   }
 
   private[this] def showHelp(): Unit = {
-    val descriptors = roleInfo
-      .availableRoleBindings
+    val descriptors = roleInfo.availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
 
-    val activations = activation.choices
-      .map {
-        case (axis, members) =>
-          s"$axis:${members.niceList().shift(2)}"
-      }
-      .niceList().shift(2)
+    val activations = activation.choices.map {
+      case (axis, members) =>
+        s"$axis:${members.niceList().shift(2)}"
+    }.niceList().shift(2)
 
     val baseDoc =
       s"""izumi/distage role application launcher

@@ -20,5 +20,4 @@ private[testkit] trait IgnoreSupport {
     throw new TestCanceledException(message, cause, failedCodeStackDepth = 0)
   }
 
-
 }

@@ -5,8 +5,7 @@ import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
-final class PlanningHookAggregate
-(
+final class PlanningHookAggregate(
   hooks: Set[PlanningHook]
 ) extends PlanningHook {
 
@@ -51,7 +50,6 @@ final class PlanningHookAggregate
         hook.phase45PreForwardingCleanup(acc)
     }
   }
-
 
   override def phase50PreForwarding(plan: SemiPlan): SemiPlan = {
     hooks.foldLeft(plan) {

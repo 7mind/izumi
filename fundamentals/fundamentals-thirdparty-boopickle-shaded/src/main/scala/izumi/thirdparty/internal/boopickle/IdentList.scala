@@ -32,8 +32,8 @@ private[boopickle] final class IdentList1Plus(o1: AnyRef) extends IdentList {
   import IdentList.Entry
   var last: Entry = new Entry(o1, null)
   var head: Entry = last
-  var switchOver  = false
-  var size        = 0
+  var switchOver = false
+  var size = 0
 
   override def apply(idx: Int): AnyRef = {
     // first time something is looked up, we switch to the more efficient implementation

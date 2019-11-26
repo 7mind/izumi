@@ -11,7 +11,6 @@ object CastSimilarExtension extends ScalaTranslatorExtension {
 
   import izumi.idealingua.translator.toscala.tools.ScalaMetaTools._
 
-
   override def handleComposite(ctx: STContext, interface: StructContext, product: CompositeProduct): CompositeProduct = {
     val converters = mkConverters(ctx, interface.struct)
     product.copy(companionBase = product.companionBase.appendDefinitions(converters))
@@ -23,7 +22,6 @@ object CastSimilarExtension extends ScalaTranslatorExtension {
     val converters = mkConverters(ctx, ctx.typespace.structure.structure(interface).toScala)
     product.copy(companionBase = product.companionBase.appendDefinitions(converters))
   }
-
 
   private def mkConverters(ctx: STContext, struct: ScalaStruct): List[Stat] = {
     ctx.typespace.structure.sameSignature(struct.id).map {

@@ -11,21 +11,21 @@ package object macrortti {
 
   type LTagK[K[_]] = LTag.WeakHK[{ type Arg[A] = K[A] }]
   type LTagKK[K[_, _]] = LTag.WeakHK[{ type Arg[A, B] = K[A, B] }]
-  type LTagK3[K[_, _, _]] = LTag.WeakHK[{ type Arg[A, B, C] = K[A, B, C]}]
+  type LTagK3[K[_, _, _]] = LTag.WeakHK[{ type Arg[A, B, C] = K[A, B, C] }]
 
-  type LTagT[K[_[_]]] = LTag.WeakHK[{ type Arg[A[_]] = K[A]}]
+  type LTagT[K[_[_]]] = LTag.WeakHK[{ type Arg[A[_]] = K[A] }]
   type LTagTK[K[_[_], _]] = LTag.WeakHK[{ type Arg[A[_], B] = K[A, B] }]
-  type LTagTKK[K[_[_], _, _]] = LTag.WeakHK[{ type  Arg[A[_], B, C] = K[A, B, C] }]
+  type LTagTKK[K[_[_], _, _]] = LTag.WeakHK[{ type Arg[A[_], B, C] = K[A, B, C] }]
   type LTagTK3[K[_[_], _, _, _]] = LTag.WeakHK[{ type Arg[A[_], B, C, D] = K[A, B, C, D] }]
 
   object LTagK {
     /**
-    * Construct a type tag for a higher-kinded type `K[_]`
-    *
-    * Example:
-    * {{{
-    *     LTagK[Option]
-    * }}}
+      * Construct a type tag for a higher-kinded type `K[_]`
+      *
+      * Example:
+      * {{{
+      *     LTagK[Option]
+      * }}}
     **/
     def apply[K[_]: LTagK]: LTagK[K] = implicitly
   }
@@ -57,7 +57,7 @@ package object macrortti {
   // simple materializers
   def LTT[T]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T]
   def `LTT[_]`[T[_]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-  def `LTT[+_]`[T[+ _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
+  def `LTT[+_]`[T[+_]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
   def `LTT[A,B,_>:B<:A]`[A, B <: A, T[_ >: B <: A]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
   def `LTT[_[_]]`[T[_[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
   def `LTT[_[_[_]]]`[T[_[_[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]

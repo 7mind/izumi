@@ -49,20 +49,19 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
       Seq.empty
     }
 
-    (pf ++ loaded.collect({ case f: Failure => f }))
-      .map {
-        case ParsingFailed(path, message) =>
-          s"Parsing phase (0) failed on $path: $message"
-        case f: ResolutionFailed =>
-          s"Typespace reference resolution phase (1) failed on ${f.domain} (${f.path}): ${f.issues.niceList().shift(2)}"
-        case f: TyperFailed =>
-          s"Typing phase (2) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
-        case f: VerificationFailed =>
-          s"Typespace verification phase (3) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
-        case PostVerificationFailure(issues) =>
-          s"Global verification phase (4) failed: ${issues.issues.niceList().shift(2)}"
+    (pf ++ loaded.collect({ case f: Failure => f })).map {
+      case ParsingFailed(path, message) =>
+        s"Parsing phase (0) failed on $path: $message"
+      case f: ResolutionFailed =>
+        s"Typespace reference resolution phase (1) failed on ${f.domain} (${f.path}): ${f.issues.niceList().shift(2)}"
+      case f: TyperFailed =>
+        s"Typing phase (2) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
+      case f: VerificationFailed =>
+        s"Typespace verification phase (3) failed on ${f.domain} (${f.path}): ${f.issues.issues.niceList().shift(2)}"
+      case PostVerificationFailure(issues) =>
+        s"Global verification phase (4) failed: ${issues.issues.niceList().shift(2)}"
 
-      }
+    }
   }
 
   private def collectWarnings: Seq[String] = {

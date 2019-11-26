@@ -9,7 +9,7 @@ private[izumi] object PicklerMaterializersImpl {
     prop != null && prop.toLowerCase == "true"
   }
   private var stats: Map[String, Int] = Map()
-  private var overallCount            = 0
+  private var overallCount = 0
   private def logStatistics(x: String): Unit = {
     stats += ((x, 1 + stats.getOrElse(x, 0)))
     overallCount += 1
@@ -25,7 +25,7 @@ private[izumi] object PicklerMaterializersImpl {
     import c.universe._
 
     val concreteTypes = findConcreteTypes(c)(tpe)
-    val name          = TermName(c.freshName("TraitPickler"))
+    val name = TermName(c.freshName("TraitPickler"))
 
     q"""
       implicit object $name extends _root_.izumi.thirdparty.internal.boopickle.CompositePickler[$tpe] {
@@ -56,22 +56,24 @@ private[izumi] object PicklerMaterializersImpl {
 
     // find all implementation classes in the trait hierarchy
     def findSubClasses(p: c.universe.ClassSymbol): Set[c.universe.ClassSymbol] = {
-      p.knownDirectSubclasses.flatMap { sub =>
-        val subClass = sub.asClass
-        if (subClass.isTrait)
-          findSubClasses(subClass)
-        else
-          Set(subClass) ++ findSubClasses(subClass)
+      p.knownDirectSubclasses.flatMap {
+        sub =>
+          val subClass = sub.asClass
+          if (subClass.isTrait)
+            findSubClasses(subClass)
+          else
+            Set(subClass) ++ findSubClasses(subClass)
       }
     }
     // sort class names to make sure they are always in the same order
-    val result = findSubClasses(sym).toSeq.sortBy(_.name.toString).map { s =>
-      if (s.typeParams.isEmpty) {
-        q"""addConcreteType[$s]"""
-      } else {
-        val t = unifyClassWithTrait(c)(tpe, s)
-        q"""addConcreteType[$t]"""
-      }
+    val result = findSubClasses(sym).toSeq.sortBy(_.name.toString).map {
+      s =>
+        if (s.typeParams.isEmpty) {
+          q"""addConcreteType[$s]"""
+        } else {
+          val t = unifyClassWithTrait(c)(tpe, s)
+          q"""addConcreteType[$t]"""
+        }
     }
     result
   }
@@ -118,9 +120,7 @@ private[izumi] object PicklerMaterializersImpl {
     }
 
     if (!sym.isCaseClass) {
-      c.error(
-        c.enclosingPosition,
-        s"Cannot materialize pickler for non-case class: $tpe. If this is a collection, the error can refer to the class inside.")
+      c.error(c.enclosingPosition, s"Cannot materialize pickler for non-case class: $tpe. If this is a collection, the error can refer to the class inside.")
       return c.Expr[Pickler[T]](q"null")
     }
 
@@ -193,7 +193,7 @@ private[izumi] object PicklerMaterializersImpl {
 
   private def unifyClassWithTrait(c: blackbox.Context)(ttrait: c.universe.Type, classSym: c.universe.ClassSymbol) = {
 
-    val tclass             = classSym.toType
+    val tclass = classSym.toType
     val traitSeenFromClass = tclass.baseType(ttrait.typeSymbol)
 
     tclass.substituteTypes(traitSeenFromClass.typeArgs.map(_.typeSymbol), ttrait.typeArgs)

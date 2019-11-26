@@ -24,11 +24,12 @@ class ExampleService(logger: IzLogger) {
     val loggerWithSubcontext = loggerWithContext("custom" -> "value")
     loggerWithSubcontext.info(s"Both custom contexts will be added into this message. Dummy: $justAnArg")
 
-
     logger.crit(s"This is an expression with user-assigned name: ${Random.nextInt() -> "random value"}")
     logger.crit(s"This is an expression with user-assigned name which will be hidden from text representations: ${Random.nextInt() -> "random value" -> null}")
 
-    logger.info(s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}")
+    logger.info(
+      s"This name will be converted from camel case to space-separated ('just and arg'). Note: spaces are replaced with underscores in non-colored sinks. ${justAnArg -> ' '}"
+    )
     logger.info(s"..Same with invisible name: ${justAnArg -> ' ' -> null}")
 
     val duplicatedParam = "DuplicatedParamVal"

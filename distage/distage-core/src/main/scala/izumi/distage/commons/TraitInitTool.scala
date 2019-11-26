@@ -15,8 +15,9 @@ class TraitInitTool {
         m
     })
 
-    val getters = vals.map { v =>
-      v.name.toString -> TraitField(v.name.toString)
+    val getters = vals.map {
+      v =>
+        v.name.toString -> TraitField(v.name.toString)
     }.toMap
 
     val setters = vals.map {
@@ -45,10 +46,18 @@ class TraitInitTool {
           }
         } catch {
           case e: AbstractMethodError =>
-            throw new TraitInitializationFailedException(s"TODO: Failed to initialize trait $instanceType. Probably it contains fields (val or var) though fields are not supported yet, see https://github.com/7mind/izumi/issues/26", instanceType, e)
+            throw new TraitInitializationFailedException(
+              s"TODO: Failed to initialize trait $instanceType. Probably it contains fields (val or var) though fields are not supported yet, see https://github.com/7mind/izumi/issues/26",
+              instanceType,
+              e
+            )
 
           case e: Throwable =>
-            throw new TraitInitializationFailedException(s"Failed to initialize trait $instanceType. It may be an issue with the trait, framework bug or trait instantiator implemetation lim", instanceType, e)
+            throw new TraitInitializationFailedException(
+              s"Failed to initialize trait $instanceType. It may be an issue with the trait, framework bug or trait instantiator implemetation lim",
+              instanceType,
+              e
+            )
         }
       case None =>
     })

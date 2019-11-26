@@ -8,8 +8,9 @@ import izumi.idealingua.translator.totypescript.products.CogenProduct.EnumProduc
 object EnumHelpersExtension extends TypeScriptTranslatorExtension {
   override def handleEnum(ctx: TSTContext, enum: TypeDef.Enumeration, product: EnumProduct): EnumProduct = {
     val it = enum.members.map(_.value).iterator
-    val values = it.map { m =>
-      s"${enum.id.name}.$m" + (if (it.hasNext) "," else "")
+    val values = it.map {
+      m =>
+        s"${enum.id.name}.$m" + (if (it.hasNext) "," else "")
     }.mkString("\n")
 
     val extension =

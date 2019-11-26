@@ -9,8 +9,7 @@ import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.reflection.ReflectionUtil
 
-class FactoryStrategyDefaultImpl
-(
+class FactoryStrategyDefaultImpl(
   proxyProvider: ProxyProvider,
   mirror: MirrorProvider,
   traitInit: TraitInitTool,
@@ -26,11 +25,11 @@ class FactoryStrategyDefaultImpl
     val runtimeClass = mirror.runtimeClass(instanceType).getOrElse(throw new NoRuntimeClassException(op.target))
 
     val factoryContext = FactoryContext(
-      factoryMethodIndex
-      , traitIndex
-      , narrowedContext
-      , executor
-      , op
+      factoryMethodIndex,
+      traitIndex,
+      narrowedContext,
+      executor,
+      op
     )
 
     val proxyInstance = proxyProvider.makeFactoryProxy(factoryContext, ProxyContext(runtimeClass, op, ProxyParams.Empty))
@@ -41,12 +40,11 @@ class FactoryStrategyDefaultImpl
   private def makeFactoryIndex(op: WiringOp.InstantiateFactory) = {
     op.wiring.factoryMethods.map {
       wiring =>
-        op.wiring.factoryType.use(t => ReflectionUtil.toJavaMethod(t, wiring.factoryMethod.underlying))-> wiring
+        op.wiring.factoryType.use(t => ReflectionUtil.toJavaMethod(t, wiring.factoryMethod.underlying)) -> wiring
 
     }.toMap
   }
 }
-
 
 class FactoryStrategyFailingImpl extends FactoryStrategy {
   override def makeFactory(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.InstantiateFactory): Seq[NewObjectOp] = {

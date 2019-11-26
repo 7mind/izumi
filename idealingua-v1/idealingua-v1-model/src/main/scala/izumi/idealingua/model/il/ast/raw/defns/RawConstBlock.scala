@@ -12,4 +12,3 @@ object RawConstMeta {
 }
 
 final case class RawConst(id: ConstId, const: RawVal, meta: RawConstMeta)
-

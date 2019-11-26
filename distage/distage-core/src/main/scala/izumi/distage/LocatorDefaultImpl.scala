@@ -8,8 +8,7 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
 
-final class LocatorDefaultImpl[F[_]]
-(
+final class LocatorDefaultImpl[F[_]](
   val plan: OrderedPlan,
   val parent: Option[Locator],
   val dependencyMap: ProvisionImmutable[F],

@@ -18,15 +18,16 @@ class ProviderMagnetTest extends WordSpec {
   "Annotation extracting WrappedFunction" should {
     "can't handle opaque function vals, that hide underlying method reference" in {
       val fn = ProviderMagnet(locargannfnvalerased).get
-      assert(fn.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(fn.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
 
       val fn2 = ProviderMagnet(testVal2).get
-      assert(fn2.diKeys.collect{case i: DIKey.IdKey[_] => i}.isEmpty)
+      assert(fn2.diKeys.collect { case i: DIKey.IdKey[_] => i }.isEmpty)
     }
 
     "produce correct DI keys for anonymous inline lambda" in {
       val fn = ProviderMagnet {
-        x: Int @Id("inlinetypeann") => x
+        x: Int @Id("inlinetypeann") =>
+          x
       }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("inlinetypeann"))
@@ -34,7 +35,8 @@ class ProviderMagnetTest extends WordSpec {
 
     "produce correct DI keys for anonymous inline lambda with annotation parameter passed by name" in {
       val fn = ProviderMagnet {
-        x: Int @Id(name = "inlinetypeann") => x
+        x: Int @Id(name = "inlinetypeann") =>
+          x
       }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("inlinetypeann"))
@@ -48,7 +50,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "handle opaque local references with type annotations" in {
-      def loctypeannfn(x: Int @Id("loctypeann")): Unit = {val _ = x}
+      def loctypeannfn(x: Int @Id("loctypeann")): Unit = { val _ = x }
 
       val fn = ProviderMagnet(loctypeannfn _).get
 
@@ -56,7 +58,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "handle opaque local references with argument annotations" in {
-      def locargannfn(@Id("locargann") x: Int): Unit = {val _ = x}
+      def locargannfn(@Id("locargann") x: Int): Unit = { val _ = x }
 
       val fn = ProviderMagnet(locargannfn _).get
       assert(fn.diKeys contains DIKey.get[Int].named("locargann"))
@@ -97,7 +99,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "ProviderMagnet can work with vals" in {
-      def triggerConversion[R](x: ProviderMagnet[R]): Int = {val _ = x; return 5}
+      def triggerConversion[R](x: ProviderMagnet[R]): Int = { val _ = x; return 5 }
 
       assert(triggerConversion(testVal3) == 5)
     }
@@ -181,7 +183,10 @@ class ProviderMagnetTest extends WordSpec {
     "handle opaque lambdas with generic parameters" in {
       def locgenfn[T](@Id("x") t: T): Option[T] = Option(t)
 
-      val fn = ProviderMagnet.apply { x: Int => locgenfn(x) }.get
+      val fn = ProviderMagnet.apply {
+        x: Int =>
+          locgenfn(x)
+      }.get
 
       assert(fn.diKeys contains DIKey.get[Int].named("x"))
     }
@@ -215,7 +220,7 @@ class ProviderMagnetTest extends WordSpec {
     }
 
     "handle generic parameters with Tag" in {
-      def fn[T: Tag]  = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
+      def fn[T: Tag] = ProviderMagnet.apply((x: T @Id("gentypeann")) => x).get
 
       assert(fn[Int].diKeys contains DIKey.get[Int].named("gentypeann"))
       assert(fn[String].diKeys contains DIKey.get[String].named("gentypeann"))
@@ -248,4 +253,3 @@ class ProviderMagnetTest extends WordSpec {
   }
 
 }
-

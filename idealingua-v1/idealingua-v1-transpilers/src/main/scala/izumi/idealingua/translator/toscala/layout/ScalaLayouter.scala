@@ -9,7 +9,6 @@ import izumi.idealingua.translator._
 
 case class RawExpr(e: String)
 
-
 class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter {
   private val naming = new ScalaNamingConvention(options.manifest.sbt.projectNaming)
   private val idlcGroupId = ProjectAttributeMacro.extractSbtProjectGroupId().getOrElse("UNSET-GROUP-ID")
@@ -33,30 +32,26 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         val runtimeModules = asSbtModule(toRuntimeModules(options).map(_.module), rtid)
           .map(m => ExtendedModule.RuntimeModule(m))
 
-
-        val projects = outputs
-          .map {
-            out =>
-              naming.projectId(out.typespace.domain.id) -> out
-          }
-          .toMap
+        val projects = outputs.map {
+          out =>
+            naming.projectId(out.typespace.domain.id) -> out
+        }.toMap
 
         val projIds = projects.keys.toList.sorted
 
-        val projDefs = projIds
-          .map {
-            id =>
-              val d = projects(id)
-              val deps = d.typespace.domain.meta.directImports.map(i => s"`${naming.projectId(i.id)}`")
+        val projDefs = projIds.map {
+          id =>
+            val d = projects(id)
+            val deps = d.typespace.domain.meta.directImports.map(i => s"`${naming.projectId(i.id)}`")
 
-              val depends = if (deps.nonEmpty) {
-                deps.mkString("\n    .dependsOn(\n        ", ",\n        ", "\n    )")
-              } else {
-                ""
-              }
+            val depends = if (deps.nonEmpty) {
+              deps.mkString("\n    .dependsOn(\n        ", ",\n        ", "\n    )")
+            } else {
+              ""
+            }
 
-              s"""lazy val `$id` = (project in file("$id"))$depends"""
-          }
+            s"""lazy val `$id` = (project in file("$id"))$depends"""
+        }
 
         val bundleId = naming.bundleId
         val rootId = naming.pkgId
@@ -84,13 +79,14 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
         import SbtDslOp._
 
         val idlVersion = options.manifest.common.izumiVersion
-        val deps = Seq("libraryDependencies" -> Append(
-          Seq(
-            RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-runtime-rpc-scala" % "$idlVersion" """),
-            RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-model" % "$idlVersion" """),
-
+        val deps = Seq(
+          "libraryDependencies" -> Append(
+            Seq(
+              RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-runtime-rpc-scala" % "$idlVersion" """),
+              RawExpr(s""" "$idlcGroupId" %% "idealingua-v1-model" % "$idlVersion" """),
+            )
           )
-        ))
+        )
 
         val resolvers = if (idlVersion.endsWith("SNAPSHOT")) {
           Seq("resolvers" -> Append(RawExpr("Opts.resolver.sonatypeSnapshots")))
@@ -120,7 +116,6 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
     Layouted(modules)
   }
 
-
   private def asSbtModule(out: Seq[Module], did: DomainId): Seq[Module] = {
     out.map {
       m =>
@@ -129,6 +124,4 @@ class ScalaLayouter(options: ScalaTranslatorOptions) extends TranslationLayouter
     }
   }
 
-
 }
-

@@ -7,25 +7,27 @@ sealed trait LightTypeTagRef {
   final def combine(o: Seq[LightTypeTagRef]): AbstractReference = {
     applyParameters {
       l =>
-        l.input.zip(o).map {
-          case (p, v: AbstractReference) =>
-            p.name -> v
-        }.toMap
+        l.input
+          .zip(o).map {
+            case (p, v: AbstractReference) =>
+              p.name -> v
+          }.toMap
     }
   }
 
   final def combineNonPos(o: Seq[Option[LightTypeTagRef]]): AbstractReference = {
     applyParameters {
       l =>
-        l.input.zip(o).flatMap {
-          case (p, v) =>
-            v match {
-              case Some(value: AbstractReference) =>
-                Seq(p.name -> value)
-              case None =>
-                Seq.empty
-            }
-        }.toMap
+        l.input
+          .zip(o).flatMap {
+            case (p, v) =>
+              v match {
+                case Some(value: AbstractReference) =>
+                  Seq(p.name -> value)
+                case None =>
+                  Seq.empty
+              }
+          }.toMap
     }
   }
 
@@ -117,7 +119,8 @@ object LightTypeTagRef {
     override def toString: String = this.render()
   }
   object NameReference {
-    def apply(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference = new NameReference(ref, boundaries, prefix)
+    def apply(ref: SymName, boundaries: Boundaries = Boundaries.Empty, prefix: Option[AppliedReference] = None): NameReference =
+      new NameReference(ref, boundaries, prefix)
     def apply(tpeName: String): NameReference = NameReference(SymTypeName(tpeName))
   }
 

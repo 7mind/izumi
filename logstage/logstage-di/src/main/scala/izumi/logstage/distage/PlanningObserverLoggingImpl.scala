@@ -13,7 +13,6 @@ class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
     log.debug(s"[onPhase00PlanCompleted]:\n$plan")
   }
 
-
   override def onPhase05PreGC(plan: SemiPlan): Unit = {
     log.debug(s"[onPhase05PreFinalization]:\n$plan")
   }
@@ -34,7 +33,4 @@ class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
     log.debug(s"[onPhase30AfterForwarding]:\n$plan")
   }
 
-
 }
-
-

@@ -12,7 +12,8 @@ object MemoizationContextId {
 
   case object Shared extends MemoizationContextId
 
-  case class PerRuntimeAndActivationAndBsconfig[F[_]](bootstrapConfig: BootstrapConfig, activation: Map[AxisBase, AxisValue], fType: SafeType) extends MemoizationContextId
+  case class PerRuntimeAndActivationAndBsconfig[F[_]](bootstrapConfig: BootstrapConfig, activation: Map[AxisBase, AxisValue], fType: SafeType)
+    extends MemoizationContextId
 
   case class Custom(id: String) extends MemoizationContextId
 

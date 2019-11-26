@@ -3,7 +3,6 @@ package izumi.idealingua.il.loader
 import java.io.File
 import java.nio.file.Path
 
-
 class LocalModelLoaderContext(src: Seq[Path], cp: Seq[File]) extends ModelLoaderContextImpl(LocalModelLoaderContext.makeEnumerator(src, cp))
 
 object LocalModelLoaderContext {

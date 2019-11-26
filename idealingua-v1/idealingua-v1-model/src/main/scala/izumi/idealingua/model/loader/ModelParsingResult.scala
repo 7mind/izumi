@@ -2,7 +2,6 @@ package izumi.idealingua.model.loader
 
 import izumi.idealingua.model.il.ast.raw.models.ParsedModel
 
-
 sealed trait ModelParsingResult {
   def path: FSPath
 }

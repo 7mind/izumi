@@ -6,8 +6,7 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.NameReference
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
-  private val indexed: Map[String, Int] = allKeys
-    .toSeq
+  private val indexed: Map[String, Int] = allKeys.toSeq
     .flatMap(extract)
     .map(name => name.split('.').last -> name)
     .toMultimap
@@ -76,9 +75,10 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
   }
 
   private def extract(key: SafeType): Set[String] = {
-    RuntimeAPI.unpack(key.tag.ref match {
-      case reference: LightTypeTagRef.AbstractReference =>
-        reference
-    }).map(_.ref.name)
+    RuntimeAPI
+      .unpack(key.tag.ref match {
+        case reference: LightTypeTagRef.AbstractReference =>
+          reference
+      }).map(_.ref.name)
   }
 }

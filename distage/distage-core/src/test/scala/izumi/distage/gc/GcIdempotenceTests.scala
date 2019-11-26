@@ -5,7 +5,6 @@ import izumi.distage.model.definition.ModuleDef
 import distage.DIKey
 import org.scalatest.WordSpec
 
-
 class GcIdempotenceTests extends WordSpec with MkGcInjector {
   "Garbage-collecting injector" when {
     "plan is re-finished" should {
@@ -61,19 +60,23 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
       "keep plans alive after conversion back to SemiPlan in case of complex loops" in {
         import GcCases.InjectorCase4._
         val injector = mkInjector()
-        val plan = injector.plan(PlannerInput(new ModuleDef {
-          make[MkS3Client]
-          make[S3Upload]
-          make[Ctx]
-          make[S3Component]
-          many[IntegrationComponent].add[S3Component]
-          make[Initiator]
-        }, GCMode(DIKey.get[Ctx], DIKey.get[Initiator])))
+        val plan = injector.plan(
+          PlannerInput(
+            new ModuleDef {
+              make[MkS3Client]
+              make[S3Upload]
+              make[Ctx]
+              make[S3Component]
+              many[IntegrationComponent].add[S3Component]
+              make[Initiator]
+            },
+            GCMode(DIKey.get[Ctx], DIKey.get[Initiator])
+          )
+        )
 
         val result = injector.fproduce(plan)
         assert(result.get[Ctx] != null)
       }
-
 
       "keep proxies alive in case of pathologically intersecting loops" in {
         import GcCases.InjectorCase5._
@@ -95,29 +98,34 @@ class GcIdempotenceTests extends WordSpec with MkGcInjector {
       "keep proxies alive in case of pathologically intersecting provider loops" in {
         import GcCases.InjectorCase6._
         val injector = mkInjector()
-        val plan = injector.plan(PlannerInput(new ModuleDef {
-          make[Circular1].from {
-            (t1: Circular1, t2: Circular2) =>
-              new Circular1 {
-                override def c1: Circular1 = t1
+        val plan = injector.plan(
+          PlannerInput(
+            new ModuleDef {
+              make[Circular1].from {
+                (t1: Circular1, t2: Circular2) =>
+                  new Circular1 {
+                    override def c1: Circular1 = t1
 
-                override def c2: Circular2 = t2
+                    override def c2: Circular2 = t2
 
-                override def nothing: Int = 1
+                    override def nothing: Int = 1
+                  }
               }
-          }
-          make[Circular2].from {
-            (t1: Circular1, t2: Circular2) =>
-              new Circular2 {
+              make[Circular2].from {
+                (t1: Circular1, t2: Circular2) =>
+                  new Circular2 {
 
-                override def c1: Circular1 = t1
+                    override def c1: Circular1 = t1
 
-                override def c2: Circular2 = t2
+                    override def c2: Circular2 = t2
 
-                override def nothing: Int = 2
+                    override def nothing: Int = 2
+                  }
               }
-          }
-        }, GCMode(DIKey.get[Circular2])))
+            },
+            GCMode(DIKey.get[Circular2])
+          )
+        )
         val result = injector.fproduce(plan)
         assert(result.get[Circular1].nothing == 1)
         assert(result.get[Circular2].nothing == 2)

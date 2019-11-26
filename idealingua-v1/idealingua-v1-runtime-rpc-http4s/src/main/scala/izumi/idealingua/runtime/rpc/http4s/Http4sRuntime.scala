@@ -7,20 +7,19 @@ import org.http4s.dsl._
 import scala.concurrent.ExecutionContext
 
 class Http4sRuntime[
-  _BiIO[+ _, + _] : BIOAsync : BIORunner
-  , _RequestContext
-  , _MethodContext
-  , _ClientId
-  , _ClientContext
-  , _ClientMethodContext
-]
-(
+  _BiIO[+_, +_]: BIOAsync: BIORunner,
+  _RequestContext,
+  _MethodContext,
+  _ClientId,
+  _ClientContext,
+  _ClientMethodContext
+](
   override val clientExecutionContext: ExecutionContext
-)(implicit
-  C: ConcurrentEffect[_BiIO[Throwable, ?]]
-, T: Timer[_BiIO[Throwable, ?]]
-)
-  extends Http4sContext {
+)(
+  implicit
+  C: ConcurrentEffect[_BiIO[Throwable, ?]],
+  T: Timer[_BiIO[Throwable, ?]]
+) extends Http4sContext {
 
   override type BiIO[+E, +V] = _BiIO[E, V]
 

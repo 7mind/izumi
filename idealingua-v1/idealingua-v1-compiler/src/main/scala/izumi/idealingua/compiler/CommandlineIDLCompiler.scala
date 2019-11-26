@@ -35,7 +35,6 @@ object CommandlineIDLCompiler {
 
     val conf = parseArgs(args)
 
-
     val results = Seq(
       initDir(conf),
       runCompilations(izumiVersion, conf),
@@ -49,29 +48,34 @@ object CommandlineIDLCompiler {
 
   private def runPublish(conf: IDLCArgs): Boolean = {
     if (conf.publish && conf.languages.nonEmpty) {
-      conf.languages.foreach { lang =>
-        val manifest = toOption(conf, Map.empty)(lang).manifest
-        publishLangArtifacts(conf, lang, manifest) match {
-          case Left(err) => throw err
-          case _ => ()
-        }
+      conf.languages.foreach {
+        lang =>
+          val manifest = toOption(conf, Map.empty)(lang).manifest
+          publishLangArtifacts(conf, lang, manifest) match {
+            case Left(err) => throw err
+            case _ => ()
+          }
       }
       true
     } else
       false
   }
 
-  def publishLangArtifacts(conf: IDLCArgs, langOpts: LanguageOpts, manifest: BuildManifest): Either[Throwable, Unit] = for {
-    credsFile <- Either.cond(langOpts.credentials.isDefined, langOpts.credentials.get,
-      new IllegalArgumentException(s"Can't publish ${langOpts.id} with empty credentials file. " +
-        s"Use `--credentials` command line arg to set it"
+  def publishLangArtifacts(conf: IDLCArgs, langOpts: LanguageOpts, manifest: BuildManifest): Either[Throwable, Unit] =
+    for {
+      credsFile <- Either.cond(
+        langOpts.credentials.isDefined,
+        langOpts.credentials.get,
+        new IllegalArgumentException(
+          s"Can't publish ${langOpts.id} with empty credentials file. " +
+          s"Use `--credentials` command line arg to set it"
+        )
       )
-    )
-    lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
-    creds <- new CredentialsReader(lang, credsFile).read(toJson(langOpts.overrides))
-    target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
-    res <- new ArtifactPublisher(target, lang, creds, manifest).publish()
-  } yield res
+      lang <- Try(IDLLanguage.parse(langOpts.id)).toEither
+      creds <- new CredentialsReader(lang, credsFile).read(toJson(langOpts.overrides))
+      target <- Try(conf.target.toAbsolutePath.resolve(langOpts.id)).toEither
+      res <- new ArtifactPublisher(target, lang, creds, manifest).publish()
+    } yield res
 
   private def initDir(conf: IDLCArgs): Boolean = {
     conf.init match {
@@ -240,19 +244,16 @@ object CommandlineIDLCompiler {
 
     v match {
       case m: java.util.HashMap[_, _] =>
-        m.asScala
-          .map {
-            case (k, value) =>
-              k.toString -> valToJson(value.asInstanceOf[AnyRef])
-          }
-          .asJson
+        m.asScala.map {
+          case (k, value) =>
+            k.toString -> valToJson(value.asInstanceOf[AnyRef])
+        }.asJson
 
       case s: String =>
         s.asJson
 
     }
   }
-
 
   private def getExt(lang: IDLLanguage, filter: List[String]): Seq[TranslatorExtension] = {
     val descriptor = TypespaceCompilerBaseFacade.descriptor(lang)
@@ -273,8 +274,7 @@ object VersionOverlay {
         IDLLanguage.Typescript -> "build.0",
         IDLLanguage.Go -> "0",
         IDLLanguage.CSharp -> "alpha",
-      )
-        .map { case (k, v) => k.toString.toLowerCase -> v }
+      ).map { case (k, v) => k.toString.toLowerCase -> v }
     )
   }
 }

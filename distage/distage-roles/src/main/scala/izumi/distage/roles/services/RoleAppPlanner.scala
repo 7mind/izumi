@@ -17,17 +17,18 @@ trait RoleAppPlanner[F[_]] {
 
 object RoleAppPlanner {
   case class AppStartupPlans(
-                              runtime: OrderedPlan,
-                              app: TriSplittedPlan,
-                              injector: Injector,
-                            )
+    runtime: OrderedPlan,
+    app: TriSplittedPlan,
+    injector: Injector,
+  )
 
   class Impl[F[_]: TagK](
-                          options: ContextOptions,
-                          bsModule: BootstrapModule,
-                          activation: AppActivation,
-                          logger: IzLogger,
-                        ) extends RoleAppPlanner[F] { self =>
+    options: ContextOptions,
+    bsModule: BootstrapModule,
+    activation: AppActivation,
+    logger: IzLogger,
+  ) extends RoleAppPlanner[F] {
+    self =>
 
     private val injector = Injector.Standard(bsModule)
 

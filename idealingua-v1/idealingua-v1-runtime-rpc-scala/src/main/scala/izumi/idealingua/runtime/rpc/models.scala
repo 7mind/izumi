@@ -2,7 +2,6 @@ package izumi.idealingua.runtime.rpc
 
 import io.circe.Json
 
-
 // addressing
 final case class IRTServiceId(value: String) extends AnyVal {
   override def toString: String = s"{service:$value}"
@@ -15,7 +14,6 @@ final case class IRTMethodName(value: String) extends AnyVal {
 final case class IRTMethodId(service: IRTServiceId, methodId: IRTMethodName) {
   override def toString: String = s"${service.value}.${methodId.value}"
 }
-
 
 // dtos
 

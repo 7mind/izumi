@@ -26,15 +26,18 @@ class DSLTest extends WordSpec with MkInjector {
           .named("named.test.class")
         make[TestDependency0]
           .named("named.test.dependency.0")
-        make[TestInstanceBinding].named("named.test")
+        make[TestInstanceBinding]
+          .named("named.test")
           .from(TestInstanceBinding())
         many[JustTrait].named("named.empty.set")
         many[JustTrait]
           .add[Impl0]
           .add(new Impl1)
-        many[JustTrait].named("named.set")
+        many[JustTrait]
+          .named("named.set")
           .add(new Impl2())
-        many[JustTrait].named("named.set")
+        many[JustTrait]
+          .named("named.set")
           .add[Impl3]
 
         make[TestDependency0].namedByImpl.from[TestImpl0]
@@ -45,7 +48,6 @@ class DSLTest extends WordSpec with MkInjector {
     }
   }
 
-
   "Module DSL" should {
     "allow to define contexts" in {
       import BasicCase1._
@@ -55,10 +57,12 @@ class DSLTest extends WordSpec with MkInjector {
         make[TestDependency0].from[TestImpl0]
       }
 
-      assert(Module.bindings == Set(
-        Bindings.binding[TestClass]
-        , Bindings.binding[TestDependency0, TestImpl0]
-      ))
+      assert(
+        Module.bindings == Set(
+          Bindings.binding[TestClass],
+          Bindings.binding[TestDependency0, TestImpl0]
+        )
+      )
     }
 
     "correctly handle sets" in {
@@ -76,19 +80,19 @@ class DSLTest extends WordSpec with MkInjector {
           .add[SetImpl3]
       }
 
-      assert(definition == Module.make(
-        Set(
-          Bindings.emptySet[SetTrait]
-          , Bindings.setElement[SetTrait, SetImpl1]
-          , Bindings.setElement[SetTrait, SetImpl2]
-          , Bindings.setElement[SetTrait, SetImpl3]
-
-          , Bindings.binding[Service0]
-          , Bindings.binding[Service1]
-          , Bindings.binding[Service2]
-          , Bindings.binding[Service3]
+      assert(
+        definition == Module.make(
+          Set(
+            Bindings.emptySet[SetTrait],
+            Bindings.setElement[SetTrait, SetImpl1],
+            Bindings.setElement[SetTrait, SetImpl2],
+            Bindings.setElement[SetTrait, SetImpl3],
+            Bindings.binding[Service0],
+            Bindings.binding[Service1],
+            Bindings.binding[Service2],
+            Bindings.binding[Service3]
+          )
         )
-      )
       )
     }
 
@@ -118,18 +122,20 @@ class DSLTest extends WordSpec with MkInjector {
       }
 
       val mod5: ModuleBase = (Module.empty
-        :+ Bindings.binding[TestDependency0, TestImpl0]
-        )
+        :+ Bindings.binding[TestDependency0, TestImpl0])
 
       val combinedModules = Seq(mod1, mod2, mod3, mod4, mod5)
         .foldLeft[ModuleBase](Module.empty)(_ ++ _)
 
-      val complexModule = Module.make(Set(
-        Bindings.binding[TestClass]
-        , Bindings.binding[TestDependency0, TestImpl0]
-        , Bindings.binding[TestCaseClass2]
-        , Bindings.binding(TestInstanceBinding())
-      ))
+      val complexModule = Module
+        .make(
+          Set(
+            Bindings.binding[TestClass],
+            Bindings.binding[TestDependency0, TestImpl0],
+            Bindings.binding[TestCaseClass2],
+            Bindings.binding(TestInstanceBinding())
+          )
+        )
         .++(mod3) // function pointer equality on magic trait providers
 
       assert(combinedModules == complexModule)
@@ -171,17 +177,15 @@ class DSLTest extends WordSpec with MkInjector {
         tag("tag2")
       }
 
-      assert(definition.bindings == Set(
-        Bindings.binding[TestClass].addTags(Set("tag1", "tag2"))
-        , Bindings.binding[TestDependency0].addTags(Set("tag1", "tag2", "sniv")))
-      )
+      assert(definition.bindings == Set(Bindings.binding[TestClass].addTags(Set("tag1", "tag2")), Bindings.binding[TestDependency0].addTags(Set("tag1", "tag2", "sniv"))))
     }
 
     "ModuleBuilder supports tags; same bindings with different tags are merged" in {
       import SetCase1._
 
       val definition = new ModuleDef {
-        many[SetTrait].named("n1").tagged("A", "B")
+        many[SetTrait]
+          .named("n1").tagged("A", "B")
           .add[SetImpl1].tagged("A")
           .add[SetImpl2].tagged("B")
           .add[SetImpl3].tagged("A") // merge
@@ -213,7 +217,8 @@ class DSLTest extends WordSpec with MkInjector {
       val set = Set(new SetImpl5, new SetImpl5)
 
       val definition = new ModuleDef {
-        many[SetTrait].named("n1").tagged("A", "B")
+        many[SetTrait]
+          .named("n1").tagged("A", "B")
           .addSetValue(set).tagged("A") // merge
           .addSetValue(set).tagged("B") // merge
       }
@@ -300,7 +305,6 @@ class DSLTest extends WordSpec with MkInjector {
 
     }
 
-
     "support includes" in {
       import BasicCase1._
 
@@ -337,58 +341,76 @@ class DSLTest extends WordSpec with MkInjector {
           .to[TraitZ]
       }
 
-      assert(definition === Module.make(
-        Set(
-          Bindings.binding[ImplXYZ]
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+      assert(
+        definition === Module.make(
+          Set(
+            Bindings.binding[ImplXYZ],
+            Bindings.reference[TraitX, ImplXYZ],
+            Bindings.reference[TraitY, ImplXYZ],
+            Bindings.reference[TraitZ, ImplXYZ]
+          )
         )
-      ))
+      )
 
       val definitionEffect = new ModuleDef {
         bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definitionEffect === Module.make(
-        Set(
-          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
-            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)), Set.empty, SourceFilePosition.unknown)
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+      assert(
+        definitionEffect === Module.make(
+          Set(
+            SingletonBinding(
+              DIKey.get[ImplXYZ],
+              ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)),
+              Set.empty,
+              SourceFilePosition.unknown
+            ),
+            Bindings.reference[TraitX, ImplXYZ],
+            Bindings.reference[TraitY, ImplXYZ],
+            Bindings.reference[TraitZ, ImplXYZ]
+          )
         )
-      ))
+      )
 
       val definitionResource = new ModuleDef {
         bindResource[DIResource.Simple[ImplXYZ]].to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definitionResource === Module.make(
-        Set(
-          SingletonBinding(DIKey.get[ImplXYZ]
-            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]]))
-            , Set.empty, SourceFilePosition.unknown)
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+      assert(
+        definitionResource === Module.make(
+          Set(
+            SingletonBinding(
+              DIKey.get[ImplXYZ],
+              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]])),
+              Set.empty,
+              SourceFilePosition.unknown
+            ),
+            Bindings.reference[TraitX, ImplXYZ],
+            Bindings.reference[TraitY, ImplXYZ],
+            Bindings.reference[TraitZ, ImplXYZ]
+          )
         )
-      ))
+      )
 
       val definitionResourceFn = new ModuleDef {
         bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definitionResourceFn === Module.make(
-        Set(
-          SingletonBinding(DIKey.get[ImplXYZ]
-            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource))
-            , Set.empty, SourceFilePosition.unknown)
-          , Bindings.reference[TraitX, ImplXYZ]
-          , Bindings.reference[TraitY, ImplXYZ]
-          , Bindings.reference[TraitZ, ImplXYZ]
+      assert(
+        definitionResourceFn === Module.make(
+          Set(
+            SingletonBinding(
+              DIKey.get[ImplXYZ],
+              ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource)),
+              Set.empty,
+              SourceFilePosition.unknown
+            ),
+            Bindings.reference[TraitX, ImplXYZ],
+            Bindings.reference[TraitY, ImplXYZ],
+            Bindings.reference[TraitZ, ImplXYZ]
+          )
         )
-      ))
+      )
 
     }
 
@@ -396,7 +418,8 @@ class DSLTest extends WordSpec with MkInjector {
       import BasicCase6._
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl")
+        bind[ImplXYZ]
+          .named("my-impl")
           .to[TraitX]
           .to[TraitY]("Y")
       })
@@ -408,7 +431,8 @@ class DSLTest extends WordSpec with MkInjector {
       })
 
       val defWithTags = PlannerInput.noGc(new ModuleDef {
-        bind[ImplXYZ].named("my-impl").tagged("tag1")
+        bind[ImplXYZ]
+          .named("my-impl").tagged("tag1")
           .to[TraitX]
           .to[TraitY]
       })

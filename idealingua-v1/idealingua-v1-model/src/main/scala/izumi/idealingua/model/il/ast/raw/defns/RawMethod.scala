@@ -31,7 +31,3 @@ object RawMethod {
   final case class RPCMethod(name: String, signature: Signature, meta: RawNodeMeta) extends RawMethod
 
 }
-
-
-
-

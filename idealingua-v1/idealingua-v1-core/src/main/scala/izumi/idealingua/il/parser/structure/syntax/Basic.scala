@@ -9,7 +9,7 @@ object Basic {
 
   //Numbers and digits
 
-  final val digits  = "0123456789"
+  final val digits = "0123456789"
   final val hexDigits = "0123456789abcdefABCDEF"
 
   def Digit[_: P]: P[Unit] = P(CharIn(digits))
@@ -25,8 +25,7 @@ object Basic {
   def OpChar[_: P]: P[Unit] = P(CharPred(isOpChar))
 
   def isOpChar(c: Char): Boolean = c match {
-    case '!' | '#' | '%' | '&' | '*' | '+' | '-' | '/' |
-         ':' | '<' | '=' | '>' | '?' | '@' | '\\' | '^' | '|' | '~' => true
+    case '!' | '#' | '%' | '&' | '*' | '+' | '-' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '\\' | '^' | '|' | '~' => true
     case _ => isOtherSymbol(c) || isMathSymbol(c)
   }
 

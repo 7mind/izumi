@@ -10,8 +10,7 @@ import izumi.distage.testkit.st.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
-
-abstract class TestkitMemoizationTest[F[_] : TagK] extends TestkitSelftest[F] {
+abstract class TestkitMemoizationTest[F[_]: TagK] extends TestkitSelftest[F] {
   val ref = new AtomicReference[TestResource1]()
 
   "testkit" must {

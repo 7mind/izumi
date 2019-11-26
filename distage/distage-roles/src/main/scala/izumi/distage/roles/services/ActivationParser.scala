@@ -11,55 +11,50 @@ import izumi.logstage.api.IzLogger
 
 class ActivationParser {
   def parseActivation(
-                       logger: IzLogger,
-                       parameters: RawAppArgs,
-                       defApp: ModuleBase,
-                       defaultActivations: Map[AxisBase, AxisValue],
-                       requiredActivations: Map[AxisBase, AxisValue],
-                     ): AppActivation = {
+    logger: IzLogger,
+    parameters: RawAppArgs,
+    defApp: ModuleBase,
+    defaultActivations: Map[AxisBase, AxisValue],
+    requiredActivations: Map[AxisBase, AxisValue],
+  ): AppActivation = {
     val uses = Options.use.findValues(parameters.globalParameters)
     val availableUses: Map[AxisBase, Set[AxisValue]] = ActivationParser.findAvailableChoices(logger, defApp)
 
     def options: String = {
-      availableUses
-        .map {
-          case (axis, members) =>
-            s"$axis:${members.niceList().shift(2)}"
-        }
-        .niceList()
+      availableUses.map {
+        case (axis, members) =>
+          s"$axis:${members.niceList().shift(2)}"
+      }.niceList()
     }
 
-    val activeChoices = uses
-      .map {
-        c =>
-          val (axisName, choiceName) = c.value.split2(':')
-          availableUses.find(_._1.name == axisName) match {
-            case Some((base, members)) =>
-              members.find(_.id == choiceName) match {
-                case Some(member) =>
-                  base -> member
-                case None =>
-                  logger.crit(s"Unknown choice: $choiceName")
-                  logger.crit(s"Available $options")
-                  throw new DiAppBootstrapException(s"Unknown choice: $choiceName")
-              }
+    val activeChoices = uses.map {
+      c =>
+        val (axisName, choiceName) = c.value.split2(':')
+        availableUses.find(_._1.name == axisName) match {
+          case Some((base, members)) =>
+            members.find(_.id == choiceName) match {
+              case Some(member) =>
+                base -> member
+              case None =>
+                logger.crit(s"Unknown choice: $choiceName")
+                logger.crit(s"Available $options")
+                throw new DiAppBootstrapException(s"Unknown choice: $choiceName")
+            }
 
-            case None =>
-              logger.crit(s"Unknown axis: $axisName")
-              logger.crit(s"Available $options")
-              throw new DiAppBootstrapException(s"Unknown axis: $axisName")
-          }
-      }
+          case None =>
+            logger.crit(s"Unknown axis: $axisName")
+            logger.crit(s"Available $options")
+            throw new DiAppBootstrapException(s"Unknown axis: $axisName")
+        }
+    }
 
     import izumi.fundamentals.collections.IzCollections._
     val badChoices = activeChoices.toMultimap.filter(_._2.size > 1)
     if (badChoices.nonEmpty) {
-      val conflicts = badChoices
-        .map {
-          case (name, c) =>
-            s"$name: ${c.mkString(", ")}"
-        }
-        .niceList()
+      val conflicts = badChoices.map {
+        case (name, c) =>
+          s"$name: ${c.mkString(", ")}"
+      }.niceList()
       logger.crit(s"Conflicting choices, you can activate one choice on each axis $conflicts")
       throw new DiAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
     }
@@ -71,9 +66,10 @@ class ActivationParser {
 
 object ActivationParser {
   def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisValue]] = {
-    val allChoices = defApp.bindings.flatMap(_.tags).collect({
-      case BindingTag.AxisTag(choice) => choice
-    })
+    val allChoices = defApp.bindings
+      .flatMap(_.tags).collect({
+        case BindingTag.AxisTag(choice) => choice
+      })
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
     val badAxis = allAxis.filter(_._2.size > 1)
     if (badAxis.nonEmpty) {

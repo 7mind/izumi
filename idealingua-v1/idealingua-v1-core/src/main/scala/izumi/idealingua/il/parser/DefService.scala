@@ -5,7 +5,6 @@ import izumi.idealingua.model.il.ast.raw.defns.{RawMethod, RawService, RawTopLev
 import fastparse.NoWhitespace._
 import fastparse._
 
-
 class DefService(context: IDLParserContext) {
 
   import context._
@@ -14,10 +13,9 @@ class DefService(context: IDLParserContext) {
   // other method kinds should be added here
   def methods[_: P]: P[Seq[RawMethod]] = P(defSignature.method(kw.defm).rep(sep = any))
 
-  def serviceBlock[_: P]: P[RawTopLevelDefn.TLDService] = P(metaAgg.cblock(kw.service, methods))
-    .map {
+  def serviceBlock[_: P]: P[RawTopLevelDefn.TLDService] =
+    P(metaAgg.cblock(kw.service, methods)).map {
       case (c, i, v) => RawService(i.toServiceId, v.toList, c)
-    }
-    .map(RawTopLevelDefn.TLDService)
+    }.map(RawTopLevelDefn.TLDService)
 
 }

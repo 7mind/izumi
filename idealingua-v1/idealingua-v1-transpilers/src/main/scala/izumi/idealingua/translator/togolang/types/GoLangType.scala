@@ -8,11 +8,11 @@ import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import izumi.idealingua.model.typespace.Typespace
 import izumi.idealingua.model.il.ast.typed.TypeDef.Enumeration
 
-final case class GoLangType (
-                        id: TypeId,
-                        im: GoLangImports,
-                        ts: Typespace = null
-                      ) {
+final case class GoLangType(
+  id: TypeId,
+  im: GoLangImports,
+  ts: Typespace = null
+) {
 
   def hasSetterError: Boolean = {
     hasSetterErrorImpl(id)
@@ -22,10 +22,11 @@ final case class GoLangType (
     id match {
       case Primitive.TUUID => true
       case Primitive.TBLOB => ???
-      case g: Generic => g match {
-        case _: Generic.TOption => false
-        case _ => true
-      }
+      case g: Generic =>
+        g match {
+          case _: Generic.TOption => false
+          case _ => true
+        }
       case _: InterfaceId | _: AdtId | _: DTOId | _: IdentifierId => true
       case al: AliasId => hasSetterErrorImpl(ts(al).asInstanceOf[Alias].target)
       case _ => false
@@ -53,12 +54,13 @@ final case class GoLangType (
   }
 
   def isSlice(id: TypeId): Boolean = id match {
-    case g: Generic => g match {
-      case _: Generic.TOption => false
-      case _: Generic.TList => true
-      case _: Generic.TSet => true
-      case _: Generic.TMap => true
-    }
+    case g: Generic =>
+      g match {
+        case _: Generic.TOption => false
+        case _: Generic.TList => true
+        case _: Generic.TSet => true
+        case _: Generic.TMap => true
+      }
     case _ => false
   }
 
@@ -70,37 +72,40 @@ final case class GoLangType (
     case _: InterfaceId => false
     case _: EnumId => false
     case al: AliasId => isPrimitive(ts.dealias(al))
-    case g: Generic => g match {
-      case _: Generic.TOption => false //isPrimitive(go.valueType)
-      case _: Generic.TList => true // isPrimitive(gl.valueType)
-      case _: Generic.TSet => true // isPrimitive(gs.valueType)
-      case _: Generic.TMap => true // isPrimitive(gm.valueType)
-    }
+    case g: Generic =>
+      g match {
+        case _: Generic.TOption => false //isPrimitive(go.valueType)
+        case _: Generic.TList => true // isPrimitive(gl.valueType)
+        case _: Generic.TSet => true // isPrimitive(gs.valueType)
+        case _: Generic.TMap => true // isPrimitive(gm.valueType)
+      }
     case _ => throw new IDLException(s"Unknown type is checked for primitiveness ${id.name}")
   }
 
   def isPolymorph(id: TypeId): Boolean = id match {
-    case p: Primitive => p match {
+    case p: Primitive =>
+      p match {
 //      case Primitive.TUUID => true
-      case Primitive.TTsU => true
-      case Primitive.TTs => true
-      case Primitive.TTsTz => true
-      case Primitive.TDate => true
-      case Primitive.TTime => true
-      case _ => false
-    }
+        case Primitive.TTsU => true
+        case Primitive.TTs => true
+        case Primitive.TTsTz => true
+        case Primitive.TDate => true
+        case Primitive.TTime => true
+        case _ => false
+      }
     case _: DTOId => true
     case _: IdentifierId => true
     case _: AdtId => true
     case _: InterfaceId => true
     case _: EnumId => true
     case al: AliasId => isPolymorph(ts.dealias(al))
-    case g: Generic => g match {
-      case go: Generic.TOption => isPolymorph(go.valueType)
-      case gl: Generic.TList => isPolymorph(gl.valueType)
-      case gs: Generic.TSet => isPolymorph(gs.valueType)
-      case gm: Generic.TMap => isPolymorph(gm.valueType)
-    }
+    case g: Generic =>
+      g match {
+        case go: Generic.TOption => isPolymorph(go.valueType)
+        case gl: Generic.TList => isPolymorph(gl.valueType)
+        case gs: Generic.TSet => isPolymorph(gs.valueType)
+        case gm: Generic.TMap => isPolymorph(gm.valueType)
+      }
     case _ => false
   }
 
@@ -136,26 +141,28 @@ final case class GoLangType (
         case _: AdtId => "json.RawMessage" // TODO Consider exposing ADT as map[string]json.RawMessage so we can see the internals of it
         case _: IdentifierId | _: EnumId => "string"
         case d: DTOId => s"*${im.withImport(d)}${d.name}Serialized"
-        case al: AliasId => ts.dealias(al) match {
+        case al: AliasId =>
+          ts.dealias(al) match {
 //          case _: Primitive => id.name
-          case _: DTOId => s"*${im.withImport(al)}${al.name}Serialized"
-          case _ => renderNativeType(ts.dealias(al), serialized)
-        }
+            case _: DTOId => s"*${im.withImport(al)}${al.name}Serialized"
+            case _ => renderNativeType(ts.dealias(al), serialized)
+          }
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     } else {
       id match {
-        case _: EnumId => if(forMap) "string" else s"${im.withImport(id)}${id.name}"
+        case _: EnumId => if (forMap) "string" else s"${im.withImport(id)}${id.name}"
         case _: InterfaceId => s"${im.withImport(id)}${id.name}"
-        case _: IdentifierId => if(forMap) "string" else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+        case _: IdentifierId => if (forMap) "string" else s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
         case _: AdtId | _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        case al: AliasId => ts.dealias(al) match {
-          case _: Primitive => id.name
-          case _: EnumId => id.name
-          case _: InterfaceId => s"${im.withImport(id)}${id.name}"
-          case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-          case _ => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
-        }
+        case al: AliasId =>
+          ts.dealias(al) match {
+            case _: Primitive => id.name
+            case _: EnumId => id.name
+            case _: InterfaceId => s"${im.withImport(id)}${id.name}"
+            case _: DTOId => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+            case _ => s"${if (forAlias) "" else "*"}${im.withImport(id)}${id.name}"
+          }
         case _ => throw new IDLException(s"Impossible renderUserType ${id.name}")
       }
     }
@@ -194,14 +201,15 @@ final case class GoLangType (
            |$assignLeft$tempContent$assignRight
          """.stripMargin
 
-      case g: Generic => g match {
-        case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TOption"
-        case _: Generic.TMap | _: Generic.TList | _: Generic.TSet =>
-          s"""$tempContent := &${renderType(forAlias = true)}{}
-             |${renderUnmarshalShared(content, tempContent, errorCheck = true)}
-             |$assignLeft*$tempContent$assignRight
+      case g: Generic =>
+        g match {
+          case _: Generic.TOption => "{Not implemented renderUnmarshal.Generic.TOption"
+          case _: Generic.TMap | _: Generic.TList | _: Generic.TSet =>
+            s"""$tempContent := &${renderType(forAlias = true)}{}
+               |${renderUnmarshalShared(content, tempContent, errorCheck = true)}
+               |$assignLeft*$tempContent$assignRight
            """.stripMargin
-      }
+        }
 
       case _ => throw new IDLException(s"Primitive types should not be unmarshalled manually ${id.name}")
       // case _ => assignLeft + content + assignRight
@@ -230,19 +238,30 @@ final case class GoLangType (
     if (unescape) {
       id match {
         case Primitive.TString => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
-        case Primitive.TBool => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseBool(${dest}Str)\nif err != nil {\n    return err\n}\n$dest := bool(${dest}64)"
-        case Primitive.TInt8 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := int8(${dest}64)"
-        case Primitive.TInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := int16(${dest}64)"
-        case Primitive.TInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"
-        case Primitive.TInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
-        case Primitive.TUInt8 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := uint8(${dest}64)"
-        case Primitive.TUInt16 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := uint16(${dest}64)"
-        case Primitive.TUInt32 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := uint32(${dest}64)"
-        case Primitive.TUInt64 => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseUInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
+        case Primitive.TBool =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseBool(${dest}Str)\nif err != nil {\n    return err\n}\n$dest := bool(${dest}64)"
+        case Primitive.TInt8 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := int8(${dest}64)"
+        case Primitive.TInt16 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := int16(${dest}64)"
+        case Primitive.TInt32 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := int32(${dest}64)"
+        case Primitive.TInt64 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
+        case Primitive.TUInt8 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 8)\nif err != nil {\n    return err\n}\n$dest := uint8(${dest}64)"
+        case Primitive.TUInt16 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 16)\nif err != nil {\n    return err\n}\n$dest := uint16(${dest}64)"
+        case Primitive.TUInt32 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n${dest}64, err := strconv.ParseUInt(${dest}Str, 10, 32)\nif err != nil {\n    return err\n}\n$dest := uint32(${dest}64)"
+        case Primitive.TUInt64 =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest, err := strconv.ParseUInt(${dest}Str, 10, 64)\nif err != nil {\n    return err\n}"
         case Primitive.TUUID => s"$dest, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}"
         case Primitive.TBLOB => ???
-        case en: EnumId => s"""${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\nif !IsValid${en.name}(${dest}Str) {\n    return fmt.Errorf("Unknown value %s for enum type ${en.name}", ${dest}Str)\n}\n$dest := New${en.name}(${dest}Str)"""
-        case id: IdentifierId => s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest := &${id.name}{}\nif err := $dest.LoadSerialized(${dest}Str); err != nil {\n    return err\n}"
+        case en: EnumId =>
+          s"""${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\nif !IsValid${en.name}(${dest}Str) {\n    return fmt.Errorf("Unknown value %s for enum type ${en.name}", ${dest}Str)\n}\n$dest := New${en.name}(${dest}Str)"""
+        case id: IdentifierId =>
+          s"${dest}Str, err := url.QueryUnescape($src)\nif err != nil {\n    return err\n}\n$dest := &${id.name}{}\nif err := $dest.LoadSerialized(${dest}Str); err != nil {\n    return err\n}"
         case _ => throw new IDLException(s"Should never parse non int or string types. Used for type ${id.name}")
       }
     } else {
@@ -270,12 +289,13 @@ final case class GoLangType (
     case Primitive.TTs => "\"0000-00-00T00:00:00.00000\""
     case Primitive.TTsTz => "\"0000-00-00T00:00:00.00000+10:00[Australia/Sydney]\""
     case Primitive.TTsU => "\"0000-00-00T00:00:00.00000Z[UTC]\""
-    case g: Generic => g match {
-      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
-      case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
-      case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
-      case _: Generic.TOption => "nil"
-    }
+    case g: Generic =>
+      g match {
+        case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
+        case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
+        case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
+        case _: Generic.TOption => "nil"
+      }
     case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).defaultValue()
     case e: EnumId => ts(e).asInstanceOf[Enumeration].members.head.value
     case _: IdentifierId | _: DTOId => "nil"
@@ -303,17 +323,19 @@ final case class GoLangType (
     case Primitive.TTs => "time.Now()" // "\"2010-12-01T15:10:10.10001\""
     case Primitive.TTsTz => "time.Now()" // "\"2010-12-01T15:10:10.10001+10:00[Australia/Sydney]\""
     case Primitive.TTsU => "time.Now()" // "\"2010-12-01T15:10:10.10001Z[UTC]\""
-    case g: Generic => g match {
-      case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
-      case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
-      case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
-      case _: Generic.TOption => "nil"
-    }
-    case al: AliasId => ts.dealias(al) match {
-      case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${al.name}()"
-      case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.tools.implId(i).name}()"
-      case _ => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
-    }
+    case g: Generic =>
+      g match {
+        case gm: Generic.TMap => s"map[${GoLangType(gm.keyType, im, ts).renderType(forMap = true)}]${GoLangType(gm.valueType, im, ts).renderType()}{}"
+        case gl: Generic.TList => s"[]${GoLangType(gl.valueType, im, ts).renderType()}{}"
+        case gs: Generic.TSet => s"[]${GoLangType(gs.valueType, im, ts).renderType()}{}"
+        case _: Generic.TOption => "nil"
+      }
+    case al: AliasId =>
+      ts.dealias(al) match {
+        case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${al.name}()"
+        case i: InterfaceId => s"${im.withImport(id)}NewTest${al.name + ts.tools.implId(i).name}()"
+        case _ => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValue()
+      }
     case _: IdentifierId | _: DTOId | _: EnumId => s"${im.withImport(id)}NewTest${id.name}()"
     case i: InterfaceId => s"${im.withImport(id)}NewTest${i.name + ts.tools.implId(i).name}()"
     case ad: AdtId => s"${im.withImport(id)}NewTest${ad.name}()"
@@ -322,7 +344,7 @@ final case class GoLangType (
 
   def testValuePackage(): List[String] = id match {
     case Primitive.TTime | Primitive.TDate | Primitive.TTsTz | Primitive.TTs | Primitive.TTsU => List("time")
-      // TODO For testing we might want to import from other packages...
+    // TODO For testing we might want to import from other packages...
 //    case al: AliasId => GoLangType(ts(al).asInstanceOf[Alias].target, im, ts).testValuePackage()
 //    case _: IdentifierId | _: DTOId | _: EnumId => s"NewTest${id.name}()"
 //    case i: InterfaceId => s"NewTest${i.name + ts.implId(i).name}()"
@@ -332,8 +354,8 @@ final case class GoLangType (
 
 object GoLangType {
   def apply(
-             id: TypeId,
-             im: GoLangImports,
-             ts: Typespace = null
-           ): GoLangType = new GoLangType(id, im, ts)
+    id: TypeId,
+    im: GoLangImports,
+    ts: Typespace = null
+  ): GoLangType = new GoLangType(id, im, ts)
 }

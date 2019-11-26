@@ -32,5 +32,3 @@ final class PlanningObserverAggregate(planningObservers: Set[PlanningObserver]) 
     planningObservers.foreach(_.onPhase90AfterForwarding(finalPlan))
   }
 }
-
-

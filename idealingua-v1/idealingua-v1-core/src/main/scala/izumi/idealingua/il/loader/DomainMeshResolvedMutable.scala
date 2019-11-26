@@ -8,8 +8,7 @@ import izumi.idealingua.model.loader.FSPath
 
 import scala.collection.mutable
 
-private[loader] class DomainMeshResolvedMutable
-(
+private[loader] class DomainMeshResolvedMutable(
   override val id: DomainId,
   override val members: Seq[RawTopLevelDefn],
   override val origin: FSPath,

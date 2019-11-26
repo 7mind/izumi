@@ -10,8 +10,8 @@ import izumi.distage.roles.services.ResourceRewriter.RewriteRules
   * @param configInjectionOptions
   */
 case class ContextOptions(
-                           addGraphVizDump: Boolean = false,
-                           warnOnCircularDeps: Boolean = true,
-                           rewriteRules: RewriteRules = RewriteRules(),
-                           configInjectionOptions: ConfigInjectionOptions = ConfigInjectionOptions(),
-                         )
+  addGraphVizDump: Boolean = false,
+  warnOnCircularDeps: Boolean = true,
+  rewriteRules: RewriteRules = RewriteRules(),
+  configInjectionOptions: ConfigInjectionOptions = ConfigInjectionOptions(),
+)

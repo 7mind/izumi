@@ -15,30 +15,28 @@ import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class ConfigProvider
-(
-  config: AppConfig
-, reader: RuntimeConfigReader
-, injectorConfig: ConfigInjectionOptions
+class ConfigProvider(
+  config: AppConfig,
+  reader: RuntimeConfigReader,
+  injectorConfig: ConfigInjectionOptions
 ) extends PlanningHook {
 
   import ConfigProvider._
 
   override def phase20Customization(plan: SemiPlan): SemiPlan = {
-    val updatedSteps = plan.steps
-      .map {
-        case ConfigImport(ci) =>
-          try {
-            val requirement = toRequirement(ci)
-            translate(ci, requirement)
-          } catch {
-            case NonFatal(t) =>
-              TranslationResult.Failure(ci.imp, config.config.origin, t)
-          }
+    val updatedSteps = plan.steps.map {
+      case ConfigImport(ci) =>
+        try {
+          val requirement = toRequirement(ci)
+          translate(ci, requirement)
+        } catch {
+          case NonFatal(t) =>
+            TranslationResult.Failure(ci.imp, config.config.origin, t)
+        }
 
-        case s =>
-          TranslationResult.Passthrough(s)
-      }
+      case s =>
+        TranslationResult.Passthrough(s)
+    }
 
     val errors = updatedSteps.collect({ case t: TranslationFailure => t })
 
@@ -66,8 +64,9 @@ class ConfigProvider
     val resolvedConfig = ResolvedConfig(config, paths.toSet)
     val target = DIKey.get[ResolvedConfig]
     ExecutableOp.WiringOp.ReferenceInstance(
-      target
-      , Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig), None
+      target,
+      Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig),
+      None
     )
   }
 
@@ -87,8 +86,9 @@ class ConfigProvider
           val product = injectorConfig.transformer.transform.lift((ci, loaded)).getOrElse(loaded)
           TranslationResult.Success(
             ExecutableOp.WiringOp.ReferenceInstance(
-              step.target
-              , Wiring.SingletonWiring.Instance(step.target.tpe, product), op.origin
+              step.target,
+              Wiring.SingletonWiring.Instance(step.target.tpe, product),
+              op.origin
             ),
             loadedPath
           )
@@ -147,15 +147,14 @@ class ConfigProvider
     val dc = DependencyContext(structInfo(op), usageInfo(op))
 
     Seq(
-      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
-      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
-      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier)
-      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier)
-
-      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName)
-      , ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name)
-      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName)
-      , ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
+      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier),
+      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier),
+      ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName ++ dc.dep.qualifier),
+      ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name ++ dc.dep.qualifier),
+      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.fqName),
+      ConfigPath(dc.usage.fqName ++ dc.usage.qualifier ++ dc.dep.name),
+      ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.fqName),
+      ConfigPath(dc.usage.name ++ dc.usage.qualifier ++ dc.dep.name)
     ).distinct
   }
 
@@ -168,7 +167,6 @@ class ConfigProvider
       case _ =>
         throw new IllegalArgumentException(s"Unexpected op: $op")
     }
-
 
     val structFqName = op.imp.target.tpe.name
     val structFqParts = structFqName.split('.').toSeq

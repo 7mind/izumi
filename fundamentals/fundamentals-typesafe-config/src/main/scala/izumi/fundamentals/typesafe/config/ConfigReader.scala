@@ -14,13 +14,10 @@ trait ConfigReader[T] {
 
 object ConfigReader {
   def fromString[T: ClassTag](f: String => T): ConfigReader[T] = {
-    case cv: ConfigValue if Set(STRING, BOOLEAN, NUMBER) contains cv.valueType  =>
+    case cv: ConfigValue if Set(STRING, BOOLEAN, NUMBER) contains cv.valueType =>
       Try(f(String.valueOf(cv.unwrapped)))
     case cv =>
-      scala.util.Failure(new ConfigReadException(
-        s"""Encountered a non-String, Boolean or Number value when trying to deserialize as ${implicitly[ClassTag[T]]}
-           | using a String codec. ConfigValue was: $cv""".stripMargin))
+      scala.util.Failure(new ConfigReadException(s"""Encountered a non-String, Boolean or Number value when trying to deserialize as ${implicitly[ClassTag[T]]}
+                                                    | using a String codec. ConfigValue was: $cv""".stripMargin))
   }
 }
-
-

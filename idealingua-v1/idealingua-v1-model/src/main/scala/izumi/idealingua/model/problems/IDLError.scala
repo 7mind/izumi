@@ -63,7 +63,6 @@ object RefResolverIssue {
 
 }
 
-
 sealed trait TypespaceError extends IDLError
 
 object TypespaceError {

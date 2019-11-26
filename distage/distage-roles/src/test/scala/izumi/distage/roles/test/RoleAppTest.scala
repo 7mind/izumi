@@ -20,8 +20,7 @@ import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import org.scalatest.WordSpec
 
-class RoleAppTest extends WordSpec
-  with WithProperties {
+class RoleAppTest extends WordSpec with WithProperties {
   private val prefix = "target/configwriter"
 
   private val overrides = Map(
@@ -40,21 +39,25 @@ class RoleAppTest extends WordSpec
 
       new RoleAppMain.Silent({
         new TestLauncher {
-          override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
-            l.copy(app = Seq(l.app.merge overridenBy new ModuleDef {
-              make[InitCounter].from {
-                locatorRef: LocatorRef =>
-                  locator0 = locatorRef
-                  initCounter
-              }
-            }))
+          override protected def pluginSource: PluginSource = super.pluginSource.map {
+            l =>
+              l.copy(app = Seq(l.app.merge overridenBy new ModuleDef {
+                make[InitCounter].from {
+                  locatorRef: LocatorRef =>
+                    locator0 = locatorRef
+                    initCounter
+                }
+              }))
           }
         }
-      }).main(Array(
-        "-ll", "info",
-        ":" + AdoptedAutocloseablesCase.id,
-        ":" + TestRole00.id,
-      ))
+      }).main(
+        Array(
+          "-ll",
+          "info",
+          ":" + AdoptedAutocloseablesCase.id,
+          ":" + TestRole00.id,
+        )
+      )
 
 //      println(initCounter.startedCloseables)
 //      println(initCounter.closedCloseables)
@@ -71,30 +74,35 @@ class RoleAppTest extends WordSpec
 
       new RoleAppMain.Silent({
         new TestLauncher {
-          override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
-            l.copy(app = Seq(
-              new ResourcesPluginBase().morph[PluginBase],
-              new ConflictPlugin,
-              new TestPlugin,
-              new AdoptedAutocloseablesCasePlugin,
-              new PluginDef {
-                make[Resource0].from[Resource1]
-                many[Resource0].ref[Resource0]
-                make[InitCounter].from {
-                  locatorRef: LocatorRef =>
-                    locator0 = locatorRef
-                    initCounter
-                }
-              }))
+          override protected def pluginSource: PluginSource = super.pluginSource.map {
+            l =>
+              l.copy(
+                app = Seq(
+                  new ResourcesPluginBase().morph[PluginBase],
+                  new ConflictPlugin,
+                  new TestPlugin,
+                  new AdoptedAutocloseablesCasePlugin,
+                  new PluginDef {
+                    make[Resource0].from[Resource1]
+                    many[Resource0].ref[Resource0]
+                    make[InitCounter].from {
+                      locatorRef: LocatorRef =>
+                        locator0 = locatorRef
+                        initCounter
+                    }
+                  }
+                )
+              )
           }
         }
-      }).main(Array(
-        "-ll", "info",
-        ":" + AdoptedAutocloseablesCase.id,
-        ":" + TestRole00.id,
-      ))
-
-
+      }).main(
+        Array(
+          "-ll",
+          "info",
+          ":" + AdoptedAutocloseablesCase.id,
+          ":" + TestRole00.id,
+        )
+      )
 
 //      println(initCounter.startedCloseables)
 //      println(initCounter.closedCloseables)
@@ -108,10 +116,10 @@ class RoleAppTest extends WordSpec
       val logger = IzLogger()
       val initCounter = new InitCounter
       val definition = (new ResourcesPluginBase {
-        make[Resource0].from[Resource1]
-        many[Resource0].ref[Resource0]
-        make[InitCounter].fromValue(initCounter)
-      } ++ IdentityDIEffectModule)
+          make[Resource0].from[Resource1]
+          many[Resource0].ref[Resource0]
+          make[InitCounter].fromValue(initCounter)
+        } ++ IdentityDIEffectModule)
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
         BootstrapModule.empty,
@@ -139,14 +147,14 @@ class RoleAppTest extends WordSpec
       val logger = IzLogger()
       val initCounter = new InitCounter
       val definition = new ResourcesPluginBase {
-        make[Resource1]
-        make[Resource0].using[Resource1]
-        make[Resource0 with AutoCloseable].using[Resource1]
-        many[Resource0]
-          .ref[Resource0]
-          .ref[Resource0 with AutoCloseable]
-        make[InitCounter].fromValue(initCounter)
-      } ++ IdentityDIEffectModule
+          make[Resource1]
+          make[Resource0].using[Resource1]
+          make[Resource0 with AutoCloseable].using[Resource1]
+          many[Resource0]
+            .ref[Resource0]
+            .ref[Resource0 with AutoCloseable]
+          make[InitCounter].fromValue(initCounter)
+        } ++ IdentityDIEffectModule
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
         BootstrapModule.empty,
@@ -173,10 +181,15 @@ class RoleAppTest extends WordSpec
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
-        TestEntrypoint.main(Array(
-          "-ll", "critical",
-          ":configwriter", "-t", prefix
-        ))
+        TestEntrypoint.main(
+          Array(
+            "-ll",
+            "critical",
+            ":configwriter",
+            "-t",
+            prefix
+          )
+        )
       }
 
       val cfg1 = cfg("configwriter", version)

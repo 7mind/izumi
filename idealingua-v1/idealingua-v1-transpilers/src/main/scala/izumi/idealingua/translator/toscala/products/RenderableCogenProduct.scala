@@ -2,7 +2,6 @@ package izumi.idealingua.translator.toscala.products
 
 import scala.meta.{Defn, Template}
 
-
 trait RenderableCogenProduct {
   def preamble: String
 
@@ -19,13 +18,11 @@ object RenderableCogenProduct {
   }
 }
 
-
 trait UnaryCogenProduct[T <: Defn] extends RenderableCogenProduct {
   def defn: T
 
   override def render: List[Defn] = List(defn)
 }
-
 
 trait MultipleCogenProduct[T <: Defn] extends UnaryCogenProduct[T] {
   def more: List[Defn]
@@ -36,7 +33,6 @@ trait MultipleCogenProduct[T <: Defn] extends UnaryCogenProduct[T] {
     super.render ++ more
   }
 }
-
 
 trait AccompaniedCogenProduct[T <: Defn] extends MultipleCogenProduct[T] {
   def companion: Defn.Object

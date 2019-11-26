@@ -41,11 +41,9 @@ class TestDep2 extends TestDep
 
 @ExposedTestScope
 class TestService(
-                   val testConf: TestConf @ConfPath("test.testconf")
-                   , val log: IzLogger
-                 )
+  val testConf: TestConf @ConfPath("test.testconf"),
+  val log: IzLogger
+)
 
 @ExposedTestScope
 final case class TestConf(int: Int)
-
-

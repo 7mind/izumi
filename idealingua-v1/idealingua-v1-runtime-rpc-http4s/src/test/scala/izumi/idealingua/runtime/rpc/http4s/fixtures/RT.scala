@@ -23,22 +23,25 @@ object RT {
 
   final val handler = BIORunner.FailureHandler.Custom(message => logger.warn(s"Fiber failed: $message"))
   val platform = new bio.BIORunner.ZIOPlatform(
-    Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor]
-  , handler
-  , 1024
-  , TracingConfig.enabled
+    Executors.newFixedThreadPool(8).asInstanceOf[ThreadPoolExecutor],
+    handler,
+    1024,
+    TracingConfig.enabled
   )
   implicit val runtime: Runtime[Any] = Runtime((), platform)
   implicit val BIOR: BIORunner[zio.IO] = BIORunner.createZIO(platform)
   final val rt = new Http4sRuntime[zio.IO, DummyRequestContext, DummyRequestContext, String, Unit, Unit](global)
 
   private def makeLogger(): IzLogger = {
-    val router = ConfigurableLogRouter(Log.Level.Info, levels = Map(
-      "org.http4s" -> Log.Level.Warn
-      , "org.http4s.server.blaze" -> Log.Level.Error
-      , "org.http4s.blaze.channel.nio1" -> Log.Level.Crit
-      , "izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Crit
-    ))
+    val router = ConfigurableLogRouter(
+      Log.Level.Info,
+      levels = Map(
+        "org.http4s" -> Log.Level.Warn,
+        "org.http4s.server.blaze" -> Log.Level.Error,
+        "org.http4s.blaze.channel.nio1" -> Log.Level.Crit,
+        "izumi.idealingua.runtime.rpc.http4s" -> Log.Level.Crit
+      )
+    )
 
     val out = IzLogger(router)
     StaticLogRouter.instance.setup(router)

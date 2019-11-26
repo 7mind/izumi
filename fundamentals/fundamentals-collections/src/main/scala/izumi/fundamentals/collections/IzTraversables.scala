@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections
 
-import  scala.collection.compat._
+import scala.collection.compat._
 
 final class IzTraversables[A](private val list: IterableOnce[A]) extends AnyVal {
   def maxOr(default: A)(implicit cmp: Ordering[A]): A = {

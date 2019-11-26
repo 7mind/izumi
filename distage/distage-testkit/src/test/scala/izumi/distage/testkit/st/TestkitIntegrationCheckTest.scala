@@ -5,7 +5,7 @@ import izumi.distage.testkit.st.fixtures.{TestFailingIntegrationResource, Testki
 import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
-abstract class TestkitIntegrationCheckTest[F[_] : TagK] extends TestkitSelftest[F] {
+abstract class TestkitIntegrationCheckTest[F[_]: TagK] extends TestkitSelftest[F] {
   "testkit" must {
     "skip test if external resource check failed" in dio {
       _: TestFailingIntegrationResource =>

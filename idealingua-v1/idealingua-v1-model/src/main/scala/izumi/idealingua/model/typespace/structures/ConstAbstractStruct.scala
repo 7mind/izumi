@@ -1,6 +1,6 @@
 package izumi.idealingua.model.typespace.structures
 
-trait ConstAbstractStruct[F] extends AbstractStruct[F]{
+trait ConstAbstractStruct[F] extends AbstractStruct[F] {
   override lazy val inherited: List[F] = super.inherited
 
   override lazy val local: List[F] = super.local

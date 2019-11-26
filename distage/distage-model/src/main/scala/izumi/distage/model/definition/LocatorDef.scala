@@ -23,11 +23,9 @@ import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFil
 import scala.collection.mutable
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able to unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
-trait LocatorDef
-  extends AbstractLocator
-     with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
+trait LocatorDef extends AbstractLocator with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
-  override protected[distage] def finalizers[F[_] : universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override protected[distage] def finalizers[F[_]: universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
   override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
@@ -78,15 +76,13 @@ trait LocatorDef
       case e: EmptySetBinding[_] =>
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>
-        throw new LocatorDefUninstantiatedBindingException(
-          s"""Binding $b is not an instance binding, only forms `make[X].from(instance)` and `many[X].add(y).add(z)`
-             |are supported, binding was defined at ${b.origin}""".stripMargin, b)
+        throw new LocatorDefUninstantiatedBindingException(s"""Binding $b is not an instance binding, only forms `make[X].from(instance)` and `many[X].add(y).add(z)`
+                                                              |are supported, binding was defined at ${b.origin}""".stripMargin, b)
     }
 
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
   }
 }
-
 
 object LocatorDef {
 
@@ -135,18 +131,17 @@ object LocatorDef {
   }
 
   trait BindDSLBase[T, AfterBind] {
-    final def fromValue[I <: T : Tag](instance: I): AfterBind =
+    final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def bind(impl: ImplDef): AfterBind
   }
 
-  final class MultipleDSL[T]
-  (
+  final class MultipleDSL[T](
     protected val mutableState: MultipleRef
   ) extends MultipleDSLMutBase[T] {
 
-    def to[I <: T : Tag]: MultipleDSL[T] = {
+    def to[I <: T: Tag]: MultipleDSL[T] = {
       addOp(ImplWithReference(DIKey.get[I]))(new MultipleDSL[T](_))
     }
 
@@ -160,13 +155,11 @@ object LocatorDef {
     }
   }
 
-
   trait SetDSLBase[T, AfterAdd] {
-    final def addValue[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
-
 
 }

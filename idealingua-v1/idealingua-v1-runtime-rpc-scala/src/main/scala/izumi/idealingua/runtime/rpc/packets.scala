@@ -20,20 +20,18 @@ trait RPCPacketKindCirce {
 object RPCPacketKind extends RPCPacketKindCirce {
   type Element = RPCPacketKind
 
-  def all: Map[String, Element] = Seq(
-    RpcRequest
-    , RpcResponse
-    , RpcFail
-
-    , BuzzRequest
-    , BuzzResponse
-    , BuzzFailure
-
-    , S2CStream
-    , C2SStream
-
-    , Fail
-  ).map(e => e.toString -> e).toMap
+  def all: Map[String, Element] =
+    Seq(
+      RpcRequest,
+      RpcResponse,
+      RpcFail,
+      BuzzRequest,
+      BuzzResponse,
+      BuzzFailure,
+      S2CStream,
+      C2SStream,
+      Fail
+    ).map(e => e.toString -> e).toMap
 
   def parse(value: String): RPCPacketKind = all(value)
 
@@ -85,15 +83,14 @@ object RpcPacketId {
   implicit def enc0: Encoder[RpcPacketId] = Encoder.encodeString.contramap(_.v)
 }
 
-case class RpcPacket
-(
-  kind: RPCPacketKind
-  , data: Option[Json]
-  , id: Option[RpcPacketId]
-  , ref: Option[RpcPacketId]
-  , service: Option[String]
-  , method: Option[String]
-  , headers: Option[Map[String, String]]
+case class RpcPacket(
+  kind: RPCPacketKind,
+  data: Option[Json],
+  id: Option[RpcPacketId],
+  ref: Option[RpcPacketId],
+  service: Option[String],
+  method: Option[String],
+  headers: Option[Map[String, String]]
 )
 
 object RpcPacket {

@@ -4,8 +4,7 @@ import izumi.distage.model.exceptions.AnnotationConflictException
 import izumi.fundamentals.reflection.AnnotationTools
 
 trait WithDISymbolInfo {
-  this: DIUniverseBase
-    with WithDISafeType =>
+  this: DIUniverseBase with WithDISafeType =>
 
   sealed trait SymbolInfo {
     def name: String
@@ -53,13 +52,13 @@ trait WithDISymbolInfo {
     }
 
     case class Static(
-                       name: String
-                       , finalResultType: SafeType
-                       , annotations: List[u.Annotation]
-                       , definingClass: SafeType
-                       , isByName: Boolean
-                       , wasGeneric: Boolean,
-                     ) extends SymbolInfo
+      name: String,
+      finalResultType: SafeType,
+      annotations: List[u.Annotation],
+      definingClass: SafeType,
+      isByName: Boolean,
+      wasGeneric: Boolean,
+    ) extends SymbolInfo
 
     def apply(symb: Symb, definingClass: SafeType, wasGeneric: Boolean): SymbolInfo = Runtime(symb, definingClass, wasGeneric)
 

@@ -9,7 +9,6 @@ import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUnivers
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.reflection.TypeUtil
 
-
 trait ProvisionOperationVerifier {
   def verify(target: RuntimeDIUniverse.DIKey, prohibited: scala.collection.Set[RuntimeDIUniverse.DIKey], value: Any, clue: String): Unit
 }
@@ -23,9 +22,9 @@ object ProvisionOperationVerifier {
   }
 
   class Default(
-                 mirror: MirrorProvider,
-                 unboxingTool: UnboxingTool,
-               ) extends ProvisionOperationVerifier {
+    mirror: MirrorProvider,
+    unboxingTool: UnboxingTool,
+  ) extends ProvisionOperationVerifier {
     def verify(target: RuntimeDIUniverse.DIKey, keys: scala.collection.Set[RuntimeDIUniverse.DIKey], value: Any, clue: String): Unit = {
       if (keys.contains(target)) {
         throw DuplicateInstancesException(target)
@@ -50,7 +49,6 @@ object ProvisionOperationVerifier {
               throwIfIncompatible(target, clue, u)
           }
       }
-
 
     }
 

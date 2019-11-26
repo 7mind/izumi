@@ -8,8 +8,8 @@ class RSimpleStructure(context: IDLRenderingContext) extends Renderable[SimpleSt
 
   override def render(signature: SimpleStructure): String = {
     Seq(
-      signature.concepts.map(_.render()).map(t => s"+ $t")
-      , signature.fields.map(_.render())
+      signature.concepts.map(_.render()).map(t => s"+ $t"),
+      signature.fields.map(_.render())
     ).flatten.mkString(", ")
   }
 }

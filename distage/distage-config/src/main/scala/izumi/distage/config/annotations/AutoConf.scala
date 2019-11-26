@@ -1,6 +1,5 @@
 package izumi.distage.config.annotations
 
-
 /**
   * Inject parameter from configuration.
   *

@@ -91,12 +91,12 @@ object HigherKindCases {
     class TestCovariantTC[F[+_, +_]]
 
     object TestCovariantTC {
-      implicit def apply[F[+ _, + _]]: TestCovariantTC[F] = new TestCovariantTC[F]
+      implicit def apply[F[+_, +_]]: TestCovariantTC[F] = new TestCovariantTC[F]
     }
 
-    class TestClassFA[F[+ _, + _]: TestCovariantTC, A]
+    class TestClassFA[F[+_, +_]: TestCovariantTC, A]
 
-    class TestClassFG[F[+ _, + _]: TestCovariantTC, G[_]]
+    class TestClassFG[F[+_, +_]: TestCovariantTC, G[_]]
 
   }
 

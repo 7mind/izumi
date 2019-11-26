@@ -15,8 +15,8 @@ import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 import scala.util.{Failure, Success, Try}
 
 class SimpleLoggerConfigurator(
-                                exceptionLogger: IzLogger,
-                              ) {
+  exceptionLogger: IzLogger,
+) {
 
   // TODO: this is a temporary solution until we finish full-scale logger configuration support
   def makeLogRouter(config: Config, root: Log.Level, json: Boolean): LogRouter = {

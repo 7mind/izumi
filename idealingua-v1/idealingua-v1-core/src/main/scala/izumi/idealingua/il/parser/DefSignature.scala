@@ -15,11 +15,10 @@ class DefSignature(context: IDLParserContext) {
 
   def errSep[_: P]: P[Unit] = P("!!" | "?!" | "⥃" | "↬" | "or")
 
-
   def baseSignature[_: P](keyword: => P[Unit]): P[(String, RawSimpleStructure)] = P(
     keyword ~ inline ~
-      ids.symbol ~ any ~
-      defStructure.inlineStruct
+    ids.symbol ~ any ~
+    defStructure.inlineStruct
   )
 
   def void[_: P]: P[Output.Void] = P("(" ~ inline ~ ")").map(_ => RawMethod.Output.Void())

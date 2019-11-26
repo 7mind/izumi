@@ -34,11 +34,12 @@ object ResourceCases {
         new X
       }
 
-      override def release(resource: X): Suspend2[Nothing, Unit] = Suspend2 {
-        resource.discard()
+      override def release(resource: X): Suspend2[Nothing, Unit] =
+        Suspend2 {
+          resource.discard()
 
-        queue += XStop
-      }.void
+          queue += XStop
+        }.void
     }
 
     class YResource(x: X, queue: mutable.Queue[Ops]) extends DIResource[Suspend2[Nothing, ?], Y] {
@@ -49,11 +50,12 @@ object ResourceCases {
         new Y
       }
 
-      override def release(resource: Y): Suspend2[Nothing, Unit] = Suspend2 {
-        resource.discard()
+      override def release(resource: Y): Suspend2[Nothing, Unit] =
+        Suspend2 {
+          resource.discard()
 
-        queue += YStop
-      }.void
+          queue += YStop
+        }.void
     }
 
     class ZFaultyResource(y: Y) extends DIResource[Suspend2[Throwable, ?], Z] {
@@ -126,7 +128,7 @@ object ResourceCases {
 
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())
-    def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
+    def update(f: A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
     def set(a: A): F[A] = update(_ => a)
   }
 
@@ -165,24 +167,28 @@ object ResourceCases {
       override def fail[A](t: => Throwable): Suspend2[E, A] = Suspend2[A](throw t)
       override def maybeSuspend[A](eff: => A): Suspend2[E, A] = Suspend2(eff)
       override def definitelyRecover[A](fa: => Suspend2[E, A])(recover: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
-        Suspend2(() => Try(fa.run()).toEither.flatMap(identity) match {
-          case Left(exception) => recover(exception).run()
-          case Right(value) => Right(value)
-        })
+        Suspend2(
+          () =>
+            Try(fa.run()).toEither.flatMap(identity) match {
+              case Left(exception) => recover(exception).run()
+              case Right(value) => Right(value)
+            }
+        )
       }
       override def definitelyRecoverCause[A](action: => Suspend2[E, A])(recoverCause: Throwable => Suspend2[E, A]): Suspend2[E, A] = {
         definitelyRecover(action)(recoverCause)
       }
 
       override def bracket[A, B](acquire: => Suspend2[E, A])(release: A => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] =
-        bracketCase(acquire){case (a, _) => release(a)}(use)
+        bracketCase(acquire) { case (a, _) => release(a) }(use)
 
       override def bracketCase[A, B](acquire: => Suspend2[E, A])(release: (A, Option[Throwable]) => Suspend2[E, Unit])(use: A => Suspend2[E, B]): Suspend2[E, B] = {
         acquire.flatMap {
-          a => definitelyRecover(use(a)) {
-            err =>
-              release(a, Some(err)).flatMap(_ => fail(err))
-          }.flatMap(res => release(a, None).map(_ => res))
+          a =>
+            definitelyRecover(use(a)) {
+              err =>
+                release(a, Some(err)).flatMap(_ => fail(err))
+            }.flatMap(res => release(a, None).map(_ => res))
         }
       }
     }

@@ -23,8 +23,7 @@ trait ModuleProvider[F[_]] {
 
 object ModuleProvider {
 
-  class Impl[F[_]: TagK]
-  (
+  class Impl[F[_]: TagK](
     logger: IzLogger,
     config: AppConfig,
     roles: RolesInfo,

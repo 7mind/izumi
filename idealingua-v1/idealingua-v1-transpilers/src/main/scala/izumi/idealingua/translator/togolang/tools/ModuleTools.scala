@@ -37,8 +37,8 @@ class ModuleTools() {
     } else {
       s"""// Auto-generated, any modifications may be overwritten in the future.
          |package ${pkg.last}
-         |${ if (header.length > 0) s"\n$header\n" else ""}
-         |${code}
+         |${if (header.length > 0) s"\n$header\n" else ""}
+         |$code
        """.stripMargin
     }
     content.densify()
@@ -59,7 +59,7 @@ class ModuleTools() {
       case other =>
         toModuleId(other.id)
     }
-    */
+   */
   }
 
   def toTestModuleId(id: TypeId): ModuleId = {

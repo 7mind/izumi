@@ -15,7 +15,7 @@ class ModuleTools() {
         Seq.empty
 
       case _ =>
-        val code = (product.preamble +:  product.render.map(_.toString())).mkString("\n\n")
+        val code = (product.preamble +: product.render.map(_.toString())).mkString("\n\n")
         val content: String = withPackage(id.toPackage, code)
         Seq(Module(moduleId, content))
     }

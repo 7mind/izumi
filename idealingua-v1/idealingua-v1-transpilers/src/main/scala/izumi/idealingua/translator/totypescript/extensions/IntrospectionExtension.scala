@@ -32,12 +32,13 @@ object IntrospectionExtension extends TypeScriptTranslatorExtension {
     case Primitive.TTs => "{intro: IntrospectorTypes.Tsl}"
     case Primitive.TTsTz => "{intro: IntrospectorTypes.Tsz}"
     case Primitive.TTsU => "{intro: IntrospectorTypes.Tsu}"
-    case g: Generic => g match {
-      case gm: Generic.TMap => s"{intro: IntrospectorTypes.Map, key: ${unwindType(gm.keyType)}, value: ${unwindType(gm.valueType)}} as IIntrospectorMapType"
-      case gl: Generic.TList => s"{intro: IntrospectorTypes.List, value: ${unwindType(gl.valueType)}} as IIntrospectorGenericType"
-      case gs: Generic.TSet => s"{intro: IntrospectorTypes.Set, value: ${unwindType(gs.valueType)}} as IIntrospectorGenericType"
-      case go: Generic.TOption => s"{intro: IntrospectorTypes.Opt, value: ${unwindType(go.valueType)}} as IIntrospectorGenericType"
-    }
+    case g: Generic =>
+      g match {
+        case gm: Generic.TMap => s"{intro: IntrospectorTypes.Map, key: ${unwindType(gm.keyType)}, value: ${unwindType(gm.valueType)}} as IIntrospectorMapType"
+        case gl: Generic.TList => s"{intro: IntrospectorTypes.List, value: ${unwindType(gl.valueType)}} as IIntrospectorGenericType"
+        case gs: Generic.TSet => s"{intro: IntrospectorTypes.Set, value: ${unwindType(gs.valueType)}} as IIntrospectorGenericType"
+        case go: Generic.TOption => s"{intro: IntrospectorTypes.Opt, value: ${unwindType(go.valueType)}} as IIntrospectorGenericType"
+      }
     case id: DTOId => s"{intro: IntrospectorTypes.Data, full: '${id.path.toPackage.mkString(".") + "." + id.name}'} as IIntrospectorUserType"
     case id: InterfaceId => s"{intro: IntrospectorTypes.Mixin, full: '${id.path.toPackage.mkString(".") + "." + id.name}'} as IIntrospectorUserType"
     case id: AdtId => s"{intro: IntrospectorTypes.Adt, full: '${id.path.toPackage.mkString(".") + "." + id.name}'} as IIntrospectorUserType"

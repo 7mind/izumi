@@ -1,6 +1,5 @@
 package izumi.idealingua.translator.toscala.types
 
-
 import izumi.idealingua.model.common.TypeId.{AdtId, DTOId}
 import izumi.idealingua.model.il.ast.typed.DefMethod
 import izumi.idealingua.model.il.ast.typed.DefMethod.RPCMethod
@@ -9,7 +8,6 @@ import izumi.idealingua.translator.toscala.STContext
 
 import scala.collection.immutable
 import scala.meta._
-
 
 final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method: RPCMethod) {
 
@@ -168,7 +166,6 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     q"def $nameTerm(..${Input.signature}): ${Output.outputType}"
   }
 
-
   protected def name: String = method.name
 
   protected def nameTerm = Term.Name(name)
@@ -211,8 +208,6 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
     private def typename: String = ctx.typespace.tools.methodToOutputName(method)
 
-
-
     def outputType: Type = method.signature.output match {
       case DefMethod.Output.Void() =>
         t"Just[Unit]"
@@ -229,7 +224,7 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
     private def positiveId: String = ctx.typespace.tools.methodToPositiveTypeName(method)
     private def negativeId: String = ctx.typespace.tools.methodToNegativeTypeName(method)
 
-    def positiveType: ScalaType =  sp.svcMethods.within(positiveId)
+    def positiveType: ScalaType = sp.svcMethods.within(positiveId)
 
     def negativeType: ScalaType = sp.svcMethods.within(negativeId)
 
@@ -282,8 +277,8 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 
         case DefMethod.Output.Alternative(success, failure) =>
           ctx.adtRenderer.renderAdt(ctx.typespace.apply(adtId).asInstanceOf[Adt], List.empty).render ++
-            render_SHIM(positiveId, success) ++
-            render_SHIM(negativeId, failure)
+          render_SHIM(positiveId, success) ++
+          render_SHIM(negativeId, failure)
       }
     }
 
@@ -315,6 +310,5 @@ final case class ServiceMethodProduct(ctx: STContext, sp: ServiceContext, method
 //    }
 //
   }
-
 
 }

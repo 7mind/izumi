@@ -65,7 +65,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     import TraitCase2._
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[Dependency1@Id("special")]
+      make[Dependency1 @Id("special")]
       make[Trait1]
     })
 
@@ -74,7 +74,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     val instantiated = context.get[Dependency1]
-    val instantiated1 = context.get[Dependency1@Id("special")]
+    val instantiated1 = context.get[Dependency1 @Id("special")]
 
     assert(instantiated eq instantiated1)
   }
@@ -103,18 +103,18 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val definition = PlannerInput.noGc(new ModuleDef {
       make[Dep]
       make[Dep2]
-      make[Trait1 {def dep: Dep2}].from[Trait3[Dep2]]
-      make[Trait1 {def dep: Dep}].from[Trait3[Dep]]
-      make[ {def dep: Dep}].from[Trait6]
+      make[Trait1 { def dep: Dep2 }].from[Trait3[Dep2]]
+      make[Trait1 { def dep: Dep }].from[Trait3[Dep]]
+      make[{ def dep: Dep }].from[Trait6]
     })
 
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
-    val instantiated1 = context.get[Trait1 {def dep: Dep2}]
-    val instantiated2 = context.get[ {def dep: Dep}]
-    val instantiated3 = context.get[Trait1 {def dep: Dep}]
+    val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
+    val instantiated2 = context.get[{ def dep: Dep }]
+    val instantiated3 = context.get[Trait1 { def dep: Dep }]
 
     assert(instantiated1.dep == context.get[Dep2])
     assert(instantiated2.dep == context.get[Dep])
@@ -146,10 +146,10 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "light type tags can handle abstract structural refinement types" in {
     import TypesCase3._
 
-    class Definition[T >: Null : Tag, G <: T {def dep : Dep} : Tag] extends ModuleDef {
+    class Definition[T >: Null: Tag, G <: T { def dep: Dep }: Tag] extends ModuleDef {
       make[Dep]
-      make[T {def dep2: Dep}].from(() => null: T {def dep2: Dep})
-      make[T {def dep: Dep}].from[G]
+      make[T { def dep2: Dep }].from(() => null: T { def dep2: Dep })
+      make[T { def dep: Dep }].from[G]
     }
 
     val definition = PlannerInput.noGc(new Definition[Trait1, Trait1])
@@ -158,7 +158,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
-    val instantiated = context.get[Trait1 {def dep: Dep}]
+    val instantiated = context.get[Trait1 { def dep: Dep }]
 
     assert(instantiated.dep == context.get[Dep])
 
@@ -167,7 +167,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T: Tag, G <: T with Trait1 : Tag, C <: T with Trait4 : Tag] extends ModuleDef {
+    class Definition[T: Tag, G <: T with Trait1: Tag, C <: T with Trait4: Tag] extends ModuleDef {
       make[Dep]
       make[T with Trait4].from[C]
       make[T with Trait1].from[G]
@@ -194,7 +194,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle generic parameters in abstract `with` types" in {
     import TypesCase3._
 
-    class Definition[T <: Dep : Tag, K >: Trait5[T] : Tag] extends ModuleDef {
+    class Definition[T <: Dep: Tag, K >: Trait5[T]: Tag] extends ModuleDef {
       make[T]
       make[Trait3[T] with K].from[Trait5[T]]
     }
@@ -229,14 +229,14 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "structural types are unsupported in class strategy" in {
     intercept[UnsupportedWiringException] {
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[ {def a: Int}]
+        make[{ def a: Int }]
         make[Int].from(5)
       })
 
       val injector = mkInjector()
       val context = injector.produceUnsafe(definition)
 
-      val instantiated = context.get[ {def a: Int}]
+      val instantiated = context.get[{ def a: Int }]
       assert(instantiated.a == context.get[Int])
     }
   }

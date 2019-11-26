@@ -21,11 +21,13 @@ import scala.util.{Success, Try}
 trait ConfigReaderInstances {
 
   implicit final val stringConfigReader: ConfigReader[String] = ConfigReader.fromString[String](s => s)
-  implicit final val charConfigReader: ConfigReader[Char] = ConfigReader.fromString[Char](s =>
-    s.length match {
-      case 1 => s.charAt(0)
-      case len => throw new ConfigReadException(s"Expected a single Char, but string `$s` is $len character long")
-    })
+  implicit final val charConfigReader: ConfigReader[Char] = ConfigReader.fromString[Char](
+    s =>
+      s.length match {
+        case 1 => s.charAt(0)
+        case len => throw new ConfigReadException(s"Expected a single Char, but string `$s` is $len character long")
+      }
+  )
   implicit final val booleanConfigReader: ConfigReader[Boolean] = ConfigReader.fromString[Boolean] {
     case "yes" | "on" => true
     case "no" | "off" => false
@@ -44,9 +46,10 @@ trait ConfigReaderInstances {
   implicit final val shortConfigReader: ConfigReader[Short] = ConfigReader.fromString[Short](_.toShort)
 
   implicit def javaEnumReader[T <: Enum[T]](implicit tag: ClassTag[T]): ConfigReader[T] =
-    ConfigReader.fromString { s =>
-      val enumClass = tag.runtimeClass.asInstanceOf[Class[T]]
-      Enum.valueOf(enumClass, s)
+    ConfigReader.fromString {
+      s =>
+        val enumClass = tag.runtimeClass.asInstanceOf[Class[T]]
+        Enum.valueOf(enumClass, s)
     }
 
   implicit final val durationConfigReader: ConfigReader[Duration] = ConfigReader.fromString[Duration](Duration.apply)

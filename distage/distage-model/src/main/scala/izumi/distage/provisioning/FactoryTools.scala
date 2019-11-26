@@ -17,14 +17,11 @@ object FactoryTools {
       case List(i: NewImport) =>
         i.instance.asInstanceOf[AnyRef]
       case List(_) =>
-        throw new UnexpectedProvisionResultException(
-          s"Factory returned a result class other than NewInstance or NewImport in $results", results)
+        throw new UnexpectedProvisionResultException(s"Factory returned a result class other than NewInstance or NewImport in $results", results)
       case _ :: _ =>
-        throw new UnexpectedProvisionResultException(
-          s"Factory returned more than one result in $results", results)
+        throw new UnexpectedProvisionResultException(s"Factory returned more than one result in $results", results)
       case Nil =>
-        throw new UnexpectedProvisionResultException(
-          s"Factory empty result list: $results", results)
+        throw new UnexpectedProvisionResultException(s"Factory empty result list: $results", results)
     }
   }
 

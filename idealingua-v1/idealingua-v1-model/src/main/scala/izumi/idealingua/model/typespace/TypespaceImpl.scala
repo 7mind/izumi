@@ -8,7 +8,6 @@ import izumi.idealingua.model.il.ast.typed._
 
 import scala.collection.mutable
 
-
 class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeResolver {
   lazy val types: TypeCollection = new TypeCollection(this)
 
@@ -63,6 +62,3 @@ class TypespaceImpl(val domain: DomainDefinition) extends Typespace with TypeRes
   }
 
 }
-
-
-

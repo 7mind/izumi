@@ -9,5 +9,3 @@ abstract class DistagePluginSpec[F[_]](implicit val tagMonoIO: TagK[F]) extends 
 
   override def toString: String = ScalatestSuite.suiteToString(None, this)
 }
-
-

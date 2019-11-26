@@ -15,7 +15,10 @@ class CompilerTest extends WordSpec {
 
     "be able to compile into scala" in {
       require("scalac")
-      assume(Properties.versionNumberString.startsWith("2.12"), "compiler test can run on the 2.12 only (local compiler used for test should be the same as build compiler)")
+      assume(
+        Properties.versionNumberString.startsWith("2.12"),
+        "compiler test can run on the 2.12 only (local compiler used for test should be the same as build compiler)"
+      )
       assert(compilesScala(s"$id-plain", loadDefs(), ScalaProjectLayout.PLAIN))
       assert(compilesScala(s"$id-plain-nonportable", loadDefs("/defs/scala"), ScalaProjectLayout.PLAIN))
     }
@@ -55,11 +58,9 @@ class CompilerTest extends WordSpec {
       assert(compilesCSharp(s"$id-nuget", loadDefs(), CSharpProjectLayout.NUGET))
     }
 
-
   }
 
   private def require(tools: String*) = {
     assume(IzFiles.haveExecutables(tools: _*), s"One of required tools is not available: $tools")
   }
 }
-

@@ -9,32 +9,32 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 private[izumi] trait BasicImplicitPicklers extends PicklerHelper with XCompatImplicitPicklers {
-  implicit def unitPickler: ConstPickler[Unit]  = BasicPicklers.UnitPickler
-  implicit def booleanPickler: P[Boolean]       = BasicPicklers.BooleanPickler
-  implicit def bytePickler: P[Byte]             = BasicPicklers.BytePickler
-  implicit def shortPickler: P[Short]           = BasicPicklers.ShortPickler
-  implicit def charPickler: P[Char]             = BasicPicklers.CharPickler
-  implicit def intPickler: P[Int]               = BasicPicklers.IntPickler
-  implicit def longPickler: P[Long]             = BasicPicklers.LongPickler
-  implicit def floatPickler: P[Float]           = BasicPicklers.FloatPickler
-  implicit def doublePickler: P[Double]         = BasicPicklers.DoublePickler
+  implicit def unitPickler: ConstPickler[Unit] = BasicPicklers.UnitPickler
+  implicit def booleanPickler: P[Boolean] = BasicPicklers.BooleanPickler
+  implicit def bytePickler: P[Byte] = BasicPicklers.BytePickler
+  implicit def shortPickler: P[Short] = BasicPicklers.ShortPickler
+  implicit def charPickler: P[Char] = BasicPicklers.CharPickler
+  implicit def intPickler: P[Int] = BasicPicklers.IntPickler
+  implicit def longPickler: P[Long] = BasicPicklers.LongPickler
+  implicit def floatPickler: P[Float] = BasicPicklers.FloatPickler
+  implicit def doublePickler: P[Double] = BasicPicklers.DoublePickler
   implicit def byteBufferPickler: P[ByteBuffer] = BasicPicklers.ByteBufferPickler
-  implicit def stringPickler: P[String]         = BasicPicklers.StringPickler
+  implicit def stringPickler: P[String] = BasicPicklers.StringPickler
 
   // less frequently used picklers are initializes lazily to enable DCE
-  implicit lazy val bigIntPickler: P[BigInt]                      = BasicPicklers.BigIntPickler
-  implicit lazy val bigDecimalPickler: P[BigDecimal]              = BasicPicklers.BigDecimalPickler
-  implicit lazy val UUIDPickler: P[UUID]                          = BasicPicklers.UUIDPickler
-  implicit lazy val durationPickler: P[Duration]                  = BasicPicklers.DurationPickler
-  implicit lazy val finiteDurationPickler: P[FiniteDuration]      = BasicPicklers.FiniteDurationPickler
+  implicit lazy val bigIntPickler: P[BigInt] = BasicPicklers.BigIntPickler
+  implicit lazy val bigDecimalPickler: P[BigDecimal] = BasicPicklers.BigDecimalPickler
+  implicit lazy val UUIDPickler: P[UUID] = BasicPicklers.UUIDPickler
+  implicit lazy val durationPickler: P[Duration] = BasicPicklers.DurationPickler
+  implicit lazy val finiteDurationPickler: P[FiniteDuration] = BasicPicklers.FiniteDurationPickler
   implicit lazy val infiniteDurationPickler: P[Duration.Infinite] = BasicPicklers.InfiniteDurationPickler
 
-  implicit def optionPickler[T: P]: P[Option[T]]          = BasicPicklers.OptionPickler[T]
-  implicit def somePickler[T: P]: P[Some[T]]              = BasicPicklers.SomePickler[T]
+  implicit def optionPickler[T: P]: P[Option[T]] = BasicPicklers.OptionPickler[T]
+  implicit def somePickler[T: P]: P[Some[T]] = BasicPicklers.SomePickler[T]
   implicit def eitherPickler[T: P, S: P]: P[Either[T, S]] = BasicPicklers.EitherPickler[T, S]
-  implicit def leftPickler[T: P, S: P]: P[Left[T, S]]     = BasicPicklers.LeftPickler[T, S]
-  implicit def rightPickler[T: P, S: P]: P[Right[T, S]]   = BasicPicklers.RightPickler[T, S]
-  implicit def arrayPickler[T: P: ClassTag]: P[Array[T]]  = BasicPicklers.ArrayPickler[T]
+  implicit def leftPickler[T: P, S: P]: P[Left[T, S]] = BasicPicklers.LeftPickler[T, S]
+  implicit def rightPickler[T: P, S: P]: P[Right[T, S]] = BasicPicklers.RightPickler[T, S]
+  implicit def arrayPickler[T: P: ClassTag]: P[Array[T]] = BasicPicklers.ArrayPickler[T]
 }
 
 private[izumi] trait TransformPicklers {
@@ -135,12 +135,7 @@ private[izumi] object SpeedOriented {
 /**
   * Provides basic implicit picklers including macro support for case classes
   */
-private[izumi] object Default
-    extends Base
-    with BasicImplicitPicklers
-    with TransformPicklers
-    with TuplePicklers
-    with MaterializePicklerFallback
+private[izumi] object Default extends Base with BasicImplicitPicklers with TransformPicklers with TuplePicklers with MaterializePicklerFallback
 
 /**
   * Provides basic implicit picklers without macro support for case classes

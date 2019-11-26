@@ -26,16 +26,14 @@ import izumi.logstage.distage.LogstageModule
 
 import scala.util._
 
-class ConfigWriter[F[_] : DIEffect]
-(
+class ConfigWriter[F[_]: DIEffect](
   logger: IzLogger,
-  launcherVersion: ArtifactVersion@Id("launcher-version"),
+  launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
   options: ContextOptions,
-  appModule: ModuleBase@Id("application.module"),
-)
-  extends RoleTask[F] {
+  appModule: ModuleBase @Id("application.module"),
+) extends RoleTask[F] {
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     val config = ConfigWriter.parse(roleParameters)
@@ -73,11 +71,10 @@ class ConfigWriter[F[_] : DIEffect]
       try {
         writeConfig(options, versionedComponent, None, refConfig)
 
-        minimizedConfig(refConfig, role)
-          .foreach {
-            cfg =>
-              writeConfig(options, versionedComponent, Some("minimized"), cfg)
-          }
+        minimizedConfig(refConfig, role).foreach {
+          cfg =>
+            writeConfig(options, versionedComponent, Some("minimized"), cfg)
+        }
       } catch {
         case exception: Throwable =>
           logger.crit(s"Cannot process role ${role.descriptor.id}")
@@ -94,15 +91,14 @@ class ConfigWriter[F[_] : DIEffect]
       .filter(_ => config.includeCommon)
       .fold(
         ConfigFactory.parseResourcesAnySyntax(referenceConfig)
-      )(parent =>
-        ConfigFactory.parseResourcesAnySyntax(referenceConfig).withFallback(parent)
-      ).resolve()
+      )(parent => ConfigFactory.parseResourcesAnySyntax(referenceConfig).withFallback(parent)).resolve()
 
     if (reference.isEmpty) {
       logger.warn(s"[${cmp.componentId}] Reference config is empty.")
     }
 
-    val resolved = ConfigFactory.systemProperties()
+    val resolved = ConfigFactory
+      .systemProperties()
       .withFallback(reference)
       .resolve()
 
@@ -203,17 +199,17 @@ object ConfigWriter extends RoleDescriptor {
     * @param includeCommon Append shared sections from `common-reference.conf` into every written config
     */
   case class WriteReference(
-                             asJson: Boolean,
-                             targetDir: String,
-                             includeCommon: Boolean,
-                             useLauncherVersion: Boolean,
-                           )
+    asJson: Boolean,
+    targetDir: String,
+    includeCommon: Boolean,
+    useLauncherVersion: Boolean,
+  )
 
   final case class ConfigurableComponent(
-                                          componentId: String
-                                          , version: Option[ArtifactVersion]
-                                          , parent: Option[Config] = None,
-                                        )
+    componentId: String,
+    version: Option[ArtifactVersion],
+    parent: Option[Config] = None,
+  )
 
   object P extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")

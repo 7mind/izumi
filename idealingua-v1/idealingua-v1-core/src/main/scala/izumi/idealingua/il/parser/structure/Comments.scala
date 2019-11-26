@@ -3,8 +3,7 @@ package izumi.idealingua.il.parser.structure
 import fastparse._
 import fastparse.NoWhitespace._
 
-trait Comments
-  extends Symbols {
+trait Comments extends Symbols {
 
   def MaybeDoc[_: P]: P[Option[String]] = P(DocComment ~ NLC ~ sep.inline).?
 
@@ -14,7 +13,8 @@ trait Comments
 
   protected[structure] def DocComment[_: P]: P[String] = {
     P(!"/**/" ~ "/*" ~ (!"*/" ~ "*" ~ DocChunk).rep(1, sep = NLC ~ sep.wss) ~ NLC ~ sep.wss ~ "*/").map {
-      s => s.mkString("\n")
+      s =>
+        s.mkString("\n")
     }
   }
 
@@ -23,4 +23,3 @@ trait Comments
   private def CommentChunk[_: P]: P[Unit] = P(CharsWhile(c => c != '/' && c != '*') | MultilineComment | !"*/" ~ AnyChar)
 
 }
-

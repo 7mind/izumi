@@ -31,7 +31,7 @@ private[izumi] trait Pickler[A] {
   */
 private[izumi] final case class ConstPickler[A](a: A) extends Pickler[A] {
   @inline override def pickle(x: A)(implicit s: PickleState) = ()
-  @inline override def unpickle(implicit s: UnpickleState)   = a
+  @inline override def unpickle(implicit s: UnpickleState) = a
 }
 
 private[izumi] trait PicklerHelper {
@@ -67,42 +67,42 @@ private[izumi] object BasicPicklers extends PicklerHelper with XCompatPicklers {
 
   object BytePickler extends P[Byte] {
     @inline override def pickle(value: Byte)(implicit state: PickleState): Unit = state.enc.writeByte(value)
-    @inline override def unpickle(implicit state: UnpickleState): Byte          = state.dec.readByte
+    @inline override def unpickle(implicit state: UnpickleState): Byte = state.dec.readByte
   }
 
   object ShortPickler extends P[Short] {
     @inline override def pickle(value: Short)(implicit state: PickleState): Unit = state.enc.writeShort(value)
-    @inline override def unpickle(implicit state: UnpickleState): Short          = state.dec.readShort
+    @inline override def unpickle(implicit state: UnpickleState): Short = state.dec.readShort
   }
 
   object CharPickler extends P[Char] {
     @inline override def pickle(value: Char)(implicit state: PickleState): Unit = state.enc.writeChar(value)
-    @inline override def unpickle(implicit state: UnpickleState): Char          = state.dec.readChar
+    @inline override def unpickle(implicit state: UnpickleState): Char = state.dec.readChar
   }
 
   object IntPickler extends P[Int] {
     @inline override def pickle(value: Int)(implicit state: PickleState): Unit = state.enc.writeInt(value)
-    @inline override def unpickle(implicit state: UnpickleState): Int          = state.dec.readInt
+    @inline override def unpickle(implicit state: UnpickleState): Int = state.dec.readInt
   }
 
   object LongPickler extends P[Long] {
     @inline override def pickle(value: Long)(implicit state: PickleState): Unit = state.enc.writeLong(value)
-    @inline override def unpickle(implicit state: UnpickleState): Long          = state.dec.readLong
+    @inline override def unpickle(implicit state: UnpickleState): Long = state.dec.readLong
   }
 
   object FloatPickler extends P[Float] {
     @inline override def pickle(value: Float)(implicit state: PickleState): Unit = state.enc.writeFloat(value)
-    @inline override def unpickle(implicit state: UnpickleState): Float          = state.dec.readFloat
+    @inline override def unpickle(implicit state: UnpickleState): Float = state.dec.readFloat
   }
 
   object DoublePickler extends P[Double] {
     @inline override def pickle(value: Double)(implicit state: PickleState): Unit = state.enc.writeDouble(value)
-    @inline override def unpickle(implicit state: UnpickleState): Double          = state.dec.readDouble
+    @inline override def unpickle(implicit state: UnpickleState): Double = state.dec.readDouble
   }
 
   object ByteBufferPickler extends P[ByteBuffer] {
     @inline override def pickle(bb: ByteBuffer)(implicit state: PickleState): Unit = state.enc.writeByteBuffer(bb)
-    @inline override def unpickle(implicit state: UnpickleState): ByteBuffer       = state.dec.readByteBuffer
+    @inline override def unpickle(implicit state: UnpickleState): ByteBuffer = state.dec.readByteBuffer
   }
 
   object BigIntPickler extends P[BigInt] {
@@ -125,7 +125,7 @@ private[izumi] object BasicPicklers extends PicklerHelper with XCompatPicklers {
     }
     @inline override def unpickle(implicit state: UnpickleState): BigDecimal = {
       val scale = state.dec.readInt
-      val arr   = ArrayPickler.unpickle
+      val arr = ArrayPickler.unpickle
       BigDecimal(BigInt(arr), scale)
     }
   }
@@ -392,7 +392,7 @@ private[izumi] final class PickleState(val enc: Encoder, deduplicate: Boolean = 
     * Object reference for immutable pickled objects
     */
   private[this] var immutableRefs: mutable.AnyRefMap[AnyRef, Int] = null
-  private[this] var immutableIdx                                  = 2
+  private[this] var immutableIdx = 2
 
   @inline def immutableRefFor(obj: AnyRef): Option[Int] = {
     if (obj == null)

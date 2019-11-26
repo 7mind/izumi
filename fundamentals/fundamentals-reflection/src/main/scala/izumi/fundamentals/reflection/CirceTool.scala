@@ -20,8 +20,7 @@ class CirceToolMacro(val c: blackbox.Context) {
     val allSymbols = all.map(_.typeSymbol)
 
     println(s"/* -- BEGIN: $base -- */")
-    val x = all
-      .toSeq
+    val x = all.toSeq
       .filterNot(t => t.toString.startsWith("scala") || t.toString.startsWith("java") || !t.toString.contains("."))
       .filter(t => t.typeSymbol.isClass)
       .sortBy {
@@ -73,9 +72,6 @@ class CirceToolMacro(val c: blackbox.Context) {
     } else {
       t.typeArgs.foreach(a => processType(a, all))
     }
-
-
-
     //m.map(_.asMethod).foreach(m => println((m.name, )))
 
   }

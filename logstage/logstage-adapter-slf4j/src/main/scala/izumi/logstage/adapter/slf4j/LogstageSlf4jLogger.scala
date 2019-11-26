@@ -26,8 +26,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val thread = Thread.currentThread()
     val threadData = ThreadData(thread.getName, thread.getId)
 
-    val caller = thread
-      .getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
+    val caller = thread.getStackTrace.tail.find(_.getClassName != getClass.getCanonicalName)
 
     val ctx = caller match {
       case Some(frame) =>
@@ -47,7 +46,7 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
         CustomContext(Seq.empty)
     }
 
-    val messageArgs = args.zipWithIndex.map{
+    val messageArgs = args.zipWithIndex.map {
       kv =>
         LogArg(Seq(s"_${kv._2}"), kv._1, hiddenName = true)
     }
@@ -55,11 +54,11 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
     val template = message.split("\\{\\}", -1).map(_.replace("\\", "\\\\"))
 
     Entry(
-      Message(StringContext(template :_*), messageArgs)
-      , Context(
-        ctx
-        , DynamicContext(level, threadData, System.currentTimeMillis())
-        , customContext
+      Message(StringContext(template: _*), messageArgs),
+      Context(
+        ctx,
+        DynamicContext(level, threadData, System.currentTimeMillis()),
+        customContext
       )
     )
   }
@@ -94,7 +93,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def trace(msg: String, t: Throwable): Unit = log(Level.Trace, msg, Option(t).toSeq)
 
-
   override def trace(marker: Marker, msg: String): Unit = log(Level.Trace, msg, Seq.empty, marker)
 
   override def trace(marker: Marker, format: String, arg: Any): Unit = log(Level.Trace, format, Seq(arg), marker)
@@ -104,7 +102,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   override def trace(marker: Marker, format: String, argArray: AnyRef*): Unit = log(Level.Trace, format, argArray, marker)
 
   override def trace(marker: Marker, msg: String, t: Throwable): Unit = log(Level.Trace, msg, Option(t).toSeq, marker)
-
 
   override def debug(msg: String): Unit = log(Level.Debug, msg, Seq.empty)
 
@@ -116,7 +113,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def debug(msg: String, t: Throwable): Unit = log(Level.Debug, msg, Option(t).toSeq)
 
-
   override def debug(marker: Marker, msg: String): Unit = log(Level.Debug, msg, Seq.empty, marker)
 
   override def debug(marker: Marker, format: String, arg: Any): Unit = log(Level.Debug, format, Seq(arg), marker)
@@ -126,7 +122,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   override def debug(marker: Marker, format: String, argArray: AnyRef*): Unit = log(Level.Debug, format, argArray, marker)
 
   override def debug(marker: Marker, msg: String, t: Throwable): Unit = log(Level.Debug, msg, Option(t).toSeq, marker)
-
 
   override def info(msg: String): Unit = log(Level.Info, msg, Seq.empty)
 
@@ -138,7 +133,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def info(msg: String, t: Throwable): Unit = log(Level.Info, msg, Option(t).toSeq)
 
-
   override def info(marker: Marker, msg: String): Unit = log(Level.Info, msg, Seq.empty, marker)
 
   override def info(marker: Marker, format: String, arg: Any): Unit = log(Level.Info, format, Seq(arg), marker)
@@ -148,7 +142,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   override def info(marker: Marker, format: String, argArray: AnyRef*): Unit = log(Level.Info, format, argArray, marker)
 
   override def info(marker: Marker, msg: String, t: Throwable): Unit = log(Level.Info, msg, Option(t).toSeq, marker)
-
 
   override def warn(msg: String): Unit = log(Level.Warn, msg, Seq.empty)
 
@@ -160,7 +153,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def warn(msg: String, t: Throwable): Unit = log(Level.Warn, msg, Option(t).toSeq)
 
-
   override def warn(marker: Marker, msg: String): Unit = log(Level.Warn, msg, Seq.empty, marker)
 
   override def warn(marker: Marker, format: String, arg: Any): Unit = log(Level.Warn, format, Seq(arg), marker)
@@ -171,7 +163,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
 
   override def warn(marker: Marker, msg: String, t: Throwable): Unit = log(Level.Warn, msg, Option(t).toSeq, marker)
 
-
   override def error(msg: String): Unit = log(Level.Error, msg, Seq.empty)
 
   override def error(format: String, arg: Any): Unit = log(Level.Error, format, Seq(arg))
@@ -181,7 +172,6 @@ class LogstageSlf4jLogger(name: String, router: LogRouter) extends Logger {
   override def error(format: String, arguments: AnyRef*): Unit = log(Level.Error, format, arguments)
 
   override def error(msg: String, t: Throwable): Unit = log(Level.Error, msg, Option(t).toSeq)
-
 
   override def error(marker: Marker, msg: String): Unit = log(Level.Error, msg, Seq.empty, marker)
 

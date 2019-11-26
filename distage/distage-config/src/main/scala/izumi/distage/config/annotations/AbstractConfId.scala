@@ -17,7 +17,6 @@ object AutoConfId {
   implicit val idContract: IdContract[AutoConfId] = new RuntimeDIUniverse.IdContractImpl[AutoConfId]
 }
 
-
 final case class ConfId(contextKey: DIKey, parameterName: String, nameOverride: String) extends AutomaticConfId {
   override def toString: String = s"${contextKey.toString}:cfg-id:$nameOverride->$parameterName"
 }
@@ -26,14 +25,13 @@ object ConfId {
   implicit val idContract: IdContract[ConfId] = new RuntimeDIUniverse.IdContractImpl[ConfId]
 }
 
-
 final case class ConfPathId(contextKey: DIKey, parameterName: String, pathOverride: String) extends AbstractConfId {
   override def toString: String = s"${contextKey.toString}:cfg-path:$pathOverride->$parameterName"
 
   override def equals(other: Any): Boolean = other match {
     case that: ConfPathId =>
       contextKey == that.contextKey &&
-        pathOverride == that.pathOverride
+      pathOverride == that.pathOverride
     case _ => false
   }
 
@@ -46,4 +44,3 @@ final case class ConfPathId(contextKey: DIKey, parameterName: String, pathOverri
 object ConfPathId {
   implicit val idContract: IdContract[ConfPathId] = new RuntimeDIUniverse.IdContractImpl[ConfPathId]
 }
-

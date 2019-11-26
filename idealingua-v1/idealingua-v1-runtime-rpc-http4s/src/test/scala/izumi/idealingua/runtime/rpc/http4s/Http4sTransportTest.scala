@@ -20,38 +20,37 @@ class Http4sTransportTest extends WordSpec {
 
   "Http4s transport" should {
     "support http" in {
-        withServer {
-          val disp = clientDispatcher()
-          val greeterClient = new GreeterServiceClientWrapped(disp)
+      withServer {
+        val disp = clientDispatcher()
+        val greeterClient = new GreeterServiceClientWrapped(disp)
 
-          disp.setupCredentials("user", "pass")
+        disp.setupCredentials("user", "pass")
 
-          assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
-          assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
+        assert(BIOR.unsafeRun(greeterClient.greet("John", "Smith")) == "Hi, John Smith!")
+        assert(BIOR.unsafeRun(greeterClient.alternative()) == "value")
 
-          checkBadBody("{}", disp)
-          checkBadBody("{unparseable", disp)
+        checkBadBody("{}", disp)
+        checkBadBody("{unparseable", disp)
 
-
-          disp.cancelCredentials()
-          BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
-              assert(exception.status == Status.Forbidden)
-            case o =>
-              fail(s"Expected IRTGenericFailure but got $o")
-          }
-
-          //
-          disp.setupCredentials("user", "badpass")
-          BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
-            case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
-              assert(exception.status == Status.Unauthorized)
-            case o =>
-              fail(s"Expected IRTGenericFailure but got $o")
-          }
-
-          ()
+        disp.cancelCredentials()
+        BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
+          case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
+            assert(exception.status == Status.Forbidden)
+          case o =>
+            fail(s"Expected IRTGenericFailure but got $o")
         }
+
+        //
+        disp.setupCredentials("user", "badpass")
+        BIOR.unsafeRunSyncAsEither(greeterClient.alternative()) match {
+          case Termination(exception: IRTUnexpectedHttpStatus, _, _) =>
+            assert(exception.status == Status.Unauthorized)
+          case o =>
+            fail(s"Expected IRTGenericFailure but got $o")
+        }
+
+        ()
+      }
     }
 
     "support websockets" in {
@@ -95,7 +94,7 @@ class Http4sTransportTest extends WordSpec {
       .evalMap(_ => Task(f))
       .compile.drain
 
-    BIOR.unsafeRun(io/*.interruptChildren*/)
+    BIOR.unsafeRun(io /*.interruptChildren*/ )
   }
 
   def checkBadBody(body: String, disp: IRTDispatcher[rt.BiIO] with TestHttpDispatcher): Unit = {

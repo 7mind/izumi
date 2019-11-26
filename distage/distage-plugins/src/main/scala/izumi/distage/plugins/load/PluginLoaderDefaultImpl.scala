@@ -35,8 +35,7 @@ object PluginLoaderDefaultImpl {
 
     try {
       val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
-      implementors
-        .asScala
+      implementors.asScala
         .filterNot(_.isAbstract)
         .flatMap {
           classInfo =>

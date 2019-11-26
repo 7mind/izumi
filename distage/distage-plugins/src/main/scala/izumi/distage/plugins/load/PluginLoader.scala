@@ -18,10 +18,9 @@ object PluginLoader {
 
   def empty: PluginLoader = PluginLoaderNullImpl
 
-  final case class PluginConfig
-  (
-    debug: Boolean
-  , packagesEnabled: Seq[String]
-  , packagesDisabled: Seq[String]
+  final case class PluginConfig(
+    debug: Boolean,
+    packagesEnabled: Seq[String],
+    packagesDisabled: Seq[String]
   )
 }

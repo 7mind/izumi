@@ -3,16 +3,15 @@ package izumi.idealingua.model.publishing.manifests
 import izumi.idealingua.model.publishing.BuildManifest.Common
 import izumi.idealingua.model.publishing.{BuildManifest, ProjectNamingRule}
 
-
 case class ScalaBuildManifest(
-                               common: Common,
-                               layout: ScalaProjectLayout,
-                               sbt: SbtOptions,
-                             ) extends BuildManifest
+  common: Common,
+  layout: ScalaProjectLayout,
+  sbt: SbtOptions,
+) extends BuildManifest
 
 case class SbtOptions(
-                       projectNaming: ProjectNamingRule,
-                     )
+  projectNaming: ProjectNamingRule,
+)
 
 object SbtOptions {
   def example: SbtOptions = {
@@ -32,7 +31,6 @@ object ScalaBuildManifest {
     )
   }
 }
-
 
 sealed trait ScalaProjectLayout
 

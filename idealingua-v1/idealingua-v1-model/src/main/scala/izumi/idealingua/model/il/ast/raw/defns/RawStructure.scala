@@ -7,11 +7,11 @@ import izumi.idealingua.model.il.ast.raw.defns.RawTypeDef.{DTO, Interface}
 final case class RawStructure(interfaces: RawInterfaces, concepts: RawStructures, removedConcepts: RawStructures, fields: RawTuple, removedFields: RawTuple) {
   def extend(other: RawStructure): RawStructure = {
     this.copy(
-      interfaces = interfaces ++ other.interfaces
-      , concepts = concepts ++ other.concepts
-      , removedConcepts = removedConcepts ++ other.removedConcepts
-      , fields = fields ++ other.fields
-      , removedFields = removedFields ++ other.removedFields
+      interfaces = interfaces ++ other.interfaces,
+      concepts = concepts ++ other.concepts,
+      removedConcepts = removedConcepts ++ other.removedConcepts,
+      fields = fields ++ other.fields,
+      removedFields = removedFields ++ other.removedFields
     )
   }
 }
@@ -46,13 +46,15 @@ object RawStructure {
   object Aux {
     def apply(v: Seq[StructOp]): Aux = {
       import StructOp._
-      Aux(RawStructure(
-        v.collect({ case Extend(i) => i }).toList
-        , v.collect({ case Mix(i) => i }).toList
-        , v.collect({ case Drop(i) => i }).toList
-        , v.collect({ case AddField(i) => i }).toList
-        , v.collect({ case RemoveField(i) => i }).toList
-      ))
+      Aux(
+        RawStructure(
+          v.collect({ case Extend(i) => i }).toList,
+          v.collect({ case Mix(i) => i }).toList,
+          v.collect({ case Drop(i) => i }).toList,
+          v.collect({ case AddField(i) => i }).toList,
+          v.collect({ case RemoveField(i) => i }).toList
+        )
+      )
     }
   }
 

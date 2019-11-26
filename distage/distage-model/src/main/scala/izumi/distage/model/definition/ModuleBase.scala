@@ -25,7 +25,7 @@ trait ModuleBase {
 }
 
 object ModuleBase {
-  type Aux[S] = ModuleBase {type Self <: S}
+  type Aux[S] = ModuleBase { type Self <: S }
 
   implicit val moduleBaseApi: ModuleMake[ModuleBase] = {
     binds =>
@@ -65,7 +65,7 @@ object ModuleBase {
   }
 
   implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {
-    def morph[T <: ModuleBase : ModuleMake]: T = {
+    def morph[T <: ModuleBase: ModuleMake]: T = {
       ModuleMake[T].make(moduleDef.bindings)
     }
   }
@@ -109,21 +109,20 @@ object ModuleBase {
       val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
 
-      val merged = mergedKeys
-        .flatMap {
-          k =>
-            val existingMappings = existingIndex.getOrElse(k, Set.empty)
-            val newMappings = newIndex.getOrElse(k, Set.empty)
+      val merged = mergedKeys.flatMap {
+        k =>
+          val existingMappings = existingIndex.getOrElse(k, Set.empty)
+          val newMappings = newIndex.getOrElse(k, Set.empty)
 
-            if (existingMappings.isEmpty) {
-              newMappings
-            } else if (newMappings.isEmpty) {
-              existingMappings
-            } else {
-              // merge tags wrt strange Binding equals
-              modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
-            }
-        }
+          if (existingMappings.isEmpty) {
+            newMappings
+          } else if (newMappings.isEmpty) {
+            existingMappings
+          } else {
+            // merge tags wrt strange Binding equals
+            modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
+          }
+      }
 
       (mergedKeys, merged)
     }
@@ -139,12 +138,11 @@ object ModuleBase {
     val grouped = bs.groupBy(_.group)
 
     val out = ListSet.newBuilder.++= {
-      grouped
-        .map {
-          case (_, v) =>
-            //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
-            v.reduce(_ addTags _.tags)
-        }
+      grouped.map {
+        case (_, v) =>
+          //assert(v.forall(_.key == k.key), s"${k.key}, ${v.map(_.key)}")
+          v.reduce(_ addTags _.tags)
+      }
     }.result()
     out
   }
@@ -155,7 +153,7 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_] : CatsPartialOrderHash]: K[T] = {
+  implicit def optionalCatsPartialOrderHashForModuleBase[T <: ModuleBase, K[_]: CatsPartialOrderHash]: K[T] = {
     import cats.instances.set._
 
     new PartialOrder[T] with Hash[T] {
@@ -171,14 +169,14 @@ object ModuleBase {
     *
     * Optional instance via https://blog.7mind.io/no-more-orphans.html
     */
-  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T] : ModuleMake, K[_] : CatsBoundedSemilattice]: K[T] =
+  implicit def optionalCatsSemilatticeForModuleBase[T <: ModuleBase.Aux[T]: ModuleMake, K[_]: CatsBoundedSemilattice]: K[T] =
     new ModuleBaseSemilattice[T].asInstanceOf[K[T]]
 
 }
 
 private object ModuleBaseInstances {
 
-  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T] : ModuleMake] extends BoundedSemilattice[T] {
+  final class ModuleBaseSemilattice[T <: ModuleBase.Aux[T]: ModuleMake] extends BoundedSemilattice[T] {
     def empty: T = ModuleMake[T].empty
     def combine(x: T, y: T): T = x ++ y
   }
@@ -195,4 +193,3 @@ private object ModuleBaseInstances {
   }
 
 }
-

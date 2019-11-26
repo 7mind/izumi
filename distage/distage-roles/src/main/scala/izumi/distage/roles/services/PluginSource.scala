@@ -25,7 +25,8 @@ object PluginSource {
     new Impl(pluginLoader, PluginLoader.empty)
   }
   def apply(allLoadedPlugins: AllLoadedPlugins): PluginSource = {
-    () => allLoadedPlugins
+    () =>
+      allLoadedPlugins
   }
   def apply(plugins: Seq[PluginBase], bootstrapPlugins: Seq[PluginBase]): PluginSource = {
     PluginSource(AllLoadedPlugins(plugins, bootstrapPlugins))
@@ -39,7 +40,7 @@ object PluginSource {
   }
 
   final case class AllLoadedPlugins(
-                                     bootstrap: Seq[PluginBase],
-                                     app: Seq[PluginBase],
-                                   )
+    bootstrap: Seq[PluginBase],
+    app: Seq[PluginBase],
+  )
 }

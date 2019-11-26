@@ -22,7 +22,6 @@ class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer
       System.getProperty("izumi.logstage.rendering.colored.forced").asBoolean(false),
     )
 
-
     options.copy(colored = colorsEnabled)
   }
 
@@ -66,38 +65,50 @@ class StringRenderingPolicy(options: RenderingOptions, template: Option[Renderer
 }
 
 object StringRenderingPolicy {
-  val template = new Renderer.Aggregate(Seq(
-    new Styler.LevelColor(Seq(
-      new Extractor.Level(1),
+  val template = new Renderer.Aggregate(
+    Seq(
+      new Styler.LevelColor(
+        Seq(
+          new Extractor.Level(1),
+          Extractor.Space,
+          new Extractor.Timestamp(IzTimeSafe.ISO_LOCAL_DATE_TIME_3NANO)
+        )
+      ),
       Extractor.Space,
-      new Extractor.Timestamp(IzTimeSafe.ISO_LOCAL_DATE_TIME_3NANO)
-    )),
-    Extractor.Space,
-    new Styler.Colored(
-      Console.BLACK_B,
-      Seq(
-        new Styler.AdaptivePad(Seq(new Extractor.SourcePosition()), 8, PadType.Left, ' ')
-      )
-    ),
-    Extractor.Space,
-    Extractor.Space,
-    new Styler.Trim(Seq(
-      new Styler.Compact(
-        Seq(new Extractor.LoggerName()),
-        3
-      )), 28, TrimType.Left, Some("…")
-    ),
-    Extractor.Space,
-    new Extractor.Constant("["),
-
-    new Styler.AdaptivePad(Seq(new Extractor.ThreadId()), 1, PadType.Left, ' '),
-    new Extractor.Constant(":"),
-    new Styler.AdaptivePad(Seq(new rendering.logunits.Styler.Trim(Seq(new rendering.logunits.Extractor.ThreadName()), 20, TrimType.Center, Some("…"))), 4, PadType.Right, ' '),
-    new Extractor.Constant("]"),
-    Extractor.Space,
-
-    new Styler.TrailingSpace(Seq(new Extractor.LoggerContext())),
-    new Extractor.Message(),
-  ))
+      new Styler.Colored(
+        Console.BLACK_B,
+        Seq(
+          new Styler.AdaptivePad(Seq(new Extractor.SourcePosition()), 8, PadType.Left, ' ')
+        )
+      ),
+      Extractor.Space,
+      Extractor.Space,
+      new Styler.Trim(
+        Seq(
+          new Styler.Compact(
+            Seq(new Extractor.LoggerName()),
+            3
+          )
+        ),
+        28,
+        TrimType.Left,
+        Some("…")
+      ),
+      Extractor.Space,
+      new Extractor.Constant("["),
+      new Styler.AdaptivePad(Seq(new Extractor.ThreadId()), 1, PadType.Left, ' '),
+      new Extractor.Constant(":"),
+      new Styler.AdaptivePad(
+        Seq(new rendering.logunits.Styler.Trim(Seq(new rendering.logunits.Extractor.ThreadName()), 20, TrimType.Center, Some("…"))),
+        4,
+        PadType.Right,
+        ' '
+      ),
+      new Extractor.Constant("]"),
+      Extractor.Space,
+      new Styler.TrailingSpace(Seq(new Extractor.LoggerContext())),
+      new Extractor.Message(),
+    )
+  )
 
 }

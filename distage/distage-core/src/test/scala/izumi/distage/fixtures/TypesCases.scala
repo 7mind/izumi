@@ -77,12 +77,12 @@ object TypesCases {
     type WidgetId = WidgetId.Type
     object WidgetId {
       type Repr = Int
-      type Base = Any {type WidgetId$newtype}
+      type Base = Any { type WidgetId$newtype }
       trait Tag extends Any
       type Type <: Base with Tag
 
       def apply(x: Int): WidgetId = x.asInstanceOf[WidgetId]
-      implicit final class Ops$newtype(val $this$: Type) extends AnyVal {
+      implicit final class Ops$newtype(val $this$ : Type) extends AnyVal {
         def toInt: Int = $this$.asInstanceOf[Int]
       }
     }

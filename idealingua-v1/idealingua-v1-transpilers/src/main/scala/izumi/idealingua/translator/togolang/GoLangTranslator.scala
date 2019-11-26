@@ -18,10 +18,8 @@ import izumi.idealingua.translator.{Translated, Translator}
 
 object GoLangTranslator {
   final val defaultExtensions = Seq(
-  )
+    )
 }
-
-
 
 class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Translator {
   protected val ctx: GLTContext = new GLTContext(ts, options.extensions)
@@ -30,21 +28,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
   def translate(): Translated = {
     val modules = Seq(
-      typespace.domain.types.flatMap(translateDef)
-      , typespace.domain.services.flatMap(translateService)
-      , typespace.domain.buzzers.flatMap(translateBuzzer)
+      typespace.domain.types.flatMap(translateDef),
+      typespace.domain.services.flatMap(translateService),
+      typespace.domain.buzzers.flatMap(translateBuzzer)
     ).flatten
     Translated(ts, modules)
   }
 
   protected def translateService(definition: Service): Seq[Module] = {
-    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id),
-      ctx.modules.toTestModuleId(definition.id), renderService(definition))
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), ctx.modules.toTestModuleId(definition.id), renderService(definition))
   }
 
   protected def translateBuzzer(definition: Buzzer): Seq[Module] = {
-    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id),
-      ctx.modules.toTestModuleId(definition.id), renderBuzzer(definition))
+    ctx.modules.toSource(definition.id.domain, ctx.modules.toModuleId(definition.id), ctx.modules.toTestModuleId(definition.id), renderBuzzer(definition))
   }
 
   protected def translateDef(definition: TypeDef): Seq[Module] = {
@@ -65,8 +61,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         RenderableCogenProduct.empty
     }
 
-    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition),
-      ctx.modules.toTestModuleId(definition), defns)
+    ctx.modules.toSource(definition.id.path.domain, ctx.modules.toModuleId(definition), ctx.modules.toTestModuleId(definition), defns)
   }
 
   protected def renderRegistrationCtor(interface: InterfaceId, structName: String, imports: GoLangImports): String = {
@@ -87,7 +82,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |
        |func init() {
        |    // Here we register current DTO in other interfaces
-       |${uniqueInterfaces.map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
+       |${uniqueInterfaces
+         .map(sc => s"${imports.withImport(sc)}Register${sc.name}(rtti${structName}FullClassName, ctor${structName}For${sc.name})").mkString("\n").shift(4)}
        |}
      """.stripMargin
   }
@@ -113,8 +109,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |${renderRegistrations(ts.inheritance.parentsInherited(i.id), i.id.name, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true, manifest = options.manifest)
+    val testImports = GoLangImports(
+      struct.fields.flatMap(
+        f =>
+          if (f.tp.testValue() != "nil")
+            GoLangImports.collectTypes(f.tp.id)
+          else List.empty
+      ),
+      i.id.path.toPackage,
+      ts,
+      List.empty,
+      forTest = true,
+      manifest = options.manifest
+    )
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -167,11 +174,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
            |    return ${imports.withImport(i.target)}New${i.target.name}(e)
            |}
            |
-             |func IsValid${i.id.name}(e string) bool {
+           |func IsValid${i.id.name}(e string) bool {
            |    return ${imports.withImport(i.target)}IsValid${i.target.name}(e)
            |}
            |
-             |func GetAll${i.id.name}() []${i.id.name} {
+           |func GetAll${i.id.name}() []${i.id.name} {
            |    return ${imports.withImport(i.target)}GetAll${i.target.name}()
            |}
            """.stripMargin
@@ -179,10 +186,9 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     }
 
     val testName = i.id.name + (i.target match {
-      case ii: InterfaceId => typespace.tools.implId(ii).name
-      case _ => ""
-    })
-
+        case ii: InterfaceId => typespace.tools.implId(ii).name
+        case _ => ""
+      })
 
     AliasProduct(
       s"""// ${i.id.name} alias
@@ -409,10 +415,12 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |        }
        |
        |        if v.left {
-       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = false, imports), imports, ts).renderUnmarshal("content", "v.value = ").shift(12) + "\n            return nil"}
+       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = false, imports), imports, ts)
+         .renderUnmarshal("content", "v.value = ").shift(12) + "\n            return nil"}
        |        }
        |
-       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = true, imports), imports, ts).renderUnmarshal("content", "v.value = ").shift(8) + "\n        return nil"}
+       |${GoLangType(renderServiceMethodAlternativeOutputTypeId(structId.path, name, alternative, success = true, imports), imports, ts)
+         .renderUnmarshal("content", "v.value = ").shift(8) + "\n        return nil"}
        |    }
        |
        |    return fmt.Errorf("$name expects a root key to be present, empty object found")
@@ -425,12 +433,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"""
          |func NewTest$name() *$name {
          |    res := &$name{}
-         |    res.Set${alternatives.head.wireId}(NewTest${
-        alternatives.head.typeId.name + (alternatives.head.typeId match {
-          case iface: InterfaceId => ts.tools.implId(iface).name;
-          case _ => ""
-        })
-      }())
+         |    res.Set${alternatives.head.wireId}(NewTest${alternatives.head.typeId.name + (alternatives.head.typeId match {
+           case iface: InterfaceId => ts.tools.implId(iface).name;
+           case _ => ""
+         })}())
          |    return res
          |}
          """.stripMargin
@@ -455,37 +461,40 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    valueType string
        |}
        |
-         |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
+       |${alternatives.map(al => renderAdtMember(name, al, imports)).mkString("\n")}
        |${if (withTest) test else ""}
        |
-         |func (v *$name) MarshalJSON() ([]byte, error) {
+       |func (v *$name) MarshalJSON() ([]byte, error) {
        |    if v.value == nil {
        |        return nil, fmt.Errorf("trying to serialize a non-initialized Adt $name")
        |    }
        |
-         |    switch v.valueType {
+       |    switch v.valueType {
        |${alternatives.map(al => "case \"" + al.wireId + "\": {\n" + renderAdtSerialization(al, imports).shift(4) + "\n}").mkString("\n").shift(8)}
        |        default:
        |            return nil, fmt.Errorf("$name encountered an unknown type '%s' during serialization", v.valueType)
        |    }
        |}
        |
-         |func (v *$name) UnmarshalJSON(data []byte) error {
+       |func (v *$name) UnmarshalJSON(data []byte) error {
        |    raw := map[string]json.RawMessage{}
        |    if err := json.Unmarshal(data, &raw); err != nil {
        |        return err
        |    }
        |
-         |    for className, content := range raw {
+       |    for className, content := range raw {
        |        v.valueType = className
        |        switch className {
-       |${alternatives.map(al => "case \"" + al.wireId + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString("\n").shift(12)}
+       |${alternatives
+         .map(al => "case \"" + al.wireId + "\": {\n" + GoLangType(al.typeId, imports, ts).renderUnmarshal("content", "v.value = ").shift(4) + "\n    return nil\n}").mkString(
+           "\n"
+         ).shift(12)}
        |            default:
        |                return fmt.Errorf("$name encountered an unknown type '%s' during deserialization", className)
        |        }
        |    }
        |
-         |    return fmt.Errorf("$name expects a root key to be present, empty object found")
+       |    return fmt.Errorf("$name expects a root key to be present, empty object found")
        |}
        """.stripMargin
   }
@@ -499,7 +508,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |        t.Errorf("type '%s' Is${m.wireId} must be true.", "${i.id.name}")
        |    }
        |
-       |${i.alternatives.map(al => if (al.wireId == m.wireId) "" else s"""if adt.Is${al.wireId}() {\n    t.Errorf("type '%s' Is${al.wireId} must be false.", "${i.id.name}")\n}""").mkString("\n").shift(4)}
+       |${i.alternatives
+         .map(al => if (al.wireId == m.wireId) "" else s"""if adt.Is${al.wireId}() {\n    t.Errorf("type '%s' Is${al.wireId} must be false.", "${i.id.name}")\n}""").mkString(
+           "\n"
+         ).shift(4)}
        |
        |    serialized, err := json.Marshal(adt)
        |    if err != nil {
@@ -541,47 +553,47 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"""// $name Enumeration
          |type $name ${if (i.members.length <= 255) "uint8" else "uint16"}
          |
-       |const (
+         |const (
          |${i.members.map(_.value).map(m => s"// $m enum value\n" + (if (m == i.members.head.value) s"${name + m} $name = iota" else (name + m))).mkString("\n").shift(4)}
          |)
          |
-       |var map${name}ToString = map[$name]string{
+         |var map${name}ToString = map[$name]string{
          |${i.members.map(_.value).map(m => s"${name + m}: " + "\"" + m + "\",").mkString("\n").shift(4)}
          |}
          |
-       |var allOf$name = []$name{
+         |var allOf$name = []$name{
          |${i.members.map(_.value).map(m => name + m + ",").mkString("\n").shift(4)}
          |}
          |
-       |var mapStringTo$name = map[string]$name{
+         |var mapStringTo$name = map[string]$name{
          |${i.members.map(_.value).map(m => "\"" + m + "\": " + s"${name + m},").mkString("\n").shift(4)}
          |}
          |
-       |// String converts an enum to a string
+         |// String converts an enum to a string
          |func (e $name) String() string {
          |    return map${name}ToString[e]
          |}
          |
-       |// New$name creates a new enum from string
+         |// New$name creates a new enum from string
          |func New$name(e string) $name {
          |    return mapStringTo$name[e]
          |}
          |
-       |func GetAll$name() []$name {
+         |func GetAll$name() []$name {
          |    return allOf$name
          |}
          |
-       |func NewTest$name() $name {
+         |func NewTest$name() $name {
          |    return mapStringTo$name["${i.members.head.value}"]
          |}
          |
-       |// IsValid$name checks if the string value can be converted to an enum
+         |// IsValid$name checks if the string value can be converted to an enum
          |func IsValid$name(e string) bool {
          |    _, ok := mapStringTo$name[e]
          |    return ok
          |}
          |
-       |// MarshalJSON deserialization for the enumeration
+         |// MarshalJSON deserialization for the enumeration
          |func (e $name) MarshalJSON() ([]byte, error) {
          |    // Enums are encoded into a string
          |    buffer := bytes.NewBufferString(`"`)
@@ -590,7 +602,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |    return buffer.Bytes(), nil
          |}
          |
-       |// UnmarshalJSON deserialization for the enumeration
+         |// UnmarshalJSON deserialization for the enumeration
          |func (e *$name) UnmarshalJSON(b []byte) error {
          |    // Restore enum from a string
          |    var s string
@@ -599,7 +611,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |        return err
          |    }
          |
-       |    *e = New$name(s)
+         |    *e = New$name(s)
          |    return nil
          |}
      """.stripMargin
@@ -678,19 +690,22 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       ts
     )
 
-    val needsStrconv = struct.fields.exists(f => f.tp.id match {
-      case Primitive.TInt8 => true
-      case Primitive.TInt16 => true
-      case Primitive.TInt32 => true
-      case Primitive.TInt64 => true
-      case Primitive.TBool => true
+    val needsStrconv = struct.fields.exists(
+      f =>
+        f.tp.id match {
+          case Primitive.TInt8 => true
+          case Primitive.TInt16 => true
+          case Primitive.TInt32 => true
+          case Primitive.TInt64 => true
+          case Primitive.TBool => true
 
-      case Primitive.TUInt8 => true
-      case Primitive.TUInt16 => true
-      case Primitive.TUInt32 => true
-      case Primitive.TUInt64 => true
-      case _ => false
-    })
+          case Primitive.TUInt8 => true
+          case Primitive.TUInt16 => true
+          case Primitive.TUInt32 => true
+          case Primitive.TUInt64 => true
+          case _ => false
+        }
+    )
 
     val decl =
       s"""${struct.render()}
@@ -715,7 +730,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |        return fmt.Errorf("expected identifier for type ${i.id.name} with ${struct.fields.length} parts, got %d in string %s", len(parts), s)
          |    }
          |
-         |${struct.fields.zipWithIndex.map { case (f, index) => f.tp.renderFromString(f.renderMemberName(false), s"parts[$index]", unescape = true) }.mkString("\n").shift(4)}
+         |${struct.fields.zipWithIndex.map { case (f, index) => f.tp.renderFromString(f.renderMemberName(false), s"parts[$index]", unescape = true) }
+           .mkString("\n").shift(4)}
          |
          |${struct.fields.map(f => f.renderAssign("v", f.renderMemberName(false), serialized = false, optional = false)).mkString("\n").shift(4)}
          |    return nil
@@ -775,12 +791,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |}
        """.stripMargin
 
-    IdentifierProduct(decl, imports.renderImports(
-      if (needsStrconv)
-        List("encoding/json", "bytes", "net/url", "fmt", "strings", "strconv")
-      else
-        List("encoding/json", "bytes", "net/url", "strings", "fmt")
-    ),
+    IdentifierProduct(
+      decl,
+      imports.renderImports(
+        if (needsStrconv)
+          List("encoding/json", "bytes", "net/url", "fmt", "strings", "strconv")
+        else
+          List("encoding/json", "bytes", "net/url", "strings", "fmt")
+      ),
       tests
     )
   }
@@ -860,8 +878,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
          |${renderRegistrations(ts.inheritance.parentsInherited(i.id), eid, imports)}
        """.stripMargin
 
-    val testImports = GoLangImports(struct.fields.flatMap(f => if (f.tp.testValue() != "nil")
-      GoLangImports.collectTypes(f.tp.id) else List.empty), i.id.path.toPackage, ts, List.empty, forTest = true, manifest = options.manifest)
+    val testImports = GoLangImports(
+      struct.fields.flatMap(
+        f =>
+          if (f.tp.testValue() != "nil")
+            GoLangImports.collectTypes(f.tp.id)
+          else List.empty
+      ),
+      i.id.path.toPackage,
+      ts,
+      List.empty,
+      forTest = true,
+      manifest = options.manifest
+    )
 
     val tests =
       s"""${testImports.renderImports(Seq("testing", "encoding/json"))}
@@ -912,12 +941,19 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"out${svcOrBuzzer.capitalize}${name.capitalize}"
   }
 
-  protected def renderRPCMethodSignature(svcOrBuzzer: String, method: DefMethod, imports: GoLangImports, spread: Boolean = false, withContext: Boolean = false): String = {
+  protected def renderRPCMethodSignature(
+    svcOrBuzzer: String,
+    method: DefMethod,
+    imports: GoLangImports,
+    spread: Boolean = false,
+    withContext: Boolean = false
+  ): String = {
     method match {
       case m: DefMethod.RPCMethod => {
         val context = if (withContext) s"context interface{}${if (m.signature.input.fields.isEmpty) "" else ", "}" else ""
         if (spread) {
-          val fields = m.signature.input.fields.map(f => mkField(imports, f).renderMemberName(capitalize = false) + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
+          val fields = m.signature.input.fields
+            .map(f => mkField(imports, f).renderMemberName(capitalize = false) + " " + GoLangType(f.typeId, imports, ts).renderType()).mkString(", ")
           s"${m.name.capitalize}($context$fields) ${renderRPCMethodOutputSignature(svcOrBuzzer, m, imports)}"
         } else {
           s"${m.name.capitalize}(${context}input: ${inName(svcOrBuzzer, m.name, public = true)}) ${renderRPCMethodOutputSignature(svcOrBuzzer, m, imports)}"
@@ -929,7 +965,8 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   protected def isServiceMethodOutputNullable(method: DefMethod.RPCMethod): Boolean = method.signature.output match {
     case _: Struct => true
     case _: Algebraic => true
-    case _: Singular => false // Should better detect here, there might be a singular object returned, which is nullable GoLangType(si.typeId, imports, ts).isPrimitive(si.typeId)
+    case _: Singular =>
+      false // Should better detect here, there might be a singular object returned, which is nullable GoLangType(si.typeId, imports, ts).isPrimitive(si.typeId)
     case _: Void => false
     case _: Alternative => true
   }
@@ -966,9 +1003,11 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       val an = getAvailName("c", m.signature.input.fields)
       m.signature.output match {
         case _: Struct | _: Algebraic | _: Alternative =>
-
           s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
-             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
+             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method"
+             else
+               s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields
+                 .map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
              |    outData := &${outName(svcOrBuzzer, m.name, public = true)}{}
              |    err := $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, outData)
              |    if err != nil {
@@ -981,9 +1020,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
         case so: Singular =>
           val resType = GoLangType(so.typeId, imports, ts)
           s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
-             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
+             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method"
+             else
+               s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields
+                 .map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
              |    ${if (resType.isPrimitive(so.typeId)) s"var outData ${resType.renderType(forAlias = true)}" else s"outData := &${resType.renderType(forAlias = true)}{}"}
-             |    err := $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType.isPrimitive(so.typeId)) "&" else ""}outData)
+             |    err := $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, ${if (resType
+                 .isPrimitive(so.typeId)) "&"
+             else ""}outData)
              |    if err != nil {
              |        return ${renderServiceMethodDefaultResult(method, imports)}, err
              |    }
@@ -993,7 +1037,10 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
         case _: Void =>
           s"""func ($an *${svcOrBuzzer}Client) ${renderRPCMethodSignature(svcOrBuzzer, method, imports, spread = true)} {
-             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields.map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
+             |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method"
+             else
+               s"inData := New${inName(svcOrBuzzer, m.name, public = true)}(${m.signature.input.fields
+                 .map(ff => mkField(imports, ff).renderMemberName(capitalize = false)).mkString(", ")})"}
              |    return $an.transport.Send("$svcOrBuzzer", "${m.name}", ${if (m.signature.input.fields.isEmpty) "nil" else "inData"}, nil)
              |}
        """.stripMargin
@@ -1074,13 +1121,18 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
     case m: DefMethod.RPCMethod =>
       if (isServiceMethodOutputExistent(m)) {
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(svcOrBuzzer, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
-           |    modelOut, err := v.$service.${m.name.capitalize}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${mkField(f).renderMemberName(capitalize = true)}()").mkString(", ")})
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method"
+           else
+             s"modelIn := &${inName(svcOrBuzzer, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    modelOut, err := v.$service.${m.name.capitalize}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields
+             .map(f => s"modelIn.${mkField(f).renderMemberName(capitalize = true)}()").mkString(", ")})
            |    if err != nil {
            |        return []byte{}, err
            |    }
            |
-           |    ${if (isServiceMethodOutputNullable(m)) s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }""" else ""}
+           |    ${if (isServiceMethodOutputNullable(m))
+             s"""if modelOut == nil {\n        return []byte{}, fmt.Errorf("Method ${m.name} returned neither error nor result. Implementation might be broken.")\n    }"""
+           else ""}
            |    dataOut, err := v.marshaller.Marshal(modelOut)
            |    if err != nil {
            |        return []byte{}, fmt.Errorf("Marshalling model failed: %s", err.Error())
@@ -1092,16 +1144,17 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        """.stripMargin
       } else {
         s"""case "${m.name}": {
-           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method" else s"modelIn := &${inName(svcOrBuzzer, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
-           |    return []byte{}, v.$service.${m.name.capitalize}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields.map(f => s"modelIn.${mkField(f).renderMemberName(capitalize = true)}()").mkString(", ")})
+           |    ${if (m.signature.input.fields.isEmpty) "// No input params for this method"
+           else
+             s"modelIn := &${inName(svcOrBuzzer, m.name, public = true)}{}\n    if err := v.marshaller.Unmarshal(data, modelIn); err != nil {\n        return nil, fmt.Errorf(" + "\"invalid input data object for method " + m.name + ":\" + err.Error())\n    }"}
+           |    return []byte{}, v.$service.${m.name.capitalize}(context${if (m.signature.input.fields.isEmpty) "" else ", "}${m.signature.input.fields
+             .map(f => s"modelIn.${mkField(f).renderMemberName(capitalize = true)}()").mkString(", ")})
            |}
            |
        """.stripMargin
       }
 
   }
-
-
 
   protected def renderServiceDispatcher(i: Service, imports: GoLangImports): String = {
     val name = s"${i.id.name}Dispatcher"
@@ -1162,13 +1215,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
   protected def renderServiceMethodDefaultResult(method: DefMethod, imports: GoLangImports): String = {
     method match {
-      case m: DefMethod.RPCMethod => m.signature.output match {
-        case _: Struct => "nil"
-        case _: Algebraic => "nil"
-        case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
-        case _: Void => ""
-        case _: Alternative => "nil"
-      }
+      case m: DefMethod.RPCMethod =>
+        m.signature.output match {
+          case _: Struct => "nil"
+          case _: Algebraic => "nil"
+          case si: Singular => GoLangType(si.typeId, imports, ts).defaultValue()
+          case _: Void => ""
+          case _: Alternative => "nil"
+        }
     }
   }
 
@@ -1179,7 +1233,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    // Implements ${i.id.name}Server interface
        |}
        |
-       |${i.methods.map(m => s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+       |${i.methods
+         .map(
+           m =>
+             s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(
+                 m.asInstanceOf[DefMethod.RPCMethod]
+               )) renderServiceMethodDefaultResult(m, imports) + ", "
+             else ""}fmt.Errorf("Method not implemented.")\n}\n"""
+         ).mkString("\n")}
      """.stripMargin
   }
 
@@ -1239,23 +1300,26 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
       s"""// ============== Service models ==============
          |${renderServiceModels(i, imports)}
          |
-           |// ============== Service Client ==============
+         |// ============== Service Client ==============
          |${renderServiceClient(i, imports)}
          |
-           |// ============== Service Dispatcher ==============
+         |// ============== Service Dispatcher ==============
          |${renderServiceDispatcher(i, imports)}
          |
-           |// ============== Service Server Dummy ==============
+         |// ============== Service Server Dummy ==============
          |${renderServiceServerDummy(i, imports)}
          """.stripMargin
 
     val serviceModelsCount = calcServiceModels(i)
-    ServiceProduct(svc, imports.renderImports(
-      if (serviceModelsCount > 0)
-        Seq("encoding/json", "fmt", "time", prefix + "irt")
-      else
-        Seq("fmt", "time", prefix + "irt")
-    ))
+    ServiceProduct(
+      svc,
+      imports.renderImports(
+        if (serviceModelsCount > 0)
+          Seq("encoding/json", "fmt", "time", prefix + "irt")
+        else
+          Seq("fmt", "time", prefix + "irt")
+      )
+    )
   }
 
   protected def renderBuzzerModels(i: Buzzer, imports: GoLangImports): String = {
@@ -1283,10 +1347,7 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
   }
 
   protected def renderServiceMethodInModel(i: DTOId, name: String, structure: SimpleStructure, imports: GoLangImports): String = {
-    val struct = GoLangStruct(name, i, List.empty,
-      structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)),
-      imports, ts
-    )
+    val struct = GoLangStruct(name, i, List.empty, structure.fields.map(ef => GoLangField(ef.name, GoLangType(ef.typeId, imports, ts), name, imports, ts)), imports, ts)
     s"""${struct.render(withTest = false)}
        |${struct.renderSerialized()}
      """.stripMargin
@@ -1381,7 +1442,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
        |    // Implements ${i.id.name}BuzzerHandlers interface
        |}
        |
-       |${i.events.map(m => s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(m.asInstanceOf[DefMethod.RPCMethod])) renderServiceMethodDefaultResult(m, imports) + ", " else ""}fmt.Errorf("Method not implemented.")\n}\n""").mkString("\n")}
+       |${i.events
+         .map(
+           m =>
+             s"func (d *$name) " + renderRPCMethodSignature(i.id.name, m, imports, spread = true, withContext = true) + s""" {\n    return ${if (isServiceMethodOutputExistent(
+                 m.asInstanceOf[DefMethod.RPCMethod]
+               )) renderServiceMethodDefaultResult(m, imports) + ", "
+             else ""}fmt.Errorf("Method not implemented.")\n}\n"""
+         ).mkString("\n")}
      """.stripMargin
   }
 
@@ -1409,11 +1477,14 @@ class GoLangTranslator(ts: Typespace, options: GoTranslatorOptions) extends Tran
 
     val buzzerModelsCount = calcBuzzerModels(i)
 
-    BuzzerProduct(svc, imports.renderImports(
-      if (buzzerModelsCount > 0)
-        Seq("encoding/json", "fmt", prefix + "irt")
-      else
-        Seq("fmt", prefix + "irt")
-    ))
+    BuzzerProduct(
+      svc,
+      imports.renderImports(
+        if (buzzerModelsCount > 0)
+          Seq("encoding/json", "fmt", prefix + "irt")
+        else
+          Seq("fmt", prefix + "irt")
+      )
+    )
   }
 }

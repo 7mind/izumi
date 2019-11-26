@@ -35,12 +35,12 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   *                        tests with the exact same overrides
   */
 final case class TestConfig(
-                             pluginPackages: Option[Seq[String]] = None
-                           , activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation
-                           , memoizedKeys: Set[DIKey] = Set.empty
-                           , moduleOverrides: Module = Module.empty
-                           , bootstrapOverrides: BootstrapModule = BootstrapModule.empty
-                           )
+  pluginPackages: Option[Seq[String]] = None,
+  activation: Map[AxisBase, AxisValue] = StandardAxis.testProdActivation,
+  memoizedKeys: Set[DIKey] = Set.empty,
+  moduleOverrides: Module = Module.empty,
+  bootstrapOverrides: BootstrapModule = BootstrapModule.empty
+)
 
 trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
@@ -73,7 +73,16 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   //
   protected var context: Option[SuiteContext] = None
 
-  override def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
+  override def registerBranch(
+    description: String,
+    childPrefix: Option[String],
+    verb: String,
+    methodName: String,
+    stackDepth: Int,
+    adjustment: Int,
+    pos: source.Position,
+    fun: () => Unit
+  ): Unit = {
     Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
     this.context = Some(SuiteContext(description, verb))
     fun()
@@ -94,15 +103,15 @@ object DistageAbstractScalatestSpec {
   }
 
   class DSWordSpecStringWrapper[F[_]](
-                                       context: Option[SuiteContext],
-                                       suiteName: String,
-                                       suiteId: String,
-                                       testname: String,
-                                       reg: TestRegistration[F],
-                                       env: TestEnvironment,
-                                     )(
-                                       implicit override val tagMonoIO: TagK[F]
-                                     ) extends DISyntaxBase[F] {
+    context: Option[SuiteContext],
+    suiteName: String,
+    suiteId: String,
+    testname: String,
+    reg: TestRegistration[F],
+    env: TestEnvironment,
+  )(
+    implicit override val tagMonoIO: TagK[F]
+  ) extends DISyntaxBase[F] {
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -158,17 +167,17 @@ object DistageAbstractScalatestSpec {
     }
   }
 
-  class DSWordSpecStringWrapper2[F[+ _, + _]](
-                                               context: Option[SuiteContext],
-                                               suiteName: String,
-                                               suiteId: String,
-                                               testname: String,
-                                               reg: TestRegistration[F[Throwable, ?]],
-                                               env: TestEnvironment,
-                                             )(
-                                               implicit override val tagBIO: TagKK[F],
-                                               val tagK: TagK[F[Throwable, *]],
-                                             ) extends DISyntaxBIOBase[F] {
+  class DSWordSpecStringWrapper2[F[+_, +_]](
+    context: Option[SuiteContext],
+    suiteName: String,
+    suiteId: String,
+    testname: String,
+    reg: TestRegistration[F[Throwable, ?]],
+    env: TestEnvironment,
+  )(
+    implicit override val tagBIO: TagKK[F],
+    val tagK: TagK[F[Throwable, *]],
+  ) extends DISyntaxBIOBase[F] {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {
       val id = TestId(
@@ -183,7 +192,6 @@ object DistageAbstractScalatestSpec {
     def in(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
       take2(function, pos.get)
     }
-
 
     final def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       take2(function, pos.get)

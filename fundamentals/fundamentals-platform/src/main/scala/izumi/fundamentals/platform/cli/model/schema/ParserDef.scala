@@ -12,7 +12,6 @@ trait ParserDef {
   def isEmpty: Boolean = _all.isEmpty
   def nonEmpty: Boolean = _all.nonEmpty
 
-
   def enumerate: Seq[ArgDef] = _all.toSeq.map(_._2)
   def all: Map[String, ArgDef] = _all.toMap
 
@@ -42,12 +41,11 @@ trait ParserDef {
   }
 }
 
-
 object ParserDef {
 
   object Empty extends ParserDef
 
-  case class ArgDef private[cli](name: ArgNameDef, doc: String, valueDoc: Option[String])
+  case class ArgDef private[cli] (name: ArgNameDef, doc: String, valueDoc: Option[String])
 
   object ArgDef {
 
@@ -71,7 +69,7 @@ object ParserDef {
 
   }
 
-  case class ArgNameDef private[cli](long: String, short: Option[String]) {
+  case class ArgNameDef private[cli] (long: String, short: Option[String]) {
     def all: Set[String] = Set(long) ++ short.toSet
 
     def matches(name: String): Boolean = all.contains(name)

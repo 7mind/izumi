@@ -39,12 +39,10 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
     }
     val result = IDLCompilationResult(target, files)
 
-
     // pack output
     import IzZip._
 
-    val ztarget = target
-      .getParent
+    val ztarget = target.getParent
       .resolve(s"${options.language.toString}.zip")
 
     val toPack = result.paths.map(p => ZE(result.target.relativize(p).toString, p))
@@ -55,18 +53,14 @@ class TypespaceCompilerFSFacade(toCompile: Seq[LoadedDomain.Success]) {
     TypespaceCompilerFSFacade.Result(result, ztarget)
   }
 
-
   private def verifySanity(grouped: Map[String, Seq[IzZip.ZE]]): Unit = {
-    val conflicts = grouped
-      .filter { // at first we compare zip entries by file path and entry name
-        case (_, v) =>
-          v.toSet.size > 1
-      }
-      .filter { // then compare the rest by content
-        case (_, v) =>
-          v.map(f => IzFiles.readString(f.file)).toSet.size > 1
-      }
-      .values
+    val conflicts = grouped.filter { // at first we compare zip entries by file path and entry name
+      case (_, v) =>
+        v.toSet.size > 1
+    }.filter { // then compare the rest by content
+      case (_, v) =>
+        v.map(f => IzFiles.readString(f.file)).toSet.size > 1
+    }.values
 
     import izumi.fundamentals.platform.strings.IzString._
     if (conflicts.nonEmpty) {
@@ -96,9 +90,8 @@ object TypespaceCompilerFSFacade {
   final case class IDLCompilationResult(target: Path, paths: Seq[Path])
 
   case class Result(
-                     compilationProducts: IDLCompilationResult
-                     , zippedOutput: Path
-                   )
-
+    compilationProducts: IDLCompilationResult,
+    zippedOutput: Path
+  )
 
 }

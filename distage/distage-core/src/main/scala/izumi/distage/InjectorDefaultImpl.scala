@@ -42,11 +42,14 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.merge(a, b)
   }
 
-  override protected[distage] def produceFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator] = {
+  override protected[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator] = {
     produceDetailedFX[F](plan, filter).evalMap(_.throwOnFailure())
   }
 
-  override protected[distage] def produceDetailedFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override protected[distage] def produceDetailedFX[F[_]: TagK: DIEffect](
+    plan: OrderedPlan,
+    filter: FinalizersFilter[F]
+  ): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     interpreter.instantiate[F](plan, parentContext, filter)
   }
 }

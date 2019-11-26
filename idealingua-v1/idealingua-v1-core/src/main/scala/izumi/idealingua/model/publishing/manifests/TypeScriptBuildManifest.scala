@@ -14,11 +14,11 @@ object TypeScriptProjectLayout {
 }
 
 case class YarnOptions(
-                        projectNaming: ProjectNamingRule,
-                        scope: String,
-                        dependencies: List[ManifestDependency],
-                        devDependencies: List[ManifestDependency],
-                      )
+  projectNaming: ProjectNamingRule,
+  scope: String,
+  dependencies: List[ManifestDependency],
+  devDependencies: List[ManifestDependency],
+)
 
 object YarnOptions {
   def example: YarnOptions = YarnOptions(
@@ -38,10 +38,10 @@ object YarnOptions {
 // https://docs.npmjs.com/files/package.json
 // https://github.com/npm/node-semver#prerelease-tags
 case class TypeScriptBuildManifest(
-                                    common: Common,
-                                    layout: TypeScriptProjectLayout,
-                                    yarn: YarnOptions
-                                  ) extends BuildManifest
+  common: Common,
+  layout: TypeScriptProjectLayout,
+  yarn: YarnOptions
+) extends BuildManifest
 
 object TypeScriptBuildManifest {
   def example: TypeScriptBuildManifest = {

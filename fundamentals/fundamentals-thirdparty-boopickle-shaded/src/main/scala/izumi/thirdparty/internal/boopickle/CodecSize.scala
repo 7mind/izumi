@@ -63,7 +63,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     if ((b & 0x80) != 0) {
       // special coding, expand sign bit
       val sign = if ((b & 0x10) == 0) 1 else -1
-      val b0   = b & 0xF
+      val b0 = b & 0xF
       b >> 4 match {
         case 0x8 | 0x9 =>
           val b1 = buf.get & 0xFF
@@ -132,7 +132,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     if ((b & 0x80) != 0) {
       // special coding, expand sign bit
       val sign = if ((b & 0x10) == 0) 1 else -1
-      val b0   = b & 0xF
+      val b0 = b & 0xF
       b >> 4 match {
         case 0x8 | 0x9 =>
           val b1 = buf.get & 0xFF
@@ -166,7 +166,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     if (b != 0xE1) {
       buf.position(buf.position() - 1)
       readIntCode match {
-        case Left(x)  => Left((x & 0xF).toByte)
+        case Left(x) => Left((x & 0xF).toByte)
         case Right(x) => Right(x.toLong)
       }
     } else
@@ -217,7 +217,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     val sizeBO = readInt
     if (sizeBO < 0)
       throw new IllegalArgumentException(s"Invalid size $sizeBO for ByteBuffer")
-    val size      = sizeBO >> 1
+    val size = sizeBO >> 1
     val byteOrder = if ((sizeBO & 1) == 1) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
     // create a copy (sharing content), set correct byte order
     val b = buf.slice().order(byteOrder)
@@ -242,7 +242,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   def readIntArray(): Array[Int] = readIntArray(readRawInt)
   def readIntArray(len: Int): Array[Int] = {
     val array = new Array[Int](len)
-    var i     = 0
+    var i = 0
     while (i < len) {
       array(i) = readInt
       i += 1
@@ -341,7 +341,7 @@ private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBuf
     } else {
       if (i > -268435456 && i < 268435456) {
         val mask = i >>> 31 << 4
-        val a    = Math.abs(i)
+        val a = Math.abs(i)
         if (a < 4096) {
           alloc(2).put((mask | 0x80 | (a >> 8)).toByte).put((a & 0xFF).toByte)
         } else if (a < 1048576) {

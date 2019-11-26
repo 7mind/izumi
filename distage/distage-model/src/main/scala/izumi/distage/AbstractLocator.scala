@@ -8,12 +8,11 @@ trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
   protected[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]] = {
-    lookupLocalUnsafe(key)
-      .map {
-        value =>
-          assert(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
-          TypedRef[T](value.asInstanceOf[T])
-      }
+    lookupLocalUnsafe(key).map {
+      value =>
+        assert(key.tpe <:< SafeType.get[T], s"$key in not a subtype of ${SafeType.get[T]}")
+        TypedRef[T](value.asInstanceOf[T])
+    }
   }
 
   final def find[T: Tag]: Option[T] =
@@ -43,7 +42,8 @@ trait AbstractLocator extends Locator {
   }
 
   private[this] final def recursiveLookup[T: Tag](key: DIKey, locator: Locator): Option[TypedRef[T]] = {
-    locator.lookupLocal[T](key)
+    locator
+      .lookupLocal[T](key)
       .orElse(locator.parent.flatMap(p => recursiveLookup(key, p)))
   }
 }

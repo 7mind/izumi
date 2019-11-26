@@ -21,11 +21,10 @@ object IzFiles {
   }
 
   def getFs(uri: URI): Try[FileSystem] = synchronized {
-    Try(FileSystems.getFileSystem(uri))
-      .recover {
-        case _ =>
-          FileSystems.newFileSystem(uri, Map.empty[String, Any].asJava)
-      }
+    Try(FileSystems.getFileSystem(uri)).recover {
+      case _ =>
+        FileSystems.newFileSystem(uri, Map.empty[String, Any].asJava)
+    }
   }
 
   def getLastModified(directory: File): Option[LocalDateTime] = {
@@ -74,18 +73,21 @@ object IzFiles {
   }
 
   def removeDir(root: Path): Unit = {
-    val _ = Files.walkFileTree(root, new SimpleFileVisitor[Path] {
-      override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-        Files.delete(file)
-        FileVisitResult.CONTINUE
-      }
+    val _ = Files.walkFileTree(
+      root,
+      new SimpleFileVisitor[Path] {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          Files.delete(file)
+          FileVisitResult.CONTINUE
+        }
 
-      override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
-        Files.delete(dir)
-        FileVisitResult.CONTINUE
-      }
+        override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+          Files.delete(dir)
+          FileVisitResult.CONTINUE
+        }
 
-    })
+      }
+    )
   }
 
   def refreshSymlink(symlink: Path, target: Path): Unit = {
@@ -94,16 +96,13 @@ object IzFiles {
   }
 
   def find(candidates: Seq[String], paths: Seq[String]): Option[Path] = {
-    paths
-      .view
-      .flatMap {
-        p =>
-          candidates.map(ext => Paths.get(p).resolve(ext))
-      }
-      .find {
-        p =>
-          p.toFile.exists()
-      }
+    paths.view.flatMap {
+      p =>
+        candidates.map(ext => Paths.get(p).resolve(ext))
+    }.find {
+      p =>
+        p.toFile.exists()
+    }
   }
 
   def haveExecutables(names: String*): Boolean = {

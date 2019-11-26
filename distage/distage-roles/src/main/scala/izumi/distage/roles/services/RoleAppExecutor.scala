@@ -19,13 +19,13 @@ trait RoleAppExecutor[F[_]] {
 object RoleAppExecutor {
 
   class Impl[F[_]: TagK](
-                          hook: AppShutdownStrategy[F],
-                          roles: RolesInfo,
-                          injector: Injector,
-                          lateLogger: IzLogger,
-                          parameters: RawAppArgs,
-                          startupPlanExecutor: StartupPlanExecutor[F],
-                        ) extends RoleAppExecutor[F] {
+    hook: AppShutdownStrategy[F],
+    roles: RolesInfo,
+    injector: Injector,
+    lateLogger: IzLogger,
+    parameters: RawAppArgs,
+    startupPlanExecutor: StartupPlanExecutor[F],
+  ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {
       try {
@@ -64,7 +64,6 @@ object RoleAppExecutor {
 
         val roleServices = rolesToRun.map {
           case (task, cfg) =>
-
             task -> task.start(cfg.roleParameters, cfg.freeArgs)
         }
 
@@ -76,9 +75,10 @@ object RoleAppExecutor {
             _ =>
               val loggedTask = for {
                 _ <- F.maybeSuspend(lateLogger.info(s"Role is about to initialize: $role"))
-                _ <- res.use { _ =>
-                  F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
-                    .flatMap(acc)
+                _ <- res.use {
+                  _ =>
+                    F.maybeSuspend(lateLogger.info(s"Role initialized: $role"))
+                      .flatMap(acc)
                 }
               } yield ()
 

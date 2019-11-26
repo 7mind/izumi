@@ -38,6 +38,6 @@ object SymbolIntrospector {
 
   type Static[U] = Aux[U]
 
-  type Aux[U] = SymbolIntrospector {val u: U}
+  type Aux[U] = SymbolIntrospector { val u: U }
 
 }

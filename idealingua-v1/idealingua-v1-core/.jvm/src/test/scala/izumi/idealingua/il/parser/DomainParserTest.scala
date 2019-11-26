@@ -2,9 +2,7 @@ package izumi.idealingua.il.parser
 
 import org.scalatest.WordSpec
 
-
-class DomainParserTest
-  extends WordSpec with ParserTestTools {
+class DomainParserTest extends WordSpec with ParserTestTools {
 
   "Domain parser" should {
     "parse domain definition" in {
@@ -163,6 +161,4 @@ class DomainParserTest
     }
   }
 
-
 }
-

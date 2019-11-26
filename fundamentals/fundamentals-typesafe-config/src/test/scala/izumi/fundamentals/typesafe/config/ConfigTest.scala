@@ -22,4 +22,3 @@ class ConfigTest extends WordSpec {
     }
   }
 }
-

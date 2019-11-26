@@ -30,7 +30,8 @@ object EarlyLoggers {
   }
 
   private def getRootLogLevel(parameters: RawAppArgs): Level = {
-    Options.logLevelRootParam.findValue(parameters.globalParameters)
+    Options.logLevelRootParam
+      .findValue(parameters.globalParameters)
       .map(v => {
         Log.Level.parseSafe(v.value, defaultLogLevel)
       })
@@ -38,7 +39,8 @@ object EarlyLoggers {
   }
 
   private def getLogFormatJson(parameters: RawAppArgs): Boolean = {
-    Options.logFormatParam.findValue(parameters.globalParameters)
+    Options.logFormatParam
+      .findValue(parameters.globalParameters)
       .map(v => {
         v.value match {
           case "json" => true

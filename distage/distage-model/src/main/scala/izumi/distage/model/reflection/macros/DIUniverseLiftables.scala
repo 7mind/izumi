@@ -56,11 +56,13 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // ParameterContext
 
   implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
-    context => q"{ new $runtimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
+    context =>
+      q"{ new $runtimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
   }
 
   implicit val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
-    context => q"{ new $runtimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
+    context =>
+      q"{ new $runtimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
   }
 
   implicit val liftableParameterContext: Liftable[DependencyContext.ParameterContext] = {
@@ -112,7 +114,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   implicit val liftableAnnotation: Liftable[Annotation] = {
     ann =>
       q"""{
-    ${symbolOf[ReflectionUtil.type].asClass.module}.runtimeAnnotation(${SafeType(ann.tree.tpe)}.tpe, ${ann.tree.children.tail.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
+    ${symbolOf[ReflectionUtil.type].asClass.module}.runtimeAnnotation(${SafeType(ann.tree.tpe)}.tpe, ${ann.tree.children.tail
+        .map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
     }"""
   }
 

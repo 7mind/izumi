@@ -22,20 +22,16 @@ trait AbstractGCTracer[NodeId, Node] {
     val filteredNodes = pruned.nodes.filter(s => pruned.reachable.contains(id(s)))
     Pruned(filteredNodes, pruned.reachable)
   }
-
-
   @tailrec
   private def trace(index: Map[NodeId, Node], toTrace: Set[NodeId], reachable: mutable.HashSet[NodeId]): Unit = {
-    val newDeps = toTrace
-      .flatMap {
-        id =>
-          if (ignoreMissingDeps) {
-            index.get(id).toSeq
-          } else {
-            Seq(index(id))
-          }
-      }
-      .flatMap(extractDependencies(index, _))
+    val newDeps = toTrace.flatMap {
+      id =>
+        if (ignoreMissingDeps) {
+          index.get(id).toSeq
+        } else {
+          Seq(index(id))
+        }
+    }.flatMap(extractDependencies(index, _))
       .diff(reachable)
 
     if (newDeps.nonEmpty) {

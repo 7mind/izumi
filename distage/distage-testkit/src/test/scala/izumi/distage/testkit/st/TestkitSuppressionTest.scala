@@ -10,8 +10,7 @@ import izumi.distage.testkit.st.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 import distage.{DIKey, TagK}
 
-
-abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
+abstract class TestkitSuppressionTest[F[_]: TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
   private val cc = new AtomicInteger(0)
 
@@ -26,7 +25,6 @@ abstract class TestkitSuppressionTest[F[_] : TagK] extends TestkitSelftest[F] {
         fail("This test must be ignored as well")
     }
   }
-
 
   override protected def additionalRoots: Set[distage.DIKey] = {
     // here we may define the roots we need for dependency checks

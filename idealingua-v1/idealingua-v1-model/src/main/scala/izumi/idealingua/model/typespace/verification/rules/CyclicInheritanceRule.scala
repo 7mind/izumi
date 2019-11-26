@@ -10,7 +10,6 @@ import izumi.idealingua.model.typespace.verification.{MissingDependency, Verific
 
 import scala.util.{Failure, Success, Try}
 
-
 object CyclicInheritanceRule extends VerificationRule {
   override def verify(ts: Typespace): IDLDiagnostics = IDLDiagnostics {
     val cycles = ts.domain.types.flatMap {
@@ -91,13 +90,13 @@ object CyclicInheritanceRule extends VerificationRule {
 
         case d: Interface =>
           d.struct.superclasses.interfaces.map(i => MissingDependency.DepInterface(d.id, i)) ++
-            d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++
-            d.struct.fields.map(f => MissingDependency.DepField(d.id, f.typeId, f))
+          d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++
+          d.struct.fields.map(f => MissingDependency.DepField(d.id, f.typeId, f))
 
         case d: DTO =>
           d.struct.superclasses.interfaces.map(i => MissingDependency.DepInterface(d.id, i)) ++
-            d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++
-            d.struct.fields.map(f => MissingDependency.DepField(d.id, f.typeId, f))
+          d.struct.superclasses.concepts.flatMap(c => extractDependencies(ts.apply(c))) ++
+          d.struct.fields.map(f => MissingDependency.DepField(d.id, f.typeId, f))
 
         case d: Identifier =>
           d.fields.map(f => MissingDependency.DepPrimitiveField(d.id, f.typeId, f))
@@ -111,6 +110,5 @@ object CyclicInheritanceRule extends VerificationRule {
     }
 
   }
-
 
 }

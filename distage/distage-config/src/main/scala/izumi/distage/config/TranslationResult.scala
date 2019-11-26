@@ -38,13 +38,14 @@ object TranslationResult {
       }.niceList()
 
       val details = s"""origin: $origin
-         |tried: $tried""".stripMargin.shift(4)
+                       |tried: $tried""".stripMargin.shift(4)
 
       s"Missing config value:\n$details\nWhen reading from ConfigOrigin: $configOrigin"
     }
   }
 
-  final case class ExtractionFailure(op: ExecutableOp, tpe: SafeType, path: String, config: ConfigValue, configOrigin: ConfigOrigin, f: Throwable) extends TranslationFailure {
+  final case class ExtractionFailure(op: ExecutableOp, tpe: SafeType, path: String, config: ConfigValue, configOrigin: ConfigOrigin, f: Throwable)
+    extends TranslationFailure {
     override def toString: String = s"$origin: cannot read $tpe out of $path ==> $config: ${f.stackTrace}\nWhen reading from ConfigOrigin: $configOrigin"
   }
 

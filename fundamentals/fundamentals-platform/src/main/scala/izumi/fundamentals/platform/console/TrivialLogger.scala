@@ -81,9 +81,9 @@ object TrivialLogger {
   }
 
   final case class Config(
-                           sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
-                           forceLog: Boolean = false,
-                         )
+    sink: AbstractStringTrivialSink = AbstractStringTrivialSink.Console,
+    forceLog: Boolean = false,
+  )
 
   def make[T: ClassTag](sysProperty: String, config: Config = Config()): TrivialLogger = {
     val logMessages: Boolean = checkLog(sysProperty, config, default = false)
@@ -94,14 +94,15 @@ object TrivialLogger {
   private[this] val enabled = new mutable.HashMap[String, Boolean]()
 
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
-    config.forceLog || enabled.getOrElseUpdate(sysProperty, {
-      val parts = sysProperty.split('.')
-      val candidates = parts.tail.scanLeft(parts.head) {
-        case (acc, chunk) =>
-          acc + "." + chunk
+    config.forceLog || enabled.getOrElseUpdate(
+      sysProperty, {
+        val parts = sysProperty.split('.')
+        val candidates = parts.tail.scanLeft(parts.head) {
+          case (acc, chunk) =>
+            acc + "." + chunk
+        }
+        candidates.exists(System.getProperty(_).asBoolean().getOrElse(default))
       }
-      candidates.exists(System.getProperty(_).asBoolean().getOrElse(default))
-    })
+    )
   }
 }
-

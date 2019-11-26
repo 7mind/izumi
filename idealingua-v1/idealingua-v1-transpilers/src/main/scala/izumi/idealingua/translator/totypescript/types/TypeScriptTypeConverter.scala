@@ -7,7 +7,6 @@ import izumi.idealingua.model.il.ast.typed.Field
 import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import izumi.idealingua.model.typespace.Typespace
 
-
 class TypeScriptTypeConverter() {
   def parseTypeFromString(value: String, target: TypeId): String = {
     target match {
@@ -54,7 +53,6 @@ class TypeScriptTypeConverter() {
       case Primitive.TUInt16 => s"$value.toString()"
       case Primitive.TUInt32 => s"$value.toString()"
       case Primitive.TUInt64 => s"$value.toString()"
-
 
       case Primitive.TFloat => s"$value.toString()"
       case Primitive.TDouble => s"$value.toString()"
@@ -104,16 +102,19 @@ class TypeScriptTypeConverter() {
   }
 
   def deserializeGenericType(variable: String, target: Generic, ts: Typespace, asAny: Boolean = false): String = target match {
-    case gm: Generic.TMap => s"Object.keys($variable).reduce((previous, current) => {previous[current] = ${deserializeType(s"$variable[current]", gm.valueType, ts, asAny)}; return previous; }, {})"
-    case gl: Generic.TList => gl.valueType match {
-      case _: Primitive => s"$variable.slice()"
-      case _ => s"$variable.map(${if(asAny)"(e: any)" else "e"} => { return ${deserializeType("e", gl.valueType, ts, asAny)}; })"
-    }
+    case gm: Generic.TMap =>
+      s"Object.keys($variable).reduce((previous, current) => {previous[current] = ${deserializeType(s"$variable[current]", gm.valueType, ts, asAny)}; return previous; }, {})"
+    case gl: Generic.TList =>
+      gl.valueType match {
+        case _: Primitive => s"$variable.slice()"
+        case _ => s"$variable.map(${if (asAny) "(e: any)" else "e"} => { return ${deserializeType("e", gl.valueType, ts, asAny)}; })"
+      }
     case go: Generic.TOption => s"typeof $variable !== 'undefined' ? ${deserializeType(variable, go.valueType, ts, asAny)} : undefined"
-    case gs: Generic.TSet => gs.valueType match {
-      case _: Primitive => s"$variable.slice()"
-      case _ => s"$variable.map(${if(asAny)"(e: any)" else "e"} => { return ${deserializeType("e", gs.valueType, ts, asAny)}; })"
-    }
+    case gs: Generic.TSet =>
+      gs.valueType match {
+        case _: Primitive => s"$variable.slice()"
+        case _ => s"$variable.map(${if (asAny) "(e: any)" else "e"} => { return ${deserializeType("e", gs.valueType, ts, asAny)}; })"
+      }
   }
 
   def deserializeCustomType(variable: String, target: TypeId, ts: Typespace, asAny: Boolean = false): String = target match {
@@ -136,10 +137,11 @@ class TypeScriptTypeConverter() {
   }
 
   def toNativeTypeName(name: String, id: TypeId): String = id match {
-    case t: Generic => t match {
-      case _: Generic.TOption => name // + "?" // We moved this to the type itself, e.g. string | undefined
-      case _ => name
-    }
+    case t: Generic =>
+      t match {
+        case _: Generic.TOption => name // + "?" // We moved this to the type itself, e.g. string | undefined
+        case _ => name
+      }
     case _ => name
   }
 
@@ -188,7 +190,12 @@ class TypeScriptTypeConverter() {
   private def toGenericType(typeId: Generic, ts: Typespace, forSerialized: Boolean): String = {
     typeId match {
       case _: Generic.TSet => toNativeType(typeId.asInstanceOf[TSet].valueType, ts, forSerialized) + "[]"
-      case _: Generic.TMap => "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized, forMap = true) + "]: " + toNativeType(typeId.asInstanceOf[TMap].valueType, ts, forSerialized) + "}"
+      case _: Generic.TMap =>
+        "{[key: " + toNativeType(typeId.asInstanceOf[TMap].keyType, ts, forSerialized, forMap = true) + "]: " + toNativeType(
+          typeId.asInstanceOf[TMap].valueType,
+          ts,
+          forSerialized
+        ) + "}"
       case _: Generic.TList => toNativeType(typeId.asInstanceOf[TList].valueType, ts, forSerialized) + "[]"
       case o: Generic.TOption => toNativeType(o.valueType, ts, forSerialized) + " | undefined"
     }
@@ -198,7 +205,7 @@ class TypeScriptTypeConverter() {
     s"${field.name}: ${serializeValue("this." + safeName(field.name), field.typeId, ts)}"
   }
 
-  def deserializeField(/*slice: String, */field: Field, ts: Typespace): String = {
+  def deserializeField( /*slice: String, */ field: Field, ts: Typespace): String = {
     s"${deserializeName("this." + safeName(field.name), field.typeId)} = ${deserializeType(s"slice.${field.name}", field.typeId, ts)};"
   }
 
@@ -223,23 +230,26 @@ class TypeScriptTypeConverter() {
     case Primitive.TDouble => s"$name"
     case Primitive.TUUID => s"$name"
     case Primitive.TBLOB => ???
-    case Primitive.TTime => if(nonMember) s"Formatter.writeTime($name)" else s"${name}AsString";
-    case Primitive.TDate => if(nonMember) s"Formatter.writeDate($name)" else s"${name}AsString";
-    case Primitive.TTs => if(nonMember) s"Formatter.writeLocalDateTime($name)" else s"${name}AsString";
-    case Primitive.TTsTz => if(nonMember) s"Formatter.writeZoneDateTime($name)" else s"${name}AsString";
-    case Primitive.TTsU => if(nonMember) s"Formatter.writeUTCDateTime($name)" else s"${name}AsString";
+    case Primitive.TTime => if (nonMember) s"Formatter.writeTime($name)" else s"${name}AsString";
+    case Primitive.TDate => if (nonMember) s"Formatter.writeDate($name)" else s"${name}AsString";
+    case Primitive.TTs => if (nonMember) s"Formatter.writeLocalDateTime($name)" else s"${name}AsString";
+    case Primitive.TTsTz => if (nonMember) s"Formatter.writeZoneDateTime($name)" else s"${name}AsString";
+    case Primitive.TTsU => if (nonMember) s"Formatter.writeUTCDateTime($name)" else s"${name}AsString";
   }
 
   def serializeGeneric(name: String, id: TypeId, ts: Typespace, asAny: Boolean = false): String = id match {
-    case m: Generic.TMap => s"Object.keys($name).reduce((previous, current) => {previous[current] = ${serializeValue(s"$name[current]", m.valueType, ts, nonMember = true)}; return previous; }, {})"
-    case s: Generic.TSet => s.valueType match {
-      case _: Primitive => s"$name.slice()"
-      case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", s.valueType, ts, nonMember = true)}; })"
-    }
-    case l: Generic.TList => l.valueType match {
-      case _: Primitive => s"$name.slice()"
-      case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", l.valueType, ts, nonMember = true)}; })"
-    }
+    case m: Generic.TMap =>
+      s"Object.keys($name).reduce((previous, current) => {previous[current] = ${serializeValue(s"$name[current]", m.valueType, ts, nonMember = true)}; return previous; }, {})"
+    case s: Generic.TSet =>
+      s.valueType match {
+        case _: Primitive => s"$name.slice()"
+        case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", s.valueType, ts, nonMember = true)}; })"
+      }
+    case l: Generic.TList =>
+      l.valueType match {
+        case _: Primitive => s"$name.slice()"
+        case _ => s"$name.map(${if (asAny) "(e: any)" else "e"} => { return ${serializeValue("e", l.valueType, ts, nonMember = true)}; })"
+      }
     case o: Generic.TOption => s"typeof $name !== 'undefined' ? ${serializeValue(name, o.valueType, ts)} : undefined"
     case _ => s"$name: 'Error here! Not Implemented!'"
   }
@@ -322,12 +332,72 @@ class TypeScriptTypeConverter() {
   }
 
   def safeName(name: String): String = {
-    val ecma1 = Seq("do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "as",
-      "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while",
-      "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends",
-      "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "any",
-      "implements", "instanceof", "namespace", "boolean", "constructor", "declare", "get", "module", "require",
-      "number", "set", "string", "symbol", "type", "from", "of")
+    val ecma1 = Seq(
+      "do",
+      "if",
+      "in",
+      "for",
+      "let",
+      "new",
+      "try",
+      "var",
+      "case",
+      "else",
+      "enum",
+      "eval",
+      "null",
+      "as",
+      "this",
+      "true",
+      "void",
+      "with",
+      "await",
+      "break",
+      "catch",
+      "class",
+      "const",
+      "false",
+      "super",
+      "throw",
+      "while",
+      "yield",
+      "delete",
+      "export",
+      "import",
+      "public",
+      "return",
+      "static",
+      "switch",
+      "typeof",
+      "default",
+      "extends",
+      "finally",
+      "package",
+      "private",
+      "continue",
+      "debugger",
+      "function",
+      "arguments",
+      "interface",
+      "protected",
+      "any",
+      "implements",
+      "instanceof",
+      "namespace",
+      "boolean",
+      "constructor",
+      "declare",
+      "get",
+      "module",
+      "require",
+      "number",
+      "set",
+      "string",
+      "symbol",
+      "type",
+      "from",
+      "of"
+    )
 
     if (ecma1.contains(name)) s"${name}_" else name
   }
@@ -339,45 +409,45 @@ class TypeScriptTypeConverter() {
   def toIntField(name: String, min: BigInt = Int.MinValue, max: BigInt = Int.MaxValue, optional: Boolean = false): String = {
     var base =
       s"""public get ${safeName(name)}(): number${if (optional) " | undefined" else ""} {
-         |    return this._$name;
-         |}
-         |
-         |public set ${safeName(name)}(value: number${if (optional) " | undefined" else ""}) {
-         |    if (typeof value === 'undefined' || value === null) {
-         |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
-         |    }
-         |
-         |    if (typeof value !== 'number') {
-         |        throw new Error('Field ${safeName(name)} expects type number, got ' + value);
-         |    }
-         |
-         |    if (value % 1 !== 0) {
-         |        throw new Error('Field ${safeName(name)} is expected to be an integer, got ' + value);
-         |    }
+      |    return this._$name;
+      |}
+      |
+      |public set ${safeName(name)}(value: number${if (optional) " | undefined" else ""}) {
+      |    if (typeof value === 'undefined' || value === null) {
+      |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
+      |    }
+      |
+      |    if (typeof value !== 'number') {
+      |        throw new Error('Field ${safeName(name)} expects type number, got ' + value);
+      |    }
+      |
+      |    if (value % 1 !== 0) {
+      |        throw new Error('Field ${safeName(name)} is expected to be an integer, got ' + value);
+      |    }
        """ // value = ~~value; <- alternative to drop the decimal part
 
     if (min != Int.MinValue) {
       base +=
-        s"""
-           |    if (value < $min) {
-           |        throw new Error('Field ${safeName(name)} is expected to be not less than $min, got ' + value);
-           |    }
+      s"""
+      |    if (value < $min) {
+      |        throw new Error('Field ${safeName(name)} is expected to be not less than $min, got ' + value);
+      |    }
          """
     }
 
     if (max != Int.MaxValue) {
       base +=
-        s"""
-           |    if (value > $max) {
-           |        throw new Error('Field ${safeName(name)} is expected to be not greater than $max, got ' + value);
-           |    }
+      s"""
+      |    if (value > $max) {
+      |        throw new Error('Field ${safeName(name)} is expected to be not greater than $max, got ' + value);
+      |    }
          """
     }
 
     base +=
-      s"""
-         |    this._$name = value;
-         |}
+    s"""
+    |    this._$name = value;
+    |}
        """
     base.stripMargin
   }
@@ -448,32 +518,32 @@ class TypeScriptTypeConverter() {
   def toStringField(name: String, max: Int = Int.MinValue, optional: Boolean = false): String = {
     var base =
       s"""public get ${safeName(name)}(): string${if (optional) " | undefined" else ""} {
-         |    return this._$name;
-         |}
-         |
-         |public set ${safeName(name)}(value: string${if (optional) " | undefined" else ""}) {
-         |    if (typeof value === 'undefined' || value === null) {
-         |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
-         |    }
-         |
-         |    if (typeof value !== 'string') {
-         |        throw new Error('Field ${safeName(name)} expects type string, got ' + value);
-         |    }
+      |    return this._$name;
+      |}
+      |
+      |public set ${safeName(name)}(value: string${if (optional) " | undefined" else ""}) {
+      |    if (typeof value === 'undefined' || value === null) {
+      |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('Field ${safeName(name)} is not optional');"}
+      |    }
+      |
+      |    if (typeof value !== 'string') {
+      |        throw new Error('Field ${safeName(name)} expects type string, got ' + value);
+      |    }
      """
 
     if (max > 0) {
       base +=
-        s"""
-           |    if (value.length > $max) {
-           |        value = value.substr(0, $max);
-           |    }
+      s"""
+      |    if (value.length > $max) {
+      |        value = value.substr(0, $max);
+      |    }
          """
     }
 
     base +=
-      s"""
-         |    this._$name = value;
-         |}
+    s"""
+    |    this._$name = value;
+    |}
        """
     base.stripMargin
   }
@@ -495,19 +565,18 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
-       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
-       |    return Formatter.write${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(this._$name);
+       |    ${if (optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
+       |    return Formatter.write${if (local) "Local" else if (utc) "UTC" else "Zone"}DateTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
-       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
+       |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
-       |    this._$name = Formatter.read${if(local) "Local" else if (utc) "UTC" else "Zone"}DateTime(value);
+       |    this._$name = Formatter.read${if (local) "Local" else if (utc) "UTC" else "Zone"}DateTime(value);
        |}
      """.stripMargin
   }
-
 
   def toDateField(name: String, optional: Boolean = false): String = {
     s"""public get ${safeName(name)}(): Date${if (optional) " | undefined" else ""} {
@@ -526,13 +595,13 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
-       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
+       |    ${if (optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeDate(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
-       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
+       |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
        |    this._$name = Formatter.readDate(value);
        |}
@@ -557,13 +626,13 @@ class TypeScriptTypeConverter() {
        |}
        |
        |public get ${safeName(name)}AsString(): string${if (optional) " | undefined" else ""} {
-       |    ${if(optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
+       |    ${if (optional) s"if (!this._$name) {\n        return undefined;\n    }" else ""}
        |    return Formatter.writeTime(this._$name);
        |}
        |
        |public set ${safeName(name)}AsString(value: string${if (optional) " | undefined" else ""}) {
        |    if (typeof value !== 'string') {
-       |        ${if(optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
+       |        ${if (optional) s"this._$name = undefined;\n        return;" else s"throw new Error('${safeName(name)}AsString expects type string, got ' + value);"}
        |    }
        |
        |    this._$name = Formatter.readTime(value);

@@ -13,7 +13,7 @@ object Injector {
     *                  They can be used to extend the Injector, e.g. add ability to inject config values
     */
   def apply(overrides: BootstrapModule*): Injector = {
-    apply(CglibBootstrap.cogenBootstrap, overrides:_ *)
+    apply(CglibBootstrap.cogenBootstrap, overrides: _*)
   }
 
   /**
@@ -35,9 +35,9 @@ object Injector {
   }
 
   private[this] def bootstrap(
-                               bootstrapBase: BootstrapContextModule = CglibBootstrap.cogenBootstrap,
-                               overrides: BootstrapModule = BootstrapModule.empty,
-                             ): Injector = {
+    bootstrapBase: BootstrapContextModule = CglibBootstrap.cogenBootstrap,
+    overrides: BootstrapModule = BootstrapModule.empty,
+  ): Injector = {
     val bootstrapDefinition = bootstrapBase.overridenBy(overrides)
     val bootstrapLocator = new BootstrapLocator(bootstrapDefinition)
     inherit(bootstrapLocator)

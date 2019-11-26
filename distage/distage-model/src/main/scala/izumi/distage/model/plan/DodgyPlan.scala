@@ -13,9 +13,9 @@ import izumi.fundamentals.platform.language.Quirks._
 import scala.collection.mutable
 
 final class DodgyPlan(
-                       val definition: ModuleBase,
-                       val gcMode: GCMode,
-                     ) {
+  val definition: ModuleBase,
+  val gcMode: GCMode,
+) {
 
   private val ops = new mutable.ArrayBuffer[TraceableOp]()
 
@@ -55,5 +55,3 @@ object DodgyPlan {
     new DodgyPlan(definition, gcMode)
   }
 }
-
-

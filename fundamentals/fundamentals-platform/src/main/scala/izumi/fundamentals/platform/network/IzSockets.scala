@@ -1,8 +1,8 @@
 /**
- * Borrowed from akka for convenience
- *
- * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
- */
+  * Borrowed from akka for convenience
+  *
+  * Copyright (C) 2009-2017 Lightbend Inc. <http://www.lightbend.com>
+  */
 package izumi.fundamentals.platform.network
 
 import java.net.{InetSocketAddress, NetworkInterface, StandardProtocolFamily}
@@ -12,8 +12,8 @@ import scala.collection.immutable
 import scala.util.Random
 
 /**
- * Utilities to get free socket address.
- */
+  * Utilities to get free socket address.
+  */
 object IzSockets {
 
   val RANDOM_LOOPBACK_ADDRESS = "RANDOM_LOOPBACK_ADDRESS"
@@ -32,10 +32,10 @@ object IzSockets {
   def temporaryLocalPort(udp: Boolean = false): Int = temporaryServerAddress("localhost", udp).getPort
 
   /**
-   * @param address host address. If not set, a loopback IP from the 127.20.0.0/16 range is picked
-   * @param udp if true, select a port that is free for running a UDP server. Otherwise TCP.
-   * @return an address (host+port) that is currently available to bind on
-   */
+    * @param address host address. If not set, a loopback IP from the 127.20.0.0/16 range is picked
+    * @param udp if true, select a port that is free for running a UDP server. Otherwise TCP.
+    * @return an address (host+port) that is currently available to bind on
+    */
   def temporaryServerAddress(address: String = RANDOM_LOOPBACK_ADDRESS, udp: Boolean = false): InetSocketAddress =
     temporaryServerAddresses(1, address, udp).head
 

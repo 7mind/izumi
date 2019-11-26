@@ -7,7 +7,6 @@ import izumi.idealingua.model.il.ast.typed.TypeDef._
 import izumi.idealingua.model.il.ast.typed._
 import izumi.idealingua.model.typespace.structures.{ConverterDef, PlainStruct, Struct}
 
-
 trait TypeResolver {
   def apply(id: ServiceId): Service
 
@@ -20,7 +19,6 @@ trait TypeResolver {
   protected[typespace] def get(id: StructureId): WithStructure = {
     apply(id: TypeId).asInstanceOf[WithStructure]
   }
-
 
   protected[typespace] def get(id: IdentifierId): Identifier = {
     apply(id: TypeId).asInstanceOf[Identifier]
@@ -114,7 +112,6 @@ trait Typespace extends TypespaceData {
 
   def tools: TypespaceTools
 
-
   def resolver: TypeResolver
 
   def apply(id: TypeId): TypeDef
@@ -125,8 +122,3 @@ trait Typespace extends TypespaceData {
 
   protected[typespace] def transitivelyReferenced: Map[DomainId, Typespace]
 }
-
-
-
-
-

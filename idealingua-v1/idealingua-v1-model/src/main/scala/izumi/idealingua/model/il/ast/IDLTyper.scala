@@ -15,7 +15,6 @@ import izumi.idealingua.model.problems.{IDLDiagnostics, IDLException, TyperError
 import scala.collection.mutable
 import scala.reflect._
 
-
 class IDLTyper(defn: DomainMeshResolved) {
   def perform(): Either[IDLDiagnostics, typed.DomainDefinition] = {
     try {
@@ -27,7 +26,6 @@ class IDLTyper(defn: DomainMeshResolved) {
     }
   }
 }
-
 
 class IDLPretyper(defn: DomainMeshResolved) {
   def perform(): DomainMeshLoaded = {
@@ -75,7 +73,6 @@ class IDLPretyper(defn: DomainMeshResolved) {
   }
 }
 
-
 class IDLPostTyper(defn: DomainMeshLoaded) {
   final val domainId: DomainId = defn.id
 
@@ -88,22 +85,18 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     typer
   }
 
-  protected val imported: Map[IndefiniteId, TypeId] = defn.imports
-    .map {
-      i =>
-        val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedAs)
-        val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
-        toIndefinite(importedId) -> getDomain(i.domain).makeDefinite(originalId)
-    }
-    .toMap
+  protected val imported: Map[IndefiniteId, TypeId] = defn.imports.map {
+    i =>
+      val importedId = common.IndefiniteId(domainId.toPackage, i.imported.importedAs)
+      val originalId = common.IndefiniteId(i.domain.toPackage, i.imported.name)
+      toIndefinite(importedId) -> getDomain(i.domain).makeDefinite(originalId)
+  }.toMap
 
   protected val mapping: Map[IndefiniteId, TypeId] = {
-    defn.types
-      .collect {
-        case d: RawTypeDef.WithId =>
-          toIndefinite(d.id) -> transformSimpleId[TypeId, TypeId](d.id)
-      }
-      .toMap ++ imported
+    defn.types.collect {
+      case d: RawTypeDef.WithId =>
+        toIndefinite(d.id) -> transformSimpleId[TypeId, TypeId](d.id)
+    }.toMap ++ imported
   }
 
   protected val index: Map[IndefiniteId, RawTypeDef] = {
@@ -279,9 +272,9 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
   protected def toSuper(struct: RawStructure): typed.Super = {
     typed.Super(
-      interfaces = fixSimpleIds(struct.interfaces)
-      , concepts = fixMixinIds(struct.concepts)
-      , removedConcepts = fixMixinIds(struct.removedConcepts)
+      interfaces = fixSimpleIds(struct.interfaces),
+      concepts = fixMixinIds(struct.concepts),
+      removedConcepts = fixMixinIds(struct.removedConcepts)
     )
   }
 
@@ -307,7 +300,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     }).asInstanceOf[R]
   }
 
-  protected def fixSimpleIds[T <: TypeId : ClassTag](d: List[T]): List[T] = {
+  protected def fixSimpleIds[T <: TypeId: ClassTag](d: List[T]): List[T] = {
     d.map(fixSimpleId[T])
   }
 
@@ -327,8 +320,10 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
   }
 
   protected def fixFields(fields: RawTuple): typed.Tuple = {
-    fields.map{f =>
-      typed.Field(name = idNameFix(f, fields.size), typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta))}
+    fields.map {
+      f =>
+        typed.Field(name = idNameFix(f, fields.size), typeId = fixId[AbstractIndefiniteId, TypeId](f.typeId), meta = fixMeta(f.meta))
+    }
   }
 
   protected def fixMethod(method: RawMethod): typed.DefMethod = {
@@ -337,7 +332,6 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
         typed.DefMethod.RPCMethod(signature = fixSignature(m.signature), name = m.name, meta = fixMeta(m.meta))
     }
   }
-
 
   protected def fixStream(method: RawStream): typed.TypedStream = {
     method match {
@@ -372,11 +366,9 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     }
   }
 
-
   protected def fixStructure(s: RawSimpleStructure): typed.SimpleStructure = {
     typed.SimpleStructure(concepts = fixMixinIds(s.concepts), fields = fixFields(s.fields))
   }
-
 
   protected def makeDefinite(id: AbstractIndefiniteId): TypeId = {
     id match {
@@ -421,7 +413,9 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
 
       case o =>
         import izumi.fundamentals.platform.strings.IzString._
-        throw new IDLException(s"[$domainId] Non-primitive type $o but primitive expected. Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}")
+        throw new IDLException(
+          s"[$domainId] Non-primitive type $o but primitive expected. Allowed types for identifier fields: ${Primitive.mappingId.values.map(_.name).niceList()}"
+        )
     }
   }
 
@@ -459,7 +453,6 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     }
   }
 
-
   protected def contains(typeId: AbstractIndefiniteId): Boolean = {
     if (typeId.pkg.isEmpty) {
       true
@@ -468,7 +461,6 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       domainId.toPackage == typeId.pkg
     }
   }
-
 
   protected def fixServiceId(t: ServiceId): ServiceId = {
     t.copy(domain = domainId)
@@ -507,7 +499,7 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
     }).asInstanceOf[R]
   }
 
-  protected def fixSimpleId[T <: TypeId : ClassTag](t: T): T = {
+  protected def fixSimpleId[T <: TypeId: ClassTag](t: T): T = {
     val idType = classTag[T]
 
     val out = (t match {
@@ -577,7 +569,6 @@ class IDLPostTyper(defn: DomainMeshLoaded) {
       IndefiniteId(typeId.pkg, typeId.name)
     }
   }
-
 
   protected def fixPkg(pkg: TypePath): common.TypePath = {
     pkg.domain match {

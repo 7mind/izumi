@@ -4,9 +4,7 @@ import izumi.distage.model.references.WithDIKey
 import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
 
 trait WithDIAnnotation {
-  this: DIUniverseBase
-    with WithDIKey
-    with WithDISafeType =>
+  this: DIUniverseBase with WithDIKey with WithDISafeType =>
 
   import u._
 
@@ -23,6 +21,5 @@ trait WithDIAnnotation {
     def unapply(ann: Annotation): Option[SafeType] =
       ann.tree.tpe.typeArgs.headOption.map(SafeType(_))
   }
-
 
 }

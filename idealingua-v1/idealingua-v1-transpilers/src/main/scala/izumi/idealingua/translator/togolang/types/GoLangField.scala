@@ -8,23 +8,84 @@ import izumi.idealingua.model.il.ast.typed.TypeDef.Alias
 import izumi.idealingua.model.typespace.Typespace
 
 final case class GoLangField(
-                      name: String,
-                      tp: GoLangType,
-                      structName: String,
-                      im: GoLangImports,
-                      ts: Typespace = null
-                      ) {
+  name: String,
+  tp: GoLangType,
+  structName: String,
+  im: GoLangImports,
+  ts: Typespace = null
+) {
   def renderMemberName(capitalize: Boolean): String = {
     safeName(name, !capitalize)
   }
 
   protected def safeName(name: String, lower: Boolean = false): String = {
-    val reserved = Seq("break", "default", "func", "interface", "select", "case", "defer", "go", "map", "struct",
-      "chan", "else", "goto", "package", "switch", "const", "fallthrough", "if", "range", "type", "continue", "for",
-      "import", "return", "var", "bool", "byte", "complex64", "complex128", "error", "float32", "float64", "int",
-      "int8", "int16", "int32", "int64", "rune", "string", "uint", "uint16", "uint8", "uint32", "uint64", "uintptr",
-      "true", "false", "iota", "nil", "append", "cap", "close", "complex", "copy", "delete", "imag", "len", "make",
-      "new", "panic", "print", "println", "real", "recover", "time")
+    val reserved = Seq(
+      "break",
+      "default",
+      "func",
+      "interface",
+      "select",
+      "case",
+      "defer",
+      "go",
+      "map",
+      "struct",
+      "chan",
+      "else",
+      "goto",
+      "package",
+      "switch",
+      "const",
+      "fallthrough",
+      "if",
+      "range",
+      "type",
+      "continue",
+      "for",
+      "import",
+      "return",
+      "var",
+      "bool",
+      "byte",
+      "complex64",
+      "complex128",
+      "error",
+      "float32",
+      "float64",
+      "int",
+      "int8",
+      "int16",
+      "int32",
+      "int64",
+      "rune",
+      "string",
+      "uint",
+      "uint16",
+      "uint8",
+      "uint32",
+      "uint64",
+      "uintptr",
+      "true",
+      "false",
+      "iota",
+      "nil",
+      "append",
+      "cap",
+      "close",
+      "complex",
+      "copy",
+      "delete",
+      "imag",
+      "len",
+      "make",
+      "new",
+      "panic",
+      "print",
+      "println",
+      "real",
+      "recover",
+      "time"
+    )
 
     val res = if (reserved.contains(name)) s"m${name.capitalize}" else name
     if (lower)
@@ -34,7 +95,7 @@ final case class GoLangField(
   }
 
   private def renderPolymorphSerialized(id: TypeId, dest: String, srcOriginal: String, forOption: Boolean = false): String = {
-    val src =  if (forOption) s"(*$srcOriginal)" else srcOriginal
+    val src = if (forOption) s"(*$srcOriginal)" else srcOriginal
 
     id match {
       case Primitive.TTime =>
@@ -82,7 +143,7 @@ final case class GoLangField(
            |if err != nil {
            |    return nil, err
            |}
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}map[string]json.RawMessage{$src.GetFullClassName(): _$dest}
+           |$dest ${if (forOption) "" else ":"}= ${if (forOption) "&" else ""}map[string]json.RawMessage{$src.GetFullClassName(): _$dest}
          """.stripMargin
 
       case _: AdtId =>
@@ -90,12 +151,14 @@ final case class GoLangField(
            |if err != nil {
            |    return nil, err
            |}
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) s"interface{}(&_$dest).(*json.RawMessage) // A bit hacky, but the underlying type for json.RawMessage is []byte, so should be legit" else s"_$dest"}
+           |$dest ${if (forOption) "" else ":"}= ${if (forOption)
+             s"interface{}(&_$dest).(*json.RawMessage) // A bit hacky, but the underlying type for json.RawMessage is []byte, so should be legit"
+           else s"_$dest"}
          """.stripMargin
 
       case _: IdentifierId | _: EnumId =>
         s"""_$dest := $src.String()
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
+           |$dest ${if (forOption) "" else ":"}= ${if (forOption) "&" else ""}_$dest
        """.stripMargin
 
       case _: DTOId =>
@@ -103,7 +166,7 @@ final case class GoLangField(
            |if err != nil {
            |    return nil, err
            |}
-           |$dest ${if(forOption) "" else ":"}= ${if(forOption) "&" else ""}_$dest
+           |$dest ${if (forOption) "" else ":"}= ${if (forOption) "&" else ""}_$dest
          """.stripMargin
 
       case al: AliasId => renderPolymorphSerialized(ts.dealias(al), dest, srcOriginal, forOption)
@@ -111,7 +174,6 @@ final case class GoLangField(
       case _ => throw new IDLException(s"Should not get into renderPolymorphSerialized ${id.name} dest: $dest src: $srcOriginal")
     }
   }
-
 
   private def renderPolymorphSerializedVar(id: TypeId, dest: String, src: String): String = {
     id match {
@@ -121,67 +183,64 @@ final case class GoLangField(
         renderPolymorphSerialized(id, dest, src)
 
       case Primitive.TDate | Primitive.TTime | Primitive.TTsTz | Primitive.TTs | Primitive.TTsU =>
-          renderPolymorphSerialized(id, dest, src)
+        renderPolymorphSerialized(id, dest, src)
 
-      case g: Generic => g match {
-        case go: Generic.TOption =>
-          s"""var $dest ${GoLangType(id, im, ts).renderType(serialized = true)} = nil
-             |if $src != nil {
-             |${
-            if (GoLangType(id, im, ts).isPolymorph(go.valueType))
-              renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
-            else
-              s"    $dest = $src"}
-             |}
+      case g: Generic =>
+        g match {
+          case go: Generic.TOption =>
+            s"""var $dest ${GoLangType(id, im, ts).renderType(serialized = true)} = nil
+               |if $src != nil {
+               |${if (GoLangType(id, im, ts).isPolymorph(go.valueType))
+                 renderPolymorphSerialized(go.valueType, dest, src, forOption = true).shift(4)
+               else
+                 s"    $dest = $src"}
+               |}
            """.stripMargin
 
-        case _: Generic.TList | _: Generic.TSet => {
-          val vt = g match {
-            case gl: Generic.TList => gl.valueType
-            case gs: Generic.TSet => gs.valueType
-            case _ => throw new IDLException("Just preventing a warning here...")
+          case _: Generic.TList | _: Generic.TSet => {
+            val vt = g match {
+              case gl: Generic.TList => gl.valueType
+              case gs: Generic.TSet => gs.valueType
+              case _ => throw new IDLException("Just preventing a warning here...")
+            }
+
+            val tempVal = s"_$dest"
+
+            // TODO This is not going to work well for nested lists
+            if (!GoLangType(null, im, ts).isPolymorph(vt))
+              s"$dest := $src"
+            else
+              s"""$tempVal := make(${GoLangType(id, im, ts).renderType(serialized = true)}, len($src))
+                 |for ${tempVal}Index, ${tempVal}Val := range $src {
+                 |${if (vt.isInstanceOf[Generic])
+                   renderPolymorphSerializedVar(vt, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4)
+                 else
+                   (renderPolymorphSerialized(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
+                 |}
+                 |$dest := $tempVal
+                 """.stripMargin
           }
 
-          val tempVal = s"_$dest"
+          case gm: Generic.TMap => {
+            val vt = GoLangType(gm.valueType, im, ts)
+            val tempVal = s"_$dest"
 
-          // TODO This is not going to work well for nested lists
-          if (!GoLangType(null, im, ts).isPolymorph(vt))
-            s"$dest := $src"
-          else
-            s"""$tempVal := make(${GoLangType(id, im, ts).renderType(serialized = true)}, len($src))
-               |for ${tempVal}Index, ${tempVal}Val := range $src {
-               |${
-              if (vt.isInstanceOf[Generic])
-                renderPolymorphSerializedVar(vt, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-                (renderPolymorphSerialized(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)
-            }
-               |}
-               |$dest := $tempVal
+            if (!GoLangType(null, im, ts).isPolymorph(vt.id))
+              s"$dest := $src"
+            else
+              // TODO: there was this thing in the for loop below
+              //
+              //if (vt.isInstanceOf[Generic])
+              //              renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
+              // but vt can't be a generic
+              s"""$tempVal := make(${GoLangType(gm, im, ts).renderType(serialized = true)})
+                 |for ${tempVal}Key, ${tempVal}Val := range $src {
+                 |  ${(renderPolymorphSerialized(vt.id, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+                 |}
+                 |$dest := $tempVal
                  """.stripMargin
+          }
         }
-
-        case gm: Generic.TMap => {
-          val vt = GoLangType(gm.valueType, im, ts)
-          val tempVal = s"_$dest"
-
-
-          if (!GoLangType(null, im, ts).isPolymorph(vt.id))
-            s"$dest := $src"
-          else
-          // TODO: there was this thing in the for loop below
-          //
-          //if (vt.isInstanceOf[Generic])
-          //              renderPolymorphSerializedVar(vt.id, s"$tempVal[${tempVal}Index]", s"${tempVal}Val").shift(4) else
-          // but vt can't be a generic
-
-            s"""$tempVal := make(${GoLangType(gm, im, ts).renderType(serialized = true)})
-               |for ${tempVal}Key, ${tempVal}Val := range $src {
-               |  ${(renderPolymorphSerialized(vt.id, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
-               |}
-               |$dest := $tempVal
-                 """.stripMargin
-        }
-      }
 
       case _ => throw new IDLException("Should never get into renderPolymorphSerializedVar with other types... " + id.name + " " + id.getClass().getName())
     }
@@ -198,13 +257,15 @@ final case class GoLangField(
       case Primitive.TTsU => renderMemberName(true) + "AsString()"
       case Primitive.TDate => renderMemberName(true) + "AsString()"
       case Primitive.TTime => renderMemberName(true) + "AsString()"
-      case g: Generic => g match {
-        case go: Generic.TOption => go.valueType match {
-          case Primitive.TTsTz | Primitive.TTs | Primitive.TTsU | Primitive.TDate | Primitive.TTime => renderMemberName(true) + "AsString()"
+      case g: Generic =>
+        g match {
+          case go: Generic.TOption =>
+            go.valueType match {
+              case Primitive.TTsTz | Primitive.TTs | Primitive.TTsU | Primitive.TDate | Primitive.TTime => renderMemberName(true) + "AsString()"
+              case _ => renderMemberName(false)
+            }
           case _ => renderMemberName(false)
         }
-        case _ => renderMemberName(false)
-      }
       case _ => renderMemberName(false)
     }
   }
@@ -227,17 +288,19 @@ final case class GoLangField(
     case Primitive.TTs => toTimeStampField(local = true)
     case Primitive.TTsTz => toTimeStampField(local = false)
     case Primitive.TTsU => toTimeStampField(local = false, utc = true)
-    case g: Generic => g match {
-      case go: Generic.TOption => go.valueType match {
-        case Primitive.TTime => toTimeField(optional = true)
-        case Primitive.TDate => toDateField(optional = true)
-        case Primitive.TTs => toTimeStampField(local = true, optional = true)
-        case Primitive.TTsTz => toTimeStampField(local = false, optional = true)
-        case Primitive.TTsU => toTimeStampField(local = false, optional = true, utc = true)
+    case g: Generic =>
+      g match {
+        case go: Generic.TOption =>
+          go.valueType match {
+            case Primitive.TTime => toTimeField(optional = true)
+            case Primitive.TDate => toDateField(optional = true)
+            case Primitive.TTs => toTimeStampField(local = true, optional = true)
+            case Primitive.TTsTz => toTimeStampField(local = false, optional = true)
+            case Primitive.TTsU => toTimeStampField(local = false, optional = true, utc = true)
+            case _ => toGenericField()
+          }
         case _ => toGenericField()
       }
-      case _ => toGenericField()
-    }
     case _ => toGenericField()
   }
 
@@ -342,12 +405,12 @@ final case class GoLangField(
        |
        |func (v *$structName) ${renderMemberName(true)}AsString() ${if (optional) "*" else ""}string {
        |    ${if (optional) s"if v.${renderMemberName(false)} == nil {\n        return nil\n    }" else ""}
-       |    res := irt.Write${if(local)"Local" else if(utc) "UTC" else "Zone"}DateTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
+       |    res := irt.Write${if (local) "Local" else if (utc) "UTC" else "Zone"}DateTime(${if (optional) "*" else ""}v.${renderMemberName(false)})
        |    return ${if (optional) "&" else ""}res
        |}
        |
        |func (v *$structName) Set${renderMemberName(true)}FromString(value string) error {
-       |    t, err := irt.Read${if(local)"Local" else if(utc) "UTC" else "Zone"}DateTime(value)
+       |    t, err := irt.Read${if (local) "Local" else if (utc) "UTC" else "Zone"}DateTime(value)
        |    if err != nil {
        |        return fmt.Errorf("Set${renderMemberName(true)} value must be in the YYYY-MM-DDTHH:MM:SS.MIC${if (local) "" else "+00:00"} format. Got %s", value)
        |    }
@@ -443,38 +506,42 @@ final case class GoLangField(
 
   private def renderAssignImpl(struct: String, id: TypeId, variable: String, serialized: Boolean, optional: Boolean): String = {
     if (serialized) {
-      val assignVar = if (optional || !tp.hasSetterError)
-        s"$struct.Set${renderMemberName(true)}($variable)"
-      else
-        s"""if err := $struct.Set${renderMemberName(true)}($variable); err != nil {
-           |    return err
-           |}
+      val assignVar =
+        if (optional || !tp.hasSetterError)
+          s"$struct.Set${renderMemberName(true)}($variable)"
+        else
+          s"""if err := $struct.Set${renderMemberName(true)}($variable); err != nil {
+             |    return err
+             |}
          """.stripMargin
 
       val tempVal = s"m${name.capitalize}"
-      val assignTemp = if (optional || !tp.hasSetterError)
-        s"$struct.Set${renderMemberName(true)}(${(if (optional) "&" else "") + tempVal})"
-      else
-        s"""if err := $struct.Set${renderMemberName(true)}($tempVal); err != nil {
-           |    return err
-           |}
+      val assignTemp =
+        if (optional || !tp.hasSetterError)
+          s"$struct.Set${renderMemberName(true)}(${(if (optional) "&" else "") + tempVal})"
+        else
+          s"""if err := $struct.Set${renderMemberName(true)}($tempVal); err != nil {
+             |    return err
+             |}
          """.stripMargin
 
       id match {
         case _: InterfaceId | _: AdtId | _: DTOId | _: EnumId | _: IdentifierId =>
-          s"""${renderDeserializedVar(id, tempVal, (if(optional) "*" else "") + variable)}
+          s"""${renderDeserializedVar(id, tempVal, (if (optional) "*" else "") + variable)}
              |$assignTemp
            """.stripMargin
 
-          case al: AliasId => ts.dealias(al) match {
+        case al: AliasId =>
+          ts.dealias(al) match {
             case _: InterfaceId | _: AdtId | _: DTOId | _: EnumId | _: IdentifierId =>
-              s"""${renderDeserializedVar(ts.dealias(al), tempVal, (if(optional) "*" else "") + variable, Some(al))}
+              s"""${renderDeserializedVar(ts.dealias(al), tempVal, (if (optional) "*" else "") + variable, Some(al))}
                  |$assignTemp
                """.stripMargin
 
             case _ => renderAssignImpl(struct, ts(al).asInstanceOf[Alias].target, variable, serialized, optional)
           }
-          case g: Generic => g match {
+        case g: Generic =>
+          g match {
             case go: Generic.TOption =>
               s"""if $variable != nil {
                  |${renderAssignImpl(struct, go.valueType, s"$variable", serialized, optional = true).shift(4)}
@@ -495,8 +562,9 @@ final case class GoLangField(
                 s"""$tempVal := make(${tp.renderType()}, len($variable))
                    |for ${tempVal}Index, ${tempVal}Val := range $variable {
                    |${if (vt.isInstanceOf[Primitive])
-                  renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
-                  (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
+                     renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4)
+                   else
+                     (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Index] = __dest").shift(4)}
                    |}
                    |$assignTemp
                  """.stripMargin
@@ -511,8 +579,9 @@ final case class GoLangField(
                 s"""$tempVal := make(${tp.renderType()})
                    |for ${tempVal}Key, ${tempVal}Val := range $variable {
                    |${if (vt.isInstanceOf[Generic])
-                      renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4) else
-                      (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
+                     renderAssignImpl(struct, vt, s"${tempVal}Val", serialized, optional).shift(4)
+                   else
+                     (renderDeserializedVar(vt, "__dest", s"${tempVal}Val") + s"\n$tempVal[${tempVal}Key] = __dest").shift(4)}
                    |}
                    |$assignTemp
                  """.stripMargin
@@ -542,10 +611,10 @@ final case class GoLangField(
 
 object GoLangField {
   def apply(
-             name: String,
-             tp: GoLangType,
-             structName: String,
-             im: GoLangImports,
-             ts: Typespace = null
-           ): GoLangField = new GoLangField(name, tp, structName, im, ts)
+    name: String,
+    tp: GoLangType,
+    structName: String,
+    im: GoLangImports,
+    ts: Typespace = null
+  ): GoLangField = new GoLangField(name, tp, structName, im, ts)
 }

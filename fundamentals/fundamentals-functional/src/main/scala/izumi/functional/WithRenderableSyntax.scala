@@ -7,4 +7,3 @@ trait WithRenderableSyntax {
     def render(): String = Renderable[T].render(r)
   }
 }
-

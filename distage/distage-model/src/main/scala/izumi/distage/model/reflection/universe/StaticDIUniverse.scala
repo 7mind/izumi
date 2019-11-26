@@ -5,7 +5,8 @@ import izumi.fundamentals.reflection.{SingletonUniverse, Tags}
 
 import scala.reflect.macros.blackbox
 
-trait StaticDIUniverse extends DIUniverse { self =>
+trait StaticDIUniverse extends DIUniverse {
+  self =>
   override val u: SingletonUniverse
 
   class IdContractImpl[T: u.Liftable] extends IdContract[T] {
@@ -20,7 +21,8 @@ object StaticDIUniverse {
 
   def apply(c: blackbox.Context): StaticDIUniverse.Aux[c.universe.type] = {
     val tags0 = new Tags { val u: c.universe.type = c.universe }
-    new StaticDIUniverse { self =>
+    new StaticDIUniverse {
+      self =>
       override val u: c.universe.type = c.universe
       override lazy val tags: tags0.type = tags0
       override protected val typeOfDistageAnnotation: SafeType = SafeType.get[DIStageAnnotation]

@@ -141,4 +141,3 @@ object CSharpTranslatorDescriptor extends TranslatorDescriptor[CSharpTranslatorO
 //    "yield",
 //  )
 }
-

@@ -46,7 +46,7 @@ trait DIEffect[F[_]] {
 }
 
 object DIEffect extends LowPriorityDIEffectInstances {
-  def apply[F[_] : DIEffect]: DIEffect[F] = implicitly
+  def apply[F[_]: DIEffect]: DIEffect[F] = implicitly
 
   object syntax {
     implicit def suspendedSyntax[F[_], A](fa: => F[A]): DIEffectSuspendedSyntax[F, A] = new DIEffectSuspendedSyntax(() => fa)
@@ -70,7 +70,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
 
     override def maybeSuspend[A](eff: => A): Identity[A] = eff
     override def definitelyRecover[A](fa: => Identity[A])(recover: Throwable => Identity[A]): Identity[A] = {
-      try fa catch {
+      try fa
+      catch {
         case t: Throwable => recover(t)
       }
     }
@@ -79,7 +80,8 @@ object DIEffect extends LowPriorityDIEffectInstances {
     }
     override def bracket[A, B](acquire: => Identity[A])(release: A => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
-      try use(a) finally release(a)
+      try use(a)
+      finally release(a)
     }
     override def bracketCase[A, B](acquire: => Identity[A])(release: (A, Option[Throwable]) => Identity[Unit])(use: A => Identity[B]): Identity[B] = {
       val a = acquire
@@ -120,10 +122,11 @@ object DIEffect extends LowPriorityDIEffectInstances {
       }
       override def bracketCase[A, B](acquire: => F[E, A])(release: (A, Option[E]) => F[E, Unit])(use: A => F[E, B]): F[E, B] = {
         F.bracketCase[Throwable, A, B](acquire = suspendF(acquire))(release = {
-          case (a, exit) => exit match {
-            case BIOExit.Success(_) => release(a, None).orTerminate
-            case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
-          }
+          case (a, exit) =>
+            exit match {
+              case BIOExit.Success(_) => release(a, None).orTerminate
+              case failure: BIOExit.Failure[E] => release(a, Some(failure.toThrowable)).orTerminate
+            }
         })(use = use)
       }
     }
@@ -161,11 +164,12 @@ private[monadic] sealed trait LowPriorityDIEffectInstances {
       }
       override def bracketCase[A, B](acquire: => F[A])(release: (A, Option[Throwable]) => F[Unit])(use: A => F[B]): F[B] = {
         F.bracketCase(acquire = F.suspend(acquire))(use = use)(release = {
-          case (a, exitCase) => exitCase match {
-            case ExitCase.Completed => release(a, None)
-            case ExitCase.Error(e) => release(a, Some(e))
-            case ExitCase.Canceled => release(a, Some(new InterruptedException))
-          }
+          case (a, exitCase) =>
+            exitCase match {
+              case ExitCase.Completed => release(a, None)
+              case ExitCase.Error(e) => release(a, Some(e))
+              case ExitCase.Canceled => release(a, Some(new InterruptedException))
+            }
         })
       }
     }

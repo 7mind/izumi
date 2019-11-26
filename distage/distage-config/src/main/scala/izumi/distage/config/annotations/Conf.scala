@@ -45,5 +45,3 @@ package izumi.distage.config.annotations
   *
   */
 final class Conf(val name: String) extends ConfiguratorAnnotation
-
-

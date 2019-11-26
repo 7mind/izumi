@@ -11,12 +11,10 @@ object Renderer {
 
   class Aggregate(units: Seq[Renderer]) {
     def render(entry: Log.Entry, context: RenderingOptions): String = {
-      units
-        .map {
-          u =>
-            render(context, u.render(entry, context))
-        }
-        .mkString
+      units.map {
+        u =>
+          render(context, u.render(entry, context))
+      }.mkString
 
     }
 

@@ -71,7 +71,8 @@ class LocatorDefTest extends WordSpec {
       import BasicCase1._
 
       val ctx = new LocatorDef {
-        many[TestInstanceBinding].named("r")
+        many[TestInstanceBinding]
+          .named("r")
           .addValue(TestInstanceBinding())
           .addValue(TestInstanceBinding("value 2"))
 
@@ -89,8 +90,14 @@ class LocatorDefTest extends WordSpec {
         make[Int].fromValue(5)
       }
 
-      assert(ctx.run { i: Int => i + 5 } == 10)
-      assert(ctx.runOption { i: Int @Id("special") => i }.isEmpty)
+      assert(ctx.run {
+        i: Int =>
+          i + 5
+      } == 10)
+      assert(ctx.runOption {
+        i: Int @Id("special") =>
+          i
+      }.isEmpty)
     }
 
   }

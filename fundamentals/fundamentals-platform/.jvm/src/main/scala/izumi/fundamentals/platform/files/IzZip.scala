@@ -19,20 +19,20 @@ object IzZip {
 
     val zip = new ZipOutputStream(new FileOutputStream(outFile))
 
-    files.foreach { name =>
-      zip.putNextEntry(new ZipEntry(name.name))
-      val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
-      var b = in.read()
-      while (b > -1) {
-        zip.write(b)
-        b = in.read()
-      }
-      in.close()
-      zip.closeEntry()
+    files.foreach {
+      name =>
+        zip.putNextEntry(new ZipEntry(name.name))
+        val in = new BufferedInputStream(new FileInputStream(name.file.toFile))
+        var b = in.read()
+        while (b > -1) {
+          zip.write(b)
+          b = in.read()
+        }
+        in.close()
+        zip.closeEntry()
     }
     zip.close()
   }
-
 
   // zip filesystem isn't thread safe
   def findInZips(zips: Seq[File], predicate: Path => Boolean): Iterable[(Path, String)] = synchronized {
@@ -53,22 +53,18 @@ object IzZip {
       }
   }
 
-
-
   private def enumerate(predicate: Path => Boolean, fs: FileSystem): Iterable[Path] = {
     import scala.jdk.CollectionConverters._
 
-    fs
-      .getRootDirectories
-      .asScala
-      .flatMap {
-        root =>
-          import java.nio.file.Files
-          Files.walk(root)
-            .iterator()
-            .asScala
-            .filter(predicate)
-      }
+    fs.getRootDirectories.asScala.flatMap {
+      root =>
+        import java.nio.file.Files
+        Files
+          .walk(root)
+          .iterator()
+          .asScala
+          .filter(predicate)
+    }
 
   }
 }

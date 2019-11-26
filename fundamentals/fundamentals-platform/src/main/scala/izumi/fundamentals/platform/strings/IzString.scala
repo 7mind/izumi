@@ -45,8 +45,6 @@ final class IzString(private val s: String) extends AnyVal {
       (minimized ++ toLeave).mkString(".")
     }
   }
-
-
   @inline final def leftEllipsed(limit: Int, ellipsis: String): String = {
     val elen = ellipsis.length
     if (s.length > limit && s.length > elen) {
@@ -110,14 +108,16 @@ final class IzString(private val s: String) extends AnyVal {
   }
 
   def camelToUnderscores: String = {
-    "[A-Z\\d]".r.replaceAllIn(s, { m =>
-      "_" + m.group(0).toLowerCase()
+    "[A-Z\\d]".r.replaceAllIn(s, {
+      m =>
+        "_" + m.group(0).toLowerCase()
     })
   }
 
   def underscoreToCamel: String = {
-    "_([a-z\\d])".r.replaceAllIn(s, { m =>
-      m.group(1).toUpperCase()
+    "_([a-z\\d])".r.replaceAllIn(s, {
+      m =>
+        m.group(1).toUpperCase()
     })
   }
 
@@ -159,12 +159,10 @@ final class IzString(private val s: String) extends AnyVal {
     }
 
     import IzString._
-    lines.zipWithIndex
-      .map {
-        case (l, i) =>
-          s"${(i+1).toString.leftPad(pad)}: $l"
-      }
-      .mkString("\n")
+    lines.zipWithIndex.map {
+      case (l, i) =>
+        s"${(i + 1).toString.leftPad(pad)}: $l"
+    }.mkString("\n")
   }
 }
 

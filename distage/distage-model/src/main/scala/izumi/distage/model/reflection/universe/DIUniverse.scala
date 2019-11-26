@@ -6,16 +6,13 @@ import izumi.distage.model.references._
 
 trait DIUniverse
   extends DIUniverseBase
-    with WithTags
-    with WithDISafeType
-    with WithDISymbolInfo
-    with WithDITypedRef
-    with WithDICallable
-    with WithDIKey
-    with WithDIDependencyContext
-    with WithDIAssociation
-    with WithDIWiring
-    with WithDIAnnotation
-
-
-
+  with WithTags
+  with WithDISafeType
+  with WithDISymbolInfo
+  with WithDITypedRef
+  with WithDICallable
+  with WithDIKey
+  with WithDIDependencyContext
+  with WithDIAssociation
+  with WithDIWiring
+  with WithDIAnnotation

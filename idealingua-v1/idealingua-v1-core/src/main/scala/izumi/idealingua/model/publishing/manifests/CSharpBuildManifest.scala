@@ -14,13 +14,13 @@ object CSharpProjectLayout {
 }
 
 case class NugetOptions(
-                         targetFramework: String,
-                         projectNaming: ProjectNamingRule,
-                         iconUrl: String,
-                         requireLicenseAcceptance: Boolean,
-                         dependencies: List[ManifestDependency],
-                         testDependencies: List[ManifestDependency],
-                       )
+  targetFramework: String,
+  projectNaming: ProjectNamingRule,
+  iconUrl: String,
+  requireLicenseAcceptance: Boolean,
+  dependencies: List[ManifestDependency],
+  testDependencies: List[ManifestDependency],
+)
 
 object NugetOptions {
   def example: NugetOptions = NugetOptions(
@@ -39,10 +39,10 @@ object NugetOptions {
 }
 
 case class CSharpBuildManifest(
-                                common: Common,
-                                nuget: NugetOptions,
-                                layout: CSharpProjectLayout,
-                              ) extends BuildManifest
+  common: Common,
+  nuget: NugetOptions,
+  layout: CSharpProjectLayout,
+) extends BuildManifest
 
 object CSharpBuildManifest {
   def example = CSharpBuildManifest(

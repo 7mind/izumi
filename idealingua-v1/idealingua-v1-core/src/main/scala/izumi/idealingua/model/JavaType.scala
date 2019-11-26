@@ -19,7 +19,6 @@ final case class JavaType(pkg: Package, name: String, parameters: Seq[String] = 
     }
   }
 
-
   def minimize(domainId: DomainId): JavaType = {
     val minimalPackageRef = PackageTools.minimize(pkg, domainId.toPackage)
     JavaType(minimalPackageRef, name, parameters)

@@ -4,7 +4,6 @@ import izumi.idealingua.model.common.DomainId
 import izumi.idealingua.model.problems._
 import izumi.idealingua.model.typespace.Typespace
 
-
 sealed trait LoadedDomain
 
 object LoadedDomain {

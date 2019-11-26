@@ -28,7 +28,6 @@ object IzText {
         "-" * len
     }, "---")
 
-
     val mainRows = bparts.map(p => Row(p, splitChar))
 
     (List(boundary) ++ List(Row(bheader, splitChar)) ++ List(splitter) ++ mainRows ++ List(boundary)).map {

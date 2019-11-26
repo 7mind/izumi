@@ -9,21 +9,13 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
     doLog("Next Plan", next.toString)
   }
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {
+  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {}
 
-  }
+  override def onPhase05PreGC(plan: SemiPlan): Unit = {}
 
-  override def onPhase05PreGC(plan: SemiPlan): Unit = {
+  override def onPhase10PostGC(plan: SemiPlan): Unit = {}
 
-  }
-
-  override def onPhase10PostGC(plan: SemiPlan): Unit = {
-
-  }
-
-  override def onPhase20Customization(plan: SemiPlan): Unit = {
-
-  }
+  override def onPhase20Customization(plan: SemiPlan): Unit = {}
 
   override def onPhase50PreForwarding(finalPlan: SemiPlan): Unit = {
     doLog("Resolved Plan", finalPlan.toString)
@@ -34,10 +26,12 @@ class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver 
   }
 
   private def doLog(title: => String, body: => String): Unit = {
-    logger.log(Seq(
-      "=" * 60 + s" $title " + "=" * 60
-      , s"$body"
-      , "\n"
-    ).mkString("\n"))
+    logger.log(
+      Seq(
+        "=" * 60 + s" $title " + "=" * 60,
+        s"$body",
+        "\n"
+      ).mkString("\n")
+    )
   }
 }

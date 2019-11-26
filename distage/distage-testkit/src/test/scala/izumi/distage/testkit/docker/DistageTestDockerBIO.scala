@@ -35,6 +35,7 @@ final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
       memoizedKeys = Set(
         DIKey.get[DynamoDocker.Container],
         DIKey.get[PostgresDocker.Container],
-      ))
+      )
+    )
   }
 }

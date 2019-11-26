@@ -7,9 +7,9 @@ import izumi.idealingua.translator.toscala.types.ScalaTypeConverter
 import izumi.idealingua.translator.toscala.types.runtime.IDLRuntimeTypes
 
 class STContext(
-                 val typespace: Typespace
-                 , extensions: Seq[ScalaTranslatorExtension]
-               ) {
+  val typespace: Typespace,
+  extensions: Seq[ScalaTranslatorExtension]
+) {
   final val conv = new ScalaTypeConverter(typespace.domain.id)
   final val rt: IDLRuntimeTypes.type = IDLRuntimeTypes
 

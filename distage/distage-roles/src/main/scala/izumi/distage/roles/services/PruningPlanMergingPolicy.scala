@@ -12,16 +12,15 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 class PruningPlanMergingPolicy(
-                                logger: IzLogger,
-                                activation: AppActivation,
-                              ) extends PlanMergingPolicyDefaultImpl {
+  logger: IzLogger,
+  activation: AppActivation,
+) extends PlanMergingPolicyDefaultImpl {
   private val activeTags = activation.active.values.toSet
 
   override protected def resolveConflict(plan: DodgyPlan, key: RuntimeDIUniverse.DIKey, operations: Set[DodgyPlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)
     val filtered = operations.filter {
-      _.binding.tags
-        .collect { case BindingTag.AxisTag(t) => t }
+      _.binding.tags.collect { case BindingTag.AxisTag(t) => t }
         .forall(t => activeTags.contains(t))
     }
 
@@ -89,17 +88,17 @@ class PruningPlanMergingPolicy(
   }
 
   private def makeHints(ops: Set[DodgyPlan.JustOp]): Seq[String] = {
-    ops
-      .toSeq
-      .map {
-        op =>
-          val bindingTags = op.binding.tags.collect({
+    ops.toSeq.map {
+      op =>
+        val bindingTags = op.binding.tags
+          .collect({
             case BindingTag.AxisTag(t) => t
           }).diff(activeTags)
-          val alreadyActiveTags = op.binding.tags.collect({
+        val alreadyActiveTags = op.binding.tags
+          .collect({
             case BindingTag.AxisTag(t) => t
           }).intersect(activeTags)
-          s"${op.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
-      }
+        s"${op.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
+    }
   }
 }

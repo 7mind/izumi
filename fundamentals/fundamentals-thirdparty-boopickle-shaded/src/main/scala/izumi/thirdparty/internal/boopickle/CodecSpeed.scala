@@ -120,7 +120,7 @@ private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
     val sizeBO = readInt
     if (sizeBO < 0)
       throw new IllegalArgumentException(s"Invalid size $sizeBO for ByteBuffer")
-    val size      = sizeBO >> 1
+    val size = sizeBO >> 1
     val byteOrder = if ((sizeBO & 1) == 1) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
     // create a copy (sharing content), set correct byte order
     val b = buf.slice().order(byteOrder)

@@ -7,8 +7,7 @@ import scala.language.higherKinds
 private[izumi] trait XCompatImplicitPicklers {
   this: PicklerHelper =>
 
-  implicit def mapPickler[T: P, S: P, V[_, _] <: scala.collection.Map[_, _]](
-      implicit cbf: Factory[(T, S), V[T, S]]): P[V[T, S]] = BasicPicklers.MapPickler[T, S, V]
+  implicit def mapPickler[T: P, S: P, V[_, _] <: scala.collection.Map[_, _]](implicit cbf: Factory[(T, S), V[T, S]]): P[V[T, S]] = BasicPicklers.MapPickler[T, S, V]
   implicit def iterablePickler[T: P, V[_] <: Iterable[_]](implicit cbf: Factory[T, V[T]]): P[V[T]] =
     BasicPicklers.IterablePickler[T, V]
 }
@@ -75,9 +74,10 @@ private[izumi] trait XCompatPicklers {
           // encode contents as a sequence
           val kPickler = implicitly[P[T]]
           val vPickler = implicitly[P[S]]
-          map.asInstanceOf[scala.collection.Map[T, S]].foreach { kv =>
-            kPickler.pickle(kv._1)(state)
-            vPickler.pickle(kv._2)(state)
+          map.asInstanceOf[scala.collection.Map[T, S]].foreach {
+            kv =>
+              kPickler.pickle(kv._1)(state)
+              vPickler.pickle(kv._2)(state)
           }
         }
       }
@@ -97,7 +97,7 @@ private[izumi] trait XCompatPicklers {
             b.sizeHint(len)
             val kPickler = implicitly[P[T]]
             val vPickler = implicitly[P[S]]
-            var i        = 0
+            var i = 0
             while (i < len) {
               b += kPickler.unpickle(state) -> vPickler.unpickle(state)
               i += 1

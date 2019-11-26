@@ -31,31 +31,31 @@ object TraitConstructorMacro {
 
     val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(ctx, name, _, key) =>
-        key.tpe.use { tpe =>
-          val methodName: TermName = TermName(name)
-          val argName: TermName = c.freshName(methodName)
+        key.tpe.use {
+          tpe =>
+            val methodName: TermName = TermName(name)
+            val argName: TermName = c.freshName(methodName)
 
-          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
+            val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-          q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
+            q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
         }
     }.unzip
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
 
-    val instantiate = if (wireMethods.isEmpty)
-      q"new ..$parents {}"
-    else
-      q"new ..$parents { ..$wireMethods }"
+    val instantiate =
+      if (wireMethods.isEmpty)
+        q"new ..$parents {}"
+      else
+        q"new ..$parents { ..$wireMethods }"
 
     val constructorDef =
       q"""
-      ${
-        if (wireArgs.nonEmpty)
-          q"def constructor(..$wireArgs): $targetType = ($instantiate): $targetType"
-        else
-          q"def constructor: $targetType = ($instantiate): $targetType"
-      }
+      ${if (wireArgs.nonEmpty)
+        q"def constructor(..$wireArgs): $targetType = ($instantiate): $targetType"
+      else
+        q"def constructor: $targetType = ($instantiate): $targetType"}
       """
 
     val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module

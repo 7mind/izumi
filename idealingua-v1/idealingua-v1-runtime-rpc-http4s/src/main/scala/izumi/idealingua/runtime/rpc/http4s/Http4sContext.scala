@@ -7,7 +7,8 @@ import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
 
-trait Http4sContext { outer =>
+trait Http4sContext {
+  outer =>
   type BiIO[+E, +A]
   final type MonoIO[+A] = BiIO[Throwable, A]
 

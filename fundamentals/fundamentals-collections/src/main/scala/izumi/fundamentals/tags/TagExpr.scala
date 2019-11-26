@@ -10,10 +10,9 @@ object TagExpr {
       def evaluate(tags: Set[T]): Boolean = For.this.evaluate(tags, this)
     }
 
-
     object Expr {
 
-      implicit final class TOps(t : T) {
+      implicit final class TOps(t: T) {
 
         private val singleTagEpr = Has(t)
 
@@ -71,11 +70,12 @@ object TagExpr {
 
       protected def mark: String
 
-      override def toString: String = if (all.size == 1) {
-        all.head.toString
-      } else {
-        all.toSeq.map(_.toString).sorted.mkString("(", s" $mark ", ")")
-      }
+      override def toString: String =
+        if (all.size == 1) {
+          all.head.toString
+        } else {
+          all.toSeq.map(_.toString).sorted.mkString("(", s" $mark ", ")")
+        }
     }
 
     sealed trait Const extends Expr
@@ -140,10 +140,10 @@ object TagExpr {
           case v: Composite if v.all.size == 1 =>
             toDNF(v.all.head)
 
-          case v@Not(_: Composite) =>
+          case v @ Not(_: Composite) =>
             toDNF(distributionLaw(v))
 
-          case v@Not(_) =>
+          case v @ Not(_) =>
             distributionLaw(v)
 
           case v: Or =>
@@ -232,7 +232,7 @@ object TagExpr {
         a.all.exists(e => a.all.contains(Not(e)))
       }
 
-      @inline private def doAgg[TT <: Composite : ClassTag](all: Set[Expr], c: Set[Expr] => TT): Expr = {
+      @inline private def doAgg[TT <: Composite: ClassTag](all: Set[Expr], c: Set[Expr] => TT): Expr = {
         all.flatMap {
           case a: TT => a.all
           case v => Set(v)
@@ -245,7 +245,6 @@ object TagExpr {
 
   }
 
-
   object Strings extends For[String] {
 
     implicit class C(val sc: StringContext) {
@@ -255,5 +254,3 @@ object TagExpr {
   }
 
 }
-
-

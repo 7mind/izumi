@@ -67,4 +67,3 @@ object WithCirceTest {
     implicit val codec: Codec.AsObject[Enum2.type] = circe.derivation.deriveCodec[Enum2.type]
   }
 }
-

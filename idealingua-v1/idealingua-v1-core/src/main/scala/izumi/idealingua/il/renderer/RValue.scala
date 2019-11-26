@@ -41,7 +41,6 @@ class RValue(context: IDLRenderingContext) extends Renderable[ConstValue] {
       case ConstValue.CTypedObject(typeId, value) =>
         typed(typeId, value.value.mapValues(render).mkString("[", ",", "]"))
 
-
       case ConstValue.CTyped(typeId, value) =>
         typed(typeId, render(value))
         typeId.render() + "(" + render(value) + ")"
@@ -54,6 +53,3 @@ class RValue(context: IDLRenderingContext) extends Renderable[ConstValue] {
 
   }
 }
-
-
-

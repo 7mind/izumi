@@ -28,10 +28,9 @@ object BasicCases {
       def doSomeMagic(): Int = methodDependency.boom()
     }
 
-    class TestClass
-    (
-      val fieldArgDependency: TestDependency0
-      , argDependency: TestDependency1
+    class TestClass(
+      val fieldArgDependency: TestDependency0,
+      argDependency: TestDependency1
     ) {
       val x = argDependency
       val y = fieldArgDependency
@@ -71,11 +70,10 @@ object BasicCases {
       override def boom(): Int = 9
     }
 
-    class TestClass
-    (
-      @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0
-      , @Id("izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0
-      , @Id("named.test") argDependency: => TestInstanceBinding
+    class TestClass(
+      @Id("named.test.dependency.0") val fieldArgDependency: TestDependency0,
+      @Id("izumi.distage.fixtures.basiccases.basiccase2.testdependency0") val fieldArgDependencyAutoname: TestDependency0,
+      @Id("named.test") argDependency: => TestInstanceBinding
     ) {
       val x = argDependency
       val y = fieldArgDependency
@@ -85,8 +83,7 @@ object BasicCases {
       }
     }
 
-    case class TestInstanceBinding(z: String =
-                                         """R-r-rollin' down the window, white widow, fuck fame
+    case class TestInstanceBinding(z: String = """R-r-rollin' down the window, white widow, fuck fame
 Forest fire, climbin' higher, real life, it can wait""")
 
   }
@@ -105,8 +102,7 @@ Forest fire, climbin' higher, real life, it can wait""")
     def value = "xxx"
     trait TestDependency0
 
-    class TestClass
-    (
+    class TestClass(
       @Id(value) val fieldArgDependency: TestDependency0
     )
   }

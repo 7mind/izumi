@@ -4,13 +4,7 @@ import izumi.distage.model.references.WithDIKey
 import izumi.distage.model.reflection.universe._
 
 trait WithDIAssociation {
-  this:  DIUniverseBase
-    with WithDISafeType
-    with WithDICallable
-    with WithDIKey
-    with WithDIDependencyContext
-    with WithDISymbolInfo
-  =>
+  this: DIUniverseBase with WithDISafeType with WithDICallable with WithDIKey with WithDIDependencyContext with WithDISymbolInfo =>
 
   sealed trait Association {
     def name: String
@@ -19,7 +13,8 @@ trait WithDIAssociation {
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association {
+    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean)
+      extends Association {
       final def withWireWith(key: DIKey.BasicKey): Association.Parameter = copy(wireWith = key)
     }
 

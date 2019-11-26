@@ -77,12 +77,13 @@ object CSharpImports {
       case Primitive.TDate => return Seq("System")
       case Primitive.TUUID => return Seq("System")
       case Primitive.TBLOB => ???
-      case g: Generic => g match {
-        case _: Generic.TOption => return Seq("System")
-        case _: Generic.TMap => return Seq("System.Collections", "System.Collections.Generic")
-        case _: Generic.TList => return Seq("System.Collections", "System.Collections.Generic")
-        case _: Generic.TSet => return Seq("System.Collections", "System.Collections.Generic")
-      }
+      case g: Generic =>
+        g match {
+          case _: Generic.TOption => return Seq("System")
+          case _: Generic.TMap => return Seq("System.Collections", "System.Collections.Generic")
+          case _: Generic.TList => return Seq("System.Collections", "System.Collections.Generic")
+          case _: Generic.TSet => return Seq("System.Collections", "System.Collections.Generic")
+        }
       case _: Primitive => return Seq.empty
       case _ =>
     }
@@ -111,24 +112,28 @@ object CSharpImports {
 
     // For each type, which has more of the same names in the current module, we need to add a unique number of
     // import so it can be distinctly used in the types reference
-    packages.flatMap(pt =>
-      if (pt._2.length == 1 || pt._2.head._1.isInstanceOf[Generic])
-        Seq(CSharpImport(pt._2.head._1, pt._2.head._2, s""))
-      else
-        pt._2.zipWithIndex.map { case (pt2, index) =>
-          CSharpImport(pt2._1, pt2._2, s"${pt2._1.name}_$index")
-        }
-    ).toList ++ extra
+    packages
+      .flatMap(
+        pt =>
+          if (pt._2.length == 1 || pt._2.head._1.isInstanceOf[Generic])
+            Seq(CSharpImport(pt._2.head._1, pt._2.head._2, s""))
+          else
+            pt._2.zipWithIndex.map {
+              case (pt2, index) =>
+                CSharpImport(pt2._1, pt2._2, s"${pt2._1.name}_$index")
+            }
+      ).toList ++ extra
   }
 
   protected def collectTypes(ts: Typespace, id: TypeId): List[TypeId] = id match {
     case p: Primitive => List(p)
-    case g: Generic => g match {
-      case gm: Generic.TMap => List(gm) ++ collectTypes(ts, gm.valueType)
-      case gl: Generic.TList => List(gl) ++ collectTypes(ts, gl.valueType)
-      case gs: Generic.TSet => List(gs) ++ collectTypes(ts, gs.valueType)
-      case go: Generic.TOption => (if (CSharpType(go.valueType)(im = null, ts).isNullable) List(go) else List.empty) ++ collectTypes(ts, go.valueType)
-    }
+    case g: Generic =>
+      g match {
+        case gm: Generic.TMap => List(gm) ++ collectTypes(ts, gm.valueType)
+        case gl: Generic.TList => List(gl) ++ collectTypes(ts, gl.valueType)
+        case gs: Generic.TSet => List(gs) ++ collectTypes(ts, gs.valueType)
+        case go: Generic.TOption => (if (CSharpType(go.valueType)(im = null, ts).isNullable) List(go) else List.empty) ++ collectTypes(ts, go.valueType)
+      }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)
     case _: AliasId => collectTypes(ts, ts.dealias(id))

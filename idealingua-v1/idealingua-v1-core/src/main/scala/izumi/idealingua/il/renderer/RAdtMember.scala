@@ -3,7 +3,6 @@ package izumi.idealingua.il.renderer
 import izumi.functional.Renderable
 import izumi.idealingua.model.il.ast.typed.AdtMember
 
-
 class RAdtMember(context: IDLRenderingContext) extends Renderable[AdtMember] {
   import context._
   override def render(field: AdtMember): String = {

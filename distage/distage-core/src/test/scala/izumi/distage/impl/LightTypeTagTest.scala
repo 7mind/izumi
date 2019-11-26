@@ -55,13 +55,13 @@ class LightTypeTagTest extends WordSpec {
 
   trait F2[+A] extends F1[A]
 
-  trait FT1[+A[+ _[+ _]]]
+  trait FT1[+A[+_[+_]]]
 
-  trait FT2[+A[+ _[+ _]]] extends FT1[A]
+  trait FT2[+A[+_[+_]]] extends FT1[A]
 
-  trait IT1[+K[+ _]]
+  trait IT1[+K[+_]]
 
-  trait IT2[+K[+ _]] extends IT1[K]
+  trait IT2[+K[+_]] extends IT1[K]
 
   trait FM1[+A, +B]
 
@@ -123,7 +123,6 @@ class LightTypeTagTest extends WordSpec {
     assert(!(child <:< parent), clue).discard()
   }
 
-
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
     val clue = s"($outer)•(${inner.mkString(",")}) => $combined =?= $expected"
@@ -149,7 +148,8 @@ class LightTypeTagTest extends WordSpec {
 
   "lightweight type tags" should {
     "support human-readable representation" in {
-      assertRepr(LTT[Int {def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A]}],
+      assertRepr(
+        LTT[Int { def a(k: String): Int; val b: String; type M1 = W1; type M2 <: W2; type M3[A] = Either[Unit, A] }],
         "({Int} & {def a(String): Int, def b(): String, type M1 = LightTypeTagTest::W1, type M2 = M2|<Nothing..LightTypeTagTest::W2>, type M3 = λ %0 → Either[+Unit,+0]})"
       )
       assertRepr(LTT[I1 with (I1 with (I1 with W1))], "{LightTypeTagTest::I1 & LightTypeTagTest::W1}")
@@ -176,8 +176,8 @@ class LightTypeTagTest extends WordSpec {
 
       assertCombine(`LTT[_[_[_],_[_]]]`[T2], `LTT[_[_],_[_]]`[T0], LTT[T2[T0]])
 
-      type ComplexRef[T] = W1 with T {def a(p: T): T; type M = T}
-      assertCombine(`LTT[_]`[ComplexRef], LTT[Int], LTT[W1 with Int {def a(p: Int): Int; type M = Int}])
+      type ComplexRef[T] = W1 with T { def a(p: T): T; type M = T }
+      assertCombine(`LTT[_]`[ComplexRef], LTT[Int], LTT[W1 with Int { def a(p: Int): Int; type M = Int }])
     }
 
     "support non-positional typetag combination" in {
@@ -314,19 +314,19 @@ class LightTypeTagTest extends WordSpec {
       assertDifferent(LTT[With[str.type] with ({ type T = str.type with Int })], LTT[With[str.type] with ({ type T = str.type with Long })])
 
       type C1 = C
-      assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
-      assertSame(LTT[C {def a: Int}], LTT[C1 {def a: Int}])
+      assertSame(LTT[{ def a: Int }], LTT[{ def a: Int }])
+      assertSame(LTT[C { def a: Int }], LTT[C1 { def a: Int }])
 
-      assertDifferent(LTT[C {def a: Int}], LTT[ {def a: Int}])
-      assertDifferent(LTT[C {def a: Int}], LTT[C])
+      assertDifferent(LTT[C { def a: Int }], LTT[{ def a: Int }])
+      assertDifferent(LTT[C { def a: Int }], LTT[C])
 
-      assertDifferent(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
+      assertDifferent(LTT[C { def a: Int }], LTT[C { def a: Int; def b: Int }])
 
       val a1 = new C {
         override type A = Int
       }
       object Z {
-        type X <: {type A = Int}
+        type X <: { type A = Int }
       }
       Z.discard()
 
@@ -335,17 +335,16 @@ class LightTypeTagTest extends WordSpec {
 
     "support structural & refinement type subtype checks" in {
       type C1 = C
-      assertChild(LTT[ {def a: Int}], LTT[ {def a: Int}])
-      assertChild(LTT[C {def a: Int}], LTT[C1 {def a: Int}])
+      assertChild(LTT[{ def a: Int }], LTT[{ def a: Int }])
+      assertChild(LTT[C { def a: Int }], LTT[C1 { def a: Int }])
 
+      assertChild(LTT[C { def a: Int }], LTT[C])
+      assertNotChild(LTT[C], LTT[C { def a: Int }])
 
-      assertChild(LTT[C {def a: Int}], LTT[C])
-      assertNotChild(LTT[C], LTT[C {def a: Int}])
+      assertChild(LTT[C { def a: Int; def b: Int }], LTT[C { def a: Int }])
+      assertNotChild(LTT[C { def a: Int }], LTT[C { def a: Int; def b: Int }])
 
-      assertChild(LTT[C {def a: Int; def b: Int}], LTT[C {def a: Int}])
-      assertNotChild(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
-
-      assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
+      assertChild(LTT[C { def a: Int }], LTT[{ def a: Int }])
     }
 
     "support literal types" in {
@@ -364,7 +363,7 @@ class LightTypeTagTest extends WordSpec {
         override type A <: Int
       }
       object Z {
-        type X <: {type A = Int}
+        type X <: { type A = Int }
       }
       Z.discard()
 

@@ -11,10 +11,13 @@ class ModuleRequirements(val requiredKeys: Set[DIKey])
 
 class NoModuleRequirements extends ModuleRequirements(Set.empty)
 
-class LogstageModuleRequirements extends ModuleRequirements(Set(
-  DIKey.get[LogRouter],
-  DIKey.get[CustomContext],
-  DIKey.get[IzLogger],
-  DIKey.get[Set[PlanningObserver]],
-  DIKey.get[LoggerHook],
-))
+class LogstageModuleRequirements
+  extends ModuleRequirements(
+    Set(
+      DIKey.get[LogRouter],
+      DIKey.get[CustomContext],
+      DIKey.get[IzLogger],
+      DIKey.get[Set[PlanningObserver]],
+      DIKey.get[LoggerHook],
+    )
+  )

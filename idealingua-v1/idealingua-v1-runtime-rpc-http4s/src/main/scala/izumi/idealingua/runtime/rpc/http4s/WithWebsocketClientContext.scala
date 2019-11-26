@@ -19,7 +19,7 @@ import org.http4s.websocket.WebSocketFrame.{Ping, Text}
 import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
-trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {
+trait WebsocketClientContext[B[+_, +_], ClientId, Ctx] {
   def requestState: RequestState[B]
 
   def id: WsClientId[ClientId]
@@ -29,7 +29,7 @@ trait WebsocketClientContext[B[+ _, + _], ClientId, Ctx] {
   def finish(): Unit
 }
 
-trait WsSessionsStorage[B[+ _, + _], ClientId, Ctx] {
+trait WsSessionsStorage[B[+_, +_], ClientId, Ctx] {
   def addClient(id: WsSessionId, ctx: WebsocketClientContext[B, ClientId, Ctx]): WebsocketClientContext[B, ClientId, Ctx]
 
   def deleteClient(id: WsSessionId): WebsocketClientContext[B, ClientId, Ctx]
@@ -57,8 +57,7 @@ object WsSessionListener {
   }
 }
 
-
-trait WsContextProvider[B[+ _, + _], Ctx, ClientId] {
+trait WsContextProvider[B[+_, +_], Ctx, ClientId] {
   def toContext(id: WsClientId[ClientId], initial: Ctx, packet: RpcPacket): B[Throwable, Ctx]
 
   def toId(initial: Ctx, currentId: WsClientId[ClientId], packet: RpcPacket): B[Throwable, Option[ClientId]]
@@ -71,7 +70,11 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
 
   import c._
 
-  override def handleEmptyBodyPacket(id: WsClientId[ClientId], initial: C#RequestContext, packet: RpcPacket): C#BiIO[Throwable, (Option[ClientId], C#BiIO[Throwable, Option[RpcPacket]])] = {
+  override def handleEmptyBodyPacket(
+    id: WsClientId[ClientId],
+    initial: C#RequestContext,
+    packet: RpcPacket
+  ): C#BiIO[Throwable, (Option[ClientId], C#BiIO[Throwable, Option[RpcPacket]])] = {
     Quirks.discard(id, initial, packet)
     F.pure((None, F.pure(None)))
   }
@@ -81,17 +84,16 @@ class IdContextProvider[C <: Http4sContext](val c: C#IMPL[C]) extends WsContextP
     F.pure(initial)
   }
 
-  override def toId(initial:  C#RequestContext, currentId:  WsClientId[C#ClientId], packet:  RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
+  override def toId(initial: C#RequestContext, currentId: WsClientId[C#ClientId], packet: RpcPacket): C#BiIO[Throwable, Option[ClientId]] = {
     Quirks.discard(initial, packet)
     F.pure(None)
   }
 }
 
-class WsSessionsStorageImpl[C <: Http4sContext]
-(
-  val c: C#IMPL[C]
-  , logger: IzLogger
-  , codec: IRTClientMultiplexor[C#BiIO]
+class WsSessionsStorageImpl[C <: Http4sContext](
+  val c: C#IMPL[C],
+  logger: IzLogger,
+  codec: IRTClientMultiplexor[C#BiIO]
 ) extends WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
@@ -123,50 +125,48 @@ class WsSessionsStorageImpl[C <: Http4sContext]
 
     logger.debug(s"Asked for buzzer for $clientId. Found: $buzzerClient")
 
-    buzzerClient
-      .map {
-        session =>
-          new IRTDispatcher[BiIO] {
-            override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
-              for {
-                json <- codec.encode(request)
-                id <- F.sync(session.enqueue(request.method, json))
-                resp <- F.bracket(F.pure(id)) {
-                  id =>
-                    logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
-                    F.sync(session.requestState.forget(id))
-                } {
-                  id =>
-                    session.requestState.poll(id, pollingInterval, timeout).flatMap {
-                      case Some(value: RawResponse.GoodRawResponse) =>
-                        logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                        codec.decode(value.data, value.method)
+    buzzerClient.map {
+      session =>
+        new IRTDispatcher[BiIO] {
+          override def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
+            for {
+              json <- codec.encode(request)
+              id <- F.sync(session.enqueue(request.method, json))
+              resp <- F.bracket(F.pure(id)) {
+                id =>
+                  logger.debug(s"${request.method -> "method"}, ${id -> "id"}: cleaning request state")
+                  F.sync(session.requestState.forget(id))
+              } {
+                id =>
+                  session.requestState.poll(id, pollingInterval, timeout).flatMap {
+                    case Some(value: RawResponse.GoodRawResponse) =>
+                      logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                      codec.decode(value.data, value.method)
 
-                      case Some(value: RawResponse.BadRawResponse) =>
-                        logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
-                        F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+                    case Some(value: RawResponse.BadRawResponse) =>
+                      logger.debug(s"${request.method -> "method"}, $id: Generic failure response: $value")
+                      F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
 
-                      case None =>
-                        F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                    }
-                }
-              } yield {
-                resp
+                    case None =>
+                      F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                  }
               }
+            } yield {
+              resp
             }
           }
-      }
+        }
+    }
   }
 }
 
-class WebsocketClientContextImpl[C <: Http4sContext]
-(
-  val c: C#IMPL[C]
-  , val initialRequest: AuthedRequest[C#MonoIO, C#RequestContext]
-  , val initialContext: C#RequestContext
-  , listeners: Seq[WsSessionListener[C#ClientId]]
-  , wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext]
-  , logger: IzLogger
+class WebsocketClientContextImpl[C <: Http4sContext](
+  val c: C#IMPL[C],
+  val initialRequest: AuthedRequest[C#MonoIO, C#RequestContext],
+  val initialContext: C#RequestContext,
+  listeners: Seq[WsSessionListener[C#ClientId]],
+  wsSessionStorage: WsSessionsStorage[C#BiIO, C#ClientId, C#RequestContext],
+  logger: IzLogger
 ) extends WebsocketClientContext[C#BiIO, C#ClientId, C#RequestContext] {
 
   import c._
@@ -201,8 +201,7 @@ class WebsocketClientContextImpl[C <: Http4sContext]
     id
   }
 
-  def onWsSessionOpened(): Unit = {
-  }
+  def onWsSessionOpened(): Unit = {}
 
   def onWsClientIdUpdate(maybeNewId: Option[ClientId], oldId: WsClientId[ClientId]): Unit = {
     logger.debug(s"Id updated to $maybeNewId, was: ${oldId.id}")
@@ -219,8 +218,9 @@ class WebsocketClientContextImpl[C <: Http4sContext]
 
     def notifyListeners(): Unit = {
       onWsClientIdUpdate(maybeNewId, oldId)
-      listeners.foreach { listener =>
-        listener.onClientIdUpdate(newId, oldId)
+      listeners.foreach {
+        listener =>
+          listener.onClientIdUpdate(newId, oldId)
       }
     }
 
@@ -249,8 +249,9 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   override def finish(): Unit = {
     onWsSessionClosed()
     Quirks.discard(wsSessionStorage.deleteClient(sessionId))
-    listeners.foreach { listener =>
-      listener.onSessionClosed(id)
+    listeners.foreach {
+      listener =>
+        listener.onSessionClosed(id)
     }
     requestState.clear()
   }
@@ -258,8 +259,9 @@ class WebsocketClientContextImpl[C <: Http4sContext]
   protected[http4s] def start(): Unit = {
     Quirks.discard(wsSessionStorage.addClient(sessionId, this))
     onWsSessionOpened()
-    listeners.foreach { listener =>
-      listener.onSessionOpened(id)
+    listeners.foreach {
+      listener =>
+        listener.onSessionOpened(id)
     }
   }
 

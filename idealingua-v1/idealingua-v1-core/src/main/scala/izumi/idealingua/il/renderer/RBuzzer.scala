@@ -4,7 +4,6 @@ import izumi.functional.Renderable
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.idealingua.model.il.ast.typed._
 
-
 class RBuzzer(context: IDLRenderingContext) extends Renderable[Buzzer] {
   override def render(buzzer: Buzzer): String = {
     val out =

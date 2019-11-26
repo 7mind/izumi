@@ -1,6 +1,6 @@
 package izumi.functional
 
-trait Renderable[T]  {
+trait Renderable[T] {
   def render(value: T): String
 }
 

@@ -45,5 +45,4 @@ class EnumRenderer(ctx: STContext) {
     ext.extend(i, EnumProduct(qqEnum, qqEnumCompanion, members), _.handleEnum)
   }
 
-
 }

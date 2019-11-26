@@ -3,7 +3,7 @@ package izumi.idealingua.runtime.rpc
 import izumi.functional.bio.BIO
 import io.circe.Json
 
-class IRTClientMultiplexor[F[+ _, + _] : BIO](clients: Set[IRTWrappedClient]) {
+class IRTClientMultiplexor[F[+_, +_]: BIO](clients: Set[IRTWrappedClient]) {
   protected val F: BIO[F] = implicitly
 
   val codecs: Map[IRTMethodId, IRTCirceMarshaller] = clients.flatMap(_.allCodecs).toMap

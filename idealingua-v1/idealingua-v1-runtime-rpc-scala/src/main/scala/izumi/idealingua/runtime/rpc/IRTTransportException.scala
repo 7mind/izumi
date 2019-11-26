@@ -15,4 +15,3 @@ class IRTLimitReachedException(message: String, cause: Option[Throwable] = None)
 class IRTUnathorizedRequestContextException(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
 
 class IRTGenericFailure(message: String, cause: Option[Throwable] = None) extends RuntimeException(message, cause.orNull) with IRTTransportException
-

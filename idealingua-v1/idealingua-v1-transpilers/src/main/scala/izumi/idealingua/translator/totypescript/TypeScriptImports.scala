@@ -38,10 +38,16 @@ final case class TypeScriptImports(imports: List[TypeScriptImport] = List.empty,
       return ""
     }
 
-    imports.filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
-      .map(i => if (i._1.startsWith("import")) i._1 else
-              "import {\n" + i._2.map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(',').map(i2 => i2.trim).distinct.map(i2 => "    "  + i2)
-            .mkString(",\n") + s"\n} from '${i._1}';")
+    imports
+      .filterNot(_.id.isInstanceOf[AliasId]).groupBy(_.pkg)
+      .map(
+        i =>
+          if (i._1.startsWith("import")) i._1
+          else
+            "import {\n" + i._2
+              .map(i2 => renderTypeImports(i2.id, ts)).mkString(",").split(',').map(i2 => i2.trim).distinct.map(i2 => "    " + i2)
+              .mkString(",\n") + s"\n} from '${i._1}';"
+      )
       .mkString("\n")
   }
 
@@ -64,7 +70,7 @@ object TypeScriptImports {
     TypeScriptImports(fromBuzzer(ts, i, fromPkg, extra, manifest), manifest)
 
   protected def withImport(t: TypeId, fromPackage: Package, manifest: TypeScriptBuildManifest): Seq[String] = {
-    val depth: Int = if(manifest.layout == TypeScriptProjectLayout.YARN) {
+    val depth: Int = if (manifest.layout == TypeScriptProjectLayout.YARN) {
       1
     } else {
       fromPackage.size
@@ -78,19 +84,21 @@ object TypeScriptImports {
     }
 
     t match {
-      case g: Generic => g match {
-        case _: Generic.TOption => return Seq.empty
-        case _: Generic.TMap => return Seq.empty
-        case _: Generic.TList => return Seq.empty
-        case _: Generic.TSet => return Seq.empty
-      }
-      case p: Primitive => p match {
-        case Primitive.TTs => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
-        case Primitive.TTsTz => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
-        case Primitive.TTime => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
-        case Primitive.TDate => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
-        case _ => return Seq.empty
-      }
+      case g: Generic =>
+        g match {
+          case _: Generic.TOption => return Seq.empty
+          case _: Generic.TMap => return Seq.empty
+          case _: Generic.TList => return Seq.empty
+          case _: Generic.TSet => return Seq.empty
+        }
+      case p: Primitive =>
+        p match {
+          case Primitive.TTs => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+          case Primitive.TTsTz => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+          case Primitive.TTime => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+          case Primitive.TDate => return Seq(s"import { Formatter } from '${scopeRoot}irt';")
+          case _ => return Seq.empty
+        }
       case _ =>
     }
 
@@ -105,8 +113,8 @@ object TypeScriptImports {
     var destPkg = t.path.toPackage
     var matching = 0
 
-    breakable{
-      for( i <- srcPkg.indices){
+    breakable {
+      for (i <- srcPkg.indices) {
         if (destPkg.size < i || pathDiffers(srcPkg, destPkg, i)) {
           break
         }
@@ -143,27 +151,33 @@ object TypeScriptImports {
     Seq(importFile)
   }
 
-  private def pathDiffers(srcPkg : Package, destPkg: Package, depth: Int) : Boolean = {
+  private def pathDiffers(srcPkg: Package, destPkg: Package, depth: Int): Boolean = {
     Try(srcPkg(depth) != destPkg(depth)).getOrElse(true)
   }
 
-  protected def fromTypes(types: List[TypeId], fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
+  protected def fromTypes(
+    types: List[TypeId],
+    fromPkg: Package,
+    extra: List[TypeScriptImport] = List.empty,
+    manifest: TypeScriptBuildManifest
+  ): List[TypeScriptImport] = {
     val imports = types.distinct
     if (fromPkg.isEmpty) {
       return List.empty
     }
 
-    imports.flatMap( i => this.withImport(i, fromPkg, manifest).map(wi => (i, wi))).filterNot(_._2.isEmpty).map(m => TypeScriptImport(m._1, m._2)) ++ extra
+    imports.flatMap(i => this.withImport(i, fromPkg, manifest).map(wi => (i, wi))).filterNot(_._2.isEmpty).map(m => TypeScriptImport(m._1, m._2)) ++ extra
   }
 
   protected def collectTypes(ts: Typespace, id: TypeId): List[TypeId] = id match {
     case p: Primitive => List(p)
-    case g: Generic => g match {
-      case gm: Generic.TMap => List(gm) ++ collectTypes(ts, gm.valueType)
-      case gl: Generic.TList => List(gl) ++ collectTypes(ts, gl.valueType)
-      case gs: Generic.TSet => List(gs) ++ collectTypes(ts, gs.valueType)
-      case go: Generic.TOption => List(go) ++ collectTypes(ts, go.valueType)
-    }
+    case g: Generic =>
+      g match {
+        case gm: Generic.TMap => List(gm) ++ collectTypes(ts, gm.valueType)
+        case gl: Generic.TList => List(gl) ++ collectTypes(ts, gl.valueType)
+        case gs: Generic.TSet => List(gs) ++ collectTypes(ts, gs.valueType)
+        case go: Generic.TOption => List(go) ++ collectTypes(ts, go.valueType)
+      }
     case a: AdtId => List(a)
     case i: InterfaceId => List(i)
     case _: AliasId => collectTypes(ts, ts.dealias(id))
@@ -182,11 +196,17 @@ object TypeScriptImports {
       i.fields.flatMap(f => List(f.typeId) ++ collectTypes(ts, f.typeId))
     case i: Interface =>
       i.struct.superclasses.interfaces ++
-      ts.structure.structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if(f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.structure
+        .structure(i).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if (f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(
+          _ == definition.id
+        ) ++
       ts.inheritance.allParents(i.id).filterNot(i.struct.superclasses.interfaces.contains).filterNot(ff => ff == i.id).map(ifc => ts.tools.implId(ifc))
     case d: DTO =>
       d.struct.superclasses.interfaces ++
-      ts.structure.structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if(f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(_ == definition.id) ++
+      ts.structure
+        .structure(d).all.flatMap(f => List(f.field.typeId) ++ collectTypes(ts, if (f.defn.variance.nonEmpty) f.defn.variance.last.typeId else f.field.typeId)).filterNot(
+          _ == definition.id
+        ) ++
       ts.inheritance.allParents(d.id).filterNot(d.struct.superclasses.interfaces.contains).map(ifc => ts.tools.implId(ifc))
     case a: Adt =>
       a.alternatives.flatMap(al => List(al.typeId) ++ collectTypes(ts, al.typeId))
@@ -196,7 +216,13 @@ object TypeScriptImports {
   val uniqueInterfaces = ts.inheritance.parentsInherited(i.id).groupBy(_.name).map(_._2.head)
    */
 
-  protected def fromDefinition(ts: Typespace, definition: TypeDef, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
+  protected def fromDefinition(
+    ts: Typespace,
+    definition: TypeDef,
+    fromPkg: Package,
+    extra: List[TypeScriptImport] = List.empty,
+    manifest: TypeScriptBuildManifest
+  ): List[TypeScriptImport] = {
     val types = collectTypes(ts, definition)
     fromTypes(types, fromPkg, extra, manifest)
   }
@@ -211,7 +237,13 @@ object TypeScriptImports {
     }
   }
 
-  protected def fromService(ts: Typespace, svc: Service, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
+  protected def fromService(
+    ts: Typespace,
+    svc: Service,
+    fromPkg: Package,
+    extra: List[TypeScriptImport] = List.empty,
+    manifest: TypeScriptBuildManifest
+  ): List[TypeScriptImport] = {
     val types = svc.methods.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ fromRPCMethodOutput(ts, m.signature.output)
     }
@@ -219,7 +251,13 @@ object TypeScriptImports {
     fromTypes(types, fromPkg, extra, manifest)
   }
 
-  protected def fromBuzzer(ts: Typespace, i: Buzzer, fromPkg: Package, extra: List[TypeScriptImport] = List.empty, manifest: TypeScriptBuildManifest): List[TypeScriptImport] = {
+  protected def fromBuzzer(
+    ts: Typespace,
+    i: Buzzer,
+    fromPkg: Package,
+    extra: List[TypeScriptImport] = List.empty,
+    manifest: TypeScriptBuildManifest
+  ): List[TypeScriptImport] = {
     val types = i.events.flatMap {
       case m: RPCMethod => m.signature.input.fields.flatMap(f => collectTypes(ts, f.typeId)) ++ fromRPCMethodOutput(ts, m.signature.output)
     }

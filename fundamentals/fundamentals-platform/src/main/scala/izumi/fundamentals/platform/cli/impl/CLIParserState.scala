@@ -73,7 +73,6 @@ object CLIParserState {
       new GlobalParameters(RawEntrypointParams(Vector.empty, Vector(parameter)))
     }
 
-
     override def openParameter(rawArg: String)(name: String): CLIParserState = {
       Quirks.discard(rawArg)
       new OpenGlobalParameters(RawEntrypointParams.empty, name)
@@ -137,7 +136,6 @@ object CLIParserState {
       new GlobalParameters(p.copy(flags = p.flags :+ flag))
     }
 
-
     override def openParameter(rawArg: String)(name: String): CLIParserState = {
       Quirks.discard(rawArg)
       new OpenGlobalParameters(p, name)
@@ -165,7 +163,6 @@ object CLIParserState {
       new RoleParameters(globalParameters, roles :+ currentRole, RawRoleParams(name, RawEntrypointParams.empty, Vector.empty))
     }
 
-
     override def openParameter(rawArg: String)(name: String): CLIParserState = {
       new OpenRoleParameters(globalParameters, roles, currentRole, name)
     }
@@ -177,7 +174,11 @@ object CLIParserState {
 
     override def addParameter(rawArg: String)(parameter: RawValue): CLIParserState = {
       Quirks.discard(rawArg)
-      new RoleParameters(globalParameters, roles, currentRole.copy(roleParameters = currentRole.roleParameters.copy(values = currentRole.roleParameters.values :+ parameter)))
+      new RoleParameters(
+        globalParameters,
+        roles,
+        currentRole.copy(roleParameters = currentRole.roleParameters.copy(values = currentRole.roleParameters.values :+ parameter))
+      )
     }
 
     override def splitter(processed: Vector[String])(): CLIParserState = {
@@ -204,7 +205,11 @@ object CLIParserState {
     }
 
     override def addFlag(rawArg: String)(flag: RawFlag): CLIParserState = {
-      new RoleParameters(globalParameters, roles, currentRole.copy(roleParameters = currentRole.roleParameters.copy(flags = currentRole.roleParameters.flags ++ Vector(RawFlag(name), flag))))
+      new RoleParameters(
+        globalParameters,
+        roles,
+        currentRole.copy(roleParameters = currentRole.roleParameters.copy(flags = currentRole.roleParameters.flags ++ Vector(RawFlag(name), flag)))
+      )
     }
 
     override def addParameter(rawArg: String)(parameter: RawValue): CLIParserState = {
@@ -214,7 +219,11 @@ object CLIParserState {
 
     override def addFreeArg(processed: Vector[String])(arg: String): CLIParserState = {
       Quirks.discard(processed)
-      new RoleParameters(globalParameters, roles, currentRole.copy(roleParameters = currentRole.roleParameters.copy(values = currentRole.roleParameters.values :+ RawValue(name, arg))))
+      new RoleParameters(
+        globalParameters,
+        roles,
+        currentRole.copy(roleParameters = currentRole.roleParameters.copy(values = currentRole.roleParameters.values :+ RawValue(name, arg)))
+      )
 
     }
 
@@ -235,7 +244,6 @@ object CLIParserState {
     override def addRole(name: String): CLIParserState = {
       new RoleParameters(globalParameters, roles :+ currentRole, RawRoleParams(name, RawEntrypointParams.empty, Vector.empty))
     }
-
 
     override def openParameter(rawArg: String)(name: String): CLIParserState = {
       Quirks.discard(name)

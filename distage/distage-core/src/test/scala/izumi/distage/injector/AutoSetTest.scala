@@ -33,7 +33,8 @@ class AutoSetTest extends WordSpec with MkInjector {
     val definition = new ModuleDef {
       make[Int].fromValue(1)
       make[Int].named("x").fromValue(2)
-      many[Int].named("nonauto")
+      many[Int]
+        .named("nonauto")
         .addValue(3)
         .addValue(4)
         .addValue(5)

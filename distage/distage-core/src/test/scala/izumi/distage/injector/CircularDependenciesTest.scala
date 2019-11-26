@@ -69,12 +69,16 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     import CircularCase1._
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[Circular2].from { c: Circular1 => new Circular2(c) }
-      make[Circular1].from { c: Circular2 =>
-        val a = new Circular1 {
-          override val arg: Circular2 = c
-        }
-        a
+      make[Circular2].from {
+        c: Circular1 =>
+          new Circular2(c)
+      }
+      make[Circular1].from {
+        c: Circular2 =>
+          val a = new Circular1 {
+            override val arg: Circular2 = c
+          }
+          a
       }
     })
 
@@ -180,14 +184,13 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
-    val planTypes: Seq[SafeType] = plan.steps
-      .collect {
-        case i: InstantiationOp => i
-        case i: MakeProxy => i
-      }
-      .map(_.target.tpe)
+    val planTypes: Seq[SafeType] = plan.steps.collect {
+      case i: InstantiationOp => i
+      case i: MakeProxy => i
+    }.map(_.target.tpe)
     val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-    val instanceTypes = context.instances.map(_.key.tpe)
+    val instanceTypes = context.instances
+      .map(_.key.tpe)
       .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
 
     assert(instanceTypes == planTypes)
@@ -280,18 +283,18 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     import CircularCase6._
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[Dependency {def dep: RefinedCircular}].from[RealDependency]
+      make[Dependency { def dep: RefinedCircular }].from[RealDependency]
       make[RefinedCircular]
     })
 
     val injector = mkInjector()
     val context = injector.produceUnsafe(definition)
 
-    assert(context.get[Dependency {def dep: RefinedCircular}] != null)
+    assert(context.get[Dependency { def dep: RefinedCircular }] != null)
     assert(context.get[RefinedCircular] != null)
 
-    assert(context.get[RefinedCircular] eq context.get[Dependency {def dep: RefinedCircular}].dep)
-    assert(context.get[Dependency {def dep: RefinedCircular}] eq context.get[RefinedCircular].dep)
+    assert(context.get[RefinedCircular] eq context.get[Dependency { def dep: RefinedCircular }].dep)
+    assert(context.get[Dependency { def dep: RefinedCircular }] eq context.get[RefinedCircular].dep)
   }
 
   "Regression test 1: isolated cycles causing spooky action at a distance" in {

@@ -6,7 +6,6 @@ import izumi.idealingua.translator.TranslatorExtension
 import izumi.idealingua.translator.toscala.STContext
 import izumi.idealingua.translator.toscala.types.{FullServiceContext, ScalaStruct, StructContext}
 
-
 trait ScalaTranslatorExtension extends TranslatorExtension {
 
   import izumi.fundamentals.platform.language.Quirks._
@@ -52,7 +51,4 @@ trait ScalaTranslatorExtension extends TranslatorExtension {
     product
   }
 
-
 }
-
-

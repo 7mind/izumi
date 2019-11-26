@@ -66,9 +66,10 @@ object Http4sTestContext {
       }
     }
 
-    override def toId(initial:  DummyRequestContext, currentId:  WsClientId[String], packet:  RpcPacket): zio.IO[Throwable, Option[String]] = {
+    override def toId(initial: DummyRequestContext, currentId: WsClientId[String], packet: RpcPacket): zio.IO[Throwable, Option[String]] = {
       zio.IO.effect {
-        packet.headers.getOrElse(Map.empty).get("Authorization")
+        packet.headers
+          .getOrElse(Map.empty).get("Authorization")
           .map(Authorization.parse)
           .flatMap(_.toOption)
           .collect {
@@ -77,7 +78,11 @@ object Http4sTestContext {
       }
     }
 
-    override def handleEmptyBodyPacket(id: WsClientId[String], initial: DummyRequestContext, packet: RpcPacket): zio.IO[Throwable, (Option[ClientId], zio.IO[Throwable, Option[RpcPacket]])] = {
+    override def handleEmptyBodyPacket(
+      id: WsClientId[String],
+      initial: DummyRequestContext,
+      packet: RpcPacket
+    ): zio.IO[Throwable, (Option[ClientId], zio.IO[Throwable, Option[RpcPacket]])] = {
       Quirks.discard(id, initial)
 
       packet.headers.getOrElse(Map.empty).get("Authorization") match {
@@ -87,7 +92,7 @@ object Http4sTestContext {
 
         case Some(_) =>
           toId(initial, id, packet) flatMap {
-            case id@Some(_) =>
+            case id @ Some(_) =>
               // here we may set internal state
               F.pure {
                 id -> F.pure(packet.ref.map {
@@ -122,8 +127,7 @@ object Http4sTestContext {
   )
 
   final def clientDispatcher(): ClientDispatcher[rt.type] with TestHttpDispatcher =
-    new ClientDispatcher[rt.DECL](rt.self, RT.logger, RT.printer, baseUri, demo.Client.codec)
-      with TestHttpDispatcher {
+    new ClientDispatcher[rt.DECL](rt.self, RT.logger, RT.printer, baseUri, demo.Client.codec) with TestHttpDispatcher {
 
       override def sendRaw(request: IRTMuxRequest, body: Array[Byte]): BiIO[Throwable, IRTMuxResponse] = {
         val req = buildRequest(baseUri, request, body)

@@ -12,7 +12,7 @@ private[izumi] class CompositePickler[A] extends Pickler[A] {
   import Constants._
 
   private var picklerClasses = IdentMap.empty
-  private val picklers       = mutable.ArrayBuffer.empty[(Class[_], Pickler[_])]
+  private val picklers = mutable.ArrayBuffer.empty[(Class[_], Pickler[_])]
 
   override def pickle(obj: A)(implicit state: PickleState): Unit = {
     if (obj == null) {
@@ -54,9 +54,7 @@ private[izumi] class CompositePickler[A] extends Pickler[A] {
     this
   }
 
-  @noinline def addTransform[B <: A, C](transformTo: (B) => C, transformFrom: (C) => B)(
-      implicit p: Pickler[C],
-      tag: ClassTag[B]): CompositePickler[A] = {
+  @noinline def addTransform[B <: A, C](transformTo: (B) => C, transformFrom: (C) => B)(implicit p: Pickler[C], tag: ClassTag[B]): CompositePickler[A] = {
     val pickler = p.xmap(transformFrom)(transformTo)
     addPickler(pickler, tag)
     this

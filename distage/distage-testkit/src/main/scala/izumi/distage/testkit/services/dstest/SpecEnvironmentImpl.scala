@@ -14,8 +14,7 @@ import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.logstage.api.{IzLogger, Log}
 
-class SpecEnvironmentImpl[F[_]: TagK]
-(
+class SpecEnvironmentImpl[F[_]: TagK](
   suiteClass: Class[_],
   override val contextOptions: ContextOptions,
   override val bootstrapOverrides: BootstrapModule,

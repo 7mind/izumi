@@ -134,4 +134,3 @@ final class IzInstant(private val timestamp: Instant) extends AnyVal with TimeEx
   }
 
 }
-

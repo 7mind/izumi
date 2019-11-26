@@ -91,7 +91,9 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val appModule = moduleProvider.appModules().merge overridenBy defApp overridenBy appOverride
     val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appPlan = planner.makePlan(roots, appModule)
-    lateLogger.info(s"Planning finished. ${appPlan.app.primary.plan.keys.size -> "main ops"}, ${appPlan.app.side.plan.keys.size -> "integration ops"}, ${appPlan.app.shared.plan.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
+    lateLogger.info(
+      s"Planning finished. ${appPlan.app.primary.plan.keys.size -> "main ops"}, ${appPlan.app.side.plan.keys.size -> "integration ops"}, ${appPlan.app.shared.plan.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}"
+    )
 
     val injector = appPlan.injector
     val r = makeExecutor(parameters, roles, lateLogger, injector, makeStartupExecutor(lateLogger, injector))
@@ -129,7 +131,13 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     new RoleAppPlanner.Impl[F](options, bsModule, activation, lateLogger)
   }
 
-  protected def makeExecutor(parameters: RawAppArgs, roles: RolesInfo, lateLogger: IzLogger, injector: Injector, startupPlanExecutor: StartupPlanExecutor[F]): RoleAppExecutor[F] = {
+  protected def makeExecutor(
+    parameters: RawAppArgs,
+    roles: RolesInfo,
+    lateLogger: IzLogger,
+    injector: Injector,
+    startupPlanExecutor: StartupPlanExecutor[F]
+  ): RoleAppExecutor[F] = {
     new RoleAppExecutor.Impl[F](shutdownStrategy, roles, injector, lateLogger, parameters, startupPlanExecutor)
   }
 
@@ -137,7 +145,14 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     StartupPlanExecutor.default(lateLogger, injector)
   }
 
-  protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
+  protected def makeModuleProvider(
+    options: ContextOptions,
+    parameters: RawAppArgs,
+    activation: AppActivation,
+    roles: RolesInfo,
+    config: AppConfig,
+    lateLogger: IzLogger
+  ): ModuleProvider[F] = {
     new ModuleProvider.Impl[F](
       lateLogger,
       config,
@@ -164,7 +179,9 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val roleProvider: RoleProvider[F] = new RoleProvider.Impl(logger, activeRoleNames, mp)
     val bindings = plugins.app.flatMap(_.bindings)
     val bsBindings = plugins.app.flatMap(_.bindings)
-    logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")
+    logger.info(
+      s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ..."
+    )
     val roles = roleProvider.getInfo(bindings)
 
     printRoleInfo(logger, roles)
@@ -197,7 +214,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val withIzumi = referenceLibraries :+ LibraryReference("izumi-r2", classOf[ConfigLoader])
     showDepData(logger, "Application is about to start", this.getClass)
     withIzumi.foreach {
-      u => showDepData(logger, s"... using ${u.libraryName}", u.clazz)
+      u =>
+        showDepData(logger, s"... using ${u.libraryName}", u.clazz)
     }
     this
   }
@@ -211,7 +229,9 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def validate(bootstrapAutoDef: ModuleBase, appDef: ModuleBase): Unit = {
     val conflicts = bootstrapAutoDef.keys.intersect(appDef.keys)
     if (conflicts.nonEmpty) {
-      throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
+      throw new DiAppBootstrapException(
+        s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating..."
+      )
     }
 
     if (appDef.bindings.isEmpty) {
@@ -254,4 +274,3 @@ object RoleAppLauncher {
   }
 
 }
-

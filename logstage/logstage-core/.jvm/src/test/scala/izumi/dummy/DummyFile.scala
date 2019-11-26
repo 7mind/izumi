@@ -19,7 +19,7 @@ case class DummyFile(override val name: String) extends LogFile {
   }
 
   def append(i: String): Unit = {
-      content += i
+    content += i
   }
 
   override def beforeDelete(): Unit = {}

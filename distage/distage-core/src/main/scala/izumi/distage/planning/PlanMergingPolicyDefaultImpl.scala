@@ -33,7 +33,6 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
     }
   }
 
-
   protected def handleIssues(plan: DodgyPlan, resolved: Map[DIKey, Set[ExecutableOp]], issues: Map[DIKey, DIKeyConflictResolution.Failed]): SemiPlan = {
     Quirks.discard(plan, resolved)
     throwOnIssues(issues)
@@ -49,21 +48,19 @@ class PlanMergingPolicyDefaultImpl extends PlanMergingPolicy with WithResolve {
          |between multiple instances of the same type.
          |
          |List of problematic bindings: $issueRepr
-         """.stripMargin
-      , issues
+         """.stripMargin,
+      issues
     )
   }
 
   protected final def formatIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): String = {
-    issues
-      .map {
-        case (k, f) =>
-          s"""Conflict resolution failed key $k with reason
+    issues.map {
+      case (k, f) =>
+        s"""Conflict resolution failed key $k with reason
            |
            |${f.explanation.shift(4)}
            |
            |    Candidates left: ${f.candidates.niceList().shift(4)}""".stripMargin
-      }
-      .niceList()
+    }.niceList()
   }
 }

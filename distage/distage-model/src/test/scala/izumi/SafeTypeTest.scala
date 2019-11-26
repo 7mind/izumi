@@ -27,4 +27,3 @@ class SafeTypeTest extends WordSpec {
   }
 
 }
-

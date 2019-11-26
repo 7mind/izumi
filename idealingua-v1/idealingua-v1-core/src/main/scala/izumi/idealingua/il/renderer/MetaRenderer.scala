@@ -15,11 +15,10 @@ class MetaRenderer(context: IDLRenderingContext) {
     val maybeAnno = meta.annos.map(_.render())
 
     Seq(
-      maybeDoc.toSeq
-      , maybeAnno
-      , Seq(struct)
-    )
-      .flatten
+      maybeDoc.toSeq,
+      maybeAnno,
+      Seq(struct)
+    ).flatten
       .mkString("\n")
   }
 

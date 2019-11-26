@@ -19,17 +19,17 @@ object ProjectVersion {
 }
 
 case class ProjectNamingRule(
-                              prefix: Seq[String],
-                              /**
-                                * Positive value will work as .drop on fully qualified module name
-                                * Zero value will leave name untouched
-                                * Negative value will work as .takeRight
-                                *
-                                * Does not apply for layout == PLAIN
-                                */
-                              dropFQNSegments: Option[Int],
-                              postfix: Seq[String],
-                            )
+  prefix: Seq[String],
+  /**
+    * Positive value will work as .drop on fully qualified module name
+    * Zero value will leave name untouched
+    * Negative value will work as .takeRight
+    *
+    * Does not apply for layout == PLAIN
+    */
+  dropFQNSegments: Option[Int],
+  postfix: Seq[String],
+)
 
 object ProjectNamingRule {
   def example = ProjectNamingRule(
@@ -42,18 +42,18 @@ object ProjectNamingRule {
 object BuildManifest {
 
   case class Common(
-                     name: String,
-                     group: String,
-                     tags: List[String],
-                     description: String,
-                     releaseNotes: String,
-                     publisher: Publisher,
-                     version: ProjectVersion,
-                     licenses: List[License],
-                     website: MFUrl,
-                     copyright: String,
-                     izumiVersion: String,
-                   )
+    name: String,
+    group: String,
+    tags: List[String],
+    description: String,
+    releaseNotes: String,
+    publisher: Publisher,
+    version: ProjectVersion,
+    licenses: List[License],
+    website: MFUrl,
+    copyright: String,
+    izumiVersion: String,
+  )
 
   object Common {
     final val example = Common(

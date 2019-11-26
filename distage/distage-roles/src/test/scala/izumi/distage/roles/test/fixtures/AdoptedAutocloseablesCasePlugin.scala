@@ -30,8 +30,7 @@ class BrokenSink extends LogSink {
   }
 }
 
-class AdoptedAutocloseablesCase
-(
+class AdoptedAutocloseablesCase(
   val sinks: Set[LogSink]
 ) extends RoleService[IO] {
 

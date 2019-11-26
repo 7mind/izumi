@@ -45,7 +45,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
     }
   }
 
-  override protected[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
+  override protected[distage] def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
 
   override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] = {
     Option(_instances.get()) match {
@@ -70,10 +70,12 @@ object BootstrapLocator {
   final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
-    val bootstrapObserver = new PlanningObserverAggregate(Set(
-      new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.bootstrap")),
-      //new GraphObserver(analyzer, Set.empty),
-    ))
+    val bootstrapObserver = new PlanningObserverAggregate(
+      Set(
+        new BootstrapPlanningObserver(TrivialLogger.make[BootstrapLocator]("izumi.distage.debug.bootstrap")),
+        //new GraphObserver(analyzer, Set.empty),
+      )
+    )
 
     val hook = new PlanningHookAggregate(Set.empty)
     val translator = new BindingTranslatorImpl(reflectionProvider, hook)
@@ -161,10 +163,9 @@ object BootstrapLocator {
   final val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
   final val noReflectionBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
-    make[ClassStrategy].from[ClassStrategyFailingImpl]
-    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
-    make[TraitStrategy].from[TraitStrategyFailingImpl]
-  }
+      make[ClassStrategy].from[ClassStrategyFailingImpl]
+      make[ProxyStrategy].from[ProxyStrategyFailingImpl]
+      make[FactoryStrategy].from[FactoryStrategyFailingImpl]
+      make[TraitStrategy].from[TraitStrategyFailingImpl]
+    }
 }
-

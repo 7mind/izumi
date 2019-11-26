@@ -1,6 +1,7 @@
 package izumi.idealingua.runtime.rpc
 
-abstract class IRTMethodWrapper[F[_, _], -C] { self =>
+abstract class IRTMethodWrapper[F[_, _], -C] {
+  self =>
   final type Just[T] = F[Nothing, T]
 
   val signature: IRTMethodSignature

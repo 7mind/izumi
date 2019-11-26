@@ -99,8 +99,8 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     case _ if Option(tree.tpe).isDefined =>
       analyzeValRef(tree.tpe, ret)
     case _ =>
-      c.abort(tree.pos
-        ,
+      c.abort(
+        tree.pos,
         s"""
            | Can handle only method references of form (method _) or lambda bodies of form (args => body).\n
            | Argument doesn't seem to be a method reference or a lambda:\n
@@ -135,19 +135,19 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     val annotationsOnLambda: List[u.Annotation] = lambdaKeys.flatMap(_.context.symbol.annotations)
     val annotationsOnMethod: List[u.Annotation] = methodReferenceKeys.flatMap(_.context.symbol.annotations)
 
-    val keys = if (
-      methodReferenceKeys.size == lambdaKeys.size &&
+    val keys =
+      if (methodReferenceKeys.size == lambdaKeys.size &&
         annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
-      // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
-      //
-      // (Besides, lambda types are the ones specified by the caller, we should always use them)
-      methodReferenceKeys.zip(lambdaKeys).map {
-        case (m, l) =>
-          m.copy(tpe = l.tpe, wireWith = m.wireWith.withTpe(l.wireWith.tpe)) // gotcha: symbol not altered
+        // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
+        //
+        // (Besides, lambda types are the ones specified by the caller, we should always use them)
+        methodReferenceKeys.zip(lambdaKeys).map {
+          case (m, l) =>
+            m.copy(tpe = l.tpe, wireWith = m.wireWith.withTpe(l.wireWith.tpe)) // gotcha: symbol not altered
+        }
+      } else {
+        lambdaKeys
       }
-    } else {
-      lambdaKeys
-    }
 
     ExtractedInfo(keys, isValReference = false)
   }
@@ -156,12 +156,12 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
     val associations = sig.typeArgs.init.map(SafeType(_)).map {
       tpe =>
         val symbol = SymbolInfo.Static(
-          c.freshName(tpe.tpe.typeSymbol.name.toString)
-          , tpe
-          , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
-          , ret
-          , tpe.tpe.typeSymbol.isTerm && tpe.tpe.typeSymbol.asTerm.isByNameParam
-          , tpe.tpe.typeSymbol.isParameter
+          c.freshName(tpe.tpe.typeSymbol.name.toString),
+          tpe,
+          AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe),
+          ret,
+          tpe.tpe.typeSymbol.isTerm && tpe.tpe.typeSymbol.asTerm.isByNameParam,
+          tpe.tpe.typeSymbol.isParameter
         )
 
         keyProvider.associationFromParameter(symbol)

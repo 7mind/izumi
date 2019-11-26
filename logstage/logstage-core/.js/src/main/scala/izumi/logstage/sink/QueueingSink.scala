@@ -6,21 +6,17 @@ import izumi.logstage.api.logger.LogSink
 
 import scala.concurrent.duration._
 
-class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis)
-  extends LogSink
-    with AutoCloseable {
+class QueueingSink(target: LogSink, sleepTime: FiniteDuration = 50.millis) extends LogSink with AutoCloseable {
 
   Quirks.discard(sleepTime)
 
-  def start(): Unit = {
-  }
+  def start(): Unit = {}
 
   def flush(e: Log.Entry): Unit = {
     target.flush(e)
   }
 
-  override def close(): Unit = {
-  }
+  override def close(): Unit = {}
 
 }
 

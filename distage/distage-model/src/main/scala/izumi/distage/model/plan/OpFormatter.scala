@@ -20,10 +20,9 @@ object OpFormatter {
     origin.fold("(<unknown>)")(_.origin.toString)
   }
 
-  class Impl
-  (
-    keyFormatter: KeyFormatter
-  , typeFormatter: TypeFormatter
+  class Impl(
+    keyFormatter: KeyFormatter,
+    typeFormatter: TypeFormatter
   ) extends OpFormatter {
 
     import typeFormatter.formatType
@@ -61,7 +60,7 @@ object OpFormatter {
                   formatOp(target, wiring, origin)
                 case ReferenceInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  if (wiring.instance!=null) {
+                  if (wiring.instance != null) {
                     s"${formatKey(target)} $pos := value ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}"
                   } else {
                     s"${formatKey(target)} $pos := null"
@@ -80,7 +79,6 @@ object OpFormatter {
         case p: ProxyOp =>
           p match {
             case MakeProxy(proxied, forwardRefs, origin, byNameAllowed) =>
-
               val pos = formatBindingPosition(origin)
               val kind = if (byNameAllowed) {
                 "proxy.light"
@@ -106,7 +104,6 @@ object OpFormatter {
       s"${formatKey(target)} $pos := $op"
     }
 
-
     private def formatWiring(deps: Wiring): String = {
       deps match {
         case Constructor(instanceType, associations, prefix) =>
@@ -127,9 +124,11 @@ object OpFormatter {
           val depsRepr = dependencies.map(formatDependency)
 
           doFormat(
-            formatType(factoryType)
-            , wirings ++ depsRepr
-            , "factory", ('(', ')'), ('{', '}')
+            formatType(factoryType),
+            wirings ++ depsRepr,
+            "factory",
+            ('(', ')'),
+            ('{', '}')
           )
 
         case FactoryFunction(provider, factoryIndex, dependencies) =>
@@ -141,12 +140,14 @@ object OpFormatter {
           val depsRepr = dependencies.map(formatDependency)
 
           doFormat(
-            formatFunction(provider)
-            , wirings ++ depsRepr
-            , "call factory", ('(', ')'), ('{', '}')
+            formatFunction(provider),
+            wirings ++ depsRepr,
+            "call factory",
+            ('(', ')'),
+            ('{', '}')
           )
 
-        case other@(_: Effect | _: Resource | _: Instance | _: Reference) =>
+        case other @ (_: Effect | _: Resource | _: Instance | _: Reference) =>
           s"UNEXPECTED WIREABLE: $other"
       }
     }

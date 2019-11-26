@@ -14,11 +14,11 @@ import org.scalatest.exceptions.TestCanceledException
 import scala.collection.immutable.TreeSet
 
 final case class SpecConfig(
-                             contextOptions: ContextOptions = ContextOptions(),
-                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-                             moduleOverrides: ModuleBase = ModuleBase.empty,
-                             bootstrapLogLevel: Log.Level = Log.Level.Info,
-                           )
+  contextOptions: ContextOptions = ContextOptions(),
+  bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
+  moduleOverrides: ModuleBase = ModuleBase.empty,
+  bootstrapLogLevel: Log.Level = Log.Level.Info,
+)
 
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
@@ -38,7 +38,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       c.bootstrapLogLevel,
     )
   }
-
 
   override final protected def runNestedSuites(args: Args): Status =
     throw new UnsupportedOperationException
@@ -116,17 +115,13 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
     val toRun = testName match {
       case None =>
-        val enabled = args.filter.dynaTags.testTags.toSeq
-          .flatMap {
-            case (suiteId, tests) =>
-
-              tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys
-                .map {
-                  testname =>
-                    (suiteId, testname)
-                }
-          }
-          .toSet
+        val enabled = args.filter.dynaTags.testTags.toSeq.flatMap {
+          case (suiteId, tests) =>
+            tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys.map {
+              testname =>
+                (suiteId, testname)
+            }
+        }.toSet
 
         if (enabled.isEmpty) {
           monadTests
@@ -152,7 +147,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   private def mkTestReporter(args: Args): TestReporter = {
 
-
     val scalatestReporter = new ScalatestReporter(args, suiteName, suiteId)
 
     new SafeTestReporter(scalatestReporter)
@@ -165,37 +159,53 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
     failure match {
       case Some(_) =>
-        args.reporter(TestStarting(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          SUITE_FAILED,
-          SUITE_FAILED,
-        ))
-        args.reporter(TestFailed(
-          tracker.nextOrdinal(),
-          s"suite failed",
-          suiteName, suiteId, Some(suiteId),
-          SUITE_FAILED,
-          SUITE_FAILED,
-          scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-          throwable = failure
-        ))
+        args.reporter(
+          TestStarting(
+            tracker.nextOrdinal(),
+            suiteName,
+            suiteId,
+            Some(suiteId),
+            SUITE_FAILED,
+            SUITE_FAILED,
+          )
+        )
+        args.reporter(
+          TestFailed(
+            tracker.nextOrdinal(),
+            s"suite failed",
+            suiteName,
+            suiteId,
+            Some(suiteId),
+            SUITE_FAILED,
+            SUITE_FAILED,
+            scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
+            throwable = failure
+          )
+        )
 
       case None =>
-        args.reporter(TestStarting(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          FUCK_SCALATEST,
-          FUCK_SCALATEST,
-        ))
-        args.reporter(TestCanceled(
-          tracker.nextOrdinal(),
-          s"ignored",
-          suiteName, suiteId, Some(suiteId),
-          FUCK_SCALATEST,
-          FUCK_SCALATEST,
-          scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-        ))
+        args.reporter(
+          TestStarting(
+            tracker.nextOrdinal(),
+            suiteName,
+            suiteId,
+            Some(suiteId),
+            FUCK_SCALATEST,
+            FUCK_SCALATEST,
+          )
+        )
+        args.reporter(
+          TestCanceled(
+            tracker.nextOrdinal(),
+            s"ignored",
+            suiteName,
+            suiteId,
+            Some(suiteId),
+            FUCK_SCALATEST,
+            FUCK_SCALATEST,
+            scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
+          )
+        )
 
     }
 
@@ -203,6 +213,3 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   final override val styleName: String = "DistageSuite"
 }
-
-
-

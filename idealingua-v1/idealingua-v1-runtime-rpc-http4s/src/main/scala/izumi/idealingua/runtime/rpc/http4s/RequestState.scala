@@ -9,7 +9,7 @@ import io.circe.Json
 
 import scala.concurrent.duration.FiniteDuration
 
-class RequestState[F[+ _, + _]: BIOAsync] {
+class RequestState[F[+_, +_]: BIOAsync] {
 
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()
@@ -57,7 +57,7 @@ class RequestState[F[+ _, + _]: BIOAsync] {
       }
 
       method <- maybeMethod match {
-        case Some(m@PacketInfo(method, id)) =>
+        case Some(m @ PacketInfo(method, id)) =>
           respond(id, RawResponse.GoodRawResponse(data, method))
           F.pure(m)
 

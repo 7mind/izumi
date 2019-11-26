@@ -18,7 +18,6 @@ class LoggingSlf4jSinkTest extends WordSpec {
 object LoggingSlf4jSinkTest {
   val sinkLegacySlf4jImpl = new LogSinkLegacySlf4jImpl(ConsoleSink.simplePolicy())
 
-
   def setupSlf4jLogger(): IzLogger = {
     IzLogger(IzLogger.Level.Trace, sinkLegacySlf4jImpl)
   }

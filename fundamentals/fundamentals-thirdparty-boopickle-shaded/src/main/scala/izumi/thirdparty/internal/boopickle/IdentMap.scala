@@ -50,8 +50,8 @@ private[izumi] object IdentMap3Plus {
 private[boopickle] final class IdentMap3Plus(o1: AnyRef, o2: AnyRef, o3: AnyRef) extends IdentMap {
   import IdentMap3Plus.Entry
 
-  var hashSize  = 64
-  val maxDepth  = 1
+  var hashSize = 64
+  val maxDepth = 1
   var hashTable = new Array[Entry](hashSize)
   // indices 0 (not used) and 1 (for null) are reserved
   var curIdx = 2
@@ -67,9 +67,9 @@ private[boopickle] final class IdentMap3Plus(o1: AnyRef, o2: AnyRef, o3: AnyRef)
   }
 
   override def apply(obj: AnyRef): Option[Int] = {
-    val hash     = ReferenceEquality.identityHashCode(obj)
+    val hash = ReferenceEquality.identityHashCode(obj)
     val tableIdx = hashIdx(hash)
-    var e        = hashTable(tableIdx)
+    var e = hashTable(tableIdx)
     while ((e != null) && ReferenceEquality.ne(e.obj, obj)) e = e.next
     if (e == null)
       None
@@ -78,7 +78,7 @@ private[boopickle] final class IdentMap3Plus(o1: AnyRef, o2: AnyRef, o3: AnyRef)
   }
 
   override def updated(obj: AnyRef): IdentMap = {
-    val hash     = ReferenceEquality.identityHashCode(obj)
+    val hash = ReferenceEquality.identityHashCode(obj)
     val tableIdx = hashIdx(hash)
     hashTable(tableIdx) = new Entry(hash, obj, curIdx, hashTable(tableIdx))
     curIdx += 1
@@ -92,7 +92,7 @@ private[boopickle] final class IdentMap3Plus(o1: AnyRef, o2: AnyRef, o3: AnyRef)
     * Resizes the underlying hash table to make indexing fast as the number of entries grows
     */
   private def resize(): Unit = {
-    val newSize  = hashSize * 4
+    val newSize = hashSize * 4
     val newTable = new Array[Entry](newSize)
     // copy old entries
     var i = hashSize - 1
@@ -101,7 +101,7 @@ private[boopickle] final class IdentMap3Plus(o1: AnyRef, o2: AnyRef, o3: AnyRef)
       var e = hashTable(i)
       while (e != null) {
         val tableIdx = hashIdx(e.hash)
-        val n        = e.next
+        val n = e.next
         e.next = newTable(tableIdx)
         newTable(tableIdx) = e
         e = n

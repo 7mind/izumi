@@ -7,10 +7,10 @@ import izumi.idealingua.translator.totypescript.tools.ModuleTools
 import izumi.idealingua.translator.totypescript.types.TypeScriptTypeConverter
 
 class TSTContext(
-                 val typespace: Typespace,
-                  val manifest: TypeScriptBuildManifest
-                 , extensions: Seq[TypeScriptTranslatorExtension]
-               ) {
+  val typespace: Typespace,
+  val manifest: TypeScriptBuildManifest,
+  extensions: Seq[TypeScriptTranslatorExtension]
+) {
   final val conv = new TypeScriptTypeConverter()
 
   final val modules = new ModuleTools()

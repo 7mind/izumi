@@ -1,16 +1,14 @@
 package izumi.idealingua.il.loader
 
-
 import izumi.idealingua.model.loader.UnresolvedDomains
 
-
 class ModelLoaderImpl(
-                        enumerator: FilesystemEnumerator,
-                        parser: ModelParser,
-                        modelExt:String,
-                        domainExt: String,
-                        overlayExt: String,
-                      ) extends ModelLoader {
+  enumerator: FilesystemEnumerator,
+  parser: ModelParser,
+  modelExt: String,
+  domainExt: String,
+  overlayExt: String,
+) extends ModelLoader {
   def load(): UnresolvedDomains = {
     val files = enumerator.enumerate()
     val domainFiles = files.filter(_._1.name.endsWith(domainExt))
@@ -27,4 +25,3 @@ class ModelLoaderImpl(
     UnresolvedDomains(domains, models, overlays)
   }
 }
-

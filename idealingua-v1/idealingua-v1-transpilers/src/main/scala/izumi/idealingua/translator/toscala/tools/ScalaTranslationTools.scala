@@ -32,31 +32,29 @@ class ScalaTranslationTools(ctx: STContext) {
     new CompositeStructure(ctx, fields)
   }
 
-
   def idToParaName(id: TypeId): Term.Name = Term.Name(ctx.typespace.tools.idToParaName(id))
 
   def makeParams(t: ConverterDef): Params = {
-    val out = t.outerParams
-      .map {
-        f =>
-          /*
+    val out = t.outerParams.map {
+      f =>
+        /*
           ANYVAL:ERASURE
            this is a workaround for anyval/scala erasure issue.
            We prohibit to use DTOs directly in parameters and using mirrors instead
-            */
-          val source = f.sourceType match {
-            case s: DTOId =>
-              ctx.typespace.tools.defnId(s)
+         */
+        val source = f.sourceType match {
+          case s: DTOId =>
+            ctx.typespace.tools.defnId(s)
 
-            case o =>
-              o
-          }
+          case o =>
+            o
+        }
 
-          val scalaType = ctx.conv.toScala(source)
-          val name = Term.Name(f.sourceName)
+        val scalaType = ctx.conv.toScala(source)
+        val name = Term.Name(f.sourceName)
 
-          (f, source, (name, scalaType.typeFull))
-      }
+        (f, source, (name, scalaType.typeFull))
+    }
 
     // this allows us to get rid of "unused" warnings and do a good thing
     val assertions = out.map {
@@ -80,7 +78,6 @@ class ScalaTranslationTools(ctx: STContext) {
       case Some(sourceFieldName) =>
         q""" ${Term.Name(f.targetFieldName)} = ${Term.Name(f.source.sourceName)}.${Term.Name(sourceFieldName)}  """
 
-
       case None =>
         val sourceType = f.source.sourceType
 
@@ -98,6 +95,5 @@ class ScalaTranslationTools(ctx: STContext) {
         }
     }
   }
-
 
 }

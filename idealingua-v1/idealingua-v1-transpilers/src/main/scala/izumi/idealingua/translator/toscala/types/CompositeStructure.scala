@@ -5,7 +5,6 @@ import izumi.idealingua.translator.toscala.STContext
 
 import scala.meta._
 
-
 class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val t: ScalaType = ctx.conv.toScala(fields.id)
 
@@ -27,16 +26,15 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
       }
       .distinctBy(_._2.types) // a fix for synthetic cornercase: https://github.com/7mind/izumi/issues/334
       .map {
-      case (_, constructorSignature, fullConstructorCode) =>
-        val instantiator = q" new ${t.typeFull}(..$fullConstructorCode) "
+        case (_, constructorSignature, fullConstructorCode) =>
+          val instantiator = q" new ${t.typeFull}(..$fullConstructorCode) "
 
-        q"""def apply(..${constructorSignature.params}): ${t.typeFull} = {
+          q"""def apply(..${constructorSignature.params}): ${t.typeFull} = {
            ..${constructorSignature.assertion}
            $instantiator
          }"""
-    }
+      }
   }
-
 
   val decls: List[Term.Param] = fields.all.toParams
 

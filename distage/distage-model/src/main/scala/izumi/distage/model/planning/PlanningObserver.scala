@@ -20,4 +20,3 @@ trait PlanningObserver {
   def onPhase50PreForwarding(plan: SemiPlan): Unit = plan.discard()
   def onPhase90AfterForwarding(finalPlan: OrderedPlan): Unit = finalPlan.discard()
 }
-

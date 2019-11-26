@@ -40,8 +40,7 @@ trait IzJvm {
   private def extractCp(classLoader: Option[ClassLoader], cp: Seq[String]): Seq[String] = {
     val clCp = classLoader match {
       case Some(u: URLClassLoader) =>
-        u
-          .getURLs
+        u.getURLs
           .map(u => URLDecoder.decode(u.getFile, "UTF-8"))
           .toSeq
       case _ =>
@@ -68,10 +67,7 @@ trait IzJvm {
   }
 
   def baseClassloader: ClassLoader = {
-    Thread
-      .currentThread
-      .getContextClassLoader
-      .getParent
+    Thread.currentThread.getContextClassLoader.getParent
   }
 
   def safeClasspath(classLoader: ClassLoader): String = {

@@ -6,7 +6,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 
-trait GreeterServiceServer[Or[+ _, + _], C] {
+trait GreeterServiceServer[Or[+_, +_], C] {
   type Just[T] = Or[Nothing, T]
 
   def greet(ctx: C, name: String, surname: String): Just[String]
@@ -18,7 +18,7 @@ trait GreeterServiceServer[Or[+ _, + _], C] {
   def alternative(ctx: C): Or[Long, String]
 }
 
-trait GreeterServiceClient[Or[+ _, + _]] {
+trait GreeterServiceClient[Or[+_, +_]] {
   type Just[T] = Or[Nothing, T]
 
   def greet(name: String, surname: String): Just[String]
@@ -30,24 +30,30 @@ trait GreeterServiceClient[Or[+ _, + _]] {
   def alternative(): Or[Long, String]
 }
 
-class GreeterServiceClientWrapped[F[+ _, + _] : BIO](dispatcher: IRTDispatcher[F])
-  extends GreeterServiceClient[F] {
+class GreeterServiceClientWrapped[F[+_, +_]: BIO](dispatcher: IRTDispatcher[F]) extends GreeterServiceClient[F] {
 
   val R: BIO[F] = implicitly
   import izumi.r2.idealingua.test.generated.{GreeterServiceMethods => _M}
 
   override def greet(name: String, surname: String): R.Just[String] = {
-    R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))( { err => R.terminate(err) }, {
-      case IRTMuxResponse(IRTResBody(v: _M.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
-        R.pure(v.value)
-      case v =>
-        R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
-    })
+    R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.greet.Input(name, surname)), GreeterServiceMethods.greet.id)))(
+      {
+        err =>
+          R.terminate(err)
+      }, {
+        case IRTMuxResponse(IRTResBody(v: _M.greet.Output), method) if method == GreeterServiceMethods.greet.id =>
+          R.pure(v.value)
+        case v =>
+          R.terminate(new RuntimeException(s"wtf: $v, ${v.getClass}"))
+      }
+    )
   }
 
   override def alternative(): R.Or[Long, String] = {
-    R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id)))({
-        err => R.terminate(err)
+    R.redeem(dispatcher.dispatch(IRTMuxRequest(IRTReqBody(GreeterServiceMethods.alternative.Input()), GreeterServiceMethods.alternative.id)))(
+      {
+        err =>
+          R.terminate(err)
       }, {
         case IRTMuxResponse(IRTResBody(v), method) if method == GreeterServiceMethods.alternative.id =>
           v match {
@@ -60,7 +66,8 @@ class GreeterServiceClientWrapped[F[+ _, + _] : BIO](dispatcher: IRTDispatcher[F
           }
         case _ =>
           R.terminate(new RuntimeException())
-      })
+      }
+    )
   }
 
   override def sayhi(): R.Just[String] = ???
@@ -71,14 +78,13 @@ class GreeterServiceClientWrapped[F[+ _, + _] : BIO](dispatcher: IRTDispatcher[F
 object GreeterServiceClientWrapped extends IRTWrappedClient {
   val allCodecs: Map[IRTMethodId, IRTCirceMarshaller] = {
     Map(
-      GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet
-      , GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
+      GreeterServiceMethods.greet.id -> GreeterServerMarshallers.greet,
+      GreeterServiceMethods.alternative.id -> GreeterServerMarshallers.alternative
     )
   }
 }
 
-class GreeterServiceServerWrapped[F[+ _, + _] : BIO, C](service: GreeterServiceServer[F, C])
-  extends IRTWrappedService[F, C] {
+class GreeterServiceServerWrapped[F[+_, +_]: BIO, C](service: GreeterServiceServer[F, C]) extends IRTWrappedService[F, C] {
 
   val F: BIO[F] = implicitly
 
@@ -106,18 +112,15 @@ class GreeterServiceServerWrapped[F[+ _, + _] : BIO, C](service: GreeterServiceS
     }
   }
 
-
   override def serviceId: IRTServiceId = GreeterServiceMethods.serviceId
 
   val allMethods: Map[IRTMethodId, IRTMethodWrapper[F, C]] = {
     Seq(
-      greet
-      , alternative
-    )
-      .map(m => m.signature.id -> m).toMap
+      greet,
+      alternative
+    ).map(m => m.signature.id -> m).toMap
   }
 }
-
 
 object GreeterServiceMethods {
   val serviceId: IRTServiceId = IRTServiceId("GreeterService")
@@ -175,7 +178,6 @@ object GreeterServerMarshallers {
 
     import GreeterServiceMethods.greet._
 
-
     override def encodeRequest: PartialFunction[IRTReqBody, Json] = {
       case IRTReqBody(value: Input) => value.asJson
     }
@@ -184,12 +186,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
+    override def decodeRequest[Or[+_, +_]: BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
+    override def decodeResponse[Or[+_, +_]: BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }
@@ -207,12 +209,12 @@ object GreeterServerMarshallers {
       case IRTResBody(value: Output) => value.asJson
     }
 
-    override def decodeRequest[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
+    override def decodeRequest[Or[+_, +_]: BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTReqBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTReqBody](packet.as[Input].map(v => IRTReqBody(v)))
     }
 
-    override def decodeResponse[Or[+ _, + _] : BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
+    override def decodeResponse[Or[+_, +_]: BIO]: PartialFunction[IRTJsonBody, Or[DecodingFailure, IRTResBody]] = {
       case IRTJsonBody(m, packet) if m == id =>
         decoded[Or, IRTResBody](packet.as[Output].map(v => IRTResBody(v)))
     }

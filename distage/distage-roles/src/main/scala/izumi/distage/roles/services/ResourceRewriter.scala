@@ -15,9 +15,9 @@ import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.logstage.api.IzLogger
 
 class ResourceRewriter(
-                        logger: IzLogger,
-                        rules: RewriteRules,
-                      ) extends PlanningHook {
+  logger: IzLogger,
+  rules: RewriteRules,
+) extends PlanningHook {
 
   import ResourceRewriter._
   import RewriteResult._
@@ -65,7 +65,13 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, isSet: Boolean): RewriteResult = {
+  private def rewriteImpl[TGT: Tag](
+    convert: TGT => DIResource[Identity, TGT],
+    key: DIKey,
+    origin: SourceFilePosition,
+    implementation: ImplDef,
+    isSet: Boolean
+  ): RewriteResult = {
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
@@ -77,14 +83,16 @@ class ResourceRewriter(
               DontChange
 
             case _: ImplDef.InstanceImpl =>
-              logger.warn(s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit DIResource (define as function binding to force conversion)")
+              logger.warn(
+                s"Instance binding for $key defined at $origin is <:< ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized, because we assume it's defined for outer scope!!! Because it's not an explicit DIResource (define as function binding to force conversion)"
+              )
               DontChange
 
             case ImplDef.ProviderImpl(_, function) =>
               val newImpl = function.unsafeMap(resourceType, (instance: Any) => convert(instance.asInstanceOf[TGT]))
               ReplaceImpl(ImplDef.ProviderImpl(resourceType, newImpl))
 
-            case implDef@ImplDef.TypeImpl(_) =>
+            case implDef @ ImplDef.TypeImpl(_) =>
               val implTypeKey = DIKey.TypeKey(implType)
               val newKey = DIKey.IdKey(
                 tpe = implType,
@@ -92,7 +100,8 @@ class ResourceRewriter(
               )
 
               val parameter = {
-                val symbolInfo = SymbolInfo.Static(name = "x$1", finalResultType = implType, annotations = Nil, definingClass = implType, isByName = false, wasGeneric = false)
+                val symbolInfo =
+                  SymbolInfo.Static(name = "x$1", finalResultType = implType, annotations = Nil, definingClass = implType, isByName = false, wasGeneric = false)
                 val debugInfo = DependencyContext.ConstructorParameterContext(implType, symbolInfo)
                 Association.Parameter(context = debugInfo, name = "x$1", tpe = implType, wireWith = newKey, isByName = false, wasGeneric = false)
               }
@@ -115,7 +124,9 @@ class ResourceRewriter(
         implDef match {
           case _: ImplDef.EffectImpl =>
             if (implDef.implType <:< SafeType.get[TGT]) {
-              logger.error(s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using DIResource.fromAutoCloseable/fromExecutorService")
+              logger.error(
+                s"Effect entity $key defined at $origin is ${SafeType.get[TGT] -> "type"}, but it will NOT be finalized!!! You must explicitly wrap it into resource using DIResource.fromAutoCloseable/fromExecutorService"
+              )
             }
             DontChange
 

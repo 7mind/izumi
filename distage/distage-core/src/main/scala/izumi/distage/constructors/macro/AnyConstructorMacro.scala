@@ -9,7 +9,8 @@ import scala.reflect.macros.blackbox
 object AnyConstructorMacro {
   def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
 
-  def mkAnyConstructorUnsafeWeakSafeTypes[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, generateUnsafeWeakSafeTypes = true)
+  def mkAnyConstructorUnsafeWeakSafeTypes[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] =
+    mkAnyConstructorImpl[T](c, generateUnsafeWeakSafeTypes = true)
 
   def mkAnyConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[AnyConstructor[T]] = {
     import c.universe._
@@ -29,8 +30,8 @@ object AnyConstructorMacro {
       TraitConstructorMacro.mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
     } else {
       c.abort(
-        c.enclosingPosition
-        , s"""
+        c.enclosingPosition,
+        s"""
            |The impossible happened! Cannot generate implementation for class $safe!
            |Because it's neither a concrete class, nor a factory, nor a trait!
          """.stripMargin

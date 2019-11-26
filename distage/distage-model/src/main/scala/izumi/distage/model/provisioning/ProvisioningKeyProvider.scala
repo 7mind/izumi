@@ -21,6 +21,3 @@ trait ProvisioningKeyProvider {
 
   def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider
 }
-
-
-

@@ -26,8 +26,7 @@ trait WsClientContextProvider[Ctx] {
 /**
   * TODO: this is a naive client implementation, good for testing purposes but not mature enough for production usage
   */
-class ClientWsDispatcher[C <: Http4sContext]
-(
+class ClientWsDispatcher[C <: Http4sContext](
   val c: C#IMPL[C],
   protected val baseUri: URI,
   protected val codec: IRTClientMultiplexor[C#BiIO],
@@ -35,8 +34,8 @@ class ClientWsDispatcher[C <: Http4sContext]
   protected val wsClientContextProvider: WsClientContextProvider[C#ClientContext],
   logger: IzLogger,
   printer: Printer,
-)
-  extends IRTDispatcher[C#BiIO] with AutoCloseable {
+) extends IRTDispatcher[C#BiIO]
+  with AutoCloseable {
 
   import c._
 
@@ -63,16 +62,18 @@ class ClientWsDispatcher[C <: Http4sContext]
     }
   }
 
-
   private val connection = new AtomicReference[NettyWebSocket]()
 
   private def send(out: String): Unit = {
     import scala.jdk.CollectionConverters._
     connection.synchronized {
       if (connection.get() == null) {
-        connection.set(wsc.prepareGet(baseUri.toString)
-          .execute(new WebSocketUpgradeHandler(List(listener).asJava))
-          .get())
+        connection.set(
+          wsc
+            .prepareGet(baseUri.toString)
+            .execute(new WebSocketUpgradeHandler(List(listener).asJava))
+            .get()
+        )
       }
     }
     connection.get().sendTextFrame(out).discard()
@@ -111,7 +112,7 @@ class ClientWsDispatcher[C <: Http4sContext]
       case RpcPacket(RPCPacketKind.RpcResponse, Some(data), _, ref, _, _, _) =>
         requestState.handleResponse(ref, data)
 
-      case p@RpcPacket(RPCPacketKind.BuzzRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
+      case p @ RpcPacket(RPCPacketKind.BuzzRequest, Some(data), Some(id), _, Some(service), Some(method), _) =>
         val methodId = IRTMethodId(IRTServiceId(service), IRTMethodName(method))
         val packetInfo = PacketInfo(methodId, id)
 
@@ -159,7 +160,6 @@ class ClientWsDispatcher[C <: Http4sContext]
     }
   }
 
-
   import scala.concurrent.duration._
 
   protected val timeout: FiniteDuration = 2.seconds
@@ -188,23 +188,21 @@ class ClientWsDispatcher[C <: Http4sContext]
                 requestState.request(pid, request.method)
                 send(out)
                 pid
+              }.flatMap {
+                id =>
+                  requestState.poll(id, pollingInterval, timeout).flatMap {
+                    case Some(value: RawResponse.GoodRawResponse) =>
+                      logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                      codec.decode(value.data, value.method)
+
+                    case Some(value: RawResponse.BadRawResponse) =>
+                      logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
+                      F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
+
+                    case None =>
+                      F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
+                  }
               }
-                .flatMap {
-                  id =>
-                    requestState.poll(id, pollingInterval, timeout)
-                      .flatMap {
-                        case Some(value: RawResponse.GoodRawResponse) =>
-                          logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                          codec.decode(value.data, value.method)
-
-                        case Some(value: RawResponse.BadRawResponse) =>
-                          logger.debug(s"${request.method -> "method"}, $id: Have response: $value")
-                          F.fail(new IRTGenericFailure(s"${request.method -> "method"}, $id: generic failure: $value"))
-
-                        case None =>
-                          F.fail(new TimeoutException(s"${request.method -> "method"}, $id: No response in $timeout"))
-                      }
-                }
           }
       }
   }

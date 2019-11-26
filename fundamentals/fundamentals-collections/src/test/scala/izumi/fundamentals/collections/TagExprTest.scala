@@ -3,7 +3,6 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.tags.TagExpr
 import org.scalatest.WordSpec
 
-
 class TagExprTest extends WordSpec {
 
   "Tag expression evaluator" should {
@@ -11,16 +10,20 @@ class TagExprTest extends WordSpec {
       val xorExpr = TagExpr.Strings.one("a", "b")
       val notXorExpr = TagExpr.Strings.Not(xorExpr)
 
-      val abExpr = TagExpr.Strings.And(Set(
-        notXorExpr,
-        TagExpr.Strings.all("a", "b"),
-      ))
+      val abExpr = TagExpr.Strings.And(
+        Set(
+          notXorExpr,
+          TagExpr.Strings.all("a", "b"),
+        )
+      )
 
-      val expr = TagExpr.Strings.And(Set(
-        notXorExpr,
-        TagExpr.Strings.all("a", "b"),
-        TagExpr.Strings.any("x", "y")
-      ))
+      val expr = TagExpr.Strings.And(
+        Set(
+          notXorExpr,
+          TagExpr.Strings.all("a", "b"),
+          TagExpr.Strings.any("x", "y")
+        )
+      )
       assert(expr.toString == "(!(:a \\/ :b) && (:a && :b) && (:x || :y))")
 
       assert(TagExpr.Strings.TagDNF.toDNF(xorExpr).toString == "((!:a && :b) || (!:b && :a))")
@@ -42,7 +45,6 @@ class TagExprTest extends WordSpec {
       assert(TagExpr.Strings.all("a", "b").evaluate(Set("a", "b", "c")))
       assert(!TagExpr.Strings.all("a", "b").evaluate(Set("d")))
 
-
       assert(TagExpr.Strings.one("a", "b").evaluate(Set("a")))
       assert(!TagExpr.Strings.one("a", "b").evaluate(Set("a", "b")))
       assert(TagExpr.Strings.one("a", "b").evaluate(Set("a", "c")))
@@ -61,6 +63,5 @@ class TagExprTest extends WordSpec {
       assert((t"a" && t"b").evaluate(Set("a", "b")))
     }
   }
-
 
 }

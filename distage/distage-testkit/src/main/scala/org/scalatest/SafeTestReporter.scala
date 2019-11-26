@@ -11,7 +11,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   private var signalled: Option[TestMeta] = None
   private var openSuite: Option[SuiteData] = None
 
-
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()
     underlying.onFailure(f)
@@ -31,7 +30,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     Quirks.discard(id)
   }
 
-
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     testStatus match {
       case TestStatus.Scheduled =>
@@ -45,7 +43,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
             reportStatus(test, testStatus)
             signalled = Some(test)
         }
-
 
       case _: Ignored =>
         if (allOpen.isEmpty) {
@@ -90,16 +87,14 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     }
   }
 
-
   private def finish(): Unit = {
     val finishedTests = allOpen.collect({ case (t, s: Done) => (t, s) })
 
-    finishedTests
-      .foreach {
-        case (t, s) =>
-          reportStatus(t, TestStatus.Running)
-          finishTest(t, s)
-      }
+    finishedTests.foreach {
+      case (t, s) =>
+        reportStatus(t, TestStatus.Running)
+        finishTest(t, s)
+    }
   }
 
   private def finishTest(test: TestMeta, testStatus: TestStatus): Option[TestStatus] = {

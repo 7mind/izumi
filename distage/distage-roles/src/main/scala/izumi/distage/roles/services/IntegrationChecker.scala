@@ -33,10 +33,9 @@ object IntegrationChecker {
 
   class IntegrationCheckException(message: String, val failures: Seq[ResourceCheck.Failure]) extends DIException(message, null)
 
-  class Impl[F[_] : TagK](
-                           logger: IzLogger,
-                         ) extends IntegrationChecker[F] {
-
+  class Impl[F[_]: TagK](
+    logger: IzLogger,
+  ) extends IntegrationChecker[F] {
 
     override protected val tag: TagK[F] = implicitly[TagK[F]]
 
@@ -55,8 +54,7 @@ object IntegrationChecker {
       val bad = instances.collect { case (ick, None) => ick }
 
       if (bad.isEmpty) {
-        P
-          .parTraverse[IntegrationCheck, Either[ResourceCheck.Failure, Unit]](good)(runCheck)
+        P.parTraverse[IntegrationCheck, Either[ResourceCheck.Failure, Unit]](good)(runCheck)
           .flatMap {
             results =>
               results.collect({ case Left(failure) => failure }) match {
@@ -76,10 +74,10 @@ object IntegrationChecker {
         logger.debug(s"Checking $resource")
         try {
           resource.resourcesAvailable() match {
-            case failure@ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
+            case failure @ ResourceCheck.ResourceUnavailable(reason, Some(cause)) =>
               logger.debug(s"Integration check failed, $resource unavailable: $reason, $cause")
               Left(failure)
-            case failure@ResourceCheck.ResourceUnavailable(reason, None) =>
+            case failure @ ResourceCheck.ResourceUnavailable(reason, None) =>
               logger.debug(s"Integration check failed, $resource unavailable: $reason")
               Left(failure)
             case ResourceCheck.Success() =>

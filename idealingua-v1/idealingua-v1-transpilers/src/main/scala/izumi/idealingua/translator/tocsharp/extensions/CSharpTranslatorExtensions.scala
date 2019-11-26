@@ -58,10 +58,11 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
       case d: DTO => extensions.flatMap(ex => ex.imports(ctx, d))
       case i: Interface => extensions.flatMap(ex => ex.imports(ctx, i))
       case a: Adt => extensions.flatMap(ex => ex.imports(ctx, a))
-      case a: Alias => ts.dealias(a.id) match {
-        case _: Builtin => List.empty
-        case v => imports(ctx, ts.apply(v))
-      }
+      case a: Alias =>
+        ts.dealias(a.id) match {
+          case _: Builtin => List.empty
+          case v => imports(ctx, ts.apply(v))
+        }
       case _ => List.empty
     }
   }
@@ -75,11 +76,10 @@ class CSharpTranslatorExtensions(ctx: CSTContext, extensions: Seq[CSharpTranslat
     case _ => List.empty
   }
 
-  def postModuleEmit[S, P]
-  (
-    source: S
-    , entity: P
-    , entityTransformer: CSharpTranslatorExtension => (CSTContext, S, P) => P
+  def postModuleEmit[S, P](
+    source: S,
+    entity: P,
+    entityTransformer: CSharpTranslatorExtension => (CSTContext, S, P) => P
   ): P = {
     extensions.foldLeft(entity) {
       case (acc, v) =>

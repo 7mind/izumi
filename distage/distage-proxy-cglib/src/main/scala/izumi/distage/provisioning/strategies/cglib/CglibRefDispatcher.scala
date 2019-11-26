@@ -7,10 +7,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu
-protected[distage] class CglibRefDispatcher(val key: RuntimeDIUniverse.DIKey, nullProxy: AnyRef)
-  extends AtomicProxyDispatcher
-    with MethodInterceptor {
-
+protected[distage] class CglibRefDispatcher(val key: RuntimeDIUniverse.DIKey, nullProxy: AnyRef) extends AtomicProxyDispatcher with MethodInterceptor {
 
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
     val methodName = method.getName

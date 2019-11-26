@@ -51,7 +51,8 @@ object FileServiceImpl {
 
     override def beforeDelete(): Unit = {
       closeStream.foreach {
-        _ => Files.deleteIfExists(filePath)
+        _ =>
+          Files.deleteIfExists(filePath)
       }
     }
 

@@ -32,10 +32,10 @@ private[izumi] abstract class StringCodecFast {
   }
 
   def encodeFastArray(s: String, bb: ByteBuffer): Unit = {
-    val len     = s.length()
-    val buf     = bb.array()
-    var dst     = bb.arrayOffset() + bb.position()
-    var src     = 0
+    val len = s.length()
+    val buf = bb.array()
+    var dst = bb.arrayOffset() + bb.position()
+    var src = 0
     var c: Char = ' '
     // start by encoding ASCII only
     while ((src < len) && { c = s.charAt(src); c < 0x80 }) {
@@ -68,7 +68,7 @@ private[izumi] abstract class StringCodecFast {
   def encodeFastBuf(s: String, bb: ByteBuffer): Unit = {
     val len = s.length()
     // worst case scenario produces 3 bytes per character
-    var src     = 0
+    var src = 0
     var c: Char = ' '
     // start by encoding ASCII only
     while ((src < len) && { c = s.charAt(src); c < 0x80 }) {
@@ -97,10 +97,10 @@ private[izumi] abstract class StringCodecFast {
     * Faster decoding for array backed buffers
     */
   protected def decodeFastArray(len: Int, buf: ByteBuffer): String = {
-    val cp     = new Array[Char](len)
-    val src    = buf.array()
+    val cp = new Array[Char](len)
+    val src = buf.array()
     var offset = buf.arrayOffset() + buf.position()
-    var dst    = 0
+    var dst = 0
     while (dst < len) {
       val b = src(offset)
       offset += 1
@@ -126,8 +126,8 @@ private[izumi] abstract class StringCodecFast {
     * Decoding for normal non-array `ByteBuffer`
     */
   protected def decodeFastBuf(len: Int, buf: ByteBuffer): String = {
-    val cp  = new Array[Char](len)
-    var i   = 0
+    val cp = new Array[Char](len)
+    var i = 0
     var dst = 0
     while (dst < len) {
       val b = buf.get()

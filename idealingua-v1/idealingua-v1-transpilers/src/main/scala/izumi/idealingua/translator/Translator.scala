@@ -8,5 +8,3 @@ case class Translated(typespace: Typespace, modules: Seq[Module])
 trait Translator {
   def translate(): Translated
 }
-
-

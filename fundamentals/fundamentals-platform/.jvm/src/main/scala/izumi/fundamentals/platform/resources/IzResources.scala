@@ -22,33 +22,30 @@ class IzResources(clazz: Class[_]) {
 
   import IzResources._
 
-
   def jarResource[C: ClassTag](name: String): ResourceLocation = {
-    classLocationUrl[C]()
-      .flatMap {
-        url =>
-          val location = Paths.get(url.toURI)
-          val locFile = location.toFile
-          val resolved = location.resolve(name)
-          val resolvedFile = resolved.toFile
+    classLocationUrl[C]().flatMap {
+      url =>
+        val location = Paths.get(url.toURI)
+        val locFile = location.toFile
+        val resolved = location.resolve(name)
+        val resolvedFile = resolved.toFile
 
-          if (locFile.exists() && locFile.isFile) { // read from jar
-            val jar = new JarFile(locFile)
+        if (locFile.exists() && locFile.isFile) { // read from jar
+          val jar = new JarFile(locFile)
 
-            Option(jar.getEntry(name)) match {
-              case Some(entry) =>
-                Some(ResourceLocation.Jar(locFile, jar, entry))
-              case None =>
-                jar.close()
-                None
-            }
-          } else if (resolvedFile.exists()) {
-            Some(ResourceLocation.Filesystem(resolvedFile))
-          } else {
-            None
+          Option(jar.getEntry(name)) match {
+            case Some(entry) =>
+              Some(ResourceLocation.Jar(locFile, jar, entry))
+            case None =>
+              jar.close()
+              None
           }
-      }
-      .getOrElse(ResourceLocation.NotFound)
+        } else if (resolvedFile.exists()) {
+          Some(ResourceLocation.Filesystem(resolvedFile))
+        } else {
+          None
+        }
+    }.getOrElse(ResourceLocation.NotFound)
   }
 
   def classLocationUrl[C: ClassTag](): Option[URL] = {
@@ -104,9 +101,9 @@ class IzResources(clazz: Class[_]) {
           val target = targetDir.resolve(jarPath.relativize(file).toString)
           targets += target
           Files.copy(
-            file
-            , target
-            , StandardCopyOption.REPLACE_EXISTING
+            file,
+            target,
+            StandardCopyOption.REPLACE_EXISTING
           )
           FileVisitResult.CONTINUE
         }
@@ -145,7 +142,6 @@ class IzResources(clazz: Class[_]) {
 
     ContentIterator(targets.toSeq)
   }
-
 
   def read(fileName: String): Option[InputStream] = {
     Option(clazz.getClassLoader.getResourceAsStream(fileName))

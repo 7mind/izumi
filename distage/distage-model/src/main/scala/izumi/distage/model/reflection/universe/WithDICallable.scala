@@ -5,14 +5,7 @@ import izumi.distage.model.plan.{WithDIAssociation, WithDIWiring}
 import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
 
 trait WithDICallable {
-  this: DIUniverseBase
-    with WithDISafeType
-    with WithTags
-    with WithDITypedRef
-    with WithDIKey
-    with WithDISymbolInfo
-    with WithDIAssociation
-    with WithDIWiring =>
+  this: DIUniverseBase with WithDISafeType with WithTags with WithDITypedRef with WithDIKey with WithDISymbolInfo with WithDIAssociation with WithDIWiring =>
 
   trait Callable {
     def argTypes: Seq[SafeType]
@@ -40,11 +33,10 @@ trait WithDICallable {
         args
       } else {
         throw new UnsafeCallArgsMismatched(
-          message =
-            s"""Mismatched arguments for unsafe call:
-               | ${if (!typesOk) "Wrong types!" else ""}
-               | ${if (!countOk) s"Expected number of arguments ${argTypes.size}, but got ${refs.size}" else ""}
-               |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${args.mkString(",")})""".stripMargin,
+          message = s"""Mismatched arguments for unsafe call:
+                       | ${if (!typesOk) "Wrong types!" else ""}
+                       | ${if (!countOk) s"Expected number of arguments ${argTypes.size}, but got ${refs.size}" else ""}
+                       |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${args.mkString(",")})""".stripMargin,
           expected = argTypes,
           actual = types,
           actualValues = args,
@@ -69,10 +61,10 @@ trait WithDICallable {
   object Provider {
 
     case class ProviderImpl[+A](
-                                 associations: Seq[Association.Parameter],
-                                 ret: SafeType,
-                                 fun: Seq[Any] => Any,
-                               ) extends Provider {
+      associations: Seq[Association.Parameter],
+      ret: SafeType,
+      fun: Seq[Any] => Any,
+    ) extends Provider {
 
       override final def unsafeApply(refs: TypedRef[_]*): A =
         super.unsafeApply(refs: _*).asInstanceOf[A]
@@ -83,10 +75,10 @@ trait WithDICallable {
       override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
         ProviderImpl(
           associations ++ that.associations,
-          newRet,
-          { args0 =>
-            val (args1, args2) = args0.splitAt(arity)
-            fun(args1) -> that.fun(args2)
+          newRet, {
+            args0 =>
+              val (args1, args2) = args0.splitAt(arity)
+              fun(args1) -> that.fun(args2)
           },
         )
     }
@@ -124,6 +116,7 @@ trait WithDICallable {
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message, null)
 
-  class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider) extends DIException(message, null)
+  class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider)
+    extends DIException(message, null)
 
 }

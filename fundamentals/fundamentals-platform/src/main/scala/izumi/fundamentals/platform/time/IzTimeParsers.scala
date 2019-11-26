@@ -17,4 +17,3 @@ final class IzTimeParsers(private val s: String) extends AnyVal {
 
   def toTsZ: ZonedDateTime = ZonedDateTime.parse(s, ISO_DATE_TIME_3NANO)
 }
-

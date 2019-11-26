@@ -29,7 +29,7 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     val plan = injector.plan(PlannerInput.noGc(new ModuleDef {
       make[JustTrait].from[Impl1]
       make[OptionT[scala.Either[Nothing, ?], Unit]].from(OptionT[Either[Nothing, ?], Unit](Right(None)))
-      make[K1[T1]].from(new K1[T1]{})
+      make[K1[T1]].from(new K1[T1] {})
       make[W1.T2]
       make[W2.T2]
     }))
@@ -41,4 +41,3 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     assert(formatted.contains("{type.CompactPlanFormatterTest::W1::izumi.distage.injector.CompactPlanFormatterTest.W1.T2}"))
   }
 }
-

@@ -9,12 +9,12 @@ object Fixture {
   trait Dummy
 
   case class TestServiceConf(
-                              intval: Int,
-                              strval: String,
-                              overridenInt: Int,
-                              systemPropInt: Int,
-                              systemPropList: List[Int],
-                            )
+    intval: Int,
+    strval: String,
+    overridenInt: Int,
+    systemPropInt: Int,
+    systemPropList: List[Int],
+  )
 
   class InitCounter {
     val startedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()

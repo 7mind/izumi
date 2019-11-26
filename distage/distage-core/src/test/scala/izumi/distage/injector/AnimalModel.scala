@@ -5,23 +5,24 @@ import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import distage._
 import org.scalatest.WordSpec
 
-
-
 class AnimalModel extends WordSpec with MkInjector {
   "animal model" must {
     "produce valid plans" in {
       import AnimalModel._
-      val definition = PlannerInput(new ModuleDef {
-        make[Cluster]
-        make[UserRepo].from[UserRepoImpl]
-        make[AccountsRepo].from[AccountsRepoImpl]
-        make[UsersService].from[UserServiceImpl]
-        make[AccountingService].from[AccountingServiceImpl]
-        make[UsersApiImpl]
-        make[AccountsApiImpl]
-        make[UnrequiredDep]
-        make[App]
-      }, GCMode(DIKey.get[App]))
+      val definition = PlannerInput(
+        new ModuleDef {
+          make[Cluster]
+          make[UserRepo].from[UserRepoImpl]
+          make[AccountsRepo].from[AccountsRepoImpl]
+          make[UsersService].from[UserServiceImpl]
+          make[AccountingService].from[AccountingServiceImpl]
+          make[UsersApiImpl]
+          make[AccountsApiImpl]
+          make[UnrequiredDep]
+          make[App]
+        },
+        GCMode(DIKey.get[App])
+      )
 
       val debug = false
 
@@ -66,4 +67,3 @@ object AnimalModel {
   class AccountsApiImpl(val service: AccountingService, val usersApi: UsersApiImpl)
   class App(val uapi: UsersApiImpl, val aapi: AccountsApiImpl)
 }
-

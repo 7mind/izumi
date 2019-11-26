@@ -18,11 +18,11 @@ trait RoleProvider[F[_]] {
 
 object RoleProvider {
 
-  class Impl[F[_] : TagK](
-                           logger: IzLogger,
-                           requiredRoles: Set[String],
-                           mirrorProvider: MirrorProvider,
-                         ) extends RoleProvider[F] {
+  class Impl[F[_]: TagK](
+    logger: IzLogger,
+    requiredRoles: Set[String],
+    mirrorProvider: MirrorProvider,
+  ) extends RoleProvider[F] {
 
     def getInfo(bindings: Seq[Binding]): RolesInfo = {
       val availableBindings = getRoles(bindings)

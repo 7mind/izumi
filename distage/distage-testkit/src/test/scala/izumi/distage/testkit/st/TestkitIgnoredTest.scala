@@ -9,7 +9,7 @@ import izumi.distage.testkit.st.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 import distage.TagK
 
-abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
+abstract class TestkitIgnoredTest[F[_]: TagK] extends TestkitSelftest[F] {
   override protected def pluginPackages: Seq[String] = thisPackage
 
   "testkit" must {
@@ -31,7 +31,6 @@ abstract class TestkitIgnoredTest[F[_] : TagK] extends TestkitSelftest[F] {
     ignoreThisTest() // and here we may conditionally ignore the tests or even use
   }
 }
-
 
 class TestkitIgnoredTestIO extends TestkitIgnoredTest[IO]
 

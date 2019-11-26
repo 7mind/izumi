@@ -4,12 +4,12 @@ import izumi.functional.bio.{BIO, BIOExit, F}
 import izumi.fundamentals.platform.language.Quirks
 import io.circe.Json
 
-trait ContextExtender[B[+ _, + _], Ctx, Ctx2] {
+trait ContextExtender[B[+_, +_], Ctx, Ctx2] {
   def extend(context: Ctx, body: Json): Ctx2
 }
 
 object ContextExtender {
-  def id[B[+ _, + _], Ctx]: ContextExtender[B, Ctx, Ctx] = new ContextExtender[B, Ctx, Ctx] {
+  def id[B[+_, +_], Ctx]: ContextExtender[B, Ctx, Ctx] = new ContextExtender[B, Ctx, Ctx] {
     override def extend(context: Ctx, body: Json): Ctx = {
       Quirks.discard(body)
       context
@@ -17,7 +17,7 @@ object ContextExtender {
   }
 }
 
-class IRTServerMultiplexor[F[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[F, C2]], extender: ContextExtender[F, C, C2]) {
+class IRTServerMultiplexor[F[+_, +_]: BIO, C, C2](list: Set[IRTWrappedService[F, C2]], extender: ContextExtender[F, C, C2]) {
   val services: Map[IRTServiceId, IRTWrappedService[F, C2]] = list.map(s => s.serviceId -> s).toMap
 
   def doInvoke(parsedBody: Json, context: C, toInvoke: IRTMethodId): F[Throwable, Option[Json]] = {

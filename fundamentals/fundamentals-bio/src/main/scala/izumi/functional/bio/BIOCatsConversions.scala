@@ -114,18 +114,25 @@ object BIOCatsConversions {
     }
   }
 
-  class BIOCatsMonadError[F[+_, +_], E](override val F: BIOMonadError[F]) extends BIOCatsMonad[F, E](F) with BIOCatsApplicativeError[F, E] with cats.MonadError[F[E, ?], E]
+  class BIOCatsMonadError[F[+_, +_], E](override val F: BIOMonadError[F])
+    extends BIOCatsMonad[F, E](F)
+    with BIOCatsApplicativeError[F, E]
+    with cats.MonadError[F[E, ?], E]
 
   class BIOCatsBracket[F[+_, +_]](override val F: BIOPanic[F]) extends BIOCatsMonadError[F, Throwable](F) with cats.effect.Bracket[F[Throwable, ?], Throwable] {
 
-    @inline override final def bracketCase[A, B](acquire: F[Throwable, A])(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
+    @inline override final def bracketCase[A, B](
+      acquire: F[Throwable, A]
+    )(use: A => F[Throwable, B])(release: (A, ExitCase[Throwable]) => F[Throwable, Unit]): F[Throwable, B] = {
       F.bracketCase[Throwable, A, B](acquire)(
-        (a, e) => F.orTerminate {
-          release(a, e match {
-            case BIOExit.Success(_) => ExitCase.Completed
-            case value: BIOExit.Failure[Throwable] => ExitCase.Error(value.toThrowable)
-          })
-        })(use)
+        (a, e) =>
+          F.orTerminate {
+            release(a, e match {
+              case BIOExit.Success(_) => ExitCase.Completed
+              case value: BIOExit.Failure[Throwable] => ExitCase.Error(value.toThrowable)
+            })
+          }
+      )(use)
     }
 
     @inline override final def bracket[A, B](acquire: F[Throwable, A])(use: A => F[Throwable, B])(release: A => F[Throwable, Unit]): F[Throwable, B] = {
@@ -141,7 +148,8 @@ object BIOCatsConversions {
   class BIOCatsAsync[F[+_, +_]](override val F: BIOAsync[F]) extends BIOCatsSync[F](F) with cats.effect.Async[F[Throwable, ?]] {
     @inline override final def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[Throwable, A] = F.async(k)
     @inline override final def asyncF[A](k: (Either[Throwable, A] => Unit) => F[Throwable, Unit]): F[Throwable, A] = F.asyncF(k)
-    @inline override def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] = Concurrent.liftIO(ioa)(new BIOCatsConcurrent[F](F, null)) // Concurrent.liftIO uses only F.cancelable, not fork
+    @inline override def liftIO[A](ioa: cats.effect.IO[A]): F[Throwable, A] =
+      Concurrent.liftIO(ioa)(new BIOCatsConcurrent[F](F, null)) // Concurrent.liftIO uses only F.cancelable, not fork
     @inline override final def never[A]: F[Throwable, A] = F.never
   }
 
@@ -149,7 +157,10 @@ object BIOCatsConversions {
     @inline override final def start[A](fa: F[Throwable, A]): F[Throwable, Fiber[F[Throwable, *], A]] = {
       F.map(Fork.fork(fa))(_.toCats(F))
     }
-    @inline override final def racePair[A, B](fa: F[Throwable, A], fb: F[Throwable, B]): F[Throwable, Either[(A, Fiber[F[Throwable, *], B]), (Fiber[F[Throwable, *], A], B)]] = {
+    @inline override final def racePair[A, B](
+      fa: F[Throwable, A],
+      fb: F[Throwable, B]
+    ): F[Throwable, Either[(A, Fiber[F[Throwable, *], B]), (Fiber[F[Throwable, *], A], B)]] = {
       F.map(F.racePair(fa, fb)) {
         case Left((a, f)) => Left((a, f.toCats(F)))
         case Right((f, b)) => Right((f.toCats(F), b))
