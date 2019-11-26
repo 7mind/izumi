@@ -35,8 +35,6 @@ final class PlannerDefaultImpl
     if (roots.isEmpty) {
       OrderedPlan.empty
     } else {
-      println(roots)
-      println(plan.index.keySet)
       assert(roots.diff(plan.index.keySet).isEmpty)
       val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
       OrderedPlan(collected.nodes, GCMode.GCRoots(roots), analyzer.topology(collected.nodes))

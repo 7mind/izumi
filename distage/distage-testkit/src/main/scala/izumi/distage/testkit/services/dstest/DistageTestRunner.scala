@@ -79,7 +79,7 @@ class DistageTestRunner[F[_] : TagK]
 
         logger.info(s"Memoized components in env $sharedKeys")
 
-        val shared = injector.trisectByPredicate(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 

@@ -8,7 +8,7 @@ import izumi.distage.model.{Planner, PlannerInput}
 
 trait PlanSplitter {
   this: Planner =>
-  final def trisectByPredicate(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
+  final def trisectByKeys(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     val rewritten = rewrite(appModule)
     val basePlan = toSubplanNoRewrite(rewritten, primaryRoots)
 
@@ -18,10 +18,8 @@ trait PlanSplitter {
   }
 
   final def trisectByRoots(appModule: ModuleBase, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
-    val basePlan = toSubplanNoRewrite(appModule, primaryRoots)
-    trisect(appModule, basePlan, primaryRoots, subplanRoots)
+    trisectByKeys(appModule, primaryRoots)(_ => subplanRoots)
   }
-
 
   private final def trisect(appModule: ModuleBase, baseplan: OrderedPlan, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
     assert(primaryRoots.diff(baseplan.keys).isEmpty)
