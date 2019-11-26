@@ -2,6 +2,7 @@ package izumi.idealingua.translator.toscala.types
 
 import izumi.idealingua.model.il.ast.typed.Interfaces
 import izumi.idealingua.translator.toscala.STContext
+import izumi.fundamentals.collections.IzCollections._
 
 import scala.meta._
 
@@ -16,7 +17,6 @@ class CompositeStructure(ctx: STContext, val fields: ScalaStruct) {
   val constructors: List[Defn.Def] = {
     val struct = fields.fields
 
-    import izumi.fundamentals.collections.IzCollections._
     ctx.typespace.structure
       .constructors(struct)
       .map {

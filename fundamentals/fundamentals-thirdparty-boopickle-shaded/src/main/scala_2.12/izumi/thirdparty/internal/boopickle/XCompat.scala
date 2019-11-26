@@ -1,8 +1,7 @@
 package izumi.thirdparty.internal.boopickle
 
-import Constants.NullRef
+import izumi.thirdparty.internal.boopickle.Constants.NullRef
 
-import collection.generic.CanBuildFrom
 import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
 
