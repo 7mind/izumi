@@ -1,9 +1,10 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.impl
 
 import cats.Applicative
 import cats.kernel.Monoid
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 

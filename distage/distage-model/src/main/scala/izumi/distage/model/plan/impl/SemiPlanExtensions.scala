@@ -1,11 +1,12 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.impl
 
 import cats.Applicative
 import cats.kernel.Monoid
 import izumi.distage.model.GCMode
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.plan.SemiPlanExtensions.SemiPlanExts
-import izumi.distage.model.plan.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl1 }
+import izumi.distage.model.plan.SemiPlan
+import izumi.distage.model.plan.impl.SemiPlanExtensions.SemiPlanExts
+import izumi.distage.model.plan.impl.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl1}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
 
 import scala.language.implicitConversions

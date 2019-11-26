@@ -1,9 +1,9 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.impl
 
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
-
 
 trait AbstractPlanOps {
   private[plan] def resolveImports[OpType <: ExecutableOp](f: PartialFunction[ImportDependency, Seq[OpType]], steps: Vector[OpType]): Vector[ExecutableOp] =

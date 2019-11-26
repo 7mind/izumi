@@ -1,16 +1,16 @@
 package izumi.distage.planning
 
+import distage.DIKey
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.SymbolIntrospector
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
-import distage.DIKey
-import izumi.distage.model.definition.ModuleBase
 
 final class PlannerDefaultImpl
 (

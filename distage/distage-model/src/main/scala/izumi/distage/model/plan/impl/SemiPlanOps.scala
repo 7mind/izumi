@@ -1,11 +1,12 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
+import izumi.distage.model.plan.{AbstractPlan, SemiPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
 
 trait SemiPlanOps {
   this: SemiPlan =>

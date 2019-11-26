@@ -1,7 +1,8 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
+import izumi.distage.model.plan.{AbstractPlan, OrderedPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 trait OrderedPlanOps {
