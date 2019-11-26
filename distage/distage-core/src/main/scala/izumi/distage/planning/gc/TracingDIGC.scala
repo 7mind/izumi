@@ -1,8 +1,7 @@
 package izumi.distage.planning.gc
 
-import izumi.distage.model.GCMode
 import izumi.distage.model.plan.ExecutableOp._
-import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, GCMode, SemiPlan}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.graphs.AbstractGCTracer

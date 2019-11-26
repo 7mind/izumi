@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit
 import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
-import izumi.distage.model.{Locator, TriSplittedPlan}
+import izumi.distage.model.Locator
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}

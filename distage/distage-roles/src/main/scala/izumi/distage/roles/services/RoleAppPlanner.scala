@@ -1,10 +1,9 @@
 package izumi.distage.roles.services
 
 import distage.{BootstrapModule, DIKey, Injector, TagK, _}
-import izumi.distage.model.TriSplittedPlan
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans

@@ -1,9 +1,8 @@
 package izumi.distage.model.plan.impl
 
 import cats.Applicative
-import izumi.distage.model.GCMode
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.{ExecutableOp, GCMode, OrderedPlan, SemiPlan}
 import izumi.distage.model.plan.impl.OrderedPlanExtensions.{OrderedPlanExts, OrderedPlanSyntax}
 import SemiPlanOrderedPlanInstances.resolveImportsImpl
 import izumi.distage.model.plan.repr.{CompactPlanFormatter, DepTreeRenderer}

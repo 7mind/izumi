@@ -2,13 +2,13 @@ package izumi.distage.injector
 
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
-import izumi.distage.model.GCMode
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import distage.{DIKey, Id, ModuleDef, PlannerInput}
+import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 

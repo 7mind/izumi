@@ -23,8 +23,8 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type Producer = model.Producer
 
-  override type GCMode = model.GCMode
-  override val GCMode: model.GCMode.type = model.GCMode
+  override type GCMode = model.plan.GCMode
+  override val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 

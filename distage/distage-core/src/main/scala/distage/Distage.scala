@@ -25,8 +25,8 @@ trait Distage {
   type Locator = model.Locator
   type Producer = model.Producer
 
-  type GCMode = model.GCMode
-  val GCMode: model.GCMode.type = model.GCMode
+  type GCMode = model.plan.GCMode
+  val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 

@@ -1,6 +1,5 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.GCMode
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.impl.{AbstractPlanOps, OrderedPlanExtensions, OrderedPlanOps, PlanLazyOps, SemiPlanExtensions, SemiPlanOps}

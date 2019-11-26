@@ -4,9 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
-import izumi.distage.model.GCMode
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
-import izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
+import izumi.distage.model.plan.{GCMode, OrderedPlan => _, SemiPlan => _, _}
 import izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot

@@ -1,8 +1,8 @@
 package izumi.distage.model.plan.initial
 
-import izumi.distage.model.GCMode
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.plan.GCMode
 import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.ImmutableMultiMap
