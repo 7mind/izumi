@@ -37,11 +37,11 @@ private[plan] object OrderedPlanExtensions {
     import cats.syntax.functor._
     import cats.syntax.traverse._
 
-    def traverse[F[_] : Applicative](f: SemiplanOp => F[SemiplanOp]): F[SemiPlan] =
-      plan.toSemi.steps.traverse(f).map(SemiPlan(_, plan.gcMode))
+    def traverse[F[_] : Applicative](f: ExecutableOp => F[SemiplanOp]): F[SemiPlan] =
+      plan.steps.traverse(f).map(SemiPlan(_, plan.gcMode))
 
-    def flatMapF[F[_] : Applicative](f: SemiplanOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
-      plan.toSemi.steps.traverse(f).map(s => SemiPlan(s.flatten, plan.gcMode))
+    def flatMapF[F[_] : Applicative](f: ExecutableOp => F[Seq[SemiplanOp]]): F[SemiPlan] =
+      plan.steps.traverse(f).map(s => SemiPlan(s.flatten, plan.gcMode))
 
     def resolveImportF[T]: ResolveImportFOrderedPlanPartiallyApplied[T] = new ResolveImportFOrderedPlanPartiallyApplied(plan)
 
