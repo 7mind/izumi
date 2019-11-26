@@ -38,15 +38,15 @@ class PlanOperationsTest extends WordSpec with MkInjector {
         sub
     }
 
-    assert(Set(sc0, sc1, sc2).diff(split.shared.plan.index.keySet).isEmpty)
+    assert(Set(sc0, sc1, sc2).diff(split.shared.index.keySet).isEmpty)
 
-    assert((primary ++ sub).intersect(split.shared.plan.index.keySet).isEmpty)
-    assert(primary.intersect(split.side.plan.index.keySet).isEmpty)
-    assert(sub.intersect(split.primary.plan.index.keySet).isEmpty)
+    assert((primary ++ sub).intersect(split.shared.index.keySet).isEmpty)
+    assert(primary.intersect(split.side.index.keySet).isEmpty)
+    assert(sub.intersect(split.primary.index.keySet).isEmpty)
 
-    assert(split.primary.plan.index.keySet.intersect(split.side.plan.index.keySet) == Set(sc2))
-    assert(split.primary.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set(sc2))
-    assert(split.side.plan.index.keySet.intersect(split.shared.plan.index.keySet) == Set(sc2))
+    assert(split.primary.index.keySet.intersect(split.side.index.keySet) == Set(sc2))
+    assert(split.primary.index.keySet.intersect(split.shared.index.keySet) == Set(sc2))
+    assert(split.side.index.keySet.intersect(split.shared.index.keySet) == Set(sc2))
   }
 
 
@@ -64,9 +64,9 @@ class PlanOperationsTest extends WordSpec with MkInjector {
 
     val split = injector.trisectByKeys(definition.bindings, primary)(_ => sub)
 
-    val sideIndex = split.side.plan.index
-    val primaryIndex = split.primary.plan.index
-    val sharedIndex = split.shared.plan.index
+    val sideIndex = split.side.index
+    val primaryIndex = split.primary.index
+    val sharedIndex = split.shared.index
 
     assert(primaryIndex.keySet.intersect(sideIndex.keySet).intersect(sharedIndex.keySet) == Set(icKey))
 

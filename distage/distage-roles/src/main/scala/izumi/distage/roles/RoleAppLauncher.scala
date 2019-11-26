@@ -91,7 +91,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val appModule = moduleProvider.appModules().merge overridenBy defApp overridenBy appOverride
     val planner = makePlanner(options, bsModule, activation, lateLogger)
     val appPlan = planner.makePlan(roots, appModule)
-    lateLogger.info(s"Planning finished. ${appPlan.app.primary.plan.keys.size -> "main ops"}, ${appPlan.app.side.plan.keys.size -> "integration ops"}, ${appPlan.app.shared.plan.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
+    lateLogger.info(s"Planning finished. ${appPlan.app.primary.keys.size -> "main ops"}, ${appPlan.app.side.keys.size -> "integration ops"}, ${appPlan.app.shared.keys.size -> "shared ops"}, ${appPlan.runtime.keys.size -> "runtime ops"}")
 
     val injector = appPlan.injector
     val r = makeExecutor(parameters, roles, lateLogger, makeStartupExecutor(lateLogger, injector))

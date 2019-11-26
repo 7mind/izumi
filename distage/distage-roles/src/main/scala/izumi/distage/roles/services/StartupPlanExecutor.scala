@@ -41,21 +41,21 @@ object StartupPlanExecutor {
 
             runner.run {
               Injector.inherit(runtimeLocator)
-                .produceFX[F](appPlan.app.shared.plan, filters.filterF)
+                .produceFX[F](appPlan.app.shared, filters.filterF)
                 .use {
                   sharedLocator =>
 
 
                     Injector.inherit(sharedLocator)
-                      .produceFX[F](appPlan.app.side.plan, filters.filterF)
+                      .produceFX[F](appPlan.app.side, filters.filterF)
                       .use {
                         integrationLocator =>
-                          integrationChecker.checkOrFail(appPlan.app.side.roots, integrationLocator)
+                          integrationChecker.checkOrFail(appPlan.app.side.gcMode.toSet, integrationLocator)
                       }
                       .flatMap {
                         _ =>
                           Injector.inherit(sharedLocator)
-                            .produceFX[F](appPlan.app.primary.plan, filters.filterF)
+                            .produceFX[F](appPlan.app.primary, filters.filterF)
                             .use(doRun(_, effect))
                       }
                 }

@@ -56,16 +56,9 @@ object RoleAppPlanner {
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimePlan)
-      check.verify(appPlan.shared.plan)
-      check.verify(appPlan.side.plan)
-      check.verify(appPlan.primary.plan)
-
-//      import izumi.fundamentals.platform.strings.IzString._
-//      logger.error(s"${fullAppModule.bindings.niceList() -> "app module"}")
-//      logger.error(s"${runtimePlan.render() -> "runtime plan"}")
-//      logger.error(s"${appPlan.shared.plan.render() -> "shared plan"}")
-//      logger.error(s"${appPlan.side.plan.render() -> "integration plan"}")
-//      logger.error(s"${appPlan.primary.plan.render() -> "primary plan"}")
+      check.verify(appPlan.shared)
+      check.verify(appPlan.side)
+      check.verify(appPlan.primary)
 
       AppStartupPlans(
         runtimePlan,

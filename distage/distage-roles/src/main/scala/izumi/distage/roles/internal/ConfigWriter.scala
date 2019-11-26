@@ -136,14 +136,14 @@ class ConfigWriter[F[_] : DIEffect]
       getConfig(plan) getOrElse ConfigFactory.empty()
     }
 
-    if (plans.app.primary.plan.steps.exists(_.target == roleDIKey)) {
-      val cfg = getConfig(plans.app.primary.plan)
-        .orElse(getConfig(plans.app.shared.plan))
-        .orElse(getConfig(plans.app.side.plan))
+    if (plans.app.primary.steps.exists(_.target == roleDIKey)) {
+      val cfg = getConfig(plans.app.primary)
+        .orElse(getConfig(plans.app.shared))
+        .orElse(getConfig(plans.app.side))
 
       cfg
-        .map(_.withFallback(getConfigOrEmpty(plans.app.side.plan)))
-        .map(_.withFallback(getConfigOrEmpty(plans.app.shared.plan)))
+        .map(_.withFallback(getConfigOrEmpty(plans.app.side)))
+        .map(_.withFallback(getConfigOrEmpty(plans.app.shared)))
         .map(_.withFallback(getConfigOrEmpty(plans.runtime)))
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")

@@ -1,7 +1,6 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.plan.TriSplittedPlan.Subplan
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{Planner, PlannerInput}
@@ -31,10 +30,14 @@ trait PlanSplitter {
     val primplan = baseplan.replaceWithImports(sharedKeys)
     val subplan = extractedSubplan.replaceWithImports(sharedKeys)
 
+    assert(subplan.gcMode.toSet == subplanRoots)
+    assert(primplan.gcMode.toSet == primaryRoots)
+    assert(sharedPlan.gcMode.toSet == sharedKeys)
+
     TriSplittedPlan(
-      Subplan(subplan, subplanRoots),
-      Subplan(primplan, primaryRoots),
-      Subplan(sharedPlan, sharedKeys),
+      subplan,
+      primplan,
+      sharedPlan,
     )
   }
 

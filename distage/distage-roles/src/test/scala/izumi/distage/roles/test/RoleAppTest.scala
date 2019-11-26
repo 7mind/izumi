@@ -115,10 +115,10 @@ class RoleAppTest extends WordSpec
 
       val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared.plan).use {
-          Injector.inherit(_).produce(plans.app.side.plan).use {
+        Injector.inherit(_).produce(plans.app.shared).use {
+          Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side.roots, locator)
+              integrationChecker.checkOrFail(plans.app.side.gcMode.toSet, locator)
 
               assert(initCounter.startedCloseables.size == 3)
               assert(initCounter.checkedResources.size == 2)
@@ -150,10 +150,10 @@ class RoleAppTest extends WordSpec
 
       val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
       Injector().produce(plans.runtime).use {
-        Injector.inherit(_).produce(plans.app.shared.plan).use {
-          Injector.inherit(_).produce(plans.app.side.plan).use {
+        Injector.inherit(_).produce(plans.app.shared).use {
+          Injector.inherit(_).produce(plans.app.side).use {
             locator =>
-              integrationChecker.checkOrFail(plans.app.side.roots, locator)
+              integrationChecker.checkOrFail(plans.app.side.gcMode.toSet, locator)
 
               assert(initCounter.startedCloseables.size == 3)
               assert(initCounter.checkedResources.size == 2)
