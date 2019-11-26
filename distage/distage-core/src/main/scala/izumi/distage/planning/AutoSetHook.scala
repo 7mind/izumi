@@ -1,6 +1,7 @@
 package izumi.distage.planning
 
 import izumi.distage.model.definition.ImplDef
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
@@ -79,7 +80,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
 
     val newSteps = plan.steps.flatMap {
       // do not process top-level references to avoid duplicates (the target of reference will be included anyway)
-      case op @ (_: ExecutableOp.WiringOp.ReferenceKey | _: ExecutableOp.ProxyOp.InitProxy) =>
+      case op: ExecutableOp.WiringOp.ReferenceKey =>
         Seq(op)
 
       case op =>
@@ -97,7 +98,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
           case s: DIKey.SetElementKey if s.set == setKey =>
             Seq(op)
 
-          case _ if ExecutableOp.instanceType(op) <:< instanceType =>
+          case _ if op.instanceType <:< instanceType =>
             if (instanceType == setElementType) {
               newMembers += op.target
               Seq(op)
@@ -115,7 +116,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
     }
 
     val newSetKeys = ListSet.newBuilder.++=(newMembers).result()
-    val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, None)
+    val newSetOp = ExecutableOp.CreateSet(setKey, setKey.tpe, newSetKeys, OperationOrigin.Unknown)
 
     plan.copy(steps = newSteps :+ newSetOp)
   }

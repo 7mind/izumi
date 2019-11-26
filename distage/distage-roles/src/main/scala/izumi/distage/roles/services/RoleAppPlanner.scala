@@ -62,11 +62,11 @@ object RoleAppPlanner {
       check.verify(appPlan.primary.plan)
 
 //      import izumi.fundamentals.platform.strings.IzString._
-//      logger.info(s"${fullAppModule.bindings.niceList() -> "app module"}")
-//      logger.info(s"${runtimePlan.render() -> "runtime plan"}")
-//      logger.info(s"${appPlan.shared.plan.render() -> "shared plan"}")
-//      logger.info(s"${appPlan.side.plan.render() -> "integration plan"}")
-//      logger.info(s"${appPlan.primary.plan.render() -> "primary plan"}")
+//      logger.error(s"${fullAppModule.bindings.niceList() -> "app module"}")
+//      logger.error(s"${runtimePlan.render() -> "runtime plan"}")
+//      logger.error(s"${appPlan.shared.plan.render() -> "shared plan"}")
+//      logger.error(s"${appPlan.side.plan.render() -> "integration plan"}")
+//      logger.error(s"${appPlan.primary.plan.render() -> "primary plan"}")
 
       AppStartupPlans(
         runtimePlan,

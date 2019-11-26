@@ -29,7 +29,7 @@ class ClientDispatcher[C <: Http4sContext]
     codec.encode(request)
       .flatMap {
         encoded =>
-          val outBytes: Array[Byte] = printer.pretty(encoded).getBytes
+          val outBytes: Array[Byte] = printer.print(encoded).getBytes
           val req = buildRequest(baseUri, request, outBytes)
 
           logger.debug(s"${request.method -> "method"}: Prepared request $encoded")

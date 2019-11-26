@@ -1,9 +1,7 @@
 package izumi.distage.planning.gc
 
 import izumi.distage.model.GCMode
-import izumi.distage.model.definition.Module
-import izumi.distage.model.exceptions.UnsupportedOpException
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, MonadicOp, ProxyOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp._
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -11,15 +9,15 @@ import izumi.fundamentals.graphs.AbstractGCTracer
 
 import scala.collection.mutable
 
-class TracingDIGC
+class TracingDIGC[OpType <: ExecutableOp]
 (
   roots: Set[DIKey],
-  fullIndex: Map[DIKey, ExecutableOp],
+  fullIndex: Map[DIKey, SemiplanOp],
   override val ignoreMissingDeps: Boolean,
-) extends AbstractGCTracer[DIKey, ExecutableOp] {
+) extends AbstractGCTracer[DIKey, SemiplanOp] {
 
   @inline
-  override protected def extractDependencies(index: Map[DIKey, ExecutableOp], node: ExecutableOp): Set[DIKey] = {
+  override protected def extractDependencies(index: Map[DIKey, SemiplanOp], node: SemiplanOp): Set[DIKey] = {
     node match {
       case op: ExecutableOp.InstantiationOp =>
         op match {
@@ -47,8 +45,6 @@ class TracingDIGC
         }
       case _: ImportDependency =>
         Set.empty
-      case p: ProxyOp =>
-        throw new UnsupportedOpException(s"Garbage collector didn't expect a proxy operation; proxies can't exist at this stage", p)
     }
   }
 
@@ -100,7 +96,7 @@ class TracingDIGC
 
   override protected def isRoot(node: DIKey): Boolean = roots.contains(node)
 
-  override protected def id(node: ExecutableOp): DIKey = node.target
+  override protected def id(node: SemiplanOp): DIKey = node.target
 }
 
 object TracingDIGC extends DIGarbageCollector {
@@ -108,15 +104,9 @@ object TracingDIGC extends DIGarbageCollector {
     plan.gcMode match {
       case GCMode.GCRoots(roots) =>
         assert(roots.nonEmpty)
+
         val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
-
-        val updatedDefn = {
-          val oldDefn = plan.definition.bindings
-          val reachable = collected.reachable
-          Module.make(oldDefn.filter(reachable contains _.key))
-        }
-
-        SemiPlan(updatedDefn, collected.nodes, plan.gcMode)
+        SemiPlan(collected.nodes, plan.gcMode)
 
       case GCMode.NoGC =>
         plan

@@ -1,15 +1,16 @@
 package izumi.distage.bootstrap
 
-import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningObserver
 import izumi.fundamentals.platform.console.TrivialLogger
 
 class BootstrapPlanningObserver(logger: TrivialLogger) extends PlanningObserver {
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {
+  override def onSuccessfulStep(next: PrePlan): Unit = {
     doLog("Next Plan", next.toString)
   }
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {
+  override def onPhase00PlanCompleted(plan: PrePlan): Unit = {
 
   }
 

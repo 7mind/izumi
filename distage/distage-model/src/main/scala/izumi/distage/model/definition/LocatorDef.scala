@@ -11,6 +11,10 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.plan.topology.DependencyGraph
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
+import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe
@@ -51,17 +55,11 @@ trait LocatorDef
 
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
-        ReferenceInstance(key, Instance(key.tpe, value), None)
+        val origin = OperationOrigin.SyntheticBinding(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown))
+        ReferenceInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
-    val moduleDef = Module.make(
-      frozenInstances.map {
-        case IdentifiedRef(key, value) =>
-          Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown)
-      }.toSet
-    )
-
-    OrderedPlan(moduleDef, ops, GCMode.NoGC, topology)
+    OrderedPlan(ops, GCMode.NoGC, topology)
   }
 
   override def parent: Option[Locator] = None

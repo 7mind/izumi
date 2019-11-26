@@ -1,6 +1,6 @@
 package izumi.distage.roles.services
 
-import distage.{Injector, TagK}
+import distage.TagK
 import izumi.distage.model.Locator
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
@@ -21,7 +21,6 @@ object RoleAppExecutor {
   class Impl[F[_]: TagK](
                           hook: AppShutdownStrategy[F],
                           roles: RolesInfo,
-                          injector: Injector,
                           lateLogger: IzLogger,
                           parameters: RawAppArgs,
                           startupPlanExecutor: StartupPlanExecutor[F],

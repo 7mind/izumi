@@ -1,8 +1,8 @@
 package izumi.distage.provisioning
 
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.UnexpectedProvisionResultException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.NewObjectOp
 import izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -28,7 +28,7 @@ object FactoryTools {
     }
   }
 
-  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.SingletonWiring, binding: Option[Binding]): WiringOp =
+  def mkExecutableOp(key: RuntimeDIUniverse.DIKey, wiring: RuntimeDIUniverse.Wiring.SingletonWiring, binding: OperationOrigin): WiringOp =
     wiring match {
       case w: SingletonWiring.Constructor =>
         val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)

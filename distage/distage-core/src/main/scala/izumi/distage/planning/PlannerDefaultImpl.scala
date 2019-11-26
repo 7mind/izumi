@@ -1,16 +1,18 @@
 package izumi.distage.planning
 
+import distage.DIKey
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
-import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
+import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp}
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.SymbolIntrospector
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.functional.Value
 import izumi.fundamentals.graphs.Toposort
-import distage.DIKey
-import izumi.distage.model.definition.ModuleBase
 
 final class PlannerDefaultImpl
 (
@@ -45,7 +47,7 @@ final class PlannerDefaultImpl
     hook.hookDefinition(module)
   }
 
-  override def freeze(plan: DodgyPlan): SemiPlan = {
+  override def freeze(plan: PrePlan): SemiPlan = {
     Value(plan)
       .map(hook.phase00PostCompletion)
       .eff(planningObserver.onPhase00PlanCompleted)
@@ -54,12 +56,12 @@ final class PlannerDefaultImpl
   }
 
   // TODO: add tests
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    order(SemiPlan(a.definition ++ b.definition, (a.steps ++ b.steps).toVector, a.gcMode ++ b.gcMode))
+  override def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan = {
+    order(SemiPlan((a.toSemi.steps ++ b.toSemi.steps).toVector, a.gcMode ++ b.gcMode))
   }
 
-  override def prepare(input: PlannerInput): DodgyPlan = {
-      input.bindings.bindings.foldLeft(DodgyPlan.empty(input.bindings, input.mode)) {
+  override def prepare(input: PlannerInput): PrePlan = {
+      input.bindings.bindings.foldLeft(PrePlan.empty(input.bindings, input.mode)) {
       case (currentPlan, binding) =>
         Value(bindingTranslator.computeProvisioning(currentPlan, binding))
           .eff(sanityChecker.assertProvisionsSane)
@@ -103,19 +105,19 @@ final class PlannerDefaultImpl
       .filterKeys(k => !plan.index.contains(k))
       .map {
         case (missing, refs) =>
-          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).flatMap(_.origin)
-          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin)
+          val maybeFirstOrigin = refs.headOption.flatMap(key => plan.index.get(key)).map(_.origin.toSynthetic)
+          missing -> ImportDependency(missing, refs.toSet, maybeFirstOrigin.getOrElse(OperationOrigin.Unknown))
       }
       .toMap
 
     val allOps = (imports.values ++ plan.steps).toVector
     val roots = plan.gcMode.toSet
-    val missingRoots: Vector[ExecutableOp] = roots.diff(allOps.map(_.target).toSet).map {
+    val missingRoots = roots.diff(allOps.map(_.target).toSet).map {
       root =>
-        ImportDependency(root, Set.empty, None)
+        ImportDependency(root, Set.empty, OperationOrigin.Unknown)
     }.toVector
 
-    SemiPlan(plan.definition, missingRoots ++ allOps, plan.gcMode)
+    SemiPlan(missingRoots ++ allOps, plan.gcMode)
   }
 
   private[this] def reorderOperations(completedPlan: SemiPlan): OrderedPlan = {
@@ -161,8 +163,6 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: ProxyOp =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is proxy O_o: $keys", op)
         case op: InstantiationOp if !symbolIntrospector.canBeProxied(op.target.tpe) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
@@ -184,11 +184,11 @@ final class PlannerDefaultImpl
 
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
-    OrderedPlan(completedPlan.definition, sortedOps.toVector, completedPlan.gcMode, topology)
+    OrderedPlan(sortedOps.toVector, completedPlan.gcMode, topology)
   }
 
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
-    val fstoTpe = ExecutableOp.instanceType(fsto)
+    val fstoTpe = fsto.instanceType
     val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
     val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
     hasByName

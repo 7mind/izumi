@@ -1,4 +1,4 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.repr
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.collections.IzCollections._

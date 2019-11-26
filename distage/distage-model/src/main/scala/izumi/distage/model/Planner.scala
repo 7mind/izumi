@@ -2,6 +2,7 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
@@ -73,21 +74,35 @@ case class TriSplittedPlan(
                             shared: Subplan,
                           )
 
+object TriSplittedPlan {
+  implicit class TriPlanEx(split: TriSplittedPlan) {
+    def render(): String = {
+      import izumi.fundamentals.platform.strings.IzString._
+      Seq(
+        split.shared.plan.render().listing("Shared Plan"),
+        split.side.plan.render().listing("Side Plan"),
+        split.primary.plan.render().listing("Primary Plan"),
+      ).mkString("\n")
+    }
+  }
+
+}
+
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
 trait Planner {
   def plan(input: PlannerInput): OrderedPlan
 
-  def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan
+  def merge[OpType <: ExecutableOp](a: AbstractPlan[OpType], b: AbstractPlan[OpType]): OrderedPlan
 
   // plan lifecycle
   def planNoRewrite(input: PlannerInput): OrderedPlan
 
   def rewrite(module: ModuleBase): ModuleBase
 
-  def prepare(input: PlannerInput): DodgyPlan
+  def prepare(input: PlannerInput): PrePlan
 
-  def freeze(plan: DodgyPlan): SemiPlan
+  def freeze(plan: PrePlan): SemiPlan
 
   def finish(semiPlan: SemiPlan): OrderedPlan
 
@@ -95,7 +110,7 @@ trait Planner {
 
   final def triSplitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     val rewritten = rewrite(appModule)
-    val primaryPlan = toSubplanNoRewrite(appModule, primaryRoots)
+    val primaryPlan = toSubplanNoRewrite(rewritten, primaryRoots)
 
     // here we extract integration checks out of our shared components plan and build it
     val subplanRoots = extractSubRoots(primaryPlan)
@@ -115,12 +130,10 @@ trait Planner {
     val sharedPlan = toSubplanNoRewrite(appModule, sharedKeys)
 
     val noSharedComponentsModule = appModule.drop(sharedKeys)
-    val primplan = toSubplanNoRewrite(noSharedComponentsModule, primaryRoots)
-    val subModule = noSharedComponentsModule.drop(primplan.index.keySet)
-    val subplan = toSubplanNoRewrite(subModule, subplanRoots)
+    val primplan = extractedPrimaryPlan.replaceWithImports(sharedKeys)
 
-    //    val conflicts = primplan.index.keySet.intersect(subplan.index.keySet).filterNot(k => primplan.index(k).isInstanceOf[ExecutableOp.ImportDependency])
-    //    assert(conflicts.isEmpty, s"conflicts: ${conflicts}")
+    val subModule = noSharedComponentsModule.drop(primplan.index.keySet)
+    val subplan = extractedSubplan.replaceWithImports(sharedKeys)
 
     val sharedModule = appModule.preserveOnly(sharedPlan.index.keySet)
     val primModule = noSharedComponentsModule.drop(subplan.index.keySet)

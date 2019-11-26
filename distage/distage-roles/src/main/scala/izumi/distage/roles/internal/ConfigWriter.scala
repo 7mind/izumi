@@ -14,7 +14,6 @@ import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
@@ -72,7 +71,6 @@ class ConfigWriter[F[_] : DIEffect]
 
       try {
         writeConfig(options, versionedComponent, None, refConfig)
-
         minimizedConfig(refConfig, role)
           .foreach {
             cfg =>
@@ -139,7 +137,11 @@ class ConfigWriter[F[_] : DIEffect]
     }
 
     if (plans.app.primary.plan.steps.exists(_.target == roleDIKey)) {
-      getConfig(plans.app.primary.plan)
+      val cfg = getConfig(plans.app.primary.plan)
+        .orElse(getConfig(plans.app.shared.plan))
+        .orElse(getConfig(plans.app.side.plan))
+
+      cfg
         .map(_.withFallback(getConfigOrEmpty(plans.app.side.plan)))
         .map(_.withFallback(getConfigOrEmpty(plans.app.shared.plan)))
         .map(_.withFallback(getConfigOrEmpty(plans.runtime)))

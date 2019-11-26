@@ -1,14 +1,15 @@
 package izumi.distage.planning
 
-import izumi.distage.model.plan.{DodgyPlan, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningObserver
 
 final class PlanningObserverAggregate(planningObservers: Set[PlanningObserver]) extends PlanningObserver {
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {
+  override def onSuccessfulStep(next: PrePlan): Unit = {
     planningObservers.foreach(_.onSuccessfulStep(next))
   }
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {
+  override def onPhase00PlanCompleted(plan: PrePlan): Unit = {
     planningObservers.foreach(_.onPhase00PlanCompleted(plan))
   }
 

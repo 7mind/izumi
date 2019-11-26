@@ -21,8 +21,8 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
   implicit val diEffectParIdentity: DIEffectAsync[Identity] = {
     new DIEffectAsync[Identity] {
       override def parTraverse_[A](l: Iterable[A])(f: A => Unit): Unit = {
-
         parTraverse(l)(f)
+        ()
       }
       override def sleep(duration: FiniteDuration): Identity[Unit] = {
         Thread.sleep(duration.toMillis)

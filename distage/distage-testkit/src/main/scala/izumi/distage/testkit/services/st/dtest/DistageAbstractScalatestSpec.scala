@@ -12,13 +12,13 @@ import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
 import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
-import org.scalatest.exceptions.TestCanceledException
+import org.scalatest.TestCancellation
 
 import scala.language.implicitConversions
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
-    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function))))
+    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
   }
 }
 
@@ -154,7 +154,7 @@ object DistageAbstractScalatestSpec {
     }
 
     private def cancelNow() = {
-      throw new TestCanceledException("test skipped!", 0)
+      TestCancellation.cancel(Some("test skipped!"), None, 1)
     }
   }
 
@@ -204,7 +204,7 @@ object DistageAbstractScalatestSpec {
     }
 
     private def cancelNow() = {
-      throw new TestCanceledException("test skipped!", 0)
+      TestCancellation.cancel(Some("test skipped!"), None, 1)
     }
   }
 

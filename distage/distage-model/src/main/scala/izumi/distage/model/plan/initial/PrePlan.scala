@@ -1,18 +1,18 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.initial
 
 import izumi.distage.model.GCMode
 import izumi.distage.model.definition.{Binding, ModuleBase}
-import izumi.distage.model.plan.DodgyPlan._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp}
+import izumi.distage.model.plan.initial.PrePlan.{JustOp, SetOp, TraceableOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.ImmutableMultiMap
-import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.collections.IzCollections._
 
 import scala.collection.mutable
 
-final class DodgyPlan(
+final class PrePlan(
                        val definition: ModuleBase,
                        val gcMode: GCMode,
                      ) {
@@ -27,7 +27,7 @@ final class DodgyPlan(
     ops.map(_.key).toSet.size
   }
 
-  def append(b: Binding, op: NextOps): DodgyPlan = {
+  def append(b: Binding, op: NextOps): PrePlan = {
     Quirks.discard(b)
 
     op.provisions.foreach {
@@ -42,7 +42,7 @@ final class DodgyPlan(
   }
 }
 
-object DodgyPlan {
+object PrePlan {
   sealed trait TraceableOp {
     def key: DIKey
     def op: InstantiationOp
@@ -51,8 +51,8 @@ object DodgyPlan {
   final case class JustOp(key: DIKey, op: InstantiationOp, binding: Binding) extends TraceableOp
   final case class SetOp(key: DIKey, op: CreateSet, binding: Binding) extends TraceableOp
 
-  def empty(definition: ModuleBase, gcMode: GCMode): DodgyPlan = {
-    new DodgyPlan(definition, gcMode)
+  def empty(definition: ModuleBase, gcMode: GCMode): PrePlan = {
+    new PrePlan(definition, gcMode)
   }
 }
 

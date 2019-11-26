@@ -13,6 +13,8 @@ import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import izumi.fundamentals.graphs.dotml.Digraph
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.repr.KeyMinimizer
 
 import scala.collection.mutable
 
@@ -22,9 +24,9 @@ final class GraphDumpObserver
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
 
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {}
+  override def onSuccessfulStep(next: PrePlan): Unit = {}
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = synchronized {
+  override def onPhase00PlanCompleted(plan: PrePlan): Unit = synchronized {
     beforeFinalization.set(null)
   }
 

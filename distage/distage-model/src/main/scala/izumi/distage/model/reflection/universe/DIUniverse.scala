@@ -1,7 +1,8 @@
 package izumi.distage.model.reflection.universe
 
 import izumi.distage.model.definition.WithDIAnnotation
-import izumi.distage.model.plan.{WithDIAssociation, WithDIDependencyContext, WithDIWiring}
+import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIDependencyContext, WithDIWiring}
+import izumi.distage.model.plan.operations.{WithDIDependencyContext, WithDIWiring}
 import izumi.distage.model.references._
 
 trait DIUniverse

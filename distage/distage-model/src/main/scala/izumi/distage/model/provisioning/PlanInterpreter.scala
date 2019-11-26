@@ -4,7 +4,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.plan.{OpFormatter, OrderedPlan}
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
