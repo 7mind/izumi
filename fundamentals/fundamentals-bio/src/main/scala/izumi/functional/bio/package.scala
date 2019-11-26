@@ -172,6 +172,8 @@ package object bio extends BIOSyntax {
     @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
     // defaults
+    @inline def suspend[A](effect: => F[Throwable, A]): F[Throwable, A] = flatten(syncThrowable(effect))
+
     @inline override def fromEither[E, A](effect: => Either[E, A]): F[E, A] = flatMap(sync(effect)) {
       case Left(e) => fail(e): F[E, A]
       case Right(v) => pure(v): F[E, A]
