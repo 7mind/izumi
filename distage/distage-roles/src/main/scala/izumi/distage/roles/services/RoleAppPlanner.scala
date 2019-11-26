@@ -50,7 +50,7 @@ object RoleAppPlanner {
 
       val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-      val appPlan = injector.triSplitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
+      val appPlan = injector.trisectByPredicate(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 

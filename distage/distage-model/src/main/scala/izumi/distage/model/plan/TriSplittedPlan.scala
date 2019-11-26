@@ -1,6 +1,5 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.TriSplittedPlan.Subplan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.strings.IzString._
@@ -12,7 +11,7 @@ case class TriSplittedPlan(
                           )
 
 object TriSplittedPlan {
-  case class Subplan(plan: OrderedPlan, roots: Set[DIKey], module: ModuleBase)
+  case class Subplan(plan: OrderedPlan, roots: Set[DIKey])
 
   implicit class TriPlanEx(split: TriSplittedPlan) {
     def render(): String = {

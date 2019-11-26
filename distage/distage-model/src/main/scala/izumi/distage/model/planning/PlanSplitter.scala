@@ -8,40 +8,35 @@ import izumi.distage.model.{Planner, PlannerInput}
 
 trait PlanSplitter {
   this: Planner =>
-  final def triSplitPlan(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
+  final def trisectByPredicate(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     val rewritten = rewrite(appModule)
     val primaryPlan = toSubplanNoRewrite(rewritten, primaryRoots)
 
     // here we extract integration checks out of our shared components plan and build it
     val subplanRoots = extractSubRoots(primaryPlan)
-    triPlan(rewritten, primaryPlan, primaryRoots, subplanRoots)
+    trisect(rewritten, primaryPlan, primaryRoots, subplanRoots)
   }
 
-  final def triPlan(appModule: ModuleBase, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
+  final def trisectByRoots(appModule: ModuleBase, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
     val primaryPlan = toSubplanNoRewrite(appModule, primaryRoots)
-    triPlan(appModule, primaryPlan, primaryRoots, subplanRoots)
+    trisect(appModule, primaryPlan, primaryRoots, subplanRoots)
   }
 
-  private final def triPlan(appModule: ModuleBase, extractedPrimaryPlan: OrderedPlan, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
+  private final def trisect(appModule: ModuleBase, extractedPrimaryPlan: OrderedPlan, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
     assert(primaryRoots.diff(extractedPrimaryPlan.keys).isEmpty)
     val extractedSubplan = toSubplanNoRewrite(appModule, subplanRoots)
 
     val sharedKeys = extractedSubplan.index.keySet.intersect(extractedPrimaryPlan.index.keySet)
     val sharedPlan = toSubplanNoRewrite(appModule, sharedKeys)
 
-    val noSharedComponentsModule = appModule.drop(sharedKeys)
     val primplan = extractedPrimaryPlan.replaceWithImports(sharedKeys)
-
-    val subModule = noSharedComponentsModule.drop(primplan.index.keySet)
     val subplan = extractedSubplan.replaceWithImports(sharedKeys)
 
-    val sharedModule = appModule.preserveOnly(sharedPlan.index.keySet)
-    val primModule = noSharedComponentsModule.drop(subplan.index.keySet)
 
     TriSplittedPlan(
-      Subplan(subplan, subplanRoots, subModule),
-      Subplan(primplan, primaryRoots, primModule),
-      Subplan(sharedPlan, sharedKeys, sharedModule),
+      Subplan(subplan, subplanRoots),
+      Subplan(primplan, primaryRoots),
+      Subplan(sharedPlan, sharedKeys),
     )
 
   }

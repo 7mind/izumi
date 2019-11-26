@@ -9,6 +9,7 @@ import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.distage.model.Locator
+import izumi.distage.model.definition.ModuleBase
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
@@ -78,7 +79,7 @@ class DistageTestRunner[F[_] : TagK]
 
         logger.info(s"Memoized components in env $sharedKeys")
 
-        val shared = injector.triSplitPlan(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val shared = injector.trisectByPredicate(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
@@ -101,7 +102,7 @@ class DistageTestRunner[F[_] : TagK]
                   Injector.inherit(sharedLocator).produceF[F](shared.side.plan).use {
                     sharedIntegrationLocator =>
                       ifIntegChecksOk(F, sharedIntegrationLocator)(testplans.map(_._1), shared) {
-                        proceed(checker, testplans, shared, sharedLocator)
+                        proceed(appModule, checker, testplans, shared, sharedLocator)
                       }
                   }
               }
@@ -126,7 +127,7 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-  private def proceed(checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)
+  private def proceed(appmodule: ModuleBase, checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)
                      (implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary.plan)
@@ -149,7 +150,7 @@ class DistageTestRunner[F[_] : TagK]
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-                  val newtestplan = testInjector.triPlan(shared.primary.module.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
+                  val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
                   checker.verify(newtestplan.primary.plan)
                   checker.verify(newtestplan.side.plan)
