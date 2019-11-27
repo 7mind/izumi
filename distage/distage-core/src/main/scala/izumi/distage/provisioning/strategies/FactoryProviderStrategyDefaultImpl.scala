@@ -4,6 +4,7 @@ import izumi.distage.model.LoggerHook
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -59,9 +60,9 @@ class FactoryProviderStrategyDefaultImpl
       res
     }
 
-  private[this] def mkExecutableOp(key: RuntimeDIUniverse.DIKey, w: RuntimeDIUniverse.Wiring.SingletonWiring.Function, binding: Option[Binding]): WiringOp = {
+  private[this] def mkExecutableOp(key: RuntimeDIUniverse.DIKey, w: RuntimeDIUniverse.Wiring.SingletonWiring.Function, origin: OperationOrigin): WiringOp = {
     val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-    WiringOp.CallProvider(target, w, binding)
+    WiringOp.CallProvider(target, w, origin)
   }
 }
 

@@ -34,8 +34,6 @@ object ExecutableOp {
   object WiringOp {
     final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
     final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
-    final case clas    final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
-    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
     final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: OperationOrigin) extends WiringOp
   }
