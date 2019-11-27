@@ -5,7 +5,7 @@ import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.platform.language.Quirks
 
 class ProxyStrategyFailingImpl extends ProxyStrategy {

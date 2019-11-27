@@ -1,7 +1,6 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.LoggerHook
-import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.operations.OperationOrigin

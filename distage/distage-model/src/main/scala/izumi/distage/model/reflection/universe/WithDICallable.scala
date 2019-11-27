@@ -3,11 +3,11 @@ package izumi.distage.model.reflection.universe
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIWiring}
 import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
+import izumi.fundamentals.reflection.Tags.Tag
 
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
-    with WithTags
     with WithDITypedRef
     with WithDIKey
     with WithDISymbolInfo

@@ -6,7 +6,8 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.fundamentals.reflection.Tags.TagK
 
 final class LocatorDefaultImpl[F[_]]
 (

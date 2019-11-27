@@ -5,6 +5,7 @@ import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{AbstractPlan, GCMode, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
 trait OrderedPlanOps {
   this: OrderedPlan =>

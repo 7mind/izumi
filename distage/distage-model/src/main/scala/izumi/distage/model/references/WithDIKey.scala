@@ -1,12 +1,12 @@
 package izumi.distage.model.references
 
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithTags}
+import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
+import izumi.fundamentals.reflection.Tags.Tag
 
 trait WithDIKey {
   this: DIUniverseBase
-    with WithDISafeType
-    with WithTags =>
+    with WithDISafeType =>
 
   sealed trait DIKey {
     def tpe: SafeType

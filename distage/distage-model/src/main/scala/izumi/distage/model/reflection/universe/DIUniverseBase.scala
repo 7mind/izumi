@@ -1,9 +1,10 @@
 package izumi.distage.model.reflection.universe
 
-import izumi.fundamentals.reflection.UniverseGeneric
+import scala.reflect.api.Universe
 
-trait DIUniverseBase extends UniverseGeneric {
+trait DIUniverseBase {
   this: WithDISafeType =>
+  val u: Universe
 
   type TypeNative = u.Type
   type Symb = u.Symbol

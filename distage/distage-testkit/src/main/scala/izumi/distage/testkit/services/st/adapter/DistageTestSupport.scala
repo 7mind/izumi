@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo

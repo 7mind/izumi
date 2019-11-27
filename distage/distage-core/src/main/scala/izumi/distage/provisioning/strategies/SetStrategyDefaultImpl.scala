@@ -5,8 +5,6 @@ import izumi.distage.model.plan.ExecutableOp.CreateSet
 import izumi.distage.model.provisioning.strategies.SetStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.TypeParam
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagRef}
 
 import scala.collection.immutable.ListSet
 

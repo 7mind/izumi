@@ -1,7 +1,7 @@
 package izumi.distage.constructors
 
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import izumi.fundamentals.reflection.Tags.Tag
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 
 // TODO: improve

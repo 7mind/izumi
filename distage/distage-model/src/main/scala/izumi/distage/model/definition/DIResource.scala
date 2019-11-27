@@ -7,11 +7,10 @@ import cats.{Applicative, ~>}
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.TagMacro
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import zio.{Exit, Reservation, ZIO, ZManaged}
 
 import scala.language.experimental.macros
@@ -541,7 +540,7 @@ object DIResource {
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
       val tagMacro = new TagMacro(c)
-      val tagTrace = tagMacro.getImplicitError[RuntimeDIUniverse.tags.type]()
+      val tagTrace = tagMacro.getImplicitError()
 
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }

@@ -5,7 +5,7 @@ import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.platform.functional.Identity
 
 /** Executes instructions in [[OrderedPlan]] to produce a [[Locator]] */

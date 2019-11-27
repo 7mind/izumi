@@ -3,7 +3,7 @@ package izumi.distage.constructors
 import izumi.distage.constructors.StaticDSL.{StaticBindDSL, StaticBinding, StaticSetDSL}
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.definition.dsl.ModuleDefDSL.{BindDSLBase, SetDSLBase}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.language.implicitConversions
 

@@ -23,6 +23,7 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.Singleto
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{Locator, definition}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 
 import scala.collection.mutable
 
@@ -31,15 +32,15 @@ trait LocatorDef
   extends AbstractLocator
      with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
-  override protected[distage] def finalizers[F[_] : universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override protected[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
-  override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
+  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
 
   override private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): LocatorDef.MultipleDSL[T] =
     new definition.LocatorDef.MultipleDSL[T](ref)
 
-  override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): LocatorDef.SetDSL[T] =
+  override private[definition] def _setDSL[T: Tag](ref: SetRef): LocatorDef.SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty

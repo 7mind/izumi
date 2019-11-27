@@ -3,13 +3,13 @@ package izumi.distage.provisioning.strategies
 import izumi.distage.model.exceptions._
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.plan.ExecutableOp.MonadicOp
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, ProxyOp, WiringOp}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
+import izumi.fundamentals.reflection.Tags.TagK
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 trait FakeSet[A] extends Set[A]

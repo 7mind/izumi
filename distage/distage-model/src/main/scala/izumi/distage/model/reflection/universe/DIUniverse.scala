@@ -7,7 +7,6 @@ import izumi.distage.model.references._
 
 trait DIUniverse
   extends DIUniverseBase
-    with WithTags
     with WithDISafeType
     with WithDISymbolInfo
     with WithDITypedRef

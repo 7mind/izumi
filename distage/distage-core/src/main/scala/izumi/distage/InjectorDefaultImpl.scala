@@ -9,7 +9,7 @@ import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
 

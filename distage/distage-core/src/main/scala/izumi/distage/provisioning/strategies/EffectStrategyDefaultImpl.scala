@@ -7,7 +7,8 @@ import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
 import izumi.distage.model.provisioning.strategies.EffectStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK, identityEffectType}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, identityEffectType}
+import izumi.fundamentals.reflection.Tags.TagK
 
 class EffectStrategyDefaultImpl
   extends EffectStrategy {

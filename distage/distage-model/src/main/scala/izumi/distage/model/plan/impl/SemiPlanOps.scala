@@ -5,8 +5,9 @@ import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.{AbstractPlan, SemiPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
 trait SemiPlanOps {
   this: SemiPlan =>

@@ -1,18 +1,18 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.Tags.hktagFormat
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
+import scala.reflect.api.TypeCreator
 import scala.reflect.{ClassTag, api}
-import scala.reflect.api.{TypeCreator, Universe}
 
-trait Tags extends UniverseGeneric { self =>
+object Tags extends {
 
   import ReflectionUtil.WeakTypeTagMigrate
-  import u._
+
+  import scala.reflect.runtime.universe._
+  import scala.reflect.runtime.{universe => u}
 
   protected[izumi] trait TagInterface[T, NativeTag[_]] {
     def tag: LightTypeTag
@@ -54,7 +54,7 @@ trait Tags extends UniverseGeneric { self =>
     override final def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
   }
 
-  object Tag extends LowPriorityTagInstances {
+  object Tag {
 
     /**
       * Use `Tag.auto.T[TYPE_PARAM]` syntax to summon a `Tag` for a type parameter of any kind:
@@ -138,19 +138,12 @@ trait Tags extends UniverseGeneric { self =>
       Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
     }
 
-    /** For construction from [[TagLambdaMacro]] */
-    type HKTagRef[T] = HKTag[T]
-
-//    implicit final def tagFromTypeTag[T](implicit l: LTag[T]): Tag[T] = Tag(null, l.tag)
-    // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
-    //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
-    // https://github.com/scala/bug/issues/11715
-    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
+    implicit final def tagFromTagMacro[T]: Tag[T] = macro TagMacro.FIXMEgetLTagAlso[T]
   }
-
-  trait LowPriorityTagInstances {
-    @inline implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
-  }
+//
+//  trait LowPriorityTagInstances {
+//    @inline implicit final def tagFromTagMaterializer[T]: Tag[T] = macro TagMacro.impl[T]
+//  }
 
   /**
     * Internal unsafe API representing a poly-kinded, higher-kinded type tag.
@@ -179,7 +172,7 @@ trait Tags extends UniverseGeneric { self =>
     def tpe: TypeTag[_] = null
     def tag: LightTypeTag
 
-    override final def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
+    override final def toString: String = s"$tag"
   }
 
   object HKTag extends LowPriorityHKTagInstances {
@@ -199,6 +192,7 @@ trait Tags extends UniverseGeneric { self =>
       }
     }
 
+    // FIXME: Fixme macro ???
     implicit def hktagFromTypeTag[T](implicit l: LTag.WeakHK[T]): HKTag[T] = {
       new HKTag[T] {
         override val tag: LightTypeTag = l.tag
@@ -305,11 +299,9 @@ trait Tags extends UniverseGeneric { self =>
       }
     }
   }
-
   trait WeakTagInstances0 extends WeakTagInstances1 {
     implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].tpe, Tag[T].tag)
   }
-
   trait WeakTagInstances1 {
     implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T], l: LTag.Weak[T]): WeakTag[T] = WeakTag(t, l.tag)
   }
@@ -321,32 +313,4 @@ trait Tags extends UniverseGeneric { self =>
   // workaround for being unable to refer to Tag object's type from a type projection (?)
   type TagObject = Tag.type
   type HKTagObject = HKTag.type
-}
-
-object Tags extends Tags {
-  override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
-
-  final val defaultTagImplicitError: String =
-    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
-
-  final def hktagFormatMap: Map[Kind, String] = {
-    Map(
-      Kind(Nil) -> "Tag",
-      Kind(Kind(Nil) :: Nil) -> "TagK",
-      Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK",
-      Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3",
-      Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagT",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagTK",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTKK",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3",
-    )
-  }
-
-  final def hktagFormat(tpe: Universe#Type): String = {
-    val kind = kindOf(tpe)
-    hktagFormatMap.get(kind) match {
-      case Some(t) => s"$t[$tpe]"
-      case _ => s"HKTag for $tpe of kind $kind"
-    }
-  }
 }

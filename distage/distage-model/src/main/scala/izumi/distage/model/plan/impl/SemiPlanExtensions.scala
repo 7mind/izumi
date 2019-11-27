@@ -6,7 +6,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.{GCMode, SemiPlan}
 import izumi.distage.model.plan.impl.SemiPlanExtensions.SemiPlanExts
 import izumi.distage.model.plan.impl.SemiPlanOrderedPlanInstances.{CatsMonoid, resolveImportsImpl1}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Tag
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.language.implicitConversions
 

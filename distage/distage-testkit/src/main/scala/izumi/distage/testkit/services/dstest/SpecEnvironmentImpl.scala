@@ -5,7 +5,7 @@ import distage.{DIKey, ModuleBase}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo

@@ -1,6 +1,6 @@
 package izumi.distage.testkit.st.adapter.specs
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.testkit.services.st.adapter.DistagePluginTestSupport
 import org.scalatest.{ScalatestSuite, WordSpecLike}
 
