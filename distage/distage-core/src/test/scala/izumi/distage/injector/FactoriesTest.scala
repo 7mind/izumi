@@ -92,6 +92,7 @@ class FactoriesTest extends WordSpec with MkInjector {
     intercept[UnsupportedWiringException] {
       import FactoryCase1._
 
+      // FIXME: `make` support? should be compile-time error
       val definition = PlannerInput.noGc(new ModuleDef {
         make[FactoryProducingFactory]
         make[Dependency]

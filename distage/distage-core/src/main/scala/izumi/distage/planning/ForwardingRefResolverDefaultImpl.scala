@@ -12,7 +12,6 @@ import scala.collection.mutable
 class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer,
-  protected val reflectionProvider: ReflectionProvider.Runtime,
   @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
 ) extends ForwardingRefResolver {
 

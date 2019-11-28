@@ -2,7 +2,8 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
+import izumi.distage.reflection.ReflectionProviderDefaultImpl
+import izumi.fundamentals.reflection.ReflectionUtil
 
 import scala.reflect.macros.blackbox
 
@@ -16,16 +17,16 @@ object AnyConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
 
-    val tpe = weakTypeOf[T]
+    val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
     try {
-      if (symbolIntrospector.isConcrete(tpe)) {
+      if (reflectionProvider.isConcrete(tpe)) {
         ConcreteConstructorMacro.mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
-      } else if (symbolIntrospector.isFactory(tpe)) {
+      } else if (reflectionProvider.isFactory(tpe)) {
         FactoryConstructorMacro.mkFactoryConstructor[T](c)
-      } else if (symbolIntrospector.isWireableAbstract(tpe)) {
+      } else if (reflectionProvider.isWireableAbstract(tpe)) {
         TraitConstructorMacro.mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
       } else {
         c.abort(
@@ -39,12 +40,9 @@ object AnyConstructorMacro {
       }
     } catch {
       case _: Throwable =>
-        val T = weakTypeOf[T]
         c.Expr[AnyConstructor[T]](q"""{
-          new _root_.izumi.distage.constructors.ConcreteConstructor[$T](
-            _root_.izumi.distage.model.providers.ProviderMagnet.todoProvider(
-              _root_.izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey.get[$T]
-            ).asInstanceOf[_root_.izumi.distage.model.providers.ProviderMagnet[$T]]
+          new _root_.izumi.distage.constructors.ConcreteConstructor[$tpe](
+            _root_.izumi.distage.model.providers.ProviderMagnet[$tpe](() => throw new RuntimeException("AnyConstructor failure: No constructor could be generated for " + ${tpe.toString}))
           )
         }""")
     }

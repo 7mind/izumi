@@ -3,7 +3,7 @@ package izumi.distage.model.reflection.macros
 import izumi.distage.constructors.DebugProperties
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -20,8 +20,7 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
   final val macroUniverse = StaticDIUniverse(c)
 
   private final val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.providermagnet`)
-  private final val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
-  private final val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
+  private final val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
 
   import c.universe._
   import macroUniverse._
@@ -109,8 +108,8 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
       )
   }
 
-  private def association(ret: SafeType)(p: Symb): Association.Parameter =
-    keyProvider.associationFromParameter(SymbolInfo.Runtime(p, ret, p.typeSignature.typeSymbol.isParameter))
+  private def association(ret: SafeType)(p: SymbNative): Association.Parameter =
+    reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p, ret, p.typeSignature.typeSymbol.isParameter))
 
   def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: SafeType): ExtractedInfo = {
     val lambdaKeys: List[Association.Parameter] =
@@ -152,18 +151,18 @@ class ProviderMagnetMacro(val c: blackbox.Context) {
   }
 
   def analyzeValRef(sig: Type, ret: SafeType): ExtractedInfo = {
-    val associations = sig.typeArgs.init.map(SafeType(_)).map {
-      tpe: SafeType =>
+    val associations = sig.typeArgs.init.map {
+      tpe =>
         val symbol = SymbolInfo.Static(
-          c.freshName(tpe.tpe.typeSymbol.name.toString)
-          , tpe
-          , AnnotationTools.getAllTypeAnnotations(u)(tpe.tpe)
+          c.freshName(tpe.typeSymbol.name.toString)
+          , SafeType(tpe)
+          , AnnotationTools.getAllTypeAnnotations(u)(tpe)
           , ret
-          , tpe.tpe.typeSymbol.isTerm && tpe.tpe.typeSymbol.asTerm.isByNameParam
-          , tpe.tpe.typeSymbol.isParameter
+          , tpe.typeSymbol.isTerm && tpe.typeSymbol.asTerm.isByNameParam
+          , tpe.typeSymbol.isParameter
         )
 
-        keyProvider.associationFromParameter(symbol)
+        reflectionProvider.associationFromParameter(symbol)
     }
 
     ExtractedInfo(associations, isValReference = true)

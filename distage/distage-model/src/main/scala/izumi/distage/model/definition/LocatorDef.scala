@@ -17,8 +17,6 @@ import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{Locator, definition}

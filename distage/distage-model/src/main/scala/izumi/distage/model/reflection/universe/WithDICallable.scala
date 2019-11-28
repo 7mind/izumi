@@ -64,6 +64,20 @@ trait WithDICallable {
 
     override final def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
+
+    // FIXME: parameterized Provider/ non-case branches ???
+    private[this] var generated: Boolean = false
+    def asGenerated: this.type = { generated = true; this }
+    private def eqField: AnyRef = if (generated) ret else fun
+    override final def equals(obj: Any): Boolean = {
+      obj match {
+        case that: Provider =>
+          eqField == that.eqField
+        case _ =>
+          false
+      }
+    }
+    override final def hashCode(): Int = eqField.hashCode()
   }
 
   object Provider {
@@ -119,11 +133,9 @@ trait WithDICallable {
         }
       }
     }
-
   }
 
   class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message, null)
 
   class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider) extends DIException(message, null)
-
 }

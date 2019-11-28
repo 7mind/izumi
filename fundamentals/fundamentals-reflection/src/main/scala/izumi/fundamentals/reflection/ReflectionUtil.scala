@@ -2,6 +2,7 @@ package izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
+import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
 import scala.language.reflectiveCalls
 import scala.reflect.api
@@ -83,6 +84,19 @@ object ReflectionUtil {
         Some(typeRef)
       case _ =>
         None
+    }
+  }
+
+  /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
+    * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
+    * So we just strip it when we get it. */
+  @tailrec
+  final def norm(u: Universe)(x: u.Type): u.Type = {
+    import u._
+    x match {
+      case RefinedType(t :: Nil, m) if m.isEmpty => norm(u)(t)
+      case AnnotatedType(_, t) => norm(u)(t)
+      case _ => x
     }
   }
 

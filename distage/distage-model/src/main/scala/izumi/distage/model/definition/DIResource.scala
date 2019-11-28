@@ -135,7 +135,9 @@ object DIResource {
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     @inline def a = acquire
+
     @inline def r = release
+
     new DIResource[F, A] {
       override def acquire: F[A] = a
       override def release(resource: A): F[Unit] = r(resource)
@@ -240,7 +242,7 @@ object DIResource {
 
   abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
-  /***
+  /**
     * Class-based variant of [[make]]:
     *
     * {{{
@@ -249,14 +251,14 @@ object DIResource {
     *   )(release = _ => IO.unit)
     * }}}
     */
-  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused","") dummy: Boolean = false) extends DIResource[F, A] {
+  class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused", "") dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
     override final def release(resource: A): F[Unit] = release.apply(resource)
   }
 
-  /***
+  /**
     * Class-based variant of [[make_]]:
     *
     * {{{
@@ -265,20 +267,20 @@ object DIResource {
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
-  /***
+  /**
     * Class-based variant of [[liftF]]:
     *
     * {{{
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
     * }}}
     */
-  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIEffect, A] private[this](acquire0: () => F[A], @deprecated("unused", "") dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()
   }
 
-  /***
+  /**
     * Class-based variant of [[fromAutoCloseableF]]:
     *
     * {{{
@@ -419,8 +421,8 @@ object DIResource {
     * }}}
     *
     * NOTE: binding a cats Resource[F, A] will add a
-    *       dependency on `Bracket[F, Throwable]` for
-    *       your corresponding `F` type
+    * dependency on `Bracket[F, Throwable]` for
+    * your corresponding `F` type
     */
   implicit final def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
     resourceProvider
@@ -431,7 +433,7 @@ object DIResource {
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R , E, A]] = {
+  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
     providerFromZIOProvider(ProviderMagnet.pure(managed))
   }
 
@@ -453,7 +455,7 @@ object DIResource {
   }
 
   @inline
-  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
 
     def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
       F.bracketCase(acquire = acquire)(release = {
@@ -528,7 +530,7 @@ object DIResource {
   object ResourceTag extends ResourceTagLowPriority {
     def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
-    implicit def resourceTag[R <: DIResourceBase[F0, A0] : Tag, F0[_] : TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
+    implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
       new ResourceTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -540,6 +542,7 @@ object DIResource {
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
       val tagMacro = new TagMacro(c)
+      tagMacro.impl[R] // run the macro AGAIN, to get a fresh error message
       val tagTrace = tagMacro.getImplicitError()
 
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")

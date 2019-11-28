@@ -121,6 +121,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       import StableObjectInheritingTrait._
 
       val definition = PlannerInput.noGc(new ModuleDef {
+        // FIXME: `make` support ??? should be a compile error
         make[TestFactory]
       })
 

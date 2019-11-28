@@ -5,7 +5,6 @@ import izumi.distage.config.model.exceptions.ConfigTranslationException
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.exceptions.BadIdAnnotationException
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.AnnotationTools
 
@@ -13,9 +12,9 @@ import izumi.fundamentals.reflection.AnnotationTools
   * Finds parameters of bindings with @Conf, @ConfPath or @AutoConf annotations and replaces their keys with Conf IdKeys
   * To then be processed by `ConfigProvider` plan rewriter
   */
-class ConfigReferenceExtractor(protected val reflectionProvider: ReflectionProvider.Runtime) extends PlanningHook {
+class ConfigReferenceExtractor extends PlanningHook {
 
-  import u._
+  import scala.reflect.runtime.universe._
 
   override def hookWiring(binding: Binding.ImplBinding, wiring: Wiring): Wiring = {
     wiring.replaceKeys(rewire(binding, _))

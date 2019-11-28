@@ -1,13 +1,13 @@
 package izumi.distage.staticinjector
 
-import izumi.distage.constructors.{AnyConstructor, StaticModuleDef}
-import izumi.distage.fixtures.TraitCases.TraitCase4.Trait
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases.{TraitCase1, TraitCase2, TraitCase4, TraitCase5}
 import izumi.distage.fixtures.TypesCases.TypesCase3
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
-import org.scalatest.WordSpec
+import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TypedRef
+import org.scalatest.WordSpec
 
 class MacroAutoTraitsTest extends WordSpec with MkInjector {
 
@@ -23,9 +23,9 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "handle one-arg trait" in {
     import TraitCase1._
 
-    val definition = new StaticModuleDef {
-      stat[Dependency1]
-      stat[TestTrait]
+    val definition = new ModuleDef {
+      make[Dependency1]
+      make[TestTrait]
     }
 
     val injector = mkStaticInjector()
@@ -40,9 +40,9 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "handle named one-arg trait" in {
     import TraitCase1._
 
-    val definition = new StaticModuleDef {
-      stat[Dependency1]
-      make[TestTrait].named("named-trait").stat[TestTrait]
+    val definition = new ModuleDef {
+      make[Dependency1]
+      make[TestTrait].named("named-trait").from[TestTrait]
     }
 
     val injector = mkStaticInjector()
@@ -57,13 +57,13 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "handle mixed sub-trait with protected autowires" in {
     import TraitCase2._
 
-    val definition = new StaticModuleDef {
-      stat[Trait3]
-      stat[Trait2]
-      stat[Trait1]
-      stat[Dependency3]
-      stat[Dependency2]
-      stat[Dependency1]
+    val definition = new ModuleDef {
+      make[Trait3]
+      make[Trait2]
+      make[Trait1]
+      make[Dependency3]
+      make[Dependency2]
+      make[Dependency1]
     }
 
     val injector = mkStaticInjector()
@@ -85,11 +85,11 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "handle sub-type trait" in {
     import TraitCase2._
 
-    val definition = new StaticModuleDef {
-      make[Trait2].stat[Trait3]
-      stat[Dependency3]
-      stat[Dependency2]
-      stat[Dependency1]
+    val definition = new ModuleDef {
+      make[Trait2].from[Trait3]
+      make[Dependency3]
+      make[Dependency2]
+      make[Dependency1]
     }
 
     val injector = mkStaticInjector()
@@ -104,9 +104,9 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "can instantiate traits with refinements" in {
     import TraitCase5._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[TestTraitAny {def dep: Dep}]
-      stat[Dep]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[TestTraitAny {def dep: Dep}]
+      make[Dep]
     })
 
     val injector = mkStaticInjector()
@@ -120,10 +120,10 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "can instantiate `with` types" in {
     import TypesCase3._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[Dep]
-      stat[Dep2]
-      stat[Trait2 with (Trait2 with (Trait2 with Trait1))]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep]
+      make[Dep2]
+      make[Trait2 with (Trait2 with (Trait2 with Trait1))]
     })
 
     val injector = mkStaticInjector()
@@ -139,11 +139,11 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "support named bindings in macro traits" in {
     import TraitCase4._
 
-    val definition = new StaticModuleDef {
-      make[Dep].named("A").stat[DepA]
-      make[Dep].named("B").stat[DepB]
-      stat[Trait]
-      stat[Trait1]
+    val definition = new ModuleDef {
+      make[Dep].named("A").from[DepA]
+      make[Dep].named("B").from[DepB]
+      make[Trait]
+      make[Trait1]
     }
 
     val injector = mkStaticInjector()
@@ -164,9 +164,9 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "override protected defs in macro traits" in {
     import TraitCase5._
 
-    val definition = new StaticModuleDef {
-      stat[TestTrait]
-      stat[Dep]
+    val definition = new ModuleDef {
+      make[TestTrait]
+      make[Dep]
     }
 
     val injector = mkStaticInjector()
@@ -181,10 +181,10 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "handle AnyVals" in {
     import izumi.distage.fixtures.TraitCases.TraitCase6._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[Dep]
-      stat[AnyValDep]
-      stat[TestTrait]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep]
+      make[AnyValDep]
+      make[TestTrait]
     })
 
     val injector = mkStaticInjector()

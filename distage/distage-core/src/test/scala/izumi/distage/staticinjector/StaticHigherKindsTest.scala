@@ -1,10 +1,11 @@
 package izumi.distage.staticinjector
 
-import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
-import izumi.distage.model.PlannerInput
 import distage.{Id, TagK}
-import izumi.distage.constructors.StaticModuleDef
+import izumi.distage.constructors.TraitConstructor
+import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
 import izumi.distage.injector.MkInjector
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
 class StaticHigherKindsTest extends WordSpec with MkInjector {
@@ -12,13 +13,13 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
   "macros support tagless final style module definitions" in {
     import HigherKindsCase1._
 
-    case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
+    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       // TODO: hmmm, what to do with this
       make[Pointed[F]].from(Pointed[F])
 
-      make[TestTrait].stat[TestServiceClass[F]]
-      stat[TestServiceClass[F]]
-      stat[TestServiceTrait[F]]
+      make[TestTrait].from[TestServiceClass[F]]
+      make[TestServiceClass[F]]
+      make[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))

@@ -1,17 +1,17 @@
 package izumi.distage.staticinjector
 
-import izumi.distage.constructors.StaticModuleDef
 import izumi.distage.fixtures.InnerClassCases.{InnerClassStablePathsCase, InnerClassUnstablePathsCase}
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
 class StaticInnerClassesTest extends WordSpec with MkInjector {
 
   "macros can handle class local path-dependent injections" in {
-    val definition = new StaticModuleDef {
-      stat[TopLevelPathDepTest.TestClass]
-      stat[TopLevelPathDepTest.TestDependency]
+    val definition = new ModuleDef {
+      make[TopLevelPathDepTest.TestClass]
+      make[TopLevelPathDepTest.TestDependency]
     }
 
     val injector = mkStaticInjector()
@@ -31,9 +31,9 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
 
     val testModule = new TestModule
 
-    val definition = new StaticModuleDef {
-      stat[testModule.TestClass]
-      stat[testModule.TestDependency]
+    val definition = new ModuleDef {
+      make[testModule.TestClass]
+      make[testModule.TestDependency]
     }
 
     val injector = mkStaticInjector()
@@ -48,8 +48,8 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition = new StaticModuleDef {
-      stat[TestDependency]
+    val definition = new ModuleDef {
+      make[TestDependency]
     }
 
     val context = mkStaticInjector().produceUnsafe(PlannerInput.noGc(definition))
@@ -61,9 +61,9 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
     import InnerClassStablePathsCase._
     import StableObjectInheritingTrait._
 
-    val definition = new StaticModuleDef {
-      stat[TestDependency]
-      stat[TestClass]
+    val definition = new ModuleDef {
+      make[TestDependency]
+      make[TestClass]
     }
 
     val context = mkStaticInjector().produceUnsafe(PlannerInput.noGc(definition))
@@ -76,8 +76,8 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
       import InnerClassCase2._
       import StableObjectInheritingTrait._
 
-      val definition = new StaticModuleDef {
-        stat[TestFactory]
+      val definition = new ModuleDef {
+        make[TestFactory]
       }
 
       val context = mkStaticInjector().produce(PlannerInput.noGc(definition))
@@ -87,9 +87,9 @@ class StaticInnerClassesTest extends WordSpec with MkInjector {
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {
-    private val definition = new StaticModuleDef {
-      stat[TestClass]
-      stat[TestDependency]
+    private val definition = new ModuleDef {
+      make[TestClass]
+      make[TestDependency]
     }
 
     def testCase = {

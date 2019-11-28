@@ -9,7 +9,7 @@ import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.SymbolIntrospector
+import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
@@ -26,10 +26,7 @@ final class PlannerDefaultImpl
   hook: PlanningHook,
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
-  symbolIntrospector: SymbolIntrospector.Runtime,
-)
-  extends Planner {
-
+) extends Planner {
 
   override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
     if (roots.isEmpty) {
@@ -140,8 +137,8 @@ final class PlannerDefaultImpl
         case (fst, snd) =>
           val fsto = index(fst)
           val sndo = index(snd)
-          val fstp = SymbolIntrospector.canBeProxied(fsto.target.tpe)
-          val sndp = SymbolIntrospector.canBeProxied(sndo.target.tpe)
+          val fstp = ReflectionProvider.canBeProxied(fsto.target.tpe)
+          val sndp = ReflectionProvider.canBeProxied(sndo.target.tpe)
 
           if (fstp && !sndp) {
             true
@@ -171,7 +168,7 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: InstantiationOp if !SymbolIntrospector.canBeProxied(op.target.tpe) =>
+        case op: InstantiationOp if !ReflectionProvider.canBeProxied(op.target.tpe) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
           best

@@ -12,9 +12,14 @@ object LTag {
 
   implicit def materialize[T]: LTag[T] = macro LightTypeTagMacro.makeStrongTag[T]
 
+  final case class StrongHK[T](tag: LightTypeTag)
+  object StrongHK {
+    implicit def materialize[T]: LTag.StrongHK[T] = macro LightTypeTagMacro.makeStrongHKTag[T]
+  }
+
   final case class WeakHK[T](tag: LightTypeTag)
   object WeakHK {
-    implicit def materialize[T]: WeakHK[T] = macro LightTypeTagMacro.makeWeakHKTag[T]
+    implicit def materialize[T]: LTag.WeakHK[T] = macro LightTypeTagMacro.makeWeakHKTag[T]
   }
 
   final case class Weak[T](tag: LightTypeTag)

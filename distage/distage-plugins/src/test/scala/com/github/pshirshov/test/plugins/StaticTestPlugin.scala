@@ -1,12 +1,11 @@
 package com.github.pshirshov.test.plugins
 
-import izumi.distage.config.annotations.ConfPath
-import izumi.fundamentals.platform.build.ExposedTestScope
-import izumi.logstage.api.IzLogger
 import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.ModuleDef
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.config.annotations.ConfPath
 import izumi.distage.dsl.TestTagOps._
+import izumi.fundamentals.platform.build.ExposedTestScope
+import izumi.logstage.api.IzLogger
 
 @ExposedTestScope
 class StaticTestPlugin extends SneakyPlugin {
@@ -25,7 +24,6 @@ class DependingPlugin extends SneakyPlugin {
 object DependingPlugin {
   val module: ModuleDef = new ModuleDef {
     // FIXME: make[] redundant generator ???
-    implicit val a: AnyConstructor[Unit] = null
     make[Unit].from((_: TestDep, _: TestService) => ()) // FIXME: Provider equals generates conflicting exception on merge
   }
 }

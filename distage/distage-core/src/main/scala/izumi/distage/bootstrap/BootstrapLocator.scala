@@ -14,12 +14,10 @@ import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, _}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import izumi.distage.planning._
 import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.distage.reflection._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 
@@ -57,14 +55,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 }
 
 object BootstrapLocator {
-  final val symbolIntrospector: SymbolIntrospectorDefaultImpl.Runtime = new SymbolIntrospectorDefaultImpl.Runtime
-
-  final val reflectionProvider: ReflectionProviderDefaultImpl.Runtime = new ReflectionProviderDefaultImpl.Runtime(
-    keyProvider = new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector),
-    symbolIntrospector = symbolIntrospector,
-  )
-
-  final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+  @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
   final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
@@ -75,9 +66,9 @@ object BootstrapLocator {
     ))
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslatorImpl(reflectionProvider, hook)
+    val translator = new BindingTranslatorImpl(hook)
     new PlannerDefaultImpl(
-      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true),
+      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true),
       sanityChecker = new SanityCheckerDefaultImpl(analyzer),
       gc = NoopDIGC,
       planningObserver = bootstrapObserver,
@@ -85,7 +76,6 @@ object BootstrapLocator {
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
-      symbolIntrospector = symbolIntrospector,
     )
   }
 
@@ -111,10 +101,6 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
-    make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
-    make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
-
     make[LoggerHook].from[LoggerHook.Null.type]
     make[MirrorProvider].from[MirrorProvider.Impl.type]
 

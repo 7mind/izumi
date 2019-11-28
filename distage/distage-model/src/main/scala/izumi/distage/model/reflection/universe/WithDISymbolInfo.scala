@@ -29,7 +29,8 @@ trait WithDISymbolInfo {
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
-    case class Runtime protected(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+    @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
+    case class Runtime private (underlying: SymbNative, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override val name: String = underlying.name.toTermName.toString
 
       override val finalResultType: SafeType = definingClass.use(tpe => SafeType(underlying.typeSignatureIn(tpe).finalResultType))
@@ -40,12 +41,9 @@ trait WithDISymbolInfo {
     }
 
     object Runtime {
-      def apply(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean, moreAnnotations: List[u.Annotation]): Runtime = {
+      @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
+      def apply(underlying: SymbNative, definingClass: SafeType, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
         new Runtime(underlying, definingClass, wasGeneric, (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct)
-      }
-
-      def apply(underlying: Symb, definingClass: SafeType, wasGeneric: Boolean): Runtime = {
-        new Runtime(underlying, definingClass, wasGeneric, AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct)
       }
     }
 

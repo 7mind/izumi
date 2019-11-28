@@ -3,7 +3,7 @@ package izumi.distage.constructors.`macro`
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -15,19 +15,33 @@ object TraitConstructorMacro {
   def mkTraitConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
+    def nonConstructibleType: PartialFunction[Type, Type] = {
+      object NonConstructible {
+        def unapply(arg: List[Type]): Option[Type] = arg.collectFirst(nonConstructibleType)
+      }
+
+      {
+        case RefinedType(NonConstructible(tpe), _) => tpe
+        case tpe if tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal => tpe
+      }
+    }
+
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+
+    nonConstructibleType.lift(targetType).foreach {
+      err =>
+        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
+    }
+
     val macroUniverse = StaticDIUniverse(c)
     import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
 
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
-    val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val targetType = weakTypeOf[T]
-
-    val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(SafeType(targetType))
+    val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
 
     val (wireArgs, wireMethods) = wireables.map {
       case AbstractMethod(ctx, name, _, key) =>
@@ -37,7 +51,7 @@ object TraitConstructorMacro {
 
           val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
 
-          q"$mods val $argName: $tpe" -> q"override val $methodName: $tpe = $argName"
+          q"$mods val $argName: $tpe" -> q"final val $methodName: $tpe = $argName"
         }
     }.unzip
 

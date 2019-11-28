@@ -2,9 +2,8 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import izumi.distage.model.reflection.universe.StaticDIUniverse
-import izumi.distage.reflection.{DependencyKeyProviderDefaultImpl, ReflectionProviderDefaultImpl, SymbolIntrospectorDefaultImpl}
+import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -19,14 +18,12 @@ object ConcreteConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     import macroUniverse._
 
-    val symbolIntrospector = SymbolIntrospectorDefaultImpl.Static(macroUniverse)
-    val keyProvider = DependencyKeyProviderDefaultImpl.Static(macroUniverse)(symbolIntrospector)
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)(keyProvider, symbolIntrospector)
+    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val targetType = weakTypeOf[T]
+    val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    if (!symbolIntrospector.isConcrete(targetType)) {
+    if (!reflectionProvider.isConcrete(targetType)) {
       c.abort(c.enclosingPosition,
         s"""Tried to derive constructor function for class $targetType, but the class is an
            |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
@@ -46,7 +43,7 @@ object ConcreteConstructorMacro {
       case _ =>
     }
 
-    val paramLists = reflectionProvider.constructorParameterLists(SafeType(targetType))
+    val paramLists = reflectionProvider.constructorParameterLists(targetType)
 
     val fnArgsNamesLists = paramLists.map(_.map {
       p =>

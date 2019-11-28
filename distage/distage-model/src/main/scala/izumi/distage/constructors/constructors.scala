@@ -7,6 +7,9 @@ import scala.language.experimental.macros
 
 sealed trait AnyConstructor[T] {
   def provider: ProviderMagnet[T]
+
+  // FIXME: better provider equality scheme ???
+  provider.get.asGenerated
 }
 final case class ConcreteConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]

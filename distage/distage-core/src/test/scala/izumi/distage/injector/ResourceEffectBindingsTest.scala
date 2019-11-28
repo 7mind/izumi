@@ -1,15 +1,17 @@
 package izumi.distage.injector
 
+import distage.{DIKey, Id, ModuleDef, PlannerInput}
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
+import izumi.distage.model.definition.DIResource.ResourceTag
 import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import distage.{DIKey, Id, ModuleDef, PlannerInput}
-import izumi.distage.constructors.AnyConstructor
-import izumi.distage.model.plan.GCMode
+import izumi.fundamentals.reflection.Tags.Tag
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
@@ -115,8 +117,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
           .addEffect(Suspend2('a'))
           .addEffect(Suspend2('b'))
 
-        // FIXME: ???
-        implicit val a: AnyConstructor[Unit] = null
+        // FIXME: `make` support ???
         make[Unit].fromEffect {
           (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
             ref.update(_ ++ set).void
@@ -379,20 +380,24 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val ops = resource.use(ops => Suspend2(ops)).run().right.get
 
       assert(ops == Seq(XStart, YStart, YStop, XStop))
+//      def y[F[_]] = Tag[DIResource[F, Any]]
+
     }
 
     "Display tag macro stack trace when ResourceTag is not found" in {
-      try {
-        assertCompiles(
+      val t = intercept[TestFailedException] {
+        assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[DIResource[F, Any]]
-          }
-        """
-        )
-      } catch {
-        case t: TestFailedException if t.message.get contains "<trace>" =>
+            // FIXME: `make` support ???
+            make[Any].fromResource[DIResource[F, Any]](() => ???)
+          }; ""
+          """
+        }
       }
+
+      assert(t.message.get contains "<trace>")
+      assert(t.message.get contains "could not find implicit value for TagK[F]")
     }
 
   }

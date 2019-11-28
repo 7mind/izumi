@@ -6,7 +6,6 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, InstantiationOp, Monadi
 import izumi.distage.model.plan.initial.{NextOps, PrePlan}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Wiring}
@@ -18,7 +17,6 @@ trait BindingTranslator {
 
 class BindingTranslatorImpl
 (
-  reflectionProvider: ReflectionProvider.Runtime,
   hook: PlanningHook,
 ) extends BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps = {

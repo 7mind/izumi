@@ -3,10 +3,10 @@ package izumi.fundamentals.reflection
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
 import izumi.fundamentals.reflection.TagMacro._
-import izumi.fundamentals.reflection.Tags.{HKTag, ScalaReflectTypeTag, ScalaReflectWeakTypeTag, Tag, TagObject}
-import izumi.fundamentals.reflection.macrortti.LightTypeTagMacro0
+import izumi.fundamentals.reflection.Tags.{HKTag, Tag}
+import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagMacro0}
 
-import scala.annotation.{implicitNotFound, tailrec}
+import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scala.reflect.api.Universe
 import scala.reflect.macros.{TypecheckException, blackbox, whitebox}
@@ -19,6 +19,7 @@ class TagMacro(val c: blackbox.Context) {
   import c.universe._
 
   protected[this] val logger: TrivialLogger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.rtti`)
+  private[this] val ltagMacro = new LightTypeTagMacro0[c.type](c)(logger)
 
   // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
   //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
@@ -26,13 +27,24 @@ class TagMacro(val c: blackbox.Context) {
   def FIXMEgetLTagAlso[T: c.WeakTypeTag]: c.Expr[Tag[T]] = {
     val tpe = weakTypeOf[T]
     if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
-      val ltagMacro = new LightTypeTagMacro0[c.type](c)
       val ltag = ltagMacro.makeParsedLightTypeTagImpl(tpe)
       c.Expr[Tag[T]] {
-        q"${c.prefix.asInstanceOf[Expr[TagObject]]}.apply[$tpe](null, $ltag)"
+        q"_root_.izumi.fundamentals.reflection.Tags.Tag.apply[$tpe]($ltag)"
       }
     } else {
       impl[T]
+    }
+  }
+
+  def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[HKTag[ArgStruct]] = {
+    val tpe = weakTypeOf[ArgStruct]
+    if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
+      val ltag = ltagMacro.makeParsedHKTagLightTypeTagImpl[ArgStruct](tpe)
+      c.Expr[HKTag[ArgStruct]] {
+        q"_root_.izumi.fundamentals.reflection.Tags.HKTag.apply($ltag)"
+      }
+    } else {
+      c.abort(c.enclosingPosition, s"Can't materialize HKTag[$tpe]: found unresolved type parameters in $tpe")
     }
   }
 
@@ -46,7 +58,7 @@ class TagMacro(val c: blackbox.Context) {
       addImplicitError("\n\n<trace>: ")
     }
 
-    val tgt = norm(weakTypeOf[T].dealias)
+    val tgt = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
 
     addImplicitError(s"  deriving Tag for $tgt:")
 
@@ -64,24 +76,16 @@ class TagMacro(val c: blackbox.Context) {
     res
   }
 
-  def getImplicitError(): String = {
-    symbolOf[Tag[Any]].annotations.headOption.flatMap(
-      AnnotationTools.findArgument(_) {
-        case Literal(Constant(s: String)) => s
-      }
-    ).getOrElse(defaultTagImplicitError)
-  }
-
   @inline
-  protected[this] def mkRefined[T: c.WeakTypeTag](intersection: List[Type], struct: Type): c.Expr[Tag[T]] = {
-    val intersectionsTags = c.Expr[List[ScalaReflectTypeTag[_]]](q"${
+  protected[this] def mkRefined[T: c.WeakTypeTag](intersection: List[Type], originalRefinement: Type): c.Expr[Tag[T]] = {
+    val intersectionsTags = c.Expr[List[LightTypeTag]](q"${
       intersection.map {
         t0 =>
-          val t = norm(t0.dealias)
+          val t = ReflectionUtil.norm(c.universe: c.universe.type)(t0.dealias)
           summonTypeTagFromTag(t)
       }
     }")
-    val structTag = mkStruct(struct)
+    val structTag = mkStruct(originalRefinement)
 
     reify {
       {Tag.refinedTag[T](intersectionsTags.splice, structTag.splice)}
@@ -90,42 +94,44 @@ class TagMacro(val c: blackbox.Context) {
 
   @inline
   // have to tag along the original intersection, because scalac dies on trying to summon typetag for a custom made refinedType from `internal.refinedType` ...
-  protected[this] def mkStruct(struct: Type): c.Expr[ScalaReflectWeakTypeTag[_]] = {
+  protected[this] def mkStruct(originalRefinement: Type): c.Expr[LightTypeTag] = {
 
-    struct.decls.find(_.info.typeSymbol.isParameter).foreach {
+    originalRefinement.decls.find(_.info.typeSymbol.isParameter).foreach {
       s =>
-        val msg = s"  Encountered a type parameter ${s.info} as a part of structural refinement of $struct: It's not yet supported to summon a Tag for ${s.info} in that position!"
+        val msg = s"  Encountered a type parameter ${s.info} as a part of structural refinement of $originalRefinement: It's not yet supported to summon a Tag for ${s.info} in that position!"
 
         addImplicitError(msg)
-        c.abort(s.pos, msg)
+        c.abort(s.pos, getImplicitError())
     }
 
-    // TODO: replace types of members with Nothing, in runtime replace types to types from tags searching by TermName("")
-    summonWeakTypeTag(struct)
+    // TODO: walk over members of struct and retrieve type tags for them
+    ltagMacro.makeParsedLightTypeTagImpl(originalRefinement)
   }
 
   // we need to handle four cases – type args, refined types, type bounds and bounded wildcards(? check existence)
   @inline
   protected[this] def mkTag[T: c.WeakTypeTag](tpe: c.Type): c.Expr[Tag[T]] = {
-
-    val ctor = tpe.typeConstructor
-    val constructorTag: c.Expr[ScalaReflectTypeTag[_]] = typeParameterKind(ctor) match {
-      case None => // concrete type
-        val tpeToNothings = applyToNothings(tpe)
-        logger.log(s"Type after replacing with Nothing $tpeToNothings, replaced args ${tpe.typeArgs}")
-        summonTypeTag[Any](tpeToNothings)
-      case Some(Kind(Nil)) => // error: lower-kinded type parameter in constructor position
-        val msg = s"  could not find implicit value for ${hktagFormat(tpe)}: $tpe is a type parameter without an implicit Tag or TypeTag!"
-        addImplicitError(msg)
-        c.abort(c.enclosingPosition, msg)
-      case Some(kind) =>
-        summonTypeTagFromTagWithKind(ctor, kind)
+    val constructorTag = {
+      val ctor = tpe.typeConstructor
+      getCtorKindIfCtorIsTypeParameter(ctor) match {
+        // type constructor of this type is not a type parameter
+        // but some of its arguments are, we should resolve the arguments
+        case None =>
+          ltagMacro.makeParsedLightTypeTagImpl(ctor)
+        // error: the entire type is just a type parameter
+        case Some(Kind(Nil)) =>
+          val msg = s"  could not find implicit value for ${hktagFormat(tpe)}: $tpe is a type parameter without an implicit Tag or TypeTag!"
+          addImplicitError(msg)
+          c.abort(c.enclosingPosition, getImplicitError())
+        // type constructor is a type parameter
+        case Some(kind) =>
+          summonTypeTagFromTagWithKind(ctor, kind)
+      }
     }
-
-    val args = tpe.typeArgs.map {
-      t => norm(t.dealias)
+    val argTags = {
+      val args = tpe.typeArgs.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias))
+      c.Expr[List[LightTypeTag]](q"${args.map(summonTypeTagFromTag)}")
     }
-    val argTags = c.Expr[List[ScalaReflectTypeTag[_]]](q"${args.map(summonTypeTagFromTag)}")
 
     reify {
       {Tag.appliedTag[T](constructorTag.splice, argTags.splice)}
@@ -133,17 +139,12 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def typeParameterKind(tpe: c.Type): Option[Kind] = {
+  protected[this] def getCtorKindIfCtorIsTypeParameter(tpe: c.Type): Option[Kind] = {
     // c.internal.isFreeType ?
     if (tpe.typeSymbol.isParameter)
       Some(kindOf(tpe))
     else
       None
-  }
-
-  @inline
-  protected[this] def applyToNothings(tpe: c.Type): c.Type = {
-    c.universe.appliedType(tpe, tpe.typeArgs.map(_ => definitions.NothingTpe))
   }
 
   protected[this] def mkTypeParameter(owner: Symbol, kind: Kind): Symbol = {
@@ -196,22 +197,12 @@ class TagMacro(val c: blackbox.Context) {
   }
 
   @inline
-  protected[this] def summonTypeTag[T](tpe: c.Type): c.Expr[ScalaReflectTypeTag[T]] = {
-    c.Expr[ScalaReflectTypeTag[T]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[ScalaReflectTypeTag[Nothing]], tpe)}]")
-  }
-
-  @inline
-  protected[this] def summonWeakTypeTag(tpe: c.Type): c.Expr[ScalaReflectWeakTypeTag[_]] = {
-    c.Expr[ScalaReflectWeakTypeTag[_]](q"_root_.scala.Predef.implicitly[${appliedType(weakTypeOf[ScalaReflectWeakTypeTag[Nothing]], tpe)}]")
-  }
-
-  @inline
-  protected[this] def summonTypeTagFromTag(tpe: c.Type): c.Expr[ScalaReflectTypeTag[_]] = {
+  protected[this] def summonTypeTagFromTag(tpe: c.Type): c.Expr[LightTypeTag] = {
     summonTypeTagFromTagWithKind(tpe, kindOf(tpe))
   }
 
   @inline
-  protected[this] def summonTypeTagFromTagWithKind(tpe: c.Type, kind: Kind): c.Expr[ScalaReflectTypeTag[_]] = {
+  protected[this] def summonTypeTagFromTagWithKind(tpe: c.Type, kind: Kind): c.Expr[LightTypeTag] = {
     // dynamically typed
     val summoned = {
       try {
@@ -238,28 +229,25 @@ class TagMacro(val c: blackbox.Context) {
                   s"""\n$tpe is of a kind $kind, which doesn't have a tag name. Please create a tag synonym as follows:\n\n
                      |  type TagXXX[${kind.format("K")}] = HKTag[ { type Arg[${args.mkString(", ")}] = K[${params.mkString(", ")}] } ]\n\n
                      |And use it in your context bound, as in def x[$tpe: TagXXX] = ...
+                     |OR use Tag.auto.T macro, as in def x[$tpe: Tag.auto.T] = ...
                """.stripMargin
               }
             }""".stripMargin
           addImplicitError(msg)
-          c.abort(c.enclosingPosition, msg)
+          c.abort(c.enclosingPosition, getImplicitError())
       }
     }
 
-    c.Expr[ScalaReflectTypeTag[_]](q"{$summoned.tpe}")
+    c.Expr[LightTypeTag](q"{$summoned.tag}")
   }
 
-  /** Mini `normalize`. We don't wanna do scary things such as beta-reduce. And AFAIK the only case that can make us
-    * confuse a type-parameter for a non-parameter is an empty refinement `T {}`. So we just strip it when we get it. */
-  @tailrec
-  protected[this] final def norm(x: Type): Type = {
-    x match {
-      case RefinedType(t :: Nil, m) if m.isEmpty =>
-        logger.log(s"Stripped empty refinement of type $t. member scope $m")
-        norm(t)
-      case AnnotatedType(_, t) => norm(t)
-      case _ => x
-    }
+  def getImplicitError(): String = {
+    val annotations = symbolOf[Tag[Any]].annotations
+    annotations.headOption.flatMap(
+      AnnotationTools.findArgument(_) {
+        case Literal(Constant(s: String)) => s
+      }
+    ).getOrElse(defaultTagImplicitError)
   }
 
   @inline

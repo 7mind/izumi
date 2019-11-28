@@ -4,7 +4,7 @@ import cats.effect.IO
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
+import scala.reflect.runtime.universe._
 import izumi.distage.testkit.st.fixtures.{TestService1, TestkitSelftest}
 import izumi.fundamentals.platform.functional.Identity
 import distage.TagK

@@ -7,3 +7,7 @@ class GraphDumpBootstrapModule extends BootstrapModuleDef {
   many[PlanningObserver]
     .add[GraphDumpObserver]
 }
+
+object GraphDumpBootstrapModule {
+  def apply(): GraphDumpBootstrapModule = new GraphDumpBootstrapModule()
+}

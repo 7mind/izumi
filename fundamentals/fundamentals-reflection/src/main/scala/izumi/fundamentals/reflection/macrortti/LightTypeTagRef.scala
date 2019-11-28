@@ -3,6 +3,8 @@ package izumi.fundamentals.reflection.macrortti
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.SymTypeName
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
+import scala.annotation.tailrec
+
 sealed trait LightTypeTagRef {
   final def combine(args: Seq[LightTypeTagRef]): AbstractReference = {
     applyParameters {
@@ -39,7 +41,7 @@ sealed trait LightTypeTagRef {
     def appliedNamedReference(reference: AppliedNamedReference) = {
       reference match {
         case LightTypeTagRef.NameReference(_, _, _) => reference
-        case LightTypeTagRef.FullReference(ref, parameters@_, prefix) => FullReference(ref, Nil, prefix)
+        case LightTypeTagRef.FullReference(ref, parameters@_, prefix) => NameReference(SymTypeName(ref), Boundaries.Empty, prefix)
       }
     }
 
@@ -53,12 +55,32 @@ sealed trait LightTypeTagRef {
       }
     }
 
-    this match {
-      case Lambda(_, output) =>
-        Lambda(Nil, output.withoutArgs)
-      case reference: AppliedReference =>
-        appliedReference(reference)
+    @tailrec
+    def go(self: LightTypeTagRef): AbstractReference = {
+      self match {
+        case Lambda(_, output) =>
+          go(output)
+        case reference: AppliedReference =>
+          appliedReference(reference)
+      }
     }
+
+    go(this)
+  }
+
+  def shortName: String = {
+    @tailrec
+    def go(self: LightTypeTagRef): String = {
+      self match {
+        case Lambda(_, output) => go(output)
+        case NameReference(ref, _, _) => ref.name
+        case FullReference(ref, _, _) => ref
+        case IntersectionReference(refs) => refs.map(_.shortName).mkString(" & ")
+        case Refinement(reference, _) => go(reference)
+      }
+    }
+
+    go(this)
   }
 
   final def typeArgs: List[AbstractReference] = {

@@ -11,6 +11,7 @@ trait WithDIAnnotation {
   import u._
 
   object Id {
+    @deprecated("remove scala reflect annotation", "0.9.0")
     def unapply(ann: Annotation): Option[String] = {
       ann.tree.children.tail.collectFirst {
         case Literal(Constant(name: String)) =>
@@ -20,9 +21,9 @@ trait WithDIAnnotation {
   }
 
   object With {
-    def unapply(ann: Annotation): Option[SafeType] =
-      ann.tree.tpe.typeArgs.headOption.map(SafeType(_))
+    @deprecated("remove scala reflect annotation", "0.9.0")
+    def unapply(ann: Annotation): Option[TypeNative] =
+      ann.tree.tpe.typeArgs.headOption
   }
-
 
 }

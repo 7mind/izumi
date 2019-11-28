@@ -8,7 +8,7 @@ import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBindi
 import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
 import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
+import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import org.scalatest.WordSpec
 
@@ -65,6 +65,7 @@ class BasicTest extends WordSpec with MkInjector {
   "fails on wrong @Id annotation" in {
     import BadAnnotationsCase._
     val definition = PlannerInput.noGc(new ModuleDef {
+      // FIXME: `make` support ??? should be compile time error
       make[TestDependency0]
       make[TestClass]
     })
@@ -271,17 +272,6 @@ class BasicTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass] != null)
-  }
-
-  "handle reflected constructor references" in {
-    import BasicCase4._
-
-    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
-    val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
-    val constructor = symbolIntrospector.selectConstructor(safeType)
-
-    val allArgsHaveAnnotations = constructor.map(_.arguments.flatten.map(_.annotations)).toSeq.flatten.forall(_.nonEmpty)
-    assert(allArgsHaveAnnotations)
   }
 
   "handle set inclusions" in {

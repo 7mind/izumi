@@ -53,7 +53,7 @@ class FactoryProviderStrategyDefaultImpl
 
       loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
 
-      val res: Seq[NewObjectOp] = executor.execute(extendedContext, mkExecutableOp(op.target, method.wireWith0, op.origin))
+      val res: Seq[NewObjectOp] = executor.execute(extendedContext, mkExecutableOp(op.target, method.wireWith, op.origin))
       loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
 
       res

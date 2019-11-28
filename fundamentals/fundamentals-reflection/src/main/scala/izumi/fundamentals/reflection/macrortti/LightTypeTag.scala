@@ -4,18 +4,18 @@ import java.nio.ByteBuffer
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
 
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],
-  db: () => Map[NameReference, Set[NameReference]],
+  inheritanceDb: () => Map[NameReference, Set[NameReference]],
 ) extends Serializable {
 
   def ref: LightTypeTagRef
   protected[macrortti] lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
-  protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
+  protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = inheritanceDb()
 
   @inline final def <:<(maybeParent: LightTypeTag): Boolean = {
     new LightTypeTagInheritance(this, maybeParent).isChild()
@@ -36,22 +36,10 @@ abstract class LightTypeTag
     * }}}
     */
   def combine(args: LightTypeTag*): LightTypeTag = {
+    def mergedBasesDB = LightTypeTag.mergeIDBs(basesdb, args.iterator.map(_.basesdb))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.idb))
 
-    def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      args.foldLeft(idb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.idb)
-      }
-    }
-
-    def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      args.foldLeft(basesdb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.basesdb)
-      }
-    }
-
-    LightTypeTag(ref.combine(args.map(_.ref)), mergedBases, mergedInhDb)
+    LightTypeTag(ref.combine(args.map(_.ref)), mergedBasesDB, mergedInheritanceDb)
   }
 
   /**
@@ -64,22 +52,10 @@ abstract class LightTypeTag
     * }}}
     */
   def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
+    def mergedBasesDB = LightTypeTag.mergeIDBs(basesdb, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
 
-    def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      args.foldLeft(idb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.map(_.idb).getOrElse(Map.empty))
-      }
-    }
-
-    def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      args.foldLeft(basesdb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.map(_.basesdb).getOrElse(Map.empty))
-      }
-    }
-
-    LightTypeTag(ref.combineNonPos(args.map(_.map(_.ref))), mergedBases, mergedInhDb)
+    LightTypeTag(ref.combineNonPos(args.map(_.map(_.ref))), mergedBasesDB, mergedInheritanceDb)
   }
 
   /**
@@ -113,6 +89,11 @@ abstract class LightTypeTag
     ref.render()
   }
 
+  /** Short class or type-constructor name of this type, without package or prefix names */
+  def shortName: String = {
+    ref.shortName
+  }
+
   override def equals(other: Any): Boolean = {
     other match {
       case that: LightTypeTag =>
@@ -132,6 +113,23 @@ object LightTypeTag {
     new LightTypeTag(() => bases, () => db) {
       override final val ref: LightTypeTagRef = ref0
     }
+  }
+
+  def refinedType(intersection: List[LightTypeTag], structure: LightTypeTag): LightTypeTag = {
+    def mergedBasesDB = LightTypeTag.mergeIDBs(structure.basesdb, intersection.iterator.map(_.basesdb))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(structure.idb, intersection.iterator.map(_.idb))
+
+    val intersectionRef = LightTypeTagRef.IntersectionReference(
+      intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
+    )
+    val ref = structure.ref match {
+      case LightTypeTagRef.Refinement(_, decls) if decls.nonEmpty =>
+        LightTypeTagRef.Refinement(intersectionRef, decls)
+      case _ =>
+        intersectionRef
+    }
+
+    LightTypeTag(ref, mergedBasesDB, mergedInheritanceDb)
   }
 
   def parse[T](refString: String, basesString: String): LightTypeTag = {
@@ -188,6 +186,10 @@ object LightTypeTag {
 
     val both = self.toSeq ++ other.toSeq
     both.toMultimap.mapValues(_.flatten).toMap
+  }
+
+  private[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], others: Iterator[Map[T, Set[T]]]): Map[T, Set[T]] = {
+    others.foldLeft(self)(mergeIDBs[T])
   }
 
   // FIXME: ??? remove

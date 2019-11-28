@@ -4,9 +4,9 @@ import com.typesafe.config.ConfigFactory
 import distage.Id
 import izumi.distage.config.annotations.AutoConf
 import izumi.distage.config.model.AppConfig
-import izumi.distage.constructors.StaticModuleDef
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
 class StaticConfigTest extends WordSpec with MkInjector {
@@ -17,9 +17,9 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
-    val definition = new StaticModuleDef {
-      stat[TestDependency]
-      stat[TestTrait]
+    val definition = new ModuleDef {
+      make[TestDependency]
+      make[TestTrait]
     }
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
@@ -35,9 +35,9 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
-    val definition = new StaticModuleDef {
-      stat[TestDependency]
-      stat[TestGenericConfFactory[TestConfAlias]]
+    val definition = new ModuleDef {
+      make[TestDependency]
+      make[TestGenericConfFactory[TestConfAlias]]
     }
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
@@ -53,10 +53,10 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
-    val definition = new StaticModuleDef {
-      stat[TestDependency]
-      stat[TestFactory]
-      stat[TestGenericConfFactory[TestConfAlias]]
+    val definition = new ModuleDef {
+      make[TestDependency]
+      make[TestFactory]
+      make[TestGenericConfFactory[TestConfAlias]]
     }
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
@@ -78,7 +78,7 @@ class StaticConfigTest extends WordSpec with MkInjector {
     val config = AppConfig(ConfigFactory.load("fixtures-test.conf"))
     val injector = mkStaticInjector(new ConfigModule(config))
 
-    val definition = new StaticModuleDef {
+    val definition = new ModuleDef {
       make[Int].named("depInt").from(5)
       make[ConcreteProduct].from {
         (conf: TestConf@AutoConf, i: Int@Id("depInt")) => ConcreteProduct(conf, i * 10)

@@ -1,7 +1,6 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions.UnexpectedProvisionResultException
-import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.provisioning.NewObjectOp
 import izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
 

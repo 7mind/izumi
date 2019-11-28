@@ -8,7 +8,7 @@ trait WithDISafeType {
   this: DIUniverseBase =>
 
   // TODO: hotspot, hashcode on keys is inefficient
-  case class SafeType protected (override val tpe: TypeNative, override val tag: LightTypeTag) extends SafeType0[u.type](tpe, tag)
+  case class SafeType private (tpe: TypeNative, override val tag: LightTypeTag) extends SafeType0[u.type](tpe, tag)
 
   object SafeType {
     // FIXME TODO constructing SafeType from a runtime type tag
@@ -16,6 +16,9 @@ trait WithDISafeType {
     def apply(tpe: TypeNative): SafeType = {
       new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
     }
+
+    @deprecated("constructing SafeType from a LightTypeTag", "0.10.0")
+    def apply(tag: LightTypeTag): SafeType = new SafeType(null, tag)
 
     def get[T: Tag]: SafeType = SafeType(null, Tag[T].tag)
     def getK[K[_]: TagK]: SafeType = SafeType(null, TagK[K].tag)

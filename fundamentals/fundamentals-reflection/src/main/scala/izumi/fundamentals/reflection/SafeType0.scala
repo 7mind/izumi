@@ -6,9 +6,9 @@ import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTag
 import scala.reflect.runtime.{universe => ru}
 
 // TODO: hotspots, hashcode on keys is inefficient
+@deprecated("removing now ???", "0.10")
 class SafeType0[U <: SingletonUniverse] protected(
-                                                   @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
-                                                   val tpe: U#Type,
+                                                   private val tpe: U#Type,
                                                    val tag: LightTypeTag,
                                                  ) {
   override final val hashCode: Int = {
@@ -33,11 +33,6 @@ class SafeType0[U <: SingletonUniverse] protected(
   }
 
   final def <:<(that: SafeType0[U]): Boolean = {
-    tag <:< that.tag
-  }
-
-  @deprecated("Weak conformance is useless for DI; weakly conformed numbers are not actually assignable in runtime", "0.9.0")
-  final def weak_<:<(that: SafeType0[U]): Boolean = {
     tag <:< that.tag
   }
 

@@ -6,9 +6,9 @@ import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
+import izumi.distage.model.reflection.ReflectionProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import izumi.distage.model.reflection.{ReflectionProvider, SymbolIntrospector}
 import izumi.fundamentals.reflection.Tags.TagK
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
@@ -19,11 +19,10 @@ trait FakeSet[A] extends Set[A]
   * - Will not work for any class which performs any operations on forwarding refs within constructor
   * - Untested on constructors accepting primitive values, will fail most likely
   */
-class ProxyStrategyDefaultImpl(
-                                reflectionProvider: ReflectionProvider.Runtime
-                                , proxyProvider: ProxyProvider
-                                , mirror: MirrorProvider
-                              ) extends ProxyStrategy {
+class ProxyStrategyDefaultImpl
+(
+  proxyProvider: ProxyProvider
+) extends ProxyStrategy {
   def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)
@@ -53,7 +52,7 @@ class ProxyStrategyDefaultImpl(
       DeferredInit(proxy, proxy)
     } else {
       val tpe = proxyTargetType(makeProxy)
-      if (!SymbolIntrospector.canBeProxied(tpe)) {
+      if (!ReflectionProvider.canBeProxied(tpe)) {
         throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
       }
       makeCogenProxy(context, tpe, makeProxy)
@@ -87,13 +86,13 @@ class ProxyStrategyDefaultImpl(
           }
 
           val parameterType = if (param.isByName) {
-            import u._
-            typeOf[() => Any]
+            scala.reflect.runtime.universe.typeOf[() => Any]
           } else if (param.wasGeneric) {
-            import u._
-            typeOf[AnyRef]
+            scala.reflect.runtime.universe.typeOf[AnyRef]
           } else {
-            param.wireWith.tpe.use(identity)
+            // FIXME: proxy support ???
+            ???
+//            param.wireWith.tpe.use(identity)
           }
           (parameterType, value)
       }
@@ -101,7 +100,9 @@ class ProxyStrategyDefaultImpl(
       val argClasses = args.map(_._1)
         .map {
           t =>
-          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
+//          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
+            // FIXME: fix proxy ???
+            ??? : Class[_]
         }
         .toArray
       val argValues = args.map(_._2).toArray
@@ -110,7 +111,9 @@ class ProxyStrategyDefaultImpl(
       ProxyParams.Empty
     }
 
-    val runtimeClass = tpe.use(mirror.runtimeClass).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
+//    val runtimeClass = tpe.use(mirror.runtimeClass).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
+    // FIXME: fix proxy ???
+    val runtimeClass = ??? : Class[_]
     val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
     val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
@@ -118,13 +121,15 @@ class ProxyStrategyDefaultImpl(
   }
 
   protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
-    tpe.use {
-      t =>
-        val constructors = t.decls.filter(_.isConstructor)
-        val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
-        val hasNoDependencies = constructors.isEmpty || hasTrivial
-        !hasNoDependencies
-    }
+    ???
+    // FIXME: fix proxy ???
+//    tpe.use {
+//      t =>
+//        val constructors = t.decls.filter(_.isConstructor)
+//        val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
+//        val hasNoDependencies = constructors.isEmpty || hasTrivial
+//        !hasNoDependencies
+//    }
   }
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {

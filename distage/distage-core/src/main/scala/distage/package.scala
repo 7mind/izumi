@@ -1,6 +1,7 @@
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.planning.extensions
 import izumi.distage.{model, planning}
 import izumi.fundamentals.reflection.Tags
 
@@ -37,6 +38,12 @@ package object distage extends Distage {
 
   override type PlannerInput = model.PlannerInput
   override val PlannerInput: model.PlannerInput.type = model.PlannerInput
+
+  override type GraphDumpObserver = extensions.GraphDumpObserver
+  override val GraphDumpObserver: extensions.GraphDumpObserver.type = extensions.GraphDumpObserver
+
+  override type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
+  override val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
   override type OrderedPlan = model.plan.OrderedPlan
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan

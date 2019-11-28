@@ -87,9 +87,7 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
-    rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
-
+    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(that.get.ret); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
@@ -99,14 +97,14 @@ final case class ProviderMagnet[+A](get: Provider) {
 
   /** Add `B` as an unused dependency for this constructor */
   def addDependency[B: Tag]: ProviderMagnet[A] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
+    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(get.ret)
     map2[B, A](ProviderMagnet.identity[B])((a, _) => a)
   }
 }
 
 object ProviderMagnet {
   implicit def apply[R](fun: () => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: _ => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
+  implicit def apply[R](fun: (_) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
@@ -129,8 +127,8 @@ object ProviderMagnet {
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
 
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[_] =
-    new ProviderMagnet[Any](
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[Nothing] =
+    new ProviderMagnet[Nothing](
       Provider.ProviderImpl(
         associations = Seq.empty
         , ret = key.tpe
@@ -159,8 +157,8 @@ object ProviderMagnet {
   def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq.empty
-        , fun = (_: Seq[Any]) => a
+        associations = Seq.empty,
+        fun = (_: Seq[Any]) => a,
       )
     )
   }

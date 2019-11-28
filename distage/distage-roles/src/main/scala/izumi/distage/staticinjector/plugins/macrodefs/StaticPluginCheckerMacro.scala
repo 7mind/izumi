@@ -12,7 +12,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import izumi.distage.model.provisioning.strategies.FactoryExecutor
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{u => ru}
+import scala.reflect.runtime.{universe => ru}
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl

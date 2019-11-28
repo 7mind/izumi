@@ -1,7 +1,7 @@
 package izumi.distage.injector
 
 import distage._
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.constructors.{AnyConstructor, TraitConstructor}
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
@@ -147,7 +147,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "light type tags can handle abstract structural refinement types" in {
     import TypesCase3._
 
-    class Definition[T >: Null : Tag, G <: T {def dep : Dep} : Tag] extends ModuleDef {
+    class Definition[T >: Null: Tag, G <: T {def dep: Dep}: Tag: AnyConstructor] extends ModuleDef {
       make[Dep]
       make[T {def dep2: Dep}].from(() => null: T {def dep2: Dep})
       make[T {def dep: Dep}].from[G]
@@ -168,15 +168,8 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   "handle abstract `with` types" in {
     import TypesCase3._
 
-    // FIXME should work ???
-//    class Definition[T: Tag, G <: T with Trait1 : Tag, C <: T with Trait4 : Tag] extends ModuleDef {
-//      make[Dep]
-//      make[T with Trait4].from[C]
-//      make[T with Trait1].from[G]
-//    }
-    class Definition[T: Tag, G <: T with Trait1 : Tag, C <: T with Trait4 : Tag] extends ModuleDef {
-      implicit val a: AnyConstructor[T with Trait4] = null
-      implicit val b: AnyConstructor[T with Trait1] = null
+    class Definition[T: Tag, G <: T with Trait1: Tag: AnyConstructor, C <: T with Trait4: Tag: AnyConstructor] extends ModuleDef {
+      // FIXME: `make` support ???
       make[Dep]
       make[T with Trait4].from[C]
       make[T with Trait1].from[G]
@@ -204,15 +197,12 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     import TypesCase3._
 
     // FIXME should work ???
-//    class Definition[T <: Dep : Tag, K >: Trait5[T] : Tag] extends ModuleDef {
-//      make[T]
-//      make[Trait3[T] with K].from[Trait5[T]]
-//    }
-    class Definition[T <: Dep : Tag, K >: Trait5[T] : Tag] extends ModuleDef {
-      implicit val p: AnyConstructor[Trait3[T] with K] = null
+    class Definition[T <: Dep: Tag: AnyConstructor, K >: Trait5[T]: Tag] extends ModuleDef {
+      // FIXME: `make` support ???
       make[T]
       make[Trait3[T] with K].from[Trait5[T]]
     }
+
 
     val definition = PlannerInput.noGc(new Definition[Dep, Trait4])
 
@@ -220,6 +210,10 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
+    import izumi.fundamentals.platform.strings.IzString._
+    println(context.allInstances.map(_.key.tpe.tag).niceList())
+    val tag = Tag[Trait3[Dep] with Trait4].tag
+    println(tag)
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])
@@ -241,34 +235,30 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     assert(instantiated1.widgetId == instantiated2)
   }
 
-  "structural types are unsupported in class strategy" in {
-    intercept[UnsupportedWiringException] {
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[ {def a: Int}]
-        make[Int].from(5)
-      })
+  "structural types are supported in class strategy" in {
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[ {def a: Int}]
+      make[Int].from(5)
+    })
 
-      val injector = mkInjector()
-      val context = injector.produceUnsafe(definition)
+    val injector = mkInjector()
+    val context = injector.produceUnsafe(definition)
 
-      val instantiated = context.get[ {def a: Int}]
-      assert(instantiated.a == context.get[Int])
-    }
+    val instantiated = context.get[ {def a: Int}]
+    assert(instantiated.a == context.get[Int])
   }
 
-  "refinements are unsupported in class strategy" in {
-    intercept[UnsupportedWiringException] {
-      import TypesCase4._
+  "empty refinements are supported in class strategy" in {
+    import TypesCase4._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Dep {}]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep {}]
+    })
 
-      val injector = mkInjector()
-      val context = injector.produceUnsafe(definition)
+    val injector = mkInjector()
+    val context = injector.produceUnsafe(definition)
 
-      assert(context.get[Dep {}] != null)
-    }
+    assert(context.get[Dep {}] != null)
   }
 
 }
