@@ -222,7 +222,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     // create a copy (sharing content), set correct byte order
     val b = buf.slice().order(byteOrder)
     (buf: java.nio.Buffer).position(buf.position() + size)
-    b.limit(b.position() + size)
+    (b: java.nio.Buffer).limit(b.position() + size)
     b
   }
 
@@ -485,7 +485,7 @@ private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBuf
     // encode byte order as bit 0 in the length
     writeInt(bb.remaining * 2 | byteOrder)
     alloc(bb.remaining).put(bb)
-    bb.reset()
+    (bb: java.nio.Buffer).reset()
     this
   }
 
