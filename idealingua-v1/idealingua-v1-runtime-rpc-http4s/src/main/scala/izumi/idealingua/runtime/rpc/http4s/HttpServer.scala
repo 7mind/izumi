@@ -163,7 +163,7 @@ class HttpServer[C <: Http4sContext]
   protected def handleResult(context: WebsocketClientContextImpl[C], result: BIOExit[Throwable, Option[RpcPacket]]): Option[String] = {
     result match {
       case Success(v) =>
-        v.map(_.asJson).map(printer.pretty)
+        v.map(_.asJson).map(printer.print)
 
       case Error(error, _) =>
         Some(handleWsError(context, List(error), None, "failure"))
@@ -231,11 +231,11 @@ class HttpServer[C <: Http4sContext]
     causes.headOption match {
       case Some(cause) =>
         logger.error(s"${context -> null}: WS Execution failed, $kind, $data, $cause")
-        printer.pretty(rpc.RpcPacket.rpcCritical(data.getOrElse(cause.getMessage), kind).asJson)
+        printer.print(rpc.RpcPacket.rpcCritical(data.getOrElse(cause.getMessage), kind).asJson)
 
       case None =>
         logger.error(s"${context -> null}: WS Execution failed, $kind, $data")
-        printer.pretty(rpc.RpcPacket.rpcCritical("?", kind).asJson)
+        printer.print(rpc.RpcPacket.rpcCritical("?", kind).asJson)
     }
   }
 
@@ -257,7 +257,7 @@ class HttpServer[C <: Http4sContext]
       case Success(v) =>
         v match {
           case Some(value) =>
-            dsl.Ok(printer.pretty(value))
+            dsl.Ok(printer.print(value))
           case None =>
             logger.warn(s"${context -> null}: No service handler for $method")
             dsl.NotFound()

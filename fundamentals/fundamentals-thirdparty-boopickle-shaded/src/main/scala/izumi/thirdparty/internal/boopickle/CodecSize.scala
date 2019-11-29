@@ -111,7 +111,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   def readLong: Long = {
     val b = buf.get & 0xFF
     if (b != 0xE1) {
-      buf.position(buf.position() - 1)
+      (buf: java.nio.Buffer).position(buf.position() - 1)
       readInt.toLong
     } else {
       readRawLong
@@ -164,7 +164,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   def readLongCode: Either[Byte, Long] = {
     val b = buf.get & 0xFF
     if (b != 0xE1) {
-      buf.position(buf.position() - 1)
+      (buf: java.nio.Buffer).position(buf.position() - 1)
       readIntCode match {
         case Left(x)  => Left((x & 0xF).toByte)
         case Right(x) => Right(x.toLong)
@@ -221,8 +221,8 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
     val byteOrder = if ((sizeBO & 1) == 1) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
     // create a copy (sharing content), set correct byte order
     val b = buf.slice().order(byteOrder)
-    buf.position(buf.position() + size)
-    b.limit(b.position() + size)
+    (buf: java.nio.Buffer).position(buf.position() + size)
+    (b: java.nio.Buffer).limit(b.position() + size)
     b
   }
 
@@ -257,7 +257,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   def readFloatArray(len: Int): Array[Float] = {
     val array = new Array[Float](len)
     buf.asFloatBuffer().get(array)
-    buf.position(buf.position() + len * 4)
+    (buf: java.nio.Buffer).position(buf.position() + len * 4)
     array
   }
 
@@ -272,7 +272,7 @@ private[izumi] class DecoderSize(val buf: ByteBuffer) extends Decoder {
   def readDoubleArray(len: Int): Array[Double] = {
     val array = new Array[Double](len)
     buf.asDoubleBuffer().get(array)
-    buf.position(buf.position() + len * 8)
+    (buf: java.nio.Buffer).position(buf.position() + len * 8)
     array
   }
 }
@@ -485,7 +485,7 @@ private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBuf
     // encode byte order as bit 0 in the length
     writeInt(bb.remaining * 2 | byteOrder)
     alloc(bb.remaining).put(bb)
-    bb.reset()
+    (bb: java.nio.Buffer).reset()
     this
   }
 
@@ -514,7 +514,7 @@ private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBuf
     writeRawInt(fa.length)
     val bb = alloc(fa.length * 4)
     bb.asFloatBuffer().put(fa)
-    bb.position(bb.position() + fa.length * 4)
+    (bb: java.nio.Buffer).position(bb.position() + fa.length * 4)
     this
   }
 
@@ -527,7 +527,7 @@ private[izumi] class EncoderSize(bufferProvider: BufferProvider = DefaultByteBuf
     writeRawInt(0)
     val bb = alloc(da.length * 8)
     bb.asDoubleBuffer().put(da)
-    bb.position(bb.position() + da.length * 8)
+    (bb: java.nio.Buffer).position(bb.position() + da.length * 8)
     this
   }
 

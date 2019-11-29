@@ -1,7 +1,7 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.operations
 
 import izumi.distage.model.references.WithDIKey
-import izumi.distage.model.reflection.universe._
+import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDICallable, WithDISafeType, WithDISymbolInfo}
 import izumi.fundamentals.platform.language.Quirks._
 
 trait WithDIWiring {

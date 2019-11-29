@@ -3,6 +3,9 @@ package izumi.distage.planning
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, MonadicOp, WiringOp}
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
+import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
+import izumi.distage.model.plan.topology.{DependencyGraph, PlanTopology}
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 

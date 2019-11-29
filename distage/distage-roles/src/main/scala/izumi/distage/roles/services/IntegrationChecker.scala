@@ -71,7 +71,7 @@ object IntegrationChecker {
       }
     }
 
-    private def runCheck(resource: IntegrationCheck)(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Either[ResourceCheck.Failure, Unit]] = {
+    private def runCheck(resource: IntegrationCheck)(implicit F: DIEffect[F]): F[Either[ResourceCheck.Failure, Unit]] = {
       F.maybeSuspend {
         logger.debug(s"Checking $resource")
         try {

@@ -4,9 +4,11 @@ import izumi.distage.model._
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.plan.{AbstractPlan, DodgyPlan, OrderedPlan, SemiPlan}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 
 class InjectorDefaultImpl(parentContext: Locator) extends Injector {
@@ -14,7 +16,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
   private val planner: Planner = parentContext.get[Planner]
   private val interpreter = parentContext.get[PlanInterpreter]
 
-  override def freeze(plan: DodgyPlan): SemiPlan = {
+  override def freeze(plan: PrePlan): SemiPlan = {
     planner.freeze(plan)
   }
 
@@ -26,7 +28,7 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.rewrite(module)
   }
 
-  override def prepare(input: PlannerInput): DodgyPlan = {
+  override def prepare(input: PlannerInput): PrePlan = {
     planner.prepare(input)
   }
 
@@ -38,8 +40,9 @@ class InjectorDefaultImpl(parentContext: Locator) extends Injector {
     planner.finish(semiPlan)
   }
 
-  override def merge(a: AbstractPlan, b: AbstractPlan): OrderedPlan = {
-    planner.merge(a, b)
+
+  override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
+    planner.truncate(plan, roots)
   }
 
   override protected[distage] def produceFX[F[_] : TagK : DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator] = {

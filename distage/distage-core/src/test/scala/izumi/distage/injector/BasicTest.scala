@@ -242,7 +242,7 @@ class BasicTest extends WordSpec with MkInjector {
     val injector = mkInjector()
 
     val plan1 = injector.plan(definition)
-    val plan2 = injector.finish(plan1.providerImport {
+    val plan2 = injector.finish(plan1.toSemi.providerImport {
       verse: String@Id("verse") =>
         TestInstanceBinding(verse)
     })

@@ -4,15 +4,16 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.atomic.AtomicReference
 
-import izumi.distage.model.GCMode
+import distage._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, ProxyOp}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.repr.KeyMinimizer
 import izumi.distage.model.plan.{OrderedPlan => _, SemiPlan => _, _}
 import izumi.distage.model.planning.{PlanAnalyzer, PlanningObserver}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions.GraphDumpObserver.RenderedDot
 import izumi.fundamentals.graphs.dotml.Digraph
 import izumi.fundamentals.platform.language.Quirks._
-import distage._
 
 import scala.collection.mutable
 
@@ -22,9 +23,9 @@ final class GraphDumpObserver
 ) extends PlanningObserver {
   private[this] val beforeFinalization = new AtomicReference[SemiPlan](null)
 
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {}
+  override def onSuccessfulStep(next: PrePlan): Unit = {}
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = synchronized {
+  override def onPhase00PlanCompleted(plan: PrePlan): Unit = synchronized {
     beforeFinalization.set(null)
   }
 
@@ -84,12 +85,7 @@ final class GraphDumpObserver
     val missingKeysSeq = missingKeys.toSeq
 
     val km = new KeyMinimizer(goodKeys ++ originalKeys)
-    val roots = finalPlan.gcMode match {
-      case GCMode.GCRoots(roots) =>
-        roots
-      case GCMode.NoGC =>
-        Set.empty[DIKey]
-    }
+    val roots = finalPlan.declaredRoots
 
     goodKeys.foreach {
       k =>

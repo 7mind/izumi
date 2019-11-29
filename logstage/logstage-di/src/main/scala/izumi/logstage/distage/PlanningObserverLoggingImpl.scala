@@ -1,15 +1,16 @@
 package izumi.logstage.distage
 
-import izumi.distage.model.plan.{DodgyPlan, SemiPlan, OrderedPlan}
+import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningObserver
 import izumi.logstage.api.IzLogger
 
 class PlanningObserverLoggingImpl(log: IzLogger) extends PlanningObserver {
-  override def onSuccessfulStep(next: DodgyPlan): Unit = {
+  override def onSuccessfulStep(next: PrePlan): Unit = {
     log.trace(s"DIStage performed planning step:\n$next")
   }
 
-  override def onPhase00PlanCompleted(plan: DodgyPlan): Unit = {
+  override def onPhase00PlanCompleted(plan: PrePlan): Unit = {
     log.debug(s"[onPhase00PlanCompleted]:\n$plan")
   }
 

@@ -1,10 +1,35 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.topology
 
+import izumi.distage.model.plan.topology.DepTreeNode.DepNode
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 
+
 case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) {
+  def dropDepsOf(keys: Set[DIKey]): DependencyGraph = {
+    kind match {
+      case DependencyKind.Depends =>
+        val filtered = graph.view
+          .flatMap {
+            case (k, _) if keys.contains(k) =>
+              Seq(k -> Set.empty[DIKey])
+            case o => Seq(o)
+          }
+          .toMap
+        DependencyGraph(filtered, kind)
+      case DependencyKind.Required =>
+        val filtered = graph.view
+          .flatMap {
+            case (k, v)  =>
+              Seq(k -> v.diff(keys))
+          }
+          .toMap
+        DependencyGraph(filtered, kind)
+    }
+  }
+
   /**
     * This method is relatively expensive
     *
@@ -37,30 +62,14 @@ case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) 
   }
 }
 
-/**
-  * This class represents direct node dependencies and allows to retrive full transitive dependencies for a node
-  */
-sealed trait PlanTopology {
-  def dependees: DependencyGraph
+object DependencyGraph {
+  sealed trait DependencyKind
 
-  def dependencies: DependencyGraph
+  object DependencyKind {
 
-  /**
-    * This method is relatively expensive
-    *
-    * @return full set of all the keys transitively depending on key
-    */
-  def transitiveDependees(key: DIKey): Set[DIKey] = dependees.transitive(key)
+    final case object Depends extends DependencyKind
 
-  /**
-    * This method is relatively expensive
-    *
-    * @return full set of all the keys transitively depending on key
-    */
-  def transitiveDependencies(key: DIKey): Set[DIKey] = dependencies.transitive(key)
+    final case object Required extends DependencyKind
+
+  }
 }
-
-final case class PlanTopologyImmutable(
-                                        dependees: DependencyGraph
-                                        , dependencies: DependencyGraph
-                                      ) extends PlanTopology

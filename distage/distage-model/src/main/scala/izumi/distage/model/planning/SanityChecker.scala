@@ -1,6 +1,7 @@
 package izumi.distage.model.planning
 
 import izumi.distage.model.plan._
+import izumi.distage.model.plan.initial.NextOps
 
 trait SanityChecker {
 

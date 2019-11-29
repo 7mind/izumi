@@ -31,8 +31,7 @@ class SanityCheckerDefaultImpl
       throw new MissingRefException(s"Cannot finish the plan, there are missing references: $missingRefs in ${fullRefTable.dependencies}!", missingRefs, Some(fullRefTable))
     }
 
-    val roots = plan.gcMode.toSet
-    val missingRoots = roots.diff(plan.keys)
+    val missingRoots = plan.declaredRoots.diff(plan.keys)
     if (missingRoots.nonEmpty) {
       throw new MissingRootsException(s"Missing GC roots in final plan, check if there were any conflicts: $missingRoots", missingRoots)
     }

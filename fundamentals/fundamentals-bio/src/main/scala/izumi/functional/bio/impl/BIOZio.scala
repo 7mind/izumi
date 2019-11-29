@@ -20,6 +20,7 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   @inline override final def pure[A](a: A): IO[Nothing, A] = ZIO.succeed(a)
   @inline override final def sync[A](effect: => A): IO[Nothing, A] = ZIO.effectTotal(effect)
   @inline override final def syncThrowable[A](effect: => A): IO[Throwable, A] = ZIO.effect(effect)
+  @inline override final def suspend[A](effect: => IO[Throwable, A]): IO[Throwable, A] = ZIO.effectSuspend(effect)
 
   @inline override final def fail[E](v: => E): IO[E, Nothing] = ZIO.effectTotal(v).flatMap[R, E, Nothing](ZIO.fail)
   @inline override final def terminate(v: => Throwable): IO[Nothing, Nothing] = ZIO.effectTotal(v).flatMap[R, Nothing, Nothing](ZIO.die)

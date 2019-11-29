@@ -1,10 +1,9 @@
 package izumi.distage.roles.services
 
 import distage.{BootstrapModule, DIKey, Injector, TagK, _}
-import izumi.distage.model.TriSplittedPlan
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.{AppActivation, IntegrationCheck}
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
@@ -51,22 +50,15 @@ object RoleAppPlanner {
 
       val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-      val appPlan = injector.triSplitPlan(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
+      val appPlan = injector.trisectByKeys(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 
       val check = new PlanCircularDependencyCheck(options, logger)
       check.verify(runtimePlan)
-      check.verify(appPlan.shared.plan)
-      check.verify(appPlan.side.plan)
-      check.verify(appPlan.primary.plan)
-
-//      import izumi.fundamentals.platform.strings.IzString._
-//      logger.info(s"${fullAppModule.bindings.niceList() -> "app module"}")
-//      logger.info(s"${runtimePlan.render() -> "runtime plan"}")
-//      logger.info(s"${appPlan.shared.plan.render() -> "shared plan"}")
-//      logger.info(s"${appPlan.side.plan.render() -> "integration plan"}")
-//      logger.info(s"${appPlan.primary.plan.render() -> "primary plan"}")
+      check.verify(appPlan.shared)
+      check.verify(appPlan.side)
+      check.verify(appPlan.primary)
 
       AppStartupPlans(
         runtimePlan,

@@ -1,4 +1,5 @@
 import izumi.distage.model.definition.Axis.AxisValue
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.{model, planning}
 
@@ -22,8 +23,8 @@ package object distage extends Distage {
   override type Locator = model.Locator
   override type Producer = model.Producer
 
-  override type GCMode = model.GCMode
-  override val GCMode: model.GCMode.type = model.GCMode
+  override type GCMode = model.plan.GCMode
+  override val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
@@ -40,7 +41,7 @@ package object distage extends Distage {
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
   override type SemiPlan = model.plan.SemiPlan
   override val SemiPlan: model.plan.SemiPlan.type = model.plan.SemiPlan
-  override type AbstractPlan = model.plan.AbstractPlan
+  override type AbstractPlan[OpType <: ExecutableOp] = model.plan.AbstractPlan[OpType]
 
   override type Id = model.definition.Id
   override type With[T] = model.definition.With[T]
@@ -60,7 +61,7 @@ package object distage extends Distage {
   override type BootstrapModule = model.definition.BootstrapModule
   override val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 
-  override val CompactPlanFormatter: model.plan.CompactPlanFormatter.type = model.plan.CompactPlanFormatter
+  override val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
 
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

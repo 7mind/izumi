@@ -11,6 +11,7 @@ import izumi.fundamentals.platform.strings.IzString._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.typesafe.config.RuntimeConfigReader
 import com.typesafe.config.{ConfigException, ConfigObject, ConfigValue}
+import izumi.distage.model.plan.operations.OperationOrigin
 
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -54,20 +55,20 @@ class ConfigProvider
       case TranslationResult.Success(op, _) => op
     }
 
-    val newPlan = SemiPlan(plan.definition, ops :+ usedConfigOp, plan.gcMode)
+    val newPlan = SemiPlan(ops :+ usedConfigOp, plan.gcMode)
     newPlan
   }
 
   private def resolvedConfigOp(config: AppConfig, updatedSteps: Vector[TranslationResult]): ExecutableOp.WiringOp.ReferenceInstance = {
     val paths = updatedSteps.collect {
       case TranslationResult.Success(_, path) => path
-
     }
     val resolvedConfig = ResolvedConfig(config, paths.toSet)
     val target = DIKey.get[ResolvedConfig]
     ExecutableOp.WiringOp.ReferenceInstance(
-      target
-      , Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig), None
+      target,
+      Wiring.SingletonWiring.Instance(target.tpe, resolvedConfig),
+      OperationOrigin.Unknown,
     )
   }
 

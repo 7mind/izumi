@@ -7,9 +7,9 @@ import izumi.distage.roles.services.IntegrationChecker
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment, SpecEnvironmentImpl}
 import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
-import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
+import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
 
@@ -70,19 +70,18 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
-    val tracker = args.tracker
 
     try {
       if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
-        doRun(tracker, testName, args)
+        doRun(testName, args)
       } else {
-        addStub(args, tracker, None)
+        addStub(args, None)
       }
     } catch {
       case t: Throwable =>
         // IDEA reporter is insane
         //status.setFailedWith(t)
-        addStub(args, tracker, Some(t))
+        addStub(args, Some(t))
 
     } finally {
       status.setCompleted()
@@ -112,9 +111,8 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
   }
 
-  private def doRun(tracker: Tracker, testName: Option[String], args: Args): Unit = {
-
-    val dreporter = mkTestReporter(args, tracker)
+  private def doRun(testName: Option[String], args: Args): Unit = {
+    val dreporter = mkTestReporter(args)
 
     val toRun = testName match {
       case None =>
@@ -146,99 +144,23 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = {
       val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
       val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](dreporter, checker, specEnv, toRun)
+      new DistageTestRunner[F](dreporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException])
     }
 
     runner.run()
   }
 
-  private def mkTestReporter(args: Args, tracker: Tracker): TestReporter = {
-    def ord(testId: TestMeta) = {
-      Quirks.discard(testId)
-      tracker.nextOrdinal()
-    }
+  private def mkTestReporter(args: Args): TestReporter = {
 
-    def recordStart(test: TestMeta): Unit = {
-      args.reporter.apply(TestStarting(
-        ord(test),
-        suiteName, suiteId, Some(suiteId),
-        test.id.name,
-        test.id.name,
-        location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-      ))
-    }
 
-    new TestReporter {
-      override def beginSuite(id: SuiteData): Unit = {
-        args.reporter.apply(TestStarting(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          id.suiteName,
-          id.suiteName,
-        ))
-      }
+    val scalatestReporter = new ScalatestReporter(args, suiteName, suiteId)
 
-      override def endSuite(id: SuiteData): Unit = {
-        args.reporter.apply(TestSucceeded(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          id.suiteName,
-          id.suiteName,
-          scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-        ))
-      }
-
-      override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = {
-        testStatus match {
-          case TestStatus.Scheduled =>
-
-          case TestStatus.Running =>
-            recordStart(test)
-
-          case TestStatus.Succeed(duration) =>
-            args.reporter.apply(TestSucceeded(
-              ord(test),
-              suiteName, suiteId, Some(suiteId),
-              test.id.name,
-              test.id.name,
-              scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-              location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-              duration = Some(duration.toMillis),
-              rerunner = Some(test.id.suiteClassName),
-            ))
-          case TestStatus.Failed(t, duration) =>
-            args.reporter.apply(TestFailed(
-              ord(test),
-              "Test failed",
-              suiteName, suiteId, Some(suiteId),
-              test.id.name,
-              test.id.name,
-              scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-              location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-              throwable = Some(t),
-              duration = Some(duration.toMillis),
-              rerunner = Some(test.id.suiteClassName),
-            ))
-          case TestStatus.Cancelled(checks) =>
-            recordStart(test)
-            import izumi.fundamentals.platform.strings.IzString._
-            args.reporter.apply(TestCanceled(
-              ord(test),
-              s"ignored: ${checks.niceList()}",
-              suiteName, suiteId, Some(suiteId),
-              test.id.name,
-              test.id.name,
-              scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-              location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
-              rerunner = Some(test.id.suiteClassName),
-            ))
-        }
-      }
-    }
+    new SafeTestReporter(scalatestReporter)
   }
 
-  private def addStub(args: Args, tracker: Tracker, failure: Option[Throwable]): Unit = {
-    val FUCK_SCALATEST = "Scalatest is not good for your mental health"
+  private def addStub(args: Args, failure: Option[Throwable]): Unit = {
+    val tracker = args.tracker
+    val FUCK_SCALATEST = "Scalatest and IDEA aren't so nice"
     val SUITE_FAILED = "Whole suite failed :/"
 
     failure match {
@@ -281,3 +203,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   final override val styleName: String = "DistageSuite"
 }
+
+
+

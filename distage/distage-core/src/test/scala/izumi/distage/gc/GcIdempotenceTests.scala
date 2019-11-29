@@ -1,8 +1,9 @@
 package izumi.distage.gc
 
-import izumi.distage.model.{GCMode, PlannerInput}
+import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import distage.DIKey
+import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
 
 

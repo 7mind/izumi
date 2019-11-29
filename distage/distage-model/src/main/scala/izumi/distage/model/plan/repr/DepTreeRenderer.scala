@@ -1,41 +1,20 @@
-package izumi.distage.model.plan
+package izumi.distage.model.plan.repr
 
+import izumi.distage.model.plan.topology.DepTreeNode
+import izumi.distage.model.plan.topology.DepTreeNode._
+import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
+import izumi.distage.model.plan.OrderedPlan
+import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
-
-sealed trait DepTreeNode {
-  def level: Int
-
-}
-
-final case class Truncated(level: Int) extends DepTreeNode
-
-final case class CircularReference(key: DIKey, level: Int) extends DepTreeNode
-
-final case class DepNode(key: DIKey, graph: DependencyGraph, level: Int, limit: Option[Int], exclusions: Set[DIKey]) extends DepTreeNode {
-  def children: Set[DepTreeNode] = {
-    val children = graph.direct(key)
-
-    if (limit.exists(_ <= level)) {
-      Set(Truncated(level))
-    } else {
-      children.diff(exclusions).map {
-        child =>
-          DepNode(child, graph, level + 1, limit, exclusions + key)
-      } ++ children.intersect(exclusions).map {
-        child =>
-          CircularReference(child, level + 1)
-      }
-    }
-  }
-}
 
 
 class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
   val minimizer = new KeyMinimizer(collectKeys(node))
 
   def render(): String = render(node)
+
   /**
     * May be unsafe to call on big graphs
     */
@@ -73,9 +52,20 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
     }
   }
 
+  private def renderOrigin(origin: OperationOrigin): String = {
+    origin match {
+      case OperationOrigin.UserBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.SyntheticBinding(binding) =>
+        binding.origin.toString
+      case OperationOrigin.Unknown =>
+        ""
+    }
+  }
+
 
   private def renderKey(key: DIKey): String = {
-    s"${minimizer.render(key)} ${plan.index.get(key).flatMap(_.origin).map(_.origin).getOrElse("")}"
+    s"${minimizer.render(key)} ${plan.index.get(key).map(op => renderOrigin(op.origin)).getOrElse("")}"
   }
 
   private def collectKeys(node: DepTreeNode): Set[DIKey] = {

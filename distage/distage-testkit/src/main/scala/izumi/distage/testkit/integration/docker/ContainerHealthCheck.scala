@@ -1,6 +1,6 @@
 package izumi.distage.testkit.integration.docker
 
-import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, DockerPort, HealthCheckResult}
 import izumi.fundamentals.platform.integration.{PortCheck, ResourceCheck}
 import izumi.logstage.api.IzLogger
 

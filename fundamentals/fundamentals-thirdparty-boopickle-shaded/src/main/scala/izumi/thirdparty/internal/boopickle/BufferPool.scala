@@ -84,7 +84,7 @@ private[izumi] object BufferPool {
             val rNext = (rIdx + 1) % entryCount
             if (rNext != aIdx) {
               // try to release the buffer
-              bb.clear()
+              (bb: java.nio.Buffer).clear()
               pool1(rNext) = bb
               releaseIdx1.compareAndSet(rIdx, rNext)
               ()
@@ -95,7 +95,7 @@ private[izumi] object BufferPool {
             val rNext = (rIdx + 1) % entryCount
             if (rNext != aIdx) {
               // try to release the buffer
-              bb.clear()
+              (bb: java.nio.Buffer).clear()
               pool0(rNext) = bb
               releaseIdx0.compareAndSet(rIdx, rNext)
               ()
