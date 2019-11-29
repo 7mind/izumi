@@ -81,7 +81,7 @@ object StringCodec extends StringCodecBase {
       // get the underlying Int8Array
       val ta = buf.typedArray()
       val s  = utf8decoder(ta.subarray(buf.position(), buf.position() + len))
-      buf.position(buf.position() + len)
+      (buf: java.nio.Buffer).position(buf.position() + len)
       s
     } else {
       val a = new Array[Byte](len)
@@ -101,7 +101,7 @@ object StringCodec extends StringCodecBase {
   override def decodeUTF16(len: Int, buf: ByteBuffer): String = {
     if (buf.isDirect) {
       val ta = new Uint16Array(buf.typedArray().buffer, buf.position() + buf.typedArray().byteOffset, len / 2)
-      buf.position(buf.position() + len)
+      (buf: java.nio.Buffer).position(buf.position() + len)
       utf16decoder(ta)
       //new String(ta.toArray) // alt implementation
     } else {
@@ -160,7 +160,7 @@ object StringCodec extends StringCodecBase {
       }
       src += 1
     }
-    bb.position(dst)
+    (bb: java.nio.Buffer).position(dst)
   }
 
   private def charArray2String(chars: js.Array[Int], offset: Int, len: Int): String = {
@@ -192,7 +192,7 @@ object StringCodec extends StringCodecBase {
       }
       dst += 1
     }
-    buf.position(offset)
+    (buf: java.nio.Buffer).position(offset)
 
     // for really long strings, convert in pieces to avoid JS engine overflows
     if (len > 4096) {

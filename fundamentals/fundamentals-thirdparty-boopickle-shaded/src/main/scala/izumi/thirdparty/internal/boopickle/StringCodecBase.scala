@@ -62,7 +62,7 @@ private[izumi] abstract class StringCodecFast {
       }
       src += 1
     }
-    bb.position(dst - bb.arrayOffset())
+    (bb: java.nio.Buffer).position(dst - bb.arrayOffset())
   }
 
   def encodeFastBuf(s: String, bb: ByteBuffer): Unit = {
@@ -118,7 +118,7 @@ private[izumi] abstract class StringCodecFast {
       }
       dst += 1
     }
-    buf.position(offset - buf.arrayOffset())
+    (buf: java.nio.Buffer).position(offset - buf.arrayOffset())
     new String(cp)
   }
 

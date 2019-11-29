@@ -124,7 +124,7 @@ private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
     val byteOrder = if ((sizeBO & 1) == 1) ByteOrder.BIG_ENDIAN else ByteOrder.LITTLE_ENDIAN
     // create a copy (sharing content), set correct byte order
     val b = buf.slice().order(byteOrder)
-    buf.position(buf.position() + size)
+    (buf: java.nio.Buffer).position(buf.position() + size)
     b.limit(b.position() + size)
     b
   }
@@ -146,7 +146,7 @@ private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
   def readIntArray(len: Int): Array[Int] = {
     val array = new Array[Int](len)
     buf.asIntBuffer().get(array)
-    buf.position(buf.position() + len * 4)
+    (buf: java.nio.Buffer).position(buf.position() + len * 4)
     array
   }
 
@@ -157,7 +157,7 @@ private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
   def readFloatArray(len: Int): Array[Float] = {
     val array = new Array[Float](len)
     buf.asFloatBuffer().get(array)
-    buf.position(buf.position() + len * 4)
+    (buf: java.nio.Buffer).position(buf.position() + len * 4)
     array
   }
 
@@ -172,7 +172,7 @@ private[izumi] class DecoderSpeed(val buf: ByteBuffer) extends Decoder {
   def readDoubleArray(len: Int): Array[Double] = {
     val array = new Array[Double](len)
     buf.asDoubleBuffer().get(array)
-    buf.position(buf.position() + len * 8)
+    (buf: java.nio.Buffer).position(buf.position() + len * 8)
     array
   }
 }
@@ -351,7 +351,7 @@ private[izumi] class EncoderSpeed(bufferProvider: BufferProvider = DefaultByteBu
     writeRawInt(ia.length)
     val bb = alloc(ia.length * 4)
     bb.asIntBuffer().put(ia)
-    bb.position(bb.position() + ia.length * 4)
+    (bb: java.nio.Buffer).position(bb.position() + ia.length * 4)
     this
   }
 
@@ -362,7 +362,7 @@ private[izumi] class EncoderSpeed(bufferProvider: BufferProvider = DefaultByteBu
     writeRawInt(fa.length)
     val bb = alloc(fa.length * 4)
     bb.asFloatBuffer().put(fa)
-    bb.position(bb.position() + fa.length * 4)
+    (bb: java.nio.Buffer).position(bb.position() + fa.length * 4)
     this
   }
 
@@ -375,7 +375,7 @@ private[izumi] class EncoderSpeed(bufferProvider: BufferProvider = DefaultByteBu
     writeRawInt(0)
     val bb = alloc(da.length * 8)
     bb.asDoubleBuffer().put(da)
-    bb.position(bb.position() + da.length * 8)
+    (bb: java.nio.Buffer).position(bb.position() + da.length * 8)
     this
   }
 
