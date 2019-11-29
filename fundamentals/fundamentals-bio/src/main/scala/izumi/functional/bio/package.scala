@@ -167,8 +167,9 @@ package object bio extends BIOSyntax {
     type Or[+E, +A] = F[E, A]
     type Just[+A] = F[Nothing, A]
 
-    @inline def syncThrowable[A](effect: => A): F[Throwable, A]
-    @inline def sync[A](effect: => A): F[Nothing, A]
+    def syncThrowable[A](effect: => A): F[Throwable, A]
+    def sync[A](effect: => A): F[Nothing, A]
+
     @inline final def apply[A](effect: => A): F[Throwable, A] = syncThrowable(effect)
 
     // defaults
@@ -191,31 +192,32 @@ package object bio extends BIOSyntax {
   trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOAsyncInstances {
     final type Canceler = F[Nothing, Unit]
 
-    @inline def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
-    @inline def asyncF[E, A](register: (Either[E, A] => Unit) => F[E, Unit]): F[E, A]
-    @inline def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): F[E, A]
+    def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
+    def asyncF[E, A](register: (Either[E, A] => Unit) => F[E, Unit]): F[E, A]
+    def asyncCancelable[E, A](register: (Either[E, A] => Unit) => Canceler): F[E, A]
 
-    @inline def fromFuture[A](mkFuture: ExecutionContext => Future[A]): F[Throwable, A]
-    @inline def fromFutureJava[A](javaFuture: => CompletionStage[A]): F[Throwable, A]
+    def fromFuture[A](mkFuture: ExecutionContext => Future[A]): F[Throwable, A]
+    def fromFutureJava[A](javaFuture: => CompletionStage[A]): F[Throwable, A]
 
-    @inline def yieldNow: F[Nothing, Unit]
-    @inline def never: F[Nothing, Nothing] = async(_ => ())
+    def yieldNow: F[Nothing, Unit]
 
     /** Race two actions, the winner is the first action to TERMINATE, whether by success or failure */
-    @inline def race[E, A](r1: F[E, A], r2: F[E, A]): F[E, A]
-    @inline def racePair[E, A, B](fa: F[E, A], fb: F[E, B]): F[E, Either[(A, BIOFiber[F, E, B]), (BIOFiber[F, E, A], B)]]
+    def race[E, A](r1: F[E, A], r2: F[E, A]): F[E, A]
+    def racePair[E, A, B](fa: F[E, A], fb: F[E, B]): F[E, Either[(A, BIOFiber[F, E, B]), (BIOFiber[F, E, A], B)]]
 
-    @inline def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
-    @inline def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
-    @inline def parTraverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
+    def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
+    def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
+    def parTraverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
-    @inline def sleep(duration: Duration): F[Nothing, Unit]
+    def sleep(duration: Duration): F[Nothing, Unit]
 
-    @inline def uninterruptible[E, A](r: F[E, A]): F[E, A]
+    def uninterruptible[E, A](r: F[E, A]): F[E, A]
 
-    @inline def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
+    def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
 
     // defaults
+    @inline def never: F[Nothing, Nothing] = async(_ => ())
+
     @inline def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
     @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
