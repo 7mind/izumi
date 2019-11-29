@@ -53,21 +53,6 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     }
   }
 
-  // ParameterContext
-
-  implicit val liftableConstructorParameterContext: Liftable[DependencyContext.ConstructorParameterContext] = {
-    context => q"{ new $runtimeDIUniverse.DependencyContext.ConstructorParameterContext(${context.definingClass}, ${context.parameterSymbol}) }"
-  }
-
-  implicit val liftableMethodParameterContext: Liftable[DependencyContext.MethodParameterContext] = {
-    context => q"{ new $runtimeDIUniverse.DependencyContext.MethodParameterContext(${context.definingClass}, ${context.factoryMethod}) }"
-  }
-
-  implicit val liftableParameterContext: Liftable[DependencyContext.ParameterContext] = {
-    case context: DependencyContext.ConstructorParameterContext => q"$context"
-    case context: DependencyContext.MethodParameterContext => q"$context"
-  }
-
   // SymbolInfo
 
   // Symbols may contain uninstantiated poly types, and are usually only included for debugging purposes anyway
@@ -76,12 +61,11 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     info =>
       q"""
     { $runtimeDIUniverse.SymbolInfo.Static(
-      ${info.name}
-      , ${liftableUnsafeWeakSafeType(info.finalResultType)}
-      , ${info.annotations}
-      , ${liftableUnsafeWeakSafeType(info.definingClass)}
-      , ${info.isByName}
-      , ${info.wasGeneric}
+      ${info.name},
+      ${liftableUnsafeWeakSafeType(info.finalResultType)},
+      ${info.annotations},
+      ${info.isByName},
+      ${info.wasGeneric}
       )
     }
        """
@@ -90,8 +74,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // Associations
 
   implicit val liftableParameter: Liftable[Association.Parameter] = {
-    case Association.Parameter(context, name, tpe, wireWith, isByName, wasGeneric) =>
-      q"{ new $runtimeDIUniverse.Association.Parameter($context, $name, $tpe, $wireWith, $isByName, $wasGeneric)}"
+    case Association.Parameter(symbol, key) =>
+      q"new $runtimeDIUniverse.Association.Parameter($symbol, $key)"
   }
 
   // Annotations

@@ -1,8 +1,8 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, SymbolInfo}
+import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, SafeType, SymbolInfo}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
@@ -138,13 +138,19 @@ object ProviderMagnet {
     )
 
   def identity[A: Tag]: ProviderMagnet[A] = {
-    val tpe = SafeType.get[A]
     val key = DIKey.get[A]
-    val debugInfo = DependencyContext.ConstructorParameterContext(tpe, SymbolInfo.Static("x$1", tpe, Nil, tpe, isByName = false, wasGeneric = false))
+    val tpe = key.tpe
+    val symbolInfo = SymbolInfo.Static(
+      name = "x$1",
+      finalResultType = tpe,
+      annotations = Nil,
+      isByName = false,
+      wasGeneric = false
+    )
 
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false))
+        associations = Seq(Association.Parameter(symbolInfo, key))
       , fun = (_: Seq[Any]).head.asInstanceOf[A]
       )
     )

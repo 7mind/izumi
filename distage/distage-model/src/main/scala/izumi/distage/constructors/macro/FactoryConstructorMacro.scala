@@ -3,7 +3,7 @@ package izumi.distage.constructors.`macro`
 import izumi.distage.constructors.{AnyConstructor, DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.strategies.FactoryExecutor
-import izumi.distage.model.reflection.macros.DIUniverseLiftables
+import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.provisioning.FactoryTools
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
@@ -46,19 +46,17 @@ object FactoryConstructorMacro {
       reflectionProvider.symbolToWiring(targetType)
     }
 
-    val (dependencyArgs, dependencyMethods) = dependencies.map {
-      case AbstractMethod(ctx, name, _, key) =>
+    val (dependencyAssociations, dependencyArgs, dependencyMethods) = dependencies.map {
+      case m @ AbstractMethod(symbol, key) =>
         key.tpe.use { tpe =>
-          val methodName: TermName = TermName(name)
+          val methodName: TermName = TermName(symbol.name)
           val argName: TermName = c.freshName(methodName)
 
-          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
-
-          (q"$mods val $argName: $tpe", q"override val $methodName: $tpe = $argName")
+          (m.asParameter, q"val $argName: $tpe", q"override val $methodName: $tpe = $argName")
         }
-    }.unzip
+    }.unzip3
 
-    val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor].typeSymbol
+    val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor]
     val factoryTools = symbolOf[FactoryTools.type].asClass.module
 
     val (producerMethods, withContexts) = wireables.zipWithIndex.map {
@@ -84,24 +82,22 @@ object FactoryConstructorMacro {
           }
           """)
 
-        val providedKeys = method.associationsFromContext.map(_.wireWith)
+        val providedKeys = method.associationsFromContext.map(_.key)
 
         val methodInfo =
           q"""{
           val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
 
-          ${reify(RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod)}.apply(
-            ${liftableSymbolInfo(factoryMethod)}
-            , wiring
-            , wiring.associations.map(_.wireWith) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)} // work hard to ensure pointer equality of dikeys...
+          new ${weakTypeOf[RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod]}(
+            ${liftableSymbolInfo(factoryMethod)},
+            wiring,
+            wiring.associations.map(_.key) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)} // work hard to ensure pointer equality of dikeys...
           )
         }"""
 
         methodDef -> methodInfo
     }.unzip
 
-    val executorArg = q"$executorName: $executorType"
-    val allArgs = executorArg +: dependencyArgs
     val allMethods = producerMethods ++ dependencyMethods
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
@@ -111,21 +107,32 @@ object FactoryConstructorMacro {
       q"new ..$parents { ..$allMethods }"
     }
 
-    val defConstructor =
-      q"""
-      def constructor(..$allArgs): $targetType = ($instantiate): $targetType
-      """
+    val executorArg = q"val $executorName: $executorType"
+    val allArgs = executorArg +: dependencyArgs
+    val executorAssociation = {
+      val unsafeSafeType = SafeType(executorType)
+      val executorKey = DIKey.TypeKey(unsafeSafeType)
+      Association.Parameter(SymbolInfo.Static("executor", unsafeSafeType, Nil, false, false), executorKey)
+    }
+    val allAssociations = executorAssociation +: dependencyAssociations
 
-    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
+    val constructor = q"(..$allArgs) => ($instantiate): $targetType"
+
+    val provided = {
+      val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
+      providerMagnetMacro.generateProvider[T](
+        allAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        constructor,
+        generateUnsafeWeakSafeTypes = false,
+      )
+    }
     val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
-          $defConstructor
-
           val withContexts = ${withContexts.toList}
           val ctxMap = withContexts.zipWithIndex.map(_.swap).toMap
 
-          val magnetized = $providerMagnet.apply[$targetType](constructor _)
+          val magnetized = $provided
           val res = new ${weakTypeOf[ProviderMagnet[T]]}(
             new ${weakTypeOf[RuntimeDIUniverse.Provider.FactoryProvider.FactoryProviderImpl]}(magnetized.get, ctxMap)
           )

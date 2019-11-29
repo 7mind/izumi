@@ -61,7 +61,6 @@ class BasicTest extends WordSpec with MkInjector {
     assert(ss.isEmpty)
   }
 
-
   "fails on wrong @Id annotation" in {
     import BadAnnotationsCase._
     val definition = PlannerInput.noGc(new ModuleDef {

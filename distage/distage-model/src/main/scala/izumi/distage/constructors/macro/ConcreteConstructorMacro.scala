@@ -2,6 +2,7 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
@@ -44,34 +45,32 @@ object ConcreteConstructorMacro {
     }
 
     val paramLists = reflectionProvider.constructorParameterLists(targetType)
-
     val fnArgsNamesLists = paramLists.map(_.map {
       p =>
         val name = c.freshName(TermName(p.name))
 
-        val mods = AnnotationTools.mkModifiers(u)(p.context.symbol.annotations)
-
-        p.wireWith.tpe.use {
+        p.key.tpe.use {
           tpe =>
-            q"$mods val $name: ${ReflectionUtil.deannotate[c.universe.type](tpe)}" -> name
+            // FIXME: by-names are borked, gotta fix ???
+            val newParamNoByName = p.copy(symbol = p.symbol.withTpe(p.key.tpe).withIsByName(false))
+            (newParamNoByName -> q"val $name: $tpe", name)
         }
 
     })
 
-    val args = fnArgsNamesLists.flatten.unzip._1
+    val (associations, args) = fnArgsNamesLists.flatten.map(_._1).unzip
     val argNamesLists = fnArgsNamesLists.map(_.map(_._2))
 
-    val fn = q"(..$args) => new $targetType(...$argNamesLists)"
+    val constructor = q"(..$args) => new $targetType(...$argNamesLists)"
 
-//    val providerMagnetMacro = new ProviderMagnetMacro(c)
-//    val provided = providerMagnetMacro.impl[T](generateUnsafeWeakSafeTypes, fn.asInstanceOf[providerMagnetMacro.c.Tree]).asInstanceOf[c.Expr[ProviderMagnet[T]]]
-    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
-
-    val provided =
-      if (generateUnsafeWeakSafeTypes)
-        q"{ $providerMagnet.generateUnsafeWeakSafeTypes[$targetType]($fn) }"
-      else
-        q"{ $providerMagnet.apply[$targetType]($fn) }"
+    val provided = {
+      val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
+      providerMagnetMacro.generateProvider[T](
+        associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        constructor,
+        generateUnsafeWeakSafeTypes
+      )
+    }
     val res = c.Expr[ConcreteConstructor[T]] {
       q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($provided) }"
     }

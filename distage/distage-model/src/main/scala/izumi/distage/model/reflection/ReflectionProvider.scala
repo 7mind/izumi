@@ -6,28 +6,23 @@ import izumi.distage.model.reflection.universe.DIUniverse
 
 trait ReflectionProvider {
   val u: DIUniverse
+  import u._
+
+//  val u0: scala.reflect.api.Universe
+//  import u0.{Type => TypeNative}
+//  import u0.{Symbol => SymbNative}
 
   // keyprovider
-  def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter
-  def keyFromParameter(context: u.DependencyContext.ParameterContext, parameterSymbol: u.SymbolInfo): u.DIKey.BasicKey
-  def keyFromMethod(context: u.DependencyContext.MethodContext, methodSymbol: u.SymbolInfo): u.DIKey.BasicKey
+  def associationFromParameter(parameterSymbol: SymbolInfo): Association.Parameter
 
   // reflectionprovider
-  def symbolToWiring(symbl: u.TypeNative): u.Wiring.PureWiring
-  def constructorParameterLists(symbl: u.TypeNative): List[List[u.Association.Parameter]]
+  def symbolToWiring(symbl: TypeNative): Wiring.PureWiring
+  def constructorParameterLists(symbl: TypeNative): List[List[Association.Parameter]]
 
   // symbolintrospector
-  case class SelectedConstructor(constructorSymbol: u.MethodSymbNative, arguments: List[List[u.SymbolInfo]])
-  def selectConstructor(tpe: u.TypeNative): Option[SelectedConstructor]
-  def selectNonImplicitParameters(symb: u.MethodSymbNative): List[List[u.SymbNative]]
-
-  def isConcrete(tpe: u.TypeNative): Boolean
-  def isWireableAbstract(tpe: u.TypeNative): Boolean
-  def isFactory(tpe: u.TypeNative): Boolean
-  def isWireableMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean
-  def isFactoryMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean
-
-  def findSymbolAnnotation(annType: u.TypeNative, symb: u.SymbolInfo): Option[u.u.Annotation]
+  def isConcrete(tpe: TypeNative): Boolean
+  def isWireableAbstract(tpe: TypeNative): Boolean
+  def isFactory(tpe: TypeNative): Boolean
 }
 
 object ReflectionProvider {

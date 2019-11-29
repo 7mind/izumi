@@ -17,10 +17,10 @@ class FactoryProviderStrategyDefaultImpl
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
       key =>
-        context.fetchKey(key.wireWith, key.isByName) match {
+        context.fetchKey(key.key, key.isByName) match {
           case Some(dep) =>
-            TypedRef(dep, key.wireWith.tpe)
-          case _ if key.wireWith == DIKey.get[FactoryExecutor] =>
+            TypedRef(dep, key.key.tpe)
+          case _ if key.key == DIKey.get[FactoryExecutor] =>
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +

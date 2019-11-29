@@ -1,3 +1,6 @@
 package izumi.distage.model.definition
 
-trait DIStageAnnotation extends scala.annotation.StaticAnnotation
+import scala.annotation.StaticAnnotation
+
+trait DIStageAnnotation extends StaticAnnotation
+// with TypeConstraint

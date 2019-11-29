@@ -352,7 +352,7 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.typesafe" % "config" % V.typesafe_config,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(
@@ -967,6 +967,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "com.typesafe" % "config" % V.typesafe_config,
+      "io.circe" %% "circe-config" % V.circe_config,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
@@ -1672,7 +1673,8 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
   )
   .settings(

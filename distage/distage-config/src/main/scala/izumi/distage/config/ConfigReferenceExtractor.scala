@@ -29,7 +29,7 @@ class ConfigReferenceExtractor extends PlanningHook {
       case Some(ann) =>
         findArgument(ann) match {
           case Some(path) =>
-            association.wireWith match {
+            association.key match {
               case k: DIKey.TypeKey =>
                 return k.named(ConfPathId(binding.key, association.name, path))
 
@@ -48,7 +48,7 @@ class ConfigReferenceExtractor extends PlanningHook {
       case Some(ann) =>
         findArgument(ann) match {
           case Some(name) =>
-            association.wireWith match {
+            association.key match {
               case k: DIKey.TypeKey =>
                 return k.named(ConfId(binding.key, association.name, name))
 
@@ -65,7 +65,7 @@ class ConfigReferenceExtractor extends PlanningHook {
 
     autoConfAnno match {
       case Some(_) =>
-        association.wireWith match {
+        association.key match {
           case k: DIKey.TypeKey =>
             return k.named(AutoConfId(binding.key, association.name))
 
@@ -76,11 +76,11 @@ class ConfigReferenceExtractor extends PlanningHook {
       case _ =>
     }
 
-    association.wireWith
+    association.key
   }
 
   protected def findAnno[T: TypeTag](association: Association): Option[Annotation] = {
-    association.context.symbol.findUniqueAnnotation(typeOf[T])
+    association.symbol.findUniqueAnnotation(typeOf[T])
   }
 
   protected def findArgument(ann: Annotation): Option[String] = {

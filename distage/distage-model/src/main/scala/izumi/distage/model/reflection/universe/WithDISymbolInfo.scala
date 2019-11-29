@@ -11,15 +11,20 @@ trait WithDISymbolInfo {
     def name: String
 
     def finalResultType: SafeType
-    def definingClass: SafeType
 
     def isByName: Boolean
     def wasGeneric: Boolean
 
     def annotations: List[u.Annotation]
-    //def typeSignatureArgs: List[SymbolInfo]
 
-    override def toString: String = name
+    override final def toString: String = name
+
+    @deprecated("remove kludge", "0.9.0")
+    def withTpe(tpe: SafeType): SymbolInfo
+    // FIXME: by-names are broken ???
+    @deprecated("remove kludge (by-names broken)", "0.9.0")
+    def withIsByName(boolean: Boolean): SymbolInfo
+    //def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
   }
 
   protected def typeOfDistageAnnotation: TypeNative
@@ -30,46 +35,50 @@ trait WithDISymbolInfo {
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
     @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
-    case class Runtime private (underlying: SymbNative, definingClass: SafeType, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
-      override val name: String = underlying.name.toTermName.toString
-
-      override val finalResultType: SafeType = definingClass.use(tpe => SafeType(underlying.typeSignatureIn(tpe).finalResultType))
-
-      override def isByName: Boolean = underlying.isTerm && underlying.asTerm.isByNameParam
-
-      //override def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
+    case class Runtime private (underlying: SymbNative, finalResultType: SafeType, wasGeneric: Boolean, isByName: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+      override final val name: String = underlying.name.toTermName.toString
+      override final def withTpe(tpe: SafeType): SymbolInfo = copy(finalResultType = tpe)
+      override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }
 
     object Runtime {
       @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
       def apply(underlying: SymbNative, definingClass: SafeType, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
-        new Runtime(underlying, definingClass, wasGeneric, (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct)
+        new Runtime(
+          underlying = underlying,
+          finalResultType = definingClass.use(tpe => SafeType(underlying.typeSignatureIn(tpe).finalResultType)),
+          wasGeneric = wasGeneric,
+          isByName = underlying.isTerm && underlying.asTerm.isByNameParam,
+          annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct
+        )
       }
     }
 
     case class Static(
-                       name: String
-                       , finalResultType: SafeType
-                       , annotations: List[u.Annotation]
-                       , definingClass: SafeType
-                       , isByName: Boolean
-                       , wasGeneric: Boolean,
-                     ) extends SymbolInfo
+                       name: String,
+                       finalResultType: SafeType,
+                       annotations: List[u.Annotation],
+                       isByName: Boolean,
+                       wasGeneric: Boolean,
+                     ) extends SymbolInfo {
+      override final def withTpe(tpe: SafeType): SymbolInfo = copy(finalResultType = tpe)
+      override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
+    }
 
     implicit final class SymbolInfoExtensions(symbolInfo: SymbolInfo) {
-      private[this] def findAnnotation(tpe: TypeNative): Option[u.Annotation] = {
-        symbolInfo.annotations.find(a => AnnotationTools.annotationTypeEq(u)(tpe, a))
-      }
-
       def findUniqueAnnotation(annType: TypeNative): Option[u.Annotation] = {
         val distageAnnos = symbolInfo.annotations.filter(t => t.tree.tpe <:< typeOfDistageAnnotation).toSet
 
         if (distageAnnos.size > 1) {
           import izumi.fundamentals.platform.strings.IzString._
-          throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.definingClass}: ${distageAnnos.niceList()}")
+          throw new AnnotationConflictException(s"Multiple DI annotations on symbol `$symbolInfo` in ${symbolInfo.finalResultType}: ${distageAnnos.niceList()}")
         }
 
         findAnnotation(annType)
+      }
+
+      private[this] def findAnnotation(tgtAnnType: TypeNative): Option[u.Annotation] = {
+        symbolInfo.annotations.find(a => AnnotationTools.annotationTypeEq(u)(tgtAnnType, a))
       }
     }
 

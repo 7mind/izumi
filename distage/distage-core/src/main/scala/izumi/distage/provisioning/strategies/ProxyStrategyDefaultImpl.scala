@@ -73,15 +73,15 @@ class ProxyStrategyDefaultImpl
       val args = params.map {
         param =>
           val value = param match {
-            case p if makeProxy.forwardRefs.contains(p.wireWith) =>
+            case p if makeProxy.forwardRefs.contains(p.key) =>
               null
 
             case p =>
-              context.fetchKey(p.wireWith, p.isByName) match {
+              context.fetchKey(p.key, p.isByName) match {
                 case Some(v) =>
                   v.asInstanceOf[AnyRef]
                 case None =>
-                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.wireWith}", Set(p.wireWith), None)
+                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.key}", Set(p.key), None)
               }
           }
 

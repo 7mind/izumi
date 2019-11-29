@@ -20,7 +20,7 @@ protected[distage] class CgLibTraitMethodInterceptor
   override def intercept(o: scala.Any, method: Method, objects: Array[AnyRef], methodProxy: MethodProxy): AnyRef = {
     //premature optimization, all our methods are parameterless
     if (method.getParameterTypes.length == 0 && index.methods.contains(method)) {
-      val wireWith = index.methods(method).wireWith
+      val wireWith = index.methods(method).key
 
       context.fetchKey(wireWith, makeByName = false) match {
         case Some(v) =>

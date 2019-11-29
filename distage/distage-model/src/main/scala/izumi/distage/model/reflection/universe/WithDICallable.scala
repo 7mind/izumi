@@ -58,8 +58,8 @@ trait WithDICallable {
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
     def unsafeZip(newRet: SafeType, that: Provider): Provider
 
-    final val diKeys: Seq[DIKey] = associations.map(_.wireWith)
-    override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
+    final val diKeys: Seq[DIKey] = associations.map(_.key)
+    override final val argTypes: Seq[SafeType] = associations.map(_.key.tpe)
     override final val arity: Int = argTypes.size
 
     override final def toString: String =

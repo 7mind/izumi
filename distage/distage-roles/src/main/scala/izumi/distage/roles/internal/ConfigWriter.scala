@@ -25,16 +25,15 @@ import izumi.logstage.distage.LogstageModule
 
 import scala.util._
 
-class ConfigWriter[F[_] : DIEffect]
+class ConfigWriter[F[_]: DIEffect]
 (
   logger: IzLogger,
-  launcherVersion: ArtifactVersion@Id("launcher-version"),
+  launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
   options: ContextOptions,
-  appModule: ModuleBase@Id("application.module"),
-)
-  extends RoleTask[F] {
+  appModule: ModuleBase @Id("application.module"),
+) extends RoleTask[F] {
 
   override def start(roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
     val config = ConfigWriter.parse(roleParameters)

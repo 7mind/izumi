@@ -10,7 +10,6 @@ trait WithDIWiring {
     with WithDICallable
     with WithDIKey
     with WithDIAssociation
-    with WithDIDependencyContext
     with WithDISymbolInfo
   =>
 
@@ -19,7 +18,7 @@ trait WithDIWiring {
     def associations: Seq[Association]
     def replaceKeys(f: Association => DIKey.BasicKey): Wiring
 
-    def requiredKeys: Set[DIKey] = associations.map(_.wireWith).toSet
+    def requiredKeys: Set[DIKey] = associations.map(_.key).toSet
   }
 
   object Wiring {
@@ -40,15 +39,15 @@ trait WithDIWiring {
       }
 
       case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
-        override final def replaceKeys(f: Association => DIKey.BasicKey): Constructor = this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Constructor = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
       case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
-        override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol = this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
+        override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
         override def instanceType: SafeType = provider.ret
 
-        override final def replaceKeys(f: Association => DIKey.BasicKey): Function = this.copy(associations = this.associations.map(a => a.withWireWith(f(a))))
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Function = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
       case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
         override def associations: Seq[Association] = Seq.empty
@@ -93,7 +92,7 @@ trait WithDIWiring {
       override final def associations: Seq[Association] = {
         val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
 
-        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.key))
 
         factorySuppliedProductDeps ++ fieldDependencies
       }
@@ -106,14 +105,14 @@ trait WithDIWiring {
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Factory =
         this.copy(
-          fieldDependencies = this.fieldDependencies.map(a => a.withWireWith(f(a)))
+          fieldDependencies = this.fieldDependencies.map(a => a.withKey(f(a)))
           , factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
         )
     }
 
     object Factory {
       case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring.ReflectiveInstantiationWiring, methodArguments: Seq[DIKey]) {
-        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.key)
       }
     }
 
@@ -127,14 +126,14 @@ trait WithDIWiring {
       override final def associations: Seq[Association] = {
         val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
 
-        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.wireWith))
+        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.key))
 
         factorySuppliedProductDeps ++ providerArguments
       }
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
         this.copy(
-          providerArguments = this.providerArguments.map(a => a.withWireWith(f(a))),
+          providerArguments = this.providerArguments.map(a => a.withKey(f(a))),
           factoryIndex = this.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
         )
 
@@ -143,7 +142,7 @@ trait WithDIWiring {
 
     object FactoryFunction {
       case class FactoryMethod(factoryMethod: SymbolInfo, wireWith: Wiring.SingletonWiring.Function, methodArguments: Seq[DIKey]) {
-        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.wireWith)
+        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.key)
       }
     }
 

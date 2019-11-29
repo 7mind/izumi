@@ -160,17 +160,17 @@ object OpFormatter {
 
     private def formatDependency(association: Association): String = {
       association match {
-        case Association.Parameter(_, name, tpe, wireWith, isByName, _) =>
-          val fname = if (isByName) {
-            s"=> $name"
+        case p: Association.Parameter =>
+          val fname = if (p.isByName) {
+            s"=> ${p.name}"
           } else {
-            name
+            p.name
           }
 
-          s"""arg $fname: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
+          s"""arg $fname: ${formatType(p.tpe)} = lookup(${formatKey(p.key)})"""
 
-        case Association.AbstractMethod(_, name, tpe, wireWith) =>
-          s"""def $name: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
+        case m: Association.AbstractMethod =>
+          s"""def ${m.name}: ${formatType(m.tpe)} = lookup(${formatKey(m.key)})"""
       }
     }
 

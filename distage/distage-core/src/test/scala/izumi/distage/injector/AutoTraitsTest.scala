@@ -39,11 +39,10 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
     val context = injector.produceUnsafe(plan)
     val instantiated = context.get[Trait]
+    val instantiated1 = context.get[Trait1]
 
     assert(instantiated.depA.isA)
     assert(!instantiated.depB.isA)
-
-    val instantiated1 = context.get[Trait1]
 
     assert(instantiated1.depA.isA)
     assert(!instantiated1.depB.isA)

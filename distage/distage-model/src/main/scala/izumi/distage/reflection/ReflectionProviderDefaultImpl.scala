@@ -13,7 +13,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   import u._
 
   // dependencykeyprovider
-  override def keyFromParameter(context: DependencyContext.ParameterContext, parameterSymbol: SymbolInfo): DIKey.BasicKey = {
+  private[this] def keyFromParameter(parameterSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = if (parameterSymbol.isByName) {
       DIKey.TypeKey(SafeType(parameterSymbol.finalResultType.use(_.typeArgs.head.finalResultType)))
     } else {
@@ -24,25 +24,16 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   override def associationFromParameter(parameterSymbol: u.SymbolInfo): u.Association.Parameter = {
-    val context = DependencyContext.ConstructorParameterContext(parameterSymbol.definingClass, parameterSymbol)
-
-    Association.Parameter(
-      context
-      , parameterSymbol.name
-      , parameterSymbol.finalResultType
-      , keyFromParameter(context, parameterSymbol)
-      , parameterSymbol.isByName
-      , parameterSymbol.wasGeneric
-    )
+    Association.Parameter(parameterSymbol, keyFromParameter(parameterSymbol))
   }
 
-  override def keyFromMethod(context: DependencyContext.MethodContext, methodSymbol: SymbolInfo): DIKey.BasicKey = {
+  private[this] def keyFromMethod(methodSymbol: SymbolInfo): DIKey.BasicKey = {
     val typeKey = DIKey.TypeKey(methodSymbol.finalResultType)
     withOptionalName(methodSymbol, typeKey)
   }
 
   private[this] def withOptionalName(parameterSymbol: SymbolInfo, typeKey: DIKey.TypeKey): u.DIKey.BasicKey =
-    findSymbolAnnotation(typeOfIdAnnotation, parameterSymbol) match {
+    parameterSymbol.findUniqueAnnotation(typeOfIdAnnotation) match {
       case Some(Id(name)) =>
         typeKey.named(name)
       case Some(v) =>
@@ -65,14 +56,13 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
           factoryMethod =>
             val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, unsafeSafeType, wasGeneric = false)
 
-            val context = DependencyContext.MethodParameterContext(unsafeSafeType, factoryMethodSymb)
+            val resultType = resultOfFactoryMethod(factoryMethodSymb)
 
-            val resultType = resultOfFactoryMethod(context)
-
-            val alreadyInSignature = self
-              .selectNonImplicitParameters(factoryMethod)
-              .flatten
-              .map(p => keyFromParameter(context, SymbolInfo.Runtime(p, unsafeSafeType, wasGeneric = false)))
+            val alreadyInSignature = {
+              selectNonImplicitParameters(factoryMethod)
+                .flatten
+                .map(p => keyFromParameter(SymbolInfo.Runtime(p, unsafeSafeType, wasGeneric = false)))
+            }
 
             //val symbolsAlreadyInSignature = alreadyInSignature.map(_.symbol).toSet
 
@@ -102,8 +92,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   override def constructorParameterLists(symbl: TypeNative): List[List[Association.Parameter]] = ReflectionLock.synchronized {
-    val argLists: List[List[u.SymbolInfo]] = selectConstructor(symbl).map(_.arguments).toList.flatten
-    argLists.map(_.map(associationFromParameter))
+    selectConstructorArguments(symbl).toList.flatten.map(_.map(associationFromParameter))
   }
 
   private[this] def mkConstructorWiring(symbl: TypeNative): SingletonWiring.ReflectiveInstantiationWiring = symbl match {
@@ -138,12 +127,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def resultOfFactoryMethod(context: u.DependencyContext.MethodParameterContext): u.TypeNative = {
-    context.factoryMethod.findUniqueAnnotation(typeOfWithAnnotation) match {
+  private[this] def resultOfFactoryMethod(symbolInfo: SymbolInfo): u.TypeNative = {
+    symbolInfo.findUniqueAnnotation(typeOfWithAnnotation) match {
       case Some(With(tpe)) =>
         tpe
       case _ =>
-        context.factoryMethod.finalResultType.use(identity)
+        symbolInfo.finalResultType.use(identity)
     }
   }
 
@@ -157,10 +146,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def methodToAssociation(symbl: u.TypeNative, method: MethodSymbNative): Association.AbstractMethod = {
-    val unsafeSafeType = SafeType(symbl)
-    val methodSymb = SymbolInfo.Runtime(method, unsafeSafeType, wasGeneric = false)
-    val context = DependencyContext.MethodContext(unsafeSafeType, methodSymb)
-    Association.AbstractMethod(context, methodSymb.name, methodSymb.finalResultType, keyFromMethod(context, methodSymb))
+    val methodSymb = SymbolInfo.Runtime(method, SafeType(symbl), wasGeneric = false)
+    Association.AbstractMethod(methodSymb, keyFromMethod(methodSymb))
   }
 
   private object ConcreteSymbol {
@@ -175,21 +162,21 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     def unapply(arg: TypeNative): Option[(TypeNative, Seq[SymbNative], Seq[MethodSymbNative])] =
       Some(arg)
         .filter(isFactory)
-        .map(f => (
-          f
-          , f.members.filter(m => isFactoryMethod(f, m)).toSeq
-          , f.members.filter(m => isWireableMethod(f, m)).map(_.asMethod).toSeq
-        ))
+        .map(f =>
+          (f,
+           f.members.filter(m => isFactoryMethod(f, m)).toSeq,
+           f.members.filter(m => isWireableMethod(f, m)).map(_.asMethod).toSeq,
+          ))
   }
 
   // symbolintrospector
-  override def selectConstructor(tpe: u.TypeNative): Option[SelectedConstructor] = ReflectionLock.synchronized {
+  private[this] def selectConstructorArguments(tpe: u.TypeNative): Option[List[List[u.SymbolInfo]]] = ReflectionLock.synchronized {
     selectConstructorMethod(tpe).map {
       selectedConstructor =>
         val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
         val paramLists = selectedConstructor.typeSignatureIn(tpe).paramLists
         // Hack due to .typeSignatureIn throwing out type annotations...
-        val paramsWithAnnos = originalParamListTypes
+        originalParamListTypes
           .zip(paramLists)
           .map {
             case (origTypes, params) =>
@@ -200,7 +187,6 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
                   u.SymbolInfo.Runtime(p, SafeType(tpe), o.typeSymbol.isParameter)
               }
           }
-        SelectedConstructor(selectedConstructor, paramsWithAnnos)
     }
   }
 
@@ -213,7 +199,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def selectNonImplicitParameters(symb: u.MethodSymbNative): List[List[u.SymbNative]] = ReflectionLock.synchronized {
+  private[this] def selectNonImplicitParameters(symb: u.MethodSymbNative): List[List[u.SymbNative]] = ReflectionLock.synchronized {
     symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
   }
 
@@ -253,23 +239,19 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def isWireableMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
+  private[this] def isWireableMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      decl.asMethod.paramLists.isEmpty && u.SafeType(decl.asMethod.returnType) != tpe
+      decl.asMethod.paramLists.isEmpty && !(decl.asMethod.returnType =:= tpe)
     }
   }
 
-  override def isFactoryMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
+  private[this] def isFactoryMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall { list =>
         !list.exists(_.typeSignature =:= decl.asMethod.returnType) && !list.exists(_.typeSignature =:= tpe)
       }
     }
-  }
-
-  override def findSymbolAnnotation(annType: u.TypeNative, symb: u.SymbolInfo): Option[u.u.Annotation] = ReflectionLock.synchronized {
-    symb.findUniqueAnnotation(annType)
   }
 
   private[this] def findConstructor(tpe: u.TypeNative): u.u.Symbol = {

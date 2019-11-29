@@ -2,6 +2,7 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
@@ -43,51 +44,50 @@ object TraitConstructorMacro {
 
     val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
 
-    val (wireArgs, wireMethods) = wireables.map {
-      case AbstractMethod(ctx, name, _, key) =>
+    def association(p: Symbol): Association.Parameter = {
+      reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p, SafeType(targetType), p.typeSignature.typeSymbol.isParameter))
+    }
+
+    val (associations, wireArgs, wireMethods) = wireables.map {
+      case m @ AbstractMethod(symbol, key) =>
         key.tpe.use { tpe =>
-          val methodName: TermName = TermName(name)
+          val methodName: TermName = TermName(symbol.name)
           val argName: TermName = c.freshName(methodName)
 
-          val mods = AnnotationTools.mkModifiers(u)(ctx.methodSymbol.annotations)
-
-          q"$mods val $argName: $tpe" -> q"final val $methodName: $tpe = $argName"
+          (m.asParameter, q"val $argName: $tpe", q"final val $methodName: $tpe = $argName")
         }
-    }.unzip
+    }.unzip3
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
 
-    val instantiate = if (wireMethods.isEmpty)
+    val instantiate = if (wireMethods.isEmpty) {
       q"new ..$parents {}"
-    else
+    } else {
       q"new ..$parents { ..$wireMethods }"
+    }
 
-    val constructorDef =
+    val constructor = {
       q"""
       ${
         if (wireArgs.nonEmpty)
-          q"def constructor(..$wireArgs): $targetType = ($instantiate): $targetType"
+          q"(..$wireArgs) => ($instantiate): $targetType"
         else
-          q"def constructor: $targetType = ($instantiate): $targetType"
+          q"() => ($instantiate): $targetType"
       }
       """
+    }
 
-    val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
-
-    val provided =
-      if (generateUnsafeWeakSafeTypes)
-        q"{ $providerMagnet.generateUnsafeWeakSafeTypes[$targetType](constructor _) }"
-      else
-        q"{ $providerMagnet.apply[$targetType](constructor _) }"
+    val provided = {
+      val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
+      providerMagnetMacro.generateProvider[T](
+        associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        constructor,
+        generateUnsafeWeakSafeTypes
+      )
+    }
 
     val res = c.Expr[TraitConstructor[T]] {
-      q"""
-          {
-          $constructorDef
-
-          new ${weakTypeOf[TraitConstructor[T]]}($provided)
-          }
-       """
+      q"""{ new ${weakTypeOf[TraitConstructor[T]]}($provided) }"""
     }
     logger.log(s"Final syntax tree of trait $targetType:\n$res")
 
