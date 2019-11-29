@@ -188,7 +188,7 @@ object Izumi {
         "scalaVersion" := "crossScalaVersions.value.head".raw,
       )
 
-      final val sharedRootSettings = Defaults.SharedOptions ++ Seq(
+      final val rootSettings = Defaults.SharedOptions ++ Seq(
         "crossScalaVersions" := "Nil".raw,
         "scalaVersion" := Targets.targetScala.head.value,
         "organization" in SettingScope.Build := "io.7mind.izumi",
@@ -218,9 +218,17 @@ object Izumi {
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) := Defaults.Scala212Options,
           SettingKey(Some(scala213), None) := Defaults.Scala213Options,
+          SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" ++= Seq(
+          SettingKey(None, Some(true)) := Seq(
+            "-opt:l:inline",
+            "-opt-inline-from:izumi.**",
+          ),
           SettingKey.Default := Const.EmptySeq
         ),
       )
+
     }
 
     object fundamentals {
@@ -722,7 +730,7 @@ object Izumi {
     topLevelSettings = Projects.root.settings,
     sharedSettings = Projects.root.sharedSettings,
     sharedAggSettings = Projects.root.sharedAggSettings,
-    rootSettings = Projects.root.sharedRootSettings,
+    rootSettings = Projects.root.rootSettings,
     imports = Seq.empty,
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All), compilerPlugin = true),

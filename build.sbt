@@ -69,6 +69,13 @@ lazy val `fundamentals-collections` = project.in(file("fundamentals/fundamentals
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -154,6 +161,13 @@ lazy val `fundamentals-platform` = project.in(file("fundamentals/fundamentals-pl
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -224,6 +238,13 @@ lazy val `fundamentals-functional` = project.in(file("fundamentals/fundamentals-
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -300,6 +321,13 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -384,6 +412,13 @@ lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamen
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -460,6 +495,13 @@ lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -543,6 +585,13 @@ lazy val `fundamentals-thirdparty-boopickle-shaded` = project.in(file("fundament
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -630,6 +679,13 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -714,6 +770,13 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -788,6 +851,13 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -866,6 +936,13 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -948,6 +1025,13 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1021,6 +1105,13 @@ lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1101,6 +1192,13 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1186,6 +1284,13 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1275,6 +1380,13 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1350,6 +1462,13 @@ lazy val `logstage-api` = project.in(file("logstage/logstage-api"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1436,6 +1555,13 @@ lazy val `logstage-core` = project.in(file("logstage/logstage-core"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1510,6 +1636,13 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1593,6 +1726,13 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1667,6 +1807,13 @@ lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1750,6 +1897,13 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1826,6 +1980,13 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -1907,6 +2068,13 @@ lazy val `idealingua-v1-model` = project.in(file("idealingua-v1/idealingua-v1-mo
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -1982,6 +2150,13 @@ lazy val `idealingua-v1-core` = project.in(file("idealingua-v1/idealingua-v1-cor
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -2064,6 +2239,13 @@ lazy val `idealingua-v1-runtime-rpc-scala` = project.in(file("idealingua-v1/idea
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -2151,6 +2333,13 @@ lazy val `idealingua-v1-runtime-rpc-http4s` = project.in(file("idealingua-v1/ide
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2235,6 +2424,13 @@ lazy val `idealingua-v1-transpilers` = project.in(file("idealingua-v1/idealingua
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2312,6 +2508,13 @@ lazy val `idealingua-v1-test-defs` = project.in(file("idealingua-v1/idealingua-v
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2382,6 +2585,13 @@ lazy val `idealingua-v1-runtime-rpc-typescript` = project.in(file("idealingua-v1
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -2458,6 +2668,13 @@ lazy val `idealingua-v1-runtime-rpc-go` = project.in(file("idealingua-v1/idealin
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2528,6 +2745,13 @@ lazy val `idealingua-v1-runtime-rpc-csharp` = project.in(file("idealingua-v1/ide
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -2623,6 +2847,13 @@ lazy val `idealingua-v1-compiler` = project.in(file("idealingua-v1/idealingua-v1
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
@@ -2780,6 +3011,13 @@ lazy val `microsite` = project.in(file("doc/microsite"))
       )
       case (_, _) => Seq.empty
     } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
     scalaVersion := crossScalaVersions.value.head,
     crossScalaVersions := Seq(
       "2.12.10",
@@ -2853,6 +3091,13 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Woctal-literal",
         "-Wunused:_",
         "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
       )
       case (_, _) => Seq.empty
     } },
