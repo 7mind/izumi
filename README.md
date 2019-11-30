@@ -33,9 +33,8 @@ Docs
 * [Scaladoc](https://izumi.7mind.io/latest/release/api/)
 
 Example projects:
-* [DIStage Livecode from ScalaWAW Warsaw](https://github.com/7mind/distage-livecode)
+* [DIStage Example Project from ScalaWAW Warsaw](https://github.com/7mind/distage-livecode)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
-* [DIStage Example Project (older)](https://github.com/7mind/distage-sample)
 
 Slides:
 * [ScalaUA Slides about DIStage](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
@@ -43,7 +42,7 @@ Slides:
 * [Slides from other meetups](https://github.com/7mind/slides)
 
 Video:
-* [Youtube: DIStage Livecode](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+* [Youtube: DIStage Bifunctor Tagless Final Livecoding](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
 Key goals
 =========
