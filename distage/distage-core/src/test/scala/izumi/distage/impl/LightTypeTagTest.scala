@@ -91,6 +91,8 @@ class LightTypeTagTest extends WordSpec {
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
 
+  class ApplePaymentProvider[F[_]] extends H1
+
   def println(o: Any): Unit = info(o.toString)
 
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
@@ -395,6 +397,13 @@ class LightTypeTagTest extends WordSpec {
 
     "resolve prefixes of annotated types" in {
       assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
+    }
+
+    "regression test: support subtyping of a simple combined type" in {
+      val ctor = `LTT[_[_]]`[ApplePaymentProvider]
+      val arg = `LTT[_]`[Id]
+      val combined = ctor.combine(arg)
+      assertChild(combined, LTT[H1])
     }
 
   }
