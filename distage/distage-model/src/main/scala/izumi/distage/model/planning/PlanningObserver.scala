@@ -4,8 +4,6 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.fundamentals.platform.language.Quirks._
 
-// TODO: Just one method onPhase(Id, plan) ?
-
 /**
   * Execute side-effects to observe planning algorithm execution, e.g. log, write GraphViz files, etc.
   *

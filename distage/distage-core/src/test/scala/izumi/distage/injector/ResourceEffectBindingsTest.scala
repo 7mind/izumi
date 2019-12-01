@@ -9,6 +9,7 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.Tags.Tag
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 

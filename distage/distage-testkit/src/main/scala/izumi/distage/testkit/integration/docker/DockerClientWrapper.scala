@@ -52,7 +52,7 @@ class DockerClientWrapper[F[_]]
 
 object DockerClientWrapper {
 
-  class Resource[F[_] : DIEffect : DIEffectAsync]
+  class Resource[F[_]: DIEffect: DIEffectAsync]
   (
     factory: DockerCmdExecFactory,
     logger: IzLogger,

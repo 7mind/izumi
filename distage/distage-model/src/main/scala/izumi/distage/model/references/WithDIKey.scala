@@ -49,15 +49,16 @@ trait WithDIKey {
 
     case class MultiSetImplId(set: DIKey, impl: ImplDef)
     object MultiSetImplId {
-      implicit object SetImplIdContract extends IdContract[MultiSetImplId] {
+      implicit object SetImplIdContract extends IdContractApi[MultiSetImplId] {
         override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode()}"
       }
     }
   }
 
-  trait IdContract[T] {
+  trait IdContractApi[T] {
     def repr(v: T): String
   }
+  type IdContract[T] <: IdContractApi[T]
 
   implicit def stringIdContract: IdContract[String]
   implicit def singletonStringIdContract[S <: String with Singleton]: IdContract[S]

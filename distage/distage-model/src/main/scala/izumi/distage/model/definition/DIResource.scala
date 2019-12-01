@@ -542,7 +542,7 @@ object DIResource {
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
       val tagMacro = new TagMacro(c)
-      tagMacro.impl[R] // run the macro AGAIN, to get a fresh error message
+      tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
       val tagTrace = tagMacro.getImplicitError()
 
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")

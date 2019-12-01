@@ -1,7 +1,6 @@
 package izumi.distage.staticinjector.plugins
 
 import distage.DIKey
-import izumi.distage.model.LoggerHook
 import izumi.distage.model.planning.PlanningObserver
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.CustomContext
@@ -16,5 +15,4 @@ class LogstageModuleRequirements extends ModuleRequirements(Set(
   DIKey.get[CustomContext],
   DIKey.get[IzLogger],
   DIKey.get[Set[PlanningObserver]],
-  DIKey.get[LoggerHook],
 ))

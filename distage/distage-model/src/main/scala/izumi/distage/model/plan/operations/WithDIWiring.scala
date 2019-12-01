@@ -45,40 +45,43 @@ trait WithDIWiring {
         override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
-        override def instanceType: SafeType = provider.ret
+        override final def instanceType: SafeType = provider.ret
 
         override final def replaceKeys(f: Association => DIKey.BasicKey): Function = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
       case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
-        override def associations: Seq[Association] = Seq.empty
+        override final def associations: Seq[Association] = Seq.empty
 
-        override def replaceKeys(f: Association => DIKey.BasicKey): Instance = { f.discard(); this }
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Instance = { f.discard(); this }
       }
       case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {
-        override def associations: Seq[Association] = Seq.empty
+        override final def associations: Seq[Association] = Seq.empty
 
-        override def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
-        override def replaceKeys(f: Association => DIKey.BasicKey): Reference = { f.discard(); this }
+        override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Reference = { f.discard(); this }
       }
     }
 
     sealed trait MonadicWiring extends Wiring {
+      def effectWiring: PureWiring
       def effectDIKey: DIKey
       def effectHKTypeCtor: SafeType
     }
     object MonadicWiring {
       case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
-        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
-        override def associations: Seq[Association] = effectWiring.associations
+        override final def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
+        override final def associations: Seq[Association] = effectWiring.associations
+        override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
-        override def replaceKeys(f: Association => DIKey.BasicKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
       }
 
       case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
-        override def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
-        override def associations: Seq[Association] = effectWiring.associations
+        override final def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
+        override final def associations: Seq[Association] = effectWiring.associations
+        override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
-        override def replaceKeys(f: Association => DIKey.BasicKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))
       }
     }
 
@@ -99,8 +102,8 @@ trait WithDIWiring {
 
       override final def instanceType: SafeType = factoryType
 
-      override def requiredKeys: Set[DIKey] = {
-        super.requiredKeys ++factoryMethods.flatMap(_.wireWith.prefix.toSeq).toSet
+      override final def requiredKeys: Set[DIKey] = {
+        super.requiredKeys ++ factoryMethods.flatMap(_.wireWith.prefix.toSeq).toSet
       }
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Factory =

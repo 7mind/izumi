@@ -76,16 +76,16 @@ object BootstrapLocator {
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
+      mirrorProvider = mirrorProvider
     )
   }
 
   final val bootstrapProducer: PlanInterpreter = {
-    val loggerHook = LoggerHook.Null // TODO: add user-controllable logs
     val verifier = new ProvisionOperationVerifier.Default(mirrorProvider)
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
-      factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl(loggerHook),
+      factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl,
       providerStrategy = new ProviderStrategyDefaultImpl,
       importStrategy = new ImportStrategyDefaultImpl,
       instanceStrategy = new InstanceStrategyDefaultImpl,
@@ -101,7 +101,6 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[LoggerHook].from[LoggerHook.Null.type]
     make[MirrorProvider].from[MirrorProvider.Impl.type]
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]

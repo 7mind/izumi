@@ -3,7 +3,6 @@ package izumi.distage.roles.services
 import distage._
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
-import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRoleF, RoleDescriptor}

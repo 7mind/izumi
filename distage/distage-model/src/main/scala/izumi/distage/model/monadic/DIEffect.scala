@@ -102,11 +102,7 @@ object DIEffect extends LowPriorityDIEffectInstances {
       override def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
       override def flatMap[A, B](fa: F[E, A])(f: A => F[E, B]): F[E, B] = F.flatMap(fa)(f)
 
-      override def maybeSuspend[A](eff: => A): F[E, A] = {
-        // FIXME: syncThrowable? ???
-        //  - hmm, usage of DIEffect in PlanInterpreter *is* completely exception-safe (because of .definitelyRecover)
-        F.syncThrowable(eff)
-      }
+      override def maybeSuspend[A](eff: => A): F[E, A] = F.syncThrowable(eff)
       override def definitelyRecover[A](action: => F[E, A])(recover: Throwable => F[E, A]): F[E, A] = {
         suspendF(action).sandbox.catchAll(recover apply _.toThrowable)
       }

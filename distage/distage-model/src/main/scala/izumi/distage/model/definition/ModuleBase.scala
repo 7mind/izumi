@@ -55,18 +55,17 @@ object ModuleBase {
 
   implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def map(f: Binding => Binding): T = {
-      ModuleMake[T].make(moduleDef.bindings.map(f))
+      T.make(moduleDef.bindings.map(f))
     }
 
     def flatMap(f: Binding => Iterable[Binding]): T = {
-      ModuleMake[T].make(moduleDef.bindings.flatMap(f))
+      T.make(moduleDef.bindings.flatMap(f))
     }
-
   }
 
-  implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) {
-    def morph[T <: ModuleBase : ModuleMake]: T = {
-      ModuleMake[T].make(moduleDef.bindings)
+  implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) extends AnyVal {
+    def morph[T <: ModuleBase](implicit T: ModuleMake[T]): T = {
+      T.make(moduleDef.bindings)
     }
   }
 
@@ -100,15 +99,15 @@ object ModuleBase {
       T.make(filtered)
     }
 
-    // TODO: a hack to support tag merging
-    private def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
+    // FIXME: a hack to support tag merging
+    private[this] def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
       (T.make(a) ++ T.make(b)).bindings
 
     def overridenBy(that: ModuleBase): T = {
       T.make(mergePreserve(moduleDef.bindings, that.bindings)._2)
     }
 
-    private def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[DIKey], Set[Binding]) = {
+    private[this] def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[DIKey], Set[Binding]) = {
       val existingIndex = existing.map(b => b.key -> b).toMultimap
       val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet
@@ -125,7 +124,9 @@ object ModuleBase {
               existingMappings
             } else {
               // merge tags wrt strange Binding equals
-              modulewiseMerge(newMappings, existingMappings.filter(m => newMappings.map(_.group).contains(m.group)))
+              val newMappingsGroups = newMappings.map(_.group)
+              val existingInNewMappings = existingMappings.filter(newMappingsGroups contains _.group)
+              modulewiseMerge(newMappings, existingInNewMappings)
             }
         }
 
@@ -134,7 +135,6 @@ object ModuleBase {
   }
 
   final class Lub[-A, -B, Out](private val dummy: Boolean = false) extends AnyVal
-
   object Lub {
     implicit def lub[T]: Lub[T, T, T] = new Lub[T, T, T]
   }
@@ -142,7 +142,7 @@ object ModuleBase {
   private[definition] def tagwiseMerge(bs: Iterable[Binding]): Set[Binding] = {
     val grouped = bs.groupBy(_.group)
 
-    val out = ListSet.newBuilder.++= {
+    ListSet.newBuilder.++= {
       grouped
         .map {
           case (_, v) =>
@@ -150,7 +150,6 @@ object ModuleBase {
             v.reduce(_ addTags _.tags)
         }
     }.result()
-    out
   }
 
   /**

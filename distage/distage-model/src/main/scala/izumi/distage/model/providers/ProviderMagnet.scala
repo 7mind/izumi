@@ -87,7 +87,7 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(that.get.ret); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
+    implicit val rTag: Tag[A] = Tag(that.get.ret.cls, that.get.ret.tag); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
@@ -97,8 +97,8 @@ final case class ProviderMagnet[+A](get: Provider) {
 
   /** Add `B` as an unused dependency for this constructor */
   def addDependency[B: Tag]: ProviderMagnet[A] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(get.ret)
-    map2[B, A](ProviderMagnet.identity[B])((a, _) => a)
+    val newProvider = zip(ProviderMagnet.identity[B]).get.unsafeMap(get.ret, { case (a, _) => a }: Any => Any)
+    copy[A](get = newProvider)
   }
 }
 

@@ -28,10 +28,6 @@ class SetStrategyDefaultImpl extends SetStrategy {
         // if member set element type is compatible with this set element type we also just merge them
         value.asInstanceOf[collection.Set[Any]]
 
-        // ??? check set merge
-//      case (m, Some(value)) if m.tpe.use(_.baseClasses.contains(setErasure)) && m.tpe.use(_.typeArgs.headOption.exists(SafeType(_) <:< keyType)) =>
-        // if member set element type is compatible with this set element type we also just merge them
-
       case (_, Some(value)) =>
         ListSet(value)
       case (m, None) =>

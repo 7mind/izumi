@@ -308,8 +308,8 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "scalac bug: can't find HKTag when obscured by type lambda" in {
-      assertCompiles("HKTag.hktagFromLTag[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.hktagFromLTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
+      assertCompiles("HKTag.hktagFromTagMacro[{ type Arg[C] = Option[C] }]")
+      assertTypeError("HKTag.hktagFromTagMacro[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
       // The error produced above is:
       //   Error:(177, 32) No TypeTag available for izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
       //   HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
@@ -317,6 +317,24 @@ class TagTest extends WordSpec with X[String] {
       //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
       //  != HKTag[{ type Arg[C] = F[C] }]
       // For Scalac. which necessitates another macro call for fixup ._.
+    }
+
+    "return expected class tag" in {
+      assert(Tag[List[_] with Set[_]].closestClass eq classOf[scala.collection.immutable.Iterable[_]])
+      assert(!Tag[List[_] with Set[_]].hasPreciseClass)
+
+      assert(Tag[AnyVal].closestClass eq classOf[AnyVal])
+      assert(!Tag[AnyVal].hasPreciseClass)
+
+      assert(Tag[String with Int].closestClass eq classOf[AnyVal])
+      assert(!Tag[String with Int].hasPreciseClass)
+
+      assert(Tag[List[Int]].closestClass eq classOf[List[_]])
+      assert(Tag[List[Int]].hasPreciseClass)
+      assert(Tag[H1].hasPreciseClass)
+
+      assert(Tag[ZY#T].closestClass eq classOf[Any])
+      assert(!Tag[ZY#T].hasPreciseClass)
     }
 
     "regression test: simple combined Tag" in {

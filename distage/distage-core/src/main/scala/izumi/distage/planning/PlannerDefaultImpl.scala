@@ -10,7 +10,7 @@ import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
 import izumi.functional.Value
@@ -26,6 +26,7 @@ final class PlannerDefaultImpl
   hook: PlanningHook,
   bindingTranslator: BindingTranslator,
   analyzer: PlanAnalyzer,
+  mirrorProvider: MirrorProvider,
 ) extends Planner {
 
   override def truncate(plan: OrderedPlan, roots: Set[RuntimeDIUniverse.DIKey]): OrderedPlan = {
@@ -137,8 +138,8 @@ final class PlannerDefaultImpl
         case (fst, snd) =>
           val fsto = index(fst)
           val sndo = index(snd)
-          val fstp = ReflectionProvider.canBeProxied(fsto.target.tpe)
-          val sndp = ReflectionProvider.canBeProxied(sndo.target.tpe)
+          val fstp = mirrorProvider.canBeProxied(fsto.target.tpe)
+          val sndp = mirrorProvider.canBeProxied(sndo.target.tpe)
 
           if (fstp && !sndp) {
             true
@@ -152,6 +153,7 @@ final class PlannerDefaultImpl
             val fstHasByName: Boolean = hasByNameParameter(fsto)
             val sndHasByName: Boolean = hasByNameParameter(sndo)
 
+            // FIXME reverse logic? prefer by-names ???
             if (!fstHasByName && sndHasByName) {
               true
             } else if (fstHasByName && !sndHasByName) {
@@ -160,7 +162,6 @@ final class PlannerDefaultImpl
               analyzer.requirements(fsto).size > analyzer.requirements(sndo).size
             }
           }
-
       }.head
 
       index(best) match {
@@ -168,7 +169,7 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: InstantiationOp if !ReflectionProvider.canBeProxied(op.target.tpe) =>
+        case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
           best
@@ -198,13 +199,13 @@ final class PlannerDefaultImpl
     OrderedPlan(sortedOps.toVector, roots, topology)
   }
 
-  // FIXME: ??? borken by-name detection
   private[this] def hasByNameParameter(fsto: ExecutableOp): Boolean = {
-    false
-//    val fstoTpe = ExecutableOp.instanceType(fsto)
-//    val ctorSymbol = symbolIntrospector.selectConstructorMethod(fstoTpe)
-//    val hasByName = ctorSymbol.exists(symbolIntrospector.hasByNameParameter)
-//    hasByName
+    fsto match {
+      case op: ExecutableOp.WiringOp =>
+        op.wiring.associations.exists(_.isByName)
+      case op: ExecutableOp.MonadicOp =>
+        op.wiring.associations.exists(_.isByName)
+    }
   }
 
 }

@@ -23,7 +23,7 @@ class TracingDIGC[OpType <: ExecutableOp]
           case w: WiringOp =>
             w.wiring.requiredKeys
           case w: MonadicOp =>
-            w.effectWiring.requiredKeys
+            w.wiring.requiredKeys
           case c: CreateSet =>
             c.members.filterNot {
               key =>
@@ -32,7 +32,7 @@ class TracingDIGC[OpType <: ExecutableOp]
                     case o: ExecutableOp.WiringOp =>
                       o.wiring
                     case o: ExecutableOp.MonadicOp =>
-                      o.effectWiring
+                      o.wiring.effectWiring
                   }
                   .exists {
                     case r: Wiring.SingletonWiring.Reference =>
@@ -69,7 +69,7 @@ class TracingDIGC[OpType <: ExecutableOp]
             case (k, Some(op: ExecutableOp.WiringOp)) =>
               (k, op.wiring)
             case (k, Some(op: ExecutableOp.MonadicOp)) =>
-              (k, op.effectWiring)
+              (k, op.wiring.effectWiring)
           }
           .collect {
             case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>

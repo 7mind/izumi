@@ -20,14 +20,14 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
   final def makeStrongHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.StrongHK[ArgStruct]] = {
     val tpe = weakTypeOf[ArgStruct]
     if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
-      c.Expr[LTag.StrongHK[ArgStruct]](q"new ${weakTypeOf[LTag.StrongHK[ArgStruct]]}(${makeParsedHKTagLightTypeTagImpl[ArgStruct](tpe)})")
+      c.Expr[LTag.StrongHK[ArgStruct]](q"new ${weakTypeOf[LTag.StrongHK[ArgStruct]]}(${makeParsedHKTagLightTypeTagImpl(tpe)})")
     } else {
       c.abort(c.enclosingPosition, s"Can't materialize LTag.StrongHKTag[$tpe]: found unresolved type parameters in $tpe")
     }
   }
 
   final def makeWeakHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.WeakHK[ArgStruct]] = {
-    c.Expr[LTag.WeakHK[ArgStruct]](q"new ${weakTypeOf[LTag.WeakHK[ArgStruct]]}(${makeParsedHKTagLightTypeTagImpl[ArgStruct](weakTypeOf[ArgStruct])})")
+    c.Expr[LTag.WeakHK[ArgStruct]](q"new ${weakTypeOf[LTag.WeakHK[ArgStruct]]}(${makeParsedHKTagLightTypeTagImpl(weakTypeOf[ArgStruct])})")
   }
 
   final def makeStrongTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
@@ -49,7 +49,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
     makeParsedLightTypeTagImpl(weakTypeOf[T])
   }
 
-  final def makeParsedHKTagLightTypeTagImpl[ArgStruct](argStruct: Type): c.Expr[LightTypeTag] = {
+  final def makeParsedHKTagLightTypeTagImpl(argStruct: Type): c.Expr[LightTypeTag] = {
     def badShapeError(t: TypeApi) = {
       c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.HK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
     }
@@ -62,6 +62,18 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
           case _ => badShapeError(r)
         }
       case other => badShapeError(other)
+    }
+  }
+
+  @inline final def unpackArgStruct(t: Type): Type = {
+    def badShapeError() = c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.HK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
+    t match {
+      case r: RefinedTypeApi =>
+        r.decl(TypeName("Arg")) match {
+          case sym: TypeSymbolApi => sym.info.typeConstructor
+          case _ => badShapeError()
+        }
+      case _ => badShapeError()
     }
   }
 

@@ -1,17 +1,22 @@
 package izumi.distage.model.reflection.universe
 
+import java.lang.reflect.Modifier
+
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Option[Class[_]]
+  def canBeProxied(tpe: SafeType): Boolean
 }
 
 object MirrorProvider {
   object Impl extends MirrorProvider {
     override def runtimeClass(tpe: SafeType): Option[Class[_]] = {
-      // FIXME: add ClassTag ???
-//      tpe.use(runtimeClass)
-      None
+      if (tpe.hasPreciseClass) Some(tpe.cls) else None
+    }
+    override def canBeProxied(tpe: SafeType): Boolean = {
+      runtimeClass(tpe)
+        .exists(c => !Modifier.isFinal(c.getModifiers))
     }
   }
 }

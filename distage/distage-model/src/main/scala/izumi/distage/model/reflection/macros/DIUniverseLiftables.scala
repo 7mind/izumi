@@ -1,7 +1,6 @@
 package izumi.distage.model.reflection.macros
 
 import izumi.distage.model.reflection.universe._
-import izumi.fundamentals.reflection.ReflectionUtil
 
 abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
@@ -40,10 +39,8 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
 
   implicit val liftableIdKey: Liftable[DIKey.IdKey[_]] = {
     case idKey: DIKey.IdKey[_] =>
-      import idKey._
-      // FIXME: will fail on config keys [Though ConfigModule is tied to RuntimeUniverse right now anyway]
-      val lift = idContract.asInstanceOf[IdContractImpl[Any]].liftable
-      q"""{ new $runtimeDIUniverse.DIKey.IdKey($tpe, ${lift(id)}) }"""
+      val lifted = idKey.idContract.liftable(idKey.id)
+      q"""{ new $runtimeDIUniverse.DIKey.IdKey(${idKey.tpe}, $lifted) }"""
   }
 
   implicit val liftableBasicDIKey: Liftable[DIKey.BasicKey] = {
@@ -59,16 +56,14 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
-      q"""
-    { $runtimeDIUniverse.SymbolInfo.Static(
+      /* FIXME: annotations ??? */
+      q"""{ $runtimeDIUniverse.SymbolInfo.Static(
       ${info.name},
       ${liftableUnsafeWeakSafeType(info.finalResultType)},
-      ${info.annotations},
+      null,
       ${info.isByName},
       ${info.wasGeneric}
-      )
-    }
-       """
+      ) }"""
   }
 
   // Associations
@@ -76,28 +71,6 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   implicit val liftableParameter: Liftable[Association.Parameter] = {
     case Association.Parameter(symbol, key) =>
       q"new $runtimeDIUniverse.Association.Parameter($symbol, $key)"
-  }
-
-  // Annotations
-
-  case class TreeLiteral(tree: Tree)
-
-  implicit val liftableLiteralTree: Liftable[TreeLiteral] = {
-    case TreeLiteral(Literal(c: Constant)) => q"""{
-      _root_.scala.reflect.runtime.universe.Literal(_root_.scala.reflect.runtime.universe.Constant($c))
-      }"""
-    case TreeLiteral(tree) => q"""{
-      import _root_.scala.reflect.runtime.universe._
-
-      _root_.scala.StringContext(${showCode(tree, printRootPkg = true)}).q.apply()
-      }"""
-  }
-
-  implicit val liftableAnnotation: Liftable[Annotation] = {
-    ann =>
-      q"""{
-    ${symbolOf[ReflectionUtil.type].asClass.module}.runtimeAnnotation(${SafeType(ann.tree.tpe)}.tpe, ${ann.tree.children.tail.map(TreeLiteral)}, _root_.scala.collection.immutable.ListMap.empty)
-    }"""
   }
 
 }

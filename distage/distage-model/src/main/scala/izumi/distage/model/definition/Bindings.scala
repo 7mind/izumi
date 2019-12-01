@@ -1,14 +1,13 @@
 package izumi.distage.model.definition
 
 import izumi.distage.constructors.AnyConstructor
+import izumi.distage.model.definition.Binding.{EmptySetBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.reflection.Tags.Tag
 
 object Bindings {
-  import Binding._
-
   def binding[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): SingletonBinding[DIKey.TypeKey] =
     provider[T](AnyConstructor[T].provider)
 
@@ -52,5 +51,4 @@ object Bindings {
     val provider = ProviderMagnet.todoProvider(key)(pos).get
     SingletonBinding(key, ImplDef.ProviderImpl(provider.ret, provider), Set.empty, pos.get.position)
   }
-
 }

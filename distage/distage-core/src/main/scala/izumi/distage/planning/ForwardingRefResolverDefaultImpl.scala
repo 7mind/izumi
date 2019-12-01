@@ -96,9 +96,9 @@ class ForwardingRefResolverDefaultImpl
           case _: ExecutableOp.WiringOp.ReferenceKey =>
             Seq(target -> false)
           case w: ExecutableOp.WiringOp =>
-            w.wiring.associations.map(a => a.key -> isByName(a))
+            w.wiring.associations.map(a => a.key -> a.isByName)
           case w: ExecutableOp.MonadicOp =>
-            w.effectWiring.associations.map(a => a.key -> isByName(a))
+            w.wiring.associations.map(a => a.key -> a.isByName)
         }
       case _: ImportDependency =>
         Seq.empty
@@ -110,10 +110,4 @@ class ForwardingRefResolverDefaultImpl
     onlyByNameUsages
   }
 
-  protected def isByName(p: Association): Boolean = p match {
-    case p: Association.Parameter =>
-      p.isByName
-    case _ =>
-      false
-  }
 }

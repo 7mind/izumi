@@ -14,24 +14,31 @@ trait WithDIAssociation {
   sealed trait Association {
     def symbol: SymbolInfo
     def key: DIKey.BasicKey
+    def tpe: SafeType
     def name: String
+    def isByName: Boolean
 
     def withKey(key: DIKey.BasicKey): Association
   }
 
   object Association {
     case class Parameter(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
-      final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
-      final def name: String = symbol.name
-      final def tpe: SafeType = symbol.finalResultType
-      final def isByName: Boolean = symbol.isByName
+      override final def name: String = symbol.name
+      override final def tpe: SafeType = symbol.finalResultType
+      override final def isByName: Boolean = symbol.isByName
+      override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
+
       final def wasGeneric: Boolean = symbol.wasGeneric
     }
 
+    // FIXME: non-existent wiring, at runtime there are only Parameters
     case class AbstractMethod(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
-      final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
-      final def name: String = symbol.name
-      final def tpe: SafeType = symbol.finalResultType
+      override final def name: String = symbol.name
+      override final def tpe: SafeType = symbol.finalResultType
+      // FIXME: trait methods must count as by-name and inject lazily via by-name parameters
+      override final def isByName: Boolean = false
+      override final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
+
       final def asParameter: Parameter = Parameter(symbol, key)
     }
   }

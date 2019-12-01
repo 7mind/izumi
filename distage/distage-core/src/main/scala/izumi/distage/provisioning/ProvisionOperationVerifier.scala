@@ -57,7 +57,6 @@ object ProvisionOperationVerifier {
       mirror.runtimeClass(target.tpe) match {
         case Some(runtimeKeyClass) =>
           TypeUtil.isAssignableFrom(runtimeKeyClass, unboxed)
-
         case None =>
           true
       }

@@ -8,7 +8,8 @@ import scala.reflect.macros.blackbox
 trait StaticDIUniverse extends DIUniverse { self =>
   override val u: SingletonUniverse
 
-  class IdContractImpl[T: u.Liftable] extends IdContract[T] {
+  override type IdContract[T] = IdContractImpl[T]
+  class IdContractImpl[T: u.Liftable] extends IdContractApi[T] {
     override def repr(v: T): String = v.toString
 
     val liftable: u.Liftable[T] = implicitly

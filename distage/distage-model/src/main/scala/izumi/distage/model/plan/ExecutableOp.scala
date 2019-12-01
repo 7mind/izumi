@@ -19,11 +19,9 @@ sealed trait ExecutableOp {
 object ExecutableOp {
 
   sealed trait SemiplanOp extends ExecutableOp
-
   final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: OperationOrigin.Synthetic) extends SemiplanOp
 
   sealed trait InstantiationOp extends SemiplanOp
-
   final case class CreateSet(target: DIKey, element: SafeType, members: Set[DIKey], origin: OperationOrigin) extends InstantiationOp
 
   sealed trait WiringOp extends InstantiationOp {
@@ -31,7 +29,6 @@ object ExecutableOp {
     def wiring: PureWiring
     def origin: OperationOrigin
   }
-
   object WiringOp {
     final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
     final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
@@ -40,21 +37,14 @@ object ExecutableOp {
   }
 
   sealed trait MonadicOp extends InstantiationOp {
-    def effectWiring: PureWiring
     def wiring: Wiring.MonadicWiring
   }
-
   object MonadicOp {
-    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: OperationOrigin) extends MonadicOp {
-      override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
-    }
-    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: OperationOrigin) extends MonadicOp {
-      override def effectWiring: RuntimeDIUniverse.Wiring.PureWiring = wiring.effectWiring
-    }
+    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: OperationOrigin) extends MonadicOp
+    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: OperationOrigin) extends MonadicOp
   }
 
   sealed trait ProxyOp extends ExecutableOp
-
   object ProxyOp {
     final case class MakeProxy(op: InstantiationOp, forwardRefs: Set[DIKey], origin: OperationOrigin, byNameAllowed: Boolean) extends ProxyOp {
       override def target: DIKey = op.target

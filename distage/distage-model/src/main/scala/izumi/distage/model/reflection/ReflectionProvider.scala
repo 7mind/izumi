@@ -27,11 +27,4 @@ trait ReflectionProvider {
 
 object ReflectionProvider {
   type Aux[U] = ReflectionProvider { val u: U }
-
-  @deprecated("proxy runtime not wokr", "???")
-  private[distage] def canBeProxied[U <: DIUniverse](tpe: U#SafeType): Boolean = {
-    !Modifier.isFinal(classOf[Any].getModifiers)
-    println(s"Proxies are not supported! in $tpe")
-    true
-  }
 }

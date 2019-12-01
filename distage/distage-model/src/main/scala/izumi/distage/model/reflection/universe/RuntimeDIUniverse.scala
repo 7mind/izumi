@@ -6,7 +6,8 @@ import izumi.fundamentals.platform.functional.Identity
 trait RuntimeDIUniverse extends DIUniverse {
   override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
 
-  class IdContractImpl[T] extends IdContract[T] {
+  override type IdContract[T] = IdContractApi[T]
+  class IdContractImpl[T] extends IdContractApi[T] {
     override def repr(value: T): String = value.toString
   }
 

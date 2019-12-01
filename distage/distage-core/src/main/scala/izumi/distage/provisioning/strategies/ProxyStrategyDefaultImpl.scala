@@ -7,12 +7,12 @@ import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, Wir
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.TagK
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-trait FakeSet[A] extends Set[A]
+private[strategies] trait FakeSet[A] extends Set[A]
 
 /**
   * Limitations:
@@ -21,9 +21,32 @@ trait FakeSet[A] extends Set[A]
   */
 class ProxyStrategyDefaultImpl
 (
-  proxyProvider: ProxyProvider
+  proxyProvider: ProxyProvider,
+  mirrorProvider: MirrorProvider,
 ) extends ProxyStrategy {
-  def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+
+  override def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
+    val cogenNotRequired = makeProxy.byNameAllowed
+
+    val proxyInstance = if (cogenNotRequired) {
+      val proxy = new ByNameDispatcher(makeProxy.target)
+      DeferredInit(proxy, proxy)
+    } else {
+      val tpe = proxyTargetType(makeProxy)
+      if (!mirrorProvider.canBeProxied(tpe)) {
+        throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
+      }
+      makeCogenProxy(context, tpe, makeProxy)
+    }
+
+    Seq(
+      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy),
+      NewObjectOp.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher),
+    )
+  }
+
+  override def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)
+                                    (implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)
     context.fetchUnsafe(key) match {
@@ -43,27 +66,6 @@ class ProxyStrategyDefaultImpl
         throw new MissingProxyAdapterException(s"Cannot get dispatcher $key for $initProxy", key, initProxy)
     }
   }
-
-  def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
-    val cogenNotRequired = makeProxy.byNameAllowed
-
-    val proxyInstance = if (cogenNotRequired) {
-      val proxy = new ByNameDispatcher(makeProxy.target)
-      DeferredInit(proxy, proxy)
-    } else {
-      val tpe = proxyTargetType(makeProxy)
-      if (!ReflectionProvider.canBeProxied(tpe)) {
-        throw new UnsupportedOpException(s"Tried to make proxy of non-proxyable (final?) $tpe", makeProxy)
-      }
-      makeCogenProxy(context, tpe, makeProxy)
-    }
-
-    Seq(
-      NewObjectOp.NewInstance(makeProxy.target, proxyInstance.proxy)
-      , NewObjectOp.NewInstance(proxyKey(makeProxy.target), proxyInstance.dispatcher)
-    )
-  }
-
 
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
     val params = if (hasDeps(tpe)) {
@@ -116,8 +118,7 @@ class ProxyStrategyDefaultImpl
     val runtimeClass = ??? : Class[_]
     val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
 
-    val proxyInstance = proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
-    proxyInstance
+    proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
   }
 
   protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {

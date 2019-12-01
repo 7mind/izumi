@@ -180,7 +180,7 @@ class PlanInterpreterDefaultRuntimeImpl
   }
 
   private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    result.asInstanceOf[NewObjectOp { type F0[A] = F[A] }] match {
+    result.asInstanceOf[NewObjectOp.Aux[F]] match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)
