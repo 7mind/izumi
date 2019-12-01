@@ -25,7 +25,7 @@ abstract class LightTypeTag
     this == other
   }
 
-  def debug(name: String): String = {
+  def debugRepr(name: String): String = {
     import izumi.fundamentals.platform.strings.IzString._
 
       s"""⚙️ $name: ${this.toString}
@@ -66,7 +66,13 @@ abstract class LightTypeTag
     * }}}
     */
   def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
-    def mergedBasesDB = LightTypeTag.mergeIDBs(basesdb, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
+    val appliedBases = basesdb.map {
+      case (self: LightTypeTagRef.Lambda, parents) =>
+        self.combineNonPos(args.map(_.map(_.ref))) -> parents
+      case o => o
+    }
+
+    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
 
     LightTypeTag(ref.combineNonPos(args.map(_.map(_.ref))), mergedBasesDB, mergedInheritanceDb)
