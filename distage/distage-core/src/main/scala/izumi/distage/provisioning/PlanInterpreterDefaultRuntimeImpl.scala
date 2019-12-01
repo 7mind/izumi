@@ -165,7 +165,7 @@ class PlanInterpreterDefaultRuntimeImpl
 
   override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
     step match {
-      case op: WiringOp.ReferenceInstance =>
+      case op: WiringOp.UseInstance =>
         instanceStrategy.getInstance(context, op)
 
       case op: WiringOp.ReferenceKey =>
@@ -179,8 +179,8 @@ class PlanInterpreterDefaultRuntimeImpl
     }
   }
 
-  private[this] def interpretResult[F[_] : TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    (result.asInstanceOf[NewObjectOp { type F0[A] = F[A] }]) match {
+  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
+    result.asInstanceOf[NewObjectOp { type F0[A] = F[A] }] match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)

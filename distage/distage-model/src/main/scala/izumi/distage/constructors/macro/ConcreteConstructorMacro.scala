@@ -2,10 +2,10 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -17,7 +17,6 @@ object ConcreteConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse._
 
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
@@ -63,7 +62,7 @@ object ConcreteConstructorMacro {
 
     val constructor = q"(..$args) => new $targetType(...$argNamesLists)"
 
-    val provided = {
+    val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],

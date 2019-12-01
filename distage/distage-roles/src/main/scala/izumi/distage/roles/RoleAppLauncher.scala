@@ -2,13 +2,11 @@ package izumi.distage.roles
 
 import cats.effect.LiftIO
 import distage._
-import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.AxisBase
 import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
 import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.config.ContextOptions
@@ -139,12 +137,12 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
 
   protected def makeModuleProvider(options: ContextOptions, parameters: RawAppArgs, activation: AppActivation, roles: RolesInfo, config: AppConfig, lateLogger: IzLogger): ModuleProvider[F] = {
     new ModuleProvider.Impl[F](
-      lateLogger,
-      config,
-      roles,
-      options,
-      parameters,
-      activation,
+      logger = lateLogger,
+      config = config,
+      roles = roles,
+      options = options,
+      args = parameters,
+      activation = activation,
     )
   }
 
@@ -154,14 +152,12 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
       dumpContext,
       warnOnCircularDeps = true,
       RewriteRules(),
-      ConfigInjectionOptions(),
     )
   }
 
   protected def loadRoles(parameters: RawAppArgs, logger: IzLogger, plugins: AllLoadedPlugins): RolesInfo = {
     val activeRoleNames = parameters.roles.map(_.role).toSet
-    val mp = MirrorProvider.Impl
-    val roleProvider: RoleProvider[F] = new RoleProvider.Impl(logger, activeRoleNames, mp)
+    val roleProvider: RoleProvider[F] = new RoleProvider.Impl(logger, activeRoleNames)
     val bindings = plugins.app.flatMap(_.bindings)
     val bsBindings = plugins.app.flatMap(_.bindings)
     logger.info(s"Available ${plugins.app.size -> "app plugins"} with ${bindings.size -> "app bindings"} and ${plugins.bootstrap.size -> "bootstrap plugins"} with ${bsBindings.size -> "bootstrap bindings"} ...")

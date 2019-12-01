@@ -1,7 +1,7 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
-import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, SafeType, SymbolInfo}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._

@@ -6,7 +6,7 @@ import izumi.distage.model.provisioning.strategies.InstanceStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
 
 class InstanceStrategyDefaultImpl extends InstanceStrategy {
-  def getInstance(context: ProvisioningKeyProvider, op: WiringOp.ReferenceInstance): Seq[NewObjectOp] = {
+  def getInstance(context: ProvisioningKeyProvider, op: WiringOp.UseInstance): Seq[NewObjectOp] = {
     Seq(NewObjectOp.NewInstance(op.target, op.wiring.instance))
   }
 

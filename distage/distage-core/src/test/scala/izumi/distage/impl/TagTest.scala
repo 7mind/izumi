@@ -3,15 +3,14 @@ package izumi.distage.impl
 import distage._
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.{OptionT, id}
 import izumi.distage.model.definition.With
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.Tags.HKTag
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import org.scalatest.WordSpec
 
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
-import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.reflection.Tags.{HKTag, TagKUBound}
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
-import org.scalatest.WordSpec
-import org.scalatest.exceptions.TestFailedException
 
 trait X[Y] {
   type Z = id[Y]
@@ -59,6 +58,7 @@ class TagTest extends WordSpec with X[String] {
   override final val tagZ = Tag[String]
   final val str = "str"
 
+  trait H1
   trait T1[A, B, C, D, E, F[_]]
   trait T2[A, B, C[_[_], _], D[_], E]
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
@@ -67,6 +67,8 @@ class TagTest extends WordSpec with X[String] {
   type Swap[A, B] = Either[B, A]
   type Id[A] = A
   type Id1[F[_], A] = F[A]
+
+  class ApplePaymentProvider[F0[_]] extends H1
 
   "Tag" should {
 
@@ -315,6 +317,13 @@ class TagTest extends WordSpec with X[String] {
       //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
       //  != HKTag[{ type Arg[C] = F[C] }]
       // For Scalac. which necessitates another macro call for fixup ._.
+    }
+
+    "regression test: simple combined Tag" in {
+      def get[F[_]: TagK] = Tag[ApplePaymentProvider[F]]
+      val tag = get[Identity]
+
+      assert(tag.tag <:< Tag[H1].tag)
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

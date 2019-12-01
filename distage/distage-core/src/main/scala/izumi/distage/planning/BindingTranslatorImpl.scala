@@ -78,6 +78,7 @@ class BindingTranslatorImpl
     val userBinding = OperationOrigin.UserBinding(binding)
     wiring match {
       case w: Constructor =>
+        // FIXME: non-existent wirings de-cake compile-time universe ???
         throw new Exception("WiringOp.InstantiateClass(target, w, Some(binding))")
 
       case w: AbstractSymbol =>
@@ -93,7 +94,7 @@ class BindingTranslatorImpl
         WiringOp.CallProvider(target, w, userBinding)
 
       case w: Instance =>
-        WiringOp.ReferenceInstance(target, w, userBinding)
+        WiringOp.UseInstance(target, w, userBinding)
 
       case w: Reference =>
         WiringOp.ReferenceKey(target, w, userBinding)

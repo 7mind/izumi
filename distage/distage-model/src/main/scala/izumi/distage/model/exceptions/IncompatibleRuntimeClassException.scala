@@ -8,7 +8,4 @@ class IncompatibleRuntimeClassException(
                                          val clue: String,
                                        ) extends DIException(
   s"Instance of type `$got` supposed to be assigned to incompatible key $expected. Context: $clue"
-  , null
 )
-
-

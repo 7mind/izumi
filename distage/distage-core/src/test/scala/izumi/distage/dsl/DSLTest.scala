@@ -4,10 +4,8 @@ import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
-import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
+import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
-import izumi.fundamentals.platform.functional.Identity
-import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.WordSpec
 
 class DSLTest extends WordSpec with MkInjector {

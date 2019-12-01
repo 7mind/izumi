@@ -7,14 +7,11 @@ sealed trait GCMode {
 }
 
 object GCMode {
-  def apply(key: DIKey, more: DIKey*): GCMode = GCRoots(more.toSet + key)
-
+  def apply(key: DIKey, more: DIKey*): GCMode = {
+    GCRoots(more.toSet + key)
+  }
   def fromSet(roots: Set[DIKey]): GCMode = {
-    if (roots.isEmpty) {
-      NoGC
-    } else {
-      GCRoots(roots)
-    }
+    if (roots.nonEmpty) GCRoots(roots) else NoGC
   }
 
   final case class GCRoots(roots: Set[DIKey]) extends GCMode {

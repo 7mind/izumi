@@ -670,10 +670,10 @@ class Program[F[_]: TagK: Monad] extends ModuleDef {
 }
 ```
 
-@scaladoc[TagK](izumi.fundamentals.reflection.WithTags#TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
+@scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
 it allows preserving type-information at runtime for types that aren't yet known at definition.
-You'll need to add a @scaladoc[TagK](izumi.fundamentals.reflection.WithTags#TagK) context bound to create a module parameterized by an abstract `F[_]`.
-Use @scaladoc[Tag](izumi.fundamentals.reflection.WithTags#Tag) to create modules parameterized by non-higher-kinded types.
+You'll need to add a @scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) context bound to create a module parameterized by an abstract `F[_]`.
+Use @scaladoc[Tag](izumi.fundamentals.reflection.Tags.Tag) to create modules parameterized by non-higher-kinded types.
 
 Interpreters:
 

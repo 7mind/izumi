@@ -71,9 +71,9 @@ class ActivationParser {
 
 object ActivationParser {
   def findAvailableChoices(logger: IzLogger, defApp: ModuleBase): Map[AxisBase, Set[AxisValue]] = {
-    val allChoices = defApp.bindings.flatMap(_.tags).collect({
+    val allChoices = defApp.bindings.flatMap(_.tags).collect {
       case BindingTag.AxisTag(choice) => choice
-    })
+    }
     val allAxis = allChoices.map(_.axis).groupBy(_.name)
     val badAxis = allAxis.filter(_._2.size > 1)
     if (badAxis.nonEmpty) {

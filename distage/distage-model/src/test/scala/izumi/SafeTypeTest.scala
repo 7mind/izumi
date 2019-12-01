@@ -1,7 +1,6 @@
 package izumi
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import org.scalatest.WordSpec
 

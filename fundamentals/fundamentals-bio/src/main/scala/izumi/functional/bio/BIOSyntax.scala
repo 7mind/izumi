@@ -115,7 +115,7 @@ object BIOSyntax {
       *
       */
     @inline final def sandboxToThrowable(implicit ev: E <:< Throwable): F[Throwable, A] =
-      F.catchAll(F.sandbox(r))(failure => F.fail(failure.toThrowable))
+      F.leftMap(F.sandbox(r))(_.toThrowable)
 
     /** Convert Throwable typed error into a defect */
     @inline final def orTerminate(implicit ev: E <:< Throwable): F[Nothing, A] = F.catchAll(r)(F.terminate(_))

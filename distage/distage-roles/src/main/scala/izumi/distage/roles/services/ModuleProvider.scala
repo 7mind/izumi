@@ -1,7 +1,7 @@
 package izumi.distage.roles.services
 
 import distage._
-import izumi.distage.config.ConfigModule
+import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.{BootstrapModuleDef, Module}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
@@ -17,7 +17,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogstageModule
 
 trait ModuleProvider[F[_]] {
-  def bootstrapModules(): Seq[BootstrapModuleDef]
+  def bootstrapModules(): Seq[BootstrapModule]
   def appModules(): Seq[Module]
 }
 
@@ -33,7 +33,7 @@ object ModuleProvider {
     activation: AppActivation,
   ) extends ModuleProvider[F] {
 
-    def bootstrapModules(): Seq[BootstrapModuleDef] = {
+    def bootstrapModules(): Seq[BootstrapModule] = {
       val rolesModule = new BootstrapModuleDef {
         make[RolesInfo].fromValue(roles)
         make[RawAppArgs].fromValue(args)
@@ -46,7 +46,7 @@ object ModuleProvider {
       val autosetModule = AutoSetModule()
         .register[AbstractRoleF[F]]
 
-      val configModule = new ConfigModule(config, options.configInjectionOptions)
+      val configModule = new AppConfigModule(config)
 
       val resourceRewriter = new BootstrapModuleDef {
         make[RewriteRules].fromValue(options.rewriteRules)

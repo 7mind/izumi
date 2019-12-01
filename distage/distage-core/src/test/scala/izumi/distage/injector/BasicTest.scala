@@ -4,12 +4,10 @@ import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
+import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.{BindingTag, Id}
+import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.platform.language.CodePositionMaterializer
 import org.scalatest.WordSpec
 
 class BasicTest extends WordSpec with MkInjector {
@@ -134,7 +132,8 @@ class BasicTest extends WordSpec with MkInjector {
         .from[TestImpl0Good]
       make[TestInstanceBinding].named("named.test")
         .from(TestInstanceBinding())
-      make[TestDependency0].namedByImpl
+      make[TestDependency0]
+        .namedByImpl // tests SetIdFromImplName
         .from[TestImpl0Good]
     })
 

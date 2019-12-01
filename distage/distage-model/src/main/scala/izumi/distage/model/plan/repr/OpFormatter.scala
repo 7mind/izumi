@@ -1,10 +1,10 @@
 package izumi.distage.model.plan.repr
 
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.MonadicOp._
 import izumi.distage.model.plan.ExecutableOp.ProxyOp._
 import izumi.distage.model.plan.ExecutableOp.WiringOp._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
-import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
@@ -30,8 +30,8 @@ object OpFormatter {
 
   class Impl
   (
-    keyFormatter: KeyFormatter
-  , typeFormatter: TypeFormatter
+    keyFormatter: KeyFormatter,
+    typeFormatter: TypeFormatter,
   ) extends OpFormatter {
 
     import keyFormatter.formatKey
@@ -61,9 +61,9 @@ object OpFormatter {
                   formatOp(target, wiring, origin)
                 case CallFactoryProvider(target, wiring, origin) =>
                   formatOp(target, wiring, origin)
-                case ReferenceInstance(target, wiring, origin) =>
+                case UseInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  if (wiring.instance!=null) {
+                  if (wiring.instance != null) {
                     s"${formatKey(target)} $pos := value ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}"
                   } else {
                     s"${formatKey(target)} $pos := null"
@@ -112,7 +112,6 @@ object OpFormatter {
       val pos = formatBindingPosition(origin)
       s"${formatKey(target)} $pos := $op"
     }
-
 
     private def formatWiring(deps: Wiring): String = {
       deps match {

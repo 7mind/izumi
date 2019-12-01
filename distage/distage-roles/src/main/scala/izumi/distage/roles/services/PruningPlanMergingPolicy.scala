@@ -95,12 +95,12 @@ class PruningPlanMergingPolicy(
       .toSeq
       .map {
         op =>
-          val bindingTags = op.binding.tags.collect({
+          val bindingTags = op.binding.tags.collect {
             case BindingTag.AxisTag(t) => t
-          }).diff(activeTags)
-          val alreadyActiveTags = op.binding.tags.collect({
+          }.diff(activeTags)
+          val alreadyActiveTags = op.binding.tags.collect {
             case BindingTag.AxisTag(t) => t
-          }).intersect(activeTags)
+          }.intersect(activeTags)
           s"${op.binding.origin}, possible: {${bindingTags.mkString(", ")}}, active: {${alreadyActiveTags.mkString(", ")}}"
       }
   }

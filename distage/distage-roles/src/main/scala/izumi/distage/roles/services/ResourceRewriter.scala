@@ -7,8 +7,7 @@ import izumi.distage.model.definition.DIResource.makeSimple
 import izumi.distage.model.definition.ImplDef.DirectImplDef
 import izumi.distage.model.definition._
 import izumi.distage.model.planning.PlanningHook
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, SafeType}
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -36,26 +35,19 @@ class ResourceRewriter(
       case implBinding: Binding.ImplBinding =>
         implBinding match {
           case binding: Binding.SingletonBinding[_] =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, isSet = false) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
-              case ReplaceImplMoveOrigToResourceKey(newImpl, resourceKey) =>
-                logger.info(s"Adapting ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}, $resourceKey")
-                Seq(binding.copy(key = resourceKey), finish(binding, newImpl))
               case DontChange =>
                 Seq(binding)
             }
 
           case binding: Binding.SetElementBinding =>
-            rewriteImpl(convert, binding.key, binding.origin, binding.implementation, isSet = true) match {
+            rewriteImpl(convert, binding.key, binding.origin, binding.implementation) match {
               case ReplaceImpl(newImpl) =>
                 logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}")
                 Seq(finish(binding, newImpl))
-              case ReplaceImplMoveOrigToResourceKey(newImpl, resourceKey) =>
-                logger.info(s"Adapting set element ${binding.key} defined at ${binding.origin} as ${SafeType.get[TGT] -> "type"}, $resourceKey")
-                val elementResourceBinding = SingletonBinding(resourceKey, binding.implementation, binding.tags, binding.origin)
-                Seq(elementResourceBinding, finish(binding, newImpl))
               case RewriteResult.DontChange =>
                 Seq(binding)
             }
@@ -66,7 +58,7 @@ class ResourceRewriter(
     }
   }
 
-  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef, isSet: Boolean): RewriteResult = {
+  private def rewriteImpl[TGT: Tag](convert: TGT => DIResource[Identity, TGT], key: DIKey, origin: SourceFilePosition, implementation: ImplDef): RewriteResult = {
     implementation match {
       case implDef: ImplDef.DirectImplDef =>
         val implType = implDef.implType
@@ -119,16 +111,7 @@ object ResourceRewriter {
   sealed trait RewriteResult
   object RewriteResult {
     final case class ReplaceImpl(newImpl: DirectImplDef) extends RewriteResult
-    final case class ReplaceImplMoveOrigToResourceKey(newImpl: DirectImplDef, newKey: DIKey) extends RewriteResult
     case object DontChange extends RewriteResult
-  }
-
-  final case class ResId(disambiguator: DIKey) {
-    override def toString: String = s"res:${disambiguator.toString}"
-  }
-
-  object ResId {
-    implicit val idContract: IdContract[ResId] = new RuntimeDIUniverse.IdContractImpl[ResId]
   }
 
   final case class RewriteRules(applyRewrites: Boolean = true)

@@ -7,7 +7,7 @@ import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.roles.model.IntegrationCheck

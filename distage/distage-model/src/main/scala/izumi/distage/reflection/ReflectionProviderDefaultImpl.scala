@@ -205,8 +205,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def isConcrete(tpe: u.TypeNative): Boolean = {
     tpe match {
-      case _: u.u.RefinedTypeApi | _: u.u.definitions.AnyTpe.type     | _: u.u.definitions.AnyRefTpe.type
-                                 | _: u.u.definitions.NothingTpe.type | _: u.u.definitions.NullTpe.type =>
+      case _: u.u.RefinedTypeApi | u.u.definitions.AnyTpe     | u.u.definitions.AnyRefTpe
+                                 | u.u.definitions.NothingTpe | u.u.definitions.NullTpe =>
         // 1. refinements never have a valid constructor unless they are tautological and can be substituted by a class
         // 2. ignoring non-runtime refinements (type members, covariant overrides) leads to unsoundness
         // rt.parents.size == 1 && !rt.decls.exists(_.isAbstract)

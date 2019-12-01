@@ -3,20 +3,18 @@ package izumi.distage.roles.services
 import distage.{DIKey, TagK}
 import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.DIException
+import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.{DiAppBootstrapException, IntegrationCheck}
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
-import DIEffect.syntax._
 
 import scala.util.control.NonFatal
 
 trait IntegrationChecker[F[_]] {
   def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]]
-
-  protected implicit val tag: TagK[F]
   final def checkOrFail(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Unit] = {
     implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
 
@@ -27,21 +25,21 @@ trait IntegrationChecker[F[_]] {
         F.unit
     }
   }
+
+  protected[this] implicit def tag: TagK[F]
 }
 
 object IntegrationChecker {
 
-  class IntegrationCheckException(message: String, val failures: Seq[ResourceCheck.Failure]) extends DIException(message, null)
+  class IntegrationCheckException(message: String, val failures: Seq[ResourceCheck.Failure]) extends DIException(message)
 
-  class Impl[F[_] : TagK](
-                           logger: IzLogger,
-                         ) extends IntegrationChecker[F] {
-
-
-    override protected val tag: TagK[F] = implicitly[TagK[F]]
+  class Impl[F[_]]
+  (
+    logger: IzLogger,
+  )(implicit protected val tag: TagK[F]) extends IntegrationChecker[F] {
 
     override def collectFailures(integrationComponents: Set[DIKey], integrationLocator: Locator): F[Either[Seq[ResourceCheck.Failure], Unit]] = {
-      logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"}")
+      logger.info(s"Going to check availability of ${integrationComponents.size -> "resources"} ${integrationComponents -> "resourceList"}")
 
       implicit val F: DIEffect[F] = integrationLocator.get[DIEffect[F]]
       implicit val P: DIEffectAsync[F] = integrationLocator.get[DIEffectAsync[F]]
@@ -59,7 +57,7 @@ object IntegrationChecker {
           .parTraverse[IntegrationCheck, Either[ResourceCheck.Failure, Unit]](good)(runCheck)
           .flatMap {
             results =>
-              results.collect({ case Left(failure) => failure }) match {
+              results.collect { case Left(failure) => failure } match {
                 case Nil =>
                   F.pure(Right(()))
                 case failures =>

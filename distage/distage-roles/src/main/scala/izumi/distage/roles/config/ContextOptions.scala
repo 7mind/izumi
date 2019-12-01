@@ -1,17 +1,15 @@
 package izumi.distage.roles.config
 
-import izumi.distage.config.ConfigInjectionOptions
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 
 /**
-  * @param addGraphVizDump dump plan to graphviz file in ./target/
-  * @param warnOnCircularDeps
-  * @param rewriteRules
-  * @param configInjectionOptions
+  * @param addGraphVizDump    dump Plan to a graphviz file in ./target/ directory
+  * @param warnOnCircularDeps print a warning when a circular dependency is detected or a proxy is generated
+  * @param rewriteRules       allow rewriting of AutoCloseable bindings to ResourceBindings by [[izumi.distage.roles.services.ResourceRewriter]]
+  *                           if disabled, AutoCloseables will NOT be deallocated
   */
-case class ContextOptions(
-                           addGraphVizDump: Boolean = false,
-                           warnOnCircularDeps: Boolean = true,
-                           rewriteRules: RewriteRules = RewriteRules(),
-                           configInjectionOptions: ConfigInjectionOptions = ConfigInjectionOptions(),
-                         )
+final case class ContextOptions(
+                                 addGraphVizDump: Boolean = false,
+                                 warnOnCircularDeps: Boolean = true,
+                                 rewriteRules: RewriteRules = RewriteRules(),
+                               )

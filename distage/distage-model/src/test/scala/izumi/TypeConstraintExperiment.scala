@@ -1,5 +1,6 @@
 package izumi
 
+import izumi.fundamentals.platform.language.unused
 import org.scalatest.WordSpec
 
 import scala.annotation.{StaticAnnotation, TypeConstraint}
@@ -26,7 +27,7 @@ class TypeConstraintExperiment extends WordSpec {
 
   class A0
   class B0
-  class C0(a: A0, b: B0)
+  class C0(val a: A0, val b: B0)
 
   def xa(a: A0@Id("a-id"), b: B0@Id("b-id")) = {
     new C0(a, b): @Id("c-id")
@@ -35,7 +36,7 @@ class TypeConstraintExperiment extends WordSpec {
   case class Extract[T](x: PrintType[_]) { override def toString = x.toString }
   object Extract {
     implicit def fromTpe[X: PrintType]: Extract[X] = Extract(PrintType[X])
-    implicit def convertTpe[X: PrintType](x: X): Extract[X] = Extract(PrintType[X])
+    implicit def convertTpe[X: PrintType](@unused x: X): Extract[X] = Extract(PrintType[X])
   }
 
   case class GetReturn[F, R](x: PrintType[_]) { override def toString = x.toString }

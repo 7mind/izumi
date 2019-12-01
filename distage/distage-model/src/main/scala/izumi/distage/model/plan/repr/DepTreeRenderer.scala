@@ -9,7 +9,6 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 
-
 class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
   val minimizer = new KeyMinimizer(collectKeys(node))
 

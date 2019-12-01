@@ -3,13 +3,11 @@ package izumi.distage.testkit.services.st.adapter
 import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
 import izumi.distage.model.Locator
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module}
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
@@ -21,7 +19,8 @@ import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider.{Memoi
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
+import izumi.fundamentals.platform.language.{CodePosition, Quirks}
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log.Level
 
@@ -188,6 +187,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
+    // FIXME: can't instantiate fixture parameters now ???
     /*val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))

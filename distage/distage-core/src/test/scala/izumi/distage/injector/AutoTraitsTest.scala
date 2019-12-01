@@ -4,8 +4,6 @@ import distage.ModuleDef
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases.TypesCase3
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.ProvisioningException
-import izumi.fundamentals.reflection.MethodMirrorException
 import org.scalatest.WordSpec
 
 class AutoTraitsTest extends WordSpec with MkInjector {

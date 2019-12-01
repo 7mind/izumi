@@ -1,17 +1,19 @@
 package distage
 
-import izumi.distage.config.model
-import izumi.distage.config.annotations
+import izumi.distage.config.{codec, model}
 
 package object config extends DistageConfig {
 
   override type AppConfig = model.AppConfig
   override val AppConfig: model.AppConfig.type = model.AppConfig
 
-  override type ConfigModule = izumi.distage.config.ConfigModule
+  override type ConfigModuleDef = izumi.distage.config.ConfigModuleDef
 
-  override type AutoConf = annotations.AutoConf
-  override type Conf = annotations.Conf
-  override type ConfPath = annotations.ConfPath
+  override type AppConfigModule = izumi.distage.config.AppConfigModule
+
+  override type ConfigReader[T] = codec.ConfigReader[T]
+  override val ConfigReader: codec.ConfigReader.type = codec.ConfigReader
+
+  override type ConfigPathExtractorModule = izumi.distage.config.ConfigPathExtractorModule
 
 }

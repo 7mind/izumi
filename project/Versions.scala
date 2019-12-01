@@ -17,6 +17,7 @@ object V {
   val circe = "0.12.3"
   val circe_generic_extras = "0.12.2"
   val circe_derivation = "0.12.0-M7"
+  val circe_config = "0.7.0"
   val jawn = "0.14.3"
 
   val http4s = "0.21.0-M6"

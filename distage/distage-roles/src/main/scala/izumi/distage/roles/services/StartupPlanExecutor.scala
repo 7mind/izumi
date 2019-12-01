@@ -14,7 +14,7 @@ trait StartupPlanExecutor[F[_]] {
 }
 
 object StartupPlanExecutor {
-  def default[F[_]:TagK](logger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
+  def default[F[_]: TagK](logger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
     val checker = new IntegrationChecker.Impl[F](logger)
     new StartupPlanExecutor.Impl[F](injector, checker)
   }
@@ -29,9 +29,9 @@ object StartupPlanExecutor {
   }
 
   class Impl[F[_]: TagK](
-              injector: Injector,
-              integrationChecker: IntegrationChecker[F],
-            ) extends StartupPlanExecutor[F] {
+                          injector: Injector,
+                          integrationChecker: IntegrationChecker[F],
+                        ) extends StartupPlanExecutor[F] {
     def execute(appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit = {
       injector.produceFX[Identity](appPlan.runtime, filters.filterId)
         .use {
@@ -44,8 +44,6 @@ object StartupPlanExecutor {
                 .produceFX[F](appPlan.app.shared, filters.filterF)
                 .use {
                   sharedLocator =>
-
-
                     Injector.inherit(sharedLocator)
                       .produceFX[F](appPlan.app.side, filters.filterF)
                       .use {

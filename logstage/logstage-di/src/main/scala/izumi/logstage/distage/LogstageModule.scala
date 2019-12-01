@@ -8,8 +8,8 @@ import izumi.logstage.api.Log.CustomContext
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.routing.StaticLogRouter
 
-class LogstageModule(router: LogRouter, setupStatic: Boolean) extends BootstrapModuleDef {
-  if (setupStatic) {
+class LogstageModule(router: LogRouter, setupStaticLogRouter: Boolean) extends BootstrapModuleDef {
+  if (setupStaticLogRouter) {
     StaticLogRouter.instance.setup(router)
   }
 

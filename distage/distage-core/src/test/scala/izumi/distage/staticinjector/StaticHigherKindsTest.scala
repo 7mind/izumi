@@ -1,7 +1,6 @@
 package izumi.distage.staticinjector
 
 import distage.{Id, TagK}
-import izumi.distage.constructors.TraitConstructor
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput

@@ -2,10 +2,10 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -37,26 +37,22 @@ object TraitConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     import macroUniverse.Association._
     import macroUniverse.Wiring._
-    import macroUniverse._
 
     val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
+    val (associations, wireArgs, wireMethods) = {
+      val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
+      wireables.map {
+        case m @ AbstractMethod(symbol, key) =>
+          key.tpe.use { tpe =>
+            val methodName: TermName = TermName(symbol.name)
+            val argName: TermName = c.freshName(methodName)
 
-    def association(p: Symbol): Association.Parameter = {
-      reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p, SafeType(targetType), p.typeSignature.typeSymbol.isParameter))
+            (m.asParameter, q"val $argName: $tpe", q"final val $methodName: $tpe = $argName")
+          }
+      }.unzip3
     }
-
-    val (associations, wireArgs, wireMethods) = wireables.map {
-      case m @ AbstractMethod(symbol, key) =>
-        key.tpe.use { tpe =>
-          val methodName: TermName = TermName(symbol.name)
-          val argName: TermName = c.freshName(methodName)
-
-          (m.asParameter, q"val $argName: $tpe", q"final val $methodName: $tpe = $argName")
-        }
-    }.unzip3
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
 
@@ -77,7 +73,7 @@ object TraitConstructorMacro {
       """
     }
 
-    val provided = {
+    val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],

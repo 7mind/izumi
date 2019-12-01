@@ -146,7 +146,7 @@ class ProxyStrategyDefaultImpl
         op.target.tpe
       case op: MonadicOp.ExecuteEffect =>
         op.target.tpe
-      case op: WiringOp.ReferenceInstance =>
+      case op: WiringOp.UseInstance =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)
       case op: WiringOp.ReferenceKey =>
         throw new UnsupportedOpException(s"Tried to execute nonsensical operation - shouldn't create proxies for references: $op", op)

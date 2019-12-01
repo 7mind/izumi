@@ -1,16 +1,17 @@
 package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
+import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.monadic.modules.CatsDIEffectModule
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.internal.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
-import izumi.distage.roles.test.fixtures.TestRole00.{TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.distage.roles.test.fixtures.TestRole00.{IntegrationOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 
-class TestPlugin extends CatsDIEffectModule with PluginDef {
+class TestPlugin extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
   tag(Env.Prod)
 
   private val version = Option(System.getProperty(TestPlugin.versionProperty)) match {
@@ -34,6 +35,9 @@ class TestPlugin extends CatsDIEffectModule with PluginDef {
   make[NotCloseable].from[InheritedCloseable]
   make[ConfigWriter[IO]]
   make[Help[IO]]
+
+  makeConfig[TestServiceConf]("testservice")
+  makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
 }
 
 object TestPlugin {

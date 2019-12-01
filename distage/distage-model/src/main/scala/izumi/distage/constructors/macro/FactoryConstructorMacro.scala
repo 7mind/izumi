@@ -7,7 +7,7 @@ import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagne
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.provisioning.FactoryTools
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -118,7 +118,7 @@ object FactoryConstructorMacro {
 
     val constructor = q"(..$allArgs) => ($instantiate): $targetType"
 
-    val provided = {
+    val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         allAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],

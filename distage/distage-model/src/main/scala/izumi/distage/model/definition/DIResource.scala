@@ -111,7 +111,7 @@ import scala.reflect.macros.blackbox
   * you can control it by controlling the scope in `.use` or by manually using
   * [[DIResourceBase.acquire]] and [[DIResourceBase.release]].
   *
-  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
+  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL.fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
   **/
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {

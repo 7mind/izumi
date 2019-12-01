@@ -16,6 +16,7 @@ object Izumi {
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
+    val circe_config = Version.VExpr("V.circe_config")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
     val scalameta = Version.VExpr("V.scalameta")
@@ -68,13 +69,17 @@ object Izumi {
       cats_effect,
     )
 
+
+    final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
+    final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
     final val circe = Seq(
-      Library("io.circe", "circe-core", V.circe, LibraryType.Auto),
+      circe_core,
       Library("io.circe", "circe-parser", V.circe, LibraryType.Auto),
       Library("io.circe", "circe-literal", V.circe, LibraryType.Auto),
       Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
-      Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto),
+      circe_derivation,
     ).map(_ in Scope.Compile.all)
+    final val circe_config = Library("io.circe", "circe-config", V.circe_config, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
@@ -275,7 +280,6 @@ object Izumi {
       final lazy val core = ArtifactId("logstage-core")
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
       final lazy val di = ArtifactId("logstage-di")
-      final lazy val config = ArtifactId("logstage-config")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
       final lazy val sinkSlf4j = ArtifactId("logstage-sink-slf4j")
     }
@@ -364,12 +368,6 @@ object Izumi {
         depends = Seq.empty,
       ),
       Artifact(
-        name = Projects.fundamentals.typesafeConfig,
-        libs = Seq(typesafe_config, scala_reflect in Scope.Compile.jvm),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.reflection in Scope.Runtime.jvm),
-        platforms = Targets.jvm,
-      ),
-      Artifact(
         name = Projects.fundamentals.reflection,
         libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(
@@ -423,8 +421,8 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(typesafe_config) ++ Seq(scala_reflect in Scope.Provided.all),
-        depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
+        libs = Seq(circe_core, circe_derivation, circe_config).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
       ),
       Artifact(
@@ -483,18 +481,12 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.di,
-        libs = Seq.empty,
-        depends = Seq(Projects.logstage.config, Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
+        libs = Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
         groups = Groups.distage,
-      ),
-      Artifact(
-        name = Projects.logstage.config,
-        libs = Seq.empty,
-        depends = Seq(Projects.fundamentals.typesafeConfig, Projects.logstage.core).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,

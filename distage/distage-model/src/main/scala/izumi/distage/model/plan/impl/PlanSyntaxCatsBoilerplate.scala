@@ -2,29 +2,28 @@ package izumi.distage.model.plan.impl
 
 import cats.Applicative
 import cats.kernel.Monoid
-import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.Tag
 
+private[plan] object PlanSyntaxCatsBoilerplate {
 
-private[plan] final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
-  def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
-    plan.resolveImportsF[F] {
-      case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
-    }
-}
+  final class ResolveImportFSemiPlanPartiallyApplied[T](private val plan: SemiPlan) extends AnyVal {
+    def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[SemiPlan] =
+      plan.resolveImportsF[F] {
+        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
+      }
+  }
 
-private[plan] final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
-  def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
-    plan.resolveImportsF[F] {
-      case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
-    }
-}
-
-private[plan] object SemiPlanOrderedPlanInstances {
+  final class ResolveImportFOrderedPlanPartiallyApplied[T](private val plan: OrderedPlan) extends AnyVal {
+    def apply[F[_] : Applicative](f: F[T])(implicit ev: Tag[T]): F[OrderedPlan] =
+      plan.resolveImportsF[F] {
+        case i if i.target == DIKey.get[T] => f.asInstanceOf[F[Any]]
+      }
+  }
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
@@ -47,7 +46,7 @@ private[plan] object SemiPlanOrderedPlanInstances {
     steps.traverse {
       case i: ImportDependency =>
         f.lift(i).map {
-          _.map[ExecutableOp](instance => ReferenceInstance(i.target, Instance(i.target.tpe, instance), i.origin))
+          _.map[ExecutableOp](instance => UseInstance(i.target, Instance(i.target.tpe, instance), i.origin))
         } getOrElse Applicative[F].pure(i)
       case op =>
         Applicative[F].pure(op)
@@ -58,7 +57,7 @@ private[plan] object SemiPlanOrderedPlanInstances {
     steps.traverse {
       case i: ImportDependency =>
         f.lift(i).map {
-          _.map[SemiplanOp](instance => ReferenceInstance(i.target, Instance(i.target.tpe, instance), i.origin))
+          _.map[SemiplanOp](instance => UseInstance(i.target, Instance(i.target.tpe, instance), i.origin))
         } getOrElse Applicative[F].pure(i)
       case op =>
         Applicative[F].pure(op)

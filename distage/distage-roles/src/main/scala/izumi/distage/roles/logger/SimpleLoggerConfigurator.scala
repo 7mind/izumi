@@ -1,9 +1,9 @@
 package izumi.distage.roles.logger
 
 import com.typesafe.config.Config
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import io.circe.Decoder
+import izumi.distage.config.codec.ConfigReader
 import izumi.distage.roles.logger.SimpleLoggerConfigurator.SinksConfig
-import izumi.fundamentals.typesafe.config.{RuntimeConfigReaderCodecs, RuntimeConfigReaderDefaultImpl}
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
 import izumi.logstage.api.rendering.json.LogstageCirceRenderingPolicy
@@ -12,11 +12,12 @@ import izumi.logstage.api.routing.{ConfigurableLogRouter, LogConfigServiceImpl, 
 import izumi.logstage.api.{IzLogger, Log}
 import izumi.logstage.sink.{ConsoleSink, QueueingSink}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
-class SimpleLoggerConfigurator(
-                                exceptionLogger: IzLogger,
-                              ) {
+class SimpleLoggerConfigurator
+(
+  exceptionLogger: IzLogger,
+) {
 
   // TODO: this is a temporary solution until we finish full-scale logger configuration support
   def makeLogRouter(config: Config, root: Log.Level, json: Boolean): LogRouter = {
@@ -50,15 +51,7 @@ class SimpleLoggerConfigurator(
   }
 
   private[this] def readConfig(config: Config): SinksConfig = {
-    // TODO: copypaste from di boostrap, this MUST disappear
-    val reader = new RuntimeConfigReaderDefaultImpl(RuntimeConfigReaderCodecs.default.readerCodecs)
-
-    val maybeConf = for {
-      section <- Try(config)
-      config <- Try(reader.readConfigAsCaseClass(section, SafeType.get[SinksConfig]).asInstanceOf[SinksConfig])
-    } yield config
-
-    maybeConf match {
+    SinksConfig.configReader(config.root) match {
       case Failure(exception) =>
         exceptionLogger.error(s"Failed to read `logger` config section, using defaults: $exception")
         SinksConfig(Map.empty, None, json = None, None)
@@ -70,5 +63,14 @@ class SimpleLoggerConfigurator(
 }
 
 object SimpleLoggerConfigurator {
-  final case class SinksConfig(levels: Map[String, List[String]], options: Option[RenderingOptions], json: Option[Boolean], layout: Option[String])
+  final case class SinksConfig(
+                                levels: Map[String, List[String]],
+                                options: Option[RenderingOptions],
+                                json: Option[Boolean],
+                                layout: Option[String],
+                              )
+  object SinksConfig {
+    implicit val decoder: Decoder[SinksConfig] = ConfigReader.deriveDecoder
+    implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.fromCirce
+  }
 }

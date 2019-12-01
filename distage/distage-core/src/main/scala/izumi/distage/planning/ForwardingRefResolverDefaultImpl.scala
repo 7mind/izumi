@@ -3,7 +3,6 @@ package izumi.distage.planning
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import distage.Id
 
@@ -51,7 +50,7 @@ class ForwardingRefResolverDefaultImpl
       initProxiesAtTheEnd(proxies.toList, resolvedSteps)
     }
 
-    val imports = plan.steps.collect({ case i: ImportDependency => i })
+    val imports = plan.steps.collect { case i: ImportDependency => i }
     OrderedPlan(imports ++ proxyOps, plan.declaredRoots, plan.topology)
   }
 

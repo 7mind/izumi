@@ -9,7 +9,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.S
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
-import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.topology.DependencyGraph
@@ -55,7 +55,7 @@ trait LocatorDef
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
         val origin = OperationOrigin.SyntheticBinding(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown))
-        ReferenceInstance(key, Instance(key.tpe, value), origin)
+        UseInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
     OrderedPlan(ops, ops.map(_.target).toSet, topology)

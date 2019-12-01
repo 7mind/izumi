@@ -146,9 +146,7 @@ private[monadic] sealed trait LowPriorityDIEffectInstances {
       override def map[A, B](fa: F[A])(f: A => B): F[B] = F.map(fa)(f)
       override def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
 
-      override def maybeSuspend[A](eff: => A): F[A] = {
-        F.delay(eff)
-      }
+      override def maybeSuspend[A](eff: => A): F[A] = F.delay(eff)
       override def definitelyRecover[A](action: => F[A])(recover: Throwable => F[A]): F[A] = {
         F.handleErrorWith(F.suspend(action))(recover)
       }

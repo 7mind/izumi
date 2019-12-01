@@ -15,7 +15,7 @@ import scala.reflect.macros.blackbox
   * }}}
   *
   * To derive codecs for a sealed trait with branches inside its
-  * own companion object, use a proxy object. This works around
+  * own companion object, use a proxy object - this works around
   * a scala limitation: https://github.com/milessabin/shapeless/issues/837
   *
   * {{{
@@ -49,17 +49,17 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
 
   def materializeEncoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedEncoder[A]] =
     c.Expr[DerivationDerivedEncoder[A]] {
-      q"{ ${symbolOf[DerivationDerivedEncoder.type].asClass.module}.apply(${materializeEncoder[A]}) }"
+      q"{ new ${weakTypeOf[DerivationDerivedEncoder[A]]}(${materializeEncoder[A]}) }"
     }
 
   def materializeDecoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedDecoder[A]] =
     c.Expr[DerivationDerivedDecoder[A]] {
-      q"{ ${symbolOf[DerivationDerivedDecoder.type].asClass.module}.apply(${materializeDecoder[A]}) }"
+      q"{ new ${weakTypeOf[DerivationDerivedDecoder[A]]}(${materializeDecoder[A]}) }"
     }
 
   def materializeCodecImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedCodec[A]] =
     c.Expr[DerivationDerivedCodec[A]] {
-      q"{ ${symbolOf[DerivationDerivedCodec.type].asClass.module}.apply(${materializeCodec[A]}) }"
+      q"{ new ${weakTypeOf[DerivationDerivedCodec[A]]}(${materializeCodec[A]}) }"
     }
 }
 

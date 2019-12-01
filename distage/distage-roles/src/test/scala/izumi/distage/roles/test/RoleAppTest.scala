@@ -37,7 +37,7 @@ class RoleAppTest extends WordSpec
     private var locator0: LocatorRef = null
     lazy val locator: Locator = locator0.get
 
-    make[XXX_ResourceEffectsRecorder].from(resources)
+    make[XXX_ResourceEffectsRecorder].fromValue(resources)
     make[XXX_LocatorLeak].from {
       locatorRef: LocatorRef =>
         locator0 = locatorRef
@@ -68,7 +68,6 @@ class RoleAppTest extends WordSpec
     "start roles regression test" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-
       new RoleAppMain.Silent({
         new TestLauncher {
           override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
@@ -77,11 +76,12 @@ class RoleAppTest extends WordSpec
               new ConflictPlugin,
               new TestPlugin,
               new AdoptedAutocloseablesCasePlugin,
+              probe,
               new PluginDef {
                 make[Resource0].from[Resource1]
-                many[Resource0].ref[Resource0]
+                many[Resource0]
+                  .ref[Resource0]
               },
-              probe
             ))
           }
         }
@@ -98,13 +98,14 @@ class RoleAppTest extends WordSpec
     }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
+      val probe = new XXX_TestWhiteboxProbe()
+
       val logger = IzLogger()
-      val initCounter = new XXX_ResourceEffectsRecorder
-      val definition = (new ResourcesPluginBase {
+      val definition = new ResourcesPluginBase {
         make[Resource0].from[Resource1]
-        many[Resource0].ref[Resource0]
-        make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
-      } ++ IdentityDIEffectModule)
+        many[Resource0]
+          .ref[Resource0]
+      } ++ IdentityDIEffectModule ++ probe
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         ContextOptions(),
         BootstrapModule.empty,
@@ -120,9 +121,9 @@ class RoleAppTest extends WordSpec
             locator =>
               integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
-              assert(initCounter.startedCloseables.size == 3)
-              assert(initCounter.checkedResources.size == 2)
-              assert(initCounter.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+              assert(probe.resources.startedCloseables.size == 3)
+              assert(probe.resources.checkedResources.size == 2)
+              assert(probe.resources.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
           }
         }
       }

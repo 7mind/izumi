@@ -3,7 +3,7 @@ package izumi.distage.model.plan.impl
 import cats.Applicative
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.plan.impl.OrderedPlanExtensions.{OrderedPlanExts, OrderedPlanSyntax}
-import izumi.distage.model.plan.impl.SemiPlanOrderedPlanInstances.resolveImportsImpl
+import izumi.distage.model.plan.impl.PlanSyntaxCatsBoilerplate.{ResolveImportFOrderedPlanPartiallyApplied, resolveImportsImpl}
 import izumi.distage.model.plan.repr.{CompactPlanFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.PlanTopology
@@ -13,7 +13,7 @@ import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.language.implicitConversions
 
-trait OrderedPlanExtensions {
+private[plan] trait OrderedPlanExtensions { this: OrderedPlan.type =>
   implicit val defaultFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
 
   def empty: OrderedPlan = OrderedPlan(Vector.empty, Set.empty, PlanTopology.empty)

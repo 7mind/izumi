@@ -4,15 +4,10 @@ import com.typesafe.config.ConfigFactory
 import distage._
 import io.github.classgraph.ClassGraph
 import izumi.distage.bootstrap.BootstrapLocator
-import izumi.distage.config.annotations.AbstractConfId
+import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.config.{ConfigModule, ConfigReferenceExtractor}
-import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
-import izumi.distage.model.provisioning.strategies.FactoryExecutor
-import scala.reflect.runtime.{universe => ru}
+import izumi.distage.model.planning.PlanMergingPolicy
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
@@ -26,7 +21,7 @@ import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
 import scala.reflect.macros.blackbox
-import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.{currentMirror, universe => ru}
 import scala.reflect.{ClassTag, classTag}
 
 object StaticPluginCheckerMacro {
@@ -101,7 +96,7 @@ object StaticPluginCheckerMacro {
 
       val referenceConfig = configUrls.foldLeft(ConfigFactory.empty())(_ withFallback ConfigFactory.parseURL(_)).resolve()
 
-      Some(new ConfigModule(AppConfig(referenceConfig)))
+      Some(new AppConfigModule(AppConfig(referenceConfig)))
     }
 
     val gcRootPath = TreeUtil.stringLiteral(c)(c.universe)(gcRoot.tree)
@@ -129,7 +124,7 @@ object StaticPluginCheckerMacro {
 
   def check(
              loadedPlugins: Seq[PluginBase],
-             configModule: Option[ConfigModule],
+             configModule: Option[AppConfigModule],
              additional: ModuleBase,
              root: Option[ModuleBase],
              moduleRequirements: Option[ModuleRequirements],
@@ -146,8 +141,8 @@ object StaticPluginCheckerMacro {
 
     // If configModule is defined - check config, otherwise skip config keys
     val config = configModule.getOrElse(new BootstrapModuleDef {
-      many[PlanningHook]
-        .add[ConfigReferenceExtractor]
+//      many[PlanningHook]
+//        .add[ConfigReferenceExtractor]
     })
 
     val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config overridenBy new BootstrapModuleDef {
@@ -160,24 +155,23 @@ object StaticPluginCheckerMacro {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true
     }
+    import izumi.fundamentals.platform.strings.IzString._
 
     if (imports.nonEmpty)
       abort(
         s"""Plugin is incomplete!
            |
-           |  ERROR: Missing imports:
-           |    ${imports.mkString("\n    ")}
+           |ERROR: Missing imports:
+           |${imports.niceList()}
            |
-           |  Module requirements were:
-           |    ${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).mkString("\n    ")}
+           |Module requirements were:
+           |${moduleRequirements.fold(Set.empty[DIKey])(_.requiredKeys).niceList()}
+           |${if (loadedPlugins.nonEmpty) s"\nPlugin classes were: ${loadedPlugins.map(_.getClass).niceList()}" else ""}
            |
-           |  Plan was:
+           |Plan was:
            |${finalPlan.render()}
            |
-           |  ${configModule.fold("")(_ => s"Config was:\n  ${bootstrap.find[AppConfig].map(_.config)}")}
-           |
-           |  ${if (loadedPlugins.nonEmpty) s"Plugin classes were: ${loadedPlugins.map(_.getClass).mkString("\n    ")}" else ""}
-           |    """.stripMargin
+           |${configModule.fold("")(_ => s"Config was:\n${bootstrap.find[AppConfig].map(_.config).toString.shift(2)}")}""".stripMargin
       )
   }
 
@@ -199,26 +193,6 @@ object StaticPluginCheckerMacro {
       }.apply()
 
     classTag[T].runtimeClass.cast(instance).asInstanceOf[T]
-  }
-
-  // FIXME: move to distage-model
-  // blockers: AbstractConfId
-  implicit final class OrderedPlanCheck(private val plan: OrderedPlan) {
-
-    /**
-      * @return this plan or a list of unsatisfied imports
-      */
-    def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
-      val nonMagicImports = plan.getImports.filter {
-        // a hack to not account for distage-config *bootstrap module*
-        // fixme: better scheme
-        case ImportDependency(DIKey.IdKey(_, _: AbstractConfId), _, _) => false
-        case i if i.target == DIKey.get[FactoryExecutor] => false
-        case i if i.target == DIKey.get[LocatorRef] => false
-        case _ => true
-      }
-      if (nonMagicImports.isEmpty) Right(plan) else Left(nonMagicImports)
-    }
   }
 
 }

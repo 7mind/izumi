@@ -1,6 +1,6 @@
 package izumi.distage.model.plan
 
-import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
+import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
@@ -19,6 +19,7 @@ sealed trait ExecutableOp {
 object ExecutableOp {
 
   sealed trait SemiplanOp extends ExecutableOp
+
   final case class ImportDependency(target: DIKey, references: Set[DIKey], origin: OperationOrigin.Synthetic) extends SemiplanOp
 
   sealed trait InstantiationOp extends SemiplanOp
@@ -34,7 +35,7 @@ object ExecutableOp {
   object WiringOp {
     final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
     final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
-    final case class ReferenceInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
+    final case class UseInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: OperationOrigin) extends WiringOp
   }
 
@@ -61,9 +62,8 @@ object ExecutableOp {
     final case class InitProxy(target: DIKey, dependencies: Set[DIKey], proxy: MakeProxy, origin: OperationOrigin) extends ProxyOp
   }
 
-  implicit class ExecutableOpExt(val op: ExecutableOp) extends AnyVal {
-    def instanceType: SafeType = opInstanceType(op)
-
+  implicit final class ExecutableOpExt(private val op: ExecutableOp) extends AnyVal {
+    @inline def instanceType: SafeType = opInstanceType(op)
   }
 
   @tailrec
@@ -76,10 +76,12 @@ object ExecutableOp {
           case _: Wiring.Factory | _: Wiring.FactoryFunction =>
             w.target.tpe
         }
+      case m: MonadicOp =>
+        m.wiring.instanceType
       case p: MakeProxy =>
         opInstanceType(p.op)
-      case o =>
-        o.target.tpe
+      case i @(_: InitProxy | _: ImportDependency | _: CreateSet) =>
+        i.target.tpe
     }
   }
 

@@ -13,8 +13,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
   *                 Garbage collector will remove all bindings that aren't direct or indirect dependencies
   *                 of the chosen root DIKeys from the plan - they will never be instantiated.
   *
-  *                 If left empty, garbage collection will not be performed – that would be equivalent to
-  *                 designating all DIKeys as roots.
+  *                 On [[GCMode.NoGC]] garbage collection will not be performed – that would be equivalent to
+  *                 designating _all_ DIKeys as roots.
   */
 final case class PlannerInput(
                                bindings: ModuleBase,
@@ -22,11 +22,10 @@ final case class PlannerInput(
                              )
 
 object PlannerInput {
-  def noGc(bindings: ModuleBase): PlannerInput = {
-    new PlannerInput(bindings, GCMode.NoGC)
-  }
-
   def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = {
     new PlannerInput(bindings, GCMode.GCRoots(roots))
+  }
+  def noGc(bindings: ModuleBase): PlannerInput = {
+    new PlannerInput(bindings, GCMode.NoGC)
   }
 }

@@ -2,7 +2,7 @@ package izumi.distage.model.reflection.universe
 
 import izumi.fundamentals.reflection.SafeType0
 import izumi.fundamentals.reflection.Tags.{Tag, TagK, WeakTag}
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 trait WithDISafeType {
   this: DIUniverseBase =>
@@ -17,7 +17,7 @@ trait WithDISafeType {
       new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
 //      new SafeType(tpe, shitTag)
     }
-    private[this] val shitTag = LTag[Null].tag
+//    private[this] val shitTag = LTag[Null].tag
 
     @deprecated("constructing SafeType from a LightTypeTag", "0.10.0")
     def apply(tag: LightTypeTag): SafeType = new SafeType(null, tag)

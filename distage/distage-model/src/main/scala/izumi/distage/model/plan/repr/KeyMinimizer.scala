@@ -2,7 +2,7 @@ package izumi.distage.model.plan.repr
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.collections.IzCollections._
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.NameReference
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
@@ -15,13 +15,13 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     .toMap
 
   private val minimizer = new LTTRenderables {
-    protected def nameToString(value: NameReference): String = {
-      val shortname = value.ref.name.split('.').last
+    override def r_SymName(sym: SymName): String = {
+      val shortname = sym.name.split('.').last
       val by = indexed.getOrElse(shortname, 0)
       if (by <= 1) {
         shortname
       } else {
-        value.ref.name
+        sym.name
       }
     }
   }

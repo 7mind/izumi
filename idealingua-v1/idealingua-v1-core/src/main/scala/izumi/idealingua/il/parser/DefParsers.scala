@@ -13,8 +13,8 @@ class DefParsers(context: IDLParserContext) {
   protected[parser] def modelDef[_: P]: P[ParsedModel] = P(any ~ defMember.anyMember.rep(sep = any) ~ any ~ End)
     .map {
       defs =>
-        val tlds = defs.collect({case ModelMember.MMTopLevelDefn(defn) => defn})
-        val inclusions = defs.collect({case ModelMember.MMInclusion(inc) => inc})
+        val tlds = defs.collect {case ModelMember.MMTopLevelDefn(defn) => defn}
+        val inclusions = defs.collect {case ModelMember.MMInclusion(inc) => inc}
 
         ParsedModel(tlds, inclusions)
     }

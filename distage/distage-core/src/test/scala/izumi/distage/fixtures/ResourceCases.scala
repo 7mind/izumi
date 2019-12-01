@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicReference
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
-import distage.Id
 import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.immutable.Queue

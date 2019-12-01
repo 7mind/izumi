@@ -8,4 +8,4 @@ class IncompatibleEffectTypesException(val provisionerEffectType: SafeType, val 
      |Clarification:
      |  - To execute `.fromEffect` and `.fromResource` bindings for effects other than `Identity` you need to use `Injector.produceF` method with F type corresponding to the type of effects/resources you inject
      |  - Subtype type constructors are allowed. e.g. when using ZIO you can execute actions with type IO[Nothing, ?] when running in IO[Throwable, ?]
-   """.stripMargin, null)
+   """.stripMargin)

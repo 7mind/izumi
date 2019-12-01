@@ -21,7 +21,6 @@ object RoleProvider {
   class Impl[F[_] : TagK](
                            logger: IzLogger,
                            requiredRoles: Set[String],
-                           mirrorProvider: MirrorProvider,
                          ) extends RoleProvider[F] {
 
     def getInfo(bindings: Seq[Binding]): RolesInfo = {
@@ -55,7 +54,10 @@ object RoleProvider {
         case (rb, impltype) =>
           getDescriptor(rb.key.tpe) match {
             case Some(d) =>
-              val runtimeClass = mirrorProvider.runtimeClass(impltype).getOrElse(classOf[Any])
+//              val runtimeClass = mirrorProvider.runtimeClass(impltype).getOrElse(classOf[Any])
+//              val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
+              // FIXME: read runtime class of ROLE INSTANCE, not role descriptor again ???
+              val runtimeClass = d.getClass
               val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
               Seq(RoleBinding(rb, runtimeClass, impltype, d, src))
             case None =>
@@ -73,18 +75,27 @@ object RoleProvider {
       tpe <:< SafeType.get[AbstractRoleF[F]]
     }
 
+    // FIXME: fix ROleDescriptor instantiation ???
     private def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      try {
-//        role.use(t => mirrorProvider.mirror.reflectModule(t.dealias.companion.typeSymbol.asClass.module.asModule).instance) match {
-        ??? match {
-          case rd: RoleDescriptor => Some(rd)
-          case _ => None
-        }
+      val n = role.tag.shortName
+      Some((try {
+        Class.forName(s"izumi.distage.roles.test.fixtures.${n}$$").getField("MODULE$").get(null)
       } catch {
         case t: Throwable =>
-          logger.error(s"Failed to reflect descriptor for $role: $t")
-          None
-      }
+          println(t.getMessage)
+          Class.forName(s"izumi.distage.roles.internal.${n}$$").getField("MODULE$").get(null)
+      }).asInstanceOf[RoleDescriptor])
+      //      try {
+////        role.use(t => mirrorProvider.mirror.reflectModule(t.dealias.companion.typeSymbol.asClass.module.asModule).instance) match {
+//        ??? match {
+//          case rd: RoleDescriptor => Some(rd)
+//          case _ => None
+//        }
+//      } catch {
+//        case t: Throwable =>
+//          logger.error(s"Failed to reflect descriptor for $role: $t")
+//          None
+//      }
     }
 
   }

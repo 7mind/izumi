@@ -93,7 +93,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
 
   private def finish(): Unit = {
-    val finishedTests = allOpen.collect({ case (t, s: Done) => (t, s) })
+    val finishedTests = allOpen.collect { case (t, s: Done) => (t, s) }
 
     finishedTests
       .foreach {

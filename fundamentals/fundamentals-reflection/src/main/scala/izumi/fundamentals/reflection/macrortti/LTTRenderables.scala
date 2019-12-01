@@ -6,7 +6,7 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 trait LTTRenderables extends WithRenderableSyntax {
 
-  protected def nameToString(value: NameReference): String
+  def r_SymName(sym: SymName): String
 
   implicit lazy val r_LightTypeTag: Renderable[LightTypeTagRef] = {
     case a: AbstractReference =>
@@ -56,7 +56,7 @@ trait LTTRenderables extends WithRenderableSyntax {
   }
 
   implicit lazy val r_NameRefRenderer: Renderable[NameReference] = (value: NameReference) => {
-    val r = nameToString(value)
+    val r = r_SymName(value.ref)
 
     val rr = value.boundaries match {
       case _: Boundaries.Defined =>
@@ -104,17 +104,17 @@ trait LTTRenderables extends WithRenderableSyntax {
 object LTTRenderables {
 
   object Short extends LTTRenderables {
-    protected def nameToString(value: NameReference): String = {
-      value.ref match {
+    def r_SymName(sym: SymName): String = {
+      sym match {
         case SymLiteral(c) => c
-        case s => s.name.split('.').last
+        case _ => sym.name.split('.').last
       }
     }
   }
 
   object Long extends LTTRenderables {
-    protected def nameToString(value: NameReference): String = {
-      value.ref.name
+    def r_SymName(sym: SymName): String = {
+      sym.name
     }
   }
 }

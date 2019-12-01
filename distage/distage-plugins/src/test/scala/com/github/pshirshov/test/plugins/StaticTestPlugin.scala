@@ -2,16 +2,17 @@ package com.github.pshirshov.test.plugins
 
 import com.github.pshirshov.test.sneaky.SneakyPlugin
 import distage.ModuleDef
-import izumi.distage.config.annotations.ConfPath
+import izumi.distage.config.ConfigModuleDef
 import izumi.distage.dsl.TestTagOps._
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.logstage.api.IzLogger
 
 @ExposedTestScope
-class StaticTestPlugin extends SneakyPlugin {
+class StaticTestPlugin extends SneakyPlugin with ConfigModuleDef {
   make[TestDep].tagged("x").from[TestDep1]
   make[TestDep].tagged("y").from[TestDep2]
   make[TestService]
+  make[TestConf].fromConfig("test.testconf")
 }
 
 @ExposedTestScope
@@ -42,8 +43,8 @@ class TestDep2 extends TestDep
 
 @ExposedTestScope
 class TestService(
-                   val testConf: TestConf @ConfPath("test.testconf")
-                   , val log: IzLogger
+                   val testConf: TestConf,
+                   val log: IzLogger,
                  )
 
 @ExposedTestScope

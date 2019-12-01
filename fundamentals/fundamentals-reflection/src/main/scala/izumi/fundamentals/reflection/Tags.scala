@@ -74,6 +74,7 @@ object Tags extends {
       }
     }
 
+    @deprecated("Constructing Tag from SafeType", "0.10.0")
     def unsafeFromSafeType[T](tpe: SafeType0[_]): Tag[T] = {
       Tag(tpe.tag)
     }

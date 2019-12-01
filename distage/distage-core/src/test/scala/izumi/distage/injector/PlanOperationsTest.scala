@@ -97,7 +97,7 @@ class PlanOperationsTest extends WordSpec with MkInjector {
     def verifySingleImport(key: DIKey): Unit = {
       val plan = srcPlan.replaceWithImports(Set(key))
       assert(plan.index.get(key).exists(_.isInstanceOf[ImportDependency]))
-      assert(plan.index.values.collect({ case i: ImportDependency => i }).size == 1)
+      assert(plan.index.values.collect { case i: ImportDependency => i }.size == 1)
       assert(!plan.definition.keys.contains(key))
       ()
     }

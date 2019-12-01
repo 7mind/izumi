@@ -41,7 +41,7 @@ import com.typesafe.config.ConfigFactory
 
 val config = ConfigFactory.load()
 
-val injector = Injector(new ConfigModule(AppConfig(config)))
+val injector = Injector(new ConfigModuleDef(AppConfig(config)))
 ```
 
 Now you can automatically parse config entries into case classes and summon them from any class:

@@ -20,7 +20,7 @@ class Struct
   def requiredInterfaces: List[InterfaceId] = {
     all
       .map(_.defn.definedBy)
-      .collect({ case i: InterfaceId => i })
+      .collect { case i: InterfaceId => i }
       .distinct
   }
 }

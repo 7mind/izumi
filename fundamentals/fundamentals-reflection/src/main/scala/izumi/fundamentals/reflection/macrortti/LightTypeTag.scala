@@ -83,7 +83,8 @@ abstract class LightTypeTag
     ref.toString
   }
 
-  /** Fully-qualified rendering of a type, use [[toString]] for a rendering that omits package names */
+  /** Fully-qualified rendering of a type, including packages and prefix types.
+    * Use [[toString]] for a rendering that omits package names */
   def repr: String = {
     import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     ref.render()
@@ -92,6 +93,11 @@ abstract class LightTypeTag
   /** Short class or type-constructor name of this type, without package or prefix names */
   def shortName: String = {
     ref.shortName
+  }
+
+  /** Class or type-constructor name of this type, WITH package name, but without prefix names */
+  def longName: String = {
+    ref.longName
   }
 
   override def equals(other: Any): Boolean = {

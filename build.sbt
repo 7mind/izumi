@@ -339,94 +339,6 @@ lazy val `fundamentals-bio` = project.in(file("fundamentals/fundamentals-bio"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `fundamentals-typesafe-config` = project.in(file("fundamentals/fundamentals-typesafe-config"))
-  .dependsOn(
-    `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-collections` % "test->compile;compile->compile",
-    `fundamentals-functional` % "test->compile;compile->compile",
-    `fundamentals-reflection` % "test->compile;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.typesafe" % "config" % V.typesafe_config,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
-  )
-  .settings(
-    organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    testOptions in Test += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
-        "-Xsource:2.13",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.13.1") => Seq(
-        "-Xlint:_,-eta-sam",
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wunused:_",
-        "-Wvalue-discard"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, _) => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalaVersion := crossScalaVersions.value.head,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    )
-  )
-  .disablePlugins(AssemblyPlugin)
-
 lazy val `fundamentals-reflection` = project.in(file("fundamentals/fundamentals-reflection"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
@@ -958,7 +870,6 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
 lazy val `distage-config` = project.in(file("distage/distage-config"))
   .dependsOn(
     `distage-model` % "test->compile;compile->compile",
-    `fundamentals-typesafe-config` % "test->compile;compile->compile",
     `distage-core` % "test->compile,test"
   )
   .settings(
@@ -966,7 +877,8 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "com.typesafe" % "config" % V.typesafe_config,
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-derivation" % V.circe_derivation,
       "io.circe" %% "circe-config" % V.circe_config,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     )
@@ -1663,7 +1575,6 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
 
 lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
   .dependsOn(
-    `logstage-config` % "test->compile;compile->compile",
     `distage-config` % "test->compile;compile->compile",
     `distage-model` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
@@ -1675,90 +1586,6 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    )
-  )
-  .settings(
-    organization := "io.7mind.izumi",
-    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
-    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
-    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    testOptions in Test += Tests.Argument("-oDF"),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.10") => Seq(
-        "-Xsource:2.13",
-        "-Ypartial-unification",
-        "-Yno-adapted-args",
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-unused:_",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard"
-      )
-      case (_, "2.13.1") => Seq(
-        "-Xlint:_,-eta-sam",
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wunused:_",
-        "-Wvalue-discard"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, _) => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalaVersion := crossScalaVersions.value.head,
-    crossScalaVersions := Seq(
-      "2.12.10",
-      "2.13.1"
-    )
-  )
-  .disablePlugins(AssemblyPlugin)
-
-lazy val `logstage-config` = project.in(file("logstage/logstage-config"))
-  .dependsOn(
-    `fundamentals-typesafe-config` % "test->compile;compile->compile",
-    `logstage-core` % "test->compile;compile->compile"
-  )
-  .settings(
-    libraryDependencies ++= Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
@@ -2879,7 +2706,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-bio` % "test->compile;compile->compile",
-    `fundamentals-typesafe-config` % "test->compile;compile->compile",
     `fundamentals-reflection` % "test->compile;compile->compile",
     `fundamentals-thirdparty-boopickle-shaded` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
@@ -2895,7 +2721,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `logstage-core` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
-    `logstage-config` % "test->compile;compile->compile",
     `logstage-adapter-slf4j` % "test->compile;compile->compile",
     `logstage-sink-slf4j` % "test->compile;compile->compile"
   )
@@ -3132,7 +2957,6 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
     `fundamentals-platform`,
     `fundamentals-functional`,
     `fundamentals-bio`,
-    `fundamentals-typesafe-config`,
     `fundamentals-reflection`,
     `fundamentals-thirdparty-boopickle-shaded`,
     `fundamentals-json-circe`
@@ -3153,7 +2977,6 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     `fundamentals-platform`,
     `fundamentals-functional`,
     `fundamentals-bio`,
-    `fundamentals-typesafe-config`,
     `fundamentals-reflection`,
     `fundamentals-thirdparty-boopickle-shaded`,
     `fundamentals-json-circe`
@@ -3216,7 +3039,6 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
     `logstage-core`,
     `logstage-rendering-circe`,
     `logstage-di`,
-    `logstage-config`,
     `logstage-adapter-slf4j`,
     `logstage-sink-slf4j`
   )
@@ -3236,7 +3058,6 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
     `logstage-core`,
     `logstage-rendering-circe`,
     `logstage-di`,
-    `logstage-config`,
     `logstage-adapter-slf4j`,
     `logstage-sink-slf4j`
   )

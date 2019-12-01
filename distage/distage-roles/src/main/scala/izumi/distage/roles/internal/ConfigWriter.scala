@@ -4,20 +4,21 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import izumi.distage.config.{AppConfigModule, ConfigPathExtractorModule}
+import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.model.AppConfig
-import izumi.distage.config.{ConfigModule, ResolvedConfig}
 import izumi.distage.model.definition.{Id, ModuleBase}
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
-import izumi.distage.roles.config.ContextOptions
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
-import izumi.fundamentals.platform.language.{Quirks, unused}
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.LogRouter
@@ -31,7 +32,6 @@ class ConfigWriter[F[_]: DIEffect]
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
   context: RoleAppPlanner[F],
-  options: ContextOptions,
   appModule: ModuleBase @Id("application.module"),
 ) extends RoleTask[F] {
 
@@ -56,9 +56,7 @@ class ConfigWriter[F[_]: DIEffect]
       writeConfig(options, commonComponent, None, commonConfig)
     }
 
-    Quirks.discard(for {
-      role <- roleInfo.availableRoleBindings
-    } yield {
+    roleInfo.availableRoleBindings.foreach { role =>
       val component = ConfigurableComponent(role.descriptor.id, role.source.map(_.version))
       val refConfig = buildConfig(options, component.copy(parent = Some(commonConfig)))
       val version = if (options.useLauncherVersion) {
@@ -80,7 +78,7 @@ class ConfigWriter[F[_]: DIEffect]
           logger.crit(s"Cannot process role ${role.descriptor.id}")
           throw exception
       }
-    })
+    }
   }
 
   private[this] def buildConfig(config: WriteReference, cmp: ConfigurableComponent): Config = {
@@ -112,21 +110,20 @@ class ConfigWriter[F[_]: DIEffect]
     val roleDIKey = role.binding.key
 
     val cfg = Seq(
-      new ConfigModule(AppConfig(config), options.configInjectionOptions),
-      new LogstageModule(LogRouter.nullRouter, false),
+      new AppConfigModule(AppConfig(config)),
+      new ConfigPathExtractorModule,
+      new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
     val plans = context.reboot(cfg).makePlan(Set(roleDIKey), appModule)
 
+    println(plans)
+
     def getConfig(plan: OrderedPlan): Option[Config] = {
       plan
         .filter[ResolvedConfig]
-        .collect {
-          case op: WiringOp.ReferenceInstance =>
-            op.wiring.instance
-        }
         .collectFirst {
-          case r: ResolvedConfig =>
+          case WiringOp.UseInstance(_, Instance(_, r: ResolvedConfig), _) =>
             r.minimized()
         }
     }
@@ -144,6 +141,10 @@ class ConfigWriter[F[_]: DIEffect]
         .map(_.withFallback(getConfigOrEmpty(plans.app.side)))
         .map(_.withFallback(getConfigOrEmpty(plans.app.shared)))
         .map(_.withFallback(getConfigOrEmpty(plans.runtime)))
+        .orElse {
+          logger.error(s"Couldn't produce minimized config for $roleDIKey")
+          None
+        }
     } else {
       logger.warn(s"$roleDIKey is not in the refined plan")
       None
@@ -211,9 +212,9 @@ object ConfigWriter extends RoleDescriptor {
                            )
 
   final case class ConfigurableComponent(
-                                          componentId: String
-                                          , version: Option[ArtifactVersion]
-                                          , parent: Option[Config] = None,
+                                          componentId: String,
+                                          version: Option[ArtifactVersion],
+                                          parent: Option[Config] = None,
                                         )
 
   object P extends ParserDef {

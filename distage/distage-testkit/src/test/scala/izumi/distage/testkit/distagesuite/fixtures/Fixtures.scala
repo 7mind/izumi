@@ -55,7 +55,7 @@ object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class ApplePaymentProvider[F[_]]() extends IntegrationCheck {
+class ApplePaymentProvider[F[_]] extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.ResourceUnavailable("Test", None)
 }
 

@@ -68,19 +68,23 @@ sealed trait LightTypeTagRef {
     go(this)
   }
 
-  def shortName: String = {
-    @tailrec
-    def go(self: LightTypeTagRef): String = {
-      self match {
-        case Lambda(_, output) => go(output)
-        case NameReference(ref, _, _) => ref.name
-        case FullReference(ref, _, _) => ref
-        case IntersectionReference(refs) => refs.map(_.shortName).mkString(" & ")
-        case Refinement(reference, _) => go(reference)
-      }
-    }
+  final def shortName: String = {
+    getName(LTTRenderables.Short.r_SymName, this)
+  }
 
-    go(this)
+  final def longName: String = {
+    getName(LTTRenderables.Long.r_SymName, this)
+  }
+
+  @tailrec @inline
+  private[this] def getName(render: SymName => String, self: LightTypeTagRef): String = {
+    self match {
+      case Lambda(_, output) => getName(render, output)
+      case NameReference(ref, _, _) => render(ref)
+      case FullReference(ref, _, _) => render(SymTypeName(ref))
+      case IntersectionReference(refs) => refs.map(_.shortName).mkString(" & ")
+      case Refinement(reference, _) => getName(render, reference)
+    }
   }
 
   final def typeArgs: List[AbstractReference] = {
