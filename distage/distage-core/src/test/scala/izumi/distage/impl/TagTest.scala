@@ -341,7 +341,10 @@ class TagTest extends WordSpec with X[String] {
       def get[F[_]: TagK] = Tag[ApplePaymentProvider[F]]
       val tag = get[Identity]
 
-      assert(tag.tag <:< Tag[H1].tag)
+      val left = tag.tag
+      val right = Tag[H1].tag
+
+      assert(left <:< right)
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

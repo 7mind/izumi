@@ -32,19 +32,18 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
   def isChild(): Boolean = {
     val st = self.ref
     val ot = other.ref
-    val logger = TrivialLogger.make[this.type]("izumi.debug.rtti", Config())
+    val logger = TrivialLogger.make[this.type]("izumi.debug.rtti", Config(forceLog = true))
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
-         |⚡️bases: ${bdb.mapValues(_.niceList().shift(2)).niceList()}
-         |⚡️inheritance: ${ib.mapValues(_.niceList().shift(2)).niceList()}""".stripMargin)
+         |⚡️bases: ${bdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚡️inheritance: ${ib.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin)
 
     isChild(Ctx(List.empty, logger))(st, ot)
   }
 
   implicit class CtxExt(val ctx: Ctx) {
     def isChild(selfT0: LightTypeTagRef, thatT0: LightTypeTagRef): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
-
   }
 
   private def isChild(ctx: Ctx)(selfT: LightTypeTagRef, thatT: LightTypeTagRef): Boolean = {

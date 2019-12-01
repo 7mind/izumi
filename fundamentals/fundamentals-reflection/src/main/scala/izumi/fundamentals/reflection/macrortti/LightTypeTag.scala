@@ -25,6 +25,14 @@ abstract class LightTypeTag
     this == other
   }
 
+  def debug(name: String): String = {
+    import izumi.fundamentals.platform.strings.IzString._
+
+      s"""⚙️ $name: ${this.toString}
+         |⚡️bases: ${basesdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin
+  }
+
   /**
     * Parameterize this type tag with `args` if it describes an unapplied type lambda
     *
@@ -36,7 +44,13 @@ abstract class LightTypeTag
     * }}}
     */
   def combine(args: LightTypeTag*): LightTypeTag = {
-    def mergedBasesDB = LightTypeTag.mergeIDBs(basesdb, args.iterator.map(_.basesdb))
+    val appliedBases = basesdb.map {
+      case (self: LightTypeTagRef.Lambda, parents) =>
+        self.combine(args.map(_.ref)) -> parents
+      case o => o
+    }
+
+    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.basesdb))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.idb))
 
     LightTypeTag(ref.combine(args.map(_.ref)), mergedBasesDB, mergedInheritanceDb)
