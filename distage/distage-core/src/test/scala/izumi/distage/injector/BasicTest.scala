@@ -78,6 +78,22 @@ class BasicTest extends WordSpec with MkInjector {
     assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
   }
 
+  "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
+    import BasicCaseIssue762._
+
+    val definition = PlannerInput.noGc(MyClassModule ++ ConfigModule)
+
+    val injector = mkInjector()
+
+    val plan = injector.plan(definition)
+    println(plan)
+
+    val context = injector.produceUnsafe(plan)
+
+    assert(context.get[MyClass].a eq context.get[String]("a"))
+    assert(context.get[MyClass].b eq context.get[String]("b"))
+  }
+
   "support multiple bindings" in {
     import BasicCase1._
     val definition = PlannerInput.noGc(new ModuleDef {
