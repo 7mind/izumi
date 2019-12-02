@@ -123,11 +123,12 @@ abstract class LightTypeTag
   }
 
   /** Print internal structures state */
-  def debug(name: String): String = {
+  def debug(name: String = ""): String = {
     import izumi.fundamentals.platform.strings.IzString._
       s"""⚙️ $name: ${this.toString}
          |⚡️bases: ${basesdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
-         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin
+         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚙️ end $name""".stripMargin
   }
 
   override def equals(other: Any): Boolean = {

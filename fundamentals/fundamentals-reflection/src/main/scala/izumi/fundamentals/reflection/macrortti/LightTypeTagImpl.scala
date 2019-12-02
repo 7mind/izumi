@@ -55,14 +55,14 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
   @inline private[this] final val it = u.asInstanceOf[scala.reflect.internal.Types]
 
-  def makeFullTagImpl(tpe: Type): LightTypeTag = {
-    val out = makeRef(tpe)
+  def makeFullTagImpl(tpe0: Type): LightTypeTag = {
+    val tpe = norm(tpe0).dealias
+    val lttRef = makeRef(tpe)
 
-    val allReferenceComponents: Set[u.Type] = Set(tpe) ++ allTypeReferences(tpe)
-      .flatMap {
-        t =>
-          UniRefinement.breakRefinement(t).toSet
-      }
+    val allReferenceComponents: Set[Type] = Set(tpe) ++ {
+      allTypeReferences(tpe)
+        .flatMap(UniRefinement.breakRefinement(_).toSet)
+    }
 
     val stableBases = makeStableBases(tpe, allReferenceComponents)
     val basesAsLambdas = allReferenceComponents.flatMap(makeBaseClasses)
@@ -77,20 +77,20 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
     val unappliedDb = makeUnappliedInheritanceDb(allReferenceComponents)
 
-    LightTypeTag(out, fullDb, unappliedDb)
+    LightTypeTag(lttRef, fullDb, unappliedDb)
   }
 
   private def makeUnappliedInheritanceDb(allReferenceComponents: Set[Type]): Map[NameReference, Set[NameReference]] = {
-    val baseclassReferences = allReferenceComponents
-      .flatMap {
-        i =>
-          val allbases = tpeBases(i)
-            .filterNot(_.takesTypeArgs)
-          allbases.map {
-            b =>
-              (i, makeRef(b))
-          }
-      }
+    val baseclassReferences = allReferenceComponents.flatMap {
+      i =>
+        val allbases = tpeBases(i)
+          .filterNot(_.takesTypeArgs)
+        allbases.map {
+          b =>
+            (i, makeRef(b))
+        }
+    }
+
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
       case (i, ref) =>
         val tpef = norm(i.dealias.resultType)
@@ -123,32 +123,31 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
             .filterNot(_ == t)
       }
       .filterNot(_._2.isEmpty)
+
     unparameterizedInheritanceData
   }
 
   private def makeStableBases(tpe: Type, allReferenceComponents: Set[Type]): Set[(AbstractReference, AbstractReference)] = {
-    val baseclassReferences = allReferenceComponents
-      .flatMap {
-        i =>
-          val allbases = tpeBases(i)
-            .filterNot(_.takesTypeArgs)
+    val baseclassReferences = allReferenceComponents.flatMap {
+      i =>
+        val appliedBases = tpeBases(i).filterNot(_.takesTypeArgs)
 
-          allbases.map {
-            b =>
-              val targs = makeLambdaParams(None, tpe.etaExpand.typeParams).toMap
-              val out = makeRef(b, targs, forceLam = targs.nonEmpty) match {
-                case l: Lambda =>
-                  if (l.allArgumentsReferenced) {
-                    l
-                  } else {
-                    l.output
-                  }
-                case reference: AppliedReference =>
-                  reference
-              }
-              (i, out)
-          }
-      }
+        appliedBases.map {
+          b =>
+            val targs = makeLambdaParams(None, tpe.etaExpand.typeParams).toMap
+            val out = makeRef(b, targs, forceLam = targs.nonEmpty) match {
+              case l: Lambda =>
+                if (l.allArgumentsReferenced) {
+                  l
+                } else {
+                  l.output
+                }
+              case reference: AppliedReference =>
+                reference
+            }
+            (i, out)
+        }
+    }
 
     val stableBases = baseclassReferences.map {
       case (b, p) =>
@@ -210,7 +209,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     out
   }
 
-  private def allTypeReferences(tpe: Type): Set[Type] = {
+  private def allTypeReferences(tpe0: Type): Set[Type] = {
+
     def extract(tpe: Type, inh: mutable.HashSet[Type]): Unit = {
       val current = Seq(tpe, tpe.dealias.resultType)
       inh ++= current
@@ -232,7 +232,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     }
 
     val inh = mutable.HashSet[Type]()
-    extract(tpe, inh)
+    extract(tpe0, inh)
     inh.toSet
   }
 
@@ -254,13 +254,13 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   private def makeRef(tpe: Type): AbstractReference = {
     if (withCache) {
       globalCache.synchronized(globalCache.get(tpe)) match {
-          case null =>
-            val ref = makeRef(tpe, Map.empty)
-            globalCache.synchronized(globalCache.put(tpe, ref))
-            ref
-          case value =>
-            value
-        }
+        case null =>
+          val ref = makeRef(tpe, Map.empty)
+          globalCache.synchronized(globalCache.put(tpe, ref))
+          ref
+        case value =>
+          value
+      }
     } else {
       makeRef(tpe, Map.empty)
     }
