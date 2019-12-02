@@ -101,6 +101,10 @@ class LightTypeTagTest extends WordSpec {
     assert(t.toString == expected).discard()
   }
 
+  def assertDebugSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
+    assert(t.debug("assert") == expected.debug("assert")).discard()
+  }
+
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
     val clue = s"$t =?= $expected"
     info(clue)
@@ -124,7 +128,6 @@ class LightTypeTagTest extends WordSpec {
     info(clue)
     assert(!(child <:< parent), clue).discard()
   }
-
 
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
@@ -404,6 +407,20 @@ class LightTypeTagTest extends WordSpec {
       val arg = `LTT[_]`[Id]
       val combined = ctor.combine(arg)
       assertChild(combined, LTT[H1])
+    }
+
+    "issue #762: properly strip away annotated types / empty refinements / type aliases" in {
+      val predefString = LTT[String]
+      val javaLangString = LTT[java.lang.String]
+      val weirdPredefString = LTT[(scala.Predef.String {}) @distage.Id("abc")]
+
+      assertSame(predefString, javaLangString)
+      assertSame(predefString, weirdPredefString)
+      assertSame(javaLangString, weirdPredefString)
+
+      assertDebugSame(predefString, javaLangString)
+      assertDebugSame(predefString, weirdPredefString)
+      assertDebugSame(javaLangString, weirdPredefString)
     }
 
   }
