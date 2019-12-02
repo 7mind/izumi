@@ -25,7 +25,7 @@ abstract class LightTypeTag
     this == other
   }
 
-  def debugRepr(name: String): String = {
+  protected[izumi] def debugRepr(name: String): String = {
     import izumi.fundamentals.platform.strings.IzString._
 
       s"""⚙️ $name: ${this.toString}
@@ -44,16 +44,21 @@ abstract class LightTypeTag
     * }}}
     */
   def combine(args: LightTypeTag*): LightTypeTag = {
-    val appliedBases = basesdb.map {
+    val argRefs = args.map(_.ref)
+    val appliedBases = basesdb ++ basesdb.map {
       case (self: LightTypeTagRef.Lambda, parents) =>
-        self.combine(args.map(_.ref)) -> parents
+        self.combine(argRefs) -> parents.map {
+          case l: LightTypeTagRef.Lambda =>
+            l.combine(argRefs)
+          case o => o
+        }
       case o => o
     }
 
     def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.basesdb))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.idb))
 
-    LightTypeTag(ref.combine(args.map(_.ref)), mergedBasesDB, mergedInheritanceDb)
+    LightTypeTag(ref.combine(argRefs), mergedBasesDB, mergedInheritanceDb)
   }
 
   /**
@@ -66,16 +71,21 @@ abstract class LightTypeTag
     * }}}
     */
   def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
-    val appliedBases = basesdb.map {
+    val argRefs = args.map(_.map(_.ref))
+    val appliedBases = basesdb ++ basesdb.map {
       case (self: LightTypeTagRef.Lambda, parents) =>
-        self.combineNonPos(args.map(_.map(_.ref))) -> parents
+        self.combineNonPos(argRefs) -> parents.map {
+          case l: LightTypeTagRef.Lambda =>
+            l.combineNonPos(argRefs)
+          case o => o
+        }
       case o => o
     }
 
     def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
     def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
 
-    LightTypeTag(ref.combineNonPos(args.map(_.map(_.ref))), mergedBasesDB, mergedInheritanceDb)
+    LightTypeTag(ref.combineNonPos(argRefs), mergedBasesDB, mergedInheritanceDb)
   }
 
   /**

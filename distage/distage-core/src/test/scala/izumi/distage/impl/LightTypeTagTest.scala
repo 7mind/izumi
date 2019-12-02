@@ -94,6 +94,13 @@ class LightTypeTagTest extends WordSpec {
     type T
   }
 
+  trait P0[A[_], B[_]]
+  trait P1[A[_], B[_]] extends P0[B, A]
+  trait X1[_]
+  trait X2[_]
+
+  trait XP1[A[_]] extends P0[X2, A]
+
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
 
@@ -231,6 +238,15 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
       // allTypeReferences: we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       //assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
+
+      assertChild(`LTT[_[_],_[_]]`[P1].combine(`LTT[_]`[X1], `LTT[_]`[X2]), LTT[P0[X2, X1]])
+      assertNotChild(`LTT[_[_],_[_]]`[P1].combine(`LTT[_]`[X1], `LTT[_]`[X2]), LTT[P0[X1, X2]])
+
+      assertChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X1]), LTT[P0[X2, X1]])
+      assertChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X2, X2]])
+      assertNotChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X2, X1]])
+      assertNotChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X1, X2]])
+
     }
 
     "support additional mixin traits after first trait with a HKT parameter" in {
