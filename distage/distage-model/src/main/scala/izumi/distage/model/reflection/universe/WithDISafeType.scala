@@ -12,7 +12,7 @@ trait WithDISafeType {
                                 private val tpe: TypeNative,
                                 tag: LightTypeTag,
                                 @deprecated("direct accesss to SafeType.cls", "now")
-                                private[model] val cls: Class[_],
+                                private[distage] val cls: Class[_],
                               ) {
 
     override final val hashCode: Int = tag.hashCode()

@@ -30,7 +30,7 @@ trait LocatorDef
   extends AbstractLocator
      with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
-  override protected[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override private[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
   override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)

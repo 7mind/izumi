@@ -17,7 +17,7 @@ object AnyConstructorMacro {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
 
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
@@ -42,7 +42,8 @@ object AnyConstructorMacro {
       case _: Throwable =>
         c.Expr[AnyConstructor[T]](q"""{
           new _root_.izumi.distage.constructors.ConcreteConstructor[$tpe](
-            _root_.izumi.distage.model.providers.ProviderMagnet[$tpe](() => throw new RuntimeException("AnyConstructor failure: No constructor could be generated for " + ${tpe.toString}))
+            _root_.izumi.distage.model.providers.ProviderMagnet[$tpe](() =>
+              throw new _root_.izumi.distage.model.exceptions.UnsupportedDefinitionException("AnyConstructor failure: No constructor could be generated for " + ${tpe.toString}))
           )
         }""")
     }

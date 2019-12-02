@@ -1,77 +1,54 @@
 package izumi.distage.provisioning.strategies.cglib
 
-import java.lang.invoke.MethodHandles
-import java.lang.reflect.Method
-
-import izumi.distage.model.provisioning.strategies
+import izumi.distage.model.provisioning.strategies.ProxyProvider.ProxyParams.{Empty, Params}
+import izumi.distage.model.provisioning.strategies.ProxyProvider.{DeferredInit, ProxyContext}
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.proxy.{Callback, Enhancer}
 
-import scala.util.{Failure, Success, Try}
+class CglibProxyProvider extends ProxyProvider {
 
-class CglibProxyProvider(mirrorProvider: MirrorProvider) extends ProxyProvider {
-  override def makeCycleProxy(cycleContext: CycleContext, proxyContext: ProxyContext): DeferredInit = {
-    val nullDispatcher = new CglibNullMethodInterceptor(cycleContext.deferredKey)
+  override def makeCycleProxy(deferredKey: DIKey, proxyContext: ProxyContext): DeferredInit = {
+    val nullDispatcher = new CglibNullMethodInterceptor(deferredKey)
     val nullProxy = mkDynamic(nullDispatcher, proxyContext)
-    val dispatcher = new CglibRefDispatcher(cycleContext.deferredKey, nullProxy)
-    val proxy = mkDynamic(dispatcher, proxyContext)
-    strategies.DeferredInit(dispatcher, proxy)
+
+    val realDispatcher = new CglibAtomicRefDispatcher(nullProxy)
+    val realProxy = mkDynamic(realDispatcher, proxyContext)
+
+    DeferredInit(realDispatcher, realProxy)
   }
 
   private def mkDynamic(dispatcher: Callback, proxyContext: ProxyContext): AnyRef = {
-    import proxyContext._
+    val clazz = proxyContext.runtimeClass
+
+    // Enhancer.setSuperclass is side-effectful, so we had to copypaste
     val enhancer = new Enhancer()
 
-    // Enhancer.setSuperclass is sideffectful, so we had to copypaste
-    Option(runtimeClass) match {
-      case Some(value) if value.isInterface =>
-        enhancer.setInterfaces(Array[Class[_]](value, classOf[DistageProxy]))
-      case Some(value) if value == classOf[Any] =>
-        enhancer.setInterfaces(Array(classOf[DistageProxy]))
-      case Some(value) =>
-        enhancer.setSuperclass(value)
-        enhancer.setInterfaces(Array(classOf[DistageProxy]))
-      case None =>
-        enhancer.setSuperclass(null)
-        enhancer.setInterfaces(Array(classOf[DistageProxy]))
+    if (clazz.isInterface) {
+      enhancer.setInterfaces(Array[Class[_]](clazz, classOf[DistageProxy]))
+    } else if (clazz == classOf[Any]) {
+      enhancer.setInterfaces(Array(classOf[DistageProxy]))
+    } else {
+      enhancer.setSuperclass(clazz)
+      enhancer.setInterfaces(Array(classOf[DistageProxy]))
     }
-
 
     enhancer.setCallback(dispatcher)
 
-    val result = params match {
-      case ProxyParams.Empty =>
-        Try(enhancer.create())
-
-      case ProxyParams.Params(types, values) =>
-        Try(enhancer.create(types, values))
-    }
-
-    result match {
-      case Success(proxyInstance) =>
-        proxyInstance
-
-      case Failure(f) =>
+    try {
+      proxyContext.params match {
+        case Empty =>
+          enhancer.create()
+        case Params(types, values) =>
+          enhancer.create(types, values)
+      }
+    } catch {
+      case f: Throwable =>
         throw new CgLibInstantiationOpException(
-          s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: class=$runtimeClass, params=$params, exception=${f.getMessage}", runtimeClass, params, op, f)
+          s"Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors: " +
+            s"class=${proxyContext.runtimeClass}, params=${proxyContext.params}, exception=${f.getMessage}",
+          clazz, proxyContext.params, proxyContext.op, f)
     }
-  }
-}
-
-object CglibProxyProvider {
-  protected[cglib] def invokeExistingMethod(o: Any, method: Method, objects: Array[AnyRef]): AnyRef = {
-    CglibProxyProvider.TRUSTED_METHOD_HANDLES
-      .in(method.getDeclaringClass)
-      .unreflectSpecial(method, method.getDeclaringClass)
-      .bindTo(o)
-      .invokeWithArguments(objects: _*)
-  }
-
-  private final lazy val TRUSTED_METHOD_HANDLES = {
-    val methodHandles = classOf[MethodHandles.Lookup].getDeclaredField("IMPL_LOOKUP")
-    methodHandles.setAccessible(true)
-    methodHandles.get(null).asInstanceOf[MethodHandles.Lookup]
   }
 }

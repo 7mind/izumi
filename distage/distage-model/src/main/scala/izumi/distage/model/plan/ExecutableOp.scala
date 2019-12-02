@@ -3,7 +3,6 @@ package izumi.distage.model.plan
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.repr.{KeyFormatter, OpFormatter, TypeFormatter}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 

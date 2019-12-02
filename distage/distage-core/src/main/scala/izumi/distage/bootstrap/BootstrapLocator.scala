@@ -10,6 +10,7 @@ import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFail
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
+import izumi.distage.model.provisioning.strategies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, _}
 import izumi.distage.model.references.IdentifiedRef
@@ -42,7 +43,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
     }
   }
 
-  override protected[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
+  override private[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
 
   override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] = {
     Option(_instances.get()) match {

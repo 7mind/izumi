@@ -116,9 +116,8 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   "progression test: can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
-    intercept[UnsupportedDefinitionException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
+    val exc = intercept[ProvisioningException] {
+      import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
 
       val definition = PlannerInput.noGc(new ModuleDef {
         // FIXME: `make` support ??? should be a compile error
@@ -129,6 +128,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
     }
+    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
   }
 
   "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {

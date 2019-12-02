@@ -18,7 +18,7 @@ object FactoryConstructorMacro {
 
     val macroUniverse = StaticDIUniverse(c)
 
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
@@ -42,7 +42,7 @@ object FactoryConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val Factory(_, wireables, dependencies) = {
+    val Factory(unsafeRet, wireables, dependencies) = {
       reflectionProvider.symbolToWiring(targetType)
     }
 
@@ -116,7 +116,7 @@ object FactoryConstructorMacro {
     }
     val allAssociations = executorAssociation +: dependencyAssociations
 
-    val constructor = q"(..$allArgs) => ($instantiate): $targetType"
+    val constructor = q"(..$allArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)

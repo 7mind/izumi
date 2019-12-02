@@ -70,7 +70,8 @@ class BasicTest extends WordSpec with MkInjector {
     val injector = mkInjector()
 
     val exc = intercept[BadIdAnnotationException] {
-      injector.plan(definition)
+      injector.produce(injector.plan(definition))
+        .use(_.get[TestClass])
     }
 
     assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")

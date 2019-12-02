@@ -4,10 +4,11 @@ import izumi.distage.model.exceptions._
 import izumi.distage.model.monadic.DIEffect
 import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
+import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatcher
+import izumi.distage.model.provisioning.strategies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.TagK
 
@@ -49,16 +50,20 @@ class ProxyStrategyDefaultImpl
                                     (implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)
+
     context.fetchUnsafe(key) match {
       case Some(dispatcher: ProxyDispatcher) =>
         executor.execute(context, initProxy.proxy.op).flatMap(_.toList match {
+
           case NewObjectOp.NewInstance(_, instance) :: Nil =>
             F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
               .map(_ => Seq.empty)
+
           case (r@NewObjectOp.NewResource(_, instance, _)) :: Nil =>
             val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
             F.maybeSuspend(dispatcher.init(instance.asInstanceOf[AnyRef]))
               .map(_ => Seq(NewObjectOp.NewFinalizer(target, finalizer)))
+
           case r =>
             throw new UnexpectedProvisionResultException(s"Unexpected operation result for $key: $r, expected a single NewInstance!", r)
         })
@@ -67,63 +72,58 @@ class ProxyStrategyDefaultImpl
     }
   }
 
-  protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, makeProxy: ProxyOp.MakeProxy): DeferredInit = {
-    val params = if (hasDeps(tpe)) {
-      // FIXME: Proxy classtag params ???
-      val params: Seq[Association.Parameter] = ??? // reflectionProvider.constructorParameters(tpe)
+  protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, op: ProxyOp.MakeProxy): DeferredInit = {
+    val runtimeClass = mirrorProvider.runtimeClass(tpe).getOrElse(throw new NoRuntimeClassException(op.target))
 
-      val args = params.map {
-        param =>
-          val value = param match {
-            case p if makeProxy.forwardRefs.contains(p.key) =>
-              null
+    val classConstructorParams = if (!hasDeps(tpe)) ProxyParams.Empty else {
+//      // FIXME: Proxy classtag params ???
+//      val params: Seq[Association.Parameter] = {
+//        Nil
+////        ???
+//        // reflectionProvider.constructorParameters(tpe)
+//      }
+//
+//      val args = params.map {
+//        param =>
+//          val value = param match {
+//            case param if op.forwardRefs.contains(param.key) =>
+//              // substitute forward references by `null`
+//              null
+//            case param =>
+//              context.fetchKey(param.key, param.isByName) match {
+//                case Some(v) =>
+//                  v.asInstanceOf[AnyRef]
+//                case None =>
+//                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${param.key}", Set(param.key), None)
+//              }
+//          }
+//
+//          val parameterType: Class[_] = if (param.isByName) {
+//            classOf[Function0[_]]
+//          } else if (param.wasGeneric) {
+//            classOf[AnyRef]
+//          } else {
+//            param.key.tpe.cls
+//          }
+//          (parameterType, value)
+//      }
 
-            case p =>
-              context.fetchKey(p.key, p.isByName) match {
-                case Some(v) =>
-                  v.asInstanceOf[AnyRef]
-                case None =>
-                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${p.key}", Set(p.key), None)
-              }
-          }
-
-          val parameterType = if (param.isByName) {
-            scala.reflect.runtime.universe.typeOf[() => Any]
-          } else if (param.wasGeneric) {
-            scala.reflect.runtime.universe.typeOf[AnyRef]
-          } else {
-            // FIXME: proxy support ???
-            ???
-//            param.wireWith.tpe.use(identity)
-          }
-          (parameterType, value)
-      }
-
-      val argClasses = args.map(_._1)
-        .map {
-          t =>
-//          mirror.runtimeClass(t).getOrElse(throw new NoRuntimeClassException(makeProxy.target, SafeType(t)))
-            // FIXME: fix proxy ???
-            ??? : Class[_]
-        }
-        .toArray
-      val argValues = args.map(_._2).toArray
+      val args: Array[(Class[_], AnyRef)] = runtimeClass.getConstructors.head.getParameterTypes.map(_ -> (null: AnyRef))
+      val (argClasses, argValues) = args.unzip
       ProxyParams.Params(argClasses, argValues)
-    } else { // this shouldn't happen anymore
-      ProxyParams.Empty
     }
 
-//    val runtimeClass = tpe.use(mirror.runtimeClass).getOrElse(throw new NoRuntimeClassException(makeProxy.target))
-    // FIXME: fix proxy ???
-    val runtimeClass = ??? : Class[_]
-    val proxyContext = ProxyContext(runtimeClass, makeProxy, params)
+    val proxyContext = ProxyContext(runtimeClass, op, classConstructorParams)
 
-    proxyProvider.makeCycleProxy(CycleContext(makeProxy.target), proxyContext)
+    proxyProvider.makeCycleProxy(op.target, proxyContext)
   }
 
-  protected def hasDeps(tpe: RuntimeDIUniverse.SafeType): Boolean = {
-    ???
-    // FIXME: fix proxy ???
+  protected def hasDeps(tpe: SafeType): Boolean = {
+    // FIXME: aadfhgadfgh ???
+    val constructors = tpe.cls.getConstructors
+    constructors.nonEmpty && !constructors.exists(_.getParameters.isEmpty)
+
+//    false
 //    tpe.use {
 //      t =>
 //        val constructors = t.decls.filter(_.isConstructor)

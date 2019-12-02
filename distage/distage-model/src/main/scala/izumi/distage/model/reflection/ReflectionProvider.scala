@@ -1,7 +1,5 @@
 package izumi.distage.model.reflection
 
-import java.lang.reflect.Modifier
-
 import izumi.distage.model.reflection.universe.DIUniverse
 
 trait ReflectionProvider {

@@ -12,15 +12,15 @@ class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy  {
   def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
-      key =>
-        context.fetchKey(key.key, key.isByName) match {
+      param =>
+        context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
-            TypedRef(dep, key.key.tpe)
-          case _ if key.key == DIKey.get[FactoryExecutor] =>
+            TypedRef(dep, param.key.tpe)
+          case _ if param.key == DIKey.get[FactoryExecutor] =>
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
-                s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
+                s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
     }
 

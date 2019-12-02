@@ -8,7 +8,7 @@ import izumi.fundamentals.reflection.Tags.Tag
 trait AbstractLocator extends Locator {
   protected def lookupLocalUnsafe(key: DIKey): Option[Any]
 
-  protected[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]] = {
+  private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]] = {
     lookupLocalUnsafe(key)
       .map {
         value =>

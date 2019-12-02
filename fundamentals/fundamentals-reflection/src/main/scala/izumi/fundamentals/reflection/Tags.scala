@@ -7,7 +7,7 @@ import scala.language.experimental.macros
 
 object Tags {
 
-  trait AnyTag extends Any {
+  trait AnyTag {
     def tag: LightTypeTag
 
     /**

@@ -1,9 +1,9 @@
 package izumi.distage.injector
 
-import izumi.distage.fixtures.FactoryCases._
-import izumi.distage.model.exceptions.UnsupportedWiringException
-import izumi.distage.model.PlannerInput
 import distage.ModuleDef
+import izumi.distage.fixtures.FactoryCases._
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
 
 class FactoriesTest extends WordSpec with MkInjector {
@@ -89,7 +89,7 @@ class FactoriesTest extends WordSpec with MkInjector {
   }
 
   "cglib factory cannot produce factories" in {
-    intercept[UnsupportedWiringException] {
+    val exc = intercept[ProvisioningException] {
       import FactoryCase1._
 
       // FIXME: `make` support? should be compile-time error
@@ -106,6 +106,8 @@ class FactoriesTest extends WordSpec with MkInjector {
 
       assert(instantiated.x().x().b == context.get[Dependency])
     }
+//    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedWiringException])
+    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
   }
 
   "cglib factory always produces new instances" in {

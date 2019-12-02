@@ -1,21 +1,20 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions._
+import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.reflection
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.platform.language.Quirks
-import izumi.fundamentals.reflection.TypeUtil
 
 trait ProvisionOperationVerifier {
-  def verify(target: RuntimeDIUniverse.DIKey, prohibited: scala.collection.Set[RuntimeDIUniverse.DIKey], value: Any, clue: String): Unit
+  def verify(target: DIKey, prohibited: collection.Set[DIKey], value: Any, clue: String): Unit
 }
 
 object ProvisionOperationVerifier {
 
   object Null extends ProvisionOperationVerifier {
-    override def verify(target: universe.RuntimeDIUniverse.DIKey, keys: collection.Set[universe.RuntimeDIUniverse.DIKey], value: Any, clue: String): Unit = {
+    override def verify(target: DIKey, keys: collection.Set[DIKey], value: Any, clue: String): Unit = {
       Quirks.discard(target, keys, value, clue)
     }
   }
@@ -24,12 +23,12 @@ object ProvisionOperationVerifier {
                  mirror: MirrorProvider,
                ) extends ProvisionOperationVerifier {
 
-    def verify(target: RuntimeDIUniverse.DIKey, keys: scala.collection.Set[RuntimeDIUniverse.DIKey], value: Any, clue: String): Unit = {
+    def verify(target: DIKey, keys: scala.collection.Set[DIKey], value: Any, clue: String): Unit = {
       if (keys.contains(target)) throw DuplicateInstancesException(target)
 
       target match {
-        case _: RuntimeDIUniverse.DIKey.ProxyElementKey => // each proxy operation returns two assignments
-          throwIfIncompatible(RuntimeDIUniverse.DIKey.get[ProxyDispatcher], clue, value)
+        case _: DIKey.ProxyElementKey => // each proxy operation returns two assignments
+          throwIfIncompatible(DIKey.get[ProxyDispatcher], clue, value)
 
         case _ =>
           value match {
@@ -47,19 +46,11 @@ object ProvisionOperationVerifier {
 
     }
 
-    private def throwIfIncompatible(target: reflection.universe.RuntimeDIUniverse.DIKey, clue: String, o: Any): Unit = {
-      if (!runtimeClassCompatible(mirror, target, o)) {
-        throw new IncompatibleRuntimeClassException(target, o.getClass, clue)
+    private def throwIfIncompatible(target: DIKey, clue: String, value: Any): Unit = {
+      if (!mirror.runtimeClassCompatible(target.tpe, value)) {
+        throw new IncompatibleRuntimeClassException(target, value.getClass, clue)
       }
     }
 
-    private def runtimeClassCompatible(mirror: MirrorProvider, target: RuntimeDIUniverse.DIKey, unboxed: Any): Boolean = {
-      mirror.runtimeClass(target.tpe) match {
-        case Some(runtimeKeyClass) =>
-          TypeUtil.isAssignableFrom(runtimeKeyClass, unboxed)
-        case None =>
-          true
-      }
-    }
   }
 }

@@ -25,14 +25,6 @@ abstract class LightTypeTag
     this == other
   }
 
-  protected[izumi] def debugRepr(name: String): String = {
-    import izumi.fundamentals.platform.strings.IzString._
-
-      s"""⚙️ $name: ${this.toString}
-         |⚡️bases: ${basesdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
-         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin
-  }
-
   /**
     * Parameterize this type tag with `args` if it describes an unapplied type lambda
     *
@@ -128,6 +120,14 @@ abstract class LightTypeTag
   /** Class or type-constructor name of this type, WITH package name, but without prefix names */
   def longName: String = {
     ref.longName
+  }
+
+  /** Print internal structures state */
+  def debug(name: String): String = {
+    import izumi.fundamentals.platform.strings.IzString._
+      s"""⚙️ $name: ${this.toString}
+         |⚡️bases: ${basesdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin
   }
 
   override def equals(other: Any): Boolean = {

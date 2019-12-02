@@ -9,7 +9,6 @@ import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.model.{Planner, PlannerInput}
 import izumi.distage.planning.gc.TracingDIGC
@@ -205,6 +204,8 @@ final class PlannerDefaultImpl
         op.wiring.associations.exists(_.isByName)
       case op: ExecutableOp.MonadicOp =>
         op.wiring.associations.exists(_.isByName)
+      case _ =>
+        false
     }
   }
 

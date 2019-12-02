@@ -156,7 +156,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
       make[ByNameSelfReference]
     })
 
-    val injector = mkInjector()
+    val injector = mkNoProxyInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -205,7 +205,9 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
       make[Int].from(1)
     })
 
-    val injector = mkInjector()
+    val injector = mkNoProxyInjector()
+    // FIXME: non-cglib strategy should support by-names ???
+//    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 

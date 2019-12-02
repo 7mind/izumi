@@ -17,7 +17,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
       make[Circular1]
     }
 
-    val injector = mkInjectorWithProxy()
+    val injector = mkInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
@@ -34,7 +34,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
       make[Circular1].from { c: Circular2 => new Circular1 { override val arg: Circular2 = c } }
     }
 
-    val injector = mkInjectorWithProxy()
+    val injector = mkInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
 
@@ -54,7 +54,7 @@ class StaticCircularDependenciesTest extends WordSpec with MkInjector {
       make[Circular4]
     }
 
-    val injector = mkInjectorWithProxy()
+    val injector = mkInjector()
     val plan = injector.plan(PlannerInput.noGc(definition))
     val context = injector.produceUnsafe(plan)
     val c3 = context.get[Circular3]

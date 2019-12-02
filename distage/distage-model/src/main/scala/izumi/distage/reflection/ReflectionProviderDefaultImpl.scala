@@ -49,7 +49,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   override def symbolToWiring(tpe: u.TypeNative): Wiring.PureWiring = ReflectionLock.synchronized {
     tpe match {
-      case FactorySymbol(_, factoryMethods, dependencyMethods) =>
+      case FactorySymbol(factoryMethods, dependencyMethods) =>
         val unsafeSafeType = SafeType(tpe)
 
         val mw = factoryMethods.map(_.asMethod).map {
@@ -76,7 +76,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
                    |  * Type $tpe has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
                    |  * But method signature contains unrequired symbols: $excessiveSymbols
                    |  * Only the following symbols are requird: ${methodTypeWireable.requiredKeys}
-                   |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin, null)
+                   |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
             }
 
             Wiring.Factory.FactoryMethod(factoryMethodSymb, methodTypeWireable, alreadyInSignature)
@@ -86,8 +86,8 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
         Wiring.Factory(unsafeSafeType, mw, materials)
 
-      case o =>
-        mkConstructorWiring(o)
+      case _ =>
+        mkConstructorWiring(tpe)
     }
   }
 
@@ -102,7 +102,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     case AbstractSymbol(symb) =>
       SingletonWiring.AbstractSymbol(SafeType(symb), traitMethods(symb), getPrefix(symb))
 
-    case FactorySymbol(_, _, _) =>
+    case FactorySymbol(_, _) =>
       throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", SafeType(symbl))
 
     case _ =>
@@ -159,12 +159,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private object FactorySymbol {
-    def unapply(arg: TypeNative): Option[(TypeNative, Seq[SymbNative], Seq[MethodSymbNative])] =
+    def unapply(arg: TypeNative): Option[(Seq[SymbNative], Seq[MethodSymbNative])] =
       Some(arg)
         .filter(isFactory)
         .map(f =>
-          (f,
-           f.members.filter(m => isFactoryMethod(f, m)).toSeq,
+          (f.members.filter(m => isFactoryMethod(f, m)).toSeq,
            f.members.filter(m => isWireableMethod(f, m)).map(_.asMethod).toSeq,
           ))
   }
@@ -240,16 +239,14 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def isWireableMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
-    decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
-      decl.asMethod.paramLists.isEmpty && !(decl.asMethod.returnType =:= tpe)
-    }
+    decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.asMethod.paramLists.isEmpty
   }
 
   private[this] def isFactoryMethod(tpe: u.TypeNative, decl: u.SymbNative): Boolean = ReflectionLock.synchronized {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && {
       val paramLists = decl.asMethod.paramLists
       paramLists.nonEmpty && paramLists.forall { list =>
-        !list.exists(_.typeSignature =:= decl.asMethod.returnType) && !list.exists(_.typeSignature =:= tpe)
+        !list.exists(_.typeSignature =:= decl.asMethod.returnType)
       }
     }
   }
@@ -263,14 +260,12 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 }
 
 object ReflectionProviderDefaultImpl {
-  object Static {
-    def apply(macroUniverse: DIUniverse): ReflectionProvider.Aux[macroUniverse.type] = {
-      new ReflectionProviderDefaultImpl {
-        override final val u: macroUniverse.type = macroUniverse
+  def apply(macroUniverse: DIUniverse): ReflectionProvider.Aux[macroUniverse.type] = {
+    new ReflectionProviderDefaultImpl {
+      override final val u: macroUniverse.type = macroUniverse
 
-        override protected val typeOfIdAnnotation: u.TypeNative = u.u.typeOf[Id]
-        override protected val typeOfWithAnnotation: u.TypeNative = u.u.typeOf[With[Any]]
-      }
+      override protected val typeOfIdAnnotation: u.TypeNative = u.u.typeOf[Id]
+      override protected val typeOfWithAnnotation: u.TypeNative = u.u.typeOf[With[Any]]
     }
   }
 }

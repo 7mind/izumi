@@ -43,7 +43,6 @@ object CircularCases {
 
     trait Circular4 {
       def arg: Circular1
-
       def factoryFun(c4: Circular4, c5: Circular5): Circular3
 
       def testVal: Int = 1

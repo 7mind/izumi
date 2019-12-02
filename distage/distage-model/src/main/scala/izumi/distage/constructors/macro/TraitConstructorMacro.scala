@@ -2,7 +2,7 @@ package izumi.distage.constructors.`macro`
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
+import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
@@ -37,12 +37,13 @@ object TraitConstructorMacro {
     val macroUniverse = StaticDIUniverse(c)
     import macroUniverse.Association._
     import macroUniverse.Wiring._
+    val tools = DIUniverseLiftables(macroUniverse)
 
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
+    val SingletonWiring.AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
     val (associations, wireArgs, wireMethods) = {
-      val SingletonWiring.AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
       wireables.map {
         case m @ AbstractMethod(symbol, key) =>
           key.tpe.use { tpe =>
@@ -66,9 +67,9 @@ object TraitConstructorMacro {
       q"""
       ${
         if (wireArgs.nonEmpty)
-          q"(..$wireArgs) => ($instantiate): $targetType"
+          q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
         else
-          q"() => ($instantiate): $targetType"
+          q"() => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
       }
       """
     }

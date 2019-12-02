@@ -18,7 +18,7 @@ object ConcreteConstructorMacro {
 
     val macroUniverse = StaticDIUniverse(c)
 
-    val reflectionProvider = ReflectionProviderDefaultImpl.Static(macroUniverse)
+    val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
