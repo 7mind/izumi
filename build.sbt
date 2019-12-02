@@ -955,7 +955,7 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-roles-api` = project.in(file("distage/distage-roles-api"))
+lazy val `distage-framework-api` = project.in(file("distage/distage-framework-api"))
   .dependsOn(
     `distage-model` % "test->compile;compile->compile"
   )
@@ -1127,9 +1127,9 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-roles` = project.in(file("distage/distage-roles"))
+lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   .dependsOn(
-    `distage-roles-api` % "test->compile;compile->compile",
+    `distage-framework-api` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `logstage-adapter-slf4j` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
@@ -1223,7 +1223,7 @@ lazy val `distage-roles` = project.in(file("distage/distage-roles"))
 lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
   .dependsOn(
     `distage-config` % "test->compile;compile->compile",
-    `distage-roles` % "test->compile;compile->compile",
+    `distage-framework` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
     `distage-plugins` % "test->test;compile->compile"
@@ -2713,9 +2713,9 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-proxy-cglib` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
     `distage-config` % "test->compile;compile->compile",
-    `distage-roles-api` % "test->compile;compile->compile",
+    `distage-framework-api` % "test->compile;compile->compile",
     `distage-plugins` % "test->compile;compile->compile",
-    `distage-roles` % "test->compile;compile->compile",
+    `distage-framework` % "test->compile;compile->compile",
     `distage-testkit` % "test->compile;compile->compile",
     `logstage-api` % "test->compile;compile->compile",
     `logstage-core` % "test->compile;compile->compile",
@@ -2997,9 +2997,9 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-proxy-cglib`,
     `distage-core`,
     `distage-config`,
-    `distage-roles-api`,
+    `distage-framework-api`,
     `distage-plugins`,
-    `distage-roles`,
+    `distage-framework`,
     `distage-testkit`
   )
 
@@ -3018,9 +3018,9 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-proxy-cglib`,
     `distage-core`,
     `distage-config`,
-    `distage-roles-api`,
+    `distage-framework-api`,
     `distage-plugins`,
-    `distage-roles`,
+    `distage-framework`,
     `distage-testkit`
   )
 

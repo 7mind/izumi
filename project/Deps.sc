@@ -266,9 +266,9 @@ object Izumi {
       final lazy val proxyCglib = ArtifactId("distage-proxy-cglib")
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-config")
-      final lazy val rolesApi = ArtifactId("distage-roles-api")
       final lazy val plugins = ArtifactId("distage-plugins")
-      final lazy val roles = ArtifactId("distage-roles")
+      final lazy val roles = ArtifactId("distage-framework")
+      final lazy val rolesApi = ArtifactId("distage-framework-api")
       final lazy val testkit = ArtifactId("distage-testkit")
     }
 
