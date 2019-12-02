@@ -145,6 +145,8 @@ object Izumi {
 
   object Targets {
     val targetScala = Seq(scala212, scala213)
+    // switch order to use 2.13 in IDEA
+//    val targetScala = Seq(scala213, scala212)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,

@@ -435,8 +435,8 @@ class LightTypeTagTest extends WordSpec {
 
     "allPartsStrong for typelambda" in {
       import scala.reflect.runtime.{universe => ru}
-      val res = ReflectionUtil.allPartsStrong[ru.type](ru.typeOf[Id[C]].typeConstructor)
-      assert(res)
+      val res1 = ReflectionUtil.allPartsStrong[ru.type](ru.typeOf[Id[C]].typeConstructor)
+      assert(res1)
     }
 
     "`withoutArgs` comparison works" in {

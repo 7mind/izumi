@@ -221,17 +221,20 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     tpe match {
       case rt: u.u.RefinedTypeApi =>
         val abstractMembers1 = (abstractMembers ++ rt.decls.filter(_.isAbstract)).toSet
-        rt.parents.forall(!_.typeSymbol.isFinal) && abstractMembers1.forall(isWireableMethod)
+        rt.parents.forall { pt =>
+          !pt.typeSymbol.isFinal && !(pt.typeSymbol.isClass && pt.typeSymbol.asClass.isSealed)
+        } && abstractMembers1.forall(isWireableMethod)
 
       case t =>
-        t.typeSymbol.isClass && t.typeSymbol.isAbstract && abstractMembers.forall(isWireableMethod)
+        t.typeSymbol.isClass && t.typeSymbol.isAbstract && !t.typeSymbol.asClass.isSealed && abstractMembers.forall(isWireableMethod)
     }
   }
 
   override def isFactory(tpe: TypeNative): Boolean = ReflectionLock.synchronized {
-    val abstracts = tpe.members.filter(_.isAbstract)
-    abstracts.exists(isFactoryMethod) &&
-      abstracts.forall(m => isFactoryMethod(m) || isWireableMethod(m))
+    !tpe.typeSymbol.isFinal && !(tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isSealed) && {
+      val abstracts = tpe.members.filter(_.isAbstract)
+      abstracts.exists(isFactoryMethod) && abstracts.forall(m => isFactoryMethod(m) || isWireableMethod(m))
+    }
   }
 
   private[this] def isWireableMethod(decl: SymbNative): Boolean = ReflectionLock.synchronized {
@@ -243,7 +246,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   private[this] def findConstructor(tpe: TypeNative): SymbNative = {
-    tpe.decl(u.u.termNames.CONSTRUCTOR)
+    tpe.decl(u.u.termNames.CONSTRUCTOR).alternatives.find(_.isPublic).getOrElse(u.u.NoSymbol)
   }
 
   protected def typeOfWithAnnotation: TypeNative

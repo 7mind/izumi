@@ -109,7 +109,7 @@ object ReflectionUtil {
   }
 
   final def allPartsStrong[U <: SingletonUniverse](tpe: U#Type): Boolean = {
-    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.contains(tpe.typeSymbol)
+    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.exists(_.typeSignature == tpe.typeSymbol.typeSignature)
     def prefixStrong = {
       tpe match {
         case t: U#TypeRefApi =>
