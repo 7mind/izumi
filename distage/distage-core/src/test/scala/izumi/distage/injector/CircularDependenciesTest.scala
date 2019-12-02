@@ -8,6 +8,8 @@ import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import izumi.distage.model.provisioning.strategies.ProxyDispatcher
 import distage._
+import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
+import izumi.distage.fixtures.CircularCases.CircularCase3.ByNameSelfReference
 import org.scalatest.WordSpec
 
 class CircularDependenciesTest extends WordSpec with MkInjector {
@@ -163,6 +165,55 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     val instance = context.get[ByNameSelfReference]
 
     assert(instance eq instance.self)
+  }
+
+  "Support self-referencing traits" in {
+    import CircularCase3._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[TraitSelfReference]
+    })
+
+    val injector = mkNoProxyInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val instance = context.get[TraitSelfReference]
+
+    assert(instance eq instance.self)
+  }
+
+  "Support self-referencing factories for by-name types" in {
+    import CircularCase3._
+
+    FactoryConstructor[FactorySelfReference]
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[ByNameSelfReference]
+      make[FactorySelfReference]
+    })
+
+    val injector = mkNoProxyInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val instance = context.get[FactorySelfReference]
+
+    assert(instance eq instance.self)
+
+    val instance1 = instance.mkByNameSelfReference(context.get[ByNameSelfReference])
+    assert(instance1.self eq context.get[ByNameSelfReference])
+    assert(instance1 ne context.get[ByNameSelfReference])
+
+//    val instance2 = instance.mkByNameSelfReferenceByName(context.get[ByNameSelfReference])
+//    assert(instance2.self eq context.get[ByNameSelfReference])
+//    assert(instance2 ne context.get[ByNameSelfReference])
+//    assert(instance2 ne instance1)
+
+    var counter = 0
+    class CountInstantiations extends ByNameSelfReference(instance1) { counter += 1 }
+    instance.mkByNameSelfReferenceByName(new CountInstantiations())
+    assert(counter == 0)
   }
 
   "Locator.instances returns instances in the order they were created in" in {

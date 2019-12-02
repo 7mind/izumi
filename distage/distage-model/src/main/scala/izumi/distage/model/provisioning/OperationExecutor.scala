@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning
 
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp
 import izumi.fundamentals.reflection.Tags.TagK
 

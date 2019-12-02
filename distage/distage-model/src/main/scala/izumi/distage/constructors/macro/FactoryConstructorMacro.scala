@@ -3,12 +3,13 @@ package izumi.distage.constructors.`macro`
 import izumi.distage.constructors.{AnyConstructor, DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.strategies.FactoryExecutor
+import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameWrapper
 import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
-import izumi.distage.provisioning.FactoryTools
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
+import scala.annotation.tailrec
 import scala.reflect.macros.blackbox
 
 object FactoryConstructorMacro {
@@ -25,7 +26,6 @@ object FactoryConstructorMacro {
     // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
     val tools = DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
 
-    import macroUniverse.Association._
     import macroUniverse.Wiring._
     import macroUniverse._
     import tools.{liftableBasicDIKey, liftableSymbolInfo}
@@ -42,45 +42,46 @@ object FactoryConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val Factory(unsafeRet, wireables, dependencies) = {
-      reflectionProvider.symbolToWiring(targetType)
-    }
-
-    val (dependencyAssociations, dependencyArgs, dependencyMethods) = dependencies.map {
-      case m @ AbstractMethod(symbol, key) =>
-        key.tpe.use { tpe =>
-          val methodName: TermName = TermName(symbol.name)
-          val argName: TermName = c.freshName(methodName)
-
-          (m.asParameter, q"val $argName: $tpe", q"override val $methodName: $tpe = $argName")
-        }
-    }.unzip3
+    val Factory(unsafeRet, factoryMethods, traitDependencies) = reflectionProvider.symbolToWiring(targetType)
+    val (dependencyAssociations, dependencyArgs, dependencyMethods) = TraitConstructorMacro.mkTraitArgMethods(c)(macroUniverse)(logger, traitDependencies)
 
     val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor]
-    val factoryTools = symbolOf[FactoryTools.type].asClass.module
+    val bynameWrapper = symbolOf[ByNameWrapper.type].asClass.module
 
-    val (producerMethods, withContexts) = wireables.zipWithIndex.map {
-      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, methodArguments), methodIndex) =>
+    val (producerMethods, withContexts) = factoryMethods.zipWithIndex.map {
+      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, _), methodIndex) =>
 
-        val (methodArgs, executorArgs) = methodArguments.map {
-          diKey =>
-            val name = TermName(c.freshName())
-            diKey.tpe.use {
-              tpe =>
-                q"$name: $tpe" -> q"{ $name }"
-            }
-        }.unzip
+        val (methodArgLists, executorArgs) = {
+          @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = tpe match {
+            case m: MethodTypeApi => m
+            case p: PolyTypeApi => instantiatedMethod(p.resultType)
+          }
+          val paramLists = instantiatedMethod(factoryMethod.underlying.typeSignatureIn(targetType)).paramLists.map(_.map {
+            argSymbol =>
+              val tpe = argSymbol.typeSignature
+              val name = argSymbol.asTerm.name
+              val expr = if (ReflectionUtil.isByName(u)(tpe)) {
+                q"{ $bynameWrapper.apply($name) }"
+              } else {
+                q"{ $name }"
+              }
+              q"val $name: $tpe" -> expr
+          })
+          paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
+        }
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val methodDef = factoryMethod.finalResultType.use(resultTypeOfMethod =>
-          q"""
-          override def ${TermName(factoryMethod.name)}[..$typeParams](..$methodArgs): $resultTypeOfMethod = {
-            val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
+        val methodDef = factoryMethod.finalResultType.use {
+          resultTypeOfMethod =>
+            q"""
+            final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgLists): $resultTypeOfMethod = {
+              val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
 
-            $factoryTools.interpret($executorName.execute($methodIndex, executorArgs)).asInstanceOf[$resultTypeOfMethod]
-          }
-          """)
+              $executorName.execute($methodIndex, executorArgs).asInstanceOf[$resultTypeOfMethod]
+            }
+            """
+        }
 
         val providedKeys = method.associationsFromContext.map(_.key)
 
@@ -129,8 +130,7 @@ object FactoryConstructorMacro {
     val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
-          val withContexts = ${withContexts.toList}
-          val ctxMap = withContexts.zipWithIndex.map(_.swap).toMap
+          val ctxMap = $withContexts.zipWithIndex.map(_.swap).toMap
 
           val magnetized = $provided
           val res = new ${weakTypeOf[ProviderMagnet[T]]}(

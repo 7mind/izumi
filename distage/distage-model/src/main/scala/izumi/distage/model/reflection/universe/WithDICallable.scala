@@ -22,7 +22,6 @@ trait WithDICallable {
 
     def unsafeApply(refs: TypedRef[_]*): Any = {
       val args = verifyArgs(refs)
-
       fun(args)
     }
 

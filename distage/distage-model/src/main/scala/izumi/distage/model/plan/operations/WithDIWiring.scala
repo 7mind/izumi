@@ -31,19 +31,6 @@ trait WithDIWiring {
       override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
     }
     object SingletonWiring {
-      sealed trait ReflectiveInstantiationWiring extends SingletonWiring {
-        def prefix: Option[DIKey]
-
-        override def replaceKeys(f: Association => DIKey.BasicKey): ReflectiveInstantiationWiring
-        override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ prefix.toSet
-      }
-
-      case class Constructor(instanceType: SafeType, associations: Seq[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
-        override final def replaceKeys(f: Association => DIKey.BasicKey): Constructor = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
-      }
-      case class AbstractSymbol(instanceType: SafeType, associations: Seq[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
-        override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
-      }
       case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
         override final def instanceType: SafeType = provider.ret
 
@@ -59,6 +46,21 @@ trait WithDIWiring {
 
         override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
         override final def replaceKeys(f: Association => DIKey.BasicKey): Reference = { f.discard(); this }
+      }
+
+      // FIXME: remove runtime wiring types ???
+      @deprecated("non-existent wiring", "???")
+      sealed trait ReflectiveInstantiationWiring extends SingletonWiring {
+        def prefix: Option[DIKey]
+
+        override def replaceKeys(f: Association => DIKey.BasicKey): ReflectiveInstantiationWiring
+        override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ prefix.toSet
+      }
+      case class Constructor(instanceType: SafeType, associations: List[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
+        override final def replaceKeys(f: Association => DIKey.BasicKey): Constructor = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
+      }
+      case class AbstractSymbol(instanceType: SafeType, associations: List[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring {
+        override final def replaceKeys(f: Association => DIKey.BasicKey): AbstractSymbol = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
       }
     }
 
@@ -85,7 +87,7 @@ trait WithDIWiring {
       }
     }
 
-    case class Factory(factoryType: SafeType, factoryMethods: Seq[Factory.FactoryMethod], fieldDependencies: Seq[Association.AbstractMethod]) extends PureWiring {
+    case class Factory(factoryType: SafeType, factoryMethods: List[Factory.FactoryMethod], fieldDependencies: List[Association.AbstractMethod]) extends PureWiring {
       /**
         * this method returns product dependencies which aren't present in any signature of factory methods.
         * Though it's a kind of a heuristic that can be spoiled at the time of plan initialization
@@ -108,8 +110,8 @@ trait WithDIWiring {
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Factory =
         this.copy(
-          fieldDependencies = this.fieldDependencies.map(a => a.withKey(f(a)))
-          , factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f)))
+          fieldDependencies = this.fieldDependencies.map(a => a.withKey(f(a))),
+          factoryMethods = this.factoryMethods.map(m => m.copy(wireWith = m.wireWith.replaceKeys(f))),
         )
     }
 
@@ -120,33 +122,30 @@ trait WithDIWiring {
     }
 
     case class FactoryFunction(
-                                provider: Provider
-                              , factoryIndex: Map[Int, FactoryFunction.FactoryMethod]
-                              , providerArguments: Seq[Association.Parameter]
+                                provider: Provider,
+                                factoryIndex: Map[Int, FactoryFunction.FactoryMethod],
+                                factoryCtorParameters: Seq[Association.Parameter],
                               ) extends PureWiring {
-      private[this] final val factoryMethods: Seq[FactoryFunction.FactoryMethod] = factoryIndex.values.toSeq
+      private[this] final val factoryMethods = factoryIndex.values.toList
 
-      override final def associations: Seq[Association] = {
-        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
+      override final lazy val associations: Seq[Association] = {
+        val userSuppliedDeps = factoryMethods.flatMap(_.userSuppliedParameters).toSet
 
-        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.key))
-
-        factorySuppliedProductDeps ++ providerArguments
+        val factorySuppliedDeps = factoryMethods.flatMap(_.productWiring.associations).filterNot(userSuppliedDeps contains _.key)
+        factorySuppliedDeps ++ factoryCtorParameters
       }
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
         this.copy(
-          providerArguments = this.providerArguments.map(a => a.withKey(f(a))),
-          factoryIndex = this.factoryIndex.mapValues(m => m.copy(wireWith = m.wireWith.replaceKeys(f))).toMap // 2.13 compat
+          factoryCtorParameters = this.factoryCtorParameters.map(a => a.withKey(f(a))),
+          factoryIndex = this.factoryIndex.mapValues(m => m.copy(productWiring = m.productWiring.replaceKeys(f))).toMap // 2.13 compat
         )
 
       override final def instanceType: SafeType = provider.ret
     }
 
     object FactoryFunction {
-      case class FactoryMethod(factoryMethod: SymbolInfo, wireWith: Wiring.SingletonWiring.Function, methodArguments: Seq[DIKey]) {
-        def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.key)
-      }
+      case class FactoryMethod(factoryMethod: SymbolInfo, productWiring: Wiring.SingletonWiring.Function, userSuppliedParameters: Seq[DIKey])
     }
 
   }

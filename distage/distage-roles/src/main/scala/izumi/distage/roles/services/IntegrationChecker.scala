@@ -3,8 +3,8 @@ package izumi.distage.roles.services
 import distage.{DIKey, TagK}
 import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.DIException
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.{DiAppBootstrapException, IntegrationCheck}
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import izumi.fundamentals.platform.integration.ResourceCheck

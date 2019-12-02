@@ -1,6 +1,6 @@
 package izumi.distage.roles.internal
 
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}

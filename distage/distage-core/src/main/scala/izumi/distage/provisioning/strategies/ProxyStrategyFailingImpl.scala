@@ -1,7 +1,7 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.exceptions.NoopProvisionerImplCalled
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.ProxyOp
 import izumi.distage.model.provisioning.strategies.ProxyStrategy
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}

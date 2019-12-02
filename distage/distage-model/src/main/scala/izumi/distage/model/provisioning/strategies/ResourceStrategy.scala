@@ -1,6 +1,6 @@
 package izumi.distage.model.provisioning.strategies
 
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
 import izumi.fundamentals.reflection.Tags.TagK

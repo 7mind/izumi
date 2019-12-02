@@ -3,7 +3,7 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.{DIEffect, LowPriorityDIEffectInstances}
+import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
 import izumi.functional.bio.{BIO, BIOAsync}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}

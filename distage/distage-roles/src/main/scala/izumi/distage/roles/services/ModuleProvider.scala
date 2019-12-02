@@ -5,7 +5,7 @@ import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.{BootstrapModuleDef, Module}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
-import izumi.distage.monadic.modules.IdentityDIEffectModule
+import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.config.ContextOptions

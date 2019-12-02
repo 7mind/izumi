@@ -1,7 +1,7 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions._
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatcher
+import izumi.distage.model.provisioning.strategies.ProxyDispatcher.{ByNameWrapper, ByNameDispatcher}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
@@ -38,6 +38,8 @@ object ProvisionOperationVerifier {
               if (!dispatcherTypeCompatible) {
                 throw new IncompatibleTypesException(s"Dispatcher contains incompatible key: ${target.tpe}, found: ${d.key.tpe}", target.tpe, d.key.tpe)
               }
+
+            case _: ByNameWrapper =>
 
             case u =>
               throwIfIncompatible(target, clue, u)

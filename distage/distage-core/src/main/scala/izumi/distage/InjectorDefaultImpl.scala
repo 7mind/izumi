@@ -3,7 +3,7 @@ package izumi.distage
 import izumi.distage.model._
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.{OrderedPlan, SemiPlan}
 import izumi.distage.model.provisioning.PlanInterpreter

@@ -2,8 +2,8 @@ package izumi.distage.roles.services
 
 import distage.{Injector, TagK}
 import izumi.distage.model.Locator
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectRunner}
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import izumi.fundamentals.platform.functional.Identity

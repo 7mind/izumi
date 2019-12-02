@@ -1,6 +1,6 @@
 package izumi.distage.testkit.services
 
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import distage.{Tag, TagK}
 import izumi.fundamentals.platform.language.CodePosition

@@ -1,17 +1,21 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.exceptions.InvalidPlanException
+import distage.DIKey
+import izumi.distage.model.exceptions.{InvalidPlanException, UnexpectedProvisionResultException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.plan.ExecutableOp.WiringOp.CallFactoryProvider
 import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
 import izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy  {
-  def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
+class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy {
+  def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
-    val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
+    val args: Seq[TypedRef[_]] = op.wiring.factoryCtorParameters.map {
       param =>
         context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
@@ -20,7 +24,7 @@ class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy  {
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
-                s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
+              s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
     }
 
@@ -28,23 +32,38 @@ class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy  {
     Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
-  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], op: WiringOp.CallFactoryProvider): FactoryExecutor =
-    (idx, args) => {
-      val Wiring.FactoryFunction.FactoryMethod(_, wireWith, methodArguments) = factoryIndex(idx)
+  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, FactoryMethod], op: CallFactoryProvider): FactoryExecutor = {
+    new FactoryExecutor {
+      override def execute(methodId: Int, args: Seq[Any]): Any = {
+        val FactoryMethod(_, productWiring, methodArguments) = factoryIndex(methodId)
 
-      val productDeps = wireWith.requiredKeys
-      val narrowedContext = context.narrow(productDeps)
+        val productDeps = productWiring.requiredKeys
+        val narrowedContext = context.narrow(productDeps)
 
-      val argsWithKeys = methodArguments.zip(args).toMap
+        val argsWithKeys = methodArguments.zip(args).toMap
+        val extendedContext = narrowedContext.extend(argsWithKeys)
 
-      val extendedContext = narrowedContext.extend(argsWithKeys)
-
-      executor.execute(extendedContext, mkExecutableOp(op.target, wireWith, op.origin))
+        val results = executor.execute(extendedContext, mkExecutableOp(op.target, productWiring, op.origin)).toList
+        results match {
+          case List(i: NewInstance) =>
+            i.instance
+          case List(i: NewImport) =>
+            i.instance
+          case List(_) =>
+            throw new UnexpectedProvisionResultException(s"Factory returned a result class other than NewInstance or NewImport in $results", results)
+          case _ :: _ =>
+            throw new UnexpectedProvisionResultException(s"Factory returned more than one result in $results", results)
+          case Nil =>
+            throw new UnexpectedProvisionResultException(s"Factory empty result list: $results", results)
+        }
+      }
     }
-
-  private[this] def mkExecutableOp(key: RuntimeDIUniverse.DIKey, w: RuntimeDIUniverse.Wiring.SingletonWiring.Function, origin: OperationOrigin): WiringOp = {
-    val target = RuntimeDIUniverse.DIKey.ProxyElementKey(key, w.instanceType)
-    WiringOp.CallProvider(target, w, origin)
   }
+
+  private[this] def mkExecutableOp(key: DIKey, functionWiring: SingletonWiring.Function, origin: OperationOrigin): WiringOp.CallProvider = {
+    val target = DIKey.ProxyElementKey(key, functionWiring.instanceType)
+    WiringOp.CallProvider(target, functionWiring, origin)
+  }
+
 }
 

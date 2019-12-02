@@ -150,12 +150,8 @@ class TagMacro(val c: blackbox.Context) {
       }
     }
     val argTags = {
-      logger.log("AAS")
       val args = tpe.typeArgs.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias))
-      logger.log("BBS")
-      val res = c.Expr[List[LightTypeTag]](Liftable.liftList[c.Expr[LightTypeTag]].apply(args.map(summonLightTypeTagOfAppropriateKind)))
-      logger.log("CCS")
-      res
+      c.Expr[List[LightTypeTag]](Liftable.liftList[c.Expr[LightTypeTag]].apply(args.map(summonLightTypeTagOfAppropriateKind)))
     }
 
     reify {

@@ -129,7 +129,7 @@ class BindingTranslatorImpl
 
   private[this] def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized {
     function match {
-      case factory: Provider.FactoryProvider@unchecked =>
+      case factory: Provider.FactoryProvider =>
         Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
       case _ =>
         Wiring.SingletonWiring.Function(function, function.associations)

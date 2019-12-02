@@ -3,7 +3,7 @@ package izumi.distage.roles
 import java.util.concurrent.CountDownLatch
 
 import cats.effect.{ContextShift, IO, LiftIO}
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.functional.bio.{BIOAsync, F}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.IzLogger

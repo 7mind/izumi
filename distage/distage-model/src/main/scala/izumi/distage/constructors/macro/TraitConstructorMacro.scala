@@ -5,6 +5,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
@@ -35,25 +36,14 @@ object TraitConstructorMacro {
     }
 
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse.Association._
-    import macroUniverse.Wiring._
+    import macroUniverse.Wiring.SingletonWiring.AbstractSymbol
     val tools = DIUniverseLiftables(macroUniverse)
 
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val SingletonWiring.AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
-    val (associations, wireArgs, wireMethods) = {
-      wireables.map {
-        case m @ AbstractMethod(symbol, key) =>
-          key.tpe.use { tpe =>
-            val methodName: TermName = TermName(symbol.name)
-            val argName: TermName = c.freshName(methodName)
-
-            (m.asParameter, q"val $argName: $tpe", q"final val $methodName: $tpe = $argName")
-          }
-      }.unzip3
-    }
+    val AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
+    val (associations, wireArgs, wireMethods) = mkTraitArgMethods(c)(macroUniverse)(logger, wireables)
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
 
@@ -89,5 +79,26 @@ object TraitConstructorMacro {
     logger.log(s"Final syntax tree of trait $targetType:\n$res")
 
     res
+  }
+
+  def mkTraitArgMethods(c: blackbox.Context)
+                       (u: StaticDIUniverse.Aux[c.universe.type])
+                       (logger: TrivialLogger, wireables: List[u.Association.AbstractMethod]): (List[u.Association.Parameter], List[c.universe.Tree], List[c.universe.Tree]) = {
+    import c.universe._
+    import u.Association._
+
+    wireables.map {
+      case m @ AbstractMethod(symbol, _) =>
+        val paramTpe = symbol.finalResultType.use(identity)
+        val methodName: TermName = TermName(symbol.name)
+        val argName: TermName = c.freshName(methodName)
+        // force by-name
+        val byNameParamTpe = appliedType(definitions.ByNameParamClass, paramTpe)
+
+        val parameter = m.asParameter
+        logger.log(s"original method return: $paramTpe, after by-name: $byNameParamTpe, $parameter")
+
+        (parameter, q"val $argName: $byNameParamTpe", q"final lazy val $methodName: $paramTpe = $argName")
+    }.unzip3
   }
 }

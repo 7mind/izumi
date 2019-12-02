@@ -88,6 +88,16 @@ object CircularCases {
       final lazy val self = _self
     }
 
+    trait TraitSelfReference {
+      def self: TraitSelfReference
+    }
+
+    trait FactorySelfReference {
+      def self: FactorySelfReference
+      def mkByNameSelfReference(inner: ByNameSelfReference): ByNameSelfReference
+      def mkByNameSelfReferenceByName(inner: => ByNameSelfReference): ByNameSelfReference
+    }
+
   }
 
   object CircularCase4 {

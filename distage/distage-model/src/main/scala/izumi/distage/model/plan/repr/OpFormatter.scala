@@ -68,7 +68,6 @@ object OpFormatter {
                   } else {
                     s"${formatKey(target)} $pos := null"
                   }
-
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
                   s"${formatKey(target)} $pos := ref ${formatKey(wiring.key)}"
@@ -115,33 +114,33 @@ object OpFormatter {
 
     private def formatWiring(deps: Wiring): String = {
       deps match {
-        case Constructor(instanceType, associations, prefix) =>
-          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "make", ('[', ']'), ('(', ')'))
-
-        case AbstractSymbol(instanceType, associations, prefix) =>
-          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "impl", ('[', ']'), ('{', '}'))
+//        case Constructor(instanceType, associations, prefix) =>
+//          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "make", ('[', ']'), ('(', ')'))
+//
+//        case AbstractSymbol(instanceType, associations, prefix) =>
+//          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "impl", ('[', ']'), ('{', '}'))
 
         case Function(provider, associations) =>
           doFormat(formatFunction(provider), associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
 
-        case Factory(factoryType, factoryIndex, dependencies) =>
-          val wirings = factoryIndex.map {
-            w =>
-              s"${w.factoryMethod}: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
-          }
-
-          val depsRepr = dependencies.map(formatDependency)
-
-          doFormat(
-            formatType(factoryType)
-            , wirings ++ depsRepr
-            , "factory", ('(', ')'), ('{', '}')
-          )
+//        case Factory(factoryType, factoryIndex, dependencies) =>
+//          val wirings = factoryIndex.map {
+//            w =>
+//              s"${w.factoryMethod}: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
+//          }
+//
+//          val depsRepr = dependencies.map(formatDependency)
+//
+//          doFormat(
+//            formatType(factoryType)
+//            , wirings ++ depsRepr
+//            , "factory", ('(', ')'), ('{', '}')
+//          )
 
         case FactoryFunction(provider, factoryIndex, dependencies) =>
           val wirings = factoryIndex.map {
             case (idx, w) =>
-              s"${w.factoryMethod}[$idx]: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
+              s"${w.factoryMethod}[$idx]: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.productWiring)}".shift(2)
           }.toSeq
 
           val depsRepr = dependencies.map(formatDependency)
@@ -177,9 +176,9 @@ object OpFormatter {
       s"${provider.fun}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
-      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
-    }
+//    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
+//      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
+//    }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
       val sb = new StringBuilder()

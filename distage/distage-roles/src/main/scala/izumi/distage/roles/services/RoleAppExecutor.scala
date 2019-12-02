@@ -2,8 +2,8 @@ package izumi.distage.roles.services
 
 import distage.TagK
 import izumi.distage.model.Locator
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.roles._
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}

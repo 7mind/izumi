@@ -2,7 +2,7 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.platform.functional.Identity

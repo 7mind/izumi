@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies
 
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.exceptions._
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
 import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.strategies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
@@ -76,40 +76,10 @@ class ProxyStrategyDefaultImpl
     val runtimeClass = mirrorProvider.runtimeClass(tpe).getOrElse(throw new NoRuntimeClassException(op.target))
 
     val classConstructorParams = if (!hasDeps(tpe)) ProxyParams.Empty else {
-//      // FIXME: Proxy classtag params ???
-//      val params: Seq[Association.Parameter] = {
-//        Nil
-////        ???
-//        // reflectionProvider.constructorParameters(tpe)
-//      }
-//
-//      val args = params.map {
-//        param =>
-//          val value = param match {
-//            case param if op.forwardRefs.contains(param.key) =>
-//              // substitute forward references by `null`
-//              null
-//            case param =>
-//              context.fetchKey(param.key, param.isByName) match {
-//                case Some(v) =>
-//                  v.asInstanceOf[AnyRef]
-//                case None =>
-//                  throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${param.key}", Set(param.key), None)
-//              }
-//          }
-//
-//          val parameterType: Class[_] = if (param.isByName) {
-//            classOf[Function0[_]]
-//          } else if (param.wasGeneric) {
-//            classOf[AnyRef]
-//          } else {
-//            param.key.tpe.cls
-//          }
-//          (parameterType, value)
-//      }
-
-      val args: Array[(Class[_], AnyRef)] = runtimeClass.getConstructors.head.getParameterTypes.map(_ -> (null: AnyRef))
-      val (argClasses, argValues) = args.unzip
+      val allArgsAsNull: Array[(Class[_], AnyRef)] = {
+        runtimeClass.getConstructors.head.getParameterTypes.map(_ -> (null: AnyRef))
+      }
+      val (argClasses, argValues) = allArgsAsNull.unzip
       ProxyParams.Params(argClasses, argValues)
     }
 
@@ -119,18 +89,8 @@ class ProxyStrategyDefaultImpl
   }
 
   protected def hasDeps(tpe: SafeType): Boolean = {
-    // FIXME: aadfhgadfgh ???
     val constructors = tpe.cls.getConstructors
     constructors.nonEmpty && !constructors.exists(_.getParameters.isEmpty)
-
-//    false
-//    tpe.use {
-//      t =>
-//        val constructors = t.decls.filter(_.isConstructor)
-//        val hasTrivial = constructors.exists(_.asMethod.paramLists.forall(_.isEmpty))
-//        val hasNoDependencies = constructors.isEmpty || hasTrivial
-//        !hasNoDependencies
-//    }
   }
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {

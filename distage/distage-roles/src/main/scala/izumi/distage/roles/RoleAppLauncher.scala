@@ -6,7 +6,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.AxisBase
 import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.config.ContextOptions

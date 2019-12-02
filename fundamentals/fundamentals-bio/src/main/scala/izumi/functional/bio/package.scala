@@ -221,6 +221,8 @@ package object bio extends BIOSyntax {
     @inline def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
     @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
+    @inline final def fromFuture[A](mkFuture: => Future[A]): F[Throwable, A] = fromFuture(_ => mkFuture)
+
     @inline final def repeatUntil[E, A](action: F[E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[E, A] = {
       def go(n: Int): F[E, A] = {
         flatMap(action) {
@@ -267,6 +269,8 @@ package object bio extends BIOSyntax {
   }
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+
+  type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {

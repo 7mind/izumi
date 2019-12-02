@@ -5,6 +5,7 @@ import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import org.scalatest.WordSpec
 
 class ProviderMagnetTest extends WordSpec {
@@ -226,6 +227,16 @@ class ProviderMagnetTest extends WordSpec {
 
       assert(fn[List].diKeys contains DIKey.get[List[Int]].named("gentypeann"))
       assert(fn[Set].diKeys contains DIKey.get[Set[Int]].named("gentypeann"))
+    }
+
+    "handle by-name vals" in {
+      val fn = ProviderMagnet.apply(testValByName).get
+
+      assert(fn.diKeys contains DIKey.get[Any])
+      var counter = 0
+      class CountInstantiations { counter += 1 }
+      fn.unsafeApply(RuntimeDIUniverse.TypedRef(() => new CountInstantiations))
+      assert(counter == 0)
     }
 
     "generic parameters without TypeTag should fail" in {

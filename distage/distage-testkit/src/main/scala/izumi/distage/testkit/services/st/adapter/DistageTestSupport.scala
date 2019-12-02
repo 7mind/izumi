@@ -5,8 +5,8 @@ import distage.{DIKey, Injector, ModuleBase}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{Binding, BootstrapModule, ImplDef, Module}
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation

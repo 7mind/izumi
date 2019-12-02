@@ -1,9 +1,12 @@
 package izumi.distage.injector
 
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
+import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
+import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.WordSpec
 
 class InnerClassesTest extends WordSpec with MkInjector {
@@ -148,41 +151,40 @@ class InnerClassesTest extends WordSpec with MkInjector {
     }
   }
 
-  "progression test: can't find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
-    intercept[ProvisioningException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
+  "can now find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
+    import InnerClassStablePathsCase._
+import StableObjectInheritingTrait._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[ByNameCircular1]
-        make[ByNameCircular2]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[ByNameCircular1]
+      make[ByNameCircular2]
+    })
 
-      val context = mkInjector().produceUnsafe(definition)
+    val context = mkNoProxyInjector().produceUnsafe(definition)
 
-      assert(context.get[ByNameCircular1] != null)
-      assert(context.get[ByNameCircular1].circular2 != context.get[ByNameCircular2])
-    }
+    assert(context.get[ByNameCircular1] != null)
+    assert(context.get[ByNameCircular1].circular2 eq context.get[ByNameCircular2])
   }
 
-  // FIXME: ???
-//  "runtime cogen can't handle path-dependent factories (macros can't?)" in {
-//    import InnerClassUnstablePathsCase._
-//    val testProviderModule = new TestModule
-//
-//    val definition = PlannerInput.noGc(new ModuleDef {
-//      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-//      make[testProviderModule.TestFactory]
-//    })
-//
-//    val context = mkInjector().produceUnsafe(definition)
-//    assert(context.instances.size == 3)
-//
-//    assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
-//  }
+  "can now handle path-dependent factories" in {
+    import InnerClassUnstablePathsCase._
+    val testProviderModule = new TestModule
 
-  "progression test: runtime cogen can't circular path-dependent dependencies (macros can't?)" in {
-    intercept[ProvisioningException] {
+    FactoryConstructor[testProviderModule.TestFactory]
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+      make[testProviderModule.TestFactory]
+    })
+
+    val context = mkInjector().produceUnsafe(definition)
+    assert(context.instances.size == 3)
+
+    assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
+  }
+
+  "progression test: runtime cogen can't circular path-dependent dependencies (we don't properly supply prefix type as argument here...)" in {
+    val exc = intercept[ProvisioningException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
@@ -196,6 +198,9 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }
+    assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
+    assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
+    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NullPointerException])
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {

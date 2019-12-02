@@ -58,11 +58,11 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
     info =>
       /* FIXME: annotations ??? */
       q"""{ $runtimeDIUniverse.SymbolInfo.Static(
-      ${info.name},
-      ${liftableUnsafeWeakSafeType(info.finalResultType)},
-      null,
-      ${info.isByName},
-      ${info.wasGeneric}
+      name = ${info.name},
+      finalResultType = ${liftableUnsafeWeakSafeType(info.finalResultType)},
+      annotations = null,
+      isByName = ${info.isByName},
+      wasGeneric = ${info.wasGeneric}
       ) }"""
   }
 

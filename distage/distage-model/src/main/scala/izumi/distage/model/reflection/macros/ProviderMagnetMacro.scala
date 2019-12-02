@@ -5,7 +5,7 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.StaticDIUniverse.Aux
 import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
-import izumi.fundamentals.reflection.{AnnotationTools, TrivialMacroLogger}
+import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
@@ -57,12 +57,11 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
     case Block(List(), inner) =>
       analyze(inner, ret)
     case Function(args, body) =>
-      analyzeMethodRef(args.map(_.symbol), body, ret)
+      analyzeMethodRef(args.map(_.symbol), body)
     case _ if tree.tpe ne null =>
-      analyzeValRef(tree.tpe, ret)
+      analyzeValRef(tree.tpe)
     case _ =>
-      c.abort(tree.pos
-        ,
+      c.abort(tree.pos,
         s"""
            | Can handle only method references of form (method _) or lambda bodies of form (args => body).\n
            | Argument doesn't seem to be a method reference or a lambda:\n
@@ -74,49 +73,46 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   def generateProvider[R: c.WeakTypeTag](associations: List[Association.Parameter], fun: Tree, generateUnsafeWeakSafeTypes: Boolean): c.Expr[ProviderMagnet[R]] = {
     val tools = {
-      if (generateUnsafeWeakSafeTypes)
+      if (generateUnsafeWeakSafeTypes) {
         DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
-      else
+      } else {
         DIUniverseLiftables(macroUniverse)
+      }
     }
 
     import tools.{liftableParameter, liftableSafeType}
 
-    val casts = associations.zipWithIndex.map {
-      case (st, i) =>
-        st.tpe.use {
-          t =>
-            q"{ seqAny($i).asInstanceOf[$t] }"
-        }
-    }
+    val (substitutedByNames, casts) = associations.zipWithIndex.map {
+      case (param, i) =>
+
+        val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
+          param.symbol.finalResultType.use(typeNative => SafeType(ReflectionUtil.stripByName(u)(typeNative)))
+        })
+        strippedByNameTpe -> q"seqAny($i)"
+    }.unzip
+
     c.Expr[ProviderMagnet[R]] {
       q"""{
         val fun = $fun
-        val associations: ${typeOf[List[RuntimeDIUniverse.Association.Parameter]]} = $associations
 
         new ${weakTypeOf[ProviderMagnet[R]]}(
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
-            associations,
+            ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
             ${liftableSafeType(SafeType(weakTypeOf[R]))},
-            { seqAny =>
-                _root_.scala.Predef.assert(seqAny.size == associations.size, "Impossible Happened! args list has different length than associations list")
-                fun(..$casts)
-            }
+            { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) }
           )
         )
       }"""
     }
   }
 
-  protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree, ret: Type): List[Association.Parameter] = {
-    val unsafeSafeType = SafeType(ret)
-
+  protected[this] def analyzeMethodRef(lambdaArgs: List[Symbol], body: Tree): List[Association.Parameter] = {
     def association(p: Symbol): Association.Parameter = {
-      reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p, unsafeSafeType, p.typeSignature.typeSymbol.isParameter))
+      reflectionProvider.associationFromParameter(SymbolInfo.Runtime(p))
     }
 
-    val lambdaKeys = lambdaArgs.map(association)
-    val methodReferenceKeys = body match {
+    val lambdaParams = lambdaArgs.map(association)
+    val methodReferenceParams = body match {
       case Apply(f, _) =>
         logger.log(s"Matched function body as a method reference - consists of a single call to a function $f - ${showRaw(body)}")
 
@@ -128,34 +124,39 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
         List()
     }
 
-    logger.log(s"lambda keys: $lambdaKeys")
-    logger.log(s"method ref keys: $methodReferenceKeys")
+    logger.log(s"lambda params: $lambdaParams")
+    logger.log(s"method ref params: $methodReferenceParams")
 
-    val annotationsOnLambda: List[u.Annotation] = lambdaKeys.flatMap(_.symbol.annotations)
-    val annotationsOnMethod: List[u.Annotation] = methodReferenceKeys.flatMap(_.symbol.annotations)
+    val annotationsOnLambda = lambdaParams.flatMap(_.symbol.annotations)
+    val annotationsOnMethod = methodReferenceParams.flatMap(_.symbol.annotations)
 
-    if (methodReferenceKeys.size == lambdaKeys.size &&
+    // if method reference has more annotations, get parameters from reference instead
+    // to preserve annotations!
+    if (methodReferenceParams.size == lambdaParams.size &&
         annotationsOnLambda.isEmpty && annotationsOnMethod.nonEmpty) {
       // Use types from the generated lambda, not the method reference, because method reference types maybe generic/unresolved
-      //
-      // (Besides, lambda types are the ones specified by the caller, we should always use them)
-      methodReferenceKeys.zip(lambdaKeys).map {
-        case (m, l) =>
-          m.copy(m.symbol.withTpe(l.tpe), key = m.key.withTpe(l.key.tpe)) // gotcha: symbol not altered
+      // But lambda params should be sufficiently 'grounded' at this point
+      // (Besides, lambda types are the ones specified by the caller, we should respect them)
+      methodReferenceParams.zip(lambdaParams).map {
+        case (mArg, lArg) =>
+          mArg.copy(
+            symbol = mArg.symbol.withTpe(lArg.tpe),
+            key = mArg.key.withTpe(lArg.key.tpe),
+          )
       }
     } else {
-      lambdaKeys
+      lambdaParams
     }
   }
 
-  protected[this] def analyzeValRef(sig: Type, ret: Type): List[Association.Parameter] = {
+  protected[this] def analyzeValRef(sig: Type): List[Association.Parameter] = {
     sig.typeArgs.init.map {
       tpe =>
         val symbol = SymbolInfo.Static(
           name = c.freshName(tpe.typeSymbol.name.toString),
           finalResultType = SafeType(tpe),
           annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
-          isByName = tpe.typeSymbol.isTerm && tpe.typeSymbol.asTerm.isByNameParam,
+          isByName = tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == definitions.ByNameParamClass,
           wasGeneric = tpe.typeSymbol.isParameter,
         )
 

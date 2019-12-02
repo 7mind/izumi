@@ -5,8 +5,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}

@@ -6,7 +6,7 @@ import izumi.distage.config.ConfigModuleDef
 import izumi.distage.config.model.ConfPathId
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.testkit.st.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 

@@ -1,10 +1,10 @@
-package izumi.distage.monadic.modules
+package izumi.distage.effect.modules
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 
 import distage.Id
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.monadic._
+import izumi.distage.model.effect._
 import izumi.distage.roles.services.ResourceRewriter
 import izumi.functional.bio.BIORunner.{FailureHandler, ZIORunner}
 import izumi.functional.bio._

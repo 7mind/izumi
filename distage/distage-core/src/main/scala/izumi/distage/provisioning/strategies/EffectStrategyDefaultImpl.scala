@@ -1,8 +1,8 @@
 package izumi.distage.provisioning.strategies
 
 import izumi.distage.model.exceptions.{IncompatibleEffectTypesException, UnexpectedProvisionResultException}
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.MonadicOp
 import izumi.distage.model.plan.ExecutableOp.MonadicOp.ExecuteEffect
 import izumi.distage.model.provisioning.strategies.EffectStrategy

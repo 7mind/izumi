@@ -2,8 +2,8 @@ package izumi.distage.testkit.distagesuite
 
 import cats.effect.{IO => CIO}
 import distage._
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}

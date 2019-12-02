@@ -7,7 +7,7 @@ import distage.Id
 import distage.config.ConfigModuleDef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.fundamentals.platform.integration.ResourceCheck

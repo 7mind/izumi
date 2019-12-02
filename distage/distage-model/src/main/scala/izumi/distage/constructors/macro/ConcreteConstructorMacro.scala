@@ -45,16 +45,10 @@ object ConcreteConstructorMacro {
 
     val paramLists = reflectionProvider.constructorParameterLists(targetType)
     val fnArgsNamesLists = paramLists.map(_.map {
-      p =>
-        val name = c.freshName(TermName(p.name))
-
-        p.key.tpe.use {
-          tpe =>
-            // FIXME: by-names are borked, gotta fix ???
-            val newParamNoByName = p.copy(symbol = p.symbol.withTpe(p.key.tpe).withIsByName(false))
-            (newParamNoByName -> q"val $name: $tpe", name)
-        }
-
+      param =>
+        val name = c.freshName(TermName(param.name))
+        val paramTpe = param.symbol.finalResultType.use(identity)
+        (param -> q"val $name: $paramTpe", name)
     })
 
     val (associations, args) = fnArgsNamesLists.flatten.map(_._1).unzip
@@ -67,7 +61,7 @@ object ConcreteConstructorMacro {
       providerMagnetMacro.generateProvider[T](
         associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
         constructor,
-        generateUnsafeWeakSafeTypes
+        generateUnsafeWeakSafeTypes,
       )
     }
     val res = c.Expr[ConcreteConstructor[T]] {

@@ -1,8 +1,8 @@
-package izumi.distage.model.monadic
+package izumi.distage.model.effect
 
 import cats.Parallel
 import cats.effect.Timer
-import izumi.distage.model.monadic.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
+import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
 import izumi.functional.bio.{BIOAsync, F}
 import izumi.fundamentals.platform.functional.Identity
 
@@ -52,7 +52,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
 
 }
 
-private[monadic] sealed trait LowPriorityDIEffectAsyncInstances {
+private[effect] sealed trait LowPriorityDIEffectAsyncInstances {
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.

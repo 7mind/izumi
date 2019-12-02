@@ -25,9 +25,9 @@ object Provision {
 
   final case class ProvisionMutable[F[_]]
   (
-    instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    , imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any]()
-    , finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]]()
+    instances: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any](),
+    imports: mutable.LinkedHashMap[DIKey, Any] = mutable.LinkedHashMap[DIKey, Any](),
+    finalizers: mutable.ListBuffer[Finalizer[F]] = mutable.ListBuffer[Finalizer[F]](),
   ) extends Provision[F] {
     def toImmutable: ProvisionImmutable[F] = {
       ProvisionImmutable(instances, imports, finalizers)
@@ -44,23 +44,23 @@ object Provision {
 
   final case class ProvisionImmutable[+F[_]]
    (
-     instances: Map[DIKey, Any]
-     , imports: Map[DIKey, Any]
-     , finalizers: Seq[Finalizer[F]]
+     instances: Map[DIKey, Any],
+     imports: Map[DIKey, Any],
+     finalizers: Seq[Finalizer[F]],
    ) extends Provision[F] {
      override def narrow(allRequiredKeys: Set[DIKey]): Provision[F] = {
        ProvisionImmutable(
-         instances.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
-         , imports.filterKeys(allRequiredKeys.contains).toMap // 2.13 compat
-         , finalizers.filter(allRequiredKeys contains _.key)
+         instances.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
+         imports.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat
+         finalizers.filter(allRequiredKeys contains _.key),
        )
      }
 
      override def extend(values: Map[DIKey, Any]): Provision[F] = {
        ProvisionImmutable(
-         instances ++ values
-         , imports
-         , finalizers
+         instances ++ values,
+         imports,
+         finalizers,
        )
      }
    }

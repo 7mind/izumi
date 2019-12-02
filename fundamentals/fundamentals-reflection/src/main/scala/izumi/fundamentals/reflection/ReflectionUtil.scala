@@ -100,6 +100,14 @@ object ReflectionUtil {
     }
   }
 
+  def stripByName(u: Universe)(tpe: u.Type): u.Type = {
+    if (isByName(u)(tpe)) tpe.typeArgs.head.finalResultType else tpe
+  }
+
+  def isByName(u: Universe)(tpe: u.Type): Boolean = {
+    tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == u.definitions.ByNameParamClass
+  }
+
   final def allPartsStrong[U <: SingletonUniverse](tpe: U#Type): Boolean = {
     def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.contains(tpe.typeSymbol)
     def prefixStrong = {

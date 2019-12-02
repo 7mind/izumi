@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
-import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException}
+import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedDefinitionException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.WordSpec
 
@@ -69,12 +69,19 @@ class BasicTest extends WordSpec with MkInjector {
 
     val injector = mkInjector()
 
-    val exc = intercept[BadIdAnnotationException] {
+//    val exc = intercept[BadIdAnnotationException] {
+//      injector.produce(injector.plan(definition))
+//        .use(_.get[TestClass])
+//    }
+//
+//    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+
+    val exc = intercept[ProvisioningException] {
       injector.produce(injector.plan(definition))
         .use(_.get[TestClass])
     }
 
-    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
   }
 
   "support multiple bindings" in {

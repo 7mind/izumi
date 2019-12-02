@@ -42,7 +42,7 @@ object TraitConstructor {
       case e: AbstractMethodError =>
         throw new TraitInitializationFailedException(s"TODO: Failed to initialize trait $tpe. Probably it contains fields (val or var) though fields are not supported yet, see https://github.com/7mind/izumi/issues/26", tpe, e)
       case e: Throwable =>
-        throw new TraitInitializationFailedException(s"Failed to initialize trait $tpe. It may be an issue with the trait, framework bug or trait instantiator implemetation lim", tpe, e)
+        throw new TraitInitializationFailedException(s"Failed to initialize trait $tpe. It may be an issue with the trait or a framework bug", tpe, e)
     }
   }
 }

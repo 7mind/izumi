@@ -7,8 +7,8 @@ import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.functional.Value

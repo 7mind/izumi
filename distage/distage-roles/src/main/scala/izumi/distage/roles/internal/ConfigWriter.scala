@@ -8,7 +8,7 @@ import izumi.distage.config.{AppConfigModule, ConfigPathExtractorModule}
 import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.{Id, ModuleBase}
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance

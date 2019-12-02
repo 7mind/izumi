@@ -3,7 +3,7 @@ package izumi.distage.testkit.docker.fixtures
 import distage.config.ConfigModuleDef
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.testkit.integration.docker.Docker.AvailablePort
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}

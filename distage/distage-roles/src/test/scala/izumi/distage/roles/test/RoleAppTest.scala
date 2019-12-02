@@ -8,7 +8,7 @@ import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.BootstrapModule
-import izumi.distage.monadic.modules.IdentityDIEffectModule
+import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation

@@ -5,7 +5,7 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._

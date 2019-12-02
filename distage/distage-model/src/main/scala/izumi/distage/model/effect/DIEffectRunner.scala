@@ -1,4 +1,4 @@
-package izumi.distage.model.monadic
+package izumi.distage.model.effect
 
 import cats.effect.IO
 import izumi.functional.bio.BIORunner

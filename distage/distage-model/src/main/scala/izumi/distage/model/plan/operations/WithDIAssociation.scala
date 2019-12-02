@@ -35,11 +35,10 @@ trait WithDIAssociation {
     case class AbstractMethod(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
       override final def name: String = symbol.name
       override final def tpe: SafeType = symbol.finalResultType
-      // FIXME: trait methods must count as by-name and inject lazily via by-name parameters
-      override final def isByName: Boolean = false
+      override final def isByName: Boolean = true
       override final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
 
-      final def asParameter: Parameter = Parameter(symbol, key)
+      final def asParameter: Parameter = Parameter(symbol.withIsByName(true), key)
     }
   }
 

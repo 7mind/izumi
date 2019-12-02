@@ -3,7 +3,7 @@ package izumi.distage.roles.test.fixtures
 import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.monadic.modules.CatsDIEffectModule
+import izumi.distage.effect.modules.CatsDIEffectModule
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.internal.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._

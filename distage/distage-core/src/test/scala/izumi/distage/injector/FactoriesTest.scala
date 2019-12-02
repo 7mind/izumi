@@ -1,6 +1,7 @@
 package izumi.distage.injector
 
-import distage.ModuleDef
+import distage.{ModuleDef, With}
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
@@ -26,6 +27,7 @@ class FactoriesTest extends WordSpec with MkInjector {
     val factory = context.get[Factory]
     assert(factory.wiringTargetForDependency != null)
     assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
+    assert(factory.factoryMethodForDependency() != factory.factoryMethodForDependency())
     assert(factory.x().b.isInstanceOf[Dependency])
 
     val abstractFactory = context.get[AbstractFactory]
@@ -47,6 +49,8 @@ class FactoriesTest extends WordSpec with MkInjector {
 
   "handle generic arguments in cglib factory methods" in {
     import FactoryCase1._
+
+    FactoryConstructor[GenericAssistedFactory]
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[GenericAssistedFactory]
@@ -86,6 +90,29 @@ class FactoriesTest extends WordSpec with MkInjector {
 
     assert(instantiated.dep.isVerySpecial)
     assert(instantiated.x(5).b.isSpecial)
+  }
+
+  "handle structural type factories" in {
+    import FactoryCase1._
+
+    FactoryConstructor[{
+            def makeConcreteDep(): Dependency @With[ConcreteDep]
+          }]
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[{
+        def makeConcreteDep(): Dependency @With[ConcreteDep]
+      }]
+    })
+
+    val injector = mkStaticInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
+
+    val instance = instantiated.makeConcreteDep()
+    assert(instance.isInstanceOf[ConcreteDep])
   }
 
   "cglib factory cannot produce factories" in {

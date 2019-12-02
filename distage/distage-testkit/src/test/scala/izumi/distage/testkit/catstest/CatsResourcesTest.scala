@@ -3,7 +3,7 @@ package izumi.distage.testkit.catstest
 import cats.effect.{Bracket, IO, Resource, Sync}
 import izumi.distage.model.definition.Binding.SingletonBinding
 import izumi.distage.model.definition.{DIResource, ImplDef, ModuleDef}
-import izumi.distage.model.monadic.LowPriorityDIEffectInstances
+import izumi.distage.model.effect.LowPriorityDIEffectInstances
 import izumi.distage.testkit.catstest.CatsResourcesTest.{DBConnection, MessageQueueConnection, MyApp, Res, Res1}
 import izumi.fundamentals.platform.language.Quirks._
 import distage._

@@ -3,7 +3,7 @@ package izumi.distage.testkit.st
 import java.util.concurrent.atomic.AtomicReference
 
 import cats.effect.IO
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.testkit.services.st.adapter.ExternalResourceProvider
 import izumi.distage.testkit.st.fixtures._

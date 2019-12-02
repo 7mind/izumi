@@ -1,7 +1,7 @@
-package izumi.distage.model.monadic
+package izumi.distage.model.effect
 
 import cats.effect.ExitCase
-import izumi.distage.model.monadic.LowPriorityDIEffectInstances._Sync
+import izumi.distage.model.effect.LowPriorityDIEffectInstances._Sync
 import izumi.functional.bio.{BIO, BIOExit}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
@@ -126,7 +126,7 @@ object DIEffect extends LowPriorityDIEffectInstances {
   }
 }
 
-private[monadic] sealed trait LowPriorityDIEffectInstances {
+private[effect] sealed trait LowPriorityDIEffectInstances {
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance

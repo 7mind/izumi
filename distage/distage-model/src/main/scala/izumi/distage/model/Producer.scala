@@ -1,8 +1,8 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.fundamentals.reflection.Tags.TagK
