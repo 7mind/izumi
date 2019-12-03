@@ -20,7 +20,11 @@ class TypeConstraintExperiment extends WordSpec {
     import scala.reflect.runtime.universe._
     implicit def materialize[T: WeakTypeTag]: PrintType[T] = {
       val tpe = weakTypeOf[T]
-      val str = (tpe.widen :: tpe.baseClasses.map(symbol => tpe.baseType(symbol))).toString
+      val str = (tpe.widen :: tpe.baseClasses.map { symbol =>
+        scala.util.Try { // 2.13 doesn't support baseType for singletons?..
+          tpe.baseType(symbol)
+        }.toOption.getOrElse(symbol.info)
+      }).toString
       new PrintType[T](str)
     }
   }
@@ -29,7 +33,7 @@ class TypeConstraintExperiment extends WordSpec {
   class B0
   class C0(val a: A0, val b: B0)
 
-  def xa(a: A0@Id("a-id"), b: B0@Id("b-id")) = {
+  def xa(a: A0 @Id("a-id"), b: B0 @Id("b-id")) = {
     new C0(a, b): @Id("c-id")
   }
 
