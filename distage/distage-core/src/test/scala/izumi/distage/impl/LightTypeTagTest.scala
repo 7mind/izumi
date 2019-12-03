@@ -471,6 +471,7 @@ class LightTypeTagTest extends WordSpec {
       val tagF3 = LTT[F3]
       assertChild(tagF3, LTT[F2[Int]])
       assertDifferent(tagF3, LTT[F2[AnyVal]])
+    }
 
     "regression test: support subtyping of a simple combined type (fixed in 0.10)" in {
       val ctor = `LTT[_[_]]`[ApplePaymentProvider]
