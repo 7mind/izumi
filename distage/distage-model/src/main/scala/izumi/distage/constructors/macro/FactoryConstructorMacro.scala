@@ -92,7 +92,7 @@ object FactoryConstructorMacro {
           new ${weakTypeOf[RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod]}(
             ${liftableSymbolInfo(factoryMethod)},
             wiring,
-            wiring.associations.map(_.key) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)} // work hard to ensure pointer equality of dikeys...
+            wiring.associations.map(_.key) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)}
           )
         }"""
 
