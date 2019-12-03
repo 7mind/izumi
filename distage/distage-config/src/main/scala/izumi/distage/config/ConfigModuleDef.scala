@@ -20,6 +20,11 @@ class AppConfigModule(appConfig: AppConfig) extends BootstrapModuleDef {
   make[AppConfig].fromValue(appConfig)
 }
 
+object AppConfigModule {
+  def apply(appConfig: AppConfig): AppConfigModule = new AppConfigModule(appConfig)
+  def apply(config: Config): AppConfigModule = new AppConfigModule(config)
+}
+
 class ConfigPathExtractorModule extends BootstrapModuleDef {
   many[PlanningHook]
     .add[ConfigPathExtractor]

@@ -213,7 +213,7 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceZIOSyntax[R, E, A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
+  implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
       ZManaged(resource.acquire.map(r => Reservation(zio.ZIO.effectTotal(resource.extract(r)), _ => resource.release(r).orDieWith {
@@ -387,61 +387,87 @@ object DIResource {
     *       dependency on `Bracket[F, Throwable]` for
     *       your corresponding `F` type
     */
-  implicit final def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
-    providerFromCatsProvider(ProviderMagnet.pure(resource))
+  implicit final def providerFromCats[F[_]: TagK, A](resource: => Resource[F, A])(implicit tag: Tag[DIResource.Cats[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+    ProviderMagnet.identity[Bracket[F, Throwable]].map {
+      implicit bracket: Bracket[F, Throwable] =>
+        fromCats(resource)
+    }
   }
-
-  /**
-    * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
-    *
-    * Example:
-    * {{{
-    *   import cats.effect._
-    *   import doobie.hikari._
-    *
-    *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
-    *
-    *   val module = new distage.ModuleDef {
-    *
-    *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
-    *
-    *     make[JdbcConfig].from {
-    *       conf: JdbcConfig @ConfPath("jdbc") => conf
-    *     }
-    *
-    *     make[HikariTransactor[IO]].fromResource {
-    *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
-    *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
-    *
-    *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
-    *     }
-    *
-    *     addImplicit[Bracket[IO, Throwable]]
-    *   }
-    * }}}
-    *
-    * NOTE: binding a cats Resource[F, A] will add a
-    * dependency on `Bracket[F, Throwable]` for
-    * your corresponding `F` type
-    */
-  implicit final def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
-    resourceProvider
-      .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
-      .map { case (resource, bracket) => fromCats(resource)(bracket) }
-  }
-
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
-    providerFromZIOProvider(ProviderMagnet.pure(managed))
+  implicit final def providerFromZIO[R, E, A](managed: => ZManaged[R, E, A])(implicit tag: Tag[DIResource.Zio[R, E, A]]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
+    ProviderMagnet.lift(fromZIO(managed))
   }
 
-  /**
-    * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
-    */
-  implicit final def providerFromZIOProvider[R: Tag, E: Tag, A: Tag](managedProvider: ProviderMagnet[ZManaged[R, E, A]]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
-    managedProvider.map(fromZIO)
+  /** Support binding various FP libraries' Resource types in `.fromResource` */
+  trait AdaptProvider[A] {
+    type Out
+    def apply(a: ProviderMagnet[A])(implicit tag: ResourceTag[Out]): ProviderMagnet[Out]
+  }
+  object AdaptProvider {
+    type Aux[A, B] = AdaptProvider[A] { type Out = B }
+
+    /**
+      * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
+      *
+      * Example:
+      * {{{
+      *   import cats.effect._
+      *   import doobie.hikari._
+      *
+      *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
+      *
+      *   val module = new distage.ModuleDef {
+      *
+      *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
+      *
+      *     make[JdbcConfig].from {
+      *       conf: JdbcConfig @ConfPath("jdbc") => conf
+      *     }
+      *
+      *     make[HikariTransactor[IO]].fromResource {
+      *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
+      *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
+      *
+      *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
+      *     }
+      *
+      *     addImplicit[Bracket[IO, Throwable]]
+      *   }
+      * }}}
+      *
+      * NOTE: binding a cats Resource[F, A] will add a
+      * dependency on `Bracket[F, Throwable]` for
+      * your corresponding `F` type
+      */
+    implicit final def providerFromCatsProvider[F[_], A]: Resource[F, A] Aux DIResource.Cats[F, A] = {
+      new AdaptProvider[Resource[F, A]] {
+        type Out = DIResource.Cats[F, A]
+
+        override def apply(a: ProviderMagnet[Resource[F, A]])(implicit tag: ResourceTag[DIResource.Cats[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+          import tag.tagFull
+          implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]
+
+          a.zip(ProviderMagnet.identity[Bracket[F, Throwable]])
+            .map { case (resource, bracket) => fromCats(resource)(bracket) }
+        }
+      }
+    }
+
+    /**
+      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      */
+    implicit final def providerFromZIOProvider[R, E, A]: ZManaged[R, E, A] Aux Zio[R, E, A] = {
+      new AdaptProvider[ZManaged[R, E, A]] {
+        type Out = DIResource.Zio[R, E, A]
+
+        override def apply(a: ProviderMagnet[ZManaged[R, E, A]])(implicit tag: ResourceTag[Out]): ProviderMagnet[Zio[R, E, A]] = {
+          import tag.tagFull
+          a.map(fromZIO)
+        }
+      }
+    }
   }
 
   @inline

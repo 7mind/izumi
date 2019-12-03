@@ -8,11 +8,8 @@ distage: Staged Dependency Injection
 `distage` is a pragmatic module system for Scala that combines simplicity and reliability of pure FP with extreme late-binding
 and flexibility of runtime dependency injection frameworks such as Guice.
 
-`distage` is unopinionated, it's good for structuring applications written in either imperative Scala style or in pure FP @ref[Tagless Final Style](basics.md#tagless-final-style)
-
-```scala mdoc:invisible
-// or with [ZIO Environment](#zio).
-```
+`distage` is unopinionated, it's good for structuring applications written in any of imperative Scala style,
+pure FP @ref[Tagless Final Style](basics.md#tagless-final-style) or @ref[ZIO Environment](basics.md#auto-traits) style.
 
 Why use distage?
 -------------------
@@ -53,28 +50,28 @@ Why use distage?
 FAQ
 ---
 
-**Q**: how to pronounce "distage" ?
+**Q**: how to pronounce "distage"?
 
-**A**: 'Dee-stage'! Although, you may pronounce it however you like.
+**A**: 'Dee-stage'
 
 **Q**: isn't it unsafe to use a runtime dependency injection framework?
 
-**A**: `distage` has static verification mechanisms allowing to achieve same level of guarantees as hand-written static code.
-        Full compile-time DI support is under development.
- 
+**A**: `distage` produces a full wiring `plan` ahead of time – a first-class value that can be [tested](distage-testkit.md)
+for errors as part of a test suite, or even at compile-time – `distage-framework` contains [macros](other-features.md#compile-time-checks) that will fail compilation
+in case of erroneous wiring.
+
 Further reading
 ---------------
 
-- [distage Example Project](https://github.com/7mind/distage-sample)
+- [distage Example Project](https://github.com/7mind/distage-livecode)
 - Slides - [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
-- @ref[Tutorial](basics.md#tutorial)
-- @ref[Config Injection](config_injection.md)
+- @ref[Basics](basics.md)
 - @ref[Other features](other-features.md)
 - @ref[Debugging](debugging.md)
-- @ref[Cookbook](cookbook.md)
-- @ref[Role-Based Apps](roles.md)
-- @ref[Testkit](testkit.md)
-- @ref[Syntax reference](reference.md)
+- @ref[distage-config](distage-config.md)
+- @ref[distage-framework](distage-framework.md)
+- @ref[distage-testkit](distage-testkit.md)
+- @ref[Syntax summary](reference.md)
 
 ## PPER
 
@@ -88,7 +85,7 @@ See @ref[PPER Overview](../pper/00_pper.md)
 * [Debugging](debugging.md)
 * [Cookbook](cookbook.md)
 * [Role-Based Apps](roles.md)
-* [Testkit](testkit.md)
-* [Syntax reference](reference.md)
+* [Testkit](distage-testkit.md)
+* [Syntax summary](reference.md)
 
 @@@

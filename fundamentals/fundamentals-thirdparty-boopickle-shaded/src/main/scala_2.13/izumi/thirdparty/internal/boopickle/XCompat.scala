@@ -2,7 +2,6 @@ package izumi.thirdparty.internal.boopickle
 
 import Constants.NullRef
 import scala.collection.Factory
-import scala.language.higherKinds
 
 private[izumi] trait XCompatImplicitPicklers {
   this: PicklerHelper =>

@@ -23,6 +23,9 @@ trait Distage {
 
   type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
+  type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+
   type Planner = model.Planner
   type Locator = model.Locator
   type Producer = model.Producer

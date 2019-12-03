@@ -17,10 +17,11 @@ trait RoleProvider[F[_]] {
 
 object RoleProvider {
 
-  class Impl[F[_] : TagK](
-                           logger: IzLogger,
-                           requiredRoles: Set[String],
-                         ) extends RoleProvider[F] {
+  class Impl[F[_]: TagK]
+  (
+    logger: IzLogger,
+    requiredRoles: Set[String],
+  ) extends RoleProvider[F] {
 
     def getInfo(bindings: Seq[Binding]): RolesInfo = {
       val availableBindings = getRoles(bindings)
@@ -50,17 +51,14 @@ object RoleProvider {
               Seq.empty
           }
       }.flatMap {
-        case (rb, impltype) =>
-          getDescriptor(rb.key.tpe) match {
+        case (roleBinding, impltype) =>
+          getDescriptor(roleBinding.key.tpe) match {
             case Some(d) =>
-//              val runtimeClass = mirrorProvider.runtimeClass(impltype).getOrElse(classOf[Any])
-//              val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-              // FIXME: read runtime class of ROLE INSTANCE, not role descriptor again ???
-              val runtimeClass = d.getClass
+              val runtimeClass = roleBinding.key.tpe.cls
               val src = IzManifest.manifest()(ClassTag(runtimeClass)).map(IzManifest.read)
-              Seq(RoleBinding(rb, runtimeClass, impltype, d, src))
+              Seq(RoleBinding(roleBinding, runtimeClass, impltype, d, src))
             case None =>
-              logger.error(s"${rb.key -> "role"} defined ${rb.origin -> "at"} has no companion object inherited from RoleDescriptor thus ignored")
+              logger.error(s"${roleBinding.key -> "role"} defined ${roleBinding.origin -> "at"} has no companion object inherited from RoleDescriptor thus ignored")
               Seq.empty
           }
       }
@@ -74,27 +72,16 @@ object RoleProvider {
       tpe <:< SafeType.get[AbstractRoleF[F]]
     }
 
-    // FIXME: fix ROleDescriptor instantiation ???
+    // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???
     private def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
-      val n = role.tag.shortName
-      Some((try {
-        Class.forName(s"izumi.distage.roles.test.fixtures.${n}$$").getField("MODULE$").get(null)
+      val roleClassName = role.cls.getCanonicalName
+      try {
+        Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])
       } catch {
         case t: Throwable =>
-          println(t.getMessage)
-          Class.forName(s"izumi.distage.roles.internal.${n}$$").getField("MODULE$").get(null)
-      }).asInstanceOf[RoleDescriptor])
-      //      try {
-////        role.use(t => mirrorProvider.mirror.reflectModule(t.dealias.companion.typeSymbol.asClass.module.asModule).instance) match {
-//        ??? match {
-//          case rd: RoleDescriptor => Some(rd)
-//          case _ => None
-//        }
-//      } catch {
-//        case t: Throwable =>
-//          logger.error(s"Failed to reflect descriptor for $role: $t")
-//          None
-//      }
+          logger.error(s"Failed to reflect descriptor for $role: $t")
+          None
+      }
     }
 
   }

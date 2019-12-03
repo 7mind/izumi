@@ -21,6 +21,9 @@ package object distage extends Distage {
 
   override type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
+  override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+
   override type Planner = model.Planner
   override type Locator = model.Locator
   override type Producer = model.Producer

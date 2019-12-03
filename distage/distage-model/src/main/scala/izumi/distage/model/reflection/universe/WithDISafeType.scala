@@ -11,7 +11,7 @@ trait WithDISafeType {
   case class SafeType private (
                                 private val tpe: TypeNative,
                                 tag: LightTypeTag,
-                                @deprecated("direct accesss to SafeType.cls", "now")
+                                @deprecated("direct access to SafeType.cls", "now")
                                 private[distage] val cls: Class[_],
                               ) {
 

@@ -10,8 +10,8 @@ are neither direct nor transitive dependencies of the supplied roots – these b
 
 GC serves two important purposes:
 
-* It enables faster @ref[tests](basics.md#testkit) by omitting unrequired instantiations and initialization of potentially heavy resources,
-* It enables multiple independent applications, aka "@ref[Roles](#roles)" to be hosted within a single `.jar` file.
+* It enables faster @ref[tests](distage-testkit.md#distage-testkit) by omitting unrequired instantiations and initialization of potentially heavy resources,
+* It enables multiple independent applications, aka "@ref[Roles](distage-framework.md#roles)" to be hosted within a single `.jar` file.
 
 To use garbage collector, pass GC roots as an argument to `Injector.produce*` methods:
 
@@ -29,20 +29,10 @@ val module = new ModuleDef {
   make[B]
   make[C]
 }
-```
 
-```scala mdoc:invisible
-val HACK_OVERRIDE_module = new ModuleDef {
-  make[A].from(new A(_))
-  make[B].from(new B)
-  make[C].from(new C)
-}
-```
-
-```scala mdoc:override
 val gc = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
 
-val locator = Injector().produceUnsafe(HACK_OVERRIDE_module, mode = gc)
+val locator = Injector().produceUnsafe(module, mode = gc)
 
 // A and B are here
 locator.find[A]
@@ -55,71 +45,14 @@ locator.find[C]
 Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
 But, if class `B` were to depend on `C` as in `case class B(c: C)`, it would've been retained, because `A` - the GC root, would depend on `B` which in turns depends on `C`.
 
-### Auto-Traits
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
-
-...
-
-### Auto-Factories
-
-`distage` can automatically create 'factory' classes from suitable traits.
-This feature is especially useful with `Akka`.
-
-Given a class `ActorFactory`:
-
-```scala mdoc
-import distage._
-import java.util.UUID
-
-class SessionStorage
-
-class UserActor(sessionId: UUID, sessionStorage: SessionStorage)
-
-trait ActorFactory {
-  def createActor(sessionId: UUID): UserActor
-}
-```
-
-And a binding of `ActorFactory` *without* an implementation
-
-```scala mdoc
-class ActorModule extends ModuleDef {
-  make[ActorFactory]
-}
-```
-
-`distage` will derive and bind the following implementation for `ActorFactory`:
-
-```scala mdoc
-class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
-  override def createActor(sessionId: UUID): UserActor = {
-    new UserActor(sessionId, sessionStorage)
-  }
-}
-```
-
-You can use this feature to concisely provide non-singleton semantics for some of your components.
-
-By default, the factory implementation class will be created automatically at runtime.
-To create factories at compile-time summon an implicit @scaladoc[FactoryConstructor](izumi.distage.constructors.FactoryConstructor) for your type.
-
 ### Plugins
 
 Plugins are a distage extension that allows you to automatically pick up all `Plugin` modules that are defined in specified package on the classpath.
 
-Plugins are especially useful in scenarios with [extreme late-binding](#roles), when the list of loaded application modules is not known ahead of time.
-Plugins are compatible with [compile-time checks](#compile-time-checks) as long as they're defined in a separate module.
+Plugins are especially useful in scenarios with @ref[extreme late-binding](distage-framework.md#roles), when the list of loaded application modules is not known ahead of time.
+Plugins are compatible with @ref[compile-time checks](other-features.md#compile-time-checks) as long as they're defined in a separate module.
 
 To use plugins add `distage-plugins` library:
-
-```scala
-libraryDependencies += Izumi.R.distage_plugins
-```
-
-or
 
 @@@vars
 
@@ -128,8 +61,6 @@ libraryDependencies += "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$"
 ```
 
 @@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
@@ -171,18 +102,6 @@ Injector().produce(app).use {
 
 Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes to the classpath via `java -cp`
 
-### Compile-Time Instantiation
-
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-
-Relevant ticket: https://github.com/7mind/izumi/issues/453
-@@@
-
-WIP
-
-You can participate in this ticket at https://github.com/7mind/izumi/issues/453
-
 ### Compile-Time Checks
 
 @@@ warning { title='TODO' }
@@ -191,25 +110,17 @@ Sorry, this page is not ready yet
 Relevant ticket: https://github.com/7mind/izumi/issues/51
 @@@
 
-As of now, an experimental plugin-checking API is available in `distage-roles` module.
+As of now, an experimental plugin-checking API is available in `distage-framework` module.
 
-To use it add `distage-roles` library:
-
-```scala
-libraryDependencies += Izumi.R.distage_roles
-```
-
-or
+To use it add `distage-framework` library:
 
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-roles" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version$"
 ```
 
 @@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
 
 Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
 
@@ -278,76 +189,36 @@ final class AppPluginTest extends WordSpec {
 
 You can participate in this ticket at https://github.com/7mind/izumi/issues/51
 
-### Roles
+### Circular Dependencies Support
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
+`distage` automatically resolves arbitrary circular dependencies, including self-references:
 
-"Roles" are a pattern of multi-tenant applications, in which multiple separate microservices all reside within a single `.jar`.
-This strategy helps cut down development, maintenance and operations costs associated with maintaining fully separate code bases and binaries.
-Apps are chosen via command-line parameters: `./launcher app1 app2 app3`. If you're not launching all apps
-hosted by the launcher at the same time, the redundant components from unlaunched apps will be [garbage collected](#garbage-collection)
-and won't be started.
+```scala mdoc:reset-object
+import distage.{GCMode, ModuleDef, Injector}
 
-consult slides [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
-for more details.
+class A(val b: B)
+class B(val a: A) 
+class C(val c: C)
 
-`distage-roles` module hosts the current experimental Roles API:
-
-```scala
-libraryDependencies += Izumi.R.distage_roles
-```
-
-or
-
-@@@vars
-
-```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-roles" % "$izumi.version$"
-```
-
-@@@
-
-If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) plugin.
-
-
-### Circular Dependencies support
-
-`distage` automatically resolves circular dependencies, including self-reference:
-
-```scala
-import distage._
-
-case class A(b: B)
-case class B(a: A) 
-case class C(c: C)
-
-val locator = Injector().produce(new ModuleDef {
+val locator = Injector().produceUnsafe(new ModuleDef {
   make[A]
   make[B]
   make[C]
-})
+}, GCMode.NoGC)
 
 locator.get[A] eq locator.get[B].a
-// res0: Boolean = true
 locator.get[B] eq locator.get[A].b
-// res1: Boolean = true
 locator.get[C] eq locator.get[C].c
-// res2: Boolean = true
 ```
 
 #### Automatic Resolution with generated proxies
 
 The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
 
-It's enabled by default. If you want to disable it, use `noCogen` bootstrap environment:
+It's enabled by default. If you want to disable it, use `noProxies` bootstrap environment:
 
-```scala
-import izumi.distage.bootstrap.DefaultBootstrapContext
-import distage._
-
-Injector(DefaultBootstrapContext.noCogen)
+```scala mdoc
+distage.Injector.NoProxies()
 ```
 
 #### Manual Resolution with by-name parameters
@@ -356,9 +227,8 @@ Most cycles can also be resolved manually when identified, using `by-name` param
 
 Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
 
-```scala
-import izumi.distage.bootstrap.DefaultBootstrapContext.noCogen
-import distage._
+```scala mdoc:reset
+import distage.{GCMode, ModuleDef, Injector}
 
 class A(b0: => B) {
   def b: B = b0
@@ -378,29 +248,33 @@ val module = new ModuleDef {
   make[C]
 }
 
-val locator = Injector(noCogen).produce(module)
+val locator = Injector.NoProxies().produceUnsafe(module, GCMode.NoGC)
 
 assert(locator.get[A].b eq locator.get[B])
 assert(locator.get[B].a eq locator.get[A])
 assert(locator.get[C].c eq locator.get[C])
 ```
 
-The proxy generation via `cglib` is still enabled by default, because in scenarios with [extreme late-binding](#roles),
-cycles can emerge unexpectedly, outside of control of the origin module.
+The proxy generation via `cglib` is currently enabled by default, because in scenarios with extreme late-binding cycles
+can emerge unexpectedly, out of control of the origin module.
 
-NB: Currently a limitation applies to by-names - ALL dependencies on a class engaged in a by-name circular dependency have to be by-name,
-otherwise distage will transparently revert to generating proxies.
+NB: Currently a limitation applies to by-names - ALL dependencies of a class engaged in a by-name circular dependency must
+be by-name, otherwise distage will revert to generating proxies.
 
 ### Auto-Sets
 
-AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks traverse the plan and collect all future objects matching a predicate.
+AutoSet @scaladoc[Planner](izumi.distage.model.Planner) Hooks can traverse the plan and collect all future objects that match a predicate.
 
 Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` them after the application has finished work.
 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
-```scala
-trait PrintResource(name: String) {
+```scala mdoc:reset
+import distage.{BootstrapModuleDef, ModuleDef, Injector, GCMode}
+import izumi.distage.model.planning.PlanningHook
+import izumi.distage.planning.AutoSetHook
+
+class PrintResource(name: String) {
   def start(): Unit = println(s"$name started")
   def stop(): Unit = println(s"$name stopped")
 }
@@ -409,43 +283,38 @@ class A extends PrintResource("A")
 class B(val a: A) extends PrintResource("B")
 class C(val b: B) extends PrintResource("C")
 
-val resources = Injector(new BootstrapModuleDef {
-  many[PlanningHook]
-    .add(new AutoSetHook[PrintResource])
-}).produce(new ModuleDef {
+val bootstrapModule = new BootstrapModuleDef {
+  many[PlanningHook].add(new AutoSetHook[PrintResource, PrintResource](identity))
+}
+
+val appModule = new ModuleDef {
   make[C]
   make[B]
   make[A]
-}).get[Set[PrintResource]]
+}
+
+val resources = Injector(bootstrapModule)
+  .produceUnsafe(appModule, GCMode.NoGC)
+  .get[Set[PrintResource]]
 
 resources.foreach(_.start())
-resources.reverse.foreach(_.stop())
-
-// Will print:
-// A started
-// B started
-// C started
-// C stopped
-// B stopped
-// A stopped
+resources.toSeq.reverse.foreach(_.stop())
 ```
 
 Calling `.foreach` on an auto-set is safe; the actions will be executed in order of dependencies.
-Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined [Sets](#multibindings--set-bindings).
+Auto-Sets preserve ordering, they use `ListSet` under the hood, unlike user-defined @ref[Sets](basics.md#set-bindings).
 e.g. If `C` depends on `B` depends on `A`, autoset order is: `A, B, C`, to start call: `A, B, C`, to close call: `C, B, A`.
 When you use auto-sets for finalization, you **must** `.reverse` the autoset.
 
-Note: Auto-Sets are NOT subject to [Garbage Collection](#using-garbage-collector), they are assembled *after* garbage collection is done,
-as such they can't contain garbage by construction.
-
-NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
+Note: Auto-Sets are NOT subject to @ref[Garbage Collection](other-features.md#garbage-collection), they are assembled *after* garbage collection is done,
+as such they can't contain garbage by construction. Because of that they also cannot be used as GC Roots.
 
 See also: same concept in [MacWire](https://github.com/softwaremill/macwire#multi-wiring-wireset)
 
 ### Weak Sets
 
-[Set bindings](#set-bindings--multibindings) can contain *weak* references. References designated as weak will
-be retained by [Garbage Collector](#using-garbage-collector) _only_ if there are other references to them except the
+@ref[Set bindings](basics.md#set-bindings) can contain *weak* references. References designated as weak will
+be retained by @ref[Garbage Collector](other-features.md#garbage-collection) _only_ if there are other references to them except the
 set binding itself.
 
 Example:
@@ -497,40 +366,36 @@ locator.get[Set[SetElem]].size == 2
 // res1: Boolean = true
 ```
 
-### Cats Integration
+### Depending on Locator
 
-Additional cats instances and syntax are available automatically without imports, if `cats-core` or `cats-effect` are
-already dependencies of your project. (Note: distage *won't* bring `cats` as a dependency if you don't already use it.
-See [No More Orphans](https://blog.7mind.io/no-more-orphans.html) for description of the technique)
-
-@ref[Cats Resource Bindings](basics.md#resource-bindings-lifecycle) will also work out of the box without any magic imports.
-
-Example:
+Objects can depend on the Locator (container of the final object graph):
 
 ```scala
-import cats.implicits._
-import cats.effect._
 import distage._
-import com.example.{DBConnection, AppEntrypoint}
 
-object Main extends IOApp {
-  def run(args: List[String]): IO[Unit] = {
-    // ModuleDef has a Monoid instance
-    val myModules = module1 |+| module2
-    
-    for {
-      // resolveImportsF can effectfully add missing instances to an existing plan
-      // (You can create instances effectfully beforehand via `make[_].fromEffect` bindings)
-      plan <- myModules.resolveImportsF[IO] {
-        case i if i.target == DIKey.get[DBConnection] =>
-           DBConnection.create[IO]
-      } 
-      // `produceF` specifies an Effect to run in; 
-      // Effect used in Resource and Effect Bindings 
-      // should match the effect in `produceF`
-      classes <- Injector().produceF[IO](plan)
-      _ <- classes.get[AppEntrypoint].run
-    } yield ()
-  }
+class A(all: LocatorRef) {
+  def c = all.get.get[C]
 }
+class B
+class C
+
+val module = new ModuleDef {
+  make[A]
+  make[B]
+  make[C]
+}
+
+val locator = Injector().produce(module)
+
+assert(locator.get[A].c eq locator.get[C]) 
+```
+
+Locator contains metadata about the plan and the bindings from which it was ultimately created:
+
+```scala
+// Plan that created this locator
+val plan: OrderedPlan = locator.plan
+
+// Bindings from which the Plan was built
+val moduleDef: ModuleBase = plan.definition
 ```

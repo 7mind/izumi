@@ -63,7 +63,7 @@ object Injector {
     }
   }
 
-  object NoCogen extends InjectorBootstrap {
+  object NoReflection extends InjectorBootstrap {
     def apply(): Injector = {
       bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap)
     }
