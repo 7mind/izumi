@@ -104,6 +104,8 @@ class LightTypeTagTest extends WordSpec {
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
 
+  class ApplePaymentProvider[F[_]] extends H1
+
   def println(o: Any): Unit = info(o.toString)
 
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
@@ -469,6 +471,12 @@ class LightTypeTagTest extends WordSpec {
       val tagF3 = LTT[F3]
       assertChild(tagF3, LTT[F2[Int]])
       assertDifferent(tagF3, LTT[F2[AnyVal]])
+
+    "regression test: support subtyping of a simple combined type (fixed in 0.10)" in {
+      val ctor = `LTT[_[_]]`[ApplePaymentProvider]
+      val arg = `LTT[_]`[Id]
+      val combined = ctor.combine(arg)
+      assertChild(combined, LTT[H1])
     }
 
     "issue #762: properly strip away annotated types / empty refinements / type aliases" in {
