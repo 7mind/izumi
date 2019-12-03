@@ -75,9 +75,13 @@ package object bio extends BIOSyntax {
 
     @inline final val unit: F[Nothing, Unit] = pure(())
     @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
+    @inline final def traverse[E, A, B](o: Option[A])(f: A => F[E, B]): F[E, Option[B]] = o match {
+      case Some(a) => map(f(a))(Some(_))
+      case None => pure(None)
+    }
   }
 
-  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
+  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F] {
     def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A]
   }
 
