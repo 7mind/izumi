@@ -105,11 +105,12 @@ In main scope:
 
 ```scala mdoc:reset
 // src/main/scala/com/example/AppPlugin.scala
-package com.example
+// package com.example
 
+import distage.DIKey
 import distage.StandardAxis.Env
-import distage.plugins.PluginDef
 import distage.config.ConfigModuleDef
+import distage.plugins.PluginDef
 import izumi.distage.staticinjector.plugins.ModuleRequirements
 
 final case class HostPort(host: String, port: Int)
@@ -117,8 +118,9 @@ final case class HostPort(host: String, port: Int)
 final case class Config(hostPort: HostPort)
 
 final class Service(conf: Config, otherService: OtherService)
+final class OtherService
 
-// OtherService class is not defined here, even though Service depends on it
+// error: OtherService is not bound here, even though Service depends on it
 final class AppPlugin extends PluginDef with ConfigModuleDef {
   tag(Env.Prod)
   
@@ -145,9 +147,9 @@ config {
 
 In test scope:
 
-```scala mdoc
+```scala mdoc:reset-object
 // src/test/scala/com/example/test/AppPluginTest.scala
-package com.example.test
+// package com.example.test
 
 import com.example._
 import org.scalatest.WordSpec
@@ -156,7 +158,7 @@ import izumi.distage.staticinjector.plugins.StaticPluginChecker
 final class AppPluginTest extends WordSpec {
   
   "App plugin will work (if OtherService will be provided later)" in {
-    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements](activations = "env:prod", configFileRegex = "*.application.conf")   
+    StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("env:prod", ".*.application.conf")   
   }
 
 }

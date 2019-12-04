@@ -26,7 +26,7 @@ conf {
 
 Parse it into case classes and summon into your object graph:
 
-```scala mdoc
+```scala mdoc:reset-object
 import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
 import distage.config.{AppConfigModule, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory

@@ -39,7 +39,7 @@ import scala.reflect.macros.blackbox
   *   }
   * }}}
   *
-  * Usage is done via [[DIResource.DIResourceUse.use use]]:
+  * Usage is done via [[DIResource.DIResourceUse#use use]]:
   *
   * {{{
   *   open(file1).use { in1 =>
@@ -135,7 +135,6 @@ object DIResource {
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     @inline def a = acquire
-
     @inline def r = release
 
     new DIResource[F, A] {
@@ -148,16 +147,22 @@ object DIResource {
     make(acquire)(_ => release)
   }
 
-  def liftF[F[_], A](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
-    make(acquire)(_ => F.unit)
-  }
-
   def makeSimple[A](acquire: => A)(release: A => Unit): DIResource[Identity, A] = {
     make[Identity, A](acquire)(release)
   }
 
+  def makePair[F[_], A](allocate: F[(A, F[Unit])]): DIResource.Cats[F, A] = {
+    new DIResource.Cats[F, A] {
+      override def acquire: F[(A, F[Unit])] = allocate
+    }
+  }
+
   def pure[A](a: A): DIResource[Identity, A] = {
     DIResource.makeSimple(a)(_ => ())
+  }
+
+  def liftF[F[_], A](acquire: => F[A])(implicit F: DIEffect[F]): DIResource[F, A] = {
+    make(acquire)(_ => F.unit)
   }
 
   def fromAutoCloseable[A <: AutoCloseable](acquire: => A): DIResource[Identity, A] = {
@@ -182,7 +187,7 @@ object DIResource {
   /** Convert [[cats.effect.Resource]] to [[DIResource]] */
   def fromCats[F[_]: Bracket[?[_], Throwable], A](resource: Resource[F, A]): DIResource.Cats[F, A] = {
     new Cats[F, A] {
-      override def acquire: F[(A, F[Unit])] = resource.allocated
+      override val acquire: F[(A, F[Unit])] = resource.allocated
     }
   }
 
@@ -314,6 +319,13 @@ object DIResource {
     */
   class OfCats[F[_]: Bracket[?[_], Throwable], A](inner: Resource[F, A]) extends DIResource.Of[F, A](fromCats(inner))
 
+  /**
+    * Class-based proxy over a [[zio.ZManaged]] value
+    *
+    * {{{
+    *   class IntRes extends DIResource.OfZIO(Managed.succeed(1000))
+    * }}}
+    */
   class OfZIO[R, E, A](inner: ZManaged[R, E, A]) extends DIResource.Of[ZIO[R, E, ?], A](fromZIO(inner))
 
   trait Self[+F[_], +A] extends DIResourceBase[F, A] { this: A =>

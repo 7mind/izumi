@@ -136,10 +136,11 @@ For example, we can declare many [http4s](https://http4s.org) routes and serve t
 ```scala mdoc:silent:reset
 // import boilerplate
 import cats.implicits._
-import cats.effect.IO
-import distage.{ModuleDef, Injector}
+import cats.effect.{Bracket, IO, Resource}
+import distage.{GCMode, ModuleDef, Injector}
 import org.http4s._
-import org.http4s.Uri.uri
+import org.http4s.server.Server
+import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -196,6 +197,7 @@ def makeHttp4sServer(routes: Set[HttpRoutes[IO]]): Resource[IO, Server[IO]] = {
 object HttpServerModule extends ModuleDef {
   make[Server[IO]].fromResource(makeHttp4sServer _)
   make[Client[IO]].fromResource(BlazeClientBuilder[IO](global).resource)
+  addImplicit[Bracket[IO, Throwable]] // required for cats `Resource` in `fromResource`
 }
 
 // join all the module definitions
@@ -206,7 +208,7 @@ val finalModule = Seq(
 ).merge
 
 // wire the graph
-val objects = Injector().produceUnsafeF(finalModule, GCMode.NoGC)
+val objects = Injector().produceUnsafeF[IO](finalModule, GCMode.NoGC).unsafeRunSync()
 
 val server = objects.get[Server[IO]]
 val client = objects.get[Client[IO]]
@@ -216,10 +218,15 @@ Check if it works:
 
 ```scala mdoc
 // check home page
-client.expect[String]("http://localhost:8080/home").unsafeRunSync
+client.expect[String]("http://localhost:8080/home").unsafeRunSync()
 
 // check blog page
-client.expect[String]("http://localhost:8080/blog/1").unsafeRunSync
+client.expect[String]("http://localhost:8080/blog/1").unsafeRunSync()
+```
+
+```scala mdoc:invisible
+// shut down http4s server
+objects.finalizers[IO].toList.traverse_(_.effect()).unsafeRunSync()
 ```
 
 Further reading: the same concept is called [Multibindings](https://github.com/google/guice/wiki/Multibindings) in Guice.
@@ -316,8 +323,10 @@ You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` metho
 You can specify objects' lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
 [zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.DIResource](izumi.distage.model.definition.DIResource)
 values that specify the allocation and finalization actions for an object.
-Resources will be deallocated when the scope of `.use` method on the result object graph ends, this will generally coincide 
-with the end of application lifecylce or a test suite.
+
+Injector itself only returns a DIResource value that can be used to create and finalize the object graph, this value is
+pure and can be reused multiple times. A DIResource is consumed using its `.use` method, the function passed to `use` will
+receive an allocated resource and when the function exits the resource will be deallocated. 
 
 Example with `cats.effect.Resource`:
 
@@ -351,18 +360,17 @@ def module = new ModuleDef {
 Will produce the following output:
 
 ```scala mdoc
-// Injector returns a pure DIResource value that describes the creation
-// and finalization of the object graph.
-// One value can be reused to recreate the same graph multiple times.
-
 val objectGraphResource = Injector().produceF[IO](module, GCMode.NoGC)
-objectGraphResource.use {
-  objects =>
-    objects.get[MyApp].run
-}.unsafeRunSync()
+
+objectGraphResource
+  .use { 
+    objects =>
+      objects.get[MyApp].run
+  }
+  .unsafeRunSync()
 ```
 
-`DIResource` lifecycle is available without an effect type too, via `DIResource.Simple` and `DIResource.Mutable`:
+Lifecycle management `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
 
 ```scala mdoc:reset
 import distage._
@@ -392,13 +400,16 @@ val closedInit = Injector().produce(module, GCMode.NoGC).use {
     println(init.initialized)
     init
 }
+
 println(closedInit.initialized)
 ```
 
-`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap` methods available.
-You can convert a `DIResource` into a `cats.effect.Resource` via `.toCats` method.
+`DIResource` forms a monad and has the expected `.map`, `.flatMap`, `.evalMap`, `.mapK` methods.
 
-You need to use resource-aware `Injector.produce`/`Injector.produceF` methods to control lifecycle of the object graph.
+You can convert between `DIResource` and `cats.effect.Resource` via `.toCats`/`.fromCats` methods, and between
+`zio.ZManaged` via `.toZIO`/`.fromZIO`.
+
+You need to use resource-aware `Injector.produce`/`Injector.produceF`, instead of `produceUnsafe` to be able to deallocate the object graph.
 
 ### Auto-Traits
 
@@ -514,6 +525,29 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 }
 ```
 
+`@With` annotation can be used to specify the implementation class, when the factory result is abstract:
+
+```scala
+trait Actor { 
+ def anyToUnit: Any => Unit = _ => ()
+}
+
+object Actor {
+  trait Factory {
+    @With[Actor.Impl]
+    def mkActor(name: String): Actor
+  }
+  // implementation class is private & hidden from outer world
+  private[this] final class Impl(name: String) extends Actor{
+    override def anyToUnit: Any => Unit = msg => println(s"Actor `$name` received a message: $msg")
+  }
+}
+
+Injector()
+  .produce(new ModuleDef { make[Actor.Factory] }, GCMode.NoGC)
+  .use(_.get[Actor.Factory].mkActor("Martin").anyToUnit("ping"))
+```
+
 You can use this feature to concisely provide non-Singleton semantics for some of your components.
 
 Factory implementations are derived at compile-time by
@@ -569,9 +603,8 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
   } yield ()
 }
 
-class Program[F[_]: TagK: Monad] extends ModuleDef {
+def ProgramModule[F[_]: TagK: Monad]: Module = new ModuleDef {
   make[TaglessProgram[F]]
-
   addImplicit[Monad[F]]
 }
 ```
@@ -601,13 +634,13 @@ def tryInteraction = new Interaction[Try] {
   def ask(s: String): Try[String] = Try("This could have been user input 1")
 }
 
-object TryInterpreters extends ModuleDef {
+val TryInterpreters = new ModuleDef {
   make[Validation[Try]].from(tryValidation)
   make[Interaction[Try]].from(tryInteraction)
 }
 
 // combine all modules
-val TryProgram = new Program[Try] ++ TryInterpreters
+val TryProgram = ProgramModule[Try] ++ TryInterpreters
 
 // create object graph
 val objects = Injector().produceUnsafe(TryProgram, GCMode.NoGC)
@@ -632,13 +665,13 @@ def SyncInterpreters[F[_]: TagK](implicit F: Sync[F]) = new ModuleDef {
   })
 }
 
-def IOProgram = new Program[IO] ++ SyncInterpreters[IO]
+def IOProgram = ProgramModule[IO] ++ SyncInterpreters[IO]
 ```
 
 We can leave it completely polymorphic:
 
 ```scala mdoc
-def SyncProgram[F[_]: TagK: Sync] = new Program[F] ++ SyncInterpreters[F]
+def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 ```
 
 Or choose different interpreters at runtime:
@@ -651,7 +684,7 @@ import cats.instances.try_.catsStdInstancesForTry
 def DifferentTryInterpreters = ???
 def chooseInterpreters(default: Boolean) = {
   val interpreters = if (default) TryInterpreters else DifferentTryInterpreters
-  new Program[Try] ++ interpreters
+  ProgramModule[Try] ++ interpreters
 }
 ```
 
@@ -687,30 +720,39 @@ See [No More Orphans](https://blog.7mind.io/no-more-orphans.html) for descriptio
 
 Example:
 
-```scala
-import cats.implicits._
-import cats.effect._
-import distage._
-import com.example.{DBConnection, AppEntrypoint}
+```scala mdoc:invisible
+class DBConnection
+object DBConnection {
+  def create[F[_]]: F[DBConnection] = ???
+}
+```
+
+```scala mdoc
+trait AppEntrypoint {
+  def run: IO[Unit]
+}
 
 object Main extends IOApp {
-  def run(args: List[String]): IO[Unit] = {
+  def run(args: List[String]): IO[ExitCode] = {
     // ModuleDef has a Monoid instance
-    val myModules = module1 |+| module2
-    
+    val myModules = ProgramModule[IO] |+| SyncInterpreters[IO]
+    val plan = Injector().plan(myModules, GCMode(DIKey.get[AppEntrypoint]))
+
     for {
       // resolveImportsF can effectfully add missing instances to an existing plan
-      // (You can create instances effectfully beforehand via `make[_].fromEffect` bindings)
-      plan <- myModules.resolveImportsF[IO] {
+      // (You can also create instances effectfully inside `ModuleDef` via `make[_].fromEffect` bindings)
+      newPlan <- plan.resolveImportsF[IO] {
         case i if i.target == DIKey.get[DBConnection] =>
            DBConnection.create[IO]
       } 
-      // `produceF` specifies an Effect to run in; 
-      // Effect used in Resource and Effect Bindings 
+      // `produceF` specifies an Effect to run in.
+      // Effects used in Resource and Effect Bindings 
       // should match the effect in `produceF`
-      classes <- Injector().produceF[IO](plan)
-      _ <- classes.get[AppEntrypoint].run
-    } yield ()
+      _ <- Injector().produceF[IO](newPlan).use {
+        classes =>
+          classes.get[AppEntrypoint].run
+      }
+    } yield ExitCode.Success
   }
 }
 ```

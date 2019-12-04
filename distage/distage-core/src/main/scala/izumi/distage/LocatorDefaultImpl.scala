@@ -13,12 +13,12 @@ final class LocatorDefaultImpl[F[_]]
 (
   val plan: OrderedPlan,
   val parent: Option[Locator],
-  val dependencyMap: ProvisionImmutable[F],
+  private val dependencyMap: ProvisionImmutable[F],
 ) extends AbstractLocator {
   override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] =
     dependencyMap.get(key)
 
-  override private[distage] def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
+  override def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
     dependencyMap.finalizers
       .filter(_.fType == SafeType.getK[F1])
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])

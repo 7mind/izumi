@@ -44,7 +44,7 @@ class PlanInterpreterDefaultRuntimeImpl
       resource =>
         val finalizers = resource match {
           case Left(failedProvision) => failedProvision.failed.finalizers
-          case Right(locator) => locator.dependencyMap.finalizers
+          case Right(locator) => locator.finalizers
         }
         filterFinalizers.filter(finalizers).foldLeft(F.unit) {
           case (acc, f) => acc.guarantee(F.suspendF(f.effect()))

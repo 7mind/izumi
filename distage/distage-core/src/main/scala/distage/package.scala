@@ -8,7 +8,13 @@ import izumi.fundamentals.reflection.Tags
 package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
+
   override type Injector = model.Injector
+  override type Planner = model.Planner
+  override type Producer = model.Producer
+
+  override type Locator = model.Locator
+  override type LocatorRef = model.Locator.LocatorRef
 
   override type Tag[T] = Tags.Tag[T]
   override val Tag: Tags.Tag.type = Tags.Tag
@@ -24,9 +30,6 @@ package object distage extends Distage {
   override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
   override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
 
-  override type Planner = model.Planner
-  override type Locator = model.Locator
-  override type Producer = model.Producer
 
   override type GCMode = model.plan.GCMode
   override val GCMode: model.plan.GCMode.type = model.plan.GCMode

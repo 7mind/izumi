@@ -92,4 +92,16 @@ class LadderTest extends LivecodeTest with DummyTest {
 
 ### Docker Test Resources
 
-Documentation pending. Known info meanwhile: https://github.com/7mind/izumi/issues/761
+There is some documentation in the [release notes for 0.9.13](https://github.com/7mind/izumi/releases/tag/v0.9.13)
+and there's an [example PR](https://github.com/7mind/distage-livecode/pull/2/files) showing how to use them. 
+
+Further documentation TBD: [Issue #761](https://github.com/7mind/izumi/issues/761)
+
+### Integration Checks
+
+Implementation classes that inherit from `izumi.distage.roles.model.IntegrationCheck` can specify a `resourceCheck()` method
+that will be called before test instantiation to check if **external test dependencies** (such as docker containers above)
+are available for the test or role. If not, the test will be canceled/ignored.
+
+This feature allows you to e.g. selectively run only the fast in-memory tests that have no external dependencies if you have 
+shut down your test environment.

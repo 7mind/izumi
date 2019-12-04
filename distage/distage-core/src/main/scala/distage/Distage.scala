@@ -10,7 +10,13 @@ import izumi.fundamentals.reflection.Tags
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
+
   type Injector = model.Injector
+  type Planner = model.Planner
+  type Producer = model.Producer
+
+  type Locator = model.Locator
+  type LocatorRef = model.Locator.LocatorRef
 
   type Tag[T] = Tags.Tag[T]
   val Tag: Tags.Tag.type = Tags.Tag
@@ -25,10 +31,6 @@ trait Distage {
 
   type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
   val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
-
-  type Planner = model.Planner
-  type Locator = model.Locator
-  type Producer = model.Producer
 
   type GCMode = model.plan.GCMode
   val GCMode: model.plan.GCMode.type = model.plan.GCMode

@@ -175,7 +175,7 @@ set binding itself.
 
 Example:
 
-```scala mdoc
+```scala mdoc:reset-object
 import distage._
 
 sealed trait SetElem
@@ -212,8 +212,34 @@ The `Strong` class remained, because the reference to it was **strong**, therefo
 
 If we change `Strong` to depend on `Weak`, then `Weak` will be retained:
 
+```scala mdoc:reset-object:invisible
+import distage._
+
+sealed trait SetElem
+
+final class Weak extends SetElem {
+  println("Weak constructed")
+}
+
+val module = new ModuleDef {
+  make[Strong]
+  make[Weak]
+  
+  many[SetElem]
+    .ref[Strong]
+    .weak[Weak]
+}
+
+// Designate Set[SetElem] as the garbage collection root,
+// everything that Set[SetElem] does not strongly depend on will be garbage collected
+// and will not be constructed. 
+val roots = Set[DIKey](DIKey.get[Set[SetElem]])
+
+val locator = Injector().produceUnsafe(PlannerInput(module, roots))
+```
+
 ```scala mdoc
-final class Strong(weak: Weak) {
+final class Strong(weak: Weak) extends SetElem {
   println("Strong constructed")
 }
 
@@ -247,7 +273,7 @@ Since version `0.10` types with a type (non-value) prefix are no longer supporte
 
 Objects can depend on the Locator (container of the final object graph):
 
-```scala mdoc
+```scala mdoc:reset
 import distage._
 
 class A(all: LocatorRef) {
@@ -262,7 +288,7 @@ val module = new ModuleDef {
   make[C]
 }
 
-val locator = Injector().produceUnsafe(module)
+val locator = Injector().produceUnsafe(module, GCMode.NoGC)
 
 assert(locator.get[A].c eq locator.get[C]) 
 ```

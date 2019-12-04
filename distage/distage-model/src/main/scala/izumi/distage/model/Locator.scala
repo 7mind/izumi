@@ -9,6 +9,7 @@ import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, TypedRef}
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 
+import scala.collection.immutable
 import scala.collection.immutable.Queue
 
 /**
@@ -39,7 +40,7 @@ trait Locator {
   def get[T: Tag]: T
   def get[T: Tag](id: String): T
 
-  private[distage] def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
+  def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
   private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
 
   def index: Map[DIKey, Any] = {
@@ -47,12 +48,12 @@ trait Locator {
   }
 
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
-    * Keys may be not unique.
+    * Returned keys may overlap, if parent locators contain objects for the same key.
     *
     * @see [[izumi.distage.bootstrap.BootstrapLocator]]
     */
-  final def allInstances: collection.Seq[IdentifiedRef] = {
-    parent.map(_.allInstances).getOrElse(Seq.empty) ++ instances
+  final def allInstances: immutable.Seq[IdentifiedRef] = {
+    parent.map(_.allInstances).getOrElse(immutable.Seq.empty) ++ instances
   }
 
   /**

@@ -23,14 +23,14 @@ import izumi.distage.model.{Locator, definition}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 // TODO: shameless copypaste of [[ModuleDef]] for now; but we CAN unify all of LocatorDef, ModuleDef, TypeLevelDSL and Bindings DSLs into one...
 trait LocatorDef
   extends AbstractLocator
-     with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
+    with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
-  override private[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
@@ -47,7 +47,7 @@ trait LocatorDef
     frozenMap.get(key)
   }
 
-  override def instances: Seq[IdentifiedRef] = frozenInstances.toList
+  override def instances: immutable.Seq[IdentifiedRef] = frozenInstances.toList
 
   override lazy val plan: OrderedPlan = {
     val topology = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Required), DependencyGraph(Map.empty, DependencyKind.Depends))
@@ -83,7 +83,6 @@ trait LocatorDef
     map.toMap -> map.toSeq.map(IdentifiedRef.tupled)
   }
 }
-
 
 object LocatorDef {
 
@@ -132,7 +131,7 @@ object LocatorDef {
   }
 
   trait BindDSLBase[T, AfterBind] {
-    final def fromValue[I <: T : Tag](instance: I): AfterBind =
+    final def fromValue[I <: T: Tag](instance: I): AfterBind =
       bind(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def bind(impl: ImplDef): AfterBind
@@ -140,10 +139,10 @@ object LocatorDef {
 
   final class MultipleDSL[T]
   (
-    protected val mutableState: MultipleRef
+    protected val mutableState: MultipleRef,
   ) extends MultipleDSLMutBase[T] {
 
-    def to[I <: T : Tag]: MultipleDSL[T] = {
+    def to[I <: T: Tag]: MultipleDSL[T] = {
       addOp(ImplWithReference(DIKey.get[I]))(new MultipleDSL[T](_))
     }
 
@@ -157,13 +156,11 @@ object LocatorDef {
     }
   }
 
-
   trait SetDSLBase[T, AfterAdd] {
-    final def addValue[I <: T : Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
+    final def addValue[I <: T: Tag](instance: I)(implicit pos: CodePositionMaterializer): AfterAdd =
       appendElement(ImplDef.InstanceImpl(SafeType.get[I], instance))
 
     protected def appendElement(newImpl: ImplDef)(implicit pos: CodePositionMaterializer): AfterAdd
   }
-
 
 }

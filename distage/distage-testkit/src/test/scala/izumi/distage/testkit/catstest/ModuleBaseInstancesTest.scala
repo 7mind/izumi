@@ -31,7 +31,7 @@ class ModuleBaseInstancesTest extends WordSpec {
         binding(TestInstanceBinding())
       ))
 
-      val moduleDef = Module.empty
+      val moduleDef = new ModuleDef {}
       val mod5 = moduleDef :+ Bindings.binding[TestDependency0, TestImpl0]
 
       val combinedModules = Vector(mod1, mod2, mod3, mod4, mod5).combineAll
