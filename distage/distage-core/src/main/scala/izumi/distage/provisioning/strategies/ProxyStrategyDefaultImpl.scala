@@ -83,9 +83,9 @@ class ProxyStrategyDefaultImpl
     } else {
       val allArgsAsNull: Array[(Class[_], Any)] = {
         op.op match {
-//          case WiringOp.CallProvider(_, Wiring.SingletonWiring.Function(provider, params), _) if provider.isGenerated =>
-//            // for generated constructors, try to fetch known dependencies from the object graph
-//            params.map(fetchNonforwardRefParamWithClass(context, op.forwardRefs, _)).toArray
+          case WiringOp.CallProvider(_, Wiring.SingletonWiring.Function(provider, params), _) if provider.isGenerated =>
+            // for generated constructors, try to fetch known dependencies from the object graph
+            params.map(fetchNonforwardRefParamWithClass(context, op.forwardRefs, _)).toArray
           case _ =>
             // otherwise fill everything with nulls
             runtimeClass.getConstructors.head.getParameterTypes
