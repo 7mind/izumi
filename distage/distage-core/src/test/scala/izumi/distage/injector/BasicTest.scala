@@ -77,8 +77,7 @@ class BasicTest extends WordSpec with MkInjector {
 //    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
 
     val exc = intercept[ProvisioningException] {
-      injector.produce(injector.plan(definition))
-        .use(_.get[TestClass])
+      injector.produceUnsafe(injector.plan(definition)).get[TestClass]
     }
 
     assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])

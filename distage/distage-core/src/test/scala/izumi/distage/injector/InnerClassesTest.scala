@@ -57,14 +57,14 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
   }
 
-  "can handle function local path-dependent injections (macros can't)" in {
-    def someFunction(): Unit = {
+  "can handle function local path-dependent injections" in {
+    def someFunction() = {
       import InnerClassUnstablePathsCase._
 
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.TestClass]
         make[testProviderModule.TestDependency]
       })
@@ -75,19 +75,38 @@ class InnerClassesTest extends WordSpec with MkInjector {
       val context = injector.produceUnsafe(plan)
 
       assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
-      ()
     }
 
     someFunction()
   }
 
-  "support path-dependant by-name injections" in {
+  "progression test: can't handle concrete type projections as prefixes in path-dependent injections" in {
+    assertTypeError(
+      """
+      import InnerClassUnstablePathsCase._
+
+      val definition = PlannerInput.noGc(new ModuleDef {
+        make[TestModule]
+        make[TestModule#TestClass]
+        make[TestModule#TestDependency]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produceUnsafe(plan)
+
+      assert(context.get[TestModule#TestClass].a.isInstanceOf[TestModule#TestDependency])
+      """)
+  }
+
+  "support path-dependent by-name injections" in {
     import InnerClassByNameCase._
 
     val testProviderModule = new TestModule
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
     })
@@ -183,7 +202,7 @@ import StableObjectInheritingTrait._
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
   }
 
-  "progression test: runtime cogen can't circular path-dependent dependencies (we don't properly supply prefix type as argument here...)" in {
+  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't properly supply the prefix type as an argument here...)" in {
     val exc = intercept[ProvisioningException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule

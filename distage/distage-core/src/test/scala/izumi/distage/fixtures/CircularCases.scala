@@ -212,6 +212,33 @@ object CircularCases {
                ) extends RoleService
   }
 
+  object CircularCase8 {
+    class Circular1(arg: Circular2) {
+      def test: Object = arg
+    }
+
+    class Circular2(arg: Circular1, int: Int) {
+      def test: Object = arg
+      def testInt: Int = int
+    }
+  }
+
+  object CircularCase9 {
+    class Circular1(arg: Circular2, int: IntHolder) {
+      val int1 = int.int + 1
+      def test: Object = arg
+    }
+
+    class Circular2(arg: Circular1, int: IntHolder) {
+      val int2 = int.int + 2
+      def test: Object = arg
+    }
+
+    class IntHolder {
+      val int: Int = 1
+    }
+  }
+
   object ByNameCycle {
     class Circular1(arg: => Circular2) {
       def test: Object = arg

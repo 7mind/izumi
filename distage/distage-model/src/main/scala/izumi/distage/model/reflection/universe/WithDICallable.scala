@@ -64,9 +64,11 @@ trait WithDICallable {
     override final def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
 
-    // FIXME: parameterized Provider/ non-case branches ???
+    // FIXME: better equality scheme ???
     private[this] var generated: Boolean = false
-    def asGenerated: this.type = { generated = true; this }
+    private[izumi] def asGenerated: this.type = { generated = true; this }
+    def isGenerated: Boolean = generated
+
     private def eqField: AnyRef = if (generated) ret else fun
     override final def equals(obj: Any): Boolean = {
       obj match {

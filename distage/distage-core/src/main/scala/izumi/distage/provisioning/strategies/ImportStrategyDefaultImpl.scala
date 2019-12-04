@@ -9,17 +9,14 @@ import izumi.fundamentals.platform.language.Quirks
 
 class ImportStrategyDefaultImpl extends ImportStrategy {
   override def importDependency(context: ProvisioningKeyProvider, op: ImportDependency): Seq[NewObjectOp] = {
-    import op._
-
-    context.importKey(target) match {
+    context.importKey(op.target) match {
       case Some(v) =>
-        Seq(NewObjectOp.NewImport(target, v))
+        Seq(NewObjectOp.NewImport(op.target, v))
       // FIXME: TODO: support FactoryStrategyMacro [remove]
-      case _ if target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
+      case _ if op.target == RuntimeDIUniverse.DIKey.get[FactoryExecutor] =>
         Seq.empty
       case _ =>
-        throw new MissingInstanceException(s"Instance is not available in the object graph: $target. " +
-          s"required by refs: $references", target)
+        throw new MissingInstanceException(MissingInstanceException.format(op.target, op.references), op.target)
     }
   }
 }

@@ -63,5 +63,4 @@ package object macrortti {
   def `LTT[_,_]`[T[_, _]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
   def `LTT[_[_],_[_]]`[T[_[_], _[_]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing, Nothing]]
   def `LTT[_[_[_],_[_]]]`[T[_[_[_], _[_]]]]: LightTypeTag = macro LightTypeTagMacro.makeParsedLightTypeTag[T[Nothing]]
-
 }

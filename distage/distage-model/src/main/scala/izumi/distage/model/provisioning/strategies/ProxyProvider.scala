@@ -21,7 +21,7 @@ object ProxyProvider {
   sealed trait ProxyParams
   object ProxyParams {
     final case object Empty extends ProxyParams
-    final case class Params(types: Array[Class[_]], values: Array[AnyRef]) extends ProxyParams {
+    final case class Params(types: Array[Class[_]], values: Array[Any]) extends ProxyParams {
       override def toString: String = s"Params(${types.mkString("[", ",", "]")}, ${values.mkString("[", ",", "]")})"
     }
   }

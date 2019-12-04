@@ -26,7 +26,7 @@ class TagMacro(val c: blackbox.Context) {
   // https://github.com/scala/bug/issues/11715
   final def makeTag[T: c.WeakTypeTag]: c.Expr[Tag[T]] = {
     val tpe = weakTypeOf[T]
-    if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
+    if (ReflectionUtil.allPartsStrong(tpe.dealias)) {
       val ltag = ltagMacro.makeParsedLightTypeTagImpl(tpe)
       val cls = closestClass(tpe)
       c.Expr[Tag[T]] {
@@ -43,7 +43,7 @@ class TagMacro(val c: blackbox.Context) {
 
   @inline final def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[HKTag[ArgStruct]] = {
     val argStruct = weakTypeOf[ArgStruct]
-    if (ReflectionUtil.allPartsStrong[c.universe.type](argStruct)) {
+    if (ReflectionUtil.allPartsStrong(argStruct)) {
       val ctor = ltagMacro.unpackArgStruct(argStruct)
       makeHKTagFromStrongTpe(ctor)
     } else {

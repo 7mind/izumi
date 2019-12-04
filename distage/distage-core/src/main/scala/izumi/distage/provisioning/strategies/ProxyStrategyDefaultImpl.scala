@@ -8,9 +8,10 @@ import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatc
 import izumi.distage.model.provisioning.strategies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.MirrorProvider
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.TagK
+import izumi.fundamentals.reflection.TypeUtil
 
 // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
 private[strategies] trait FakeSet[A] extends Set[A]
@@ -46,8 +47,10 @@ class ProxyStrategyDefaultImpl
     )
   }
 
-  override def initProxy[F[_]: TagK](context: ProvisioningKeyProvider, executor: OperationExecutor, initProxy: ProxyOp.InitProxy)
-                                    (implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
+  override def initProxy[F[_]: TagK](context: ProvisioningKeyProvider,
+                                     executor: OperationExecutor,
+                                     initProxy: ProxyOp.InitProxy,
+                                    )(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val target = initProxy.target
     val key = proxyKey(target)
 
@@ -75,9 +78,19 @@ class ProxyStrategyDefaultImpl
   protected def makeCogenProxy(context: ProvisioningKeyProvider, tpe: SafeType, op: ProxyOp.MakeProxy): DeferredInit = {
     val runtimeClass = mirrorProvider.runtimeClass(tpe).getOrElse(throw new NoRuntimeClassException(op.target))
 
-    val classConstructorParams = if (!hasDeps(tpe)) ProxyParams.Empty else {
-      val allArgsAsNull: Array[(Class[_], AnyRef)] = {
-        runtimeClass.getConstructors.head.getParameterTypes.map(_ -> (null: AnyRef))
+    val classConstructorParams = if (noArgsConstructor(tpe)) {
+      ProxyParams.Empty
+    } else {
+      val allArgsAsNull: Array[(Class[_], Any)] = {
+        op.op match {
+//          case WiringOp.CallProvider(_, Wiring.SingletonWiring.Function(provider, params), _) if provider.isGenerated =>
+//            // for generated constructors, try to fetch known dependencies from the object graph
+//            params.map(fetchNonforwardRefParamWithClass(context, op.forwardRefs, _)).toArray
+          case _ =>
+            // otherwise fill everything with nulls
+            runtimeClass.getConstructors.head.getParameterTypes
+              .map(clazz => clazz -> TypeUtil.defaultValue(clazz))
+        }
       }
       val (argClasses, argValues) = allArgsAsNull.unzip
       ProxyParams.Params(argClasses, argValues)
@@ -88,9 +101,33 @@ class ProxyStrategyDefaultImpl
     proxyProvider.makeCycleProxy(op.target, proxyContext)
   }
 
-  protected def hasDeps(tpe: SafeType): Boolean = {
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: RuntimeDIUniverse.Association.Parameter) = {
+    val clazz = if (param.isByName) {
+      classOf[Function0[_]]
+    } else if (param.wasGeneric) {
+      classOf[Any]
+    } else {
+      param.key.tpe.cls
+    }
+
+    val value = param match {
+      case param if forwardRefs.contains(param.key) =>
+        // substitute forward references by `null`
+        TypeUtil.defaultValue(param.key.tpe.cls)
+      case param =>
+        context.fetchKey(param.key, param.isByName) match {
+          case Some(v) =>
+            v.asInstanceOf[Any]
+          case None =>
+            throw new MissingRefException(s"Proxy precondition failed: non-forwarding key expected to be in context but wasn't: ${param.key}", Set(param.key), None)
+        }
+    }
+
+    (clazz, value)
+  }
+  protected def noArgsConstructor(tpe: SafeType): Boolean = {
     val constructors = tpe.cls.getConstructors
-    constructors.nonEmpty && !constructors.exists(_.getParameters.isEmpty)
+    constructors.isEmpty || constructors.exists(_.getParameters.isEmpty)
   }
 
   protected def proxyTargetType(makeProxy: ProxyOp.MakeProxy): SafeType = {

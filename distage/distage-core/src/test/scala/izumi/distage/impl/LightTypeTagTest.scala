@@ -437,7 +437,7 @@ class LightTypeTagTest extends WordSpec {
 
     "allPartsStrong for typelambda" in {
       import scala.reflect.runtime.{universe => ru}
-      val res1 = ReflectionUtil.allPartsStrong[ru.type](ru.typeOf[Id[C]].typeConstructor)
+      val res1 = ReflectionUtil.allPartsStrong(ru.typeOf[Id[C]].typeConstructor)
       assert(res1)
     }
 

@@ -1,5 +1,7 @@
 package izumi.distage.injector
 
+import distage._
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.PlannerInput
@@ -7,9 +9,6 @@ import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializatio
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
 import izumi.distage.model.provisioning.strategies.ProxyDispatcher
-import distage._
-import izumi.distage.constructors.{FactoryConstructor, TraitConstructor}
-import izumi.distage.fixtures.CircularCases.CircularCase3.ByNameSelfReference
 import org.scalatest.WordSpec
 
 class CircularDependenciesTest extends WordSpec with MkInjector {
@@ -247,6 +246,55 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(plan.steps.getClass == classOf[Vector[_]])
   }
 
+  "support proxy circular dependencies involving a primitive type" in {
+    import CircularCase8._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Circular2]
+      make[Circular1]
+      make[Int].from(1)
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    assert(context.get[Circular1] != null)
+    assert(context.get[Circular2] != null)
+    assert(context.get[Circular2].testInt == 1)
+
+    assert(context.get[Circular1].isInstanceOf[Circular1])
+    assert(context.get[Circular2].isInstanceOf[Circular2])
+
+    assert(context.get[Circular1].test.isInstanceOf[Circular2])
+    assert(context.get[Circular2].test.isInstanceOf[Circular1])
+  }
+
+  "support circular dependencies that use another object in their constructor that isn't involved in a cycle" in {
+    import CircularCase9._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Circular2]
+      make[Circular1]
+      make[IntHolder]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    assert(context.get[Circular1] != null)
+    assert(context.get[Circular2] != null)
+    assert(context.get[Circular1].int1 == 2)
+    assert(context.get[Circular2].int2 == 3)
+
+    assert(context.get[Circular1].isInstanceOf[Circular1])
+    assert(context.get[Circular2].isInstanceOf[Circular2])
+
+    assert(context.get[Circular1].test.isInstanceOf[Circular2])
+    assert(context.get[Circular2].test.isInstanceOf[Circular1])
+  }
+
   "support by-name circular dependencies" in {
     import ByNameCycle._
 
@@ -257,13 +305,12 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     })
 
     val injector = mkNoProxyInjector()
-    // FIXME: non-cglib strategy should support by-names ???
-//    val injector = mkStaticInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)
+    assert(context.get[Circular2].testInt == 1)
 
     assert(context.get[Circular1].isInstanceOf[Circular1])
     assert(context.get[Circular2].isInstanceOf[Circular2])
@@ -376,6 +423,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
       many[WsSessionListener[String]]
       many[HealthChecker]
       many[TGLegacyRestService]
+      many[DynamoDDLGroup]
     })
 
     val injector = Injector(
@@ -387,8 +435,7 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     )
 
     val plan = injector.plan(definition)
-    //println(plan.render())
-    injector.produce(plan)
+    injector.produceUnsafe(plan)
   }
 
 }

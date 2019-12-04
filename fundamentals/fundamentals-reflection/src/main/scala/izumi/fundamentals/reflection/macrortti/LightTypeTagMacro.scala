@@ -19,7 +19,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
 
   final def makeStrongHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[LTag.StrongHK[ArgStruct]] = {
     val tpe = weakTypeOf[ArgStruct]
-    if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
+    if (ReflectionUtil.allPartsStrong(tpe.dealias)) {
       c.Expr[LTag.StrongHK[ArgStruct]](q"new ${weakTypeOf[LTag.StrongHK[ArgStruct]]}(${makeParsedHKTagLightTypeTagImpl(tpe)})")
     } else {
       c.abort(c.enclosingPosition, s"Can't materialize LTag.StrongHKTag[$tpe]: found unresolved type parameters in $tpe")
@@ -32,7 +32,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
 
   final def makeStrongTag[T: c.WeakTypeTag]: c.Expr[LTag[T]] = {
     val tpe = weakTypeOf[T]
-    if (ReflectionUtil.allPartsStrong[c.universe.type](tpe.dealias)) {
+    if (ReflectionUtil.allPartsStrong(tpe.dealias)) {
       val res = makeParsedLightTypeTagImpl(tpe)
       c.Expr[LTag[T]](q"new ${weakTypeOf[LTag[T]]}($res)")
     } else {

@@ -16,7 +16,7 @@ import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.services.{ActivationParser, PruningPlanMergingPolicy}
 import izumi.distage.staticinjector.plugins.ModuleRequirements
 import izumi.fundamentals.platform.cli.model.raw.{RawAppArgs, RawEntrypointParams, RawValue}
-import izumi.fundamentals.reflection.TreeUtil
+import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.logstage.api.IzLogger
 
 import scala.jdk.CollectionConverters._
@@ -67,7 +67,7 @@ object StaticPluginCheckerMacro {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
 
-    val pluginPath = TreeUtil.stringLiteral(c)(c.universe)(pluginsPackage.tree)
+    val pluginPath = ReflectionUtil.getStringLiteral(c)(pluginsPackage.tree)
 
     val loadedPlugins = if (pluginPath == "") {
       Seq.empty
@@ -81,7 +81,7 @@ object StaticPluginCheckerMacro {
       pluginLoader.load()
     }
 
-    val configRegex = TreeUtil.stringLiteral(c)(c.universe)(configFileRegex.tree)
+    val configRegex = ReflectionUtil.getStringLiteral(c)(configFileRegex.tree)
 
     val configModule = if (configRegex == "") {
       None
@@ -99,7 +99,7 @@ object StaticPluginCheckerMacro {
       Some(new AppConfigModule(AppConfig(referenceConfig)))
     }
 
-    val gcRootPath = TreeUtil.stringLiteral(c)(c.universe)(gcRoot.tree)
+    val gcRootPath = ReflectionUtil.getStringLiteral(c)(gcRoot.tree)
 
     val gcRootModule = if (gcRootPath == "") {
       None
@@ -107,7 +107,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[PluginBase](gcRootPath, abort))
     }
 
-    val requirementsPath = TreeUtil.stringLiteral(c)(c.universe)(requirements.tree)
+    val requirementsPath = ReflectionUtil.getStringLiteral(c)(requirements.tree)
 
     val requirementsModule = if (requirementsPath == "") {
       None
@@ -115,7 +115,7 @@ object StaticPluginCheckerMacro {
       Some(constructClass[ModuleRequirements](requirementsPath, abort))
     }
 
-    val activationsVals = TreeUtil.stringLiteral(c)(c.universe)(activations.tree).split(',').toSeq
+    val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq
 
     check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
 
