@@ -48,19 +48,19 @@ class TypeConstraintExperiment extends WordSpec {
     implicit def fromTpe[X <: (A, B) => R: PrintType, A, B, R]: GetReturn[X with ((A, B) => R), R] = GetReturn(PrintType[X])
   }
 
-  def tt[A, B, C](f: (A, B) => C)(implicit e: Extract[f.type]) = {
+  def tt[A, B, C](f: (A, B) => C)(implicit e: Extract[f.type]): Unit = {
     println(e)
   }
 
-  def mag[R](e: Extract[R]) = {
+  def mag[R](e: Extract[R]): Unit = {
     println(e)
   }
 
-  def tc[R](r: AnyRef)(implicit e: GetReturn[r.type, R]) = {
+  def tc[R](r: AnyRef)(implicit e: GetReturn[r.type, R]): Unit = {
     println(e.x)
   }
 
-  "fghfgdh" in {
+  "check output" in {
     tt(xa)
     mag(xa _)
     tc(xa _)

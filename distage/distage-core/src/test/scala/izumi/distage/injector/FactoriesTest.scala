@@ -7,6 +7,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
 
+import scala.language.reflectiveCalls
+
 class FactoriesTest extends WordSpec with MkInjector {
 
   "handle factory injections" in {

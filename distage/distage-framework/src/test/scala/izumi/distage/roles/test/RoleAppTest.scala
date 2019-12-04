@@ -7,7 +7,7 @@ import java.util.UUID
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.model.Locator.LocatorRef
-import izumi.distage.model.definition.BootstrapModule
+import izumi.distage.model.definition.{BootstrapModule, DIResource}
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.config.ContextOptions
@@ -45,6 +45,9 @@ class RoleAppTest extends WordSpec
     }
   }
 
+  val logLevel = "crit"
+//  val logLevel = "info"
+
   "Role Launcher" should {
     "be able to start roles" in {
       val probe = new XXX_TestWhiteboxProbe()
@@ -56,7 +59,7 @@ class RoleAppTest extends WordSpec
           }
         }
       }).main(Array(
-        "-ll", "info",
+        "-ll", logLevel,
         ":" + AdoptedAutocloseablesCase.id,
         ":" + TestRole00.id,
       ))
@@ -86,7 +89,7 @@ class RoleAppTest extends WordSpec
           }
         }
       }).main(Array(
-        "-ll", "info",
+        "-ll", logLevel,
         ":" + AdoptedAutocloseablesCase.id,
         ":" + TestRole00.id,
       ))
@@ -103,6 +106,41 @@ class RoleAppTest extends WordSpec
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
         make[Resource0].from[Resource1]
+        many[Resource0]
+          .ref[Resource0]
+      } ++ IdentityDIEffectModule ++ probe
+      val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
+        ContextOptions(),
+        BootstrapModule.empty,
+        AppActivation.empty,
+        logger,
+      )
+      val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
+
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
+      Injector().produce(plans.runtime).use {
+        Injector.inherit(_).produce(plans.app.shared).use {
+          Injector.inherit(_).produce(plans.app.side).use {
+            locator =>
+              integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
+
+              assert(probe.resources.startedCloseables.size == 3)
+              assert(probe.resources.checkedResources.size == 2)
+              assert(probe.resources.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+          }
+        }
+      }
+    }
+
+    "integration checks are discovered and ran from resource bindings" in {
+      val probe = new XXX_TestWhiteboxProbe()
+
+      val logger = IzLogger()
+      val definition = new ResourcesPluginBase {
+        make[Resource0].fromResource {
+          r: Resource2 =>
+            DIResource.fromAutoCloseable(new Resource1(r, probe.resources))
+        }
         many[Resource0]
           .ref[Resource0]
       } ++ IdentityDIEffectModule ++ probe
@@ -168,7 +206,7 @@ class RoleAppTest extends WordSpec
       val version = ArtifactVersion(s"0.0.0-${UUID.randomUUID().toString}")
       withProperties(overrides ++ Map(TestPlugin.versionProperty -> version.version)) {
         TestEntrypoint.main(Array(
-          "-ll", "info",
+          "-ll", logLevel,
           ":configwriter", "-t", prefix
         ))
       }

@@ -31,7 +31,7 @@ class ConfigPathExtractorModule extends BootstrapModuleDef {
 }
 
 trait ConfigModuleDef extends ModuleDef {
-  // FIXME: use annotations/attachments/metadata instead of Ids here, also resolve Role companion object ???
+  // FIXME: use annotations/attachments/metadata instead of Ids here ???
   final def makeConfig[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     val id = ConfPathId(path)
     make[T].named(id).from {
@@ -42,14 +42,14 @@ trait ConfigModuleDef extends ModuleDef {
     val ref = _registered(new MultipleRef(SingletonBinding(key, ReferenceImpl(key.tpe, DIKey.get[T].named(id), weak = false), Set.empty, pos.get.position), pos.get.position))
     new MultipleDSL(ref, key)
   }
-  // FIXME: use annotations/attachments/metadata instead of Ids here, also resolve Role companion object ???
+  // FIXME: use annotations/attachments/metadata instead of Ids here ???
   final def makeConfigNamed[T: Tag: ConfigReader](path: String)(implicit pos: CodePositionMaterializer): MultipleNamedDSL[T] = {
     makeConfig[T](path).named(path)
   }
 
   implicit final class FromConfig[T](private val dsl: MakeDSL[T]) {
     def fromConfig(path: String)(implicit dec: ConfigReader[T], tag: Tag[T], pos: CodePositionMaterializer): Unit = {
-      // FIXME: use annotations/attachments/metadata instead of Ids here, also resolve Role companion object ???
+      // FIXME: use annotations/attachments/metadata instead of Ids here ???
       val id = ConfPathId(path)
       dsl.named(id).from {
         config: AppConfig =>
@@ -67,7 +67,7 @@ trait ConfigModuleDef extends ModuleDef {
     }
   }
 
-  // FIXME: use annotations/attachments/metadata instead of Ids here, also resolve Role companion object ???
+  // FIXME: use annotations/attachments/metadata instead of Ids here ???
   // FIXME: `.using` usable with non-String names
   private[this] def hackyMakeReferenceImpl(key: DIKey, ref: DIKey)(implicit pos: CodePositionMaterializer): Unit = {
     include(ModuleBase.make(Set(

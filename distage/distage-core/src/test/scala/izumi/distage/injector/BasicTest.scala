@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
-import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedDefinitionException}
+import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedDefinitionException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.WordSpec
 
@@ -91,8 +91,6 @@ class BasicTest extends WordSpec with MkInjector {
     val injector = mkInjector()
 
     val plan = injector.plan(definition)
-    println(plan)
-
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[MyClass].a eq context.get[String]("a"))

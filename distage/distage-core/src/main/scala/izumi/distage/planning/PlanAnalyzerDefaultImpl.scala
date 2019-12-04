@@ -34,7 +34,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
         w.wiring.requiredKeys
 
       case w: MonadicOp =>
-        w.wiring.requiredKeys
+        Set(w.effectKey)
 
       case c: CreateSet =>
         c.members

@@ -345,7 +345,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
         failure.throwException().unsafeRun()
       }
 
-      assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/9 operations failed"))
+      assert(exc.getMessage.contains("Incompatible effect types"))
     }
 
     "deallocate correctly in case of exceptions" in {

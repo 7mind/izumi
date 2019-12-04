@@ -98,7 +98,7 @@ class ForwardingRefResolverDefaultImpl
           case w: ExecutableOp.WiringOp =>
             w.wiring.associations.map(a => a.key -> a.isByName)
           case w: ExecutableOp.MonadicOp =>
-            w.wiring.associations.map(a => a.key -> a.isByName)
+            Seq(w.effectKey -> false)
         }
       case _: ImportDependency =>
         Seq.empty

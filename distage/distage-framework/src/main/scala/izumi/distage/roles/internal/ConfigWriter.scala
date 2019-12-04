@@ -117,8 +117,6 @@ class ConfigWriter[F[_]: DIEffect]
 
     val plans = context.reboot(cfg).makePlan(Set(roleDIKey), appModule)
 
-    println(plans)
-
     def getConfig(plan: OrderedPlan): Option[Config] = {
       plan
         .filter[ResolvedConfig]

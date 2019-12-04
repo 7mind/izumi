@@ -3,7 +3,7 @@ package izumi.distage.model.reflection.universe
 import java.lang.reflect.Modifier
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
-import izumi.fundamentals.reflection.{ReflectionUtil, TypeUtil}
+import izumi.fundamentals.reflection.TypeUtil
 
 trait MirrorProvider {
   def runtimeClass(tpe: SafeType): Option[Class[_]]

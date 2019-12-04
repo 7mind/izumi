@@ -30,6 +30,7 @@ class SetStrategyDefaultImpl extends SetStrategy {
 
       case (_, Some(value)) =>
         ListSet(value)
+
       case (m, None) =>
         throw new MissingRefException(s"Failed to fetch set element $m", Set(m), None)
     }

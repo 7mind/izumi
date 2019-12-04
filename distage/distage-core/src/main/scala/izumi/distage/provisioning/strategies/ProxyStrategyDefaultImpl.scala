@@ -101,8 +101,8 @@ class ProxyStrategyDefaultImpl
     proxyProvider.makeCycleProxy(op.target, proxyContext)
   }
 
-  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: RuntimeDIUniverse.Association.Parameter) = {
-    val clazz = if (param.isByName) {
+  private def fetchNonforwardRefParamWithClass(context: ProvisioningKeyProvider, forwardRefs: Set[DIKey], param: RuntimeDIUniverse.Association.Parameter): (Class[_], Any) = {
+    val clazz: Class[_] = if (param.isByName) {
       classOf[Function0[_]]
     } else if (param.wasGeneric) {
       classOf[Any]

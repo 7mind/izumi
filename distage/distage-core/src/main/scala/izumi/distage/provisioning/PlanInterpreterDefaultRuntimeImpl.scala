@@ -210,7 +210,7 @@ class PlanInterpreterDefaultRuntimeImpl
     val monadicOps = ops.collect { case m: MonadicOp => m }
     F.traverse_(monadicOps) {
       op =>
-        val actionEffectType = op.wiring.effectHKTypeCtor
+        val actionEffectType = op.effectHKTypeCtor
         val isEffect = actionEffectType != identityEffectType
 
         if (isEffect && !(actionEffectType <:< provisionerEffectType)) {

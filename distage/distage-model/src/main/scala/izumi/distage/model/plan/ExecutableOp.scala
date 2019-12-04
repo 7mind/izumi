@@ -36,11 +36,13 @@ object ExecutableOp {
   }
 
   sealed trait MonadicOp extends InstantiationOp {
-    def wiring: Wiring.MonadicWiring
+    def effectKey: DIKey
+    private[ExecutableOp] def instanceTpe: SafeType
+    def effectHKTypeCtor: SafeType
   }
   object MonadicOp {
-    final case class ExecuteEffect(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Effect, origin: OperationOrigin) extends MonadicOp
-    final case class AllocateResource(target: DIKey, effectOp: WiringOp, wiring: Wiring.MonadicWiring.Resource, origin: OperationOrigin) extends MonadicOp
+    final case class ExecuteEffect(target: DIKey, effectKey: DIKey, instanceTpe: SafeType, effectHKTypeCtor: SafeType, origin: OperationOrigin) extends MonadicOp
+    final case class AllocateResource(target: DIKey, effectKey: DIKey, instanceTpe: SafeType, effectHKTypeCtor: SafeType, origin: OperationOrigin) extends MonadicOp
   }
 
   sealed trait ProxyOp extends ExecutableOp
@@ -66,47 +68,13 @@ object ExecutableOp {
             w.target.tpe
         }
       case m: MonadicOp =>
-        m.wiring.instanceType
+        m.instanceTpe
       case p: MakeProxy =>
         opInstanceType(p.op)
       case i @(_: InitProxy | _: ImportDependency | _: CreateSet) =>
         i.target.tpe
     }
   }
-
-//  @tailrec
-//  def underlyingInstanceType(op: ExecutableOp): SafeType = {
-//    op match {
-//      case op: ImportDependency =>
-//        op.target.tpe
-//      case op: InstantiationOp =>
-//        op match {
-//          case op: CreateSet =>
-//            op.target.tpe
-//          case op: WiringOp =>
-//            op.wiring match {
-//              case u: Wiring.SingletonWiring =>
-//                u.instanceType
-//              case _: Wiring.Factory | _: Wiring.FactoryFunction =>
-//                op.target.tpe
-//            }
-//          case op: MonadicOp =>
-//            op match {
-//              case eff: MonadicOp.ExecuteEffect =>
-//                underlyingInstanceType(eff.effectOp)
-//              case res: MonadicOp.AllocateResource =>
-//                underlyingInstanceType(res.effectOp)
-//            }
-//        }
-//      case op: ProxyOp =>
-//        op match {
-//          case p: MakeProxy =>
-//            underlyingInstanceType(p.op)
-//          case p: ProxyOp.InitProxy =>
-//            underlyingInstanceType(p.proxy)
-//        }
-//    }
-//  }
 
 }
 

@@ -447,7 +447,7 @@ object DIResource {
 
         override def apply(a: ProviderMagnet[Resource[F, A]])(implicit tag: ResourceTag[DIResource.Cats[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
           import tag.tagFull
-          implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]
+          implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
 
           a.zip(ProviderMagnet.identity[Bracket[F, Throwable]])
             .map { case (resource, bracket) => fromCats(resource)(bracket) }

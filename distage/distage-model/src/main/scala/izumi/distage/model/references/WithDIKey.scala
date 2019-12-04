@@ -37,6 +37,14 @@ trait WithDIKey {
       override final def toString: String = s"{proxy.${proxied.toString}}"
     }
 
+    case class ResourceKey(key: DIKey, tpe: SafeType) extends DIKey {
+      override final def toString: String = s"{resource.${key.toString}/$tpe}"
+    }
+
+    case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
+      override final def toString: String = s"{effect.${key.toString}/$tpe}"
+    }
+
     /**
       * @param set Key of the parent Set. `set.tpe` must be of type `Set[T]`
       * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`

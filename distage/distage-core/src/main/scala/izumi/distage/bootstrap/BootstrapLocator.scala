@@ -67,7 +67,7 @@ object BootstrapLocator {
     ))
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslatorImpl(hook)
+    val translator = new BindingTranslator.Impl(hook)
     new PlannerDefaultImpl(
       forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true),
       sanityChecker = new SanityCheckerDefaultImpl(analyzer),
@@ -129,7 +129,7 @@ object BootstrapLocator {
     make[PlanningHook].from[PlanningHookAggregate]
     make[PlanningObserver].from[PlanningObserverAggregate]
 
-    make[BindingTranslator].from[BindingTranslatorImpl]
+    make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }

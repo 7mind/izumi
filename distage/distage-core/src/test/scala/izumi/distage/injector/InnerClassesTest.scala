@@ -202,13 +202,14 @@ import StableObjectInheritingTrait._
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
   }
 
-  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't properly supply the prefix type as an argument here...)" in {
+  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't take prefix type into account when calling constructor for generated lambdas and end up choosing the wrong constructor...)" in {
+    // the value prefix probably has to be stored inside the Provider to fix this
     val exc = intercept[ProvisioningException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.Circular1]
         make[testProviderModule.Circular2]
       })
@@ -219,7 +220,7 @@ import StableObjectInheritingTrait._
     }
     assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
     assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
-    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NullPointerException])
+    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {

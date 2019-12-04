@@ -44,7 +44,7 @@ trait WithDIWiring {
       case class Reference(instanceType: SafeType, key: DIKey, weak: Boolean) extends SingletonWiring {
         override final def associations: Seq[Association] = Seq.empty
 
-        override final def requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
+        override final val requiredKeys: Set[DIKey] = super.requiredKeys ++ Set(key)
         override final def replaceKeys(f: Association => DIKey.BasicKey): Reference = { f.discard(); this }
       }
 
@@ -66,12 +66,10 @@ trait WithDIWiring {
 
     sealed trait MonadicWiring extends Wiring {
       def effectWiring: PureWiring
-      def effectDIKey: DIKey
       def effectHKTypeCtor: SafeType
     }
     object MonadicWiring {
       case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
-        override final def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
         override final def associations: Seq[Association] = effectWiring.associations
         override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
@@ -79,7 +77,6 @@ trait WithDIWiring {
       }
 
       case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
-        override final def effectDIKey: DIKey = DIKey.TypeKey(effectWiring.instanceType)
         override final def associations: Seq[Association] = effectWiring.associations
         override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 

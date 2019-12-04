@@ -42,18 +42,17 @@ object OpFormatter {
         case i: InstantiationOp =>
           i match {
             case CreateSet(target, tpe, members, origin) =>
-              // f"""$target := newset[$tpe]"""
               val repr = doFormat(formatType(tpe), members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
               val pos = formatBindingPosition(origin)
               s"${formatKey(target)} $pos := $repr"
 
-            case ExecuteEffect(target, proxied, wiring, origin) =>
+            case ExecuteEffect(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := effect[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
+              s"${formatKey(target)} $pos := effect[$effectHKTypeCtor]${formatKey(effectKey)}"
 
-            case AllocateResource(target, proxied, wiring, origin) =>
+            case AllocateResource(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := allocate[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
+              s"${formatKey(target)} $pos := allocate[$effectHKTypeCtor]${formatKey(effectKey)}"
 
             case w: WiringOp =>
               w match {

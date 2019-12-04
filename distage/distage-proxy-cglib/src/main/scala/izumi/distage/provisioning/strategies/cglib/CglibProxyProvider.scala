@@ -41,7 +41,7 @@ class CglibProxyProvider extends ProxyProvider {
         case Empty =>
           enhancer.create()
         case Params(types, values) =>
-          enhancer.create(types, values)
+          enhancer.create(types, values.asInstanceOf[Array[Object]])
       }
     } catch {
       case f: Throwable =>
