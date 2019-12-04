@@ -5,7 +5,6 @@ import java.time.ZonedDateTime
 import io.circe
 import io.circe.Codec
 import io.circe.syntax._
-import izumi.fundamentals.platform.time.IzTime
 import izumi.idealingua.runtime.circe.WithCirceTest.{Cba, Enum, Enum1, Enum2, Nested, Sealed}
 import org.scalatest.WordSpec
 

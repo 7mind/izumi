@@ -95,11 +95,3 @@ final case class DerivationDerivedCodec[A](value: Codec.AsObject[A]) extends Any
 object DerivationDerivedCodec {
   implicit def materialize[A]: DerivationDerivedCodec[A] = macro MaterializeDerivationMacros.materializeCodecImpl[A]
 }
-
-abstract class Derive[+A](implicit bundle: Bundle[A]) { this: RequireDeriving[A] => }
-
-trait RequireDeriving[+A] {
-  type BundleTpe <: A
-}
-
-class Bundle[A](val a: A)

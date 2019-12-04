@@ -3,8 +3,6 @@ package izumi.fundamentals.bio.test
 import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOPrimitives, F}
 import izumi.fundamentals.bio.test.masking._
 import org.scalatest.WordSpec
-import zio.ZIO
-import zio.blocking.Blocking
 
 import scala.concurrent.duration._
 
@@ -69,20 +67,5 @@ class BIOSyntaxTest extends WordSpec {
       `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
     )
-  }
-  object BlockingIOSyntaxTest {
-    import izumi.functional.bio.{BlockingIO, BlockingIO3}
-
-    def `attach BlockingIO methods to a trifunctor BIO`[F[-_, +_, +_]: BIOMonad3: BlockingIO3]: F[Any, Throwable, Int] = {
-      F.syncBlocking(2)
-    }
-    def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: BIOFunctor: BlockingIO]: F[Throwable, Int] = {
-      F.syncBlocking(2)
-    }
-    val _: ZIO[Blocking, Throwable, Int] = {
-      implicit val b: zio.blocking.Blocking = zio.blocking.Blocking.Live
-      `attach BlockingIO methods to a trifunctor BIO`[BlockingIO3.ZIOBlocking#l]
-      `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
-    }
   }
 }
