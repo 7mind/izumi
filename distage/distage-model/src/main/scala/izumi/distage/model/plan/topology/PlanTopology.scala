@@ -38,8 +38,8 @@ object PlanTopology {
   def empty: PlanTopologyImmutable = PlanTopologyImmutable(DependencyGraph(Map.empty, DependencyKind.Depends), DependencyGraph(Map.empty, DependencyKind.Required))
 
   final case class PlanTopologyImmutable(
-                                          dependees: DependencyGraph
-                                          , dependencies: DependencyGraph
+                                          dependees: DependencyGraph,
+                                          dependencies: DependencyGraph,
                                         ) extends PlanTopology {
     override def removeKeys(keys: Set[DIKey]): PlanTopology = {
       PlanTopologyImmutable(
@@ -47,8 +47,6 @@ object PlanTopology {
         dependencies.dropDepsOf(keys),
       )
     }
-
-
   }
 
 }

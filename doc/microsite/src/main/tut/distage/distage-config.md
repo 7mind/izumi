@@ -26,7 +26,7 @@ conf {
 
 Parse it into case classes and summon into your object graph:
 
-```scala mdoc:reset-object
+```scala mdoc:reset-object:to-string
 import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
 import distage.config.{AppConfigModule, ConfigModuleDef}
 import com.typesafe.config.ConfigFactory
@@ -67,5 +67,5 @@ val objects = injector.produceUnsafe(
 objects.get[ConfigPrinter].print()
 ```
 
-[circe-config](https://github.com/circe/circe-config) & [circe-derivation](https://github.com/circe/circe-derivation) are
-used for the derivation of config codecs.
+Automatic derivation of config codecs is based on [circe-config](https://github.com/circe/circe-config) & [circe-derivation](https://github.com/circe/circe-derivation). 
+[Circe](https://github.com/circe/circe) codecs for a type will be reused if they exist.

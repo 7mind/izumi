@@ -6,10 +6,10 @@ import izumi.functional.Renderable
 
 trait CompactPlanFormatter extends Renderable[OrderedPlan] {
   override def render(plan: OrderedPlan): String = {
+
     val minimizer = new KeyMinimizer(plan.keys)
     val tf: TypeFormatter = (key: SafeType) => minimizer.renderType(key)
-
-    val kf: KeyFormatter = (key: DIKey) => minimizer.render(key)
+    val kf: KeyFormatter = (key: DIKey) => minimizer.renderKey(key)
 
     val opFormatter = new OpFormatter.Impl(kf, tf)
 

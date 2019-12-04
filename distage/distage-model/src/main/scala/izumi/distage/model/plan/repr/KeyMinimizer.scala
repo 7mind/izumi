@@ -6,7 +6,8 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName
 import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef, RuntimeAPI}
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
-  private val indexed: Map[String, Int] = allKeys
+
+  private[this] val index: Map[String, Int] = allKeys
     .toSeq
     .flatMap(extract)
     .map(name => name.split('.').last -> name)
@@ -14,28 +15,24 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     .mapValues(_.size)
     .toMap
 
-  private val minimizer = new LTTRenderables {
+  private[this] val minimizedLTTRenderables = new LTTRenderables {
     override def r_SymName(sym: SymName): String = {
       val shortname = sym.name.split('.').last
-      val by = indexed.getOrElse(shortname, 0)
-      if (by <= 1) {
-        shortname
-      } else {
-        sym.name
-      }
+      val withSameName = index.getOrElse(shortname, 0)
+      if (withSameName <= 1) shortname else sym.name
     }
   }
 
-  def render(key: DIKey): String = {
-    render(key, renderType)
+  def renderKey(key: DIKey): String = {
+    renderKey(key, renderType)
   }
 
   def renderType(tpe: SafeType): String = {
-    import minimizer._
+    import minimizedLTTRenderables._
     tpe.tag.ref.render()
   }
 
-  private def render(key: DIKey, rendertype: SafeType => String): String = {
+  private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
     key match {
       case DIKey.TypeKey(tpe) =>
@@ -52,20 +49,20 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
         s"{id.${rendertype(tpe)}@$fullId}"
 
       case DIKey.ProxyElementKey(proxied, _) =>
-        s"{proxy.${render(proxied)}}"
+        s"{proxy.${renderKey(proxied)}}"
 
       case DIKey.EffectKey(key, _) =>
-        s"{effect.${render(key)}"
+        s"{effect.${renderKey(key)}"
 
       case DIKey.ResourceKey(key, _) =>
-        s"{resource.${render(key)}"
+        s"{resource.${renderKey(key)}"
 
       case DIKey.SetElementKey(set, reference, disambiguator) =>
-        s"{set.${render(set)}/${render(reference)}#${disambiguator.fold("0")(_.hashCode().toString)}"
+        s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode().toString)}"
     }
   }
 
-  private def extract(key: DIKey): Set[String] = {
+  private[this] def extract(key: DIKey): Set[String] = {
     key match {
       case k: DIKey.TypeKey =>
         extract(k.tpe)
@@ -81,7 +78,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
     }
   }
 
-  private def extract(key: SafeType): Set[String] = {
+  private[this] def extract(key: SafeType): Set[String] = {
     RuntimeAPI.unpack(key.tag.ref match {
       case reference: LightTypeTagRef.AbstractReference =>
         reference

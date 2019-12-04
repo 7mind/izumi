@@ -2,6 +2,7 @@ package izumi.distage.model.definition
 
 import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.GroupingKey
+import izumi.distage.model.plan.repr.{BindingFormatter, KeyFormatter}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -18,6 +19,7 @@ sealed trait Binding {
   def addTags(tags: Set[BindingTag]): Binding
   protected[this] def withTags(tags: Set[BindingTag]): Binding
 
+  override final def toString: String = BindingFormatter(KeyFormatter.Full).formatBinding(this)
   override final def hashCode(): Int = group.hashCode()
   override final def equals(obj: Any): Boolean = obj match {
     case b: Binding =>

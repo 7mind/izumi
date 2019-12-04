@@ -41,7 +41,7 @@ private[plan] trait OrderedPlanOps {
     import izumi.fundamentals.platform.strings.IzString._
     unresolvedImports.left.map {
       unresolved =>
-        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).niceList())
+        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).niceList(shift = ""))
     }
   }
 

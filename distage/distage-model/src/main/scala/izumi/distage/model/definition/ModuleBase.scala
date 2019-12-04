@@ -21,7 +21,7 @@ trait ModuleBase {
     case _ =>
       false
   }
-  override final def toString: String = bindings.toString()
+  override final def toString: String = bindings.mkString(s"Module(",", ",")")
 }
 
 object ModuleBase {

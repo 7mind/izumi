@@ -5,39 +5,40 @@ out: index.html
 distage: Staged Dependency Injection
 ====================================
 
-`distage` is a pragmatic module system for Scala that combines simplicity and reliability of pure FP with extreme late-binding
-and flexibility of runtime dependency injection frameworks such as Guice.
+`distage` is a pragmatic module system for functional Scala, it aims to combine simplicity and expressivity of pure FP
+with the flexibility and extreme late-binding that's traditionally associated with object-oriented dependency injection frameworks, such as Guice.
 
-`distage` is unopinionated, it's good for structuring applications written in any of imperative Scala style,
-pure FP @ref[Tagless Final Style](basics.md#tagless-final-style) or @ref[ZIO Environment](basics.md#auto-traits) style.
+`distage` is suitable for structuring applications in @ref[Tagless Final Style](basics.md#tagless-final-style),
+with @ref[ZIO Environment](basics.md#auto-traits), or in imperative Scala style.
 
 Why use distage?
 -------------------
 
 1. **Faster applications and tests**:
-    `distage` guarantees that no unneccessary instantiations will happen during your tests or application startup.
-2. **Quicker failure detection**:
+    `distage` guarantees that no unnecessary instantiations will happen during your tests or application startup.
+2. **Quick failure detection**:
     `distage` performs all the integration checks for your application and tests even before any instantiations happened.    
-3. **Simpler tests**:
+3. **Simple tests**:
     `distage` eliminates all the hard work of setting up your test environments, especially polymorphic ones.
-4. **Simpler development workflows**:
-    @ref[distage-framework](distage-framework.md) module allows you to develop Role-Based Applications -- a fusion of Microservices and Monoliths.
-     You may run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
-5. **Faster compile times and low mental overhead**:
-    Unlike fully compile-time DIs, `distage` does not impose a compile time penalty for medium/large projects.
-    `distage` extensions are simple to write and do not require type-level programming.
-6. **Simpler deployments**:
-    `distage` allows you to simplify deployments and reduce your running costs by leveraging Role-Based Applications Architecture.
-7. **Simpler debugging**:
-    `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
-    before any instantiations happen.
-8. **Higher Correctness**:
-    `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
-9. **Cheaper integration tests**:
+4. **Better integration tests**:
     `distage` provides you great memoization support for your tests so you may reuse expensive resources (like database connections) across multiple
     integration tests, gaining performance and without sacrificing correctness.
-10. **No pressure**:
-    `distage` is non-invasive and designed to not impact the way your Scala code is written. 
+5. **Simple development workflow**:
+    @ref[distage-framework](distage-framework.md) module allows you to develop Role-Based Applications -- a fusion of Microservices and Monoliths.
+     You may run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
+6. **Fast compile times and low mental overhead**:
+    Unlike fully compile-time DIs, `distage` does not impose a compile time penalty.
+    `distage` extensions are simple to write and do not require type-level programming.
+7. **Simple debugging**:
+    `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
+    before any instantiations happen.
+8. **High Correctness**:
+    `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
+9. **No reflection**:
+    `distage` generates all constructors and [type info](https://blog.7mind.io/lightweight-reflection.html) at compile-time and does not use Scala reflection.
+    As such, it's compatible with Graal Native Image and (soon) Scala.js.
+10. **Non-invasive**:
+    `distage` is designed to not impact the way your Scala code is written. 
     It just removes all the initialization boilerplate.
     You don't need to learn magic tricks to write components in a distage application.
 
@@ -54,7 +55,7 @@ FAQ
 
 **A**: 'Dee-stage'
 
-**Q**: Isn't it unsafe to use a runtime dependency injection framework?
+**Q**: Isn't it unsafe to use runtime dependency injection?
 
 **A**: `distage` is split into two stages, first a wiring `plan` is calculated, only afterwards it is executed. This `Plan`
 value can be @ref[tested](debugging.md#testing-plans) for errors in an ordinary test suite – if it is well-formed, the wiring
@@ -65,7 +66,7 @@ Further reading
 ---------------
 
 - [Example Project](https://github.com/7mind/distage-livecode)
-- Slides - [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+- [ScalaUA Presentation](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 - @ref[Basics](basics.md)
 - @ref[Other features](other-features.md)
 - @ref[Debugging](debugging.md)
@@ -73,10 +74,6 @@ Further reading
 - @ref[distage-framework](distage-framework.md)
 - @ref[distage-testkit](distage-testkit.md)
 - @ref[Syntax summary](reference.md)
-
-## PPER
-
-See @ref[PPER Overview](../pper/00_pper.md)
 
 @@@ index
 

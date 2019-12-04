@@ -64,7 +64,7 @@ class DepTreeRenderer(node: DepNode, plan: OrderedPlan) {
 
 
   private def renderKey(key: DIKey): String = {
-    s"${minimizer.render(key)} ${plan.index.get(key).map(op => renderOrigin(op.origin)).getOrElse("")}"
+    s"${minimizer.renderKey(key)} ${plan.index.get(key).map(op => renderOrigin(op.origin)).getOrElse("")}"
   }
 
   private def collectKeys(node: DepTreeNode): Set[DIKey] = {

@@ -1,22 +1,14 @@
 distage-framework
 =======================
 
+@@toc { depth=2 }
+
 ### Roles
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
+A "Role" is an entrypoint for a specific application hosted in a larger software suite. Bundling multiple roles in a
+single `.jar` file can simplify deployment and operations.
 
-"Roles" are a pattern of multi-tenant applications, in which multiple separate microservices all reside within a single `.jar`.
-This strategy helps cut down development, maintenance and operations costs associated with maintaining fully separate code bases and binaries.
-Apps are chosen via command-line parameters: `./launcher app1 app2 app3`. If you're not launching all apps
-hosted by the launcher at the same time, the redundant components from unlaunched apps will be @ref[garbage collected](other-features.md#garbage-collection)
-and won't be started.
-
-consult slides [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
-for more details.
-
-`distage-framework` module hosts the current experimental Roles API:
+`distage-framework` module contains the distage Role API:
 
 @@@vars
 
@@ -26,14 +18,18 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 
 @@@
 
+With default `RoleLauncher` implementation, roles to be launched are chosen by command-line parameters: `./launcher role1 role2 role3`.
+Only the components required by the chosen roles will be created, everything else will be pruned. (see: @ref[GC](other-features.md#garbage-collection))
+
+Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
+
 ### Plugins
 
-Plugins are a distage extension that allows you to automatically pick up all `Plugin` modules that are defined in specified package on the classpath.
+`distage-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`. 
+Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time by adding new `Plugin` classes
+to the classpath. Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long as they're defined in a separate module.
 
-Plugins are especially useful in scenarios with @ref[extreme late-binding](distage-framework.md#roles), when the list of loaded application modules is not known ahead of time.
-Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long as they're defined in a separate module.
-
-To use plugins add `distage-plugins` library:
+To use plugins, first add the `distage-plugins` library:
 
 @@@vars
 
@@ -45,8 +41,12 @@ libraryDependencies += "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$"
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
-```scala
-package com.example.petstore
+```scala mdoc:invisible
+import com.example.petstore._
+```
+
+```scala mdoc:to-string
+// package com.example.petstore
 
 import distage._
 import distage.plugins._
@@ -58,32 +58,35 @@ object PetStorePlugin extends PluginDef {
 }
 ```
 
-At your app entry point use a plugin loader to discover all `PluginDefs`:
+Collect all `PluginDefs` in a package:
 
-```scala
-val pluginLoader = new PluginLoaderDefaultImpl(
+```scala mdoc:to-string
+val pluginLoader = PluginLoader(
   PluginConfig(
-    debug = true
-  , packagesEnabled = Seq("com.example.petstore") // packages to scan
-  , packagesDisabled = Seq.empty         // packages to ignore
+    debug = false,
+    packagesEnabled = Seq("com.example.petstore"), // packages to scan
+    packagesDisabled = Seq.empty,                  // packages to ignore
   )
 )
 
-val appModules: Seq[PluginBase] = pluginLoader.load()
-val app: ModuleBase = appModules.merge
+val appModules = pluginLoader.load()
 ```
 
-Launch as normal with the loaded modules:
+Execute collected modules as usual:
 
-```scala
-Injector().produce(app).use {
+```scala mdoc:to-string
+// combine all modules into one
+
+val appModule = appModules.merge
+
+// launch
+
+Injector().produce(appModule, GCMode.NoGC).use {
   _.get[PetStoreController].run
 }
 ```
 
-Plugins also allow a program to extend itself at runtime by adding new `Plugin` classes to the classpath via `java -cp`
-
-### Compile-Time Checks
+### Compile-time checks
 
 An experimental compile-time verification API is available in the `distage-framework` module.
 
@@ -99,12 +102,11 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 
 Only plugins defined in a different module can be checked at compile-time, `test` scope counts as a different module.
 
-##### Example:
+Example:
 
 In main scope:
 
-```scala mdoc:reset
-// src/main/scala/com/example/AppPlugin.scala
+```scala mdoc:reset:to-string
 // package com.example
 
 import distage.DIKey
@@ -147,8 +149,7 @@ config {
 
 In test scope:
 
-```scala mdoc:reset-object
-// src/test/scala/com/example/test/AppPluginTest.scala
+```scala mdoc:reset-object:to-string
 // package com.example.test
 
 import com.example._
@@ -156,14 +157,12 @@ import org.scalatest.WordSpec
 import izumi.distage.staticinjector.plugins.StaticPluginChecker
 
 final class AppPluginTest extends WordSpec {
-  
-  "App plugin will work (if OtherService will be provided later)" in {
+  "App plugin will work (if OtherService is provided later)" in {
     StaticPluginChecker.checkWithConfig[AppPlugin, AppRequirements]("env:prod", ".*.application.conf")   
   }
-
 }
 ```
 
-`checkWithConfig` will run at compile-time, every time that AppPluginTest is recompiled.
+`checkWithConfig` will run at compile-time whenever `AppPluginTest` is recompiled.
 
-Note: Since version 0.10, configuration files are no longer checked for correctness by compile-time checker, see: https://github.com/7mind/izumi/issues/763
+Note: Since version `0.10.0`, configuration files are no longer checked for correctness by the compile-time checker, see: https://github.com/7mind/izumi/issues/763

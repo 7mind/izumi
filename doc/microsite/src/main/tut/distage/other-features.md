@@ -15,7 +15,7 @@ GC serves two important purposes:
 
 To use garbage collector, pass GC roots as an argument to `Injector.produce*` methods:
 
-```scala mdoc:reset-class
+```scala mdoc:reset:to-string
 import distage._
 
 case class A(b: B)
@@ -30,16 +30,23 @@ val module = new ModuleDef {
   make[C]
 }
 
-val gc = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
+// declare `A` as a GC root
 
-val locator = Injector().produceUnsafe(module, mode = gc)
+val roots = GCMode.GCRoots(Set[DIKey](DIKey.get[A]))
 
-// A and B are here
-locator.find[A]
-locator.find[B]
+// create an object graph from description in `module`
+// with `A` as a GC root
 
-// C was not created
-locator.find[C]
+val objects = Injector().produceUnsafe(module, roots)
+
+// A and B are in the object graph
+
+objects.find[A]
+objects.find[B]
+
+// C is missing
+
+objects.find[C]
 ```
 
 Class `C` was removed because neither `B` nor `A` depended on it. It's not present in the `Locator` and the `"C!"` message was never printed.
@@ -49,7 +56,7 @@ But, if class `B` were to depend on `C` as in `case class B(c: C)`, it would've 
 
 `distage` automatically resolves arbitrary circular dependencies, including self-references:
 
-```scala mdoc:reset-object
+```scala mdoc:reset-object:to-string
 import distage.{GCMode, ModuleDef, Injector}
 
 class A(val b: B)
@@ -69,21 +76,21 @@ locator.get[C] eq locator.get[C].c
 
 #### Automatic Resolution with generated proxies
 
-The above strategy depends on `distage-proxy-cglib` module which is brought in by default with `distage-core`.
+The above strategy depends on `distage-proxy-cglib` module which is a default dependency of `distage-core`.
 
-It's enabled by default. If you want to disable it, use `noProxies` bootstrap environment:
+If you want to disable it, use `NoProxies` bootstrap configuration:
 
-```scala mdoc
-distage.Injector.NoProxies()
+```scala mdoc:to-string
+Injector.NoProxies()
 ```
 
 #### Manual Resolution with by-name parameters
 
-Most cycles can also be resolved manually when identified, using `by-name` parameters.
+Most cycles can be resolved manually when identified using By Name parameters.
 
-Circular dependencies in the following example are all resolved via Scala's native `by-name`'s, without any proxy generation:
+Circular dependencies in the following example are all resolved via Scala's native By Name, no proxies are generated:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage.{GCMode, ModuleDef, Injector}
 
 class A(b0: => B) {
@@ -104,11 +111,14 @@ val module = new ModuleDef {
   make[C]
 }
 
-val locator = Injector.NoProxies().produceUnsafe(module, GCMode.NoGC)
+// disable proxies and execute the module
 
-assert(locator.get[A].b eq locator.get[B])
-assert(locator.get[B].a eq locator.get[A])
-assert(locator.get[C].c eq locator.get[C])
+val locator = Injector.NoProxies()
+  .produceUnsafe(module, GCMode.NoGC)
+
+locator.get[A].b eq locator.get[B]
+locator.get[B].a eq locator.get[A]
+locator.get[C].c eq locator.get[C]
 ```
 
 The proxy generation via `cglib` is currently enabled by default, because in scenarios with extreme late-binding cycles
@@ -125,7 +135,7 @@ Using Auto-Sets you can e.g. collect all `AutoCloseable` classes and `.close()` 
 
 NOTE: please use @ref[Resource bindings](basics.md#resource-bindings-lifecycle) for real lifecycle, this is just an example.
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage.{BootstrapModuleDef, ModuleDef, Injector, GCMode}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
@@ -170,21 +180,20 @@ See also: same concept in [MacWire](https://github.com/softwaremill/macwire#mult
 ### Weak Sets
 
 @ref[Set bindings](basics.md#set-bindings) can contain *weak* references. References designated as weak will
-be retained by @ref[Garbage Collector](other-features.md#garbage-collection) _only_ if there are other references to them except the
-set binding itself.
+be retained *only* if there are other dependencies on them **except** for the set addition.
 
 Example:
 
-```scala mdoc:reset-object
+```scala mdoc:reset-object:to-string
 import distage._
 
-sealed trait SetElem
+sealed trait Elem
 
-final class Strong extends SetElem {
+final class Strong extends Elem {
   println("Strong constructed")
 }
 
-final class Weak extends SetElem {
+final class Weak extends Elem {
   println("Weak constructed")
 }
 
@@ -192,32 +201,33 @@ val module = new ModuleDef {
   make[Strong]
   make[Weak]
   
-  many[SetElem]
+  many[Elem]
     .ref[Strong]
     .weak[Weak]
 }
 
-// Designate Set[SetElem] as the garbage collection root,
-// everything that Set[SetElem] does not strongly depend on will be garbage collected
+// Designate Set[Elem] as the garbage collection root,
+// everything that Set[Elem] does not strongly depend on will be garbage collected
 // and will not be constructed. 
-val roots = Set[DIKey](DIKey.get[Set[SetElem]])
+
+val roots = Set[DIKey](DIKey.get[Set[Elem]])
 
 val locator = Injector().produceUnsafe(PlannerInput(module, roots))
 
-locator.get[Set[SetElem]].size == 1
+locator.get[Set[Elem]].size == 1
 ```
 
-The `Weak` class was not required in any dependency of `Set[SetElem]`, so it was pruned.
-The `Strong` class remained, because the reference to it was **strong**, therefore it was counted as a dependency of `Set[SetElem]`
+The `Weak` class was not required by any dependency of `Set[Elem]`, so it was pruned.
+The `Strong` class remained, because the reference to it was **strong**, so it was counted as a dependency of `Set[Elem]`.
 
-If we change `Strong` to depend on `Weak`, then `Weak` will be retained:
+If we change `Strong` to depend on the `Weak`, then `Weak` will be retained:
 
-```scala mdoc:reset-object:invisible
+```scala mdoc:reset-object:invisible:to-string
 import distage._
 
-sealed trait SetElem
+sealed trait Elem
 
-final class Weak extends SetElem {
+final class Weak extends Elem {
   println("Weak constructed")
 }
 
@@ -225,32 +235,29 @@ val module = new ModuleDef {
   make[Strong]
   make[Weak]
   
-  many[SetElem]
+  many[Elem]
     .ref[Strong]
     .weak[Weak]
 }
 
-// Designate Set[SetElem] as the garbage collection root,
-// everything that Set[SetElem] does not strongly depend on will be garbage collected
-// and will not be constructed. 
-val roots = Set[DIKey](DIKey.get[Set[SetElem]])
-
-val locator = Injector().produceUnsafe(PlannerInput(module, roots))
+val roots = Set[DIKey](DIKey.get[Set[Elem]])
 ```
 
-```scala mdoc
-final class Strong(weak: Weak) extends SetElem {
+```scala mdoc:to-string
+final class Strong(weak: Weak) extends Elem {
   println("Strong constructed")
 }
 
-locator.get[Set[SetElem]].size == 2
+val locator = Injector().produceUnsafe(PlannerInput(module, roots))
+
+locator.get[Set[Elem]].size == 2
 ```
 
 ### Inner Classes and Path-Dependent Types
 
-Path-dependent types with a known value prefix will instantiate normally:
+Path-dependent types with a value prefix will instantiate normally:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage.{GCMode, ModuleDef, Injector}
 
 class Path {
@@ -267,13 +274,13 @@ Injector()
   .get[path.A]
 ```
 
-Since version `0.10` types with a type (non-value) prefix are no longer supported, see issue: https://github.com/7mind/izumi/issues/764
+Since version `0.10`, path-dependent types with a type (non-value) prefix are no longer supported, see issue: https://github.com/7mind/izumi/issues/764
 
 ### Depending on Locator
 
 Objects can depend on the Locator (container of the final object graph):
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage._
 
 class A(all: LocatorRef) {
@@ -295,10 +302,12 @@ assert(locator.get[A].c eq locator.get[C])
 
 Locator contains metadata about the plan and the bindings from which it was ultimately created:
 
-```scala mdoc
+```scala mdoc:to-string
 // Plan that created this locator
+
 val plan: OrderedPlan = locator.plan
 
 // Bindings from which the Plan was built
+
 val moduleDef: ModuleBase = plan.definition
 ```

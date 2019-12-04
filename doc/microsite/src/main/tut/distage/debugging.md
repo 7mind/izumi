@@ -1,12 +1,14 @@
 Debugging
 =========
 
+@@toc { depth=2 }
+
 ### Testing Plans
 
 Use `OrderedPlan#assertImportsResolvedOrThrow` method to test whether all dependencies in a given plan are present and the
 plan will execute correctly when passed to `Injector#produce`.
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage.{DIKey, GCMode, ModuleDef, Injector}
 
 class A(b: B)
@@ -19,11 +21,11 @@ val badModule = new ModuleDef {
 val badPlan = Injector().plan(badModule, GCMode.NoGC)
 ```
 
-```scala mdoc:crash
+```scala mdoc:crash:to-string
 badPlan.assertImportsResolvedOrThrow
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 val goodModule = new ModuleDef {
   make[A]
   make[B]
@@ -39,7 +41,7 @@ plan.assertImportsResolvedOrThrow
 You can print the output of `plan.render()` to get detailed info on what will happen during instantiation. The printout includes source
 and line numbers so your IDE can show you where the binding was defined!
 
-```scala mdoc
+```scala mdoc:to-string
 println(plan.render())
 ```
 
@@ -47,7 +49,7 @@ println(plan.render())
 
 You can also query a plan to see the dependencies and reverse dependencies of a specific class and their order of instantiation:
 
-```scala mdoc
+```scala mdoc:to-string
 // Print dependencies
 println(plan.topology.dependencies.tree(DIKey.get[A]))
 
@@ -71,7 +73,7 @@ sbt -Dizumi.debug.macro.distage.providermagnet=true compile # ProviderMagnet mac
 
 Add `GraphDumpBootstrapModule` to your `Injector`'s configuration to enable dumping of graphviz files with a graphical representation of the `Plan`.
 
-```scala mdoc
+```scala mdoc:to-string
 import distage.GraphDumpBootstrapModule
 
 val injector = Injector(GraphDumpBootstrapModule())

@@ -6,8 +6,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 import scala.collection.mutable
 
+final case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) {
 
-case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) {
   def dropDepsOf(keys: Set[DIKey]): DependencyGraph = {
     kind match {
       case DependencyKind.Depends =>
@@ -64,12 +64,8 @@ case class DependencyGraph(graph: Map[DIKey, Set[DIKey]], kind: DependencyKind) 
 
 object DependencyGraph {
   sealed trait DependencyKind
-
   object DependencyKind {
-
     final case object Depends extends DependencyKind
-
     final case object Required extends DependencyKind
-
   }
 }

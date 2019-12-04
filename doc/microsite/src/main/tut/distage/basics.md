@@ -5,29 +5,25 @@ Basics
 
 ### Tutorial
 
-Suppose we want to create an abstract `Greeter` component that we want to use without knowing its concrete implementation:
+Suppose we have an abstract `Greeter` component with a simple implementation:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 trait Greeter {
   def hello(name: String): Unit
 }
-```
 
-A simple implementation would be:
-
-```scala mdoc
 final class PrintGreeter extends Greeter {
   override def hello(name: String) = println(s"Hello $name!") 
 }
 ```
 
-Let's define some more components that depend on a `Greeter`:
+Some other components depend on `Greeter`:
 
-```scala mdoc:invisible
-def readLine() = { println("kai"); "kai" }
+```scala mdoc:invisible:to-string
+def readLine() = { println("> kai"); "kai" }
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 trait Byer {
   def bye(name: String): Unit
 }
@@ -47,54 +43,56 @@ final class HelloByeApp(greeter: Greeter, byer: Byer) {
 }
 ```
 
-The app above uses `Greeter` and `Byer` to hold a simple conversation with the user.
+To actually run the `HelloByeApp`, we have to create the real implementations of `Greeter` and `Byer` and wire them together.
+We'll start by describing the component interfaces we have and the implementations we want for them:
 
-To actually run the app, we'll have to bind the real implementations of `Greeter` and `Byer`.
-
-```scala mdoc
-import distage.{ModuleDef, Injector, GCMode}
+```scala mdoc:to-string
+import distage.{ModuleDef, Injector, GCMode, OrderedPlan}
 
 object HelloByeModule extends ModuleDef {
   make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
-  make[HelloByeApp]
+  make[HelloByeApp] // A `from` clause is not required for concrete classes 
 }
 ```
 
-Since `HelloByeApp` is not an interface, but a `final class` that implements itself, we don't have to specify an implementation class for it.
+`ModuleDef` merely contains a description of the desired object graph, let's transform that high-level description into an
+actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.OrderedPlan):
 
-Let's launch the app and see what happens:
-
-```scala mdoc
-val injector = Injector()
-
-val plan = injector.plan(HelloByeModule, GCMode.NoGC)
-val objects = injector.produceUnsafe(plan)
-
-objects.get[HelloByeApp].run()
+```scala mdoc:to-string
+val plan: OrderedPlan = Injector().plan(HelloByeModule, GCMode.NoGC)
 ```
 
-Given a set of bindings, such as `HelloByeModule`, `distage` will lookup the dependencies (constructor or function arguments)
-of each implementation and deduce a `plan` to satisfy each dependency using the other implementations in that module.
-Once finished, it will happily return the `plan` back to you as a simple datatype.
-We can print `HelloByeModule`'s plan while we're at it:
+OrderedPlan is a plain datatype we can @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or 
+@ref[verify at compile-time](distage-framework.md#compile-time-checks), all without actually executing any effects.
 
-```
-println(plan.render)
+```scala mdoc:to-string
+println(plan.render())
 ```
 
-Since `plan` is just a value, we need to interpret it to create the actual object graph –
-`Injector`'s `produce` method is the default interpreter. `Injector` contains no logic of its own beyond interpreting
-instructions, its output is fully determined by the plan.
+We do need to interpret it to create an actual object graph, though.<br/>
+The default interpreter is `Injector.produce` - it will return a @ref[Resource](basics.md#resource-bindings-lifecycle) value with the lifecycle of the object graph:
 
-Plans being data, you may inspect @ref[inspect them](debugging.md#pretty-printing-plans), @ref[test them](debugging.md#testing-plans) or 
-@ref[verify them at compile-time](distage-framework.md#compile-time-checks) before ever running the application.
+```scala mdoc:to-string
+// Interpret into DIResource
 
-Objects in `distage` are always created exactly once, even if multiple other objects depend on them - they're `Singletons`.
-It's impossible to create non-singletons in `distage`, however it's possible to generate factory classes (@ref[Auto-Factories](#auto-factories))
-If you need multiple singleton instances of the same type, you may create `named` instances and disambiguate between them with `@Id` annotation:
+val resource = Injector().produce(plan)
 
-```scala mdoc
+// Use the object graph:
+// After `.use` exits, all objects will be deallocated,
+// and all allocated resources will be freed.
+
+resource.use {
+  objects =>
+    objects.get[HelloByeApp].run()
+}
+```
+
+Objects in `distage` are always created exactly once, even if multiple other objects depend on them aka they have a `Singleton scope`.
+It's *impossible* to create non-singletons in `distage`. If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them with `@Id` annotation. 
+For true non-singleton semantics, you may write or generate explicit factory classes (see @ref[Auto-Factories](#auto-factories))
+
+```scala mdoc:to-string
 import distage.Id
 
 new ModuleDef {
@@ -110,213 +108,19 @@ new ModuleDef {
 
 Modules can be combined into larger modules with `++` and `overridenBy` operators.
 
-```scala mdoc
-val caps = HelloByeModule.overridenBy(new ModuleDef {
+```scala mdoc:to-string
+val capsModule = HelloByeModule overridenBy new ModuleDef {
   make[Greeter].from(new Greeter {
-    override def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
+    def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
   })
-})
+}
 
-val capsUniverse = injector.produceUnsafe(caps, GCMode.NoGC)
+val capsObjects = Injector().produceUnsafe(capsModule, GCMode.NoGC)
 
-capsUniverse.get[HelloByeApp].run()
+capsObjects.get[HelloByeApp].run()
 ```
 
 We've overriden the `Greeter` binding in `HelloByeModule` with an implementation of `Greeter` that prints in ALL CAPS.
-
-### Set Bindings
-
-Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
-Everywhere where a collection of components is required, a Set Binding is appropriate.
-
-To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL.
-
-For example, we can declare many [http4s](https://http4s.org) routes and serve them all from a central component:
-
-```scala mdoc:silent:reset
-// import boilerplate
-import cats.implicits._
-import cats.effect.{Bracket, IO, Resource}
-import distage.{GCMode, ModuleDef, Injector}
-import org.http4s._
-import org.http4s.server.Server
-import org.http4s.client.Client
-import org.http4s.dsl.io._
-import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.client.blaze.BlazeClientBuilder
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
-implicit val contextShift = IO.contextShift(global)
-implicit val timer = IO.timer(global)
-```
-
-```scala mdoc
-val homeRoute = HttpRoutes.of[IO] { 
-  case GET -> Root / "home" => Ok(s"Home page!") 
-}
-
-object HomeRouteModule extends ModuleDef {
-  many[HttpRoutes[IO]]
-    .add(homeRoute)
-}
-```
-
-We've used `many` method to declare an open `Set` of http routes and then added one HTTP route into it.
-When module definitions are combined, `Sets` for the same binding will be merged together.
-You can summon a Set Bindings by summoning a scala `Set`, as in `Set[HttpRoutes[IO]]`.
-
-Let's define a new module with another route:
-
-```scala mdoc
-val blogRoute = HttpRoutes.of[IO] { 
-  case GET -> Root / "blog" / post => Ok(s"Blog post ``$post''!") 
-}
-
-object BlogRouteModule extends ModuleDef {  
-  many[HttpRoutes[IO]]
-    .add(blogRoute)
-}
-```
-
-Now it's the time to define a `Server` component to serve all the different routes we have:
-
-```scala mdoc
-def makeHttp4sServer(routes: Set[HttpRoutes[IO]]): Resource[IO, Server[IO]] = {
-  // create a top-level router by combining all the routes
-  val router: HttpApp[IO] = routes.toList.foldK.orNotFound
-
-  // return a Resource value that will setup an http4s server 
-  BlazeServerBuilder[IO]
-    .bindHttp(8080, "localhost")
-    .withHttpApp(router)
-    .resource
-}
-
-object HttpServerModule extends ModuleDef {
-  make[Server[IO]].fromResource(makeHttp4sServer _)
-  make[Client[IO]].fromResource(BlazeClientBuilder[IO](global).resource)
-  addImplicit[Bracket[IO, Throwable]] // required for cats `Resource` in `fromResource`
-}
-
-// join all the module definitions
-val finalModule = Seq(
-  HomeRouteModule,
-  BlogRouteModule,
-  HttpServerModule,
-).merge
-
-// wire the graph
-val objects = Injector().produceUnsafeF[IO](finalModule, GCMode.NoGC).unsafeRunSync()
-
-val server = objects.get[Server[IO]]
-val client = objects.get[Client[IO]]
-```
-
-Check if it works:
-
-```scala mdoc
-// check home page
-client.expect[String]("http://localhost:8080/home").unsafeRunSync()
-
-// check blog page
-client.expect[String]("http://localhost:8080/blog/1").unsafeRunSync()
-```
-
-```scala mdoc:invisible
-// shut down http4s server
-objects.finalizers[IO].toList.traverse_(_.effect()).unsafeRunSync()
-```
-
-Further reading: the same concept is called [Multibindings](https://github.com/google/guice/wiki/Multibindings) in Guice.
-
-### Effect Bindings
-
-Sometimes we need to effectfully create a component or fetch some data and inject it into the object graph during startup (e.g. read a configuration file),
-but the resulting component or data does not need to be closed. An example might be a global `Semaphore` that limits the parallelism of an
-entire application based on configuration value or a `dummy`/`test double` implementation of some external service made for testing using simple `Ref`s.
-
-In these cases we can use `.fromEffect` to simply bind a value created effectfully.
-
-Example with `ZIO` `Semaphore`:
-
-```scala mdoc:reset-class
-import distage._
-import distage.config._
-import zio._
-
-case class Content(bytes: Array[Byte])
-
-case class UploadConfig(maxParallelUploads: Long)
-
-class UploaderModule extends ModuleDef {
-  make[Semaphore].named("upload-limit").fromEffect {
-    conf: UploadConfig =>
-      Semaphore.make(conf.maxParallelUploads) // : IO[Nothing, Semaphore]
-  }
-
-  make[Uploader]
-
-  include(new ConfigModuleDef {
-    makeConfig[UploadConfig]("myapp.uploads")
-  })
-}
-
-class Uploader(limit: Semaphore @Id("upload-limit")) {
-  def upload(content: Content): IO[Throwable, Unit] =
-    limit.withPermit(upload(content))
-}
-```
-
-Example with a `Dummy` `KVStore`:
-
-```scala mdoc
-trait KVStore[F[_, _]] {
-  def put(key: String, value: String): F[Nothing, Unit]
-  def get(key: String): F[NoSuchElementException, String]
-}
-
-object KVStore {
-  def dummy: IO[Nothing, KVStore[IO]] = for {
-    ref <- Ref.make(Map.empty[String, String])
-  } yield
-    new KVStore[IO] {
-      def put(key: String, value: String): IO[Nothing, Unit] =
-        ref.update(_ + (key -> value)).unit
-    
-      def get(key: String): IO[NoSuchElementException, String] =
-        for {
-          map <- ref.get
-          res <- map.get(key) match {
-            case None => 
-              IO.fail(new NoSuchElementException(key))
-            case Some(value) => 
-              IO.succeed(value)
-          }
-        } yield res
-    }
-}
-
-val kvStoreModule = new ModuleDef {
-  make[KVStore[IO]].fromEffect(KVStore.dummy)
-}
-
-new DefaultRuntime{}.unsafeRun {
-  Injector().produceF[IO[Throwable, ?]](kvStoreModule, GCMode.NoGC)
-    .use {
-      objects =>
-        val kv = objects.get[KVStore[IO]]
-        
-        for {
-          _   <- kv.put("apple", "pie")
-          res <- kv.get("apple")
-        } yield res
-    }
-}
-```
-
-You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
 
 ### Resource Bindings, Lifecycle
 
@@ -330,7 +134,7 @@ receive an allocated resource and when the function exits the resource will be d
 
 Example with `cats.effect.Resource`:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage._
 import cats.effect._
 
@@ -359,7 +163,7 @@ def module = new ModuleDef {
 
 Will produce the following output:
 
-```scala mdoc
+```scala mdoc:to-string
 val objectGraphResource = Injector().produceF[IO](module, GCMode.NoGC)
 
 objectGraphResource
@@ -372,7 +176,7 @@ objectGraphResource
 
 Lifecycle management `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import distage._
 
 class Init {
@@ -411,6 +215,176 @@ You can convert between `DIResource` and `cats.effect.Resource` via `.toCats`/`.
 
 You need to use resource-aware `Injector.produce`/`Injector.produceF`, instead of `produceUnsafe` to be able to deallocate the object graph.
 
+### Set Bindings
+
+Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
+Everywhere where a collection of components is required, a Set Binding is appropriate.
+
+To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL.
+
+For example, we may declare many [http4s](https://http4s.org) routes and serve them all from a central router:
+
+```scala mdoc:silent:reset:to-string
+// import boilerplate
+import cats.implicits._
+import cats.effect.{Bracket, IO, Resource}
+import distage.{GCMode, ModuleDef, Injector}
+import org.http4s._
+import org.http4s.server.Server
+import org.http4s.client.Client
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+implicit val contextShift = IO.contextShift(global)
+implicit val timer = IO.timer(global)
+```
+
+```scala mdoc:to-string
+val homeRoute = HttpRoutes.of[IO] { 
+  case GET -> Root / "home" => Ok(s"Home page!") 
+}
+
+object HomeRouteModule extends ModuleDef {
+  many[HttpRoutes[IO]]
+    .add(homeRoute)
+}
+```
+
+We've used `many` method to declare an open `Set` of http routes and then added one HTTP route into it.
+When module definitions are combined, `Sets` for the same binding will be merged together.
+You can summon a Set Bindings by summoning a scala `Set`, as in `Set[HttpRoutes[IO]]`.
+
+Let's define a new module with another route:
+
+```scala mdoc:to-string
+val blogRoute = HttpRoutes.of[IO] { 
+  case GET -> Root / "blog" / post => Ok(s"Blog post ``$post''!") 
+}
+
+object BlogRouteModule extends ModuleDef {  
+  many[HttpRoutes[IO]]
+    .add(blogRoute)
+}
+```
+
+Now it's the time to define a `Server` component to serve all the different routes we have:
+
+```scala mdoc:to-string
+def makeHttp4sServer(routes: Set[HttpRoutes[IO]]): Resource[IO, Server[IO]] = {
+  // create a top-level router by combining all the routes
+  val router: HttpApp[IO] = routes.toList.foldK.orNotFound
+
+  // return a Resource value that will setup an http4s server 
+  BlazeServerBuilder[IO]
+    .bindHttp(8080, "localhost")
+    .withHttpApp(router)
+    .resource
+}
+
+object HttpServerModule extends ModuleDef {
+  make[Server[IO]].fromResource(makeHttp4sServer _)
+  make[Client[IO]].fromResource(BlazeClientBuilder[IO](global).resource)
+  addImplicit[Bracket[IO, Throwable]] // required for cats `Resource` in `fromResource`
+}
+
+// join all the module definitions
+val finalModule = Seq(
+  HomeRouteModule,
+  BlogRouteModule,
+  HttpServerModule,
+).merge
+
+// wire the graph
+val objects = Injector().produceUnsafeF[IO](finalModule, GCMode.NoGC).unsafeRunSync()
+
+val server = objects.get[Server[IO]]
+val client = objects.get[Client[IO]]
+```
+
+Check if it works:
+
+```scala mdoc:to-string
+// check home page
+client.expect[String]("http://localhost:8080/home").unsafeRunSync()
+
+// check blog page
+client.expect[String]("http://localhost:8080/blog/1").unsafeRunSync()
+```
+
+```scala mdoc:invisible:to-string
+// shut down http4s server
+objects.finalizers[IO].toList.traverse_(_.effect()).unsafeRunSync()
+```
+
+Further reading: the same concept is called [Multibindings](https://github.com/google/guice/wiki/Multibindings) in Guice.
+
+### Effect Bindings
+
+Sometimes we want to effectfully create a component, but the resulting component or data does not need to be deallocated.
+An example might be a global `Semaphore` to limit the parallelism of the entire application based on configuration,
+or a test implementation of some service made with `Ref`s.
+
+In these cases we can use `.fromEffect` to create a value using an effectful constructor.
+
+Example with a `Ref`-based Tagless Final `KVStore`:
+
+```scala mdoc:reset:to-string
+import distage.{GCMode, ModuleDef, Injector}
+import izumi.functional.bio.{BIOMonadError, BIOPrimitives, F}
+import zio.{Task, IO}
+
+trait KVStore[F[_, _]] {
+  def get(key: String): F[NoSuchElementException, String]
+  def put(key: String, value: String): F[Nothing, Unit]
+}
+
+def dummyKVStore[F[+_, +_]: BIOMonadError: BIOPrimitives]: F[Nothing, KVStore[F]] = {
+  for {
+    ref <- F.mkRef(Map.empty[String, String])
+  } yield new KVStore[F] {
+    def put(key: String, value: String): F[Nothing, Unit] = {
+      ref.update_(_ + (key -> value))
+    }
+  
+    def get(key: String): F[NoSuchElementException, String] = {
+      for {
+        map <- ref.get
+        res <- map.get(key) match {
+          case Some(value) => F.pure(value)
+          case None        => F.fail(new NoSuchElementException(key))
+        }
+      } yield res
+    }
+  }
+}
+
+val kvStoreModule = new ModuleDef {
+  make[KVStore[IO]].fromEffect(dummyKVStore[IO])
+}
+
+val io = Injector()
+  .produceF[Task](kvStoreModule, GCMode.NoGC)
+  .use {
+    objects =>
+      val kv = objects.get[KVStore[IO]]
+      
+      for {
+        _    <- kv.put("apple", "pie")
+        res1 <- kv.get("apple")
+        _    <- kv.put("apple", "ipad")
+        res2 <- kv.get("apple")
+      } yield res1 + res2
+  }
+
+new zio.DefaultRuntime{}.unsafeRun(io)
+```
+
+You need to use effect-aware `Injector.produceF`/`Injector.produceUnsafeF` methods to use effect bindings.
+
 ### Auto-Traits
 
 distage can instantiate traits and structural types. All unimplemented fields in a trait or a refinement are filled in from the object graph.
@@ -420,7 +394,7 @@ This can be used to create ZIO Environment cakes with required dependencies - ht
 Trait implementations are derived at compile-time by @scaladoc[TraitConstructor](izumi.distage.constructors.TraitConstructor) macro
 and can be summoned at need. Example:
 
-```scala mdoc
+```scala mdoc:reset:to-string
 import distage.{DIKey, GCMode, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
 import zio.console.{Console, putStrLn}
@@ -435,11 +409,14 @@ trait World {
 
 // Environment forwarders that allow
 // using service functions from everywhere
+
 val hello: URIO[{def hello: Hello}, String] = ZIO.accessM(_.hello.hello)
+
 val world: URIO[{def world: World}, String] = ZIO.accessM(_.world.world)
 
 // service implementations
-def makeHello: URManaged[Console, Hello] = {
+
+val makeHello = {
   (for {
     _     <- putStrLn("Creating Enterprise Hellower...")
     hello = new Hello { val hello = UIO("Hello") }
@@ -448,7 +425,7 @@ def makeHello: URManaged[Console, Hello] = {
   }
 }
 
-def makeWorld: URIO[Console, World] = {
+val makeWorld = {
   for {
     counter <- Ref.make(0)
   } yield new World {
@@ -457,6 +434,7 @@ def makeWorld: URIO[Console, World] = {
 }
 
 // the main function
+
 val turboFunctionalHelloWorld = {
   for {
     hello <- hello
@@ -466,13 +444,14 @@ val turboFunctionalHelloWorld = {
 }
 
 // a generic function that creates an `R` trait where all fields are populated from the object graph
+
 def provideCake[R: TraitConstructor, A: Tag](fn: R => A): ProviderMagnet[A] = {
   TraitConstructor[R].provider.map(fn)
 }
 
 val definition = new ModuleDef {
   make[Hello].fromResource(provideCake(makeHello.provide(_)))
-  make[World].fromEffect(provideCake(makeWorld.provide(_)))
+  make[World].fromEffect(makeWorld)
   make[Console.Service[Any]].fromValue(Console.Live.console)
   make[UIO[Unit]].from(provideCake(turboFunctionalHelloWorld.provide))
 }
@@ -491,7 +470,7 @@ All unimplemented methods _with parameters_ in a trait will be filled by factory
 
 Given a class `ActorFactory`:
 
-```scala mdoc
+```scala mdoc:to-string
 import distage._
 import java.util.UUID
 
@@ -509,7 +488,7 @@ trait ActorFactory {
 
 And a binding of `ActorFactory` *without* an implementation
 
-```scala mdoc
+```scala mdoc:to-string
 class ActorModule extends ModuleDef {
   make[ActorFactory]
 }
@@ -517,7 +496,7 @@ class ActorModule extends ModuleDef {
 
 `distage` will derive and bind the following implementation for `ActorFactory`:
 
-```scala mdoc
+```scala mdoc:to-string
 class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
   override def createActor(sessionId: UUID): UserActor = {
     new UserActor(sessionId, sessionStorage)
@@ -575,7 +554,7 @@ and make it safer and more flexible by replacing dependencies on global `import`
 
 First, the program we want to write:
 
-```scala mdoc:reset
+```scala mdoc:reset:to-string
 import cats._
 import cats.implicits._
 import distage._
@@ -616,11 +595,11 @@ Use @scaladoc[Tag](izumi.fundamentals.reflection.Tags.Tag) to create modules par
 
 Interpreters:
 
-```scala mdoc:invisible
+```scala mdoc:invisible:to-string
 import cats.instances.try_.catsStdInstancesForTry
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 import scala.util.Try
 import cats.instances.all._
 
@@ -651,7 +630,7 @@ objects.get[TaglessProgram[Try]].program
 
 The program module is polymorphic over the eventual effect type, we can easily parameterize it by a different effect:
 
-```scala mdoc
+```scala mdoc:to-string
 import cats.effect._
 
 def SyncInterpreters[F[_]: TagK](implicit F: Sync[F]) = new ModuleDef {
@@ -670,17 +649,17 @@ def IOProgram = ProgramModule[IO] ++ SyncInterpreters[IO]
 
 We can leave it completely polymorphic:
 
-```scala mdoc
+```scala mdoc:to-string
 def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
 ```
 
 Or choose different interpreters at runtime:
 
-```scala mdoc:invisible
+```scala mdoc:invisible:to-string
 import cats.instances.try_.catsStdInstancesForTry
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 def DifferentTryInterpreters = ???
 def chooseInterpreters(default: Boolean) = {
   val interpreters = if (default) TryInterpreters else DifferentTryInterpreters
@@ -690,21 +669,21 @@ def chooseInterpreters(default: Boolean) = {
 
 Modules can be polymorphic over arbitrary kinds - use `TagKK` to abstract over bifunctors:
 
-```scala mdoc
+```scala mdoc:to-string
 class BifunctorIOModule[F[_, _]: TagKK] extends ModuleDef 
 ```
 
 Or use `Tag.auto.T` to abstract over any kind:
 
-```scala mdoc
+```scala mdoc:to-string
 class MonadTransModule[F[_[_], _]: Tag.auto.T] extends ModuleDef
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 class TrifunctorModule[F[_, _, _]: Tag.auto.T] extends ModuleDef
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 class EldritchModule[F[+_, -_[_, _], _[_[_, _], _], _]: Tag.auto.T] extends ModuleDef
 ```
 
@@ -720,14 +699,14 @@ See [No More Orphans](https://blog.7mind.io/no-more-orphans.html) for descriptio
 
 Example:
 
-```scala mdoc:invisible
+```scala mdoc:invisible:to-string
 class DBConnection
 object DBConnection {
   def create[F[_]]: F[DBConnection] = ???
 }
 ```
 
-```scala mdoc
+```scala mdoc:to-string
 trait AppEntrypoint {
   def run: IO[Unit]
 }

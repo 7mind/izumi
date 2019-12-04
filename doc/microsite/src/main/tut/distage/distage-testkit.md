@@ -1,11 +1,11 @@
 distage-testkit
 =======
 
-@@@ warning { title='TODO' }
-Sorry, this page is not ready yet
-@@@
+@@toc { depth=2 }
 
-[distage Livecode project](https://github.com/7mind/distage-livecode) project shows several examples of `distage-testkit` usage:
+### Testkit
+
+[distage Livecode project](https://github.com/7mind/distage-livecode) project shows how to use `distage-testkit`:
 
 ```scala
 package livecode
