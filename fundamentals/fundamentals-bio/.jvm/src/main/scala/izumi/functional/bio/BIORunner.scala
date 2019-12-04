@@ -10,7 +10,6 @@ import zio.{Cause, FiberFailure, IO, Runtime}
 
 trait BIORunner[F[_, _]] {
   def unsafeRun[E, A](io: => F[E, A]): A
-
   def unsafeRunSyncAsEither[E, A](io: => F[E, A]): BIOExit[E, A]
 
   def unsafeRunAsyncAsEither[E, A](io: => F[E, A])(callback: BIOExit[E, A] => Unit): Unit

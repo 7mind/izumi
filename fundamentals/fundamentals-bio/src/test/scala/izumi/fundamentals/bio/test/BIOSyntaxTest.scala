@@ -1,19 +1,21 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, F}
+import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOPrimitives, F}
 import izumi.fundamentals.bio.test.masking._
 import org.scalatest.WordSpec
+import zio.ZIO
+import zio.blocking.Blocking
 
 import scala.concurrent.duration._
 
 object masking {
-  import izumi.functional.bio.{BIOFork, BIOFork3, BIOPrimitives}
+  import izumi.functional.bio.{BIOFork, BIOFork3, BIOPrimitives3}
 
   type Primitives[F[+_, +_]] = BIOPrimitives[F]
-  type Primitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
   type Fork[F[+_, +_]] = BIOFork[F]
   type Fork3[F[-_, +_, +_]] = BIOFork3[F]
   type BIOMonad3[F[-_, +_, +_]] = BIOMonad[F[Any, +?, +?]]
+  type Primitives3[F[-_, +_, +_]] = BIOPrimitives3[F]
 }
 
 class BIOSyntaxTest extends WordSpec {
@@ -68,5 +70,19 @@ class BIOSyntaxTest extends WordSpec {
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],
     )
   }
+  object BlockingIOSyntaxTest {
+    import izumi.functional.bio.{BlockingIO, BlockingIO3}
 
+    def `attach BlockingIO methods to a trifunctor BIO`[F[-_, +_, +_]: BIOMonad3: BlockingIO3]: F[Any, Throwable, Int] = {
+      F.syncBlocking(2)
+    }
+    def `attach BlockingIO methods to a bifunctor BIO`[F[+_, +_]: BIOFunctor: BlockingIO]: F[Throwable, Int] = {
+      F.syncBlocking(2)
+    }
+    val _: ZIO[Blocking, Throwable, Int] = {
+      implicit val b: zio.blocking.Blocking = zio.blocking.Blocking.Live
+      `attach BlockingIO methods to a trifunctor BIO`[BlockingIO3.ZIOBlocking#l]
+      `attach BlockingIO methods to a bifunctor BIO`[zio.IO]
+    }
+  }
 }
