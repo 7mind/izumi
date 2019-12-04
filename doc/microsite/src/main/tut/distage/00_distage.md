@@ -81,12 +81,11 @@ See @ref[PPER Overview](../pper/00_pper.md)
 @@@ index
 
 * [Basics](basics.md)
-* [Config Injection](config_injection.md)
 * [Other features](other-features.md)
 * [Debugging](debugging.md)
-* [Cookbook](cookbook.md)
-* [Role-Based Apps](roles.md)
-* [Testkit](distage-testkit.md)
+* [distage-config](distage-config.md)
+* [distage-framework](distage-framework.md)
+* [distage-testkit](distage-testkit.md)
 * [Syntax summary](reference.md)
 
 @@@
