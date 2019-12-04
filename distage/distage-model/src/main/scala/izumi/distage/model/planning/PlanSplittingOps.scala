@@ -5,8 +5,9 @@ import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{Planner, PlannerInput}
 
-trait PlanSplitter {
+trait PlanSplittingOps {
   this: Planner =>
+
   final def trisectByKeys(appModule: ModuleBase, primaryRoots: Set[DIKey])(extractSubRoots: OrderedPlan => Set[DIKey]): TriSplittedPlan = {
     val rewritten = rewrite(appModule)
     val basePlan = toSubplanNoRewrite(rewritten, primaryRoots)
@@ -20,7 +21,7 @@ trait PlanSplitter {
     trisectByKeys(appModule, primaryRoots)(_ => subplanRoots)
   }
 
-  private final def trisect(appModule: ModuleBase, baseplan: OrderedPlan, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
+  private[this] final def trisect(appModule: ModuleBase, baseplan: OrderedPlan, primaryRoots: Set[DIKey], subplanRoots: Set[DIKey]): TriSplittedPlan = {
     assert(primaryRoots.diff(baseplan.keys).isEmpty)
     val extractedSubplan = truncateOrReplan(appModule, baseplan, subplanRoots)
 
@@ -41,7 +42,7 @@ trait PlanSplitter {
     )
   }
 
-  private def truncateOrReplan(appModule: ModuleBase, basePlan: OrderedPlan, subplanKeys: Set[DIKey]): OrderedPlan = {
+  private[this] final def truncateOrReplan(appModule: ModuleBase, basePlan: OrderedPlan, subplanKeys: Set[DIKey]): OrderedPlan = {
     val isSubset = subplanKeys.diff(basePlan.index.keySet).isEmpty
     if (isSubset) {
       truncate(basePlan, subplanKeys)
@@ -50,11 +51,11 @@ trait PlanSplitter {
     }
   }
 
-  private def toSubplanNoRewrite(appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
+  private[this] final def toSubplanNoRewrite(appModule: ModuleBase, extractedRoots: Set[DIKey]): OrderedPlan = {
     toSubplan(appModule, extractedRoots, planNoRewrite)
   }
 
-  private def toSubplan(appModule: ModuleBase, extractedRoots: Set[DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan= {
+  private[this] final def toSubplan(appModule: ModuleBase, extractedRoots: Set[DIKey], plan: PlannerInput => OrderedPlan): OrderedPlan= {
     if (extractedRoots.nonEmpty) {
       // exclude runtime
       plan(PlannerInput(appModule, extractedRoots))

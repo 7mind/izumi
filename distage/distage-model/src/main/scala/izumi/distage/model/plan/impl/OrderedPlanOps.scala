@@ -2,6 +2,7 @@ package izumi.distage.model.plan.impl
 
 import izumi.distage.model.Locator
 import izumi.distage.model.Locator.LocatorRef
+import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceException}
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
@@ -33,6 +34,24 @@ private[plan] trait OrderedPlanOps {
         true
     }
     if (nonMagicImports.isEmpty) Right(this) else Left(nonMagicImports)
+  }
+
+  /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
+  def assertImportsResolved: Either[InvalidPlanException, OrderedPlan] = {
+    import izumi.fundamentals.platform.strings.IzString._
+    unresolvedImports.left.map {
+      unresolved =>
+        new InvalidPlanException(unresolved.map(op => MissingInstanceException.format(op.target, op.references)).niceList())
+    }
+  }
+
+  /**
+    * Same as [[unresolvedImports]], but throws an [[InvalidPlanException]] if there are unresolved imports
+    *
+    * @throws InvalidPlanException
+    */
+  def assertImportsResolvedOrThrow: OrderedPlan = {
+    assertImportsResolved.fold(throw _, identity)
   }
 
   /**

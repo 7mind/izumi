@@ -1,6 +1,35 @@
 Debugging
 =========
 
+### Testing Plans
+
+Use `OrderedPlan#assertResolvedImportsOrThrow` method to test whether all dependencies in a given plan are present and the
+plan will execute correctly when passed to `Injector#produce`.
+
+```scala mdoc:reset
+class A(b: B)
+class B
+
+val badModule = new ModuleDef {
+  make[A]
+}
+
+val badPlan = Injector().plan(badModule)
+
+badPlan.assertResolvedImportsOrThrow
+```
+
+```scala mdoc
+val goodModule = new ModuleDef {
+  make[A]
+  make[B]
+}
+
+val goodPlan = Injector().plan(goodModule)
+
+goodPlan.assertResolvedImportsOrThrow
+```
+
 ### Pretty-printing plans
 
 You can print the `plan` to get detailed info on what will happen during instantiation. The printout includes source

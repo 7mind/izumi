@@ -85,10 +85,10 @@ println(plan.render)
 
 Since `plan` is just a value, we need to interpret it to create the actual object graph –
 `Injector`'s `produce` method is the default interpreter. `Injector` contains no logic of its own beyond interpreting
-instructions, its output is fully determined by the plan. This makes @ref[debugging](debugging.md#debugging) quite easy.
+instructions, its output is fully determined by the plan.
 
-Given that plans are data, it's possible to @ref[inspect them](debugging.md#pretty-printing-plans), test them or 
-@ref[verify them at compile-time](other-features.md#compile-time-checks) before ever running the application.
+Plans being data, you may inspect @ref[inspect them](debugging.md#pretty-printing-plans), @ref[test them](debugging.md#testing-plans) or 
+@ref[verify them at compile-time](distage-framework.md#compile-time-checks) before ever running the application.
 
 Objects in `distage` are always created exactly once, even if multiple other objects depend on them - they're `Singletons`.
 It's impossible to create non-singletons in `distage`, however it's possible to generate factory classes (@ref[Auto-Factories](#auto-factories))
@@ -126,25 +126,24 @@ We've overriden the `Greeter` binding in `HelloByeModule` with an implementation
 
 ### Set Bindings
 
-Set bindings are useful for implementing event listeners, plugins, hooks, http routes, healthchecks, migrations, etc. Everywhere where
-you need to gather up a bunch of similar components is probably a good place for a Set Binding.
+Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
+Everywhere where a collection of components is required, a Set Binding is appropriate.
 
-To define a Set binding use `.many` and `.add` methods in @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef)
-DSL.
+To define a Set binding use `.many` and `.add` methods of the @scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL.
 
-
-For example, we can gather and serve all the different [http4s](https://http4s.org) routes added in multiple independent modules:
+For example, we can declare many [http4s](https://http4s.org) routes and serve them all from a central component:
 
 ```scala mdoc:silent:reset
-// boilerplate
+// import boilerplate
 import cats.implicits._
-import cats.effect._
-import distage._
+import cats.effect.IO
+import distage.{ModuleDef, Injector}
 import org.http4s._
 import org.http4s.Uri.uri
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze._
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -152,20 +151,12 @@ implicit val contextShift = IO.contextShift(global)
 implicit val timer = IO.timer(global)
 ```
 
-```scala mdoc:invisible
-// HACK ??? because of mdoc // java.lang.ClassNotFoundException: repl.Session$
-// trait ModuleDef extends distage.ModuleDef {
-//  make[App4.this.type].from[App4.this.type](App4.this: App4.this.type)
-// }
-```
-
 ```scala mdoc
+val homeRoute = HttpRoutes.of[IO] { 
+  case GET -> Root / "home" => Ok(s"Home page!") 
+}
+
 object HomeRouteModule extends ModuleDef {
-
-  val homeRoute = HttpRoutes.of[IO] { 
-    case GET -> Root / "home" => Ok(s"Home page!") 
-  }
-
   many[HttpRoutes[IO]]
     .add(homeRoute)
 }
@@ -178,12 +169,11 @@ You can summon a Set Bindings by summoning a scala `Set`, as in `Set[HttpRoutes[
 Let's define a new module with another route:
 
 ```scala mdoc
-object BlogRouteModule extends ModuleDef {
+val blogRoute = HttpRoutes.of[IO] { 
+  case GET -> Root / "blog" / post => Ok(s"Blog post ``$post''!") 
+}
 
-  val blogRoute = HttpRoutes.of[IO] { 
-    case GET -> Root / "blog" / post => Ok(s"Blog post ``$post''!") 
-  }
-  
+object BlogRouteModule extends ModuleDef {  
   many[HttpRoutes[IO]]
     .add(blogRoute)
 }
@@ -192,52 +182,47 @@ object BlogRouteModule extends ModuleDef {
 Now it's the time to define a `Server` component to serve all the different routes we have:
 
 ```scala mdoc
-final class HttpServer(routes: Set[HttpRoutes[IO]]) {
-  
-  val router: HttpApp[IO] = 
-    routes.toList.foldK.orNotFound
+def makeHttp4sServer(routes: Set[HttpRoutes[IO]]): Resource[IO, Server[IO]] = {
+  // create a top-level router by combining all the routes
+  val router: HttpApp[IO] = routes.toList.foldK.orNotFound
 
-  val serverResource = 
-    BlazeServerBuilder[IO]
-      .bindHttp(8080, "localhost")
-      .withHttpApp(router)
-      .resource
+  // return a Resource value that will setup an http4s server 
+  BlazeServerBuilder[IO]
+    .bindHttp(8080, "localhost")
+    .withHttpApp(router)
+    .resource
 }
 
 object HttpServerModule extends ModuleDef {
-  make[HttpServer]
+  make[Server[IO]].fromResource(makeHttp4sServer _)
+  make[Client[IO]].fromResource(BlazeClientBuilder[IO](global).resource)
 }
-```
 
-Now, let's wire all the modules and create the server!
-
-```scala mdoc
+// join all the module definitions
 val finalModule = Seq(
-    HomeRouteModule,
-    BlogRouteModule,
-    HttpServerModule,
-  ).merge
+  HomeRouteModule,
+  BlogRouteModule,
+  HttpServerModule,
+).merge
 
-val objects = Injector().produceUnsafe(finalModule, GCMode.NoGC)
+// wire the graph
+val objects = Injector().produceUnsafeF(finalModule, GCMode.NoGC)
 
-val server = objects.get[HttpServer]
+val server = objects.get[Server[IO]]
+val client = objects.get[Client[IO]]
 ```
 
 Check if it works:
 
 ```scala mdoc
-server.router.run(Request(uri = uri("/home")))
-  .flatMap(_.as[String]).unsafeRunSync
+// check home page
+client.expect[String]("http://localhost:8080/home").unsafeRunSync
+
+// check blog page
+client.expect[String]("http://localhost:8080/blog/1").unsafeRunSync
 ```
 
-```scala mdoc
-server.router.run(Request(uri = uri("/blog/1")))
-  .flatMap(_.as[String]).unsafeRunSync
-```
-
-It does!
-
-See also, same concept in [Guice](https://github.com/google/guice/wiki/Multibindings).
+Further reading: the same concept is called [Multibindings](https://github.com/google/guice/wiki/Multibindings) in Guice.
 
 ### Effect Bindings
 
@@ -288,15 +273,15 @@ trait KVStore[F[_, _]] {
 object KVStore {
   def dummy: IO[Nothing, KVStore[IO]] = for {
     ref <- Ref.make(Map.empty[String, String])
-    kvStore = new KVStore[IO] {
+  } yield
+    new KVStore[IO] {
       def put(key: String, value: String): IO[Nothing, Unit] =
         ref.update(_ + (key -> value)).unit
-      
-      def get(key: String): IO[NoSuchElementException, String] = 
+    
+      def get(key: String): IO[NoSuchElementException, String] =
         for {
           map <- ref.get
-          maybeValue = map.get(key)
-          res <- maybeValue match {
+          res <- map.get(key) match {
             case None => 
               IO.fail(new NoSuchElementException(key))
             case Some(value) => 
@@ -304,7 +289,6 @@ object KVStore {
           }
         } yield res
     }
-  } yield kvStore
 }
 
 val kvStoreModule = new ModuleDef {
@@ -318,7 +302,7 @@ new DefaultRuntime{}.unsafeRun {
         val kv = objects.get[KVStore[IO]]
         
         for {
-          _ <- kv.put("apple", "pie")
+          _   <- kv.put("apple", "pie")
           res <- kv.get("apple")
         } yield res
     }

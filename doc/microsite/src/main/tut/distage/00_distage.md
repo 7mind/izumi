@@ -14,14 +14,14 @@ pure FP @ref[Tagless Final Style](basics.md#tagless-final-style) or @ref[ZIO Env
 Why use distage?
 -------------------
 
-1. **Faster applications and tests**: 
+1. **Faster applications and tests**:
     `distage` guarantees that no unneccessary instantiations will happen during your tests or application startup.
-2. **Quicker failure detection**: 
-    `distage` peforms all the integration checks for your application and tests even before any instantiations happened.    
-3. **Simpler tests**: 
+2. **Quicker failure detection**:
+    `distage` performs all the integration checks for your application and tests even before any instantiations happened.    
+3. **Simpler tests**:
     `distage` eliminates all the hard work of setting up your test environments, especially polymorphic ones.
-4. **Simpler development workflows**: 
-    `distage` allows you to develop Role-Based Applications -- a fusion of Microservices and Monoliths.
+4. **Simpler development workflows**:
+    @ref[distage-framework](distage-framework.md) module allows you to develop Role-Based Applications -- a fusion of Microservices and Monoliths.
      You may run all your services in one process for development purposes (and even switch to mock implementations with a single commandline argument).
 5. **Faster compile times and low mental overhead**:
     Unlike fully compile-time DIs, `distage` does not impose a compile time penalty for medium/large projects.
@@ -31,12 +31,12 @@ Why use distage?
 7. **Simpler debugging**:
     `distage` provides you important insights about your application and allows you to introspect and modify it on the fly, 
     before any instantiations happen.
-8. **Higher Correctness**: 
+8. **Higher Correctness**:
     `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
 9. **Cheaper integration tests**:
     `distage` provides you great memoization support for your tests so you may reuse expensive resources (like database connections) across multiple
     integration tests, gaining performance and without sacrificing correctness.
-10. **No pressure**: 
+10. **No pressure**:
     `distage` is non-invasive and designed to not impact the way your Scala code is written. 
     It just removes all the initialization boilerplate.
     You don't need to learn magic tricks to write components in a distage application.
@@ -50,20 +50,21 @@ Why use distage?
 FAQ
 ---
 
-**Q**: how to pronounce "distage"?
+**Q**: How to pronounce `distage`?
 
 **A**: 'Dee-stage'
 
-**Q**: isn't it unsafe to use a runtime dependency injection framework?
+**Q**: Isn't it unsafe to use a runtime dependency injection framework?
 
-**A**: `distage` produces a full wiring `plan` ahead of time – a first-class value that can be [tested](distage-testkit.md)
-for errors as part of a test suite, or even at compile-time – `distage-framework` contains [macros](other-features.md#compile-time-checks) that will fail compilation
-in case of erroneous wiring.
+**A**: `distage` is split into two stages, first a wiring `plan` is calculated, only afterwards it is executed. This `Plan`
+value can be @ref[tested](debugging.md#testing-plans) for errors in an ordinary test suite – if it is well-formed, the wiring
+will succeed at runtime. This test can also be performed at compile-time – `distage-framework` module contains
+@ref[macros](distage-framework.md#compile-time-checks) for aborting compilation in case of erroneous wiring.
 
 Further reading
 ---------------
 
-- [distage Example Project](https://github.com/7mind/distage-livecode)
+- [Example Project](https://github.com/7mind/distage-livecode)
 - Slides - [distage: Staged Dependency Injection](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 - @ref[Basics](basics.md)
 - @ref[Other features](other-features.md)
