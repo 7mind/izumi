@@ -1,8 +1,14 @@
 package izumi.distage.model.exceptions
 
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.fundamentals.platform.strings.IzString._
 
-class MissingInstanceException(message: String, val key: RuntimeDIUniverse.DIKey) extends DIException(message, null)
+class MissingInstanceException(message: String, val key: DIKey) extends DIException(message)
 
+object MissingInstanceException {
+  def format(target: DIKey, references: Set[DIKey]): String = {
+    s"""Instance is not available in the object graph: $target. required by refs:${references.niceList()}""".stripMargin
+  }
+}
 
 

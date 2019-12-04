@@ -5,13 +5,12 @@ import java.util.concurrent.{ExecutorService, TimeUnit}
 import cats.effect.Bracket
 import cats.{Applicative, ~>}
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.TagMacro
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import zio.{Exit, Reservation, ZIO, ZManaged}
 
 import scala.language.experimental.macros
@@ -112,7 +111,7 @@ import scala.reflect.macros.blackbox
   * you can control it by controlling the scope in `.use` or by manually using
   * [[DIResourceBase.acquire]] and [[DIResourceBase.release]].
   *
-  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.BindDSL.fromResource]]
+  * @see ModuleDef.fromResource: [[izumi.distage.model.definition.dsl.ModuleDefDSL.MakeDSL.fromResource]]
   *      [[cats.effect.Resource]]: https://typelevel.org/cats-effect/datatypes/resource.html
   **/
 trait DIResource[+F[_], Resource] extends DIResourceBase[F, Resource] {
@@ -136,7 +135,9 @@ object DIResource {
 
   def make[F[_], A](acquire: => F[A])(release: A => F[Unit]): DIResource[F, A] = {
     @inline def a = acquire
+
     @inline def r = release
+
     new DIResource[F, A] {
       override def acquire: F[A] = a
       override def release(resource: A): F[Unit] = r(resource)
@@ -212,7 +213,7 @@ object DIResource {
     }
   }
 
-  implicit final class DIResourceZIOSyntax[R, E, A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
+  implicit final class DIResourceZIOSyntax[-R, +E, +A](private val resource: DIResourceBase[ZIO[R, E, ?], A]) extends AnyVal {
     /** Convert [[DIResource]] to [[zio.ZManaged]] */
     def toZIO: ZManaged[R, E, A] = {
       ZManaged(resource.acquire.map(r => Reservation(zio.ZIO.effectTotal(resource.extract(r)), _ => resource.release(r).orDieWith {
@@ -241,7 +242,7 @@ object DIResource {
 
   abstract class NoClose[+F[_]: DIEffect, A] extends DIResourceBase.NoClose[F, A] with DIResource[F, A]
 
-  /***
+  /**
     * Class-based variant of [[make]]:
     *
     * {{{
@@ -250,14 +251,14 @@ object DIResource {
     *   )(release = _ => IO.unit)
     * }}}
     */
-  class Make[+F[_], A] private[this] (acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused","") dummy: Boolean = false) extends DIResource[F, A] {
+  class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused", "") dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
     override final def release(resource: A): F[Unit] = release.apply(resource)
   }
 
-  /***
+  /**
     * Class-based variant of [[make_]]:
     *
     * {{{
@@ -266,20 +267,20 @@ object DIResource {
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
-  /***
+  /**
     * Class-based variant of [[liftF]]:
     *
     * {{{
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
     * }}}
     */
-  class LiftF[+F[_]: DIEffect, A] private[this] (acquire0: () => F[A], @deprecated("unused","") dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIEffect, A] private[this](acquire0: () => F[A], @deprecated("unused", "") dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()
   }
 
-  /***
+  /**
     * Class-based variant of [[fromAutoCloseableF]]:
     *
     * {{{
@@ -386,61 +387,87 @@ object DIResource {
     *       dependency on `Bracket[F, Throwable]` for
     *       your corresponding `F` type
     */
-  implicit final def providerFromCats[F[_]: TagK, A: Tag](resource: Resource[F, A]): ProviderMagnet[DIResource.Cats[F, A]] = {
-    providerFromCatsProvider(ProviderMagnet.pure(resource))
+  implicit final def providerFromCats[F[_]: TagK, A](resource: => Resource[F, A])(implicit tag: Tag[DIResource.Cats[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+    ProviderMagnet.identity[Bracket[F, Throwable]].map {
+      implicit bracket: Bracket[F, Throwable] =>
+        fromCats(resource)
+    }
   }
-
-  /**
-    * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
-    *
-    * Example:
-    * {{{
-    *   import cats.effect._
-    *   import doobie.hikari._
-    *
-    *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
-    *
-    *   val module = new distage.ModuleDef {
-    *
-    *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
-    *
-    *     make[JdbcConfig].from {
-    *       conf: JdbcConfig @ConfPath("jdbc") => conf
-    *     }
-    *
-    *     make[HikariTransactor[IO]].fromResource {
-    *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
-    *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
-    *
-    *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
-    *     }
-    *
-    *     addImplicit[Bracket[IO, Throwable]]
-    *   }
-    * }}}
-    *
-    * NOTE: binding a cats Resource[F, A] will add a
-    *       dependency on `Bracket[F, Throwable]` for
-    *       your corresponding `F` type
-    */
-  implicit final def providerFromCatsProvider[F[_]: TagK, A: Tag](resourceProvider: ProviderMagnet[Resource[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
-    resourceProvider
-      .zip(ProviderMagnet.identity[Bracket[F, Throwable]])
-      .map { case (resource, bracket) => fromCats(resource)(bracket) }
-  }
-
   /**
     * Allows you to bind [[zio.ZManaged]]-based constructors in `ModuleDef`:
     */
-  implicit final def providerFromZIO[R: Tag, E: Tag, A: Tag](managed: ZManaged[R, E, A]): ProviderMagnet[DIResource.Zio[R , E, A]] = {
-    providerFromZIOProvider(ProviderMagnet.pure(managed))
+  implicit final def providerFromZIO[R, E, A](managed: => ZManaged[R, E, A])(implicit tag: Tag[DIResource.Zio[R, E, A]]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
+    ProviderMagnet.lift(fromZIO(managed))
   }
 
-  /**
-    * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
-    */
-  implicit final def providerFromZIOProvider[R: Tag, E: Tag, A: Tag](managedProvider: ProviderMagnet[ZManaged[R, E, A]]): ProviderMagnet[DIResource.Zio[R, E, A]] = {
-    managedProvider.map(fromZIO)
+  /** Support binding various FP libraries' Resource types in `.fromResource` */
+  trait AdaptProvider[A] {
+    type Out
+    def apply(a: ProviderMagnet[A])(implicit tag: ResourceTag[Out]): ProviderMagnet[Out]
+  }
+  object AdaptProvider {
+    type Aux[A, B] = AdaptProvider[A] { type Out = B }
+
+    /**
+      * Allows you to bind [[cats.effect.Resource]]-based constructor functions in `ModuleDef`:
+      *
+      * Example:
+      * {{{
+      *   import cats.effect._
+      *   import doobie.hikari._
+      *
+      *   final case class JdbcConfig(driverClassName: String, url: String, user: String, pass: String)
+      *
+      *   val module = new distage.ModuleDef {
+      *
+      *     make[ExecutionContext].from(scala.concurrent.ExecutionContext.global)
+      *
+      *     make[JdbcConfig].from {
+      *       conf: JdbcConfig @ConfPath("jdbc") => conf
+      *     }
+      *
+      *     make[HikariTransactor[IO]].fromResource {
+      *       (ec: ExecutionContext, jdbc: JdbcConfig) =>
+      *         implicit val C: ContextShift[IO] = IO.contextShift(ec)
+      *
+      *         HikariTransactor.newHikariTransactor[IO](jdbc.driverClassName, jdbc.url, jdbc.user, jdbc.pass, ec, ec)
+      *     }
+      *
+      *     addImplicit[Bracket[IO, Throwable]]
+      *   }
+      * }}}
+      *
+      * NOTE: binding a cats Resource[F, A] will add a
+      * dependency on `Bracket[F, Throwable]` for
+      * your corresponding `F` type
+      */
+    implicit final def providerFromCatsProvider[F[_], A]: Resource[F, A] Aux DIResource.Cats[F, A] = {
+      new AdaptProvider[Resource[F, A]] {
+        type Out = DIResource.Cats[F, A]
+
+        override def apply(a: ProviderMagnet[Resource[F, A]])(implicit tag: ResourceTag[DIResource.Cats[F, A]]): ProviderMagnet[DIResource.Cats[F, A]] = {
+          import tag.tagFull
+          implicit val tagF: TagK[F] = tag.tagK.asInstanceOf[TagK[F]]; val _ = tagF
+
+          a.zip(ProviderMagnet.identity[Bracket[F, Throwable]])
+            .map { case (resource, bracket) => fromCats(resource)(bracket) }
+        }
+      }
+    }
+
+    /**
+      * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
+      */
+    implicit final def providerFromZIOProvider[R, E, A]: ZManaged[R, E, A] Aux Zio[R, E, A] = {
+      new AdaptProvider[ZManaged[R, E, A]] {
+        type Out = DIResource.Zio[R, E, A]
+
+        override def apply(a: ProviderMagnet[ZManaged[R, E, A]])(implicit tag: ResourceTag[Out]): ProviderMagnet[Zio[R, E, A]] = {
+          import tag.tagFull
+          a.map(fromZIO)
+        }
+      }
+    }
   }
 
   @inline
@@ -454,7 +481,7 @@ object DIResource {
   }
 
   @inline
-  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F ,A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
+  private[this] final def flatMapImpl[F[_], A, B](self: DIResourceBase[F, A])(f: A => DIResourceBase[F, B])(implicit F: DIEffect[F]): DIResourceBase[F, B] = {
 
     def bracketOnError[a, b](acquire: => F[a])(releaseOnError: a => F[Unit])(use: a => F[b]): F[b] = {
       F.bracketCase(acquire = acquire)(release = {
@@ -529,7 +556,7 @@ object DIResource {
   object ResourceTag extends ResourceTagLowPriority {
     def apply[A: ResourceTag]: ResourceTag[A] = implicitly
 
-    implicit def resourceTag[R <: DIResourceBase[F0, A0] : Tag, F0[_] : TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
+    implicit def resourceTag[R <: DIResourceBase[F0, A0]: Tag, F0[_]: TagK, A0: Tag]: ResourceTag[R with DIResourceBase[F0, A0]] {type F[X] = F0[X]; type A = A0} = {
       new ResourceTag[R] {
         type F[X] = F0[X]
         type A = A0
@@ -541,7 +568,8 @@ object DIResource {
 
     def fakeResourceTagMacroIntellijWorkaroundImpl[R <: DIResourceBase[Any, Any]: c.WeakTypeTag](c: blackbox.Context): c.Expr[ResourceTag[R]] = {
       val tagMacro = new TagMacro(c)
-      val tagTrace = tagMacro.getImplicitError[RuntimeDIUniverse.tags.type]()
+      tagMacro.makeTagImpl[R] // run the macro AGAIN, to get a fresh error message
+      val tagTrace = tagMacro.getImplicitError()
 
       c.abort(c.enclosingPosition, s"could not find implicit ResourceTag for ${c.universe.weakTypeOf[R]}!\n$tagTrace")
     }

@@ -3,10 +3,11 @@ package izumi.distage.testkit.st.fixtures
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import izumi.distage.config.annotations.ConfPath
+import distage.Id
+import distage.config.ConfigModuleDef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -66,8 +67,8 @@ case class TestConfig(provided: Int, overriden: Int)
 case class TestConfig1(x: Int, y: Int)
 
 class TestService2(
-                    @ConfPath("test") val cfg: TestConfig
-                    , @ConfPath("missing-test-section") val cfg1: TestConfig
+                    @Id("test") val cfg: TestConfig,
+                    @Id("missing-test-section") val cfg1: TestConfig,
                   )
 
 trait Conflict
@@ -102,6 +103,10 @@ object TestPlugin00
   make[TestFailingIntegrationResource]
   make[TestResourceDI].fromResource(DIResource.fromAutoCloseable(new TestResourceDI()))
 
+  include(new ConfigModuleDef {
+    makeConfigNamed[TestConfig]("test")
+    makeConfigNamed[TestConfig]("missing-test-section")
+  })
 }
 
 

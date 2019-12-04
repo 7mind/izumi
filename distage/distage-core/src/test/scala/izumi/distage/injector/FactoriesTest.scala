@@ -1,10 +1,13 @@
 package izumi.distage.injector
 
+import distage.{ModuleDef, With}
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
-import izumi.distage.model.exceptions.UnsupportedWiringException
 import izumi.distage.model.PlannerInput
-import distage.ModuleDef
+import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
+
+import scala.language.reflectiveCalls
 
 class FactoriesTest extends WordSpec with MkInjector {
 
@@ -26,6 +29,7 @@ class FactoriesTest extends WordSpec with MkInjector {
     val factory = context.get[Factory]
     assert(factory.wiringTargetForDependency != null)
     assert(factory.factoryMethodForDependency() != factory.wiringTargetForDependency)
+    assert(factory.factoryMethodForDependency() != factory.factoryMethodForDependency())
     assert(factory.x().b.isInstanceOf[Dependency])
 
     val abstractFactory = context.get[AbstractFactory]
@@ -47,6 +51,8 @@ class FactoriesTest extends WordSpec with MkInjector {
 
   "handle generic arguments in cglib factory methods" in {
     import FactoryCase1._
+
+    FactoryConstructor[GenericAssistedFactory]
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[GenericAssistedFactory]
@@ -88,10 +94,34 @@ class FactoriesTest extends WordSpec with MkInjector {
     assert(instantiated.x(5).b.isSpecial)
   }
 
+  "handle structural type factories" in {
+    import FactoryCase1._
+
+    FactoryConstructor[{
+            def makeConcreteDep(): Dependency @With[ConcreteDep]
+          }]
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[{
+        def makeConcreteDep(): Dependency @With[ConcreteDep]
+      }]
+    })
+
+    val injector = mkNoReflectionInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
+
+    val instance = instantiated.makeConcreteDep()
+    assert(instance.isInstanceOf[ConcreteDep])
+  }
+
   "cglib factory cannot produce factories" in {
-    intercept[UnsupportedWiringException] {
+    val exc = intercept[ProvisioningException] {
       import FactoryCase1._
 
+      // FIXME: `make` support? should be compile-time error
       val definition = PlannerInput.noGc(new ModuleDef {
         make[FactoryProducingFactory]
         make[Dependency]
@@ -105,6 +135,8 @@ class FactoriesTest extends WordSpec with MkInjector {
 
       assert(instantiated.x().x().b == context.get[Dependency])
     }
+//    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedWiringException])
+    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
   }
 
   "cglib factory always produces new instances" in {

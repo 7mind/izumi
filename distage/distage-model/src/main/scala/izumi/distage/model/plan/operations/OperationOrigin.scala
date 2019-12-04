@@ -9,19 +9,15 @@ sealed trait OperationOrigin {
 object OperationOrigin {
   sealed trait Defined extends OperationOrigin {
     def binding: Binding
-  }
-
-  case class UserBinding(binding: Binding) extends Defined {
     override def toSynthetic: Synthetic = SyntheticBinding(binding)
   }
 
-  sealed trait Synthetic extends OperationOrigin
+  final case class UserBinding(binding: Binding) extends Defined
 
-  case class SyntheticBinding(binding: Binding) extends Synthetic with Defined {
-    override def toSynthetic: Synthetic = this
+  sealed trait Synthetic extends OperationOrigin {
+    override final def toSynthetic: Synthetic = this
   }
 
-  case object Unknown extends Synthetic {
-    override def toSynthetic: Synthetic = this
-  }
+  final case class SyntheticBinding(binding: Binding) extends Defined with Synthetic
+  final case object Unknown extends Synthetic
 }

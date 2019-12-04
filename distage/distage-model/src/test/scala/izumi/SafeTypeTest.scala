@@ -1,11 +1,10 @@
 package izumi
 
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import org.scalatest.WordSpec
 
 class SafeTypeTest extends WordSpec {
-  case class TestClass(field: Int)
-
   "SafeType" should {
     "have consistent equals and hashcode" in {
       val t1 = SafeType.get[Int]
@@ -15,11 +14,8 @@ class SafeTypeTest extends WordSpec {
       assert(t1.hashCode == t2.hashCode)
       assert(t1.toString == t2.toString)
 
-      import u._
-
-      val testClass = SafeType.get[TestClass]
-      val rtype = testClass.use(_.decl(TermName("field")).asMethod.returnType)
-      val t3 = SafeType(rtype)
+      def mk[F[_]: TagK, T: Tag] = SafeType(Tag[F[T]].tag.typeArgs.head)
+      val t3 = mk[List, Int]
 
       assert(t1 == t3)
       assert(t1.hashCode == t3.hashCode)

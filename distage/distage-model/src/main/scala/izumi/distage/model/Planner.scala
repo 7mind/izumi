@@ -3,10 +3,11 @@ package izumi.distage.model
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
+import izumi.distage.model.planning.PlanSplittingOps
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 /** Transforms [[ModuleBase]] into [[OrderedPlan]] */
-trait Planner extends PlannerExtendedAPI {
+trait Planner extends PlanSplittingOps {
   def plan(input: PlannerInput): OrderedPlan
 
   final def plan(input: ModuleBase, gcMode: GCMode): OrderedPlan = {

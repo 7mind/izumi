@@ -7,8 +7,8 @@ import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.integration.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.functional.Value
@@ -41,7 +41,7 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_] : TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, DockerContainer[Tag]]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }

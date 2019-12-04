@@ -6,7 +6,8 @@ import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{SafeType, TagK}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.fundamentals.reflection.Tags.TagK
 
 final class LocatorDefaultImpl[F[_]]
 (
@@ -17,7 +18,7 @@ final class LocatorDefaultImpl[F[_]]
   override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] =
     dependencyMap.get(key)
 
-  override protected[distage] def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
+  override private[distage] def finalizers[F1[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F1]] = {
     dependencyMap.finalizers
       .filter(_.fType == SafeType.getK[F1])
       .map(_.asInstanceOf[PlanInterpreter.Finalizer[F1]])

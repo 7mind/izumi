@@ -6,8 +6,8 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder}
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectAsync}
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.testkit.integration.docker.Docker.{ClientConfig, ContainerId}
 import izumi.functional.Value
@@ -52,7 +52,7 @@ class DockerClientWrapper[F[_]]
 
 object DockerClientWrapper {
 
-  class Resource[F[_] : DIEffect : DIEffectAsync]
+  class Resource[F[_]: DIEffect: DIEffectAsync]
   (
     factory: DockerCmdExecFactory,
     logger: IzLogger,

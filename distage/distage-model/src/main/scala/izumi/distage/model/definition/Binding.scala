@@ -1,10 +1,12 @@
 package izumi.distage.model.definition
 
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.model.definition.Binding.GroupingKey
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.SourceFilePosition
+import izumi.fundamentals.reflection.Tags.Tag
 
 sealed trait Binding {
   def key: DIKey
@@ -72,8 +74,8 @@ object Binding {
   }
 
   implicit final class WithImplementation[R](private val binding: ImplBinding {def withImplDef(implDef: ImplDef): R}) extends AnyVal {
-    def withImpl[T: Tag]: R =
-      binding.withImplDef(ImplDef.TypeImpl(SafeType.get[T]))
+    def withImpl[T: Tag: AnyConstructor]: R =
+      withImpl[T](AnyConstructor[T].provider)
 
     def withImpl[T: Tag](instance: T): R =
       binding.withImplDef(ImplDef.InstanceImpl(SafeType.get[T], instance))

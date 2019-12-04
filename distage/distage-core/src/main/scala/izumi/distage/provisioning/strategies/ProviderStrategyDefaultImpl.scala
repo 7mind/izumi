@@ -10,13 +10,13 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
   def callProvider(context: ProvisioningKeyProvider, op: WiringOp.CallProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
-      key =>
-        context.fetchKey(key.wireWith, key.isByName) match {
+      param =>
+        context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
-            RuntimeDIUniverse.TypedRef(dep, key.wireWith.tpe)
+            RuntimeDIUniverse.TypedRef(dep, param.key.tpe)
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
-                s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
+                s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
     }
 

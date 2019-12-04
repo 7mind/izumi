@@ -10,7 +10,6 @@ object FactoryCases {
 
     trait Dependency {
       def isSpecial: Boolean = false
-
       def isVerySpecial: Boolean = false
 
       override def toString: String = s"Dependency($isSpecial, $isVerySpecial)"

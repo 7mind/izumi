@@ -3,7 +3,6 @@ package izumi.distage.planning
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, ProxyOp}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.planning.{ForwardingRefResolver, PlanAnalyzer}
-import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import distage.Id
 
@@ -12,7 +11,6 @@ import scala.collection.mutable
 class ForwardingRefResolverDefaultImpl
 (
   protected val planAnalyzer: PlanAnalyzer,
-  protected val reflectionProvider: ReflectionProvider.Runtime,
   @Id("distage.init-proxies-asap") initProxiesAsap: Boolean,
 ) extends ForwardingRefResolver {
 
@@ -52,7 +50,7 @@ class ForwardingRefResolverDefaultImpl
       initProxiesAtTheEnd(proxies.toList, resolvedSteps)
     }
 
-    val imports = plan.steps.collect({ case i: ImportDependency => i })
+    val imports = plan.steps.collect { case i: ImportDependency => i }
     OrderedPlan(imports ++ proxyOps, plan.declaredRoots, plan.topology)
   }
 
@@ -98,9 +96,9 @@ class ForwardingRefResolverDefaultImpl
           case _: ExecutableOp.WiringOp.ReferenceKey =>
             Seq(target -> false)
           case w: ExecutableOp.WiringOp =>
-            w.wiring.associations.map(a => a.wireWith -> isByName(a))
+            w.wiring.associations.map(a => a.key -> a.isByName)
           case w: ExecutableOp.MonadicOp =>
-            w.effectWiring.associations.map(a => a.wireWith -> isByName(a))
+            Seq(w.effectKey -> false)
         }
       case _: ImportDependency =>
         Seq.empty
@@ -112,10 +110,4 @@ class ForwardingRefResolverDefaultImpl
     onlyByNameUsages
   }
 
-  protected def isByName(p: Association): Boolean = p match {
-    case p: Association.Parameter =>
-      p.isByName
-    case _ =>
-      false
-  }
 }

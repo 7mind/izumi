@@ -3,23 +3,28 @@ package distage
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.planning.extensions
 import izumi.distage.{model, planning}
+import izumi.fundamentals.reflection.Tags
 
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
   type Injector = model.Injector
 
-  type Tag[T] = RuntimeDIUniverse.Tag[T]
-  val Tag: RuntimeDIUniverse.Tag.type = RuntimeDIUniverse.Tag
+  type Tag[T] = Tags.Tag[T]
+  val Tag: Tags.Tag.type = Tags.Tag
 
-  type TagK[T[_]] = RuntimeDIUniverse.TagK[T]
-  val TagK: RuntimeDIUniverse.TagK.type = RuntimeDIUniverse.TagK
+  type TagK[T[_]] = Tags.TagK[T]
+  val TagK: Tags.TagK.type = Tags.TagK
 
   type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   val DIResource: model.definition.DIResource.type = model.definition.DIResource
 
   type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
+
+  type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
 
   type Planner = model.Planner
   type Locator = model.Locator
@@ -38,6 +43,12 @@ trait Distage {
 
   type PlannerInput = model.PlannerInput
   val PlannerInput: model.PlannerInput.type = model.PlannerInput
+
+  type GraphDumpObserver = extensions.GraphDumpObserver
+  val GraphDumpObserver: extensions.GraphDumpObserver.type = extensions.GraphDumpObserver
+
+  type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
+  val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
   type OrderedPlan = model.plan.OrderedPlan
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
@@ -70,22 +81,22 @@ trait Distage {
   type AutoSetModule = planning.AutoSetModule
   val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
-  type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
-  val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
+  type TagKK[T[_, _]] = Tags.TagKK[T]
+  val TagKK: Tags.TagKK.type = Tags.TagKK
 
-  type TagK3[T[_, _, _]] = RuntimeDIUniverse.TagK3[T]
-  val TagK3: RuntimeDIUniverse.TagK3.type = RuntimeDIUniverse.TagK3
+  type TagK3[T[_, _, _]] = Tags.TagK3[T]
+  val TagK3: Tags.TagK3.type = Tags.TagK3
 
-  type TagT[T[_[_]]] = RuntimeDIUniverse.TagT[T]
-  val TagT: RuntimeDIUniverse.TagT.type = RuntimeDIUniverse.TagT
+  type TagT[T[_[_]]] = Tags.TagT[T]
+  val TagT: Tags.TagT.type = Tags.TagT
 
-  type TagTK[T[_[_], _]] = RuntimeDIUniverse.TagTK[T]
-  val TagTK: RuntimeDIUniverse.TagTK.type = RuntimeDIUniverse.TagTK
+  type TagTK[T[_[_], _]] = Tags.TagTK[T]
+  val TagTK: Tags.TagTK.type = Tags.TagTK
 
-  type TagTKK[T[_[_], _, _]] = RuntimeDIUniverse.TagTKK[T]
-  val TagTKK: RuntimeDIUniverse.TagTKK.type = RuntimeDIUniverse.TagTKK
+  type TagTKK[T[_[_], _, _]] = Tags.TagTKK[T]
+  val TagTKK: Tags.TagTKK.type = Tags.TagTKK
 
-  type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
-  val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
+  type TagTK3[T[_[_], _, _, _]] = Tags.TagTK3[T]
+  val TagTK3: Tags.TagTK3.type = Tags.TagTK3
 
 }

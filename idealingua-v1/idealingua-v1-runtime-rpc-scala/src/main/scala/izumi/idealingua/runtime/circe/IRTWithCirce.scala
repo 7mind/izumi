@@ -15,7 +15,7 @@ import scala.reflect.macros.blackbox
   * }}}
   *
   * To derive codecs for a sealed trait with branches inside its
-  * own companion object, use a proxy object. This works around
+  * own companion object, use a proxy object - this works around
   * a scala limitation: https://github.com/milessabin/shapeless/issues/837
   *
   * {{{
@@ -49,17 +49,35 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
 
   def materializeEncoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedEncoder[A]] =
     c.Expr[DerivationDerivedEncoder[A]] {
-      q"{ ${symbolOf[DerivationDerivedEncoder.type].asClass.module}.apply(${materializeEncoder[A]}) }"
+      // Yes, this is legal /_\ !! We add an import so that
+      // instances in IRTTimeInstances always beat out circe's default instances
+      q"""{
+           import _root_.izumi.idealingua.runtime.circe.IRTTimeInstances._
+
+           new ${weakTypeOf[DerivationDerivedEncoder[A]]}(_root_.io.circe.derivation.deriveEncoder[${weakTypeOf[A]}])
+         }"""
     }
 
   def materializeDecoderImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedDecoder[A]] =
     c.Expr[DerivationDerivedDecoder[A]] {
-      q"{ ${symbolOf[DerivationDerivedDecoder.type].asClass.module}.apply(${materializeDecoder[A]}) }"
+      // Yes, this is legal /_\ !! We add an import so that
+      // instances in IRTTimeInstances always beat out circe's default instances
+      q"""{
+           import _root_.izumi.idealingua.runtime.circe.IRTTimeInstances._
+
+           new ${weakTypeOf[DerivationDerivedDecoder[A]]}(_root_.io.circe.derivation.deriveEncoder[${weakTypeOf[A]}])
+         }"""
     }
 
   def materializeCodecImpl[A: c.WeakTypeTag]: c.Expr[DerivationDerivedCodec[A]] =
     c.Expr[DerivationDerivedCodec[A]] {
-      q"{ ${symbolOf[DerivationDerivedCodec.type].asClass.module}.apply(${materializeCodec[A]}) }"
+      // Yes, this is legal /_\ !! We add an import so that
+      // instances in IRTTimeInstances always beat out circe's default instances
+      q"""{
+           import _root_.izumi.idealingua.runtime.circe.IRTTimeInstances._
+
+           new ${weakTypeOf[DerivationDerivedCodec[A]]}(_root_.io.circe.derivation.deriveCodec[${weakTypeOf[A]}])
+         }"""
     }
 }
 
@@ -77,3 +95,11 @@ final case class DerivationDerivedCodec[A](value: Codec.AsObject[A]) extends Any
 object DerivationDerivedCodec {
   implicit def materialize[A]: DerivationDerivedCodec[A] = macro MaterializeDerivationMacros.materializeCodecImpl[A]
 }
+
+abstract class Derive[+A](implicit bundle: Bundle[A]) { this: RequireDeriving[A] => }
+
+trait RequireDeriving[+A] {
+  type BundleTpe <: A
+}
+
+class Bundle[A](val a: A)

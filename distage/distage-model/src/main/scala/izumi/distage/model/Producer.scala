@@ -1,17 +1,17 @@
 package izumi.distage.model
 
 import izumi.distage.model.definition.DIResource.DIResourceBase
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.platform.functional.Identity
 
 /** Executes instructions in [[OrderedPlan]] to produce a [[Locator]] */
 trait Producer {
-  protected[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator]
-  protected[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]]
+  private[distage] def produceFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Locator]
+  private[distage] def produceDetailedFX[F[_]: TagK: DIEffect](plan: OrderedPlan, filter: FinalizersFilter[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 
   final def produceF[F[_]: TagK: DIEffect](plan: OrderedPlan): DIResourceBase[F, Locator] = {
     produceFX[F](plan, FinalizersFilter.all[F])

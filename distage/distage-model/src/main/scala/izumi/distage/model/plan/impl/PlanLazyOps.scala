@@ -5,10 +5,11 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{AbstractPlan, ExecutableOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-trait PlanLazyOps[OpType <: ExecutableOp] {
+private[plan] trait PlanLazyOps[OpType <: ExecutableOp] {
   this: AbstractPlan[OpType] =>
-  def index: Map[DIKey, OpType] = lazyIndex
-  def definition: ModuleBase = lazyDefn
+
+  override final def index: Map[DIKey, OpType] = lazyIndex
+  override final def definition: ModuleBase = lazyDefn
 
   private[this] final lazy val lazyDefn = {
     val userBindings = steps.flatMap {
@@ -27,5 +28,4 @@ trait PlanLazyOps[OpType <: ExecutableOp] {
   private[this] final lazy val lazyIndex : Map[DIKey, OpType] = {
     steps.map(s => s.target -> s).toMap
   }
-
 }

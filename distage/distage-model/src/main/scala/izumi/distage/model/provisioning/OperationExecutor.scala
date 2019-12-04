@@ -1,8 +1,8 @@
 package izumi.distage.model.provisioning
 
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 
 trait OperationExecutor {
   def execute[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider, step: ExecutableOp): F[Seq[NewObjectOp]]

@@ -9,7 +9,7 @@ sealed trait BindingTag
 object BindingTag {
   implicit def apply(tag: AxisValue): BindingTag = AxisTag(tag)
 
-  case class AxisTag(choice: AxisValue) extends BindingTag
+  final case class AxisTag(choice: AxisValue) extends BindingTag
 }
 
 sealed trait AxisBase {

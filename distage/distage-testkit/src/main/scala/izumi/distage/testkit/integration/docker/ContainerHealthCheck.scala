@@ -35,7 +35,7 @@ object ContainerHealthCheck {
                       (AvailablePort(host, servicePort.port), check.checkPort(host, servicePort.port, s"open port $port on ${container.id}"))
                   }
               }
-              .collect({ case (p, _: ResourceCheck.Success) => p })
+              .collect { case (p, _: ResourceCheck.Success) => p }
 
             (port : DockerPort, availablePorts)
         }

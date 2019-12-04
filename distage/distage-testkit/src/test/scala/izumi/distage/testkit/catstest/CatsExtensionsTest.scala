@@ -7,7 +7,7 @@ import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.CircularCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import distage._
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import org.scalatest.{GivenWhenThen, WordSpec}
@@ -51,11 +51,11 @@ class CatsExtensionsTest extends WordSpec with GivenWhenThen {
       val plan3 = plan2.resolveImportsF[Id] {
         case _ => NotInContext
       }
-      assert(plan3.steps.collectFirst { case ReferenceInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
+      assert(plan3.steps.collectFirst { case UseInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
 
       Then("resolveImport should work")
       val plan4 = plan2.resolveImportF(Option[NotInContext](NotInContext)).get
-      assert(plan4.steps.collectFirst { case ReferenceInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
+      assert(plan4.steps.collectFirst { case UseInstance(key, instance, _) if key == DIKey.get[NotInContext] => instance.instance }.contains(NotInContext))
 
       Then("object graph is correct")
       assert(plan3 == plan4)

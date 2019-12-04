@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.st.dtest
 import distage.{BootstrapModule, DIKey, Module, Tag, TagK, TagKK}
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, StandardAxis}
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._

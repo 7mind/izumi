@@ -3,7 +3,7 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.{DIEffect, LowPriorityDIEffectInstances}
+import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
 import izumi.functional.bio.{BIO, BIOAsync}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}
@@ -45,10 +45,8 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
       DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
     }
 
-    And("Methods that mention cats types only in generics can be called with nulls, but will error")
-    intercept[ScalaReflectionException] {
-      DIResource.providerFromCatsProvider[Identity, Int](null)
-    }
+    And("Methods that mention cats types only in generics will error on call")
+//    assertDoesNotCompile("DIResource.providerFromCatsProvider[Identity, Int](() => null)")
 
     Then("DIResource.use syntax works")
     var open = false

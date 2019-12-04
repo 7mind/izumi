@@ -3,11 +3,11 @@ package izumi.distage.model.reflection.universe
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIWiring}
 import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
+import izumi.fundamentals.reflection.Tags.Tag
 
 trait WithDICallable {
   this: DIUniverseBase
     with WithDISafeType
-    with WithTags
     with WithDITypedRef
     with WithDIKey
     with WithDISymbolInfo
@@ -22,7 +22,6 @@ trait WithDICallable {
 
     def unsafeApply(refs: TypedRef[_]*): Any = {
       val args = verifyArgs(refs)
-
       fun(args)
     }
 
@@ -58,12 +57,28 @@ trait WithDICallable {
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
     def unsafeZip(newRet: SafeType, that: Provider): Provider
 
-    final val diKeys: Seq[DIKey] = associations.map(_.wireWith)
-    override final val argTypes: Seq[SafeType] = associations.map(_.wireWith.tpe)
+    final val diKeys: Seq[DIKey] = associations.map(_.key)
+    override final val argTypes: Seq[SafeType] = associations.map(_.key.tpe)
     override final val arity: Int = argTypes.size
 
     override final def toString: String =
       s"$fun(${argTypes.mkString(", ")}): $ret"
+
+    // FIXME: better equality scheme ???
+    private[this] var generated: Boolean = false
+    private[izumi] def asGenerated: this.type = { generated = true; this }
+    def isGenerated: Boolean = generated
+
+    private def eqField: AnyRef = if (generated) ret else fun
+    override final def equals(obj: Any): Boolean = {
+      obj match {
+        case that: Provider =>
+          eqField == that.eqField
+        case _ =>
+          false
+      }
+    }
+    override final def hashCode(): Int = eqField.hashCode()
   }
 
   object Provider {
@@ -119,11 +134,9 @@ trait WithDICallable {
         }
       }
     }
-
   }
 
-  class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message, null)
+  class UnsafeCallArgsMismatched(message: String, val expected: Seq[SafeType], val actual: Seq[SafeType], val actualValues: Seq[Any]) extends DIException(message)
 
-  class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider) extends DIException(message, null)
-
+  class FactoryProvidersCannotBeCombined(message: String, val provider1: Provider.FactoryProvider, val provider2: Provider.FactoryProvider) extends DIException(message)
 }

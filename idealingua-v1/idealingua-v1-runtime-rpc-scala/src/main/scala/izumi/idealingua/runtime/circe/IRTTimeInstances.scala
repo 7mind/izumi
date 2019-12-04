@@ -6,6 +6,8 @@ import java.time._
 import izumi.fundamentals.platform.time.IzTime
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 
+object IRTTimeInstances extends IRTTimeInstances
+
 trait IRTTimeInstances {
   import izumi.fundamentals.platform.time.IzTime._
   implicit final val decodeInstant: Decoder[Instant] =

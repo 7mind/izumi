@@ -9,7 +9,7 @@ import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SetInstruction.S
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.SingletonInstruction.{SetId, SetImpl}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL._
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
-import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceInstance
+import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.topology.DependencyGraph
@@ -17,29 +17,28 @@ import izumi.distage.model.plan.topology.DependencyGraph.DependencyKind
 import izumi.distage.model.plan.topology.PlanTopology.PlanTopologyImmutable
 import izumi.distage.model.provisioning.PlanInterpreter
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.{Locator, definition}
 import izumi.fundamentals.platform.language.{CodePositionMaterializer, SourceFilePosition}
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 
 import scala.collection.mutable
 
-// TODO: shameless copypaste of [[ModuleDef]] for now; but we ARE able to unify all of LocatorDef, ModuleDef, TypeLevelDSL and [[Bindings]] DSLs into one!
+// TODO: shameless copypaste of [[ModuleDef]] for now; but we CAN unify all of LocatorDef, ModuleDef, TypeLevelDSL and Bindings DSLs into one...
 trait LocatorDef
   extends AbstractLocator
      with AbstractBindingDefDSL[LocatorDef.BindDSL, LocatorDef.MultipleDSL, LocatorDef.SetDSL] {
 
-  override protected[distage] def finalizers[F[_] : universe.RuntimeDIUniverse.TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
+  override private[distage] def finalizers[F[_] : TagK]: Seq[PlanInterpreter.Finalizer[F]] = Seq.empty
 
-  override private[definition] def _bindDSL[T: RuntimeDIUniverse.Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
+  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
 
   override private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): LocatorDef.MultipleDSL[T] =
     new definition.LocatorDef.MultipleDSL[T](ref)
 
-  override private[definition] def _setDSL[T: RuntimeDIUniverse.Tag](ref: SetRef): LocatorDef.SetDSL[T] =
+  override private[definition] def _setDSL[T: Tag](ref: SetRef): LocatorDef.SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
@@ -56,7 +55,7 @@ trait LocatorDef
     val ops = frozenInstances.map {
       case IdentifiedRef(key, value) =>
         val origin = OperationOrigin.SyntheticBinding(Binding.SingletonBinding[DIKey](key, ImplDef.InstanceImpl(key.tpe, value), Set.empty, SourceFilePosition.unknown))
-        ReferenceInstance(key, Instance(key.tpe, value), origin)
+        UseInstance(key, Instance(key.tpe, value), origin)
     }.toVector
 
     OrderedPlan(ops, ops.map(_.target).toSet, topology)
@@ -77,7 +76,7 @@ trait LocatorDef
         map.getOrElseUpdate(e.key, Set.empty[Any])
       case b =>
         throw new LocatorDefUninstantiatedBindingException(
-          s"""Binding $b is not an instance binding, only forms `make[X].from(instance)` and `many[X].add(y).add(z)`
+          s"""Binding $b is not an instance binding, only forms `make[X].fromValue(instance)` and `many[X].addValue(y).addValue(z)`
              |are supported, binding was defined at ${b.origin}""".stripMargin, b)
     }
 

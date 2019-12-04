@@ -16,7 +16,7 @@ object InnerClassCases {
       }
 
       case class Circular1(circular2: Circular2)
-      case class Circular2(circular2: Circular1)
+      case class Circular2(circular1: Circular1)
     }
   }
 

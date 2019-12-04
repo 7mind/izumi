@@ -53,16 +53,6 @@ object Injector {
     }
   }
 
-  object NoCogen extends InjectorBootstrap {
-    def apply(): Injector = {
-      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap)
-    }
-
-    def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap, overrides = overrides.merge)
-    }
-  }
-
   object NoProxies extends InjectorBootstrap {
     def apply(): Injector = {
       bootstrap(bootstrapBase = BootstrapLocator.noProxiesBootstrap)
@@ -73,9 +63,18 @@ object Injector {
     }
   }
 
-  trait InjectorBootstrap {
-    def apply(): Injector
+  object NoReflection extends InjectorBootstrap {
+    def apply(): Injector = {
+      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap)
+    }
 
+    def apply(overrides: BootstrapModule*): Injector = {
+      bootstrap(bootstrapBase = BootstrapLocator.noReflectionBootstrap, overrides = overrides.merge)
+    }
+  }
+
+  private[Injector] sealed trait InjectorBootstrap {
+    def apply(): Injector
     def apply(overrides: BootstrapModule*): Injector
   }
 

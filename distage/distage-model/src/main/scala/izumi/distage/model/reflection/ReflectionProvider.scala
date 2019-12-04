@@ -1,27 +1,28 @@
 package izumi.distage.model.reflection
 
-import izumi.distage.model.reflection.universe.{DIUniverse, RuntimeDIUniverse}
+import izumi.distage.model.reflection.universe.DIUniverse
 
 trait ReflectionProvider {
   val u: DIUniverse
+  import u._
 
-  def symbolToWiring(symbl: u.SafeType): u.Wiring.PureWiring
+//  val u0: scala.reflect.api.Universe
+//  import u0.{Type => TypeNative}
+//  import u0.{Symbol => SymbNative}
 
-  def providerToWiring(function: u.Provider): u.Wiring.PureWiring
+  // keyprovider
+  def associationFromParameter(parameterSymbol: SymbolInfo): Association.Parameter
 
-  def constructorParameters(symbl: u.SafeType): List[u.Association.Parameter]
+  // reflectionprovider
+  def symbolToWiring(symbl: TypeNative): Wiring.PureWiring
+  def constructorParameterLists(symbl: TypeNative): List[List[Association.Parameter]]
 
-  def constructorParameterLists(symbl: u.SafeType): List[List[u.Association.Parameter]]
+  // symbolintrospector
+  def isConcrete(tpe: TypeNative): Boolean
+  def isWireableAbstract(tpe: TypeNative): Boolean
+  def isFactory(tpe: TypeNative): Boolean
 }
 
 object ReflectionProvider {
-
-  trait Runtime extends ReflectionProvider {
-    override val u: RuntimeDIUniverse.type = RuntimeDIUniverse
-  }
-
-  type Static[U] = Aux[U]
-
   type Aux[U] = ReflectionProvider { val u: U }
-
 }

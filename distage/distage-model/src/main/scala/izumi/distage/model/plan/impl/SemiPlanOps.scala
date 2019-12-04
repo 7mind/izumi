@@ -3,12 +3,13 @@ package izumi.distage.model.plan.impl
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.WiringOp.CallProvider
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.plan.{AbstractPlan, SemiPlan}
+import izumi.distage.model.plan.SemiPlan
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
-trait SemiPlanOps {
+private[plan] trait SemiPlanOps {
   this: SemiPlan =>
 
   override def toSemi: SemiPlan = this
@@ -27,7 +28,7 @@ trait SemiPlanOps {
   }
 
   override def resolveImports(f: PartialFunction[ImportDependency, Any]): SemiPlan = {
-    copy(steps = AbstractPlan.resolveImports1(AbstractPlan.importToInstances(f), steps))
+    copy(steps = AbstractPlanOps.resolveImports1(AbstractPlanOps.importToInstances(f), steps))
   }
 
   override def locateImports(locator: Locator): SemiPlan = {
@@ -35,7 +36,7 @@ trait SemiPlanOps {
   }
 
   final def resolveImportsOp(f: PartialFunction[ImportDependency, Seq[SemiplanOp]]): SemiPlan = {
-    SemiPlan(steps = AbstractPlan.resolveImports1(f, steps.toVector), gcMode)
+    SemiPlan(steps = AbstractPlanOps.resolveImports1(f, steps.toVector), gcMode)
   }
 
   final def providerImport[T](function: ProviderMagnet[T]): SemiPlan = {

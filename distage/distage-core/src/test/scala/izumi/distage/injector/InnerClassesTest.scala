@@ -1,9 +1,12 @@
 package izumi.distage.injector
 
+import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
+import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
+import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.WordSpec
 
 class InnerClassesTest extends WordSpec with MkInjector {
@@ -54,14 +57,14 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
   }
 
-  "can handle function local path-dependent injections (macros can't)" in {
-    def someFunction(): Unit = {
+  "can handle function local path-dependent injections" in {
+    def someFunction() = {
       import InnerClassUnstablePathsCase._
 
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.TestClass]
         make[testProviderModule.TestDependency]
       })
@@ -72,19 +75,38 @@ class InnerClassesTest extends WordSpec with MkInjector {
       val context = injector.produceUnsafe(plan)
 
       assert(context.get[testProviderModule.TestClass].a.isInstanceOf[testProviderModule.TestDependency])
-      ()
     }
 
     someFunction()
   }
 
-  "support path-dependant by-name injections" in {
+  "progression test: can't handle concrete type projections as prefixes in path-dependent injections" in {
+    assertTypeError(
+      """
+      import InnerClassUnstablePathsCase._
+
+      val definition = PlannerInput.noGc(new ModuleDef {
+        make[TestModule]
+        make[TestModule#TestClass]
+        make[TestModule#TestDependency]
+      })
+
+      val injector = mkInjector()
+      val plan = injector.plan(definition)
+
+      val context = injector.produceUnsafe(plan)
+
+      assert(context.get[TestModule#TestClass].a.isInstanceOf[TestModule#TestDependency])
+      """)
+  }
+
+  "support path-dependent by-name injections" in {
     import InnerClassByNameCase._
 
     val testProviderModule = new TestModule
 
     val definition = PlannerInput.noGc(new ModuleDef {
-      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//      make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
       make[testProviderModule.TestDependency]
       make[testProviderModule.TestClass]
     })
@@ -116,11 +138,11 @@ class InnerClassesTest extends WordSpec with MkInjector {
   }
 
   "progression test: can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
-    intercept[UnsupportedDefinitionException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
+    val exc = intercept[ProvisioningException] {
+      import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
 
       val definition = PlannerInput.noGc(new ModuleDef {
+        // FIXME: `make` support ??? should be a compile error
         make[TestFactory]
       })
 
@@ -128,6 +150,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
     }
+    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
   }
 
   "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
@@ -147,26 +170,26 @@ class InnerClassesTest extends WordSpec with MkInjector {
     }
   }
 
-  "progression test: can't find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
-    intercept[ProvisioningException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
+  "can now find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
+    import InnerClassStablePathsCase._
+import StableObjectInheritingTrait._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[ByNameCircular1]
-        make[ByNameCircular2]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[ByNameCircular1]
+      make[ByNameCircular2]
+    })
 
-      val context = mkInjector().produceUnsafe(definition)
+    val context = mkNoProxyInjector().produceUnsafe(definition)
 
-      assert(context.get[ByNameCircular1] != null)
-      assert(context.get[ByNameCircular1].circular2 != context.get[ByNameCircular2])
-    }
+    assert(context.get[ByNameCircular1] != null)
+    assert(context.get[ByNameCircular1].circular2 eq context.get[ByNameCircular2])
   }
 
-  "runtime cogen can't handle path-dependent factories (macros can't?)" in {
+  "can now handle path-dependent factories" in {
     import InnerClassUnstablePathsCase._
     val testProviderModule = new TestModule
+
+    FactoryConstructor[testProviderModule.TestFactory]
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
@@ -179,13 +202,14 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
   }
 
-  "progression test: runtime cogen can't circular path-dependent dependencies (macros can't?)" in {
-    intercept[ProvisioningException] {
+  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't take prefix type into account when calling constructor for generated lambdas and end up choosing the wrong constructor...)" in {
+    // the value prefix probably has to be stored inside the Provider to fix this
+    val exc = intercept[ProvisioningException] {
       import InnerClassUnstablePathsCase._
       val testProviderModule = new TestModule
 
       val definition = PlannerInput.noGc(new ModuleDef {
-        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
+//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
         make[testProviderModule.Circular1]
         make[testProviderModule.Circular2]
       })
@@ -194,6 +218,9 @@ class InnerClassesTest extends WordSpec with MkInjector {
 
       assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
     }
+    assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
+    assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
+    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {

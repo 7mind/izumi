@@ -16,12 +16,16 @@ object ProviderCases {
 
     def defconfannfn2(@Id("confargann1") @Id("confargann2") y: String): String = y
 
+    def defimplicitfn(implicit y: String): String = y
+
     val testVal: (String @Id("valsigtypeann1"), Int @Id("valsigtypeann2")) => String = (x, _) => x
 
     val testVal2: Boolean => String = { x: Boolean @Id("valbodytypeann") => x.toString }
 
     val testVal3: Long @Id("valsbtypeann1") => String @Id("valsbtypeann2") => Long =
       { x: Long @Id("valsbtypeann3") => _ => x }
+
+    val testValByName: (=> Any) => Unit = _ => ()
 
     case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
     case class ClassTypeAnn(val x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))

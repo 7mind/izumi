@@ -40,13 +40,16 @@ package object bio extends BIOSyntax {
 
   private[bio] sealed trait BIOFunctorInstances
   object BIOFunctorInstances {
-    // place ZIO instance at the root of hierarchy, so that it's visible when summoning any class in hierarchy
+    // place ZIO instance at the root of the hierarchy, so that it's visible when summoning any class in hierarchy
     @inline implicit final def BIOZIO[R]: BIOZio[R] = BIOZio.asInstanceOf[BIOZio[R]]
 
-    @inline implicit def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
+    @inline implicit final def AttachBIOPrimitives[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOPrimitives: BIOPrimitives[F]): BIOPrimitives.type = BIOPrimitives
 
-    @inline implicit def AttachBIOFork[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
-    @inline implicit def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused","") self: BIOFunctor[F[Any, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type = BIOFork
+    @inline implicit final def AttachBIOFork[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BIOFork: BIOFork[F]): BIOFork.type = BIOFork
+    @inline implicit final def AttachBIOFork3[F[-_, +_, +_]](@deprecated("unused","") self: BIOFunctor[F[Any, +?, +?]])(implicit BIOFork: BIOFork3[F]): BIOFork.type = BIOFork
+
+    @inline implicit final def AttachBlockingIO[F[+_, +_]](@deprecated("unused","") self: BIOFunctor[F])(implicit BlockingIO: BlockingIO[F]): BlockingIO.type = BlockingIO
+    @inline implicit final def AttachBlockingIO3[F[-_, +_, +_]](@deprecated("unused","") self: BIOFunctor[F[Any, +?, +?]])(implicit BlockingIO: BlockingIO3[F]): BlockingIO.type = BlockingIO
   }
 
   trait BIOBifunctor[F[+_, +_]] extends BIOFunctor[F] {
@@ -75,9 +78,13 @@ package object bio extends BIOSyntax {
 
     @inline final val unit: F[Nothing, Unit] = pure(())
     @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
+    @inline final def traverse[E, A, B](o: Option[A])(f: A => F[E, B]): F[E, Option[B]] = o match {
+      case Some(a) => map(f(a))(Some(_))
+      case None => pure(None)
+    }
   }
 
-  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F]  {
+  trait BIOGuarantee[F[+_, +_]] extends BIOApplicative[F] {
     def guarantee[E, A](f: F[E, A])(cleanup: F[Nothing, Unit]): F[E, A]
   }
 
@@ -221,6 +228,8 @@ package object bio extends BIOSyntax {
     @inline def parTraverse_[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverse(l)(f))
     @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
+    @inline final def fromFuture[A](mkFuture: => Future[A]): F[Throwable, A] = fromFuture(_ => mkFuture)
+
     @inline final def repeatUntil[E, A](action: F[E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[E, A] = {
       def go(n: Int): F[E, A] = {
         flatMap(action) {
@@ -241,7 +250,7 @@ package object bio extends BIOSyntax {
 
   private[bio] sealed trait BIOAsyncInstances
   object BIOAsyncInstances {
-    implicit def BIOAsyncZio[F](implicit clockService: zio.clock.Clock): BIOAsync[ZIO[F, +?, +?]] = new BIOAsyncZio[F](clockService)
+    implicit def BIOAsyncZio[R](implicit clockService: zio.clock.Clock): BIOAsync[ZIO[R, +?, +?]] = new BIOAsyncZio[R](clockService)
   }
 
   trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {
@@ -250,6 +259,7 @@ package object bio extends BIOSyntax {
 
   private[bio] sealed trait BIOForkInstances
   object BIOForkInstances {
+    // FIXME: bad encoding for lifting to 2-parameters...
     implicit def BIOForkZioIO[R]: BIOFork[ZIO[R, +?, +?]] = BIOForkZio.asInstanceOf[BIOFork[ZIO[R, +?, +?]]]
 
     implicit object BIOForkZio extends BIOFork3[ZIO] {
@@ -266,7 +276,14 @@ package object bio extends BIOSyntax {
     }
   }
 
+  type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
+
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
+
+  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+  @inline final lazy val BlockingIO: BlockingIO3.type = BlockingIO3
+
+  type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
 
   type SyncSafe2[F[_, _]] = SyncSafe[F[Nothing, ?]]
   object SyncSafe2 {

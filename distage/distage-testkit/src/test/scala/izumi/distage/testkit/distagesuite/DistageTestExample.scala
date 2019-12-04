@@ -2,11 +2,12 @@ package izumi.distage.testkit.distagesuite
 
 import cats.effect.{IO => CIO}
 import distage._
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
 import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
@@ -61,12 +62,12 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         ???
     }
 
-    "test 5 (should be ingored)" skip {
+    "test 5 (should be ignored)" skip {
       _: MockCachedUserService[F] =>
        ???
     }
 
-    "test 6 (should be ingored)" in {
+    "test 6 (should be ignored)" in {
       _: MockCachedUserService[F] =>
         assume(false, "xxx")
     }
@@ -74,50 +75,6 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
 }
 
-//final class DistageTestExampleId extends DistageTestExampleBase[Identity]
-//final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
+final class DistageTestExampleId extends DistageTestExampleBase[Identity]
+final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
-
-
-abstract class DistageTestExampleBase1[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
-
-  "distage test custom runner" should {
-    "xtest 1" in {
-      service: MockUserRepository[F] =>
-        for {
-          _ <- F.maybeSuspend(assert(service != null))
-          _ <- F.maybeSuspend(println("xtest2"))
-        } yield ()
-    }
-
-    "xtest 2" in {
-      service: MockCachedUserService[F] =>
-        for {
-          _ <- F.maybeSuspend(assert(service != null))
-          _ <- F.maybeSuspend(println("xtest1"))
-        } yield ()
-    }
-
-    "xtest 3" in {
-      service: MockCachedUserService[F] =>
-        F.maybeSuspend(assert(service != null))
-    }
-
-    "xtest 4 (should be ignored)" in {
-      _: ApplePaymentProvider[F] =>
-        ???
-    }
-
-    "xtest 5 (should be ingored)" skip {
-      _: MockCachedUserService[F] =>
-        ???
-    }
-
-    "xtest 6 (should be ingored)" in {
-      _: MockCachedUserService[F] =>
-        assume(false)
-    }
-  }
-
-}
-final class DistageTestExampleZIO1 extends DistageTestExampleBase[Task]

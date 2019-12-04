@@ -1,10 +1,11 @@
 package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
-import izumi.distage.model.reflection.macros.{ProviderMagnetMacro, ProviderMagnetMacroGenerateUnsafeWeakSafeTypes}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, DependencyContext, Provider, SafeType, SymbolInfo, Tag}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, SafeType, SymbolInfo}
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.language.experimental.macros
 import scala.language.implicitConversions
@@ -23,6 +24,7 @@ import scala.language.implicitConversions
   * }}}
   *
   * Method reference:
+  *
   * {{{
   *   def constructor(@Id("special") i: Int): Unit = ()
   *
@@ -32,6 +34,7 @@ import scala.language.implicitConversions
   * }}}
   *
   * Function value with annotated signature:
+  *
   * {{{
   *   val constructor: (Int @Id("special"), String @Id("special")) => Unit = (_, _) => ()
   *
@@ -50,33 +53,33 @@ import scala.language.implicitConversions
   * When binding a case class to constructor, prefer passing `new X(_)` instead of `X.apply _` because `apply` will
   * not preserve parameter annotations from case class definitions:
   *
-  *   {{{
-  *   case class X(@Id("special") i: Int)
+  * {{{
+  *  case class X(@Id("special") i: Int)
   *
-  *   make[X].from(X.apply _) // summons regular Int
-  *   make[X].from(new X(_)) // summons special Int
-  *   }}}
+  *  make[X].from(X.apply _) // summons regular Int
+  *  make[X].from(new X(_)) // summons special Int
+  * }}}
   *
   * HOWEVER, if you annotate the types of parameters instead of their names, `apply` WILL work:
   *
-  *   {{{
-  *     case class X(i: Int @Id("special"))
+  * {{{
+  *   case class X(i: Int @Id("special"))
   *
-  *     make[X].from(X.apply _) // summons special Int
-  *   }}}
+  *   make[X].from(X.apply _) // summons special Int
+  * }}}
   *
-  * Using intermediate vals` will lose annotations when converting a method into a function value,
+  * Using intermediate vals will lose annotations when converting a method into a function value,
   * prefer using annotated method directly as method reference `(method _)`:
   *
-  *   {{{
+  * {{{
   *   def constructorMethod(@Id("special") i: Int): Unit = ()
   *
   *   val constructor = constructorMethod _
   *
   *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
-  *   }}}
+  * }}}
   *
-  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]
+  * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
   */
 final case class ProviderMagnet[+A](get: Provider) {
   def map[B: Tag](f: A => B): ProviderMagnet[B] = {
@@ -84,9 +87,7 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   def zip[B: Tag](that: ProviderMagnet[B]): ProviderMagnet[(A, B)] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
-    rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
-
+    implicit val rTag: Tag[A] = Tag(that.get.ret.cls, that.get.ret.tag); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
     copy[(A, B)](get = get.unsafeZip(SafeType.get[(A, B)], that.get))
   }
 
@@ -96,14 +97,14 @@ final case class ProviderMagnet[+A](get: Provider) {
 
   /** Add `B` as an unused dependency for this constructor */
   def addDependency[B: Tag]: ProviderMagnet[A] = {
-    implicit val rTag: Tag[A] = Tag.unsafeFromSafeType(Tag[B].tpe.mirror)(get.ret)
-    map2[B, A](ProviderMagnet.identity[B])((a, _) => a)
+    val newProvider = zip(ProviderMagnet.identity[B]).get.unsafeMap(get.ret, { case (a, _) => a }: Any => Any)
+    copy[A](get = newProvider)
   }
 }
 
 object ProviderMagnet {
   implicit def apply[R](fun: () => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
-  implicit def apply[R](fun: _ => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
+  implicit def apply[R](fun: (_) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
@@ -126,8 +127,8 @@ object ProviderMagnet {
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
   implicit def apply[R](fun: (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => R): ProviderMagnet[R] = macro ProviderMagnetMacro.impl[R]
 
-  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[_] =
-    new ProviderMagnet[Any](
+  def todoProvider(key: DIKey)(implicit pos: CodePositionMaterializer): ProviderMagnet[Nothing] =
+    new ProviderMagnet[Nothing](
       Provider.ProviderImpl(
         associations = Seq.empty
         , ret = key.tpe
@@ -137,13 +138,19 @@ object ProviderMagnet {
     )
 
   def identity[A: Tag]: ProviderMagnet[A] = {
-    val tpe = SafeType.get[A]
     val key = DIKey.get[A]
-    val debugInfo = DependencyContext.ConstructorParameterContext(tpe, SymbolInfo.Static("x$1", tpe, Nil, tpe, isByName = false, wasGeneric = false))
+    val tpe = key.tpe
+    val symbolInfo = SymbolInfo.Static(
+      name = "x$1",
+      finalResultType = tpe,
+      annotations = Nil,
+      isByName = false,
+      wasGeneric = false
+    )
 
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq(Association.Parameter(debugInfo, "x$1", tpe, key, isByName = false, wasGeneric = false))
+        associations = Seq(Association.Parameter(symbolInfo, key))
       , fun = (_: Seq[Any]).head.asInstanceOf[A]
       )
     )
@@ -156,12 +163,12 @@ object ProviderMagnet {
   def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](
       Provider.ProviderImpl[A](
-        associations = Seq.empty
-        , fun = (_: Seq[Any]) => a
+        associations = Seq.empty,
+        fun = (_: Seq[Any]) => a,
       )
     )
   }
 
-  def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacroGenerateUnsafeWeakSafeTypes.impl[R]
+  def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacro.generateUnsafeWeakSafeTypes[R]
 
 }

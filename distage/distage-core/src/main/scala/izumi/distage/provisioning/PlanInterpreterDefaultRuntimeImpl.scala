@@ -5,8 +5,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
@@ -14,6 +14,7 @@ import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -23,11 +24,8 @@ class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
 , proxyStrategy: ProxyStrategy
-, factoryStrategy: FactoryStrategy
-, traitStrategy: TraitStrategy
 , factoryProviderStrategy: FactoryProviderStrategy
 , providerStrategy: ProviderStrategy
-, classStrategy: ClassStrategy
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
 , effectStrategy: EffectStrategy
@@ -167,7 +165,7 @@ class PlanInterpreterDefaultRuntimeImpl
 
   override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
     step match {
-      case op: WiringOp.ReferenceInstance =>
+      case op: WiringOp.UseInstance =>
         instanceStrategy.getInstance(context, op)
 
       case op: WiringOp.ReferenceKey =>
@@ -176,22 +174,13 @@ class PlanInterpreterDefaultRuntimeImpl
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, op)
 
-      case op: WiringOp.InstantiateClass =>
-        classStrategy.instantiateClass(context, op)
-
-      case op: WiringOp.InstantiateTrait =>
-        traitStrategy.makeTrait(context, op)
-
       case op: WiringOp.CallFactoryProvider =>
         factoryProviderStrategy.callFactoryProvider(context, this, op)
-
-      case op: WiringOp.InstantiateFactory =>
-        factoryStrategy.makeFactory(context, this, op)
     }
   }
 
-  private[this] def interpretResult[F[_] : TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
-    result match {
+  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
+    result.asInstanceOf[NewObjectOp.Aux[F]] match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
         active.imports += (target -> instance)
@@ -213,9 +202,6 @@ class PlanInterpreterDefaultRuntimeImpl
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
         active.instances += (target -> instance)
-
-      case NewObjectOp.DoNothing() =>
-        ()
     }
   }
 
@@ -224,7 +210,7 @@ class PlanInterpreterDefaultRuntimeImpl
     val monadicOps = ops.collect { case m: MonadicOp => m }
     F.traverse_(monadicOps) {
       op =>
-        val actionEffectType = op.wiring.effectHKTypeCtor
+        val actionEffectType = op.effectHKTypeCtor
         val isEffect = actionEffectType != identityEffectType
 
         if (isEffect && !(actionEffectType <:< provisionerEffectType)) {

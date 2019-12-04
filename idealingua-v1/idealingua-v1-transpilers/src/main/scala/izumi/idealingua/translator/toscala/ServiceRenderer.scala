@@ -18,7 +18,7 @@ class ServiceRenderer(ctx: STContext) {
     val c = ServiceContext(ctx, svc)
 
     val decls = svc.methods
-      .collect({ case c: RPCMethod => c })
+      .collect { case c: RPCMethod => c }
       .map(ServiceMethodProduct(ctx, c, _))
 
     val qqServer =

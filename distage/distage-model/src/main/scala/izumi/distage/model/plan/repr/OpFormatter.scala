@@ -1,10 +1,10 @@
 package izumi.distage.model.plan.repr
 
+import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.MonadicOp._
 import izumi.distage.model.plan.ExecutableOp.ProxyOp._
 import izumi.distage.model.plan.ExecutableOp.WiringOp._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, ImportDependency, InstantiationOp, WiringOp, _}
-import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.MonadicWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
@@ -30,8 +30,8 @@ object OpFormatter {
 
   class Impl
   (
-    keyFormatter: KeyFormatter
-  , typeFormatter: TypeFormatter
+    keyFormatter: KeyFormatter,
+    typeFormatter: TypeFormatter,
   ) extends OpFormatter {
 
     import keyFormatter.formatKey
@@ -42,39 +42,31 @@ object OpFormatter {
         case i: InstantiationOp =>
           i match {
             case CreateSet(target, tpe, members, origin) =>
-              // f"""$target := newset[$tpe]"""
               val repr = doFormat(formatType(tpe), members.map(formatKey).toSeq, "newset", ('[', ']'), ('{', '}'))
               val pos = formatBindingPosition(origin)
               s"${formatKey(target)} $pos := $repr"
 
-            case ExecuteEffect(target, proxied, wiring, origin) =>
+            case ExecuteEffect(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := effect[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
+              s"${formatKey(target)} $pos := effect[$effectHKTypeCtor]${formatKey(effectKey)}"
 
-            case AllocateResource(target, proxied, wiring, origin) =>
+            case AllocateResource(target, effectKey, _, effectHKTypeCtor, origin) =>
               val pos = formatBindingPosition(origin)
-              s"${formatKey(target)} $pos := allocate[${wiring.effectHKTypeCtor}] {\n${format(proxied).shift(2)}\n}"
+              s"${formatKey(target)} $pos := allocate[$effectHKTypeCtor]${formatKey(effectKey)}"
 
             case w: WiringOp =>
               w match {
-                case InstantiateClass(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
-                case InstantiateTrait(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
-                case InstantiateFactory(target, wiring, origin) =>
-                  formatOp(target, wiring, origin)
                 case CallProvider(target, wiring, origin) =>
                   formatOp(target, wiring, origin)
                 case CallFactoryProvider(target, wiring, origin) =>
                   formatOp(target, wiring, origin)
-                case ReferenceInstance(target, wiring, origin) =>
+                case UseInstance(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
-                  if (wiring.instance!=null) {
+                  if (wiring.instance != null) {
                     s"${formatKey(target)} $pos := value ${wiring.instance.getClass.getName}#${wiring.instance.hashCode()}"
                   } else {
                     s"${formatKey(target)} $pos := null"
                   }
-
                 case ReferenceKey(target, wiring, origin) =>
                   val pos = formatBindingPosition(origin)
                   s"${formatKey(target)} $pos := ref ${formatKey(wiring.key)}"
@@ -119,36 +111,35 @@ object OpFormatter {
       s"${formatKey(target)} $pos := $op"
     }
 
-
     private def formatWiring(deps: Wiring): String = {
       deps match {
-        case Constructor(instanceType, associations, prefix) =>
-          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "make", ('[', ']'), ('(', ')'))
-
-        case AbstractSymbol(instanceType, associations, prefix) =>
-          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "impl", ('[', ']'), ('{', '}'))
+//        case Constructor(instanceType, associations, prefix) =>
+//          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "make", ('[', ']'), ('(', ')'))
+//
+//        case AbstractSymbol(instanceType, associations, prefix) =>
+//          doFormat(formatType(instanceType), formatPrefix(prefix) ++ associations.map(formatDependency), "impl", ('[', ']'), ('{', '}'))
 
         case Function(provider, associations) =>
           doFormat(formatFunction(provider), associations.map(formatDependency), "call", ('(', ')'), ('{', '}'))
 
-        case Factory(factoryType, factoryIndex, dependencies) =>
-          val wirings = factoryIndex.map {
-            w =>
-              s"${w.factoryMethod}: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
-          }
-
-          val depsRepr = dependencies.map(formatDependency)
-
-          doFormat(
-            formatType(factoryType)
-            , wirings ++ depsRepr
-            , "factory", ('(', ')'), ('{', '}')
-          )
+//        case Factory(factoryType, factoryIndex, dependencies) =>
+//          val wirings = factoryIndex.map {
+//            w =>
+//              s"${w.factoryMethod}: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
+//          }
+//
+//          val depsRepr = dependencies.map(formatDependency)
+//
+//          doFormat(
+//            formatType(factoryType)
+//            , wirings ++ depsRepr
+//            , "factory", ('(', ')'), ('{', '}')
+//          )
 
         case FactoryFunction(provider, factoryIndex, dependencies) =>
           val wirings = factoryIndex.map {
             case (idx, w) =>
-              s"${w.factoryMethod}[$idx]: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.wireWith)}".shift(2)
+              s"${w.factoryMethod}[$idx]: ${formatType(w.factoryMethod.finalResultType)} ~= ${formatWiring(w.productWiring)}".shift(2)
           }.toSeq
 
           val depsRepr = dependencies.map(formatDependency)
@@ -166,17 +157,17 @@ object OpFormatter {
 
     private def formatDependency(association: Association): String = {
       association match {
-        case Association.Parameter(_, name, tpe, wireWith, isByName, _) =>
-          val fname = if (isByName) {
-            s"=> $name"
+        case p: Association.Parameter =>
+          val fname = if (p.isByName) {
+            s"=> ${p.name}"
           } else {
-            name
+            p.name
           }
 
-          s"""arg $fname: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
+          s"""arg $fname: ${formatType(p.tpe)} = lookup(${formatKey(p.key)})"""
 
-        case Association.AbstractMethod(_, name, tpe, wireWith) =>
-          s"""def $name: ${formatType(tpe)} = lookup(${formatKey(wireWith)})"""
+        case m: Association.AbstractMethod =>
+          s"""def ${m.name}: ${formatType(m.tpe)} = lookup(${formatKey(m.key)})"""
       }
     }
 
@@ -184,9 +175,9 @@ object OpFormatter {
       s"${provider.fun}(${provider.argTypes.map(formatType).mkString(", ")}): ${formatType(provider.ret)}"
     }
 
-    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
-      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
-    }
+//    private def formatPrefix(prefix: Option[DIKey]): Seq[String] = {
+//      prefix.toSeq.map(p => s".prefix = lookup(${formatKey(p)})")
+//    }
 
     private def doFormat(impl: String, depRepr: Seq[String], opName: String, opFormat: (Char, Char), delim: (Char, Char)): String = {
       val sb = new StringBuilder()

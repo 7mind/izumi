@@ -1,16 +1,16 @@
 package izumi.distage.testkit.docker.fixtures
 
-import distage.config.ConfPath
+import distage.config.ConfigModuleDef
 import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.testkit.integration.docker.Docker.AvailablePort
 import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
 import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
 import zio.Task
 
-class PgSvcExample(val pg: AvailablePort@Id("pg"), val ddb: AvailablePort@Id("ddb"))
+class PgSvcExample(val pg: AvailablePort @Id("pg"), val ddb: AvailablePort @Id("ddb"))
 
 object MonadPlugin extends PluginDef
   with CatsDIEffectModule
@@ -39,10 +39,13 @@ object DockerPlugin extends DockerContainerModule[Task] with PluginDef {
 
   // and this one is for production
   make[AvailablePort].named("pg").tagged(Env.Prod).from {
-    pgPort: Int @ConfPath("postgres.port") =>
+    pgPort: Int @Id("postgres.port") =>
       AvailablePort.local(pgPort)
   }
 
   make[PgSvcExample]
 
+  include(new ConfigModuleDef {
+    makeConfigNamed[Int]("postgres.port")
+  })
 }

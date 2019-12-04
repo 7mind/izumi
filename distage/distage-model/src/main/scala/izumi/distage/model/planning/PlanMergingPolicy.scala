@@ -26,14 +26,14 @@ object PlanMergingPolicy {
         case s if s.size == 1 =>
           DIKeyConflictResolution.Successful(Set(s.head.op))
         case s if s.nonEmpty && s.forall(_.isInstanceOf[SetOp]) =>
-          val ops = s.collect({ case c: SetOp => c.op })
+          val ops = s.collect { case c: SetOp => c.op }
           val merged = ops.tail.foldLeft(ops.head) {
             case (acc, op) =>
               acc.copy(members = acc.members ++ op.members)
           }
           DIKeyConflictResolution.Successful(Set(merged))
         case s if s.nonEmpty && s.forall(_.isInstanceOf[JustOp]) =>
-          resolveConflict(plan, key, s.collect({ case c: JustOp => c }))
+          resolveConflict(plan, key, s.collect { case c: JustOp => c })
         case s if s.exists(_.isInstanceOf[JustOp]) && s.exists(_.isInstanceOf[SetOp]) =>
           DIKeyConflictResolution.Failed(operations.map(_.op), "Set and non-set bindings to the same key")
         case other =>

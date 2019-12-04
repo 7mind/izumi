@@ -23,7 +23,7 @@ object TestTagOps {
   }
 
   implicit class TagConversions(private val tags: scala.collection.immutable.Set[BindingTag]) extends AnyVal {
-    def strings: Set[String] = tags.collect({ case BindingTag.AxisTag(v: TestAxis.TestTag) => v.t })
+    def strings: Set[String] = tags.collect { case BindingTag.AxisTag(v: TestAxis.TestTag) => v.t }
   }
 
 }

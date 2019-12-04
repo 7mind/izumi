@@ -8,23 +8,37 @@ trait WithDIAssociation {
     with WithDISafeType
     with WithDICallable
     with WithDIKey
-    with WithDIDependencyContext
     with WithDISymbolInfo
   =>
 
   sealed trait Association {
+    def symbol: SymbolInfo
+    def key: DIKey.BasicKey
+    def tpe: SafeType
     def name: String
-    def wireWith: DIKey.BasicKey
-    def context: DependencyContext
+    def isByName: Boolean
+
+    def withKey(key: DIKey.BasicKey): Association
   }
 
   object Association {
-    case class Parameter(context: DependencyContext.ParameterContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey, isByName: Boolean, wasGeneric: Boolean) extends Association {
-      final def withWireWith(key: DIKey.BasicKey): Association.Parameter = copy(wireWith = key)
+    case class Parameter(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
+      override final def name: String = symbol.name
+      override final def tpe: SafeType = symbol.finalResultType
+      override final def isByName: Boolean = symbol.isByName
+      override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
+
+      final def wasGeneric: Boolean = symbol.wasGeneric
     }
 
-    case class AbstractMethod(context: DependencyContext.MethodContext, name: String, tpe: SafeType, wireWith: DIKey.BasicKey) extends Association {
-      final def withWireWith(key: DIKey.BasicKey): Association.AbstractMethod = copy(wireWith = key)
+    // FIXME: non-existent wiring, at runtime there are only Parameters
+    case class AbstractMethod(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
+      override final def name: String = symbol.name
+      override final def tpe: SafeType = symbol.finalResultType
+      override final def isByName: Boolean = true
+      override final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
+
+      final def asParameter: Parameter = Parameter(symbol.withIsByName(true), key)
     }
   }
 

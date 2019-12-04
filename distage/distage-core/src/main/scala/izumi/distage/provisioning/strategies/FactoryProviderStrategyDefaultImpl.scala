@@ -1,29 +1,30 @@
 package izumi.distage.provisioning.strategies
 
-import izumi.distage.model.LoggerHook
-import izumi.distage.model.exceptions.InvalidPlanException
+import distage.DIKey
+import izumi.distage.model.exceptions.{InvalidPlanException, UnexpectedProvisionResultException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp
+import izumi.distage.model.plan.ExecutableOp.WiringOp.CallFactoryProvider
+import izumi.distage.model.plan.operations.OperationOrigin
+import izumi.distage.model.provisioning.NewObjectOp.{NewImport, NewInstance}
 import izumi.distage.model.provisioning.strategies.{FactoryExecutor, FactoryProviderStrategy}
 import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.distage.provisioning.FactoryTools
 
-class FactoryProviderStrategyDefaultImpl
-(
-  loggerHook: LoggerHook
-) extends FactoryProviderStrategy  {
-  def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: WiringOp.CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
+class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy {
+  def callFactoryProvider(context: ProvisioningKeyProvider, executor: WiringExecutor, op: CallFactoryProvider): Seq[NewObjectOp.NewInstance] = {
 
-    val args: Seq[TypedRef[_]] = op.wiring.providerArguments.map {
-      key =>
-        context.fetchKey(key.wireWith, key.isByName) match {
+    val args: Seq[TypedRef[_]] = op.wiring.factoryCtorParameters.map {
+      param =>
+        context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
-            TypedRef(dep, key.wireWith.tpe)
-          case _ if key.wireWith == DIKey.get[FactoryExecutor] =>
+            TypedRef(dep, param.key.tpe)
+          case _ if param.key == DIKey.get[FactoryExecutor] =>
             TypedRef(mkExecutor(context, executor, op.wiring.factoryIndex, op))
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
-                s" but the dependency has not been initialized: Class: $op.target, dependency: $key")
+              s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
     }
 
@@ -31,31 +32,38 @@ class FactoryProviderStrategyDefaultImpl
     Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 
-  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], op: WiringOp.CallFactoryProvider): FactoryExecutor =
-    (idx, args) => {
-      loggerHook.log(s"FactoryExecutor: Start! Looking up method index $idx in $factoryIndex")
+  private def mkExecutor(context: ProvisioningKeyProvider, executor: WiringExecutor, factoryIndex: Map[Int, FactoryMethod], op: CallFactoryProvider): FactoryExecutor = {
+    new FactoryExecutor {
+      override def execute(methodId: Int, args: Seq[Any]): Any = {
+        val FactoryMethod(_, productWiring, methodArguments) = factoryIndex(methodId)
 
-      val method@Wiring.FactoryFunction.FactoryMethod(_, wireWith, methodArguments) = factoryIndex(idx)
+        val productDeps = productWiring.requiredKeys
+        val narrowedContext = context.narrow(productDeps)
 
-      loggerHook.log(s"FactoryExecutor: Executing method $method with ${args.toList} in context $context")
+        val argsWithKeys = methodArguments.zip(args).toMap
+        val extendedContext = narrowedContext.extend(argsWithKeys)
 
-      val productDeps = wireWith.requiredKeys
-      loggerHook.log(s"FactoryExecutor: Product dependencies are $productDeps")
-
-      val narrowedContext = context.narrow(productDeps)
-      loggerHook.log(s"FactoryExecutor: context narrowed to $narrowedContext, requested dependencies were $productDeps")
-
-      val argsWithKeys = methodArguments.zip(args).toMap
-
-      val extendedContext = narrowedContext.extend(argsWithKeys)
-      loggerHook.log(s"FactoryExecutor: context extended to $extendedContext by adding ${argsWithKeys.keys.toList}")
-
-      loggerHook.log(s"FactoryExecutor: Here are args keys $args and dep keys $productDeps")
-
-      val res: Seq[NewObjectOp] = executor.execute(extendedContext, FactoryTools.mkExecutableOp(op.target, wireWith, op.origin))
-      loggerHook.log(s"FactoryExecutor: Successfully produced instances [${res.mkString(",")}]")
-
-      res
+        val results = executor.execute(extendedContext, mkExecutableOp(op.target, productWiring, op.origin)).toList
+        results match {
+          case List(i: NewInstance) =>
+            i.instance
+          case List(i: NewImport) =>
+            i.instance
+          case List(_) =>
+            throw new UnexpectedProvisionResultException(s"Factory returned a result class other than NewInstance or NewImport in $results", results)
+          case _ :: _ =>
+            throw new UnexpectedProvisionResultException(s"Factory returned more than one result in $results", results)
+          case Nil =>
+            throw new UnexpectedProvisionResultException(s"Factory empty result list: $results", results)
+        }
+      }
     }
+  }
+
+  private[this] def mkExecutableOp(key: DIKey, functionWiring: SingletonWiring.Function, origin: OperationOrigin): WiringOp.CallProvider = {
+    val target = DIKey.ProxyElementKey(key, functionWiring.instanceType)
+    WiringOp.CallProvider(target, functionWiring, origin)
+  }
+
 }
 

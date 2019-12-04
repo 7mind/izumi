@@ -1,5 +1,6 @@
 package izumi.fundamentals.tags
 
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 object TagExpr {
@@ -199,7 +200,7 @@ object TagExpr {
         Or(exprs)
       }
 
-      @scala.annotation.tailrec
+      @tailrec
       private def distributionLaw(v: Not): Expr = {
         v.expr match {
           case _: Has => v

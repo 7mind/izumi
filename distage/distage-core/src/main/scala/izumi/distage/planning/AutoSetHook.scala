@@ -6,6 +6,7 @@ import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.collection.immutable.ListSet
 

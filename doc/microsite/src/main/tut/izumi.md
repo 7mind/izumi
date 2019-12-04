@@ -31,8 +31,8 @@ libraryDependencies ++= Seq(
   "io.7mind.izumi" %% "distage-config" % "$izumi.version$",
   // Classpath discovery support
   "io.7mind.izumi" %% "distage-plugins" % "$izumi.version$",
-  // Roles & Application entrypoint framework
-  "io.7mind.izumi" %% "distage-roles" % "$izumi.version$",
+  // distage Framework: Roles, Entrypoints, Effect modules
+  "io.7mind.izumi" %% "distage-framework" % "$izumi.version$",
   
   // Core LogStage library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",

@@ -2,16 +2,13 @@ package izumi.distage.testkit.services.dstest
 
 import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
-import izumi.distage.model.Locator.LocatorRef
-import izumi.distage.model.definition.Binding.SingletonBinding
-import izumi.distage.model.definition.{BootstrapModule, ImplDef, Module}
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.distage.model.definition.BootstrapModule
 import izumi.distage.roles.config.ContextOptions
 import izumi.distage.roles.model.AppActivation
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
-import izumi.fundamentals.platform.language.CodePositionMaterializer
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.{IzLogger, Log}
 
 class SpecEnvironmentImpl[F[_]: TagK]
@@ -25,7 +22,9 @@ class SpecEnvironmentImpl[F[_]: TagK]
 
   /** Override this to disable instantiation of fixture parameters that aren't bound in `makeBindings` */
   def addUnboundParametersAsRoots(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
-    val paramsModule = Module.make {
+    // FIXME: can't add unbound parameters anymore ???
+    // ???
+    /*val paramsModule = Module.make {
       (roots - DIKey.get[LocatorRef])
         .filterNot(_.tpe.use(_.typeSymbol.isAbstract))
         .map {
@@ -34,7 +33,7 @@ class SpecEnvironmentImpl[F[_]: TagK]
         }
     }
 
-    paramsModule overridenBy primaryModule
+    paramsModule overridenBy */primaryModule
   }
 
   def makeLogger(): IzLogger = {

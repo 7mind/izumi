@@ -3,23 +3,23 @@ package izumi.distage.testkit.services.dstest
 import java.util.concurrent.TimeUnit
 
 import distage.{DIKey, Injector, PlannerInput}
-import izumi.distage.model.monadic.DIEffect.syntax._
-import izumi.distage.model.monadic.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
-import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
-import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestReporter}
+import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.CodePosition
+import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_] : TagK]
+class DistageTestRunner[F[_]: TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
@@ -27,9 +27,6 @@ class DistageTestRunner[F[_] : TagK]
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
 ) {
-
-  import DistageTestRunner._
-
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
 
@@ -179,7 +176,6 @@ class DistageTestRunner[F[_] : TagK]
     }
   }
 
-
   private def proceedIndividual(test: DistageTest[F], newtestplan: TriSplittedPlan, parent: Locator)(implicit F: DIEffect[F]): F[Unit] = {
     Injector.inherit(parent)
       .produceF[F](newtestplan.primary).use {
@@ -236,25 +232,17 @@ object DistageTestRunner {
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
-
   object TestStatus {
-
     case object Scheduled extends TestStatus
-
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
-
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
-
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
-
     final case class Succeed(duration: FiniteDuration) extends Finished
-
     final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
-
   }
 
   trait TestReporter {

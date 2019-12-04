@@ -1,6 +1,5 @@
 package com.github.pshirshov.configapp
 
-import izumi.distage.config.annotations.AutoConf
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 
@@ -32,7 +31,7 @@ object SealedTrait2 {
 }
 
 case class Wrapper[A](wrap: A)
-case class Service[A](@AutoConf conf: A)
+case class Service[A](/*@AutoConf */conf: A)
 
 object TestConfigReaders {
   final val mapDefinition = PlannerInput.noGc(new ModuleDef {

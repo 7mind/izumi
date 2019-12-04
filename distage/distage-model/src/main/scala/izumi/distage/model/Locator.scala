@@ -6,7 +6,8 @@ import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Tag, TagK, TypedRef}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, TypedRef}
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 
 import scala.collection.immutable.Queue
 
@@ -38,8 +39,8 @@ trait Locator {
   def get[T: Tag]: T
   def get[T: Tag](id: String): T
 
-  protected[distage] def finalizers[F[_] : TagK]: collection.Seq[Finalizer[F]]
-  protected[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
+  private[distage] def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
+  private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
 
   def index: Map[DIKey, Any] = {
     instances.map(i => i.key -> i.value).toMap
@@ -94,7 +95,7 @@ object Locator {
     * Summoning the entire Locator is usually an anti-pattern, but may sometimes be necessary.
     */
   class LocatorRef {
-    protected[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
+    private[distage] val ref: AtomicReference[Locator] = new AtomicReference[Locator]()
 
     def get: Locator = ref.get()
   }

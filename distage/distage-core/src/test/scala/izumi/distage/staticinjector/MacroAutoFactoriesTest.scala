@@ -1,9 +1,9 @@
 package izumi.distage.staticinjector
 
-import izumi.distage.constructors.StaticModuleDef
 import izumi.distage.fixtures.FactoryCases.FactoryCase1
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
 class MacroAutoFactoriesTest extends WordSpec with MkInjector {
@@ -11,15 +11,15 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
   "handle macro factory injections" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[Factory]
-      stat[Dependency]
-      stat[OverridingFactory]
-      stat[AssistedFactory]
-      stat[AbstractFactory]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Factory]
+      make[Dependency]
+      make[OverridingFactory]
+      make[AssistedFactory]
+      make[AbstractFactory]
     })
 
-    val injector = mkStaticInjector()
+    val injector = mkNoReflectionInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -48,12 +48,12 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
   "handle generic arguments in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[GenericAssistedFactory]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkStaticInjector()
+    val injector = mkNoReflectionInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -67,12 +67,12 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
   "handle assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[AssistedFactory]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[AssistedFactory]
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkStaticInjector()
+    val injector = mkNoReflectionInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -84,14 +84,14 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
   "handle named assisted dependencies in macro factory methods" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[NamedAssistedFactory]
-      stat[Dependency]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[NamedAssistedFactory]
+      make[Dependency]
       make[Dependency].named("special").from(SpecialDep())
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
 
-    val injector = mkStaticInjector()
+    val injector = mkNoReflectionInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -106,9 +106,9 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       """
         |import Case5._
         |
-        |val definition: ModuleBase = new StaticModuleDef {
-        |  stat[FactoryProducingFactory]
-        |  stat[Dependency]
+        |val definition: ModuleBase = new ModuleDef {
+        |  make[FactoryProducingFactory]
+        |  make[Dependency]
         |}
         |
         |val injector = mkStaticInjector()
@@ -125,13 +125,13 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
   "macro factory always produces new instances" in {
     import FactoryCase1._
 
-    val definition = PlannerInput.noGc(new StaticModuleDef {
-      stat[Dependency]
-      stat[TestClass]
-      stat[Factory]
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dependency]
+      make[TestClass]
+      make[Factory]
     })
 
-    val injector = mkStaticInjector()
+    val injector = mkNoReflectionInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 

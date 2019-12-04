@@ -133,6 +133,4 @@ trait IzManifest {
   }
 }
 
-object IzManifest extends IzManifest {
-}
-
+object IzManifest extends IzManifest

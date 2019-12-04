@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.{IO => CIO}
 import distage.TagK
-import izumi.distage.monadic.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.model.IntegrationCheck
 import izumi.fundamentals.platform.functional.Identity
@@ -55,7 +55,7 @@ object MockCache {
   val instanceCounter = mutable.Map[AnyRef, AtomicInteger]()
 }
 
-class ApplePaymentProvider[F[_]]() extends IntegrationCheck {
+class ApplePaymentProvider[F[_]] extends IntegrationCheck {
   override def resourcesAvailable(): ResourceCheck = ResourceCheck.ResourceUnavailable("Test", None)
 }
 

@@ -40,14 +40,14 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
   *   - `many[X].ref[X]("special")` = add a reference to an **existing** named binding of X to a set of X's
   *
   * Tags:
-  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding. Tags can be processed in a special way. See [[izumi.distage.roles.RoleId]]
+  *   - `make[X].tagged("t1", "t2)` = attach tags to X's binding.
   *   - `many[X].add[X1].tagged("x1tag")` = Tag a specific element of X. The tags of sets and their elements are separate.
   *   - `many[X].tagged("xsettag")` = Tag the binding of empty Set of X with a tag. The tags of sets and their elements are separate.
   *
   * Includes:
   *   - `include(that: ModuleDef)` = add all bindings in `that` module into `this` module
   *
-  *  @see [[izumi.fundamentals.reflection.Tags#TagK TagK]]
+  *  @see [[izumi.fundamentals.reflection.Tags.TagK TagK]]
   * @see [[Id]]
   * @see [[ModuleDefDSL]]
   */

@@ -1,7 +1,6 @@
 package com.github.pshirshov.configapp
 
-import izumi.distage.config.ResolvedConfig
-import izumi.distage.config.annotations.{AutoConf, Conf, ConfPath}
+import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.fundamentals.platform.language.Quirks
@@ -16,38 +15,38 @@ case class HostPort(port: Int, host: String)
 
 // application services
 class DataPuller1(
-                   @AutoConf val target: HostPort
-                   , @AutoConf val source: HostPort
+                   val target: HostPort
+                   , val source: HostPort
                  ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 class DataPuller2(
-                   @AutoConf val target: HostPort
-                   , @AutoConf val source: HostPort
+                   /*@AutoConf */val target: HostPort
+                   ,/* @AutoConf*/ val source: HostPort
                  ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 
 class DataPuller3(
-                   @Conf("cassandra") val target: HostPort
-                   , @ConfPath("datasource.google") val source: HostPort
-                   , @ConfPath("scalars.s") val s: String
+                   /*@Conf("cassandra") */val target: HostPort
+                   , /*@ConfPath("datasource.google")*/ val source: HostPort
+                   , /*@ConfPath("scalars.s")*/ val s: String
                  ) extends TestAppService {
   Quirks.discard(source, target)
 }
 
 // Trivial injections
-class HttpServer1(@AutoConf val listenOn: HostPort) extends TestAppService {
+class HttpServer1(/*@AutoConf*/ val listenOn: HostPort) extends TestAppService {
   Quirks.discard(listenOn)
 }
 
-class HttpServer2(@AutoConf val listenOn: HostPort) extends TestAppService {
+class HttpServer2(/*@AutoConf*/ val listenOn: HostPort) extends TestAppService {
   Quirks.discard(listenOn)
 }
 
-class HttpServer3(@AutoConf val listenOn: HostPort) extends TestAppService {
+class HttpServer3(/*@AutoConf*/ val listenOn: HostPort) extends TestAppService {
   Quirks.discard(listenOn)
 }
 

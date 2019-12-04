@@ -1,20 +1,20 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.model.definition.dsl.IncludesDSL.{Include, IncludeApplyTags}
 import izumi.distage.model.definition.{Binding, ModuleBase}
 import izumi.fundamentals.platform.language.Quirks.discard
 
 import scala.collection.mutable
 
 trait IncludesDSL {
-  import IncludesDSL._
   final private[this] val mutableRetaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = _initialTaggedIncludes
   final private[this] val mutableAsIsIncludes: mutable.ArrayBuffer[Include] = _initialIncludes
 
-  final private[definition] def retaggedIncludes: List[Binding] = mutableRetaggedIncludes.flatMap(_.bindings).toList
-  final private[definition] def asIsIncludes: List[Binding] = mutableAsIsIncludes.flatMap(_.bindings).toList
+  final private[dsl] def retaggedIncludes: List[Binding] = mutableRetaggedIncludes.flatMap(_.bindings).toList
+  final private[dsl] def asIsIncludes: List[Binding] = mutableAsIsIncludes.flatMap(_.bindings).toList
 
-  protected def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
-  protected def _initialTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = mutable.ArrayBuffer.empty
+  protected[this] def _initialIncludes: mutable.ArrayBuffer[Include] = mutable.ArrayBuffer.empty
+  protected[this] def _initialTaggedIncludes: mutable.ArrayBuffer[IncludeApplyTags] = mutable.ArrayBuffer.empty
 
   /** Add all bindings in `that` module into `this` module
     *

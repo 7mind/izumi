@@ -11,6 +11,7 @@ import izumi.idealingua.translator.toscala.products.CogenProduct
 import izumi.idealingua.translator.toscala.products.CogenProduct.{CompositeProduct, IdentifierProudct}
 import izumi.idealingua.translator.toscala.types.{ScalaStruct, StructContext}
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.meta._
 
@@ -56,7 +57,7 @@ object AnyvalExtension extends ScalaTranslatorExtension {
     canBeAnyValField(ctx, typeId, mutable.HashSet.empty)
   }
 
-  @scala.annotation.tailrec
+  @tailrec
   private def canBeAnyValField(ctx: STContext, typeId: TypeId, /* unused */ seen: mutable.HashSet[TypeId]): Boolean = {
     typeId match {
       case _: Generic =>

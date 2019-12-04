@@ -3,23 +3,28 @@ package izumi.distage.model.plan
 import izumi.distage.model.Locator
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
-trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
+private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
   this: AbstractPlan[OpType] =>
+
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]
-
   def resolveImport[T: Tag](instance: T): AbstractPlan[OpType]
-
   def resolveImport[T: Tag](id: String)(instance: T): AbstractPlan[OpType]
 
+  /** Try to substitute unresolved dependencies in this plan by objects in `locator` */
   def locateImports(locator: Locator): AbstractPlan[OpType]
 
-  /** Get all imports (unresolved dependencies).
+  /**
+    * Get all imports (unresolved dependencies).
     *
-    * Note, presence of imports does not automatically mean that a plan is invalid,
-    * Imports may be fulfilled by a `Locator`, by BootstrapContext, or they may be materialized by a custom
-    * [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
-    * */
+    * Note, presence of imports does not *always* mean
+    * that a plan is invalid, imports may be fulfilled by a parent
+    * `Locator`, by BootstrapContext, or they may be materialized by
+    * a custom [[izumi.distage.model.provisioning.strategies.ImportStrategy]]
+    *
+    * @see [[izumi.distage.model.plan.impl.OrderedPlanOps#unresolvedImports]] for a check you can use in tests
+    */
   final def getImports: Seq[ImportDependency] =
     steps.collect { case i: ImportDependency => i }
 

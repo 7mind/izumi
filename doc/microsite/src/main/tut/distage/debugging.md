@@ -1,10 +1,39 @@
 Debugging
 =========
 
+### Testing Plans
+
+Use `OrderedPlan#assertResolvedImportsOrThrow` method to test whether all dependencies in a given plan are present and the
+plan will execute correctly when passed to `Injector#produce`.
+
+```scala mdoc:reset
+class A(b: B)
+class B
+
+val badModule = new ModuleDef {
+  make[A]
+}
+
+val badPlan = Injector().plan(badModule)
+
+badPlan.assertResolvedImportsOrThrow
+```
+
+```scala mdoc
+val goodModule = new ModuleDef {
+  make[A]
+  make[B]
+}
+
+val goodPlan = Injector().plan(goodModule)
+
+goodPlan.assertResolvedImportsOrThrow
+```
+
 ### Pretty-printing plans
 
-You can print the `plan` to get detailed info on what will happen during instantiation. The printout includes file:line info
-so your IDE can show you where the binding was defined!
+You can print the `plan` to get detailed info on what will happen during instantiation. The printout includes source
+and line numbers so your IDE can show you where the binding was defined!
 
 ```scala
 val plan = Injector().plan(module)
@@ -27,11 +56,12 @@ System.err.println(plan.topology.dependees.tree(DIKey.get[Circular1]))
 
 The printer highlights circular dependencies.
 
-distage also uses some macros to create `TagK`s and [function bindings](#function-bindings),
-you can turn on macro debug output during compilation by setting `-Dizumi.debug.macro.rtti=true` java property:
+To debug macros used by `distage` you may turn on various java Properties:
 
 ```bash
-sbt -Dizumi.debug.macro.rtti=true compile
+sbt -Dizumi.debug.macro.rtti=true compile # fundamentals-reflection & LightTypeTag macros
+sbt -Dizumi.debug.macro.distage.constructors=true compile # izumi.distage.constructors.* macros
+sbt -Dizumi.debug.macro.distage.providermagnet=true compile # ProviderMagnet macro
 ```
 
 ### Graphviz rendering

@@ -2,27 +2,19 @@ package izumi.distage.model.plan
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import izumi.distage.model.plan.impl.{AbstractPlanOps, OrderedPlanExtensions, OrderedPlanOps, PlanLazyOps, SemiPlanExtensions, SemiPlanOps}
+import izumi.distage.model.plan.impl.{OrderedPlanExtensions, OrderedPlanOps, PlanLazyOps, SemiPlanExtensions, SemiPlanOps}
 import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
-
-sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAPI[OpType] {
+sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAPI[OpType] with PlanLazyOps[OpType] {
   def definition: ModuleBase
-
   def steps: Seq[OpType]
-
   def index: Map[DIKey, OpType]
 
   override def toString: String = {
     steps.map(_.toString).mkString("\n")
   }
 }
-
-
-object AbstractPlan extends AbstractPlanOps
-
-sealed trait ExtendedPlan[OpType <: ExecutableOp] extends AbstractPlan[OpType] with PlanLazyOps[OpType]
 
 /**
   * An unordered plan.
@@ -31,8 +23,8 @@ sealed trait ExtendedPlan[OpType <: ExecutableOp] extends AbstractPlan[OpType] w
   */
 final case class SemiPlan(
                            steps: Vector[SemiplanOp],
-                           gcMode: GCMode
-                         ) extends ExtendedPlan[SemiplanOp] with SemiPlanOps
+                           gcMode: GCMode,
+                         ) extends AbstractPlan[SemiplanOp] with SemiPlanOps
 
 object SemiPlan extends SemiPlanExtensions
 
@@ -44,9 +36,8 @@ object SemiPlan extends SemiPlanExtensions
 final case class OrderedPlan(
                               steps: Vector[ExecutableOp],
                               declaredRoots: Set[DIKey],
-                              topology: PlanTopology
-                            ) extends ExtendedPlan[ExecutableOp] with OrderedPlanOps
-
+                              topology: PlanTopology,
+                            ) extends AbstractPlan[ExecutableOp] with OrderedPlanOps
 
 object OrderedPlan extends OrderedPlanExtensions
 

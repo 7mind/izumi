@@ -3,12 +3,13 @@ package izumi.distage.model.provisioning
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.{DIException, ProvisioningException}
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.TagK
 
 trait PlanInterpreter {
   def instantiate[F[_]: TagK: DIEffect](

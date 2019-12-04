@@ -124,7 +124,7 @@ class HttpServer[C <: Http4sContext]
         stream =>
           stream
             .evalMap(handleWsMessage(context))
-            .collect({ case Some(v) => WebSocketFrame.Text(v) })
+            .collect { case Some(v) => WebSocketFrame.Text(v) }
       }
       val enqueueSink = q.enqueue
       WebSocketBuilder[MonoIO].build(

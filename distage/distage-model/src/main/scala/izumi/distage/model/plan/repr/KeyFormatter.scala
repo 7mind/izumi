@@ -7,11 +7,9 @@ trait KeyFormatter {
 }
 
 object KeyFormatter {
-
   object Full extends KeyFormatter {
     override def formatKey(key: DIKey): String = key.toString
   }
-
 }
 
 trait TypeFormatter {
@@ -19,9 +17,7 @@ trait TypeFormatter {
 }
 
 object TypeFormatter {
-
   object Full extends TypeFormatter {
     override def formatType(key: SafeType): String = key.tag.repr
   }
-
 }

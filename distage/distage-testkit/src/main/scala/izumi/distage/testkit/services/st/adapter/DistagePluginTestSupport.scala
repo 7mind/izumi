@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.model.definition.{AxisBase, BootstrapModuleDef}
 import izumi.distage.model.planning.PlanMergingPolicy
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.TagK
+import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.BootstrapConfig

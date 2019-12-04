@@ -3,7 +3,7 @@ package izumi.distage.testkit.integration.docker
 import com.github.dockerjava.api.command.DockerCmdExecFactory
 import com.github.dockerjava.netty.NettyDockerCmdExecFactory
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect
+import izumi.distage.model.effect.DIEffect
 
 class DockerCmdExecFactoryResource[F[_]: DIEffect]
 (
