@@ -158,6 +158,10 @@ object Tags {
       override val closestClass: Class[_] = cls
     }
 
+    def appliedTagNonPos[R](tag: HKTag[_], args: List[Option[LightTypeTag]]): HKTag[R] = {
+      HKTag(tag.closestClass, tag.tag.combineNonPos(args: _*))
+    }
+
     @inline implicit final def hktagFromTagMacro[T](implicit materializer: HKTagMaterializer[T]): HKTag[T] = materializer.value
   }
 

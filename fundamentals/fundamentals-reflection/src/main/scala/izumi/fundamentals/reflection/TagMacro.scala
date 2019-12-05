@@ -43,15 +43,64 @@ class TagMacro(val c: blackbox.Context) {
 
   @inline final def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[HKTag[ArgStruct]] = {
     val argStruct = weakTypeOf[ArgStruct]
+    val ctor = ltagMacro.unpackArgStruct(argStruct)
     if (ReflectionUtil.allPartsStrong(argStruct)) {
-      val ctor = ltagMacro.unpackArgStruct(argStruct)
       makeHKTagFromStrongTpe(ctor)
     } else {
-      c.abort(c.enclosingPosition, s"Can't materialize HKTag[$argStruct]: found unresolved type parameters in $argStruct")
+      makeHKTagImpl(ctor)
     }
   }
 
-  private[this] def makeHKTagFromStrongTpe[ArgStruct](strongCtorType: Type) = {
+  // FIXME: nearly a copypaste of mkTagWithTypeParameters, deduplicate?
+  private[this] def makeHKTagImpl[ArgStruct: c.WeakTypeTag](tpeOrigKind: Type): c.Expr[HKTag[ArgStruct]] = {
+    logger.log(s"Got unresolved HKTag summon: ${tagFormat(tpeOrigKind)}")
+
+    val tpe = tpeOrigKind.finalResultType
+    val nonPosTypeArgs = tpe.typeArgs.map {
+      arg =>
+        if (!tpeOrigKind.typeParams.contains(arg.typeSymbol)) Some(arg) else None
+    }
+
+    val constructorTag = {
+      val ctor = tpe.typeConstructor
+      getCtorKindIfCtorIsTypeParameter(ctor) match {
+        // type constructor of this type is not a type parameter
+        // AND not an intersection type
+        // some of its arguments are type parameters that we should resolve
+        case None =>
+          logger.log(s"type A $ctor")
+          makeHKTagFromStrongTpe(ctor)
+
+        // error: the entire type is just a proper type parameter with no type arguments
+        // it cannot be resolved further
+        case Some(k) if k == kindOf(tpeOrigKind) =>
+          logger.log(s"type B $ctor")
+          val msg = s"  could not find implicit value for ${tagFormat(tpe)}: $tpe is a type parameter without an implicit Tag!"
+          addImplicitError(msg)
+          c.abort(c.enclosingPosition, getImplicitError())
+
+        // type constructor is a type parameter AND has type arguments
+        // we should resolve type constructor separately from an HKTag
+        case Some(hktKind) =>
+          logger.log(s"type C $ctor")
+          summonHKTag(ctor, hktKind)
+      }
+    }
+    val argTags = {
+      val args = nonPosTypeArgs.map(_.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias)))
+      c.Expr[List[Option[LightTypeTag]]](q"${args.map(_.map(summonLightTypeTagOfAppropriateKind))}")
+    }
+
+    val res = reify {
+      HKTag.appliedTagNonPos[ArgStruct](constructorTag.splice, argTags.splice)
+    }
+
+    logger.log(s"Final code of HKTag[$tpe]:\n ${showCode(res.tree)}")
+
+    res
+  }
+
+  private[this] def makeHKTagFromStrongTpe[ArgStruct](strongCtorType: Type): c.Expr[HKTag[ArgStruct]] = {
     val ltag = ltagMacro.makeParsedLightTypeTagImpl(strongCtorType)
     val cls = closestClass(strongCtorType)
     c.Expr[HKTag[ArgStruct]] {
@@ -131,7 +180,6 @@ class TagMacro(val c: blackbox.Context) {
         case None =>
           logger.log(s"type A $ctor")
           makeHKTagFromStrongTpe(ctor)
-//          ltagMacro.makeParsedLightTypeTagImpl(ctor)
 
         // error: the entire type is just a proper type parameter with no type arguments
         // it cannot be resolved further
@@ -146,7 +194,6 @@ class TagMacro(val c: blackbox.Context) {
         case Some(hktKind) =>
           logger.log(s"type C $ctor")
           summonHKTag(ctor, hktKind)
-//          lttFromTag(summonHKTag(ctor, hktKind).tree)
       }
     }
     val argTags = {
@@ -238,7 +285,7 @@ class TagMacro(val c: blackbox.Context) {
         c.inferImplicitValue(appliedType(weakTypeOf[Tag[Nothing]].typeConstructor, tpe), silent = false)
       } else {
         val ArgStruct = mkHKTagArgStruct(tpe, kind)
-        logger.log(s"Created impicit Arg: $ArgStruct")
+        logger.log(s"Created implicit Arg: $ArgStruct")
         c.inferImplicitValue(appliedType(weakTypeOf[HKTag[Nothing]].typeConstructor, ArgStruct), silent = false)
       }
     } catch {
@@ -342,8 +389,10 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
 
     val targetTpe = c.enclosingUnit.body.collect {
       case AppliedTypeTree(t, arg :: _) if t.exists(_.pos == pos) =>
-        c.typecheck(arg, c.TYPEmode, c.universe.definitions.NothingTpe, silent = false, withImplicitViewsDisabled = true, withMacrosDisabled = true)
-          .tpe
+        c.typecheck(
+          tree = arg, mode = c.TYPEmode, pt = c.universe.definitions.NothingTpe,
+          silent = false, withImplicitViewsDisabled = true, withMacrosDisabled = true
+        ).tpe
     }.headOption match {
       case None =>
         c.abort(c.enclosingPosition, "Couldn't find an the type that `Tag.auto.T` macro was applied to, please make sure you use the correct syntax, as in `def tagk[F[_]: Tag.auto.T]: TagK[T] = implicitly[Tag.auto.T[F]]`")

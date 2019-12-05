@@ -67,6 +67,7 @@ class TagTest extends WordSpec with X[String] {
   type Swap[A, B] = Either[B, A]
   type Id[A] = A
   type Id1[F[_], A] = F[A]
+  type Const[A, B] = A
 
   class ApplePaymentProvider[F0[_]] extends H1
 
@@ -345,6 +346,50 @@ class TagTest extends WordSpec with X[String] {
       val right = Tag[H1].tag
 
       assert(left <:< right)
+    }
+
+    "resolve TagK from TagKK" in {
+      def getTag[F[+_, +_]: TagKK] = TagK[F[Throwable, ?]]
+      val tagEitherThrowable = getTag[Either].tag
+
+      assert(tagEitherThrowable == TagK[Either[Throwable, ?]].tag)
+      assert(tagEitherThrowable <:< TagK[Either[Throwable, ?]].tag)
+      assert(tagEitherThrowable <:< TagK[Either[Any, ?]].tag)
+      assert(TagK[Either[Nothing, ?]].tag <:< tagEitherThrowable)
+    }
+
+    "regression test: combine Const Lambda to TagK" in {
+      def get[F[_, _]: TagKK] = TagK[F[Int, ?]]
+      val tag = get[Const]
+
+      assert(tag.tag == TagK[Const[Int, ?]].tag)
+      assert(tag.tag <:< TagK[Const[AnyVal, ?]].tag)
+    }
+
+    "resolve TagKK from an odd higher-kinded Tag and with parameters out of order" in {
+      type EitherR[-_, +L, +R] = Either[L, R]
+      def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
+      val tagEitherThrowable = getTag[EitherR].tag
+
+      assert(tagEitherThrowable == TagKK[EitherR[?, ?, Throwable]].tag)
+      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Throwable]].tag)
+      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Any]].tag)
+      assert(TagKK[EitherR[?, ?, Nothing]].tag <:< tagEitherThrowable)
+    }
+
+    "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {
+      intercept[IllegalArgumentException] {
+        class Path {
+          type Child
+        }
+        val path = new Path
+
+        def getTag[A <: Path] = Tag[A#Child]
+
+        assert(getTag[path.type].tag == Tag[path.type].tag)
+        assert(getTag[path.type].tag <:< Tag[Path#Child].tag)
+        assert(!(Tag[Path#Child].tag <:< getTag[path.type].tag))
+      }
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {
