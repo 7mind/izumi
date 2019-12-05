@@ -85,7 +85,9 @@ package object bio extends BIOSyntax {
       case None => pure(None)
     }
 
-    @inline final def when[E](p: Boolean)(r: F[E, Unit]): F[E, Unit] = if (p) r else unit
+    @inline final def when[E](cond: Boolean)(r: F[E, Unit]): F[E, Unit] = {
+      ifThenElse(cond)(r, unit)
+    }
     @inline def unless[E, E1 >: E](cond: Boolean)(ifFalse: F[E1, Unit]): F[E1, Unit] = {
       ifThenElse[E, E1, Unit](cond)(unit, ifFalse)
     }
