@@ -42,7 +42,7 @@ final class ConfigPrinter(conf: Conf, otherConf: OtherConf @Id("other")) {
 }
 
 // load
-val config = ConfigFactory.load()
+val config = ConfigFactory.defaultApplication()
 
 // declare paths to parse
 val configModule = new ConfigModuleDef {
