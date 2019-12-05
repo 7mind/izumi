@@ -9,8 +9,8 @@ import izumi.fundamentals.reflection.Tags.TagK
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.BootstrapConfig
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.{ActivationParser, PluginSource, PruningPlanMergingPolicy}
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}

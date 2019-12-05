@@ -2,7 +2,7 @@ package izumi.distage.roles.internal
 
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema._

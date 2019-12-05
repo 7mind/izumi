@@ -5,7 +5,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
-import izumi.distage.roles.model.{DiAppBootstrapException, IntegrationCheck}
+import izumi.distage.roles.model.{DIAppBootstrapException, IntegrationCheck}
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString._
@@ -65,7 +65,7 @@ object IntegrationChecker {
               }
           }
       } else {
-        F.fail(new DiAppBootstrapException(s"Inconsistent locator state: integration components ${bad.mkString("{", ", ", "}")} are missing from locator"))
+        F.fail(new DIAppBootstrapException(s"Inconsistent locator state: integration components ${bad.mkString("{", ", ", "}")} are missing from locator"))
       }
     }
 

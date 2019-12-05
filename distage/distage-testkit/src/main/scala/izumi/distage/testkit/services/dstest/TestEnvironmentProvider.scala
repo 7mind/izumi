@@ -3,7 +3,7 @@ package izumi.distage.testkit.services.dstest
 import izumi.distage.model.definition.{Axis, AxisBase}
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.BootstrapConfig
-import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.services.PluginSource
 import izumi.distage.testkit.services.PluginsCache
 import izumi.logstage.api.IzLogger

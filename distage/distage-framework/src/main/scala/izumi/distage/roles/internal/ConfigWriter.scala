@@ -13,7 +13,7 @@ import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring.Instance
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
-import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
+import izumi.distage.roles.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
 import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams

@@ -9,8 +9,8 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.roles.config.ContextOptions
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.IntegrationChecker.IntegrationCheckException
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services._
