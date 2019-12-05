@@ -88,10 +88,10 @@ package object bio extends BIOSyntax {
     @inline final def when[E](cond: Boolean)(r: F[E, Unit]): F[E, Unit] = {
       ifThenElse(cond)(r, unit)
     }
-    @inline def unless[E, E1 >: E](cond: Boolean)(ifFalse: F[E1, Unit]): F[E1, Unit] = {
+    @inline final def unless[E, E1 >: E](cond: Boolean)(ifFalse: F[E1, Unit]): F[E1, Unit] = {
       ifThenElse[E, E1, Unit](cond)(unit, ifFalse)
     }
-    @inline def ifThenElse[E, E1 >: E, A](cond: Boolean)(ifTrue: F[E1, A], ifFalse: F[E1, A]): F[E1, A] = {
+    @inline final def ifThenElse[E, E1 >: E, A](cond: Boolean)(ifTrue: F[E1, A], ifFalse: F[E1, A]): F[E1, A] = {
       if (cond) {
         ifTrue
       } else {
