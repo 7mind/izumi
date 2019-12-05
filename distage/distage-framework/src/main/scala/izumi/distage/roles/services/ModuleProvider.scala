@@ -9,7 +9,7 @@ import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.{AbstractRoleF, AppActivation}
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

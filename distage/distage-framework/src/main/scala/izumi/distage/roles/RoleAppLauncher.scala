@@ -10,8 +10,8 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
-import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
+import izumi.distage.roles.meta.{LibraryReference, RolesInfo}
+import izumi.distage.roles.model.{AppActivation, DIAppBootstrapException}
 import izumi.distage.roles.services.PluginSource.AllLoadedPlugins
 import izumi.distage.roles.services.ResourceRewriter.RewriteRules
 import izumi.distage.roles.services._
@@ -167,7 +167,7 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
     val missing = parameters.roles.map(_.role).toSet.diff(roles.availableRoleBindings.map(_.descriptor.id).toSet)
     if (missing.nonEmpty) {
       logger.crit(s"Missing ${missing.niceList() -> "roles"}")
-      throw new DiAppBootstrapException(s"Unknown roles: $missing")
+      throw new DIAppBootstrapException(s"Unknown roles: $missing")
     }
 
     roles
@@ -207,11 +207,11 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def validate(bootstrapAutoDef: ModuleBase, appDef: ModuleBase): Unit = {
     val conflicts = bootstrapAutoDef.keys.intersect(appDef.keys)
     if (conflicts.nonEmpty) {
-      throw new DiAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
+      throw new DIAppBootstrapException(s"Same keys defined by bootstrap and app plugins: $conflicts. Most likely your bootstrap configs are contradictive, terminating...")
     }
 
     if (appDef.bindings.isEmpty) {
-      throw new DiAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
+      throw new DIAppBootstrapException("Empty app object graph. Most likely you have no plugins defined or your app plugin config is wrong, terminating...")
     }
   }
 

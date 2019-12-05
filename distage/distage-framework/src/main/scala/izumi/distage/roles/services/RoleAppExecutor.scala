@@ -5,8 +5,8 @@ import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.roles._
-import izumi.distage.roles.model.meta.RolesInfo
-import izumi.distage.roles.model.{AbstractRoleF, DiAppBootstrapException, RoleService, RoleTask}
+import izumi.distage.roles.meta.RolesInfo
+import izumi.distage.roles.model.{AbstractRoleF, DIAppBootstrapException, RoleService, RoleTask}
 import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -52,9 +52,9 @@ object RoleAppExecutor {
             case Some(value: RoleService[F]) =>
               Seq(value -> r)
             case Some(v) =>
-              throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
+              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
-              throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
+              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }
       }
 
@@ -102,9 +102,9 @@ object RoleAppExecutor {
             case Some(_: RoleService[F]) =>
               Seq.empty
             case Some(v) =>
-              throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
+              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} has unexpected type: $v")
             case None =>
-              throw new DiAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
+              throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
           }
       }
 

@@ -6,8 +6,8 @@ import izumi.distage.model.definition.{AxisBase, BootstrapModule, ModuleBase}
 import izumi.distage.plugins.load.PluginLoader.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.BootstrapConfig
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.{ActivationParser, PluginSource}
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}

@@ -1,9 +1,9 @@
 package izumi.distage.testkit.services.dstest
 
 import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.model.meta.RolesInfo
 import distage._
 import izumi.distage.model.planning.PlanMergingPolicy
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.services.PruningPlanMergingPolicy
 
 case class TestEnvironment(

@@ -4,7 +4,7 @@ import distage.ModuleBase
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{AxisBase, BindingTag}
 import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.model.{AppActivation, DiAppBootstrapException}
+import izumi.distage.roles.model.{AppActivation, DIAppBootstrapException}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -41,13 +41,13 @@ class ActivationParser {
                 case None =>
                   logger.crit(s"Unknown choice: $choiceName")
                   logger.crit(s"Available $options")
-                  throw new DiAppBootstrapException(s"Unknown choice: $choiceName")
+                  throw new DIAppBootstrapException(s"Unknown choice: $choiceName")
               }
 
             case None =>
               logger.crit(s"Unknown axis: $axisName")
               logger.crit(s"Available $options")
-              throw new DiAppBootstrapException(s"Unknown axis: $axisName")
+              throw new DIAppBootstrapException(s"Unknown axis: $axisName")
           }
       }
 
@@ -61,7 +61,7 @@ class ActivationParser {
         }
         .niceList()
       logger.crit(s"Conflicting choices, you can activate one choice on each axis $conflicts")
-      throw new DiAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
+      throw new DIAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
     }
 
     AppActivation(availableUses, defaultActivations ++ activeChoices ++ requiredActivations)
@@ -82,7 +82,7 @@ object ActivationParser {
           s"$name: ${value.niceList().shift(2)}"
       }
       logger.crit(s"Conflicting axis ${conflicts.niceList() -> "names"}")
-      throw new DiAppBootstrapException(s"Conflicting axis: $conflicts")
+      throw new DIAppBootstrapException(s"Conflicting axis: $conflicts")
     }
     val availableUses = allChoices.groupBy(_.axis)
     availableUses

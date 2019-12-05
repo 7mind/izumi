@@ -4,8 +4,8 @@ import distage.config.AppConfig
 import distage.{DIKey, ModuleBase}
 import izumi.distage.model.definition.BootstrapModule
 import izumi.distage.roles.config.ContextOptions
+import izumi.distage.roles.meta.RolesInfo
 import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.roles.services.{ConfigLoader, ModuleProvider}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.reflection.Tags.TagK
