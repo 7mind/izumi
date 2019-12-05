@@ -6,7 +6,7 @@ import izumi.distage.testkit.services.st.adapter.DISyntaxBIO
 import izumi.distage.testkit.st.adapter.specs.DistagePluginBioSpec
 import izumi.functional.bio.{BIO, BIOError, F}
 
-abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK](implicit ev: TagK[F[Throwable, ?]]) extends DistagePluginBioSpec[F]
+abstract class TestkitBIOTest[F[+_, +_]: BIO: TagKK] extends DistagePluginBioSpec[F]
   with DISyntaxBIO[F] {
 
   override protected def pluginPackages: Seq[String] = thisPackage

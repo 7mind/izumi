@@ -167,7 +167,6 @@ object DistageAbstractScalatestSpec {
                                                env: TestEnvironment,
                                              )(
                                                implicit override val tagBIO: TagKK[F],
-                                               val tagK: TagK[F[Throwable, *]],
                                              ) extends DISyntaxBIOBase[F] {
 
     override protected def takeAs1(fAsThrowable: ProviderMagnet[F[Throwable, _]], pos: CodePosition): Unit = {

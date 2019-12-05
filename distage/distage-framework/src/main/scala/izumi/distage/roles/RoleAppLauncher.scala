@@ -241,7 +241,7 @@ object RoleAppLauncher {
     override protected val shutdownStrategy: AppShutdownStrategy[F] = new CatsEffectIOShutdownStrategy(executionContext)
   }
 
-  abstract class LauncherBIO[F[+_, +_]: BIOAsync: BIOPrimitives](implicit tagK: TagK[F[Throwable, ?]]) extends RoleAppLauncherImpl[F[Throwable, ?]] {
+  abstract class LauncherBIO[F[+_, +_]: TagKK: BIOAsync: BIOPrimitives] extends RoleAppLauncherImpl[F[Throwable, ?]] {
     override protected val shutdownStrategy: AppShutdownStrategy[F[Throwable, ?]] = new BIOShutdownStrategy[F]
   }
 
