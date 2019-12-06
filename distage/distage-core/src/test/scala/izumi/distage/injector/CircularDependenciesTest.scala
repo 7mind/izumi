@@ -8,7 +8,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.{ProvisioningException, TraitInitializationFailedException}
 import izumi.distage.model.plan.ExecutableOp.InstantiationOp
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.MakeProxy
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher
 import org.scalatest.WordSpec
 
 class CircularDependenciesTest extends WordSpec with MkInjector {
@@ -204,10 +204,10 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(instance1.self eq context.get[ByNameSelfReference])
     assert(instance1 ne context.get[ByNameSelfReference])
 
-//    val instance2 = instance.mkByNameSelfReferenceByName(context.get[ByNameSelfReference])
-//    assert(instance2.self eq context.get[ByNameSelfReference])
-//    assert(instance2 ne context.get[ByNameSelfReference])
-//    assert(instance2 ne instance1)
+    val instance2 = instance.mkByNameSelfReferenceByName(context.get[ByNameSelfReference])
+    assert(instance2.self eq context.get[ByNameSelfReference])
+    assert(instance2 ne context.get[ByNameSelfReference])
+    assert(instance2 ne instance1)
 
     var counter = 0
     class CountInstantiations extends ByNameSelfReference(instance1) { counter += 1 }

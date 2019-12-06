@@ -40,10 +40,10 @@ object BIOSyntax {
   class BIOApplicativeOps[F[+_, +_], E, A](override protected[this] val r: F[E, A])(implicit override protected[this] val F: BIOApplicative[F]) extends BIOBifunctorOps(r) {
 
     /** execute two operations in order, return result of second operation */
-    @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>[E, A, E1, B](r, f0)
+    @inline final def *>[E1 >: E, B](f0: => F[E1, B]): F[E1, B] = F.*>(r, f0)
 
     /** execute two operations in order, same as `*>`, but return result of first operation */
-    @inline final def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*[E, A, E1, B](r, f0)
+    @inline final def <*[E1 >: E, B](f0: => F[E1, B]): F[E1, A] = F.<*(r, f0)
 
     /** execute two operations in order, return result of both operations */
     @inline final def zip[E2 >: E, B, C](r2: => F[E2, B]): F[E2, (A, B)] = F.map2(r, r2)(_ -> _)

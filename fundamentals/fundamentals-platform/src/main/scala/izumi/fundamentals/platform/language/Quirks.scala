@@ -5,6 +5,8 @@ import scala.language.implicitConversions
 /**
   * Syntax for explicitly discarding values to satisfy -Ywarn-value-discard,
   * and for clarity of course!
+  *
+  * @see also [[izumi.fundamentals.platform.language.unused]]
   **/
 object Quirks {
 

@@ -3,14 +3,14 @@ package izumi.distage.testkit.services.dstest
 import java.util.concurrent.TimeUnit
 
 import distage.{DIKey, Injector, PlannerInput}
+import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.roles.model.IntegrationCheck
-import izumi.distage.roles.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -23,7 +23,7 @@ class DistageTestRunner[F[_]: TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
-  runnerEnvironment: SpecEnvironment[F],
+  runnerEnvironment: SpecEnvironment,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
 ) {
@@ -44,7 +44,7 @@ class DistageTestRunner[F[_]: TagK]
       case (env, group) =>
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
-        val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activation)
+        val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
         val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
@@ -64,8 +64,7 @@ class DistageTestRunner[F[_]: TagK]
         val testplans = group.map {
           pm =>
             val keys = pm.test.get.diKeys.toSet
-            val withUnboundParametersAsRoots = runnerEnvironment.addUnboundParametersAsRoots(keys, appModule)
-            pm -> injector.plan(PlannerInput(withUnboundParametersAsRoots, keys))
+            pm -> injector.plan(PlannerInput(appModule, keys))
         }
 
         // here we find all the shared components in each of our individual tests
@@ -124,8 +123,12 @@ class DistageTestRunner[F[_]: TagK]
     }
   }
 
-  private def proceed(appmodule: ModuleBase, checker: PlanCircularDependencyCheck, testplans: Seq[(DistageTest[F], OrderedPlan)], shared: TriSplittedPlan, parent: Locator)
-                     (implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+  private def proceed(appmodule: ModuleBase,
+                      checker: PlanCircularDependencyCheck,
+                      testplans: Seq[(DistageTest[F], OrderedPlan)],
+                      shared: TriSplittedPlan,
+                      parent: Locator,
+                     )(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
     // here we produce our shared plan
     checker.verify(shared.primary)
     Injector.inherit(parent).produceF[F](shared.primary).use {

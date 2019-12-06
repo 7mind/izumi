@@ -3,16 +3,16 @@ package izumi.distage.roles.internal
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.{AppActivation, RoleDescriptor, RoleTask}
+import izumi.distage.roles.model.{ActivationInfo, RoleDescriptor, RoleTask}
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema._
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 
-class Help[F[_] : DIEffect]
+class Help[F[_]: DIEffect]
 (
   roleInfo: RolesInfo,
-  activation: AppActivation,
+  activationInfo: ActivationInfo,
 ) extends RoleTask[F] {
 
   override def start(@unused roleParameters: RawEntrypointParams, @unused freeArgs: Vector[String]): F[Unit] = {
@@ -24,7 +24,7 @@ class Help[F[_] : DIEffect]
       .availableRoleBindings
       .map(rb => rb.descriptor.parserSchema)
 
-    val activations = activation.choices
+    val activations = activationInfo.availableChoices
       .map {
         case (axis, members) =>
           s"$axis:${members.niceList().shift(2)}"

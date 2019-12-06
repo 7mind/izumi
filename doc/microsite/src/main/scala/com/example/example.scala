@@ -10,7 +10,7 @@ final case class HostPort(host: String, port: Int)
 
 final case class Config(hostPort: HostPort)
 
-final class Service(conf: Config, otherService: OtherService)
+final class Service(val conf: Config, val otherService: OtherService)
 final class OtherService
 
 // OtherService class is not defined here, even though Service depends on it

@@ -2,10 +2,11 @@ package izumi.distage.roles.test.fixtures
 
 import java.util.concurrent.ExecutorService
 
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect
-import izumi.distage.roles.model.{IntegrationCheck, RoleDescriptor, RoleService, RoleTask}
+import izumi.distage.roles.model.{RoleDescriptor, RoleService, RoleTask}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.ResourcesPlugin.Conflict
 import izumi.distage.roles.test.fixtures.TestPlugin.NotCloseable

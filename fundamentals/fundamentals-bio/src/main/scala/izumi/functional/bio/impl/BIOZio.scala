@@ -42,9 +42,9 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   @inline override final def tap[E, A, E2 >: E](r: IO[E, A])(f: A => IO[E2, Unit]): IO[E2, A] = r.tap(f)
   @inline override final def tapBoth[E, A, E2 >: E](r: IO[E, A])(err: E => IO[E2, Unit], succ: A => IO[E2, Unit]): IO[E2, A] = r.tapBoth(err, succ)
   @inline override final def flatten[E, A](r: IO[E, IO[E, A]]): IO[E, A] = ZIO.flatten(r)
-  @inline override final def *>[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, B] = f *> next
-  @inline override final def <*[E, A, E2 >: E, B](f: IO[E, A], next: => IO[E2, B]): IO[E2, A] = f <* next
-  @inline override final def map2[E, A, E2 >: E, B, C](r1: IO[E, A], r2: => IO[E2, B])(f: (A, B) => C): IO[E2, C] = {
+  @inline override final def *>[E, A, B](f: IO[E, A], next: => IO[E, B]): IO[E, B] = f *> next
+  @inline override final def <*[E, A, B](f: IO[E, A], next: => IO[E, B]): IO[E, A] = f <* next
+  @inline override final def map2[E, A, B, C](r1: IO[E, A], r2: => IO[E, B])(f: (A, B) => C): IO[E, C] = {
     r1.zipWith(ZIO.effectSuspendTotal(r2))(f)
   }
 
@@ -67,6 +67,9 @@ class BIOZio[R] extends BIO[ZIO[R, +?, +?]] {
   }
 
   @inline override final def traverse[E, A, B](l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreach(l)(f)
+  @inline override final def sequence[E, A, B](l: Iterable[IO[E, A]]): IO[E, List[A]] = ZIO.collectAll(l)
+  @inline override final def traverse_[E, A](l: Iterable[A])(f: A => IO[E, Unit]): IO[E, Unit] = ZIO.foreach_(l)(f)
+  @inline override final def sequence_[E](l: Iterable[IO[E, Unit]]): IO[E, Unit] = ZIO.foreach_(l)(identity)
 
   @inline override final def sandbox[E, A](r: IO[E, A]): IO[BIOExit.Failure[E], A] = r.sandbox.mapError(ZIOExit.toBIOExit[E])
 }
@@ -159,23 +162,10 @@ class BIOAsyncZio[R](clockService: Clock) extends BIOZio[R] with BIOAsync[ZIO[R,
     })
   }
 
-  @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = {
-    r.uninterruptible
-  }
+  @inline override final def uninterruptible[E, A](r: IO[E, A]): IO[E, A] = r.uninterruptible
 
-  @inline override final def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = {
-    ZIO.foreachParN(maxConcurrent)(l)(f)
-  }
-
-  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
-    ZIO.foreachParN_(maxConcurrent)(l)(f)
-  }
-
-  @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = {
-    ZIO.foreachPar(l)(f)
-  }
-
-  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = {
-    ZIO.foreachPar_(l)(f)
-  }
+  @inline override final def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => IO[E, B]): IO[E, List[B]] = ZIO.foreachParN(maxConcurrent)(l)(f)
+  @inline override final def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachParN_(maxConcurrent)(l)(f)
+  @inline override final def parTraverse[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, List[B]] = ZIO.foreachPar(l)(f)
+  @inline override final def parTraverse_[E, A, B](l: Iterable[A])(f: A => ZIO[R, E, B]): ZIO[R, E, Unit] = ZIO.foreachPar_(l)(f)
 }

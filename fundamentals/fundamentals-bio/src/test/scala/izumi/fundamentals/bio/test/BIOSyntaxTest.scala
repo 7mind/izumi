@@ -42,6 +42,15 @@ class BIOSyntaxTest extends WordSpec {
     x[zio.IO]
   }
 
+  "BIO.when/unless/ifThenElse have nice inference" in {
+    def x[F[+_, +_]: BIOMonad] = {
+      F.ifThenElse(F.pure(false): F[RuntimeException, Boolean])(F.pure(()), F.pure(()): F[Throwable, Any]) *>
+      F.when(F.pure(false): F[RuntimeException, Boolean])(F.pure(()): F[Throwable, Unit])
+    }
+
+    x[zio.IO]
+  }
+
   "F summoner examples" in {
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)

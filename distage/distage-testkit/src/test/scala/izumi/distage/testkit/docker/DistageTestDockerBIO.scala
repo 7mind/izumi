@@ -1,10 +1,10 @@
 package izumi.distage.testkit.docker
 
 import distage.DIKey
+import izumi.distage.docker.examples.{DynamoDocker, PostgresDocker}
+import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.docker.fixtures.PgSvcExample
-import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
-import izumi.distage.testkit.services.st.dtest.TestConfig
-import izumi.distage.testkit.st.specs.DistageBIOSpecScalatest
+import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import zio.IO
 
 final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {

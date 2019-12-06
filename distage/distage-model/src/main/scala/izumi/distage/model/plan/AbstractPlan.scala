@@ -11,9 +11,9 @@ sealed trait AbstractPlan[OpType <: ExecutableOp] extends AbstractPlanExtendedAP
   def steps: Seq[OpType]
   def index: Map[DIKey, OpType]
 
-  override def toString: String = {
-    steps.map(_.toString).mkString("\n")
-  }
+  /** A long-form rendering of the Plan */
+  final def repr: String = steps.map(_.toString).mkString("\n")
+  override def toString: String = repr
 }
 
 /**

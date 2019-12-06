@@ -1,6 +1,5 @@
 package izumi.distage.model.plan.repr
 
-import izumi.distage.model.definition.{Binding, BindingTag, ImplDef}
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.plan.ExecutableOp.MonadicOp._
 import izumi.distage.model.plan.ExecutableOp.ProxyOp._
@@ -28,6 +27,8 @@ object OpFormatter {
         "(<unknown>)"
     }
   }
+
+  def apply(keyFormatter: KeyFormatter, typeFormatter: TypeFormatter): OpFormatter = new OpFormatter.Impl(keyFormatter, typeFormatter)
 
   class Impl
   (

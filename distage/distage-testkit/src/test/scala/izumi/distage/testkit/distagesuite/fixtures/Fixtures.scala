@@ -5,8 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.{IO => CIO}
 import distage.TagK
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.plugins.PluginDef
-import izumi.distage.roles.model.IntegrationCheck
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
 import zio.Task

@@ -53,36 +53,36 @@ object ModuleBase {
     }
   }
 
-  implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
+  implicit final class ModuleDefOps[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val module: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def map(f: Binding => Binding): T = {
-      T.make(moduleDef.bindings.map(f))
+      T.make(module.bindings.map(f))
     }
 
     def flatMap(f: Binding => Iterable[Binding]): T = {
-      T.make(moduleDef.bindings.flatMap(f))
+      T.make(module.bindings.flatMap(f))
     }
   }
 
-  implicit final class ModuleDefMorph(private val moduleDef: ModuleBase) extends AnyVal {
+  implicit final class ModuleDefMorph(private val module: ModuleBase) extends AnyVal {
     def morph[T <: ModuleBase](implicit T: ModuleMake[T]): T = {
-      T.make(moduleDef.bindings)
+      T.make(module.bindings)
     }
   }
 
-  implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](val moduleDef: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
+  implicit final class ModuleDefCombine[S <: ModuleBase, T <: ModuleBase.Aux[T]](private val module: S)(implicit l: Lub[S, S#Self, T], T: ModuleMake[T]) {
     def ++(that: ModuleBase): T = {
-      val theseBindings = moduleDef.bindings.toSeq
+      val theseBindings = module.bindings.toSeq
       val thoseBindings = that.bindings.toSeq
 
       T.make(tagwiseMerge(theseBindings ++ thoseBindings))
     }
 
     def :+(binding: Binding): T = {
-      moduleDef ++ T.make(Set(binding))
+      module ++ T.make(Set(binding))
     }
 
     def +:(binding: Binding): T = {
-      T.make(Set(binding)) ++ moduleDef
+      T.make(Set(binding)) ++ module
     }
 
     def --(that: ModuleBase): T = {
@@ -90,24 +90,25 @@ object ModuleBase {
     }
 
     def preserveOnly(preserve: Set[DIKey]): T = {
-      val filtered = moduleDef.bindings.filterNot(b => preserve.contains(b.key))
+      val filtered = module.bindings.filterNot(b => preserve.contains(b.key))
       T.make(filtered)
     }
 
     def drop(ignored: Set[DIKey]): T = {
-      val filtered = moduleDef.bindings.filterNot(b => ignored.contains(b.key))
+      val filtered = module.bindings.filterNot(b => ignored.contains(b.key))
       T.make(filtered)
     }
 
-    // FIXME: a hack to support tag merging
-    private[this] def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] =
-      (T.make(a) ++ T.make(b)).bindings
-
     def overridenBy(that: ModuleBase): T = {
-      T.make(mergePreserve(moduleDef.bindings, that.bindings)._2)
+      T.make(mergePreserve(module.bindings, that.bindings)._2)
     }
 
     private[this] def mergePreserve(existing: Set[Binding], overriding: Set[Binding]): (Set[DIKey], Set[Binding]) = {
+      // FIXME: a hack to support tag merging
+      def modulewiseMerge(a: Set[Binding], b: Set[Binding]): Set[Binding] = {
+        (T.make(a) ++ T.make(b)).bindings
+      }
+
       val existingIndex = existing.map(b => b.key -> b).toMultimap
       val newIndex = overriding.map(b => b.key -> b).toMultimap
       val mergedKeys = existingIndex.keySet ++ newIndex.keySet

@@ -270,7 +270,6 @@ object Izumi {
       final lazy val config = ArtifactId("distage-config")
       final lazy val plugins = ArtifactId("distage-plugins")
       final lazy val framework = ArtifactId("distage-framework")
-      final lazy val rolesApi = ArtifactId("distage-framework-api")
       final lazy val testkit = ArtifactId("distage-testkit")
     }
 
@@ -436,13 +435,13 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.framework,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allMonadsOptional ++ Seq(docker_java in Scope.Compile.jvm) ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency, docker_java).map(_ in Scope.Compile.all) ++ allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(scalatest.dependency).map(_ in Scope.Compile.all) ++ allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),

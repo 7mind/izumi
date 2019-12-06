@@ -1,36 +1,86 @@
 package izumi.distage.testkit.services.dstest
 
-import izumi.distage.model.definition.{Axis, AxisBase}
-import izumi.distage.plugins.merge.PluginMergeStrategy
-import izumi.distage.roles.BootstrapConfig
+import distage.DIKey
+import izumi.distage.framework.model.PluginSource
+import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase}
+import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.services.PluginSource
+import izumi.distage.roles.model.ActivationInfo
 import izumi.distage.testkit.services.PluginsCache
+import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
+import izumi.fundamentals.platform.language.Quirks
 import izumi.logstage.api.IzLogger
 
 trait TestEnvironmentProvider {
-
-  /**
-    * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
-    */
+  /** Merge strategy will be applied only once for all the tests with the same BootstrapConfig, if memoization is on */
   def loadEnvironment(logger: IzLogger): TestEnvironment
+}
 
-  //
-  protected def doLoad(logger: IzLogger, env: PluginsCache.CacheValue): TestEnvironment
+object TestEnvironmentProvider {
 
-  protected def memoizePlugins: Boolean
+  class Impl
+  (
+    protected val pluginSource: PluginSource,
+    protected val activation: Activation,
+    protected val memoizedKeys: Set[DIKey],
+    protected val bootstrapOverrides: BootstrapModule,
+    protected val moduleOverrides: ModuleBase,
+  ) extends TestEnvironmentProvider {
 
-  protected def loadRoles(logger: IzLogger): RolesInfo
+    /**
+      * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
+      */
+    override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
+      val bootstrapConfig = pluginSource.bootstrapConfig
+      def env(): CacheValue = {
+        val plugins = pluginSource.load()
+        val mergeStrategy = makeMergeStrategy(logger)
+        val defApp = mergeStrategy.merge(plugins.app)
+        val bootstrap = mergeStrategy.merge(plugins.bootstrap)
+        val availableActivations = ActivationInfo.findAvailableChoices(logger, defApp)
+        CacheValue(plugins, bootstrap, defApp, availableActivations)
+      }
 
-  protected def activation: Map[AxisBase, Axis.AxisValue]
+      val plugins = bootstrapConfig match {
+        case Some(config) if memoizePlugins =>
+          PluginsCache.Instance.getOrCompute(CacheKey(config), env())
+        case _ =>
+          env()
+      }
 
-  protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy
+      doLoad(logger, plugins)
+    }
 
-  protected def bootstrapConfig: BootstrapConfig
+    protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
+      val roles = loadRoles(logger)
+      TestEnvironment(
+        baseBsModule = env.bsModule overridenBy bootstrapOverrides,
+        appModule = env.appModule overridenBy moduleOverrides,
+        roles = roles,
+        activationInfo = env.availableActivations,
+        activation = activation,
+        memoizedKeys = memoizedKeys,
+      )
+    }
 
-  protected def makePluginLoader(bootstrapConfig: BootstrapConfig): PluginSource
+    protected def memoizePlugins: Boolean = {
+      import izumi.fundamentals.platform.strings.IzString._
 
-  protected def pluginPackages: Seq[String]
+      System.getProperty("izumi.distage.testkit.plugins.memoize")
+        .asBoolean(true)
+    }
 
-  protected def pluginBootstrapPackages: Option[Seq[String]]
+    protected def loadRoles(logger: IzLogger): RolesInfo = {
+      Quirks.discard(logger)
+      // For all normal scenarios we don't need roles to setup a test
+      RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
+    }
+
+    protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
+      Quirks.discard(lateLogger)
+      SimplePluginMergeStrategy
+    }
+
+  }
+
 }

@@ -3,11 +3,24 @@ Basics
 
 @@toc { depth=2 }
 
-### Tutorial
+### Quick Start
 
-Suppose we have an abstract `Greeter` component with a simple implementation:
+Suppose we have an abstract `Greeter` component and some other components that depend on `Greeter`:
 
-```scala mdoc:reset:to-string
+```scala mdoc:reset:invisible:to-string
+var counter = 0
+val names = Array("kai", "xai", "mai")
+def readLine() = {
+  val n = names(counter % names.length)
+  counter += 1
+  println(s"> $n")
+  n
+}
+```
+
+```scala mdoc:to-string
+import distage.{ModuleDef, Injector, GCMode}
+
 trait Greeter {
   def hello(name: String): Unit
 }
@@ -15,15 +28,7 @@ trait Greeter {
 final class PrintGreeter extends Greeter {
   override def hello(name: String) = println(s"Hello $name!") 
 }
-```
 
-Some other components depend on `Greeter`:
-
-```scala mdoc:invisible:to-string
-def readLine() = { println("> kai"); "kai" }
-```
-
-```scala mdoc:to-string
 trait Byer {
   def bye(name: String): Unit
 }
@@ -47,27 +52,19 @@ To actually run the `HelloByeApp`, we have to create the real implementations of
 We'll start by describing the component interfaces we have and the implementations we want for them:
 
 ```scala mdoc:to-string
-import distage.{ModuleDef, Injector, GCMode, OrderedPlan}
-
-object HelloByeModule extends ModuleDef {
+val HelloByeModule = new ModuleDef {
   make[Greeter].from[PrintGreeter]
   make[Byer].from[PrintByer]
-  make[HelloByeApp] // A `from` clause is not required for concrete classes 
+  make[HelloByeApp] // `.from` is not required for concrete classes 
 }
 ```
 
 `ModuleDef` merely contains a description of the desired object graph, let's transform that high-level description into an
-actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.OrderedPlan):
+actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.OrderedPlan), a datatype we can
+@ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or @ref[verify at compile-time](distage-framework.md#compile-time-checks) – without actually creating any objects or executing any effects.
 
 ```scala mdoc:to-string
-val plan: OrderedPlan = Injector().plan(HelloByeModule, GCMode.NoGC)
-```
-
-OrderedPlan is a plain datatype we can @ref[inspect](debugging.md#pretty-printing-plans), @ref[test](debugging.md#testing-plans) or 
-@ref[verify at compile-time](distage-framework.md#compile-time-checks), all without actually executing any effects.
-
-```scala mdoc:to-string
-println(plan.render())
+val plan = Injector().plan(HelloByeModule, GCMode.NoGC)
 ```
 
 We do need to interpret it to create an actual object graph, though.<br/>
@@ -88,9 +85,9 @@ resource.use {
 }
 ```
 
-Objects in `distage` are always created exactly once, even if multiple other objects depend on them aka they have a `Singleton scope`.
-It's *impossible* to create non-singletons in `distage`. If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them with `@Id` annotation. 
-For true non-singleton semantics, you may write or generate explicit factory classes (see @ref[Auto-Factories](#auto-factories))
+`distage` always creates components exactly once, even if multiple other objects depend on them. Aka there's only a `Singleton` scope.
+It's *impossible* to create non-singletons in `distage`.
+If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them using `@Id` annotation. 
 
 ```scala mdoc:to-string
 import distage.Id
@@ -106,21 +103,81 @@ new ModuleDef {
 }
 ```
 
-Modules can be combined into larger modules with `++` and `overridenBy` operators.
+For true non-singleton semantics, you must create explicit factory classes or generate them (see @ref[Auto-Factories](#auto-factories))
+
+### Activation Axis
+
+You can choose between different implementations of a component using `Axis` tags:
 
 ```scala mdoc:to-string
-val capsModule = HelloByeModule overridenBy new ModuleDef {
-  make[Greeter].from(new Greeter {
-    def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
-  })
+import distage.{Axis, Activation, ModuleDef, Injector, GCMode}
+
+class AllCapsGreeter extends Greeter {
+  def hello(name: String) = println(s"HELLO ${name.toUpperCase}")
 }
 
-val capsObjects = Injector().produceUnsafe(capsModule, GCMode.NoGC)
+// declare the configuration axis for our components
 
-capsObjects.get[HelloByeApp].run()
+object Style extends Axis {
+  case object AllCaps extends AxisValueDef
+  case object Normal extends AxisValueDef
+}
+
+// Declare a module with several implementations of Greeter
+// but in different environments
+
+val TwoImplsModule = new ModuleDef {
+  make[Greeter].tagged(Style.Normal)
+    .from[PrintGreeter]
+  
+  make[Greeter].tagged(Style.AllCaps)
+    .from[AllCapsGreeter]
+}
+
+// Combine previous `HelloByeModule` with our new module
+// While overriding `make[Greeter]` bindings from the first module 
+
+val CombinedModule = HelloByeModule overridenBy TwoImplsModule
+
+// Choose component configuration when making an Injector:
+
+val capsInjector = Injector(Activation(Style -> Style.AllCaps))
+
+// Check the result:
+
+capsInjector
+  .produce(CombinedModule, GCMode.NoGC)
+  .use(_.get[HelloByeApp].run())
+
+// Check that result changes with a different configuration:
+
+Injector(Activation(Style -> Style.Normal))
+  .produce(CombinedModule, GCMode.NoGC)
+  .use(_.get[HelloByeApp].run())
 ```
 
-We've overriden the `Greeter` binding in `HelloByeModule` with an implementation of `Greeter` that prints in ALL CAPS.
+In @scaladoc[distage.StandardAxis](izumi.distage.model.definition.StandardAxis) there are three example Axes for back-end development: `Repo.Prod/Dummy`, `Env.Prod/Test` & `ExternalApi.Prod/Mock`  
+
+In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppLauncher), you can choose axes using the `-u` command-line parameter:
+
+```
+./launcher -u repo:dummy app1
+```
+
+In `distage-testkit`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
+
+```scala mdoc:to-string
+import distage.StandardAxis.Repo
+import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
+
+class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
+  override protected def config: TestConfig = TestConfig(
+    // choose implementations tagged `Repo.Dummy` when multiple implemenations with `Repo.*` tags are available
+    activation = Activation(Repo -> Repo.Dummy)
+  )
+}
+```
 
 ### Resource Bindings, Lifecycle
 
@@ -135,25 +192,29 @@ receive an allocated resource and when the function exits the resource will be d
 Example with `cats.effect.Resource`:
 
 ```scala mdoc:reset:to-string
-import distage._
-import cats.effect._
+import distage.{GCMode, ModuleDef, Injector}
+import cats.effect.{Bracket, Resource, IO}
 
 class DBConnection
 class MessageQueueConnection
 
 val dbResource = Resource.make(
-  acquire = IO { println("Connecting to DB!"); new DBConnection }
-)(release = _ => IO(println("Disconnecting DB")))
+  acquire = IO { 
+    println("Connecting to DB!")
+    new DBConnection 
+})(release = _ => IO(println("Disconnecting DB")))
 
 val mqResource = Resource.make(
-  acquire = IO { println("Connecting to Message Queue!"); new MessageQueueConnection }
-)(release = _ => IO(println("Disconnecting Message Queue")))
+  acquire = IO {
+   println("Connecting to Message Queue!")
+   new MessageQueueConnection 
+})(release = _ => IO(println("Disconnecting Message Queue")))
 
 class MyApp(db: DBConnection, mq: MessageQueueConnection) {
   val run = IO(println("Hello World!"))
 }
 
-def module = new ModuleDef {
+val module = new ModuleDef {
   make[DBConnection].fromResource(dbResource)
   make[MessageQueueConnection].fromResource(mqResource)
   addImplicit[Bracket[IO, Throwable]]
@@ -167,17 +228,14 @@ Will produce the following output:
 val objectGraphResource = Injector().produceF[IO](module, GCMode.NoGC)
 
 objectGraphResource
-  .use { 
-    objects =>
-      objects.get[MyApp].run
-  }
+  .use(_.get[MyApp].run)
   .unsafeRunSync()
 ```
 
 Lifecycle management `DIResource` is also available without an effect type, via `DIResource.Simple` and `DIResource.Mutable`:
 
 ```scala mdoc:reset:to-string
-import distage._
+import distage.{DIResource, GCMode, ModuleDef, Injector}
 
 class Init {
   var initialized = false
@@ -506,24 +564,27 @@ class ActorFactoryImpl(sessionStorage: SessionStorage) extends ActorFactory {
 
 `@With` annotation can be used to specify the implementation class, when the factory result is abstract:
 
-```scala
+```scala mdoc:to-string
 trait Actor { 
  def anyToUnit: Any => Unit = _ => ()
 }
 
 object Actor {
   trait Factory {
-    @With[Actor.Impl]
-    def mkActor(name: String): Actor
+    def mkActor(name: String): Actor @With[Actor.Impl]
   }
-  // implementation class is private & hidden from outer world
-  private[this] final class Impl(name: String) extends Actor{
+
+  final class Impl(name: String) extends Actor{
     override def anyToUnit: Any => Unit = msg => println(s"Actor `$name` received a message: $msg")
   }
 }
 
+val factoryModule = new ModuleDef {
+  make[Actor.Factory]
+}
+
 Injector()
-  .produce(new ModuleDef { make[Actor.Factory] }, GCMode.NoGC)
+  .produce(factoryModule, GCMode.NoGC)
   .use(_.get[Actor.Factory].mkActor("Martin").anyToUnit("ping"))
 ```
 

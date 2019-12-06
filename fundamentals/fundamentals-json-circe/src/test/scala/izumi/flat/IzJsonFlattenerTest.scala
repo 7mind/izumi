@@ -1,9 +1,9 @@
 
 package izumi.flat
 
-import izumi.json.flat.JsonFlattener
 import io.circe.Json
 import io.circe.literal._
+import izumi.fundamentals.json.flat.JsonFlattener
 import org.scalatest.{Assertion, WordSpec}
 
 class IzJsonFlattenerTest extends WordSpec {

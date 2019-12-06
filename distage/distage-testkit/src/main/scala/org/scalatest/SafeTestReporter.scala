@@ -11,7 +11,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   private var signalled: Option[TestMeta] = None
   private var openSuite: Option[SuiteData] = None
 
-
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()
     underlying.onFailure(f)

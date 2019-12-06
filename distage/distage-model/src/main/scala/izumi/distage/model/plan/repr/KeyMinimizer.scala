@@ -7,30 +7,34 @@ import izumi.fundamentals.reflection.macrortti.{LTTRenderables, LightTypeTagRef,
 
 class KeyMinimizer(allKeys: Set[DIKey]) {
 
-  private[this] val index: Map[String, Int] = allKeys
-    .toSeq
-    .flatMap(extract)
-    .map(name => name.split('.').last -> name)
-    .toMultimap
-    .mapValues(_.size)
-    .toMap
-
-  private[this] val minimizedLTTRenderables = new LTTRenderables {
-    override def r_SymName(sym: SymName): String = {
-      val shortname = sym.name.split('.').last
-      val withSameName = index.getOrElse(shortname, 0)
-      if (withSameName <= 1) shortname else sym.name
-    }
+  private[this] val index: Map[String, Int] = {
+    allKeys
+      .toSeq
+      .flatMap(extract)
+      .map(name => name.split('.').last -> name)
+      .toMultimap
+      .mapValues(_.size)
+      .toMap
   }
 
-  def renderKey(key: DIKey): String = {
-    renderKey(key, renderType)
+  private[this] val minimizedLTTRenderables = new LTTRenderables {
+    override def r_SymName(sym: SymName, hasPrefix: Boolean): String = {
+      val shortname = sym.name.split('.').last
+      if (hasPrefix) {
+        shortname
+      } else {
+        val withSameName = index.getOrElse(shortname, 0)
+        if (withSameName <= 1) shortname else sym.name
+      }
+    }
   }
 
   def renderType(tpe: SafeType): String = {
     import minimizedLTTRenderables._
     tpe.tag.ref.render()
   }
+
+  def renderKey(key: DIKey): String = renderKey(key, renderType)
 
   private[this] def renderKey(key: DIKey, rendertype: SafeType => String): String = {
     // in order to make idea links working we need to put a dot before Position occurence and avoid using #
@@ -84,4 +88,9 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
         reference
     }).map(_.ref.name)
   }
+
+}
+
+object KeyMinimizer {
+  def apply(allKeys: Set[DIKey]): KeyMinimizer = new KeyMinimizer(allKeys)
 }

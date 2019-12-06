@@ -1,6 +1,6 @@
 package izumi.distage.model.references
 
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameWrapper
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameWrapper
 import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
 import izumi.fundamentals.reflection.Tags.Tag
 

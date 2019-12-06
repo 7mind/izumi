@@ -6,13 +6,13 @@ import java.util.UUID
 
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
+import izumi.distage.effect.modules.IdentityDIEffectModule
+import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.framework.model.PluginSource
+import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
-import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.model.AppActivation
-import izumi.distage.roles.services.{IntegrationChecker, PluginSource, RoleAppPlanner}
 import izumi.distage.roles.test.fixtures.Fixture.{Resource0, Resource1, Resource2, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
 import izumi.fundamentals.platform.functional.Identity
@@ -46,19 +46,19 @@ class RoleAppTest extends WordSpec
   }
 
   val logLevel = "crit"
-//  val logLevel = "info"
+  //val logLevel = "info"
 
   "Role Launcher" should {
     "be able to start roles" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      new RoleAppMain.Silent({
+      new RoleAppMain.Silent(
         new TestLauncher {
           override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
             l.copy(app = Seq(l.app.merge overridenBy probe))
           }
         }
-      }).main(Array(
+      ).main(Array(
         "-ll", logLevel,
         ":" + AdoptedAutocloseablesCase.id,
         ":" + TestRole00.id,
@@ -71,7 +71,7 @@ class RoleAppTest extends WordSpec
     "start roles regression test" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      new RoleAppMain.Silent({
+      new RoleAppMain.Silent(
         new TestLauncher {
           override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
             l.copy(app = Seq(
@@ -88,12 +88,11 @@ class RoleAppTest extends WordSpec
             ))
           }
         }
-      }).main(Array(
+      ).main(Array(
         "-ll", logLevel,
         ":" + AdoptedAutocloseablesCase.id,
         ":" + TestRole00.id,
       ))
-
 
       assert(probe.resources.startedCloseables == probe.resources.closedCloseables.reverse)
       assert(probe.resources.checkedResources.toSet.size == 2)
@@ -110,9 +109,8 @@ class RoleAppTest extends WordSpec
           .ref[Resource0]
       } ++ IdentityDIEffectModule ++ probe
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
-        ContextOptions(),
+        PlanningOptions(),
         BootstrapModule.empty,
-        AppActivation.empty,
         logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
@@ -145,9 +143,8 @@ class RoleAppTest extends WordSpec
           .ref[Resource0]
       } ++ IdentityDIEffectModule ++ probe
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
-        ContextOptions(),
+        PlanningOptions(),
         BootstrapModule.empty,
-        AppActivation.empty,
         logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
@@ -180,9 +177,8 @@ class RoleAppTest extends WordSpec
         make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
-        ContextOptions(),
+        PlanningOptions(),
         BootstrapModule.empty,
-        AppActivation.empty,
         logger,
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)

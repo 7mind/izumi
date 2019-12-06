@@ -4,9 +4,10 @@ import cats.effect.{IO => CIO}
 import distage._
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
-import izumi.distage.testkit.services.st.dtest.{DistageAbstractScalatestSpec, TestConfig}
-import izumi.distage.testkit.st.specs.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
+import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
 import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 

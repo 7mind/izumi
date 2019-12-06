@@ -4,17 +4,17 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.exceptions._
 import izumi.distage.model.plan.ExecutableOp.{CreateSet, MonadicOp, ProxyOp, WiringOp}
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher.ByNameDispatcher
-import izumi.distage.model.provisioning.strategies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
+import izumi.distage.model.provisioning.proxies.ProxyProvider.{DeferredInit, ProxyContext, ProxyParams}
+import izumi.distage.model.provisioning.proxies.{ProxyDispatcher, ProxyProvider}
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.provisioning.strategies.ProxyStrategyDefaultImpl.FakeSet
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.reflection.TypeUtil
-
-// CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-private[strategies] trait FakeSet[A] extends Set[A]
 
 /**
   * Limitations:
@@ -27,7 +27,7 @@ class ProxyStrategyDefaultImpl
   mirrorProvider: MirrorProvider,
 ) extends ProxyStrategy {
 
-  override def makeProxy(context: ProvisioningKeyProvider, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
+  override def makeProxy(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, makeProxy: ProxyOp.MakeProxy): Seq[NewObjectOp] = {
     val cogenNotRequired = makeProxy.byNameAllowed
 
     val proxyInstance = if (cogenNotRequired) {
@@ -134,7 +134,6 @@ class ProxyStrategyDefaultImpl
     makeProxy.op match {
       case _: CreateSet =>
         // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
-        //op.target.symbol
         SafeType.get[FakeSet[_]]
       case op: WiringOp.CallProvider =>
         op.target.tpe
@@ -157,3 +156,7 @@ class ProxyStrategyDefaultImpl
 
 }
 
+object ProxyStrategyDefaultImpl {
+  // CGLIB-CLASSLOADER: when we work under sbt cglib fails to instantiate set
+  private trait FakeSet[A] extends Set[A]
+}

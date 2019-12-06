@@ -152,7 +152,7 @@ final class PlannerDefaultImpl
             val fstHasByName: Boolean = hasByNameParameter(fsto)
             val sndHasByName: Boolean = hasByNameParameter(sndo)
 
-            // FIXME reverse logic? prefer by-names ???
+            // reverse logic? prefer by-names ???
 //            if (!fstHasByName && sndHasByName) {
 //              true
 //            } else if (fstHasByName && !sndHasByName) {

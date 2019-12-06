@@ -9,7 +9,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
@@ -33,11 +33,9 @@ class PlanInterpreterDefaultRuntimeImpl
 
 , failureHandler: ProvisioningFailureInterceptor
 , verifier: ProvisionOperationVerifier,
-) extends PlanInterpreter
-     with OperationExecutor
-     with WiringExecutor {
+) extends PlanInterpreter with OperationExecutor {
 
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizersFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizerFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     DIResource.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
@@ -141,16 +139,16 @@ class PlanInterpreterDefaultRuntimeImpl
   override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     step match {
       case op: ImportDependency =>
-        F pure importStrategy.importDependency(context, op)
+        F pure importStrategy.importDependency(context, this, op)
 
       case op: CreateSet =>
-        F pure setStrategy.makeSet(context, op)
+        F pure setStrategy.makeSet(context, this, op)
 
       case op: WiringOp =>
         F pure execute(context, op)
 
       case op: ProxyOp.MakeProxy =>
-        F pure proxyStrategy.makeProxy(context, op)
+        F pure proxyStrategy.makeProxy(context, this, op)
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)
@@ -166,13 +164,13 @@ class PlanInterpreterDefaultRuntimeImpl
   override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
     step match {
       case op: WiringOp.UseInstance =>
-        instanceStrategy.getInstance(context, op)
+        instanceStrategy.getInstance(context, this, op)
 
       case op: WiringOp.ReferenceKey =>
-        instanceStrategy.getInstance(context, op)
+        instanceStrategy.getInstance(context, this, op)
 
       case op: WiringOp.CallProvider =>
-        providerStrategy.callProvider(context, op)
+        providerStrategy.callProvider(context, this, op)
 
       case op: WiringOp.CallFactoryProvider =>
         factoryProviderStrategy.callFactoryProvider(context, this, op)
@@ -193,11 +191,11 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer[F](target, finalizer)
 
       case r@NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer[F](target, finalizer)
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")

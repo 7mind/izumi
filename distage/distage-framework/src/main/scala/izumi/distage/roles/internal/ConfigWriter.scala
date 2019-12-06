@@ -4,9 +4,10 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
-import izumi.distage.config.{AppConfigModule, ConfigPathExtractorModule}
 import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
 import izumi.distage.config.model.AppConfig
+import izumi.distage.config.{AppConfigModule, ConfigPathExtractorModule}
+import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, ModuleBase}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.ExecutableOp.WiringOp
@@ -15,7 +16,6 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.Singleto
 import izumi.distage.roles.internal.ConfigWriter.{ConfigurableComponent, WriteReference}
 import izumi.distage.roles.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{RoleDescriptor, RoleTask}
-import izumi.distage.roles.services.RoleAppPlanner
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 import izumi.fundamentals.platform.cli.model.schema.{ParserDef, RoleParserSchema}
 import izumi.fundamentals.platform.language.unused
@@ -223,10 +223,10 @@ object ConfigWriter extends RoleDescriptor {
   }
 
   def parse(p: RawEntrypointParams): WriteReference = {
-    val targetDir = P.targetDir.findValue(p).map(_.value).getOrElse("config")
-    val includeCommon = !P.excludeCommon.hasFlag(p)
-    val useLauncherVersion = !P.useComponentVersion.hasFlag(p)
-    val asJson = !P.formatTypesafe.findValue(p).map(_.value).contains("hocon")
+    val targetDir = p.findValue(P.targetDir).map(_.value).getOrElse("config")
+    val includeCommon = p.hasNoFlag(P.excludeCommon)
+    val useLauncherVersion = p.hasNoFlag(P.useComponentVersion)
+    val asJson = !p.findValue(P.formatTypesafe).map(_.value).contains("hocon")
 
     WriteReference(
       asJson,

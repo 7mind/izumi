@@ -3,11 +3,12 @@ package izumi.distage.provisioning.strategies
 import izumi.distage.model.exceptions.InvalidPlanException
 import izumi.distage.model.plan.ExecutableOp.WiringOp
 import izumi.distage.model.provisioning.strategies.ProviderStrategy
-import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider}
+import izumi.distage.model.provisioning.{NewObjectOp, ProvisioningKeyProvider, WiringExecutor}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.platform.language.unused
 
 class ProviderStrategyDefaultImpl extends ProviderStrategy  {
-  def callProvider(context: ProvisioningKeyProvider, op: WiringOp.CallProvider): Seq[NewObjectOp.NewInstance] = {
+  def callProvider(context: ProvisioningKeyProvider, @unused executor: WiringExecutor, op: WiringOp.CallProvider): Seq[NewObjectOp.NewInstance] = {
 
     val args: Seq[RuntimeDIUniverse.TypedRef[_]] = op.wiring.associations.map {
       param =>

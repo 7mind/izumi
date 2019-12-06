@@ -6,7 +6,7 @@ import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 import izumi.distage.roles.meta
 import izumi.distage.roles.meta.{RoleBinding, RolesInfo}
-import izumi.distage.roles.model.{AbstractRoleF, RoleDescriptor}
+import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.logstage.api.IzLogger
 
@@ -29,8 +29,7 @@ object RoleProvider {
 
       val roles = availableBindings.map(_.descriptor.id)
 
-      val enabledRoles = availableBindings
-        .filter(b => isEnabledRole(b))
+      val enabledRoles = availableBindings.filter(isRoleEnabled)
 
       meta.RolesInfo(
         enabledRoles.map(_.binding.key).toSet,
@@ -41,11 +40,11 @@ object RoleProvider {
       )
     }
 
-    private def getRoles(bb: Seq[Binding]): Seq[RoleBinding] = {
+    private[this] def getRoles(bb: Seq[Binding]): Seq[RoleBinding] = {
       bb.flatMap {
         b =>
           b match {
-            case s: ImplBinding if isAvailableRoleType(s.implementation.implType) =>
+            case s: ImplBinding if isRoleType(s.implementation.implType) =>
               Seq((b, s.implementation.implType))
 
             case _ =>
@@ -65,16 +64,16 @@ object RoleProvider {
       }
     }
 
-    private def isEnabledRole(b: RoleBinding): Boolean = {
+    private[this] def isRoleEnabled(b: RoleBinding): Boolean = {
       requiredRoles.contains(b.descriptor.id) || requiredRoles.contains(b.tpe.tag.shortName.toLowerCase)
     }
 
-    private def isAvailableRoleType(tpe: SafeType): Boolean = {
-      tpe <:< SafeType.get[AbstractRoleF[F]]
+    private[this] def isRoleType(tpe: SafeType): Boolean = {
+      tpe <:< SafeType.get[AbstractRole[F]]
     }
 
     // FIXME: Scala.js RoleDescriptor instantiation (portable-scala-reflect) ???
-    private def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
+    private[this] def getDescriptor(role: SafeType): Option[RoleDescriptor] = {
       val roleClassName = role.cls.getCanonicalName
       try {
         Some(Class.forName(s"$roleClassName$$").getField("MODULE$").get(null).asInstanceOf[RoleDescriptor])

@@ -144,12 +144,11 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
       val allParents = safeParentsOf(self)
-      val moreParents = bdb.collect({
-        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({
+      val moreParents = bdb.collect {
+        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect {
           case l: Lambda if l.input.size == self.parameters.size => l
-        })
-          .map(l => l.combine(self.parameters.map(_.ref)))
-      }).flatten
+        }.map(l => l.combine(self.parameters.map(_.ref)))
+      }.flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
       (allParents ++ moreParents)
         .exists {

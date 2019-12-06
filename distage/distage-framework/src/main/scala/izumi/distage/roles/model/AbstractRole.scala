@@ -3,9 +3,9 @@ package izumi.distage.roles.model
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.fundamentals.platform.cli.model.raw.RawEntrypointParams
 
-sealed trait AbstractRoleF[+F[_]]
+sealed trait AbstractRole[+F[_]]
 
-trait RoleService[+F[_]] extends AbstractRoleF[F] {
+trait RoleService[+F[_]] extends AbstractRole[F] {
   /**
     * Application startup wouldn't progress until this method finishes.
     * Resource initialization must be finite
@@ -18,7 +18,7 @@ trait RoleService[+F[_]] extends AbstractRoleF[F] {
 /**
   * Single-shot task, shouldn't block forever
   */
-trait RoleTask[+F[_]] extends AbstractRoleF[F] {
+trait RoleTask[+F[_]] extends AbstractRole[F] {
   /**
     * Application startup wouldn't progress until this method finishes
     */

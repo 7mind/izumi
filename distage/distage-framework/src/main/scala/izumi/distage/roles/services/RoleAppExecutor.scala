@@ -1,13 +1,13 @@
 package izumi.distage.roles.services
 
 import distage.TagK
+import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.roles._
 import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.{AbstractRoleF, DIAppBootstrapException, RoleService, RoleTask}
-import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.distage.roles.model.{AbstractRole, DIAppBootstrapException, RoleService, RoleTask}
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
@@ -24,11 +24,12 @@ object RoleAppExecutor {
                           lateLogger: IzLogger,
                           parameters: RawAppArgs,
                           startupPlanExecutor: StartupPlanExecutor[F],
+                          filters: Filters[F],
                         ) extends RoleAppExecutor[F] {
 
     final def runPlan(appPlan: AppStartupPlans): Unit = {
       try {
-        startupPlanExecutor.execute(appPlan, Filters.all[F])(doRun)
+        startupPlanExecutor.execute(appPlan, filters)(doRun)
       } finally {
         hook.release()
       }
@@ -43,7 +44,7 @@ object RoleAppExecutor {
       } yield ()
     }
 
-    protected def runRoles(index: Map[String, AbstractRoleF[F]])(implicit F: DIEffect[F]): F[Unit] = {
+    protected def runRoles(index: Map[String, AbstractRole[F]])(implicit F: DIEffect[F]): F[Unit] = {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
@@ -128,11 +129,11 @@ object RoleAppExecutor {
       }
     }
 
-    private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRoleF[F]] = {
+    private def getRoleIndex(rolesLocator: Locator): Map[String, AbstractRole[F]] = {
       roles.availableRoleBindings.flatMap {
         b =>
           rolesLocator.index.get(b.binding.key) match {
-            case Some(value: AbstractRoleF[F]) =>
+            case Some(value: AbstractRole[F]) =>
               Seq(b.descriptor.id -> value)
             case _ =>
               Seq.empty

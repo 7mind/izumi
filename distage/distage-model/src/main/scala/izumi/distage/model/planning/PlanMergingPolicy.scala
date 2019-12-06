@@ -5,7 +5,6 @@ import izumi.distage.model.plan.ExecutableOp.SemiplanOp
 import izumi.distage.model.plan.SemiPlan
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
-import izumi.fundamentals.platform.language.Quirks
 
 trait PlanMergingPolicy {
   def freeze(plan: PrePlan): SemiPlan
@@ -41,9 +40,6 @@ object PlanMergingPolicy {
       }
     }
 
-    protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution = {
-      Quirks.discard(key, plan)
-      DIKeyConflictResolution.Failed(operations.map(_.op), "Default policy cannot handle multiple bindings")
-    }
+    protected def resolveConflict(plan: PrePlan, key: DIKey, operations: Set[JustOp]): DIKeyConflictResolution
   }
 }

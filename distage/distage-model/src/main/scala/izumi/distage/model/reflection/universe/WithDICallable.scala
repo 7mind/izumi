@@ -14,7 +14,7 @@ trait WithDICallable {
     with WithDIAssociation
     with WithDIWiring =>
 
-  trait Callable {
+  trait DIFunction {
     def argTypes: Seq[SafeType]
     def ret: SafeType
     def fun: Seq[Any] => Any
@@ -52,7 +52,8 @@ trait WithDICallable {
     }
   }
 
-  trait Provider extends Callable {
+
+  trait Provider extends DIFunction {
     def associations: Seq[Association.Parameter]
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
     def unsafeZip(newRet: SafeType, that: Provider): Provider

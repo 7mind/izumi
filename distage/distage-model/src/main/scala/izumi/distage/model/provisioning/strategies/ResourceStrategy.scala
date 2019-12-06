@@ -6,9 +6,7 @@ import izumi.distage.model.provisioning.{NewObjectOp, OperationExecutor, Provisi
 import izumi.fundamentals.reflection.Tags.TagK
 
 trait ResourceStrategy {
-  def allocateResource[F[_]: TagK: DIEffect](
-                                              context: ProvisioningKeyProvider
-                                            , executor: OperationExecutor
-                                            , op: MonadicOp.AllocateResource
-                                            ): F[Seq[NewObjectOp.NewResource[F]]]
+  def allocateResource[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider,
+                                             executor: OperationExecutor,
+                                             op: MonadicOp.AllocateResource): F[Seq[NewObjectOp.NewResource[F]]]
 }
