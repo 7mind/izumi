@@ -49,9 +49,7 @@ trait DISyntaxZIOEnv {
   }
 
   def args[R: Tag: TraitConstructor, E: Tag, A: Tag](zio: ProviderMagnet[ZIO[R, E, A]]): ProviderMagnet[IO[E, A]] = {
-    zio.zip(TraitConstructor[R].provider).map {
-      case (zio, r) => zio.provide(r)
-    }
+    zio.map2(TraitConstructor[R].provider)(_.provide(_))
   }
 }
 

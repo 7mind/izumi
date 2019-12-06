@@ -79,6 +79,8 @@ import scala.language.implicitConversions
   *   make[Unit].from(constructor) // Will summon regular Int, not a "special" Int from DI object graph
   * }}}
   *
+  * ProviderMagnet forms an applicative functor via its [[ProviderMagnet.pure]] & [[map2]] methods
+  *
   * @see [[izumi.distage.model.reflection.macros.ProviderMagnetMacro]]]
   */
 final case class ProviderMagnet[+A](get: Provider) {
@@ -93,6 +95,12 @@ final case class ProviderMagnet[+A](get: Provider) {
 
   def map2[B: Tag, C: Tag](that: ProviderMagnet[B])(f: (A, B) => C): ProviderMagnet[C] = {
     zip(that).map[C](f.tupled)
+  }
+
+  /** Applicative's `ap` method - can be used to chain transformations similarly to `flatMap` */
+  def flatAp[B: Tag](that: ProviderMagnet[A => B]): ProviderMagnet[B] = {
+    implicit val rTag: Tag[A] = Tag(that.get.ret.cls, that.get.ret.tag); rTag.discard() // scalac can't detect usage in TagMacro assembling Tag[(R, B)] below
+    map2(that) { case (a, f) => f(a) }
   }
 
   /** Add `B` as an unused dependency for this constructor */
