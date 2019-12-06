@@ -4,7 +4,7 @@ import distage.{BootstrapModule, DIKey, Injector, TagK, _}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
-import izumi.distage.model.definition.{Activation, ModuleBase, ModuleDef}
+import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.logstage.api.IzLogger

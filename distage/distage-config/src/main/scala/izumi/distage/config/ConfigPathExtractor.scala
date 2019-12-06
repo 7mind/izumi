@@ -2,7 +2,8 @@ package izumi.distage.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import izumi.distage.config.ConfigPathExtractor._
-import izumi.distage.config.model.{AppConfig, ConfPathId}
+import izumi.distage.config.model.AppConfig
+import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
@@ -42,9 +43,11 @@ object ConfigPathExtractor {
 
   object ExtractConfigPath {
     def unapply(op: ExecutableOp): Option[ConfigPath] = {
-      op.target match {
-        case DIKey.IdKey(_, id: ConfPathId) =>
-          Some(ConfigPath(id.path))
+      op.origin match {
+        case defined: OperationOrigin.Defined =>
+          defined.binding.tags.collectFirst {
+            case ConfTag(path) => ConfigPath(path)
+          }
         case _ =>
           None
       }
