@@ -88,12 +88,12 @@ object IDLCArgs {
     }
 
     val parameters = parsed.globalParameters
-    val src = P.sourceDir.findValue(parameters).asPath.getOrElse(Paths.get("./source"))
-    val target = P.targetDir.findValue(parameters).asPath.getOrElse(Paths.get("./target"))
+    val src = parameters.findValue(P.sourceDir).asPath.getOrElse(Paths.get("./source"))
+    val target = parameters.findValue(P.targetDir).asPath.getOrElse(Paths.get("./target"))
     assert(src.toFile.getCanonicalPath != target.toFile.getCanonicalPath)
-    val overlay = P.overlayDir.findValue(parameters).asPath.getOrElse(Paths.get("./overlay"))
-    val overlayVersion = P.overlayVersionFile.findValue(parameters).asPath
-    val publish = P.publish.hasFlag(parameters)
+    val overlay = parameters.findValue(P.overlayDir).asPath.getOrElse(Paths.get("./overlay"))
+    val overlayVersion = parameters.findValue(P.overlayVersionFile).asPath
+    val publish = parameters.hasFlag(P.publish)
     val defines = parseDefs(parameters)
 
     val internalRoles = Seq("init", "help")
@@ -101,19 +101,19 @@ object IDLCArgs {
     val languages = parsed.roles.filterNot(r => internalRoles.contains(r.role)).map {
       role =>
         val parameters = role.roleParameters
-        val runtime = !LP.noRuntime.hasFlag(parameters)
-        val manifest = LP.manifest.findValue(parameters).asFile
-        val credentials = LP.credentials.findValue(parameters).asFile
+        val runtime = parameters.hasNoFlag(LP.noRuntime)
+        val manifest = parameters.findValue(LP.manifest).asFile
+        val credentials = parameters.findValue(LP.credentials).asFile
         val defines = parseDefs(parameters)
-        val extensions = LP.extensionSpec.findValue(parameters).map(_.value.split(',')).toList.flatten
+        val extensions = parameters.findValue(LP.extensionSpec).map(_.value.split(',')).toList.flatten
 
         LanguageOpts(
-          role.role,
-          runtime,
-          manifest,
-          credentials,
-          extensions,
-          defines
+          id = role.role,
+          withRuntime = runtime,
+          manifest = manifest,
+          credentials = credentials,
+          extensions = extensions,
+          overrides = defines
         )
     }
 
@@ -129,8 +129,8 @@ object IDLCArgs {
     )
   }
 
-  private def parseDefs(parameters: RawEntrypointParams) = {
-    LP.define.findValues(parameters).map {
+  private def parseDefs(parameters: RawEntrypointParams): Map[String, String] = {
+    parameters.findValues(LP.define).map {
       v =>
         val parts = v.value.split('=')
         parts.head -> parts.tail.mkString("=")

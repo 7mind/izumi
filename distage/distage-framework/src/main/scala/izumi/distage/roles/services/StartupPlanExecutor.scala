@@ -1,31 +1,29 @@
 package izumi.distage.roles.services
 
 import distage.{Injector, TagK}
+import izumi.distage.framework.services.IntegrationChecker
+import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectRunner}
-import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
-import izumi.distage.roles.services.RoleAppPlanner.AppStartupPlans
+import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
 import izumi.fundamentals.platform.functional.Identity
-import izumi.logstage.api.IzLogger
 
 trait StartupPlanExecutor[F[_]] {
   def execute(appPlan: AppStartupPlans, filters: StartupPlanExecutor.Filters[F])(doRun: (Locator, DIEffect[F]) => F[Unit]): Unit
 }
 
 object StartupPlanExecutor {
-  def default[F[_]: TagK](logger: IzLogger, injector: Injector): StartupPlanExecutor[F] = {
-    val checker = new IntegrationChecker.Impl[F](logger)
+  def apply[F[_]: TagK](injector: Injector, checker: IntegrationChecker[F]): StartupPlanExecutor[F] = {
     new StartupPlanExecutor.Impl[F](injector, checker)
   }
 
   final case class Filters[F[_]](
-                                  filterF: FinalizersFilter[F],
-                                  filterId: FinalizersFilter[Identity],
+                                  filterF: FinalizerFilter[F],
+                                  filterId: FinalizerFilter[Identity],
                                 )
-
   object Filters {
-    def all[F[_]]: Filters[F] = Filters[F](FinalizersFilter.all, FinalizersFilter.all)
+    def all[F[_]]: Filters[F] = Filters[F](FinalizerFilter.all, FinalizerFilter.all)
   }
 
   class Impl[F[_]: TagK](

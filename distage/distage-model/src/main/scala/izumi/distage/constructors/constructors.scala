@@ -1,11 +1,11 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.`macro`.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
+import izumi.distage.constructors.macros.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
 import izumi.distage.model.exceptions.TraitInitializationFailedException
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 
-import scala.language.experimental.macros
+import scala.language.experimental.{macros => enableMacros}
 
 sealed trait AnyConstructor[T] {
   def provider: ProviderMagnet[T]

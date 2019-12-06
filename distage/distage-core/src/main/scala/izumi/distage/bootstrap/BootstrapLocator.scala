@@ -5,14 +5,15 @@ import java.util.concurrent.atomic.AtomicReference
 import distage.TagK
 import izumi.distage._
 import izumi.distage.model._
-import izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapContextModuleDef}
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
-import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
-import izumi.distage.model.provisioning.strategies.ProxyProvider.ProxyProviderFailingImpl
+import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
+import izumi.distage.model.provisioning.proxies.ProxyProvider
+import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{PlanInterpreter, _}
+import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
 import izumi.distage.planning._
@@ -28,7 +29,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
   private val bootstrappedContext: Locator = {
-    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
+    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
 
@@ -73,7 +74,7 @@ object BootstrapLocator {
       sanityChecker = new SanityCheckerDefaultImpl(analyzer),
       gc = NoopDIGC,
       planningObserver = bootstrapObserver,
-      planMergingPolicy = new PlanMergingPolicyDefaultImpl,
+      planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl(Activation.empty),
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
@@ -92,7 +93,7 @@ object BootstrapLocator {
       instanceStrategy = new InstanceStrategyDefaultImpl,
       effectStrategy = new EffectStrategyDefaultImpl,
       resourceStrategy = new ResourceStrategyDefaultImpl,
-      failureHandler = new ProvisioningFailureInterceptorDefaultImpl,
+      failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = verifier,
     )
   }
@@ -102,15 +103,16 @@ object BootstrapLocator {
   }
 
   final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[MirrorProvider].from[MirrorProvider.Impl.type]
+    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
+    make[Activation].fromValue(Activation.empty)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
+    make[MirrorProvider].from[MirrorProvider.Impl.type]
     make[DIGarbageCollector].from[TracingDIGC.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
-    make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
-    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
+    make[PlanMergingPolicy].from[PruningPlanMergingPolicyDefaultImpl]
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]
@@ -122,7 +124,7 @@ object BootstrapLocator {
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
-    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
+    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptor.DefaultImpl]
 
     many[PlanningObserver]
     many[PlanningHook]

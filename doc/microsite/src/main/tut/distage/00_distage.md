@@ -19,7 +19,7 @@ Why use distage?
 2. **Quick failure detection**:
     `distage` performs all the integration checks for your application and tests even before any instantiations happened.    
 3. **Simple tests**:
-    `distage` eliminates all the hard work of setting up your test environments, especially polymorphic ones.
+    `distage` eliminates all the hard work of setting up your test environments, especially configurable ones.
 4. **Better integration tests**:
     `distage` provides you great memoization support for your tests so you may reuse expensive resources (like database connections) across multiple
     integration tests, gaining performance and without sacrificing correctness.
@@ -68,7 +68,7 @@ Further reading
 - [Example Project](https://github.com/7mind/distage-livecode)
 - [ScalaUA Presentation](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
 - @ref[Basics](basics.md)
-- @ref[Other features](other-features.md)
+- @ref[Advanced features](advanced-features.md)
 - @ref[Debugging](debugging.md)
 - @ref[distage-config](distage-config.md)
 - @ref[distage-framework](distage-framework.md)
@@ -78,7 +78,7 @@ Further reading
 @@@ index
 
 * [Basics](basics.md)
-* [Other features](other-features.md)
+* [Advanced features](advanced-features.md)
 * [Debugging](debugging.md)
 * [distage-config](distage-config.md)
 * [distage-framework](distage-framework.md)

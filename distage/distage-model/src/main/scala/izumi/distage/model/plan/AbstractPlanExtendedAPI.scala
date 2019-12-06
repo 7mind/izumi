@@ -5,7 +5,7 @@ import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.Tag
 
-private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] {
+private[plan] trait AbstractPlanExtendedAPI[OpType <: ExecutableOp] extends Any {
   this: AbstractPlan[OpType] =>
 
   def resolveImports(f: PartialFunction[ImportDependency, Any]): AbstractPlan[OpType]

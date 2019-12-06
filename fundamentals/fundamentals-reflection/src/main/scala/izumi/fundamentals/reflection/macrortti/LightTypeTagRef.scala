@@ -69,11 +69,11 @@ sealed trait LightTypeTagRef {
   }
 
   final def shortName: String = {
-    getName(LTTRenderables.Short.r_SymName, this)
+    getName(LTTRenderables.Short.r_SymName(_, hasPrefix = false), this)
   }
 
   final def longName: String = {
-    getName(LTTRenderables.Long.r_SymName, this)
+    getName(LTTRenderables.Long.r_SymName(_, hasPrefix = false), this)
   }
 
   @tailrec @inline

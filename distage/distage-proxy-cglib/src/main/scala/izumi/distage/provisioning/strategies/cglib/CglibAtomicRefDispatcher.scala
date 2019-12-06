@@ -2,7 +2,7 @@ package izumi.distage.provisioning.strategies.cglib
 
 import java.lang.reflect.Method
 
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher.AtomicProxyDispatcher
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.AtomicProxyDispatcher
 import net.sf.cglib.proxy.{MethodInterceptor, MethodProxy}
 
 // dynamic dispatching is not optimal, uhu

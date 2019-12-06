@@ -1,51 +1,39 @@
 package org.scalatest
 
-import distage.{ModuleBase, TagK}
-import izumi.distage.model.definition.BootstrapModule
-import izumi.distage.roles.config.ContextOptions
-import izumi.distage.roles.services.IntegrationChecker
+import distage.TagK
+import izumi.distage.framework.services.IntegrationChecker
+import izumi.distage.testkit.SpecConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
-import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment, SpecEnvironmentImpl}
-import izumi.distage.testkit.services.st.dtest.DistageTestsRegistrySingleton
+import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
+import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
 
-final case class SpecConfig(
-                             contextOptions: ContextOptions = ContextOptions(),
-                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
-                             moduleOverrides: ModuleBase = ModuleBase.empty,
-                             bootstrapLogLevel: Log.Level = Log.Level.Info,
-                           )
-
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
   implicit def tagMonoIO: TagK[F]
 
-  private[this] lazy val specEnv: SpecEnvironment[F] = makeSpecEnvironment()
+  private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
 
   protected def makeSpecConfig(): SpecConfig = SpecConfig()
 
-  protected def makeSpecEnvironment(): SpecEnvironment[F] = {
+  protected def makeSpecEnvironment(): SpecEnvironment = {
     val c = makeSpecConfig()
 
-    new SpecEnvironmentImpl[F](
-      this.getClass,
-      c.contextOptions,
-      c.bootstrapOverrides,
-      c.moduleOverrides,
-      c.bootstrapLogLevel,
+    new SpecEnvironment.Impl[F](
+      suiteClass = this.getClass,
+      contextOptions = c.contextOptions,
+      bootstrapOverrides = c.bootstrapOverrides,
+      moduleOverrides = c.moduleOverrides,
+      bootstrapLogLevel = c.bootstrapLogLevel,
     )
   }
 
-
-  override final protected def runNestedSuites(args: Args): Status =
-    throw new UnsupportedOperationException
-  override protected final def runTests(testName: Option[String], args: Args): Status =
-    throw new UnsupportedOperationException
-  override protected final def runTest(testName: String, args: Args): Status =
-    throw new UnsupportedOperationException
+  override protected final def runNestedSuites(args: Args): Status = throw new UnsupportedOperationException
+  override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
+  override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
   override def testNames: Set[String] = {
     TreeSet[String](thisTests.map(_.meta.id.name): _*)
@@ -201,7 +189,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   }
 
-  final override val styleName: String = "DistageSuite"
+  override final val styleName: String = "DistageSuite"
 }
 
 

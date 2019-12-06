@@ -1,10 +1,9 @@
 package izumi.distage.model.plan.impl
 
-import cats.Applicative
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, SemiplanOp}
-import izumi.distage.model.plan.impl.OrderedPlanExtensions.{OrderedPlanExts, OrderedPlanSyntax}
-import izumi.distage.model.plan.impl.PlanSyntaxCatsBoilerplate.{ResolveImportFOrderedPlanPartiallyApplied, resolveImportsImpl}
-import izumi.distage.model.plan.repr.{CompactPlanFormatter, DepTreeRenderer}
+import izumi.distage.model.plan.impl.OrderedPlanExtensions.{OrderedPlanCatsOps, OrderedPlanRenderOps}
+import izumi.distage.model.plan.impl.PlanCatsSyntaxImpl.{ResolveImportFOrderedPlanPartiallyApplied, resolveImportsImpl}
+import izumi.distage.model.plan.repr.{CompactOrderedPlanFormatter, DepTreeRenderer}
 import izumi.distage.model.plan.topology.DepTreeNode.DepNode
 import izumi.distage.model.plan.topology.PlanTopology
 import izumi.distage.model.plan.{ExecutableOp, GCMode, OrderedPlan, SemiPlan}
@@ -13,19 +12,19 @@ import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.language.implicitConversions
 
-private[plan] trait OrderedPlanExtensions { this: OrderedPlan.type =>
-  implicit val defaultFormatter: Renderable[OrderedPlan] = CompactPlanFormatter.OrderedPlanFormatter
+private[plan] trait OrderedPlanExtensions extends Any { this: OrderedPlan.type =>
+  final def empty: OrderedPlan = OrderedPlan(Vector.empty, Set.empty, PlanTopology.empty)
 
-  def empty: OrderedPlan = OrderedPlan(Vector.empty, Set.empty, PlanTopology.empty)
+  @inline implicit final def defaultFormatter: Renderable[OrderedPlan] = CompactOrderedPlanFormatter
 
-  @inline implicit final def toPlanSyntax(plan: OrderedPlan): OrderedPlanSyntax = new OrderedPlanSyntax(plan)
-  @inline implicit final def toOrderedPlanExts(plan: OrderedPlan): OrderedPlanExts = new OrderedPlanExts(plan)
+  @inline implicit final def toOrderedPlanRenderOps(plan: OrderedPlan): OrderedPlanRenderOps = new OrderedPlanRenderOps(plan)
+  @inline implicit final def toOrderedPlanCatsOps(plan: OrderedPlan): OrderedPlanCatsOps = new OrderedPlanCatsOps(plan)
 }
 
 private[plan] object OrderedPlanExtensions {
-  final class OrderedPlanSyntax(private val plan: OrderedPlan) extends AnyVal {
-    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
 
+  final class OrderedPlanRenderOps(private val plan: OrderedPlan) extends AnyVal {
+    def render()(implicit ev: Renderable[OrderedPlan]): String = ev.render(plan)
     def renderDeps(node: DepNode): String = new DepTreeRenderer(node, plan).render()
 
     def renderAllDeps(): String = {
@@ -34,8 +33,9 @@ private[plan] object OrderedPlanExtensions {
     }
   }
 
-  final class OrderedPlanExts(private val plan: OrderedPlan) extends AnyVal {
+  final class OrderedPlanCatsOps(private val plan: OrderedPlan) extends AnyVal {
 
+    import cats.Applicative
     import cats.instances.vector._
     import cats.syntax.functor._
     import cats.syntax.traverse._

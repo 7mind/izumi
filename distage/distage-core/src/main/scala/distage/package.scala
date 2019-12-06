@@ -1,4 +1,3 @@
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
@@ -8,6 +7,9 @@ import izumi.fundamentals.reflection.Tags
 package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
+
+  override type Activation = model.definition.Activation
+  override val Activation: model.definition.Activation.type = model.definition.Activation
 
   override type Injector = model.Injector
   override type Planner = model.Planner
@@ -36,7 +38,7 @@ package object distage extends Distage {
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
-  override type Axis[+MM <: AxisValue] = model.definition.Axis[MM]
+  override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis
 
   override type BindingTag = model.definition.BindingTag
@@ -74,8 +76,6 @@ package object distage extends Distage {
 
   override type BootstrapModule = model.definition.BootstrapModule
   override val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
-
-  override val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
 
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

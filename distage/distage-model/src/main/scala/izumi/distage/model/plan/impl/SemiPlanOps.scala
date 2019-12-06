@@ -9,29 +9,29 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.Singleto
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.Tag
 
-private[plan] trait SemiPlanOps {
+private[plan] trait SemiPlanOps extends Any {
   this: SemiPlan =>
 
-  override def toSemi: SemiPlan = this
+  override final def toSemi: SemiPlan = this
 
-  override def resolveImport[T: Tag](instance: T): SemiPlan =
+  override final def resolveImport[T: Tag](instance: T): SemiPlan =
     resolveImports {
       case i if i.target == DIKey.get[T] =>
         instance
     }
 
-  override def resolveImport[T: Tag](id: String)(instance: T): SemiPlan = {
+  override final def resolveImport[T: Tag](id: String)(instance: T): SemiPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance
     }
   }
 
-  override def resolveImports(f: PartialFunction[ImportDependency, Any]): SemiPlan = {
+  override final def resolveImports(f: PartialFunction[ImportDependency, Any]): SemiPlan = {
     copy(steps = AbstractPlanOps.resolveImports1(AbstractPlanOps.importToInstances(f), steps))
   }
 
-  override def locateImports(locator: Locator): SemiPlan = {
+  override final def locateImports(locator: Locator): SemiPlan = {
     resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
   }
 

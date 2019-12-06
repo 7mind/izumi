@@ -1,9 +1,9 @@
 package izumi.distage.staticinjector.plugins
 
 import distage.plugins.PluginBase
-import izumi.distage.staticinjector.plugins.macrodefs.StaticPluginCheckerMacro
+import izumi.distage.staticinjector.plugins.macros.StaticPluginCheckerMacro
 
-import scala.language.experimental.macros
+import scala.language.experimental.{macros => enableMacros}
 
 object StaticPluginChecker {
   def check[GcRoot <: PluginBase, R <: ModuleRequirements](activations: String): Unit = macro StaticPluginCheckerMacro.implDefault[GcRoot, R]

@@ -1,7 +1,7 @@
 package izumi.distage.testkit
 
 import izumi.fundamentals.reflection.Tags.TagK
-import izumi.distage.testkit.services.st.adapter.DistageTestSupport
+import izumi.distage.testkit.services.scalatest.adapter.DistageTestSupport
 import org.scalatest.{ScalatestSuite, WordSpecLike}
 
 @deprecated("Use dstest", "2019/Jul/18")

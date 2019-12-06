@@ -6,7 +6,7 @@ import izumi.distage.model.exceptions.{DIException, ProvisioningException}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.plan.repr.OpFormatter
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizersFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.TagK
@@ -15,21 +15,23 @@ trait PlanInterpreter {
   def instantiate[F[_]: TagK: DIEffect](
                                          plan: OrderedPlan,
                                          parentContext: Locator,
-                                         filterFinalizers: FinalizersFilter[F],
+                                         filterFinalizers: FinalizerFilter[F],
                                        ): DIResourceBase[F, Either[FailedProvision[F], Locator]]
 }
 
 object PlanInterpreter {
-  trait FinalizersFilter[F[_]] {
+  trait FinalizerFilter[F[_]] {
     def filter(finalizers: collection.Seq[Finalizer[F]]): collection.Seq[Finalizer[F]]
   }
-  object FinalizersFilter {
-    def all[F[_]]: FinalizersFilter[F] = finalizers => finalizers
+  object FinalizerFilter {
+    def all[F[_]]: FinalizerFilter[F] = identity
   }
 
   final case class Finalizer[+F[_]](key: DIKey, effect: () => F[Unit], fType: SafeType)
   object Finalizer {
-    def apply[F[_]: TagK](key: DIKey, effect: () => F[Unit]): Finalizer[F] = new Finalizer(key, effect, SafeType.getK[F])
+    def apply[F[_]: TagK](key: DIKey, effect: () => F[Unit]): Finalizer[F] = {
+      new Finalizer(key, effect, SafeType.getK[F])
+    }
   }
 
   final case class FailedProvision[F[_]](

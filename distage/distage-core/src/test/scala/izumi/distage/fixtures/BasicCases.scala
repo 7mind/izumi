@@ -31,8 +31,8 @@ object BasicCases {
 
     class TestClass
     (
-      val fieldArgDependency: TestDependency0
-      , argDependency: TestDependency1
+      val fieldArgDependency: TestDependency0,
+      argDependency: TestDependency1,
     ) {
       val x = argDependency
       val y = fieldArgDependency

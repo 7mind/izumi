@@ -13,10 +13,10 @@ package livecode
 import distage.{DIKey, ModuleDef}
 import doobie.util.transactor.Transactor
 import izumi.distage.model.definition.StandardAxis
-import izumi.distage.testkit.integration.docker.examples.PostgresDocker
+import izumi.distage.docker.examples.PostgresDocker
 import izumi.distage.testkit.services.DISyntaxZIOEnv
-import izumi.distage.testkit.services.st.dtest.TestConfig
-import izumi.distage.testkit.st.specs.DistageBIOSpecScalatest
+import izumi.distage.testkit.TestConfig
+import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 import livecode.code._
 import livecode.zioenv._
 import zio.{IO, Task, ZIO}
@@ -88,7 +88,7 @@ class LadderTest extends LivecodeTest with DummyTest {
   }
 
 }
-``` 
+```
 
 ### Docker Test Resources
 
@@ -105,3 +105,7 @@ are available for the test or role. If not, the test will be canceled/ignored.
 
 This feature allows you to e.g. selectively run only the fast in-memory tests that have no external dependencies if you have 
 shut down your test environment.
+
+Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s @ref[Roles](distage-framework.md#roles).
+
+Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.services.StartupPlanExecutor) to execute the checks manually.

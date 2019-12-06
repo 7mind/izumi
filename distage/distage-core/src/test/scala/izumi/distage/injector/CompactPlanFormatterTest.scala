@@ -1,11 +1,11 @@
 package izumi.distage.injector
 
+import distage.ModuleDef
 import izumi.distage.fixtures.BasicCases.BasicCase1.{Impl1, JustTrait}
 import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
+import izumi.distage.injector.CompactPlanFormatterTest._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.plan.repr.CompactPlanFormatter._
 import izumi.functional.Renderable._
-import distage.ModuleDef
 import org.scalatest.WordSpec
 
 object CompactPlanFormatterTest {
@@ -23,7 +23,6 @@ object CompactPlanFormatterTest {
 }
 
 class CompactPlanFormatterTest extends WordSpec with MkInjector {
-  import CompactPlanFormatterTest._
   "PlanFormatterTest should produce short class names if it's unique in plan" in {
     val injector = mkInjector()
     val plan = injector.plan(PlannerInput.noGc(new ModuleDef {
@@ -36,9 +35,11 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
 
     val formatted = plan.render()
     assert(!formatted.contains(classOf[Impl1].getName))
-    assert(formatted.contains("Impl1"))
+    assert(formatted.contains("{type.BasicCases::BasicCase1::JustTrait}"))
+    assert(formatted.contains("BasicCases::BasicCase1::Impl1"))
     assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %0 → Either[+Nothing,+0],=Unit]}"))
-    assert(formatted.contains("{type.CompactPlanFormatterTest::W1::izumi.distage.injector.CompactPlanFormatterTest.W1.T2}"))
+    assert(formatted.contains("{type.CompactPlanFormatterTest::W1::T2}"))
+    assert(formatted.contains("{type.CompactPlanFormatterTest::K1[=λ %0,%1 → CompactPlanFormatterTest::T1[=0,=1]]}"))
   }
 }
 

@@ -11,5 +11,5 @@ object PetStorePlugin extends PluginDef {
 class PetRepository
 class PetStoreService
 class PetStoreController {
-  def run = println("PetStoreController: running!")
+  def run() = println("PetStoreController: running!")
 }

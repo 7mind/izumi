@@ -10,8 +10,11 @@ import izumi.distage.model.provisioning.strategies.FactoryExecutor
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.Tag
 
-private[plan] trait OrderedPlanOps {
+private[plan] trait OrderedPlanOps extends Any {
   this: OrderedPlan =>
+
+  /** Print while omitting package names for unambiguous types */
+  override final def toString: String = (this: OrderedPlan).render()
 
   /**
     * Check for any unresolved dependencies, if this
@@ -26,7 +29,7 @@ private[plan] trait OrderedPlanOps {
     *
     * @return this plan or a list of unresolved parameters
     */
-  def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
+  final def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
     val nonMagicImports = getImports.filter {
       case i if i.target == DIKey.get[FactoryExecutor] || i.target == DIKey.get[LocatorRef] =>
         false
@@ -37,7 +40,7 @@ private[plan] trait OrderedPlanOps {
   }
 
   /** Same as [[unresolvedImports]], but returns a pretty-printed exception if there are unresolved imports */
-  def assertImportsResolved: Either[InvalidPlanException, OrderedPlan] = {
+  final def assertImportsResolved: Either[InvalidPlanException, OrderedPlan] = {
     import izumi.fundamentals.platform.strings.IzString._
     unresolvedImports.left.map {
       unresolved =>
@@ -50,7 +53,7 @@ private[plan] trait OrderedPlanOps {
     *
     * @throws InvalidPlanException
     */
-  def assertImportsResolvedOrThrow: OrderedPlan = {
+  final def assertImportsResolvedOrThrow: OrderedPlan = {
     assertImportsResolved.fold(throw _, identity)
   }
 
@@ -59,7 +62,7 @@ private[plan] trait OrderedPlanOps {
     *
     * Proper usage assume that `keys` contains complete subgraph reachable from graph roots.
     */
-  def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
+  final def replaceWithImports(keys: Set[DIKey]): OrderedPlan = {
     val newSteps = steps.flatMap {
       case s if keys.contains(s.target) =>
         val dependees = topology.dependees.direct(s.target)
@@ -80,28 +83,28 @@ private[plan] trait OrderedPlanOps {
     )
   }
 
-  override def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
+  override final def resolveImports(f: PartialFunction[ImportDependency, Any]): OrderedPlan = {
     copy(steps = AbstractPlanOps.resolveImports(AbstractPlanOps.importToInstances(f), steps))
   }
 
-  override def resolveImport[T: Tag](instance: T): OrderedPlan =
+  override final def resolveImport[T: Tag](instance: T): OrderedPlan =
     resolveImports {
       case i if i.target == DIKey.get[T] =>
         instance
     }
 
-  override def resolveImport[T: Tag](id: String)(instance: T): OrderedPlan = {
+  override final def resolveImport[T: Tag](id: String)(instance: T): OrderedPlan = {
     resolveImports {
       case i if i.target == DIKey.get[T].named(id) =>
         instance
     }
   }
 
-  override def locateImports(locator: Locator): OrderedPlan = {
+  override final def locateImports(locator: Locator): OrderedPlan = {
     resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
   }
 
-  override def toSemi: SemiPlan = {
+  override final def toSemi: SemiPlan = {
     val safeSteps: Seq[SemiplanOp] = steps.flatMap{
       case s: SemiplanOp =>
         Seq(s)

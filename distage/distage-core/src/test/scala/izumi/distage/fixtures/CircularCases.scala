@@ -2,6 +2,7 @@ package izumi.distage.fixtures
 
 import izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Id
+import izumi.fundamentals.platform.language.unused
 
 import scala.util.Random
 
@@ -13,11 +14,9 @@ object CircularCases {
     trait Circular1 {
       def arg: Circular2
     }
-
-    final class Circular1Impl(override val arg: Circular2) extends Circular1
-
     class Circular2(val arg: Circular1)
 
+    final class Circular1Impl(override val arg: Circular2) extends Circular1
     final class Circular2Impl(override val arg: Circular1) extends Circular2(arg)
 
   }
@@ -31,7 +30,6 @@ object CircularCases {
     trait Circular2 {
       def arg: Circular3
     }
-
 
     trait Circular3 {
       def arg: Circular4
@@ -237,6 +235,16 @@ object CircularCases {
     class IntHolder {
       val int: Int = 1
     }
+  }
+
+  object CircularCase10 {
+    class Component1
+    class Component2
+    class ComponentWithByNameFwdRef(@unused fwd: => ComponentHolder)
+
+    class ComponentHolder(val component1: Component1, val component2: Component2, val componentFwdRef: ComponentWithByNameFwdRef)
+
+    class Root(val holder: ComponentHolder)
   }
 
   object ByNameCycle {

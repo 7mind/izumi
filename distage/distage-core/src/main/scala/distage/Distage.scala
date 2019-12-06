@@ -1,6 +1,5 @@
 package distage
 
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning.extensions
@@ -10,6 +9,9 @@ import izumi.fundamentals.reflection.Tags
 trait Distage {
 
   type ModuleDef = model.definition.ModuleDef
+
+  type Activation = model.definition.Activation
+  val Activation: model.definition.Activation.type = model.definition.Activation
 
   type Injector = model.Injector
   type Planner = model.Planner
@@ -37,7 +39,7 @@ trait Distage {
 
   val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
-  type Axis[+MM <: AxisValue] = model.definition.Axis[MM]
+  type Axis = model.definition.Axis
   val Axis: model.definition.Axis.type = model.definition.Axis
 
   type BindingTag = model.definition.BindingTag
@@ -75,8 +77,6 @@ trait Distage {
 
   type BootstrapModule = model.definition.BootstrapModule
   val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
-
-  val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
 
   type BootstrapModuleDef = model.definition.BootstrapModuleDef
 

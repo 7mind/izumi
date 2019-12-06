@@ -28,7 +28,7 @@ object Log {
 
     def parseSafe(lvl:String, default: Level): Level = {
       labelMap
-        .find({case (k, _) => k.toLowerCase.startsWith(lvl.toLowerCase) || lvl.toLowerCase.startsWith(k.toLowerCase)})
+        .find { case (k, _) => k.toLowerCase.startsWith(lvl.toLowerCase) || lvl.toLowerCase.startsWith(k.toLowerCase) }
         .map(_._2)
         .getOrElse(default)
     }

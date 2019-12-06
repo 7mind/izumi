@@ -5,9 +5,9 @@ import izumi.distage.model.definition.Id
 import izumi.distage.model.definition.StandardAxis.Env
 import izumi.distage.effect.modules.{CatsDIEffectModule, ZIODIEffectModule}
 import izumi.distage.plugins.PluginDef
-import izumi.distage.testkit.integration.docker.Docker.AvailablePort
-import izumi.distage.testkit.integration.docker.examples.{DynamoDocker, PostgresDocker}
-import izumi.distage.testkit.integration.docker.modules.DockerContainerModule
+import izumi.distage.docker.Docker.AvailablePort
+import izumi.distage.docker.examples.{DynamoDocker, PostgresDocker}
+import izumi.distage.docker.modules.DockerContainerModule
 import zio.Task
 
 class PgSvcExample(val pg: AvailablePort @Id("pg"), val ddb: AvailablePort @Id("ddb"))

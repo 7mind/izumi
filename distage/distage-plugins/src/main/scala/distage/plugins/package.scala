@@ -12,6 +12,8 @@ package object plugins extends DistagePlugins {
   override type PluginLoader = load.PluginLoader
   override val PluginLoader: load.PluginLoader.type = load.PluginLoader
 
+  override type PluginLoaderDefaultImpl = load.PluginLoaderDefaultImpl
+
   override type PluginConfig = load.PluginLoader.PluginConfig
   override val PluginConfig: load.PluginLoader.PluginConfig.type = load.PluginLoader.PluginConfig
 

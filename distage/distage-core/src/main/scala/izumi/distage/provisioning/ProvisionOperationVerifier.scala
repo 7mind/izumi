@@ -1,8 +1,8 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.exceptions._
-import izumi.distage.model.provisioning.strategies.ProxyDispatcher.{ByNameWrapper, ByNameDispatcher}
-import izumi.distage.model.provisioning.strategies._
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.{ByNameDispatcher, ByNameWrapper}
 import izumi.distage.model.reflection.universe.MirrorProvider
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.platform.language.Quirks

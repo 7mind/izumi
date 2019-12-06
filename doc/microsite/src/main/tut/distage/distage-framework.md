@@ -19,7 +19,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 @@@
 
 With default `RoleLauncher` implementation, roles to be launched are chosen by command-line parameters: `./launcher role1 role2 role3`.
-Only the components required by the chosen roles will be created, everything else will be pruned. (see: @ref[GC](other-features.md#garbage-collection))
+Only the components required by the chosen roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
 
 Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
 
@@ -82,7 +82,7 @@ val appModule = appModules.merge
 // launch
 
 Injector().produce(appModule, GCMode.NoGC).use {
-  _.get[PetStoreController].run
+  _.get[PetStoreController].run()
 }
 ```
 

@@ -1,6 +1,6 @@
 package izumi.distage.roles.test.fixtures
 
-import izumi.distage.roles.model.IntegrationCheck
+import izumi.distage.framework.model.IntegrationCheck
 import izumi.fundamentals.platform.integration.ResourceCheck
 
 import scala.collection.mutable
