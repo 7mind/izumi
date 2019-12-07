@@ -56,23 +56,31 @@ sealed trait AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
 }
 object AnyConstructorOptionalMakeDSL {
-  def error[T](tpe: String, nonWhitelistedMethods: Set[String]): AnyConstructorOptionalMakeDSL[T] = {
+  def errorConstructor[T](tpe: String, nonWhitelistedMethods: List[String]): AnyConstructorOptionalMakeDSL[T] = {
+    new AnyConstructorOptionalMakeDSL[T] {
+      val provider: ProviderMagnet[T] = ProviderMagnet.lift(throwError(tpe, nonWhitelistedMethods, scaladoc = false))
+    }
+  }
+
+  def throwError(tpe: String, nonWhitelistedMethods: List[String], scaladoc: Boolean): Nothing = {
     import izumi.fundamentals.platform.strings.IzString._
-    AnyConstructorOptionalMakeDSL[T](ConcreteConstructor[T](ProviderMagnet.lift[Nothing] {
-      throw new UnsupportedDefinitionException(
-        s"`make[$tpe]` DSL failure: Called an empty error constructor, constructor for $tpe WAS NOT generated because after" +
-        s""" `make` call there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
-             |
-             |The assumption is that all method calls that aren't in ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
-             |Will eventually call `.from`/`.using`/`.todo` and fill in the constructor.
-             |""".stripMargin
-      )
-    }))
+
+    throw new UnsupportedDefinitionException(
+      (if (scaladoc)
+        """This method was generated for ScalaDoc: if you're seeing this error,
+          |then AnyConstructorMacro mistook your compiler's behavior for running under Scaladoc, please report this as a bug!""".stripMargin else "") +
+      s"""`make[$tpe]` DSL failure: Called an empty error constructor, because constructor for $tpe WAS NOT generated.
+         |Because after `make` there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
+         |
+         |These calls were assumed to be `.from`-like method calls, since they are in the white-list: ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
+         |The assumption is that all non-whitelisted calls will eventually call any of `.from`/`.using`/`.todo` and fill in the constructor.
+         |""".stripMargin
+    )
   }
 
   def apply[T](anyConstructor: AnyConstructor[T]): AnyConstructorOptionalMakeDSL[T] = {
     new AnyConstructorOptionalMakeDSL[T] {
-      override val provider: ProviderMagnet[T] = anyConstructor.provider
+      val provider: ProviderMagnet[T] = anyConstructor.provider
     }
   }
 
