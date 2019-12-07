@@ -1,16 +1,17 @@
 package izumi.distage.constructors
 
 import izumi.distage.constructors.macros.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
-import izumi.distage.model.exceptions.TraitInitializationFailedException
+import izumi.distage.model.definition.dsl.ModuleDefDSL
+import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
 
 import scala.language.experimental.{macros => enableMacros}
 
-sealed trait AnyConstructor[T] {
+sealed trait AnyConstructor[T] extends AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
 
-  // FIXME: better provider equality scheme ???
+  // FIXME: better immutable provider equality scheme ???
   provider.get.asGenerated
   // FIXME: better immutable provider equality scheme ???
 }
@@ -39,8 +40,6 @@ object TraitConstructor {
 
   def wrapInitialization[A](tpe: SafeType)(init: => A): A = {
     try init catch {
-      case e: AbstractMethodError =>
-        throw new TraitInitializationFailedException(s"TODO: Failed to initialize trait $tpe. Probably it contains fields (val or var) though fields are not supported yet, see https://github.com/7mind/izumi/issues/26", tpe, e)
       case e: Throwable =>
         throw new TraitInitializationFailedException(s"Failed to initialize trait $tpe. It may be an issue with the trait or a framework bug", tpe, e)
     }
@@ -51,4 +50,31 @@ object FactoryConstructor {
   def apply[T: FactoryConstructor]: FactoryConstructor[T] = implicitly
 
   implicit def materialize[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
+}
+
+sealed trait AnyConstructorOptionalMakeDSL[T] {
+  def provider: ProviderMagnet[T]
+}
+object AnyConstructorOptionalMakeDSL {
+  def error[T](tpe: String, nonWhitelistedMethods: Set[String]): AnyConstructorOptionalMakeDSL[T] = {
+    import izumi.fundamentals.platform.strings.IzString._
+    AnyConstructorOptionalMakeDSL[T](ConcreteConstructor[T](ProviderMagnet.lift[Nothing] {
+      throw new UnsupportedDefinitionException(
+        s"`make[$tpe]` DSL failure: Called an empty error constructor, constructor for $tpe WAS NOT generated because after" +
+        s""" `make` call there were following method calls in the same expression:${nonWhitelistedMethods.niceList()}
+             |
+             |The assumption is that all method calls that aren't in ${ModuleDefDSL.MakeDSLNoOpMethodsWhitelist}
+             |Will eventually call `.from`/`.using`/`.todo` and fill in the constructor.
+             |""".stripMargin
+      )
+    }))
+  }
+
+  def apply[T](anyConstructor: AnyConstructor[T]): AnyConstructorOptionalMakeDSL[T] = {
+    new AnyConstructorOptionalMakeDSL[T] {
+      override val provider: ProviderMagnet[T] = anyConstructor.provider
+    }
+  }
+
+  implicit def materialize[T]: AnyConstructorOptionalMakeDSL[T] = macro AnyConstructorMacro.optional[T]
 }

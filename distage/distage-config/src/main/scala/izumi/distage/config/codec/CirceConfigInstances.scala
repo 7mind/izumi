@@ -20,7 +20,7 @@ object CirceConfigInstances extends CirceConfigInstances
 trait CirceConfigInstances extends LowPriorityCirceConfigInstances {
 
   // re-export instances from io.circe.config.syntax
-  // use `Exported` so that if user imports their own instances, user's instances will have higher priority
+  // use `Exported` so that if user imports their own instances, user instances will have higher priority
 
   implicit final val finiteDurationDecoder: Exported[Decoder[FiniteDuration]] = Exported(syntax.durationDecoder)
   implicit final val memorySizeDecoder: Exported[Decoder[ConfigMemorySize]] = Exported(syntax.memorySizeDecoder)

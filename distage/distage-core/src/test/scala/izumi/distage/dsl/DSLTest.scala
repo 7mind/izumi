@@ -1,11 +1,14 @@
 package izumi.distage.dsl
 
 import distage._
+import izumi.distage.constructors.{AnyConstructor, ConcreteConstructor, FactoryConstructor}
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
-import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.{BindingTag, Bindings, ImplDef, Module}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.SourceFilePosition
 import org.scalatest.WordSpec
 
 class DSLTest extends WordSpec with MkInjector {
@@ -322,74 +325,84 @@ class DSLTest extends WordSpec with MkInjector {
       assert(definition2.bindings.map(_.tags.strings) == Set(Set("tag1", "tag2")))
     }
 
-    // ???
-//    "support binding to multiple interfaces" in {
-//      import BasicCase6._
-//
-//      val implXYZ: Identity[ImplXYZ] = new ImplXYZ
-//      val implXYZResource = DIResource.make(implXYZ)(_ => ())
-//
-//      val definition = new ModuleDef {
-//        bind[ImplXYZ]
-//          .to[TraitX]
-//          .to[TraitY]
-//          .to[TraitZ]
-//      }
-//
-//      assert(definition === Module.make(
-//        Set(
-//          Bindings.binding[ImplXYZ]
-//          , Bindings.reference[TraitX, ImplXYZ]
-//          , Bindings.reference[TraitY, ImplXYZ]
-//          , Bindings.reference[TraitZ, ImplXYZ]
-//        )
-//      ))
-//
-//      val definitionEffect = new ModuleDef {
-//        bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
-//      }
-//
-//      assert(definitionEffect === Module.make(
-//        Set(
-//          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
-//            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)), Set.empty, SourceFilePosition.unknown)
-//          , Bindings.reference[TraitX, ImplXYZ]
-//          , Bindings.reference[TraitY, ImplXYZ]
-//          , Bindings.reference[TraitZ, ImplXYZ]
-//        )
-//      ))
-//
-//      val definitionResource = new ModuleDef {
-//        bindResource[DIResource.Simple[ImplXYZ]].to[TraitX].to[TraitY].to[TraitZ]
-//      }
-//
-//      assert(definitionResource === Module.make(
-//        Set(
-//          SingletonBinding(DIKey.get[ImplXYZ]
-//            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]]))
-//            , Set.empty, SourceFilePosition.unknown)
-//          , Bindings.reference[TraitX, ImplXYZ]
-//          , Bindings.reference[TraitY, ImplXYZ]
-//          , Bindings.reference[TraitZ, ImplXYZ]
-//        )
-//      ))
-//
-//      val definitionResourceFn = new ModuleDef {
-//        bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
-//      }
-//
-//      assert(definitionResourceFn === Module.make(
-//        Set(
-//          SingletonBinding(DIKey.get[ImplXYZ]
-//            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource))
-//            , Set.empty, SourceFilePosition.unknown)
-//          , Bindings.reference[TraitX, ImplXYZ]
-//          , Bindings.reference[TraitY, ImplXYZ]
-//          , Bindings.reference[TraitZ, ImplXYZ]
-//        )
-//      ))
-//
-//    }
+    "support binding to multiple interfaces" in {
+      import BasicCase6._
+
+      val implXYZ: Identity[ImplXYZ] = new ImplXYZ
+      val implXYZResource = DIResource.make(implXYZ)(_ => ())
+
+      val definition = new ModuleDef {
+        bind[ImplXYZ]
+          .to[TraitX]
+          .to[TraitY]
+          .to[TraitZ]
+      }
+
+      assert(definition == Module.make(
+        Set(
+          Bindings.binding[ImplXYZ]
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+      val definitionEffect = new ModuleDef {
+        bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionEffect == Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
+            ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)), Set.empty, SourceFilePosition.unknown)
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+      class X extends DIResource.Simple[ImplXYZ] {
+        override def acquire: ImplXYZ = new ImplXYZ
+        override def release(resource: ImplXYZ): Unit = ()
+      }
+
+      val definitionResource = new ModuleDef {
+        bindResource[X].to[TraitX].to[TraitY].to[TraitZ]
+      }
+      val expectedResource = Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ],
+            ImplDef.ResourceImpl(
+              SafeType.get[ImplXYZ],
+              SafeType.getK[Identity],
+              ImplDef.ProviderImpl(SafeType.get[X], ConcreteConstructor[X].provider.get),
+            ),
+            Set.empty,
+            SourceFilePosition.unknown
+          )
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      )
+      assert(definitionResource == expectedResource)
+
+      val definitionResourceFn = new ModuleDef {
+        bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
+      }
+
+      assert(definitionResourceFn == Module.make(
+        Set(
+          SingletonBinding(DIKey.get[ImplXYZ]
+            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource))
+            , Set.empty, SourceFilePosition.unknown)
+          , Bindings.reference[TraitX, ImplXYZ]
+          , Bindings.reference[TraitY, ImplXYZ]
+          , Bindings.reference[TraitZ, ImplXYZ]
+        )
+      ))
+
+    }
 
     "support bindings to multiple interfaces (injector test)" in {
       import BasicCase6._

@@ -71,9 +71,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             if (excessiveSymbols.nonEmpty) {
               throw new UnsupportedDefinitionException(
                 s"""Augmentation failure.
-                   |  * Type $tpe has been considered a factory because of abstract method `$factoryMethodSymb` with result type `$resultType`
-                   |  * But method signature contains unrequired symbols: $excessiveSymbols
-                   |  * Only the following symbols are requird: ${methodTypeWireable.requiredKeys}
+                   |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.underlying}` with result type `$resultType`
+                   |  * But method signature types not required by result type constructor: ${excessiveSymbols.map(_.tpe.use(identity))}
+                   |  * Only the following types are required: ${methodTypeWireable.requiredKeys.map(_.tpe.use(identity))}
                    |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
             }
 
@@ -89,11 +89,11 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def constructorParameterLists(symbl: TypeNative): List[List[Association.Parameter]] = ReflectionLock.synchronized {
-    selectConstructorArguments(symbl).toList.flatten.map(_.map(associationFromParameter))
+  override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = ReflectionLock.synchronized {
+    selectConstructorArguments(tpe).toList.flatten.map(_.map(associationFromParameter))
   }
 
-  private[this] def mkConstructorWiring(symbl: TypeNative): SingletonWiring.ReflectiveInstantiationWiring = symbl match {
+  private[this] def mkConstructorWiring(tpe: TypeNative): SingletonWiring.ReflectiveInstantiationWiring = tpe match {
     case ConcreteSymbol(symb) =>
       SingletonWiring.Constructor(SafeType(symb), constructorParameters(symb), getPrefix(symb))
 
@@ -101,10 +101,16 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
       SingletonWiring.AbstractSymbol(SafeType(symb), traitMethods(symb), getPrefix(symb))
 
     case FactorySymbol(_, _) =>
-      throw new UnsupportedWiringException(s"Factory cannot produce factories, it's pointless: $symbl", SafeType(symbl))
+      throw new UnsupportedWiringException(
+        s"""Augmentation failure. Factory cannot produce factories, it's pointless: $tpe
+           |  * Type $tpe has been considered a factory because of an unimplemented abstract method with parameters
+           |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
+           |""".stripMargin,
+        SafeType(tpe)
+      )
 
     case _ =>
-      throw new UnsupportedWiringException(s"Wiring unsupported: $symbl", SafeType(symbl))
+      throw new UnsupportedWiringException(s"Wiring unsupported: $tpe", SafeType(tpe))
   }
 
   private[this] def constructorParameters(symbl: TypeNative): List[Association.Parameter] = {

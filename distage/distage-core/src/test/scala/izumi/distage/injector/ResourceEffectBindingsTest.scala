@@ -114,7 +114,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
           .addEffect(Suspend2('a'))
           .addEffect(Suspend2('b'))
 
-        // FIXME: `make` support ???
         make[Unit].fromEffect {
           (ref: Ref[Fn, Set[Char]], set: Set[Char]) =>
             ref.update(_ ++ set).void
@@ -386,7 +385,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            // FIXME: `make` support ???
             make[Any].fromResource[DIResource[F, Any]](() => ???)
           }; ""
           """
