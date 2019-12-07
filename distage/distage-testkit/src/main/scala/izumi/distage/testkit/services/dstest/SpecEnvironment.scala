@@ -12,7 +12,6 @@ import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.{IzLogger, Log}
 
 trait SpecEnvironment {
-
   def bootstrapOverrides: BootstrapModule
   def moduleOverrides: ModuleBase
 

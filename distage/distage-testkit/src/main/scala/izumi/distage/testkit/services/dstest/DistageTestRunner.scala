@@ -11,6 +11,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.roles.internal.ConfigWriter.P
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -26,6 +27,7 @@ class DistageTestRunner[F[_]: TagK]
   runnerEnvironment: SpecEnvironment,
   tests: Seq[DistageTest[F]],
   isTestSkipException: Throwable => Boolean,
+  parallelTests: Boolean
 ) {
   def run(): Unit = {
     val groups = tests.groupBy(_.environment)
@@ -137,7 +139,7 @@ class DistageTestRunner[F[_]: TagK]
 
         // now we are ready to run each individual test
         // note: scheduling here is custom also and tests may automatically run in parallel for any non-trivial monad
-        val tests = P.parTraverse_(testplans.groupBy {
+        val tests = configuredTraverse_(testplans.groupBy {
           t =>
             val id = t._1.meta.id
             SuiteData(id.suiteName, id.suiteId, id.suiteClassName)
@@ -145,7 +147,7 @@ class DistageTestRunner[F[_]: TagK]
           case (id, plans) =>
             for {
               _ <- F.maybeSuspend(reporter.beginSuite(id))
-              _ <- P.parTraverse_(plans) {
+              _ <- configuredTraverse_(plans) {
                 case (test, testplan) =>
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
@@ -219,6 +221,14 @@ class DistageTestRunner[F[_]: TagK]
           _ <- F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Running))
           _ <- F.definitelyRecoverCause(doRun(before))(doRecover(before))
         } yield ()
+    }
+  }
+
+  protected def configuredTraverse_[A](l: Iterable[A])(f: A => F[Unit])(implicit F: DIEffect[F], P: DIEffectAsync[F]): F[Unit] = {
+    if (parallelTests) {
+      P.parTraverse_(l)(f)
+    } else {
+      F.traverse_(l)(f)
     }
   }
 

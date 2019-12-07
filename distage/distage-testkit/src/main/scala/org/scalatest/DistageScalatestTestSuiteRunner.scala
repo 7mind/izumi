@@ -132,15 +132,18 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = {
       val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
       val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](dreporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException])
+      new DistageTestRunner[F](dreporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
     }
 
     runner.run()
   }
 
+  // FIXME: read scalatest runner configuration???
+  protected def parallelTestsAlways: Boolean = {
+    true
+  }
+
   private def mkTestReporter(args: Args): TestReporter = {
-
-
     val scalatestReporter = new ScalatestReporter(args, suiteName, suiteId)
 
     new SafeTestReporter(scalatestReporter)
