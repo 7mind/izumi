@@ -133,21 +133,21 @@ object StaticPluginCheckerMacro {
              abort: String => Unit,
            ): Unit = {
 
-    val module = SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
+    // If configModule is defined - check config
+    val config = configModule.getOrElse(new ModuleDef {
+      make[AppConfig].from(AppConfig(ConfigFactory.empty()))
+    })
+
+    val module = config overridenBy SimplePluginMergeStrategy.merge(loadedPlugins :+ additional.morph[PluginBase] :+ root.toList.merge.morph[PluginBase])
 
     val logger = IzLogger.NullLogger
     val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
     val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Map.empty)
-    val policy: PlanMergingPolicy = new PruningPlanMergingPolicy(logger, activation)
+    val policy = new PruningPlanMergingPolicy(logger, activation)
 
-    // If configModule is defined - check config, otherwise skip config keys
-    val config = configModule.getOrElse(new BootstrapModuleDef {
-//      many[PlanningHook]
-//        .add[ConfigReferenceExtractor]
-    })
-
-    val bootstrap = new BootstrapLocator(BootstrapLocator.noReflectionBootstrap overridenBy config overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from(policy)
+    val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap overridenBy new BootstrapModuleDef {
+      make[Activation].fromValue(activation)
+      make[PlanMergingPolicy].fromValue(policy)
     })
     val injector = Injector.inherit(bootstrap)
 

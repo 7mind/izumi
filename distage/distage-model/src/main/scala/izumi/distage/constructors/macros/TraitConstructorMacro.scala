@@ -67,9 +67,10 @@ object TraitConstructorMacro {
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
-        associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
-        constructor,
-        generateUnsafeWeakSafeTypes
+        parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        fun = constructor,
+        generateUnsafeWeakSafeTypes = generateUnsafeWeakSafeTypes,
+        isGenerated = true
       )
     }
 

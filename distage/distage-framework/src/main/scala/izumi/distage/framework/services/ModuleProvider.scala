@@ -49,8 +49,6 @@ object ModuleProvider {
       val autosetModule = AutoSetModule()
         .register[AbstractRole[F]]
 
-      val configModule = new AppConfigModule(config)
-
       val resourceRewriter = new BootstrapModuleDef {
         make[RewriteRules].fromValue(options.rewriteRules)
         many[PlanningHook].add[ResourceRewriter]
@@ -58,7 +56,6 @@ object ModuleProvider {
 
       Seq(
         Seq(
-          configModule,
           autosetModule,
           rolesModule,
           resourceRewriter,
@@ -69,7 +66,11 @@ object ModuleProvider {
     }
 
     def appModules(): Seq[Module] = {
-      Seq(IdentityDIEffectModule)
+      val configModule = new AppConfigModule(config)
+      Seq(
+        configModule,
+        IdentityDIEffectModule,
+      )
     }
   }
 

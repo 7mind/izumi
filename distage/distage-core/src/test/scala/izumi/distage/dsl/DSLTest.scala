@@ -1,7 +1,7 @@
 package izumi.distage.dsl
 
 import distage._
-import izumi.distage.constructors.{AnyConstructor, ConcreteConstructor, FactoryConstructor}
+import izumi.distage.constructors.ConcreteConstructor
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector

@@ -56,7 +56,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
-      /* FIXME: annotations ??? */
+      // FIXME: annotations ???
       q"""{ $runtimeDIUniverse.SymbolInfo.Static(
       name = ${info.name},
       finalResultType = ${liftableUnsafeWeakSafeType(info.finalResultType)},

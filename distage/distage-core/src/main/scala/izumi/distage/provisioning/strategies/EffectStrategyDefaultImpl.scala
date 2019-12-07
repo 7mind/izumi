@@ -16,7 +16,7 @@ class EffectStrategyDefaultImpl
   override def executeEffect[F[_]: TagK](context: ProvisioningKeyProvider,
                                          @unused executor: OperationExecutor,
                                          op: MonadicOp.ExecuteEffect,
-                                        )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewInstance]] = {
+                                        )(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor
 

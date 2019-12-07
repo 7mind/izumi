@@ -35,7 +35,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   def implImpl[R: c.WeakTypeTag](generateUnsafeWeakSafeTypes: Boolean, fun: Tree): c.Expr[ProviderMagnet[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R](associations, fun, generateUnsafeWeakSafeTypes)
+    val result = generateProvider[R](associations, fun, generateUnsafeWeakSafeTypes, false)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
@@ -71,7 +71,11 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
       )
   }
 
-  def generateProvider[R: c.WeakTypeTag](associations: List[Association.Parameter], fun: Tree, generateUnsafeWeakSafeTypes: Boolean): c.Expr[ProviderMagnet[R]] = {
+  def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter],
+                                         fun: Tree,
+                                         generateUnsafeWeakSafeTypes: Boolean,
+                                         isGenerated: Boolean,
+                                        ): c.Expr[ProviderMagnet[R]] = {
     val tools = {
       if (generateUnsafeWeakSafeTypes) {
         DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
@@ -82,7 +86,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
     import tools.{liftableParameter, liftableSafeType}
 
-    val (substitutedByNames, casts) = associations.zipWithIndex.map {
+    val (substitutedByNames, casts) = parameters.zipWithIndex.map {
       case (param, i) =>
 
         val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
@@ -99,7 +103,8 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
             ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
             ${liftableSafeType(SafeType(weakTypeOf[R]))},
-            { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) }
+            { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
+            $isGenerated,
           )
         )
       }"""

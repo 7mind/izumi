@@ -51,7 +51,7 @@ object FactoryConstructorMacro {
     val (producerMethods, withContexts) = factoryMethods.zipWithIndex.map {
       case (method@Factory.FactoryMethod(factoryMethod, productConstructor, _), methodIndex) =>
 
-        val (methodArgLists, executorArgs) = {
+        val (methodArgLists, methodArgs) = {
           @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = tpe match {
             case m: MethodTypeApi => m
             case p: PolyTypeApi => instantiatedMethod(p.resultType)
@@ -76,7 +76,7 @@ object FactoryConstructorMacro {
           resultTypeOfMethod =>
             q"""
             final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgLists): $resultTypeOfMethod = {
-              val executorArgs: ${typeOf[List[Any]]} = ${executorArgs.toList}
+              val executorArgs: ${typeOf[List[Any]]} = $methodArgs
 
               $executorName.execute($methodIndex, executorArgs).asInstanceOf[$resultTypeOfMethod]
             }
@@ -122,9 +122,10 @@ object FactoryConstructorMacro {
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
-        allAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
-        constructor,
+        parameters = allAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        fun = constructor,
         generateUnsafeWeakSafeTypes = false,
+        isGenerated = true
       )
     }
     val res = c.Expr[FactoryConstructor[T]] {
@@ -134,7 +135,7 @@ object FactoryConstructorMacro {
 
           val magnetized = $provided
           val res = new ${weakTypeOf[ProviderMagnet[T]]}(
-            new ${weakTypeOf[RuntimeDIUniverse.Provider.FactoryProvider.FactoryProviderImpl]}(magnetized.get, ctxMap)
+            new ${weakTypeOf[RuntimeDIUniverse.Provider.FactoryProvider.FactoryProviderImpl]}(magnetized.get, ctxMap, true)
           )
 
           new ${weakTypeOf[FactoryConstructor[T]]}(res)

@@ -8,5 +8,5 @@ import izumi.fundamentals.reflection.Tags.TagK
 trait ResourceStrategy {
   def allocateResource[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider,
                                              executor: OperationExecutor,
-                                             op: MonadicOp.AllocateResource): F[Seq[NewObjectOp.NewResource[F]]]
+                                             op: MonadicOp.AllocateResource): F[Seq[NewObjectOp]]
 }

@@ -10,8 +10,7 @@ import izumi.distage.model.planning.PlanningHook
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.reflection.Tags.Tag
 
-// FIXME: AppConfigModule: non-bootstrap def?
-class AppConfigModule(appConfig: AppConfig) extends BootstrapModuleDef {
+class AppConfigModule(appConfig: AppConfig) extends ModuleDef {
   def this(config: Config) = this(AppConfig(config))
 
   make[AppConfig].fromValue(appConfig)
@@ -39,13 +38,13 @@ trait ConfigModuleDef extends ModuleDef {
   }
 
   implicit final class FromConfig[T](private val dsl: MakeDSL[T]) {
-    def fromConfig(path: String)(implicit dec: ConfigReader[T], tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+    def fromConfig(path: String)(implicit dec: ConfigReader[T], tag: Tag[T]): Unit = {
       dsl.tagged(ConfTag(path)).from {
         config: AppConfig =>
           ConfigReader[T].apply(config.config.getValue(path)).get
       }
     }
-    def fromConfigNamed(path: String)(implicit dec: ConfigReader[T], tag: Tag[T], pos: CodePositionMaterializer): Unit = {
+    def fromConfigNamed(path: String)(implicit dec: ConfigReader[T], tag: Tag[T]): Unit = {
       dsl.named(path).tagged(ConfTag(path)).from {
         config: AppConfig =>
           ConfigReader[T].apply(config.config.getValue(path)).get

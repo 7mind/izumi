@@ -57,7 +57,7 @@ val appModule = new ModuleDef {
 // add config wiring to the graph
 val appConfigModule = AppConfigModule(config)
 
-val injector = Injector(appConfigModule)
+val injector = Injector(appModule ++ appConfigModule)
 
 val objects = injector.produceUnsafe(
   input = Seq(appModule, configModule).merge,

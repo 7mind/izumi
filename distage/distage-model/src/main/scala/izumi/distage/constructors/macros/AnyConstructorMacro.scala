@@ -15,26 +15,18 @@ object AnyConstructorMacro {
   def optional[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL[T]] = {
     import c.universe._
 
-    def findBlockWithMakeExpr(t: Tree): Option[Tree] = {
-//      val maybeTrees = t.collect {
-//        case Template(_, _, l) => l.find(_.exists(_.pos == c.macroApplication.pos))
-//        case Block(init, last) =>
-//          (init.iterator ++ Iterator.single(last))
-//            .find(_.exists(_.pos == c.macroApplication.pos))
-//      }
-//      val afterLastBlock = maybeTrees.flatMap(_.toList).lastOption
-
+    def findExprContainingMake(tree: Tree): Option[Tree] = {
       val afterLastBlock = Option {
-        t.filter(_.exists(_.pos == c.macroApplication.pos))
+        tree
+          .filter(_.exists(_.pos == c.macroApplication.pos))
           .reverseIterator
           .takeWhile(!_.isInstanceOf[BlockApi])
           .foldLeft(null: Tree)((_, t) => t) // .last for iterator
       }
-
       afterLastBlock
     }
 
-    val maybeNonwhiteListedMethods = findBlockWithMakeExpr(c.enclosingClass).map(_.collect {
+    val maybeNonwhiteListedMethods = findExprContainingMake(c.enclosingClass).map(_.collect {
       case Select(lhs, TermName(method))
         if !ModuleDefDSL.MakeDSLNoOpMethodsWhitelist.contains(method) &&
           lhs.exists(_.pos == c.macroApplication.pos) =>
@@ -53,7 +45,7 @@ object AnyConstructorMacro {
         case Some(nonwhiteListedMethods) =>
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(
-              s"""For $tpe found no `.from`-like calls in ${findBlockWithMakeExpr(c.enclosingClass)} (raw tree: ${showRaw(findBlockWithMakeExpr(c.enclosingClass))})
+              s"""For $tpe found no `.from`-like calls in ${findExprContainingMake(c.enclosingClass)} (raw tree: ${showRaw(findExprContainingMake(c.enclosingClass))})
                   |enclosingClass contains macro call (must be true): ${
                 val res = c.enclosingClass.exists(_.pos == c.macroApplication.pos)
                 assert(res, "enclosingClass must contain macro call position")

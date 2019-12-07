@@ -365,7 +365,6 @@ object ModuleDefDSL {
       *   many[T].addSet(Set(new T, new T, new T))
       * }}}
       **/
-    // FIXME ??? always use immutable.Set type for Sets due to LTT type constructor comparison
     final def addSet[I <: Set[_ <: T]: Tag](instance: => I)(implicit pos: CodePositionMaterializer): AfterMultiAdd =
       addSet(ProviderMagnet.lift(instance))
 

@@ -8,5 +8,5 @@ import izumi.fundamentals.reflection.Tags.TagK
 trait EffectStrategy {
   def executeEffect[F[_]: TagK: DIEffect](context: ProvisioningKeyProvider,
                                           executor: OperationExecutor,
-                                          op: MonadicOp.ExecuteEffect): F[Seq[NewObjectOp.NewInstance]]
+                                          op: MonadicOp.ExecuteEffect): F[Seq[NewObjectOp]]
 }

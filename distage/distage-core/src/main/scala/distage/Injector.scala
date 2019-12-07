@@ -66,10 +66,10 @@ object Injector {
     }
   }
 
-  object NoReflection extends InjectorBootstrap {
+  object NoCycles extends InjectorBootstrap {
     override def apply(): Injector = super.apply()
     override def apply(overrides: BootstrapModule*): Injector = {
-      bootstrap(BootstrapLocator.noReflectionBootstrap, overrides = overrides.merge)
+      bootstrap(BootstrapLocator.noCyclesBootstrap, overrides = overrides.merge)
     }
   }
 

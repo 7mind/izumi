@@ -6,8 +6,6 @@ sealed trait NewObjectOp {
   type F0[_]
 }
 object NewObjectOp {
-  type Aux[F[_]] = NewObjectOp { type F0[A] = F[A] }
-
   final case class NewInstance(key: DIKey, instance: Any) extends NewObjectOp
   final case class NewResource[F[_]](key: DIKey, instance: Any, finalizer: () => F[Unit]) extends NewObjectOp { type F0[A] = F[A] }
   final case class NewFinalizer[F[_]](key: DIKey, finalizer: () => F[Unit]) extends NewObjectOp { type F0[A] = F[A] }

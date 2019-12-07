@@ -4,6 +4,6 @@ import distage.Injector
 
 trait MkInjector {
   def mkInjector(): Injector = Injector.Standard()
-  def mkNoReflectionInjector(): Injector = Injector.NoReflection()
+  def mkNoReflectionInjector(): Injector = Injector.NoCycles()
   def mkNoProxyInjector(): Injector = Injector.NoProxies()
 }

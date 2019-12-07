@@ -10,10 +10,6 @@ import scala.language.experimental.{macros => enableMacros}
 
 sealed trait AnyConstructor[T] extends AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
-
-  // FIXME: better immutable provider equality scheme ???
-  provider.get.asGenerated
-  // FIXME: better immutable provider equality scheme ???
 }
 final case class ConcreteConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
@@ -52,7 +48,7 @@ object FactoryConstructor {
   implicit def materialize[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
 }
 
-sealed trait AnyConstructorOptionalMakeDSL[T] {
+private[distage] sealed trait AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
 }
 object AnyConstructorOptionalMakeDSL {

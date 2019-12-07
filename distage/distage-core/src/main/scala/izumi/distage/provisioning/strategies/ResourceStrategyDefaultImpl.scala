@@ -18,7 +18,7 @@ class ResourceStrategyDefaultImpl
   override def allocateResource[F[_]: TagK](context: ProvisioningKeyProvider,
                                             @unused executor: OperationExecutor,
                                             op: MonadicOp.AllocateResource,
-                                           )(implicit F: DIEffect[F]): F[Seq[NewObjectOp.NewResource[F]]] = {
+                                           )(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     val provisionerEffectType = SafeType.getK[F]
     val actionEffectType = op.effectHKTypeCtor
 

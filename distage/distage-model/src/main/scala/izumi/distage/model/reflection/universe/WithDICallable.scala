@@ -3,7 +3,6 @@ package izumi.distage.model.reflection.universe
 import izumi.distage.model.exceptions.DIException
 import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIWiring}
 import izumi.distage.model.references.{WithDIKey, WithDITypedRef}
-import izumi.fundamentals.reflection.Tags.Tag
 
 trait WithDICallable {
   this: DIUniverseBase
@@ -15,10 +14,16 @@ trait WithDICallable {
     with WithDIWiring =>
 
   trait DIFunction {
+    def associations: Seq[Association.Parameter]
     def argTypes: Seq[SafeType]
+    def diKeys: Seq[DIKey]
+
     def ret: SafeType
+
     def fun: Seq[Any] => Any
     def arity: Int
+
+    def isGenerated: Boolean
 
     def unsafeApply(refs: TypedRef[_]*): Any = {
       val args = verifyArgs(refs)
@@ -54,23 +59,14 @@ trait WithDICallable {
 
 
   trait Provider extends DIFunction {
-    def associations: Seq[Association.Parameter]
     def unsafeMap(newRet: SafeType, f: Any => _): Provider
     def unsafeZip(newRet: SafeType, that: Provider): Provider
 
-    final val diKeys: Seq[DIKey] = associations.map(_.key)
+    override final val diKeys: Seq[DIKey] = associations.map(_.key)
     override final val argTypes: Seq[SafeType] = associations.map(_.key.tpe)
     override final val arity: Int = argTypes.size
 
-    override final def toString: String =
-      s"$fun(${argTypes.mkString(", ")}): $ret"
-
-    // FIXME: better equality scheme ???
-    private[this] var generated: Boolean = false
-    private[izumi] def asGenerated: this.type = { generated = true; this }
-    def isGenerated: Boolean = generated
-
-    private def eqField: AnyRef = if (generated) ret else fun
+    private def eqField: AnyRef = if (isGenerated) ret else fun
     override final def equals(obj: Any): Boolean = {
       obj match {
         case that: Provider =>
@@ -80,6 +76,7 @@ trait WithDICallable {
       }
     }
     override final def hashCode(): Int = eqField.hashCode()
+    override final def toString: String = s"$fun(${argTypes.mkString(", ")}): $ret"
   }
 
   object Provider {
@@ -88,6 +85,7 @@ trait WithDICallable {
                                  associations: Seq[Association.Parameter],
                                  ret: SafeType,
                                  fun: Seq[Any] => Any,
+                                 isGenerated: Boolean,
                                ) extends Provider {
 
       override final def unsafeApply(refs: TypedRef[_]*): A =
@@ -104,12 +102,8 @@ trait WithDICallable {
             val (args1, args2) = args0.splitAt(arity)
             fun(args1) -> that.fun(args2)
           },
+          isGenerated
         )
-    }
-
-    object ProviderImpl {
-      def apply[R: Tag](associations: Seq[Association.Parameter], fun: Seq[Any] => Any): ProviderImpl[R] =
-        new ProviderImpl[R](associations, SafeType.get[R], fun)
     }
 
     trait FactoryProvider extends Provider {
@@ -117,7 +111,7 @@ trait WithDICallable {
     }
 
     object FactoryProvider {
-      case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod]) extends FactoryProvider {
+      case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], isGenerated: Boolean) extends FactoryProvider {
         override final def associations: Seq[Association.Parameter] = provider.associations
         override final def ret: SafeType = provider.ret
         override final def fun: Seq[Any] => Any = provider.fun

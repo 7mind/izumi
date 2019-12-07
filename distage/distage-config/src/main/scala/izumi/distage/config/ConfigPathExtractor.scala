@@ -2,7 +2,6 @@ package izumi.distage.config
 
 import com.typesafe.config.{Config, ConfigFactory}
 import izumi.distage.config.ConfigPathExtractor._
-import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.BindingTag.ConfTag
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.{ExecutableOp, SemiPlan}
@@ -12,23 +11,20 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.Singleto
 
 import scala.jdk.CollectionConverters._
 
-class ConfigPathExtractor
-(
-  config: AppConfig,
-) extends PlanningHook {
+class ConfigPathExtractor extends PlanningHook {
 
   override def phase20Customization(plan: SemiPlan): SemiPlan = {
     val paths = plan.steps.collect {
       case ExtractConfigPath(configPath) => configPath
     }.toSet
 
-    val addResolvedConfigOp = resolvedConfigOp(config, paths)
+    val addResolvedConfigOp = resolvedConfigOp(paths)
 
     SemiPlan(plan.steps :+ addResolvedConfigOp, plan.gcMode)
   }
 
-  private def resolvedConfigOp(config: AppConfig, paths: Set[ConfigPath]): ExecutableOp.WiringOp.UseInstance = {
-    val resolvedConfig = ResolvedConfig(config, paths)
+  private def resolvedConfigOp(paths: Set[ConfigPath]): ExecutableOp.WiringOp.UseInstance = {
+    val resolvedConfig = ResolvedConfig(paths)
     val target = DIKey.get[ResolvedConfig]
     ExecutableOp.WiringOp.UseInstance(
       target = target,
@@ -54,12 +50,12 @@ object ConfigPathExtractor {
     }
   }
 
-  final case class ResolvedConfig(source: AppConfig, requiredPaths: Set[ConfigPath]) {
-    def minimized(): Config = {
+  final case class ResolvedConfig(requiredPaths: Set[ConfigPath]) {
+    def minimized(source: Config): Config = {
       val paths = requiredPaths.map(_.toPath)
 
       ConfigFactory.parseMap {
-        source.config.root().unwrapped().asScala
+        source.root().unwrapped().asScala
           .filterKeys(key => paths.exists(_.startsWith(key)))
           .toMap
           .asJava

@@ -138,7 +138,7 @@ object BootstrapLocator {
 
   final val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
-  final val noReflectionBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
+  final val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
   }
 }

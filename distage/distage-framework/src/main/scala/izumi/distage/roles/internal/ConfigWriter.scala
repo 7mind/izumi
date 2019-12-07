@@ -5,8 +5,7 @@ import java.nio.file.{Files, Paths}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import izumi.distage.config.ConfigPathExtractor.ResolvedConfig
-import izumi.distage.config.model.AppConfig
-import izumi.distage.config.{AppConfigModule, ConfigPathExtractorModule}
+import izumi.distage.config.ConfigPathExtractorModule
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.definition.{Id, ModuleBase}
 import izumi.distage.model.effect.DIEffect
@@ -110,19 +109,19 @@ class ConfigWriter[F[_]: DIEffect]
     val roleDIKey = role.binding.key
 
     val cfg = Seq(
-      new AppConfigModule(AppConfig(config)),
       new ConfigPathExtractorModule,
       new LogstageModule(LogRouter.nullRouter, setupStaticLogRouter = false),
     ).overrideLeft
 
-    val plans = context.reboot(cfg).makePlan(Set(roleDIKey), appModule)
+    val newAppModule = appModule
+    val plans = context.reboot(cfg).makePlan(Set(roleDIKey), newAppModule)
 
     def getConfig(plan: OrderedPlan): Option[Config] = {
       plan
         .filter[ResolvedConfig]
         .collectFirst {
           case WiringOp.UseInstance(_, Instance(_, r: ResolvedConfig), _) =>
-            r.minimized()
+            r.minimized(config)
         }
     }
 
