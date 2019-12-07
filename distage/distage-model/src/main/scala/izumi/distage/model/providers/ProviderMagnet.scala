@@ -151,7 +151,6 @@ object ProviderMagnet {
     val symbolInfo = SymbolInfo.Static(
       name = "x$1",
       finalResultType = tpe,
-      annotations = Nil,
       isByName = false,
       wasGeneric = false
     )

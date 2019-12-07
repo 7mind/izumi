@@ -23,9 +23,9 @@ class PruningPlanMergingPolicyDefaultImpl
 
   private[this] val activeChoices = activation.activeChoices.values.toSet
 
-  protected def logUntaggedConflicts(key: DIKey, noTags: Set[PrePlan.JustOp]): Unit = {}
-  protected def logHandleIssues(issues: Map[DIKey, DIKeyConflictResolution.Failed]): Unit = {}
-  protected def logPruningSuccesfulResolve(issues: Map[DIKey, DIKeyConflictResolution.Failed], erased: Map[DIKey, Set[SemiplanOp]]): Unit = {}
+  protected def logUntaggedConflicts(@unused key: DIKey, @unused noTags: Set[PrePlan.JustOp]): Unit = {}
+  protected def logHandleIssues(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed]): Unit = {}
+  protected def logPruningSuccesfulResolve(@unused issues: Map[DIKey, DIKeyConflictResolution.Failed], @unused erased: Map[DIKey, Set[SemiplanOp]]): Unit = {}
 
   override protected def resolveConflict(plan: PrePlan, key: RuntimeDIUniverse.DIKey, operations: Set[PrePlan.JustOp]): DIKeyConflictResolution = {
     assert(operations.size > 1)

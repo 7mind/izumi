@@ -64,7 +64,7 @@ object ExecutableOp {
         w.wiring match {
           case u: Wiring.SingletonWiring =>
             u.instanceType
-          case _: Wiring.Factory | _: Wiring.FactoryFunction =>
+          case _: Wiring.FactoryFunction =>
             w.target.tpe
         }
       case m: MonadicOp =>

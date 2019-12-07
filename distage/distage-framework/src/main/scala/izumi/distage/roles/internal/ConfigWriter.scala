@@ -193,7 +193,7 @@ object ConfigWriter extends RoleDescriptor {
   override final val id = "configwriter"
 
   override def parserSchema: RoleParserSchema = {
-    RoleParserSchema(id, P, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
+    RoleParserSchema(id, Options, Some("Dump reference configs for all the roles"), None, freeArgsAllowed = false)
   }
 
   /**
@@ -214,7 +214,7 @@ object ConfigWriter extends RoleDescriptor {
                                           parent: Option[Config] = None,
                                         )
 
-  object P extends ParserDef {
+  object Options extends ParserDef {
     final val targetDir = arg("target", "t", "target directory", "<path>")
     final val excludeCommon = flag("exclude-common", "ec", "do not include shared sections")
     final val useComponentVersion = flag("version-use-component", "vc", "use component version instead of launcher version")
@@ -222,10 +222,10 @@ object ConfigWriter extends RoleDescriptor {
   }
 
   def parse(p: RawEntrypointParams): WriteReference = {
-    val targetDir = p.findValue(P.targetDir).map(_.value).getOrElse("config")
-    val includeCommon = p.hasNoFlag(P.excludeCommon)
-    val useLauncherVersion = p.hasNoFlag(P.useComponentVersion)
-    val asJson = !p.findValue(P.formatTypesafe).map(_.value).contains("hocon")
+    val targetDir = p.findValue(Options.targetDir).map(_.value).getOrElse("config")
+    val includeCommon = p.hasNoFlag(Options.excludeCommon)
+    val useLauncherVersion = p.hasNoFlag(Options.useComponentVersion)
+    val asJson = !p.findValue(Options.formatTypesafe).map(_.value).contains("hocon")
 
     WriteReference(
       asJson,

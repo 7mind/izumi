@@ -706,8 +706,7 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "cglib" % "cglib-nodep" % V.cglib_nodep,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "cglib" % "cglib-nodep" % V.cglib_nodep
     )
   )
   .settings(
@@ -791,8 +790,7 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(
@@ -967,8 +965,7 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "io.github.classgraph" % "classgraph" % V.classgraph,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "io.github.classgraph" % "classgraph" % V.classgraph
     )
   )
   .settings(
@@ -1152,8 +1149,7 @@ lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
       "org.scalatest" %% "scalatest" % V.scalatest,
       "org.typelevel" %% "cats-core" % V.cats % Optional,
       "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "dev.zio" %% "zio" % V.zio % Optional
     )
   )
   .settings(
@@ -1499,8 +1495,7 @@ lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
     libraryDependencies ++= Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
       "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .settings(

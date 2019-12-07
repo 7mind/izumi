@@ -79,6 +79,12 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
 
       case s: DIKey.SetElementKey =>
         extract(s.tpe) ++ extract(s.reference)
+
+      case r: DIKey.ResourceKey =>
+        extract(r.tpe) ++ extract(r.tpe)
+
+      case e: DIKey.EffectKey =>
+        extract(e.tpe) ++ extract(e.tpe)
     }
   }
 

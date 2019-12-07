@@ -13,13 +13,4 @@ class ModelTest extends WordSpec {
     }
   }
 
-  "SafeType" should {
-    "support construction from method type signatures" in {
-      import scala.reflect.runtime.universe._
-      assert(SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature) ==
-        SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature))
-    }
-  }
-
-
 }

@@ -412,12 +412,12 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.proxyCglib,
-        libs = Seq(cglib_nodep) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(cglib_nodep),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq.empty,
         depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
       ),
       Artifact(
@@ -428,7 +428,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.plugins,
-        libs = Seq(fast_classpath_scanner) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(fast_classpath_scanner),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all) ++
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
@@ -441,7 +441,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency).map(_ in Scope.Compile.all) ++ allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq(scalatest.dependency).map(_ in Scope.Compile.all) ++ allMonadsOptional,
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
@@ -477,7 +477,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.di,
-        libs = Seq(scala_reflect in Scope.Provided.all),
+        libs = Seq.empty,
         depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),

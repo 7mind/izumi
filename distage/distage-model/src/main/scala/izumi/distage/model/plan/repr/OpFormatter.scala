@@ -167,9 +167,6 @@ object OpFormatter {
           }
 
           s"""arg $fname: ${formatType(p.tpe)} = lookup(${formatKey(p.key)})"""
-
-        case m: Association.AbstractMethod =>
-          s"""def ${m.name}: ${formatType(m.tpe)} = lookup(${formatKey(m.key)})"""
       }
     }
 

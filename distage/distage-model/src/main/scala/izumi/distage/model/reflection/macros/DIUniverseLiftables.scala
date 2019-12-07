@@ -7,7 +7,7 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   import u._
   import u.u._
 
-  val runtimeDIUniverse: Tree = q"${symbolOf[RuntimeDIUniverse.type].asClass.module}"
+  val runtimeDIUniverse: Tree = q"_root_.izumi.distage.model.reflection.universe.RuntimeDIUniverse"
 
   implicit def liftableSafeType: Liftable[SafeType]
 
@@ -56,11 +56,9 @@ abstract class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // so weak types are allowed here (See Inject config tests in StaticInjectorTest, they do break if this is changed)
   implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
-      // FIXME: annotations ???
       q"""{ $runtimeDIUniverse.SymbolInfo.Static(
       name = ${info.name},
       finalResultType = ${liftableUnsafeWeakSafeType(info.finalResultType)},
-      annotations = null,
       isByName = ${info.isByName},
       wasGeneric = ${info.wasGeneric}
       ) }"""

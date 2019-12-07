@@ -6,7 +6,7 @@ import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
-import scala.language.experimental.macros
+import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 object AnyConstructorMacro {
@@ -25,7 +25,7 @@ object AnyConstructorMacro {
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     val enclosingClass = c.enclosingClass
-    val positionOfMakeCall = c.enclosingMacros(1).macroApplication.pos
+    val positionOfMakeCall: Universe#Position = c.enclosingMacros(1).macroApplication.pos
 
     assert(enclosingClass.exists(_.pos == positionOfMakeCall), "enclosingClass must contain macro call position")
 
