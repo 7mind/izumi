@@ -4,8 +4,8 @@ import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.{ProvisioningException, UnsupportedDefinitionException}
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 import scala.language.reflectiveCalls
 
@@ -117,26 +117,27 @@ class FactoriesTest extends WordSpec with MkInjector {
     assert(instance.isInstanceOf[ConcreteDep])
   }
 
-  "cglib factory cannot produce factories" in {
-    val exc = intercept[ProvisioningException] {
-      import FactoryCase1._
+  "Factory cannot produce factories" in {
+    val exc = intercept[TestFailedException] {
+      assertCompiles("""
+        import FactoryCase1._
 
-      // FIXME: `make` support? should be compile-time error
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[FactoryProducingFactory]
-        make[Dependency]
-      })
+        // FIXME: `make` support? should be compile-time error
+        val definition = PlannerInput.noGc(new ModuleDef {
+          make[FactoryProducingFactory]
+          make[Dependency]
+        })
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+        val injector = mkInjector()
+        val plan = injector.plan(definition)
+        val context = injector.produceUnsafe(plan)
 
-      val instantiated = context.get[FactoryProducingFactory]
+        val instantiated = context.get[FactoryProducingFactory]
 
-      assert(instantiated.x().x().b == context.get[Dependency])
+        assert(instantiated.x().x().b == context.get[Dependency])
+      """)
     }
-//    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedWiringException])
-    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
+    assert(exc.getMessage.contains("Factory cannot produce factories"))
   }
 
   "cglib factory always produces new instances" in {

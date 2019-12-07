@@ -3,7 +3,6 @@ package izumi.distage.testkit.scalatest
 import cats.effect.IO
 import distage.{DIKey, Id, ModuleBase, TagK}
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.config.model.ConfPathId
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.effect.DIEffect
@@ -72,7 +71,7 @@ abstract class TestkitTest[F[_]: TagK] extends TestkitSelftest[F] {
 
   override protected def refineBindings(roots: Set[DIKey], primaryModule: ModuleBase): ModuleBase = {
     super.refineBindings(roots, primaryModule) overridenBy new ModuleDef {
-      make[TestConf].named(ConfPathId("missing-test-section")).from(TestConf(111, 222))
+      make[TestConf].named("missing-test-section").from(TestConf(111, 222))
     }
   }
 }

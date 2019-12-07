@@ -433,6 +433,19 @@ object ModuleDefDSL {
 
   // DSL state machine
 
+  /** These are the _only_ methods that can chained after `make`
+    * such that make[T] will still generate the constructor for `T`
+    *
+    * See [[izumi.distage.constructors.macros.AnyConstructorMacro.optional]]
+    *
+    * If ANY other method is chained in the same expression
+    * it's assumed that it will replace make[T]'s constructor,
+    * so the constructor for `T` will NOT be generated.
+    *
+    * Please update this when adding new methods to [[MakeDSL]]!
+    */
+  private[distage] final lazy val MakeDSLNoOpMethodsWhitelist = Set("named", "namedByImpl", "tagged", "alias")
+
   final class MakeDSL[T]
   (
     override protected val mutableState: SingletonRef,

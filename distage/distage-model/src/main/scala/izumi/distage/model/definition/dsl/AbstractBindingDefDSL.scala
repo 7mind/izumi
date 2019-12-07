@@ -1,6 +1,6 @@
 package izumi.distage.model.definition.dsl
 
-import izumi.distage.constructors.AnyConstructor
+import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference
@@ -34,8 +34,8 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindingRef
   }
 
-  final protected def make[T: Tag: AnyConstructor](implicit pos: CodePositionMaterializer): BindDSL[T] = {
-    val ref = _registered(new SingletonRef(Bindings.binding[T]))
+  final protected def make[T: Tag](implicit optionalConstructor: AnyConstructorOptionalMakeDSL[T], pos: CodePositionMaterializer): BindDSL[T] = {
+    val ref = _registered(new SingletonRef(Bindings.provider[T](optionalConstructor.provider)))
     _bindDSL[T](ref)
   }
 
@@ -174,7 +174,8 @@ object AbstractBindingDefDSL {
               val key = DIKey.IdKey(b.key.tpe, s.id)(s.idContract)
               b.withTarget(key)
             case _: SetIdFromImplName =>
-              b.withTarget(DIKey.IdKey(b.key.tpe, b.implementation.implType.tag.longName.toString.toLowerCase))
+              // b.key.tpe is the same b.implementation.tpe because `SetIdFromImplName` comes before `SetImpl`...
+              b.withTarget(DIKey.IdKey(b.key.tpe, b.key.tpe.tag.longName.toString.toLowerCase))
           }
       }
     )

@@ -6,9 +6,10 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
-import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedDefinitionException}
+import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 class BasicTest extends WordSpec with MkInjector {
 
@@ -59,28 +60,21 @@ class BasicTest extends WordSpec with MkInjector {
     assert(ss.isEmpty)
   }
 
-  "fails on wrong @Id annotation" in {
-    import BadAnnotationsCase._
-    val definition = PlannerInput.noGc(new ModuleDef {
-      // FIXME: `make` support ??? should be compile time error
-      make[TestDependency0]
-      make[TestClass]
-    })
+  "fails on wrong @Id annotation at compile-time" in {
+    val exc = intercept[TestFailedException] {
+      assertCompiles("""
+        import BadAnnotationsCase._
 
-    val injector = mkInjector()
+        val definition = PlannerInput.noGc(new ModuleDef {
+          make[TestDependency0]
+          make[TestClass]
+        })
 
-//    val exc = intercept[BadIdAnnotationException] {
-//      injector.produce(injector.plan(definition))
-//        .use(_.get[TestClass])
-//    }
-//
-//    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
-
-    val exc = intercept[ProvisioningException] {
-      injector.produceUnsafe(injector.plan(definition)).get[TestClass]
+        val injector = mkInjector()
+        injector.produceUnsafe(injector.plan(definition)).get[TestClass]
+        """)
     }
-
-    assert(exc.getSuppressed.head.isInstanceOf[UnsupportedDefinitionException])
+    assert(exc.getMessage.contains("BadIdAnnotationException"))
   }
 
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
@@ -164,22 +158,6 @@ class BasicTest extends WordSpec with MkInjector {
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
-
-  // FIXME ???
-//  "fail on unbindable" in {
-//    import BasicCase3._
-//
-//    val definition = PlannerInput.noGc(new ModuleBase {
-//      override def bindings: Set[Binding] = Set(
-//        SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]), Set.empty, CodePositionMaterializer().get.position)
-//      )
-//    })
-//
-//    val injector = mkInjector()
-//    intercept[UnsupportedWiringException] {
-//      injector.plan(definition)
-//    }
-//  }
 
   "fail on unsolvable conflicts" in {
     import BasicCase3._
