@@ -1221,6 +1221,7 @@ lazy val `distage-docker` = project.in(file("distage/distage-docker"))
     `distage-core` % "test->compile;compile->compile",
     `distage-config` % "test->compile;compile->compile",
     `distage-framework-api` % "test->compile;compile->compile",
+    `logstage-di` % "test->compile;compile->compile",
     `distage-testkit` % "test->compile"
   )
   .settings(
