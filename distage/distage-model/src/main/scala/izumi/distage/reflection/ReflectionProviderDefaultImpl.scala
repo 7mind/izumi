@@ -5,13 +5,27 @@ import izumi.distage.model.exceptions.{BadIdAnnotationException, UnsupportedDefi
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.universe.DIUniverse
 import izumi.fundamentals.reflection.ReflectionUtil
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   self =>
 
-  import u._
-  import Wiring._
+  import u.u.{Annotation, Constant, Literal}
+  import u.{Association, DIKey, MethodSymbNative, SafeType, SymbNative, SymbolInfo, TypeNative, Wiring, stringIdContract}
+
+  private[this] object Id {
+    def unapply(ann: Annotation): Option[String] = {
+      ann.tree.children.tail.collectFirst {
+        case Literal(Constant(name: String)) =>
+          name
+      }
+    }
+  }
+
+  private[this] object With {
+    def unapply(ann: Annotation): Option[TypeNative] = {
+      ann.tree.tpe.typeArgs.headOption
+    }
+  }
 
   // dependencykeyprovider
 
@@ -47,7 +61,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
 
   // reflectionprovider
 
-  override def symbolToWiring(tpe: TypeNative): Wiring.PureWiring = ReflectionLock.synchronized {
+  override def symbolToWiring(tpe: TypeNative): Wiring.PureWiring = {
     tpe match {
       case FactorySymbol(factoryMethods, dependencyMethods) =>
         val unsafeSafeType = SafeType(tpe)
@@ -89,34 +103,34 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = ReflectionLock.synchronized {
+  override def constructorParameterLists(tpe: TypeNative): List[List[Association.Parameter]] = {
     selectConstructorArguments(tpe).toList.flatten.map(_.map(associationFromParameter))
   }
 
-  private[this] def mkConstructorWiring(tpe: TypeNative): SingletonWiring.ReflectiveInstantiationWiring = tpe match {
-    case ConcreteSymbol(symb) =>
-      SingletonWiring.Constructor(SafeType(symb), constructorParameters(symb), getPrefix(symb))
+  private[this] def mkConstructorWiring(tpe: TypeNative): Wiring.SingletonWiring.ReflectiveInstantiationWiring = {
+    tpe match {
+      case ConcreteSymbol(symb) =>
+        Wiring.SingletonWiring.Constructor(SafeType(symb), constructorParameters(symb), getPrefix(symb))
 
-    case AbstractSymbol(symb) =>
-      SingletonWiring.AbstractSymbol(SafeType(symb), traitMethods(symb), getPrefix(symb))
+      case AbstractSymbol(symb) =>
+        Wiring.SingletonWiring.AbstractSymbol(SafeType(symb), traitMethods(symb), getPrefix(symb))
 
-    case FactorySymbol(_, _) =>
-      throw new UnsupportedWiringException(
-        s"""Augmentation failure. Factory cannot produce factories, it's pointless: $tpe
-           |  * Type $tpe has been considered a factory because of an unimplemented abstract method with parameters
-           |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
-           |""".stripMargin,
-        SafeType(tpe)
-      )
+      case FactorySymbol(_, _) =>
+        throw new UnsupportedWiringException(
+          s"""Augmentation failure. Factory cannot produce factories, it's pointless: $tpe
+             |  * Type $tpe has been considered a factory because of an unimplemented abstract method with parameters
+             |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.
+             |""".stripMargin,
+          SafeType(tpe)
+        )
 
-    case _ =>
-      throw new UnsupportedWiringException(s"Wiring unsupported: $tpe", SafeType(tpe))
+      case _ =>
+        throw new UnsupportedWiringException(s"Wiring unsupported: $tpe", SafeType(tpe))
+    }
   }
 
   private[this] def constructorParameters(symbl: TypeNative): List[Association.Parameter] = {
-    ReflectionLock.synchronized {
-      constructorParameterLists(symbl).flatten
-    }
+    constructorParameterLists(symbl).flatten
   }
 
   private[this] def getPrefix(symb: TypeNative): Option[DIKey] = {
@@ -173,7 +187,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
   }
 
   // symbolintrospector
-  private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[SymbolInfo]]] = ReflectionLock.synchronized {
+  private[this] def selectConstructorArguments(tpe: TypeNative): Option[List[List[SymbolInfo]]] = {
     selectConstructorMethod(tpe).map {
       selectedConstructor =>
         val originalParamListTypes = selectedConstructor.paramLists.map(_.map(_.typeSignature))
@@ -193,7 +207,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = ReflectionLock.synchronized {
+  private[this] def selectConstructorMethod(tpe: TypeNative): Option[MethodSymbNative] = {
     val constructor = findConstructor(tpe)
     if (!constructor.isTerm) {
       None
@@ -202,7 +216,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  private[this] def selectNonImplicitParameters(symb: MethodSymbNative): List[List[SymbNative]] = ReflectionLock.synchronized {
+  private[this] def selectNonImplicitParameters(symb: MethodSymbNative): List[List[SymbNative]] = {
     symb.paramLists.takeWhile(_.headOption.forall(!_.isImplicit))
   }
 
@@ -220,7 +234,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def isWireableAbstract(tpe: TypeNative): Boolean = ReflectionLock.synchronized {
+  override def isWireableAbstract(tpe: TypeNative): Boolean = {
     val abstractMembers = tpe.members.filter(_.isAbstract)
 
     // no mistake here. Wireable astract is a abstract class or class with an abstract parent having all abstract members wireable
@@ -236,18 +250,18 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
     }
   }
 
-  override def isFactory(tpe: TypeNative): Boolean = ReflectionLock.synchronized {
+  override def isFactory(tpe: TypeNative): Boolean = {
     !tpe.typeSymbol.isFinal && !(tpe.typeSymbol.isClass && tpe.typeSymbol.asClass.isSealed) && {
       val abstracts = tpe.members.filter(_.isAbstract)
       abstracts.exists(isFactoryMethod) && abstracts.forall(m => isFactoryMethod(m) || isWireableMethod(m))
     }
   }
 
-  private[this] def isWireableMethod(decl: SymbNative): Boolean = ReflectionLock.synchronized {
+  private[this] def isWireableMethod(decl: SymbNative): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.asMethod.paramLists.isEmpty
   }
 
-  private[this] def isFactoryMethod(decl: SymbNative): Boolean = ReflectionLock.synchronized {
+  private[this] def isFactoryMethod(decl: SymbNative): Boolean = {
     decl.isMethod && decl.isAbstract && !decl.isSynthetic && decl.asMethod.paramLists.nonEmpty
   }
 

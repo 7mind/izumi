@@ -4,6 +4,8 @@ import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import org.scalatest.WordSpec
 
+import scala.reflect.ClassTag
+
 class SafeTypeTest extends WordSpec {
   "SafeType" should {
     "have consistent equals and hashcode" in {
@@ -14,7 +16,7 @@ class SafeTypeTest extends WordSpec {
       assert(t1.hashCode == t2.hashCode)
       assert(t1.toString == t2.toString)
 
-      def mk[F[_]: TagK, T: Tag] = SafeType(Tag[F[T]].tag.typeArgs.head)
+      def mk[F[_]: TagK, T: Tag: ClassTag] = SafeType(Tag[F[T]].tag.typeArgs.head, scala.reflect.classTag[T].runtimeClass)
       val t3 = mk[List, Int]
 
       assert(t1 == t3)

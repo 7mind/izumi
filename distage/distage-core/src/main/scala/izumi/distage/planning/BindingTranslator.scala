@@ -80,16 +80,6 @@ object BindingTranslator {
     private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: PureWiring): WiringOp = {
       val userBinding = OperationOrigin.UserBinding(binding)
       wiring match {
-        case w: Constructor =>
-          // FIXME: non-existent wirings de-cake compile-time universe ???
-          throw new Exception("WiringOp.InstantiateClass(target, w, Some(binding))")
-
-        case w: AbstractSymbol =>
-          throw new Exception("WiringOp.InstantiateTrait(target, w, Some(binding))")
-
-        case w: Factory =>
-          throw new Exception("WiringOp.InstantiateFactory(target, w, Some(binding))")
-
         case w: FactoryFunction =>
           WiringOp.CallFactoryProvider(target, w, userBinding)
 

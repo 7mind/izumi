@@ -1,7 +1,7 @@
 package izumi.distage.model.definition.dsl
 
+import izumi.distage.constructors.AnyConstructor
 import izumi.distage.constructors.macros.AnyConstructorMacro
-import izumi.distage.constructors.{AnyConstructor, AnyConstructorOptionalMakeDSL}
 import izumi.distage.model.definition.Binding.{EmptySetBinding, ImplBinding, SetElementBinding, SingletonBinding}
 import izumi.distage.model.definition.DIResource.{DIResourceBase, ResourceTag}
 import izumi.distage.model.definition.dsl.AbstractBindingDefDSL.MultipleInstruction.ImplWithReference

@@ -6,7 +6,6 @@ import izumi.distage.plugins.{PluginBase, PluginDef}
 import izumi.functional.Value
 
 import scala.jdk.CollectionConverters._
-import scala.reflect.runtime.universe
 
 class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
   def load(): Seq[PluginBase] = {
@@ -41,11 +40,9 @@ object PluginLoaderDefaultImpl {
         .flatMap {
           classInfo =>
             val clz = classInfo.loadClass()
-            val runtimeMirror = universe.runtimeMirror(clz.getClassLoader)
-            val symbol = runtimeMirror.classSymbol(clz)
 
-            if (symbol.isModuleClass) {
-              Seq(runtimeMirror.reflectModule(symbol.thisPrefix.termSymbol.asModule).instance.asInstanceOf[T])
+            if (Option(clz.getSimpleName).exists(_.endsWith("$"))) {
+              Seq(clz.getField("MODULE$").get(null).asInstanceOf[T])
             } else {
               clz.getDeclaredConstructors.find(_.getParameterCount == 0).map(_.newInstance().asInstanceOf[T]).toSeq
             }

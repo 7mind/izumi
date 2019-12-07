@@ -30,12 +30,8 @@ trait WithDIWiring {
       def instanceType: SafeType
       override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
     }
-    object SingletonWiring {
-      case class Function(provider: Provider, associations: Seq[Association.Parameter]) extends SingletonWiring {
-        override final def instanceType: SafeType = provider.ret
 
-        override final def replaceKeys(f: Association => DIKey.BasicKey): Function = this.copy(associations = this.associations.map(a => a.withKey(f(a))))
-      }
+    object SingletonWiring {
       case class Instance(instanceType: SafeType, instance: Any) extends SingletonWiring {
         override final def associations: Seq[Association] = Seq.empty
 
@@ -116,33 +112,6 @@ trait WithDIWiring {
       case class FactoryMethod(factoryMethod: SymbolInfo.Runtime, wireWith: SingletonWiring.ReflectiveInstantiationWiring, methodArguments: Seq[DIKey]) {
         def associationsFromContext: Seq[Association] = wireWith.associations.filterNot(methodArguments contains _.key)
       }
-    }
-
-    case class FactoryFunction(
-                                provider: Provider,
-                                factoryIndex: Map[Int, FactoryFunction.FactoryMethod],
-                                factoryCtorParameters: Seq[Association.Parameter],
-                              ) extends PureWiring {
-      private[this] final val factoryMethods = factoryIndex.values.toList
-
-      override final lazy val associations: Seq[Association] = {
-        val userSuppliedDeps = factoryMethods.flatMap(_.userSuppliedParameters).toSet
-
-        val factorySuppliedDeps = factoryMethods.flatMap(_.productWiring.associations).filterNot(userSuppliedDeps contains _.key)
-        factorySuppliedDeps ++ factoryCtorParameters
-      }
-
-      override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
-        this.copy(
-          factoryCtorParameters = this.factoryCtorParameters.map(a => a.withKey(f(a))),
-          factoryIndex = this.factoryIndex.mapValues(m => m.copy(productWiring = m.productWiring.replaceKeys(f))).toMap // 2.13 compat
-        )
-
-      override final def instanceType: SafeType = provider.ret
-    }
-
-    object FactoryFunction {
-      case class FactoryMethod(factoryMethod: SymbolInfo, productWiring: Wiring.SingletonWiring.Function, userSuppliedParameters: Seq[DIKey])
     }
 
   }

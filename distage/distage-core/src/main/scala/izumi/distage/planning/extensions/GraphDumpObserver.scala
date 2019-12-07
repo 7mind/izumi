@@ -153,8 +153,6 @@ final class GraphDumpObserver
             op.wiring match {
               case w: RuntimeDIUniverse.Wiring.SingletonWiring =>
                 w match {
-                  case _: RuntimeDIUniverse.Wiring.SingletonWiring.ReflectiveInstantiationWiring =>
-                    "make"
                   case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
                     "lambda"
                   case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
@@ -166,8 +164,6 @@ final class GraphDumpObserver
                     "ref"
                 }
 
-              case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
-                "factory"
               case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
                 "factoryfun"
             }

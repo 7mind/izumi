@@ -9,6 +9,7 @@ import izumi.fundamentals.reflection.Tags.HKTag
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
 import org.scalatest.WordSpec
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 
@@ -45,10 +46,15 @@ final case class testTag3[F[_]: TagK]() {
 
 class TagTest extends WordSpec with X[String] {
 
-  def safe[T: TypeTag] = SafeType(LightTypeTagImpl.makeLightTypeTag(universe)(typeOf[T]))
+  def safe[T: TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
+    SafeType(
+      tag = LightTypeTagImpl.makeLightTypeTag(universe)(typeOf[T]),
+      cls = Option(maybeClassTag).fold[Class[_]](classOf[Any])(_.runtimeClass),
+    )
+  }
 
   implicit class TagSafeType(tag: Tag[_]) {
-    def toSafe: SafeType = SafeType(tag.tag)
+    def toSafe: SafeType = SafeType(tag.tag, tag.closestClass)
   }
 
   implicit class TagKSafeType(tagK: HKTag[_]) {
