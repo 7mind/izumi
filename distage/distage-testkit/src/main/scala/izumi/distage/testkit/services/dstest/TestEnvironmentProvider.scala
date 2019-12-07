@@ -2,10 +2,10 @@ package izumi.distage.testkit.services.dstest
 
 import distage.DIKey
 import izumi.distage.framework.model.PluginSource
+import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
-import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.ActivationInfo
+import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.services.PluginsCache
 import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.fundamentals.platform.language.Quirks
@@ -37,7 +37,7 @@ object TestEnvironmentProvider {
         val mergeStrategy = makeMergeStrategy(logger)
         val defApp = mergeStrategy.merge(plugins.app)
         val bootstrap = mergeStrategy.merge(plugins.bootstrap)
-        val availableActivations = ActivationInfo.findAvailableChoices(logger, defApp)
+        val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, defApp)
         CacheValue(plugins, bootstrap, defApp, availableActivations)
       }
 

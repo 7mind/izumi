@@ -1,8 +1,7 @@
 package izumi.distage.testkit.services
 
-import izumi.distage.framework.model.{AllLoadedPlugins, BootstrapConfig}
+import izumi.distage.framework.model.{ActivationInfo, AllLoadedPlugins, BootstrapConfig}
 import izumi.distage.model.definition.ModuleBase
-import izumi.distage.roles.model.ActivationInfo
 
 object PluginsCache {
   final case class CacheKey(config: BootstrapConfig)

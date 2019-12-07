@@ -7,7 +7,7 @@ import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.exceptions.DIException
-import izumi.distage.roles.model.DIAppBootstrapException
+import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger

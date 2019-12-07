@@ -1,12 +1,11 @@
 package izumi.distage.model.plan.operations
 
 import izumi.distage.model.references.WithDIKey
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDICallable, WithDISafeType, WithDISymbolInfo}
+import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithDISymbolInfo}
 
 trait WithDIAssociation {
   this:  DIUniverseBase
     with WithDISafeType
-    with WithDICallable
     with WithDIKey
     with WithDISymbolInfo
   =>

@@ -269,8 +269,11 @@ object Izumi {
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-config")
       final lazy val plugins = ArtifactId("distage-plugins")
+      final lazy val docker = ArtifactId("distage-docker")
+      final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkit = ArtifactId("distage-testkit")
+      final lazy val legacyTestkit = ArtifactId("distage-legacy-testkit")
     }
 
     object logstage {
@@ -434,17 +437,38 @@ object Izumi {
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
       ),
       Artifact(
+        name = Projects.distage.frameworkApi,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+      ),
+      Artifact(
         name = Projects.distage.framework,
-        libs = allMonadsOptional ++ Seq(docker_java in Scope.Compile.jvm) ++ Seq(scala_reflect in Scope.Provided.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+          Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+      ),
+      Artifact(
+        name = Projects.distage.docker,
+        libs = Seq(docker_java in Scope.Compile.jvm),
+        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.testkit in Scope.Test.all),
       ),
       Artifact(
         name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency).map(_ in Scope.Compile.all) ++ allMonadsOptional,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+        settings = Seq(
+          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.legacyTestkit,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        depends =
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+            Seq(Projects.distage.core, Projects.distage.testkit).map(_ in Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),

@@ -6,13 +6,14 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.effect.modules.IdentityDIEffectModule
 import izumi.distage.framework.activation.PruningPlanMergingPolicy
 import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.model.definition.{Activation, BootstrapModuleDef, Module}
 import izumi.distage.model.planning.{PlanMergingPolicy, PlanningHook}
 import izumi.distage.planning.AutoSetModule
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
-import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.{AbstractRole, ActivationInfo}
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.AbstractRole
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogstageModule

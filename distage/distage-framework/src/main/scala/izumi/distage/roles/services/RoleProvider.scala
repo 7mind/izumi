@@ -4,8 +4,8 @@ import distage._
 import izumi.distage.model.definition.Binding
 import izumi.distage.model.definition.Binding.ImplBinding
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
-import izumi.distage.roles.meta
-import izumi.distage.roles.meta.{RoleBinding, RolesInfo}
+import izumi.distage.roles.model.meta
+import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.distage.roles.model.{AbstractRole, RoleDescriptor}
 import izumi.fundamentals.platform.resources.IzManifest
 import izumi.logstage.api.IzLogger
