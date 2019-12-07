@@ -6,52 +6,74 @@ import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
+import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
 object AnyConstructorMacro {
   def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, false)
   def mkAnyConstructorUnsafeWeakSafeTypes[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, true)
 
-  def optional[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL[T]] = {
+  def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
     import c.universe._
+
+    c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}]((${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}).provider)""")
+  }
+
+  def anyConstructorOptionalMakeDSL[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructorOptionalMakeDSL[T]] = {
+    import c.universe._
+
+    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
+
+    val enclosingClass = c.enclosingClass
+    val positionOfMakeCall = c.enclosingMacros(1).macroApplication.pos
+
+    assert(enclosingClass.exists(_.pos == positionOfMakeCall), "enclosingClass must contain macro call position")
 
     def findExprContainingMake(tree: Tree): Option[Tree] = {
       val afterLastBlock = Option {
         tree
-          .filter(_.exists(_.pos == c.macroApplication.pos))
+          .filter(_.exists(_.pos == positionOfMakeCall))
           .reverseIterator
-          .takeWhile(!_.isInstanceOf[BlockApi])
+          .takeWhile { case _: BlockApi | _ : TemplateApi | _ : DefTreeApi => false ; case _ => true }
           .foldLeft(null: Tree)((_, t) => t) // .last for iterator
       }
       afterLastBlock
     }
 
-    val maybeNonwhiteListedMethods = findExprContainingMake(c.enclosingClass).map(_.collect {
+    val maybeTree = findExprContainingMake(enclosingClass)
+
+    val maybeNonwhiteListedMethods = maybeTree.map(_.collect {
       case Select(lhs, TermName(method))
         if !ModuleDefDSL.MakeDSLNoOpMethodsWhitelist.contains(method) &&
-          lhs.exists(_.pos == c.macroApplication.pos) =>
+          lhs.exists(_.pos == positionOfMakeCall) =>
         method
     })
 
+    logger.log(
+      s"""Got tree: $maybeTree
+         |Result of search: $maybeNonwhiteListedMethods
+         |Searched for position: $positionOfMakeCall
+         |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
+         |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
+         |""".stripMargin)
+
+
     val tpe = weakTypeOf[T]
-    val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     c.Expr[AnyConstructorOptionalMakeDSL[T]] {
       maybeNonwhiteListedMethods match {
         case None =>
-          logger.log(s"Scaladoc shenanigans: got `EmptyTree` for macroApplication. Directly generating an error:")
-
-          q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.throwError(${tpe.toString}, Nil, true)"""
+          c.abort(c.enclosingPosition,
+            s"""Couldn't find position of the `make` call when summoning AnyConstructorOptionalMakeDSL[$tpe]
+               |Got tree: $maybeTree
+               |Result of search: $maybeNonwhiteListedMethods
+               |Searched for position: $positionOfMakeCall
+               |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
+               |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
+               |""".stripMargin)
         case Some(nonwhiteListedMethods) =>
           if (nonwhiteListedMethods.isEmpty) {
-            logger.log(
-              s"""For $tpe found no `.from`-like calls in ${findExprContainingMake(c.enclosingClass)} (raw tree: ${showRaw(findExprContainingMake(c.enclosingClass))})
-                  |enclosingClass contains macro call (must be true): ${
-                val res = c.enclosingClass.exists(_.pos == c.macroApplication.pos)
-                assert(res, "enclosingClass must contain macro call position")
-                res}
-                  |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == c.macroApplication.pos)}
-                  |""".stripMargin)
+            logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
 
             q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructorImpl[T](c, false)})"""
           } else {

@@ -435,7 +435,7 @@ object ModuleDefDSL {
   /** These are the _only_ methods that can chained after `make`
     * such that make[T] will still generate the constructor for `T`
     *
-    * See [[izumi.distage.constructors.macros.AnyConstructorMacro.optional]]
+    * See [[izumi.distage.constructors.macros.AnyConstructorMacro.anyConstructorOptionalMakeDSL]]
     *
     * If ANY other method is chained in the same expression
     * it's assumed that it will replace make[T]'s constructor,

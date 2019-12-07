@@ -402,7 +402,7 @@ class TagLambdaMacro(override val c: whitebox.Context) extends TagMacro(c) {
 
     val kind = kindOf(targetTpe)
 
-    logger.log(s"Found posiition $pos, target type $targetTpe, target kind $kind")
+    logger.log(s"Found position $pos, target type $targetTpe, target kind $kind")
 
     val ctorParam = mkTypeParameter(NoSymbol, kind)
     val ArgStruct = mkHKTagArgStruct(ctorParam.asType.toType, kind)

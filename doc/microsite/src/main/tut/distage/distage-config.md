@@ -50,17 +50,15 @@ val configModule = new ConfigModuleDef {
   makeConfig[OtherConf]("conf").named("other")
 }
 
+// add config itself to the graph
+val appConfigModule = AppConfigModule(config)
+
 val appModule = new ModuleDef {
   make[ConfigPrinter]
 }
 
-// add config wiring to the graph
-val appConfigModule = AppConfigModule(config)
-
-val injector = Injector(appModule ++ appConfigModule)
-
-val objects = injector.produceUnsafe(
-  input = Seq(appModule, configModule).merge,
+val objects = Injector().produceUnsafe(
+  input = Seq(appModule, configModule, appConfigModule).merge,
   mode  = GCMode(DIKey.get[ConfigPrinter])
 )
 

@@ -1,6 +1,6 @@
 package izumi.distage.constructors
 
-import izumi.distage.constructors.macros.{AnyConstructorMacro, ConcreteConstructorMacro, FactoryConstructorMacro, TraitConstructorMacro}
+import izumi.distage.constructors.macros._
 import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.ProviderMagnet
@@ -48,7 +48,7 @@ object FactoryConstructor {
   implicit def materialize[T]: FactoryConstructor[T] = macro FactoryConstructorMacro.mkFactoryConstructor[T]
 }
 
-private[distage] sealed trait AnyConstructorOptionalMakeDSL[T] {
+private[constructors] sealed trait AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
 }
 object AnyConstructorOptionalMakeDSL {
@@ -80,5 +80,5 @@ object AnyConstructorOptionalMakeDSL {
     }
   }
 
-  implicit def materialize[T]: AnyConstructorOptionalMakeDSL[T] = macro AnyConstructorMacro.optional[T]
+  implicit def materialize[T]: AnyConstructorOptionalMakeDSL[T] = macro AnyConstructorMacro.anyConstructorOptionalMakeDSL[T]
 }
