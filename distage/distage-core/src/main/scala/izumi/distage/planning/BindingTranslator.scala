@@ -9,7 +9,6 @@ import izumi.distage.model.planning._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Wiring}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 
 trait BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps
@@ -120,7 +119,7 @@ object BindingTranslator {
       }
     }
 
-    private[this] def providerToWiring(function: Provider): Wiring.PureWiring = ReflectionLock.synchronized {
+    private[this] def providerToWiring(function: Provider): Wiring.PureWiring = {
       function match {
         case factory: Provider.FactoryProvider =>
           Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)

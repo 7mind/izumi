@@ -229,7 +229,4 @@ object LightTypeTag {
     others.foldLeft(self)(mergeIDBs[T])
   }
 
-  // FIXME: ??? remove
-  private[izumi] object ReflectionLock
-
 }

@@ -1,7 +1,6 @@
 package izumi.distage.model.reflection.universe
 
 import izumi.fundamentals.reflection.Tags.{Tag, TagK, WeakTag}
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagImpl}
 
 trait WithDISafeType {
@@ -40,11 +39,7 @@ trait WithDISafeType {
     }
 
     @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
-    def use[T](f: TypeNative => T): T = {
-      ReflectionLock.synchronized {
-        f(tpe)
-      }
-    }
+    def use[T](f: TypeNative => T): T = f(tpe)
   }
 
   object SafeType {
@@ -52,9 +47,7 @@ trait WithDISafeType {
     @deprecated("constructing SafeType from a runtime type tag", "0.9.0")
     def apply(tpe: TypeNative): SafeType = {
       new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe), shitClass)
-//      new SafeType(tpe, shitTag)
     }
-//    private[this] val shitTag = LTag[Null].tag
     private[this] val shitClass = classOf[Any]
 
     @deprecated("constructing SafeType from a LightTypeTag", "0.10.0")

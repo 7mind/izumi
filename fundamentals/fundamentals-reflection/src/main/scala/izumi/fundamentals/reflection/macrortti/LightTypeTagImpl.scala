@@ -4,7 +4,6 @@ import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
-import izumi.fundamentals.reflection.macrortti.LightTypeTag.ReflectionLock
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.{Broken, globalCache}
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.{SymLiteral, SymTermName, SymTypeName}
@@ -31,6 +30,8 @@ object LightTypeTagImpl {
       new LightTypeTagImpl[u.type](u, withCache = runtimeCacheEnabled, logger).makeFullTagImpl(typeTag)
     }
   }
+
+  private[this] object ReflectionLock
 
   sealed trait Broken[T, S] {
     def toSet: Set[T]
