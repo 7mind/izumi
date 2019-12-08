@@ -1,7 +1,7 @@
 package izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.exceptions.{FactoryProvidersCannotBeCombined, UnsafeCallArgsMismatched}
+import izumi.distage.model.exceptions.UnsafeCallArgsMismatched
 import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameWrapper
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.{Tag, TagK, WeakTag}
@@ -244,29 +244,6 @@ object Provider {
       )
   }
 
-  trait FactoryProvider extends Provider {
-    def factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod]
-  }
-
-  object FactoryProvider {
-    final case class FactoryProviderImpl(provider: Provider, factoryIndex: Map[Int, Wiring.FactoryFunction.FactoryMethod], isGenerated: Boolean) extends FactoryProvider {
-      override final def associations: Seq[Association.Parameter] = provider.associations
-      override final def ret: SafeType = provider.ret
-      override final def fun: Seq[Any] => Any = provider.fun
-
-      override final def unsafeMap(newRet: SafeType, f: Any => _): FactoryProviderImpl =
-        copy(provider = provider.unsafeMap(newRet, f))
-
-      override final def unsafeZip(newRet: SafeType, that: Provider): FactoryProviderImpl = {
-        that match {
-          case that: FactoryProviderImpl =>
-            throw new FactoryProvidersCannotBeCombined(s"Impossible operation: two factory providers cannot be zipped. this=$this that=$that", this, that)
-          case _ =>
-            copy(provider = provider.unsafeZip(newRet, that))
-        }
-      }
-    }
-  }
 }
 
 // wiring
@@ -280,11 +257,7 @@ sealed trait Wiring {
 }
 
 object Wiring {
-  sealed trait PureWiring extends Wiring {
-    override def replaceKeys(f: Association => DIKey.BasicKey): PureWiring
-  }
-
-  sealed trait SingletonWiring extends PureWiring {
+  sealed trait SingletonWiring extends Wiring {
     def instanceType: SafeType
     override def replaceKeys(f: Association => DIKey.BasicKey): SingletonWiring
   }
@@ -308,50 +281,23 @@ object Wiring {
   }
 
   sealed trait MonadicWiring extends Wiring {
-    def effectWiring: PureWiring
+    def effectWiring: SingletonWiring
     def effectHKTypeCtor: SafeType
   }
   object MonadicWiring {
-    final case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
+    final case class Effect(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: SingletonWiring) extends MonadicWiring {
       override final def associations: Seq[Association] = effectWiring.associations
       override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Effect = copy(effectWiring = effectWiring.replaceKeys(f))
     }
 
-    final case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: PureWiring) extends MonadicWiring {
+    final case class Resource(instanceType: SafeType, effectHKTypeCtor: SafeType, effectWiring: SingletonWiring) extends MonadicWiring {
       override final def associations: Seq[Association] = effectWiring.associations
       override final def requiredKeys: Set[DIKey] = effectWiring.requiredKeys
 
       override final def replaceKeys(f: Association => DIKey.BasicKey): Resource = copy(effectWiring = effectWiring.replaceKeys(f))
     }
-  }
-
-  final case class FactoryFunction(
-                                    provider: Provider,
-                                    factoryIndex: Map[Int, FactoryFunction.FactoryMethod],
-                                    factoryCtorParameters: Seq[Association.Parameter],
-                                  ) extends PureWiring {
-    private[this] final val factoryMethods = factoryIndex.values.toList
-
-    override final lazy val associations: Seq[Association] = {
-      val userSuppliedDeps = factoryMethods.flatMap(_.userSuppliedParameters).toSet
-
-      val factorySuppliedDeps = factoryMethods.flatMap(_.productWiring.associations).filterNot(userSuppliedDeps contains _.key)
-      factorySuppliedDeps ++ factoryCtorParameters
-    }
-
-    override final def replaceKeys(f: Association => DIKey.BasicKey): FactoryFunction =
-      this.copy(
-        factoryCtorParameters = this.factoryCtorParameters.map(a => a.withKey(f(a))),
-        factoryIndex = this.factoryIndex.mapValues(m => m.copy(productWiring = m.productWiring.replaceKeys(f))).toMap // 2.13 compat
-      )
-
-    override final def instanceType: SafeType = provider.ret
-  }
-
-  object FactoryFunction {
-    final case class FactoryMethod(factoryMethod: SymbolInfo, productWiring: Wiring.SingletonWiring.Function, userSuppliedParameters: Seq[DIKey])
   }
 
 }

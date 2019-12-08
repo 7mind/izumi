@@ -137,8 +137,6 @@ class ProxyStrategyDefaultImpl
         SafeType.get[FakeSet[_]]
       case op: WiringOp.CallProvider =>
         op.target.tpe
-      case op: WiringOp.CallFactoryProvider =>
-        op.target.tpe
       case op: MonadicOp.AllocateResource =>
         op.target.tpe
       case op: MonadicOp.ExecuteEffect =>

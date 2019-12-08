@@ -6,7 +6,6 @@ import izumi.distage.model.exceptions.{InvalidPlanException, MissingInstanceExce
 import izumi.distage.model.plan.ExecutableOp.ProxyOp.{InitProxy, MakeProxy}
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, ProxyOp, SemiplanOp}
 import izumi.distage.model.plan.{GCMode, OrderedPlan, SemiPlan}
-import izumi.distage.model.provisioning.strategies.FactoryExecutor
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.reflection.Tags.Tag
 
@@ -31,7 +30,7 @@ private[plan] trait OrderedPlanOps extends Any {
     */
   final def unresolvedImports: Either[Seq[ImportDependency], OrderedPlan] = {
     val nonMagicImports = getImports.filter {
-      case i if i.target == DIKey.get[FactoryExecutor] || i.target == DIKey.get[LocatorRef] =>
+      case i if i.target == DIKey.get[LocatorRef] =>
         false
       case _ =>
         true

@@ -24,7 +24,6 @@ class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
 , proxyStrategy: ProxyStrategy
-, factoryProviderStrategy: FactoryProviderStrategy
 , providerStrategy: ProviderStrategy
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
@@ -171,9 +170,6 @@ class PlanInterpreterDefaultRuntimeImpl
 
       case op: WiringOp.CallProvider =>
         providerStrategy.callProvider(context, this, op)
-
-      case op: WiringOp.CallFactoryProvider =>
-        factoryProviderStrategy.callFactoryProvider(context, this, op)
     }
   }
 

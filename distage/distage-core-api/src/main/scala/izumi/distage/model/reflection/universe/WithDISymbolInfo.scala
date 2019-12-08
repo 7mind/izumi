@@ -16,10 +16,7 @@ trait WithDISymbolInfo {
 
     def annotations: List[u.Annotation]
 
-    @deprecated("remove kludge", "0.9.0")
     def withTpe(tpe: SafeType): SymbolInfo
-    // FIXME: by-names are broken ???
-    @deprecated("remove kludge (by-names broken)", "0.9.0")
     def withIsByName(boolean: Boolean): SymbolInfo
     //def typeSignatureArgs: List[SymbolInfo] = underlying.typeSignature.typeArgs.map(_.typeSymbol).map(s => Runtime(s, definingClass))
   }
@@ -57,7 +54,7 @@ trait WithDISymbolInfo {
           finalResultType = SafeType(underlying.typeSignature),
           isByName = (underlying.isTerm && underlying.asTerm.isByNameParam) || ReflectionUtil.isByName(u)(underlying.typeSignature),
           wasGeneric = underlying.typeSignature.typeSymbol.isParameter,
-          annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying)).distinct
+          annotations = AnnotationTools.getAllAnnotations(u: u.type)(underlying).distinct
         )
       }
     }

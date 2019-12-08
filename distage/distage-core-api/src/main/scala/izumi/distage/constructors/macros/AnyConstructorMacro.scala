@@ -34,7 +34,7 @@ object AnyConstructorMacro {
         tree
           .filter(_.exists(_.pos == positionOfMakeCall))
           .reverseIterator
-          .takeWhile { case _: BlockApi | _ : TemplateApi | _ : DefTreeApi => false ; case _ => true }
+          .takeWhile { case _: BlockApi | _: TemplateApi | _: DefTreeApi => false; case _ => true }
           .foldLeft(null: Tree)((_, t) => t) // .last for iterator
       }
       afterLastBlock
@@ -56,7 +56,6 @@ object AnyConstructorMacro {
          |Positions: ${c.macroApplication.pos -> c.enclosingMacros.map(_.macroApplication.pos)}
          |enclosingUnit contains macro call (can be non-true for inline typechecks): ${c.enclosingUnit.body.exists(_.pos == positionOfMakeCall)}
          |""".stripMargin)
-
 
     val tpe = weakTypeOf[T]
 
@@ -107,4 +106,5 @@ object AnyConstructorMacro {
       )
     }
   }
+
 }

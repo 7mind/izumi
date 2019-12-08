@@ -8,7 +8,7 @@ import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.planning._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring.SingletonWiring._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring._
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Provider, Wiring}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{DIKey, Wiring}
 
 trait BindingTranslator {
   def computeProvisioning(currentPlan: PrePlan, binding: Binding): NextOps
@@ -59,7 +59,7 @@ object BindingTranslator {
 
     private[this] def wiringToInstantiationOp(target: DIKey, binding: Binding, wiring: Wiring): Seq[InstantiationOp] = {
       wiring match {
-        case w: PureWiring =>
+        case w: SingletonWiring =>
           Seq(pureWiringToWiringOp(target, binding, w))
 
         case w: MonadicWiring.Effect =>
@@ -76,12 +76,9 @@ object BindingTranslator {
       }
     }
 
-    private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: PureWiring): WiringOp = {
+    private[this] def pureWiringToWiringOp(target: DIKey, binding: Binding, wiring: SingletonWiring): WiringOp = {
       val userBinding = OperationOrigin.UserBinding(binding)
       wiring match {
-        case w: FactoryFunction =>
-          WiringOp.CallFactoryProvider(target, w, userBinding)
-
         case w: Function =>
           WiringOp.CallProvider(target, w, userBinding)
 
@@ -106,25 +103,16 @@ object BindingTranslator {
       }
     }
 
-    private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): PureWiring = {
+    private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): SingletonWiring = {
       implementation match {
         case p: ImplDef.ProviderImpl =>
-          providerToWiring(p.function)
+          Wiring.SingletonWiring.Function(p.function, p.function.associations)
 
         case i: ImplDef.InstanceImpl =>
           SingletonWiring.Instance(i.implType, i.instance)
 
         case r: ImplDef.ReferenceImpl =>
           SingletonWiring.Reference(r.implType, r.key, r.weak)
-      }
-    }
-
-    private[this] def providerToWiring(function: Provider): Wiring.PureWiring = {
-      function match {
-        case factory: Provider.FactoryProvider =>
-          Wiring.FactoryFunction(factory, factory.factoryIndex, factory.associations)
-        case _ =>
-          Wiring.SingletonWiring.Function(function, function.associations)
       }
     }
 

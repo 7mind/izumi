@@ -1,12 +1,12 @@
 package izumi.distage.constructors.macros
 
-import izumi.distage.constructors.{AnyConstructor, DebugProperties, FactoryConstructor}
+import izumi.distage.constructors.{DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameWrapper
-import izumi.distage.model.provisioning.strategies.FactoryExecutor
+import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
-import izumi.distage.model.reflection.universe.{RuntimeDIUniverse, StaticDIUniverse}
+import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
+import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.annotation.tailrec
@@ -28,78 +28,75 @@ object FactoryConstructorMacro {
 
     import macroUniverse.Wiring._
     import macroUniverse._
-    import tools.{liftableBasicDIKey, liftableSymbolInfo}
 
-    def _unsafeWrong_convertReflectiveWiringToFunctionWiring(w: Wiring.SingletonWiring.ReflectiveInstantiationWiring): Tree = {
-      w.instanceType.use {
-        tpe =>
-          q"""{
-            ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
-          }"""
-      }
-    }
+//    def _unsafeWrong_convertReflectiveWiringToFunctionWiring(w: Wiring.SingletonWiring.ReflectiveInstantiationWiring): Tree = {
+//      w.instanceType.use {
+//        tpe =>
+//          q"""{
+//            ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
+//          }"""
+//      }
+//    }
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val factory@Factory(unsafeRet, factoryMethods, traitDependencies) = reflectionProvider.symbolToWiring(targetType)
-    val (dependencyAssociations0, dependencyArgs0, dependencyMethods) = TraitConstructorMacro.mkTraitArgMethods(c)(macroUniverse)(logger, traitDependencies)
-    val ((dependencyAssociations1, dependencyArgs1), dependencyValsNames) = {
-      val (x, y) = factory.factorySuppliedProductDeps.map {
-        association => ConcreteConstructorMacro.paramToNamTreeEtc(c)(macroUniverse)(association.asParameter)
-      }.unzip
-      (x.unzip, y.map(termName => q"$termName"))
-    }
-    val (dependencyAssociations, dependencyArgs, dependencyHandles) =
-      (dependencyAssociations0 ++ dependencyAssociations1,
-        dependencyArgs0 ++ dependencyArgs1,
-        dependencyAssociations0.map(parameter => q"${TermName(parameter.symbol.name)}") ++ dependencyValsNames,
-      )
+    val factory@Factory(unsafeRet, factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
+    val traitMeta = factory.traitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
+    val paramMeta = factory.factoryProductDepsFromObjectGraph.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
+    val allMeta = traitMeta ++ paramMeta
+    val (dependencyAssociations, dependencyArgDecls, _) = allMeta.unzip3
+    val dependencyMethods = traitMeta.map(_._3._1)
+    val dependencyArgMap = allMeta.map { case (param, _, (_, argName)) => param.key -> argName }.toMap
 
-    val bynameWrapper = symbolOf[ByNameWrapper.type].asClass.module
+    logger.log(
+      s"""Got associations: $dependencyAssociations
+         |Got argmap: $dependencyArgMap
+         |""".stripMargin)
 
     val producerMethods = factoryMethods.map {
       case Factory.FactoryMethod(factoryMethod, productConstructor, _) =>
 
-        val (methodArgLists, methodArgs0) = {
+        val (methodArgListDecls, methodArgsMap) = {
           @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = tpe match {
             case m: MethodTypeApi => m
             case p: PolyTypeApi => instantiatedMethod(p.resultType)
           }
+
           val paramLists = instantiatedMethod(factoryMethod.underlying.typeSignatureIn(targetType)).paramLists.map(_.map {
             argSymbol =>
               val tpe = argSymbol.typeSignature
               val name = argSymbol.asTerm.name
-              val expr = if (ReflectionUtil.isByName(u)(tpe)) {
-                q"{ $bynameWrapper.apply($name) }"
-              } else {
-                q"{ $name }"
-              }
-              q"val $name: $tpe" -> (tpe -> expr)
+              q"val $name: $tpe" -> (tpe -> name)
           })
           paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
         }
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val args = productConstructor.associations.map {
+        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(tools, reflectionProvider, logger)(productConstructor.instanceType.use(identity))
+        val args = associations.map {
           param =>
-            Option(dependencyAssociations.indexWhere(_.key == param.key)).filter(_ != -1).map(dependencyHandles(_))
-              .orElse(methodArgs0.collectFirst {
-                case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe.use(identity)) =>
-                  tree
-              })
-              .getOrElse(c.abort(c.enclosingPosition,
-                s"Couldn't find anything for ${param.tpe.use(identity)} in ${dependencyAssociations.map(_.tpe.use(identity))} ++ ${methodArgs0.map(_._1)}"
-              ))
-        }.toList
+            dependencyArgMap.get(param.key)
+              .orElse {
+                methodArgsMap.collectFirst {
+                  case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe.use(identity)) =>
+                    tree
+                }
+              }
+              .getOrElse {
+                c.abort(c.enclosingPosition,
+                  s"Couldn't find anything for ${param.tpe.use(identity)} in ${dependencyAssociations.map(_.tpe.use(identity))} ++ ${methodArgsMap.map(_._1)}"
+                )
+              }
+        }
+        val freshName = TermName(c.freshName("wiring"))
 
         factoryMethod.finalResultType.use {
           resultTypeOfMethod =>
             q"""
-            final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgLists): $resultTypeOfMethod = {
-              val executorArgs: ${typeOf[List[Any]]} = $args
-              val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
-              wiring.fun(executorArgs).asInstanceOf[$resultTypeOfMethod]
+            final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgListDecls): $resultTypeOfMethod = {
+              val $freshName = $fnTree
+              $freshName(..$args)
             }
             """
         }
@@ -107,14 +104,9 @@ object FactoryConstructorMacro {
 
     val allMethods = producerMethods ++ dependencyMethods
 
-    val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
-    val instantiate = if (allMethods.isEmpty) {
-      q"new ..$parents {}"
-    } else {
-      q"new ..$parents { ..$allMethods }"
-    }
+    val instantiate = TraitConstructorMacro.newWithMethods(c)(targetType, allMethods)
 
-    val constructor = q"(..$dependencyArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
+    val constructor = q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
@@ -135,6 +127,28 @@ object FactoryConstructorMacro {
     logger.log(s"Final syntax tree of factory $targetType:\n$res")
 
     res
+  }
+
+  def mkAnyProductConstructorUnwrapped(c: blackbox.Context)
+                                      (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                      (tools: DIUniverseLiftables[macroUniverse.type],
+                                       reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                       logger: TrivialLogger)
+                                      (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+
+    val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(targetType)
+
+    if (reflectionProvider.isConcrete(tpe)) {
+      ConcreteConstructorMacro.mkConcreteConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
+    } else if (reflectionProvider.isWireableAbstract(tpe)) {
+      TraitConstructorMacro.mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(tools, reflectionProvider, logger)(tpe)
+    } else {
+      c.abort(
+        c.enclosingPosition,
+        s"""AnyConstructor failure: couldn't generate a constructor for $tpe!
+           |It's neither a concrete class nor a trait!""".stripMargin
+      )
+    }
   }
 
 }

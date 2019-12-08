@@ -2,6 +2,7 @@ package izumi.distage.constructors.macros
 
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
@@ -17,52 +18,15 @@ object TraitConstructorMacro {
   def mkTraitConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
-    def nonConstructibleType: PartialFunction[Type, Type] = {
-      object NonConstructible {
-        def unapply(arg: List[Type]): Option[Type] = arg.collectFirst(nonConstructibleType)
-      }
-
-      {
-        case RefinedType(NonConstructible(tpe), _) => tpe
-        case tpe if tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal => tpe
-      }
-    }
-
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    nonConstructibleType.lift(targetType).foreach {
-      err =>
-        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
-    }
-
     val macroUniverse = StaticDIUniverse(c)
-    import macroUniverse.Wiring.SingletonWiring.AbstractSymbol
     val tools = DIUniverseLiftables(macroUniverse)
 
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
-    val (associations, wireArgs, wireMethods) = mkTraitArgMethods(c)(macroUniverse)(logger, wireables)
-
-    val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
-
-    val instantiate = if (wireMethods.isEmpty) {
-      q"new ..$parents {}"
-    } else {
-      q"new ..$parents { ..$wireMethods }"
-    }
-
-    val constructor = {
-      q"""
-      ${
-        if (wireArgs.nonEmpty)
-          q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
-        else
-          q"() => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
-      }
-      """
-    }
+    val (associations, constructor) = mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(tools, reflectionProvider, logger)(targetType)
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
@@ -82,24 +46,75 @@ object TraitConstructorMacro {
     res
   }
 
-  def mkTraitArgMethods(c: blackbox.Context)
-                       (u: StaticDIUniverse.Aux[c.universe.type])
-                       (logger: TrivialLogger, wireables: List[u.Association.AbstractMethod]): (List[u.Association.Parameter], List[c.universe.Tree], List[c.universe.Tree]) = {
+  def mkTraitConstructorUnwrappedImpl(c: blackbox.Context)
+                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                     (tools: DIUniverseLiftables[macroUniverse.type],
+                                      reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                      logger: TrivialLogger)
+                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+    import c.universe._
+    import macroUniverse.Wiring.SingletonWiring.AbstractSymbol
+
+    object NonConstructible {
+      def unapply(arg: List[Type]): Option[Type] = arg.collectFirst(isNonConstructibleType)
+    }
+    def isNonConstructibleType: PartialFunction[Type, Type] = {
+      case RefinedType(NonConstructible(tpe), _) => tpe
+      case tpe if tpe.typeSymbol.isParameter || tpe.typeSymbol.isFinal => tpe
+    }
+
+    isNonConstructibleType.lift(targetType).foreach {
+      err =>
+        c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
+    }
+
+    val AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
+    val (associations, wireArgs, wire0) = wireables.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)).unzip3
+    val (wireMethods, _) = wire0.unzip
+
+    val instantiate = newWithMethods(c)(targetType, wireMethods)
+    val constructor = q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${tools.liftableSafeType(unsafeRet)})($instantiate)"
+
+    (associations, constructor)
+  }
+
+  def newWithMethods(c: blackbox.Context)(targetType: c.universe.Type, methods: List[c.universe.Tree]): c.universe.Tree = {
+    import c.universe._
+
+    val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
+    if (methods.isEmpty) {
+      q"new ..$parents {}"
+    } else {
+      q"new ..$parents { ..$methods }"
+    }
+  }
+
+  def mkArgFromAssociation(c: blackbox.Context)
+                          (u: StaticDIUniverse.Aux[c.universe.type])
+                          (logger: TrivialLogger)
+                          (association: u.Association): (u.Association.Parameter, c.universe.Tree, (c.universe.Tree, c.universe.TermName)) = {
     import c.universe._
     import u.Association._
 
-    wireables.map {
-      case m @ AbstractMethod(symbol, _) =>
-        val paramTpe = symbol.finalResultType.use(identity)
-        val methodName: TermName = TermName(symbol.name)
-        val argName: TermName = c.freshName(methodName)
+    association match {
+      case method: AbstractMethod =>
+        val paramTpe = method.symbol.finalResultType.use(identity)
+        val methodName = TermName(method.name)
+        val freshArgName = c.freshName(methodName)
         // force by-name
         val byNameParamTpe = appliedType(definitions.ByNameParamClass, paramTpe)
 
-        val parameter = m.asParameter
+        val parameter = method.asParameter
         logger.log(s"original method return: $paramTpe, after by-name: $byNameParamTpe, $parameter")
 
-        (parameter, q"val $argName: $byNameParamTpe", q"final lazy val $methodName: $paramTpe = $argName")
-    }.unzip3
+        (parameter, q"val $freshArgName: $byNameParamTpe", q"final lazy val $methodName: $paramTpe = $freshArgName" -> freshArgName)
+      case parameter: Parameter =>
+        val paramTpe = parameter.symbol.finalResultType.use(identity)
+        val methodName = TermName(parameter.name)
+        val freshArgName = c.freshName(TermName(parameter.name))
+
+        (parameter, q"val $freshArgName: $paramTpe", q"final lazy val $methodName: $paramTpe = $freshArgName" -> freshArgName)
+    }
   }
+
 }

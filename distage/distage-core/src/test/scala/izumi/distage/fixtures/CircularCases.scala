@@ -2,7 +2,6 @@ package izumi.distage.fixtures
 
 import izumi.fundamentals.platform.build.ExposedTestScope
 import distage.Id
-import izumi.fundamentals.platform.language.unused
 
 import scala.util.Random
 

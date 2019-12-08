@@ -87,7 +87,6 @@ object BootstrapLocator {
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
-      factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl,
       providerStrategy = new ProviderStrategyDefaultImpl,
       importStrategy = new ImportStrategyDefaultImpl,
       instanceStrategy = new InstanceStrategyDefaultImpl,
@@ -118,7 +117,6 @@ object BootstrapLocator {
     make[Planner].from[PlannerDefaultImpl]
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
-    make[FactoryProviderStrategy].from[FactoryProviderStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]

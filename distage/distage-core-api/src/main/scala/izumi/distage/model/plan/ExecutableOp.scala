@@ -25,12 +25,11 @@ object ExecutableOp {
 
   sealed trait WiringOp extends InstantiationOp {
     def target: DIKey
-    def wiring: PureWiring
+    def wiring: SingletonWiring
     def origin: OperationOrigin
   }
   object WiringOp {
     final case class CallProvider(target: DIKey, wiring: SingletonWiring.Function, origin: OperationOrigin) extends WiringOp
-    final case class CallFactoryProvider(target: DIKey, wiring: FactoryFunction, origin: OperationOrigin) extends WiringOp
     final case class UseInstance(target: DIKey, wiring: SingletonWiring.Instance, origin: OperationOrigin) extends WiringOp
     final case class ReferenceKey(target: DIKey, wiring: SingletonWiring.Reference, origin: OperationOrigin) extends WiringOp
   }
@@ -61,12 +60,7 @@ object ExecutableOp {
   private[this] def opInstanceType(op: ExecutableOp): SafeType = {
     op match {
       case w: WiringOp =>
-        w.wiring match {
-          case u: Wiring.SingletonWiring =>
-            u.instanceType
-          case _: Wiring.FactoryFunction =>
-            w.target.tpe
-        }
+        w.wiring.instanceType
       case m: MonadicOp =>
         m.instanceTpe
       case p: MakeProxy =>
