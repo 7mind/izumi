@@ -3035,7 +3035,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     version in Paradox := version.value,
     ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox),
     addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`izumi-jvm`, transitive=true),
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
     paradoxMaterialTheme in Paradox ~= {
                 _.withCopyright("7mind.io")
                   .withRepository(uri("https://github.com/7mind/izumi"))

@@ -1,14 +1,14 @@
-distage-config
+distage-extension-config
 ================
 
-`distage-config` library allows summoning case classes and sealed traits from `typesafe-config` configuration
+`distage-extension-config` library allows summoning case classes and sealed traits from `typesafe-config` configuration
 
-To use it, add `distage-config` library:
+To use it, add `distage-extension-config` library:
 
 @@@vars
 
 ```scala
-libraryDependencies += "io.7mind.izumi" %% "distage-config" % "$izumi.version$"
+libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
 ```
 
 @@@

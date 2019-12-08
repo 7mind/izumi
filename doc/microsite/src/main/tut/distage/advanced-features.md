@@ -76,7 +76,7 @@ locator.get[C] eq locator.get[C].c
 
 #### Automatic Resolution with generated proxies
 
-The above strategy depends on `distage-proxy-cglib` module which is a default dependency of `distage-core`.
+The above strategy depends on `distage-core-proxy-cglib` module which is a default dependency of `distage-core`.
 
 If you want to disable it, use `NoProxies` bootstrap configuration:
 
