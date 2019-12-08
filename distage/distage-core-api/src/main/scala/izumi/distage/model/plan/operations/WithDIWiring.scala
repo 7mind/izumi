@@ -87,11 +87,12 @@ trait WithDIWiring {
         * Complete check can only be performed at runtime.
         */
       override final def associations: Seq[Association] = {
-        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
-
-        val factorySuppliedProductDeps = factoryMethods.flatMap(_.wireWith.associations).filterNot(v => factoryMethodsArgs.contains(v.key))
-
         factorySuppliedProductDeps ++ fieldDependencies
+      }
+
+      final def factorySuppliedProductDeps: Seq[Association] = {
+        val factoryMethodsArgs = factoryMethods.flatMap(_.methodArguments).toSet
+        factoryMethods.flatMap(_.wireWith.associations).filterNot(factoryMethodsArgs contains _.key)
       }
 
       override final def instanceType: SafeType = factoryType

@@ -34,24 +34,33 @@ object FactoryConstructorMacro {
       w.instanceType.use {
         tpe =>
           q"""{
-            val fun = ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
-            ${reify(RuntimeDIUniverse.Wiring.SingletonWiring.Function)}.apply(fun, fun.associations)
+            ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
           }"""
       }
     }
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val Factory(unsafeRet, factoryMethods, traitDependencies) = reflectionProvider.symbolToWiring(targetType)
-    val (dependencyAssociations, dependencyArgs, dependencyMethods) = TraitConstructorMacro.mkTraitArgMethods(c)(macroUniverse)(logger, traitDependencies)
+    val factory@Factory(unsafeRet, factoryMethods, traitDependencies) = reflectionProvider.symbolToWiring(targetType)
+    val (dependencyAssociations0, dependencyArgs0, dependencyMethods) = TraitConstructorMacro.mkTraitArgMethods(c)(macroUniverse)(logger, traitDependencies)
+    val ((dependencyAssociations1, dependencyArgs1), dependencyValsNames) = {
+      val (x, y) = factory.factorySuppliedProductDeps.map {
+        association => ConcreteConstructorMacro.paramToNamTreeEtc(c)(macroUniverse)(association.asParameter)
+      }.unzip
+      (x.unzip, y.map(termName => q"$termName"))
+    }
+    val (dependencyAssociations, dependencyArgs, dependencyHandles) =
+      (dependencyAssociations0 ++ dependencyAssociations1,
+        dependencyArgs0 ++ dependencyArgs1,
+        dependencyAssociations0.map(parameter => q"${TermName(parameter.symbol.name)}") ++ dependencyValsNames,
+      )
 
-    val (executorName, executorType) = TermName(c.freshName("executor")) -> typeOf[FactoryExecutor]
     val bynameWrapper = symbolOf[ByNameWrapper.type].asClass.module
 
-    val (producerMethods, withContexts) = factoryMethods.zipWithIndex.map {
-      case (method@Factory.FactoryMethod(factoryMethod, productConstructor, _), methodIndex) =>
+    val producerMethods = factoryMethods.map {
+      case Factory.FactoryMethod(factoryMethod, productConstructor, _) =>
 
-        val (methodArgLists, methodArgs) = {
+        val (methodArgLists, methodArgs0) = {
           @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = tpe match {
             case m: MethodTypeApi => m
             case p: PolyTypeApi => instantiatedMethod(p.resultType)
@@ -65,39 +74,36 @@ object FactoryConstructorMacro {
               } else {
                 q"{ $name }"
               }
-              q"val $name: $tpe" -> expr
+              q"val $name: $tpe" -> (tpe -> expr)
           })
           paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
         }
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val methodDef = factoryMethod.finalResultType.use {
+        val args = productConstructor.associations.map {
+          param =>
+            Option(dependencyAssociations.indexWhere(_.key == param.key)).filter(_ != -1).map(dependencyHandles(_))
+              .orElse(methodArgs0.collectFirst {
+                case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe.use(identity)) =>
+                  tree
+              })
+              .getOrElse(c.abort(c.enclosingPosition,
+                s"Couldn't find anything for ${param.tpe.use(identity)} in ${dependencyAssociations.map(_.tpe.use(identity))} ++ ${methodArgs0.map(_._1)}"
+              ))
+        }.toList
+
+        factoryMethod.finalResultType.use {
           resultTypeOfMethod =>
             q"""
             final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgLists): $resultTypeOfMethod = {
-              val executorArgs: ${typeOf[List[Any]]} = $methodArgs
-
-              $executorName.execute($methodIndex, executorArgs).asInstanceOf[$resultTypeOfMethod]
+              val executorArgs: ${typeOf[List[Any]]} = $args
+              val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
+              wiring.fun(executorArgs).asInstanceOf[$resultTypeOfMethod]
             }
             """
         }
-
-        val providedKeys = method.associationsFromContext.map(_.key)
-
-        val methodInfo =
-          q"""{
-          val wiring = ${_unsafeWrong_convertReflectiveWiringToFunctionWiring(productConstructor)}
-
-          new ${weakTypeOf[RuntimeDIUniverse.Wiring.FactoryFunction.FactoryMethod]}(
-            ${liftableSymbolInfo(factoryMethod)},
-            wiring,
-            wiring.associations.map(_.key) diff ${Liftable.liftList(liftableBasicDIKey)(providedKeys.toList)}
-          )
-        }"""
-
-        methodDef -> methodInfo
-    }.unzip
+    }
 
     val allMethods = producerMethods ++ dependencyMethods
 
@@ -108,21 +114,12 @@ object FactoryConstructorMacro {
       q"new ..$parents { ..$allMethods }"
     }
 
-    val executorArg = q"val $executorName: $executorType"
-    val allArgs = executorArg +: dependencyArgs
-    val executorAssociation = {
-      val unsafeSafeType = SafeType(executorType)
-      val executorKey = DIKey.TypeKey(unsafeSafeType)
-      Association.Parameter(SymbolInfo.Static("executor", unsafeSafeType, Nil, false, false), executorKey)
-    }
-    val allAssociations = executorAssociation +: dependencyAssociations
-
-    val constructor = q"(..$allArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
+    val constructor = q"(..$dependencyArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
-        parameters = allAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
+        parameters = dependencyAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
         fun = constructor,
         generateUnsafeWeakSafeTypes = false,
         isGenerated = true
@@ -131,14 +128,7 @@ object FactoryConstructorMacro {
     val res = c.Expr[FactoryConstructor[T]] {
       q"""
           {
-          val ctxMap = $withContexts.zipWithIndex.map(_.swap).toMap
-
-          val magnetized = $provided
-          val res = new ${weakTypeOf[ProviderMagnet[T]]}(
-            new ${weakTypeOf[RuntimeDIUniverse.Provider.FactoryProvider.FactoryProviderImpl]}(magnetized.get, ctxMap, true)
-          )
-
-          new ${weakTypeOf[FactoryConstructor[T]]}(res)
+          new ${weakTypeOf[FactoryConstructor[T]]}($provided)
           }
        """
     }

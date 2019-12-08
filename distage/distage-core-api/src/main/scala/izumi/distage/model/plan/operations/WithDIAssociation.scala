@@ -17,6 +17,7 @@ trait WithDIAssociation {
     def name: String
     def isByName: Boolean
 
+    def asParameter: Association.Parameter
     def withKey(key: DIKey.BasicKey): Association
   }
 
@@ -26,6 +27,7 @@ trait WithDIAssociation {
       override final def tpe: SafeType = symbol.finalResultType
       override final def isByName: Boolean = symbol.isByName
       override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
+      override final def asParameter: Association.Parameter = this
 
       final def wasGeneric: Boolean = symbol.wasGeneric
     }
@@ -36,8 +38,7 @@ trait WithDIAssociation {
       override final def tpe: SafeType = symbol.finalResultType
       override final def isByName: Boolean = true
       override final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
-
-      final def asParameter: Parameter = Parameter(symbol.withIsByName(true), key)
+      override final def asParameter: Parameter = Parameter(symbol.withIsByName(true), key)
     }
   }
 

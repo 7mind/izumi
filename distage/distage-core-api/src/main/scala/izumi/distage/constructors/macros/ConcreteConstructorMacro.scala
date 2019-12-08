@@ -44,12 +44,7 @@ object ConcreteConstructorMacro {
     }
 
     val paramLists = reflectionProvider.constructorParameterLists(targetType)
-    val fnArgsNamesLists = paramLists.map(_.map {
-      param =>
-        val name = c.freshName(TermName(param.name))
-        val paramTpe = param.symbol.finalResultType.use(identity)
-        (param -> q"val $name: $paramTpe", name)
-    })
+    val fnArgsNamesLists = paramLists.map(_.map(paramToNamTreeEtc(c)(macroUniverse)(_)))
 
     val (associations, args) = fnArgsNamesLists.flatten.map(_._1).unzip
     val argNamesLists = fnArgsNamesLists.map(_.map(_._2))
@@ -71,6 +66,13 @@ object ConcreteConstructorMacro {
     logger.log(s"Final syntax tree of concrete constructor for $targetType:\n$res")
 
     res
+  }
+
+  def paramToNamTreeEtc(c: blackbox.Context)(u: StaticDIUniverse.Aux[c.universe.type])(param: u.Association.Parameter): ((u.Association.Parameter, c.universe.Tree), c.universe.TermName) = {
+    import c.universe._
+    val name = c.freshName(TermName(param.name))
+    val paramTpe = param.symbol.finalResultType.use(identity)
+    (param -> q"val $name: $paramTpe", name)
   }
 }
 

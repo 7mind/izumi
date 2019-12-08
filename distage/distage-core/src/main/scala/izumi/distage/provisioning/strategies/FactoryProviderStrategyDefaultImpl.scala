@@ -37,11 +37,11 @@ class FactoryProviderStrategyDefaultImpl extends FactoryProviderStrategy {
       override def execute(methodId: Int, args: Seq[Any]): Any = {
         val FactoryMethod(_, productWiring, methodArguments) = factoryIndex(methodId)
 
-        val productDeps = productWiring.requiredKeys
-        val narrowedContext = context.narrow(productDeps)
+        val productDeps: Set[DIKey] = productWiring.requiredKeys
+        val narrowedContext: ProvisioningKeyProvider = context.narrow(productDeps)
 
-        val argsWithKeys = methodArguments.zip(args).toMap
-        val extendedContext = narrowedContext.extend(argsWithKeys)
+        val argsWithKeys: Map[DIKey, Any] = methodArguments.zip(args).toMap
+        val extendedContext: ProvisioningKeyProvider = narrowedContext.extend(argsWithKeys)
 
         val results = executor.execute(extendedContext, mkExecutableOp(op.target, productWiring, op.origin)).toList
         results match {
