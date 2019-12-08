@@ -40,9 +40,9 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
     val overridingFactory = context.get[OverridingFactory]
     assert(overridingFactory.x(ConcreteDep()).b.isInstanceOf[ConcreteDep])
 
-//    val assistedFactory = context.get[AssistedFactory]
-//    assert(assistedFactory.x(1).a == 1)
-//    assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
+    val assistedFactory = context.get[AssistedFactory]
+    assert(assistedFactory.x(1).a == 1)
+    assert(assistedFactory.x(1).b.isInstanceOf[Dependency])
   }
 
   "handle generic arguments in macro factory methods" in {

@@ -10,9 +10,6 @@ import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 object AnyConstructorMacro {
-  def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, false)
-  def mkAnyConstructorUnsafeWeakSafeTypes[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = mkAnyConstructorImpl[T](c, true)
-
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
     import c.universe._
 
@@ -74,7 +71,7 @@ object AnyConstructorMacro {
           if (nonwhiteListedMethods.isEmpty) {
             logger.log(s"""For $tpe found no `.from`-like calls in $maybeTree""".stripMargin)
 
-            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructorImpl[T](c, false)})"""
+            q"""_root_.izumi.distage.constructors.AnyConstructorOptionalMakeDSL.apply[$tpe](${mkAnyConstructor[T](c)})"""
           } else {
             logger.log(s"For $tpe found `.from`-like calls, generating ERROR constructor: $nonwhiteListedMethods")
 
@@ -84,7 +81,7 @@ object AnyConstructorMacro {
     }
   }
 
-  def mkAnyConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[AnyConstructor[T]] = {
+  def mkAnyConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[AnyConstructor[T]] = {
     import c.universe._
 
     val macroUniverse = StaticDIUniverse(c)
@@ -93,11 +90,11 @@ object AnyConstructorMacro {
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
     if (reflectionProvider.isConcrete(tpe)) {
-      ConcreteConstructorMacro.mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
+      ConcreteConstructorMacro.mkConcreteConstructor[T](c)
     } else if (reflectionProvider.isFactory(tpe)) {
       FactoryConstructorMacro.mkFactoryConstructor[T](c)
     } else if (reflectionProvider.isWireableAbstract(tpe)) {
-      TraitConstructorMacro.mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes)
+      TraitConstructorMacro.mkTraitConstructor[T](c)
     } else {
       c.abort(
         c.enclosingPosition,

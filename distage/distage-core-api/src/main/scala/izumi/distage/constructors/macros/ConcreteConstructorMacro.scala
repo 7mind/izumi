@@ -13,9 +13,7 @@ import scala.reflect.macros.blackbox
 
 object ConcreteConstructorMacro {
 
-  def mkConcreteConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ConcreteConstructor[T]] = mkConcreteConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
-
-  def mkConcreteConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[ConcreteConstructor[T]] = {
+  def mkConcreteConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ConcreteConstructor[T]] = {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
@@ -43,7 +41,6 @@ object ConcreteConstructorMacro {
           providerMagnetMacro.generateProvider[T](
             parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
             fun = constructor,
-            generateUnsafeWeakSafeTypes = generateUnsafeWeakSafeTypes,
             isGenerated = true
           )
         }

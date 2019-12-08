@@ -180,6 +180,4 @@ object ProviderMagnet {
     )
   }
 
-  def generateUnsafeWeakSafeTypes[R](fun: Any): ProviderMagnet[R] = macro ProviderMagnetMacro.generateUnsafeWeakSafeTypes[R]
-
 }

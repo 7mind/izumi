@@ -19,8 +19,6 @@ class FactoriesTest extends WordSpec with MkInjector {
       make[Dependency]
       make[OverridingFactory]
       make[AssistedFactory]
-
-
       make[AbstractFactory]
     })
 

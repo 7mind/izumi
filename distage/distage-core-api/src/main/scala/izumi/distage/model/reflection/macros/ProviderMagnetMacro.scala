@@ -30,16 +30,12 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   case class ExtractedInfo(associations: List[Association.Parameter], isValReference: Boolean)
 
-  def generateUnsafeWeakSafeTypes[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = implImpl[R](generateUnsafeWeakSafeTypes = true, fun.tree)
-  def impl[R: c.WeakTypeTag](fun: c.Expr[_]): c.Expr[ProviderMagnet[R]] = implImpl[R](generateUnsafeWeakSafeTypes = false, fun.tree)
-
-  def implImpl[R: c.WeakTypeTag](generateUnsafeWeakSafeTypes: Boolean, fun: Tree): c.Expr[ProviderMagnet[R]] = {
+  def impl[R: c.WeakTypeTag](fun: Tree): c.Expr[ProviderMagnet[R]] = {
     val associations = analyze(fun, weakTypeOf[R])
-    val result = generateProvider[R](associations, fun, generateUnsafeWeakSafeTypes, false)
+    val result = generateProvider[R](associations, fun, false)
 
     logger.log(
       s"""DIKeyWrappedFunction info:
-         | generateUnsafeWeakSafeTypes: $generateUnsafeWeakSafeTypes\n
          | Symbol: ${fun.symbol}\n
          | IsMethodSymbol: ${Option(fun.symbol).exists(_.isMethod)}\n
          | Extracted Annotations: ${associations.flatMap(_.symbol.annotations)}\n
@@ -73,17 +69,9 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
 
   def generateProvider[R: c.WeakTypeTag](parameters: List[Association.Parameter],
                                          fun: Tree,
-                                         generateUnsafeWeakSafeTypes: Boolean,
                                          isGenerated: Boolean,
                                         ): c.Expr[ProviderMagnet[R]] = {
-    val tools = {
-      if (generateUnsafeWeakSafeTypes) {
-        DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
-      } else {
-        DIUniverseLiftables(macroUniverse)
-      }
-    }
-
+    val tools = DIUniverseLiftables(macroUniverse)
     import tools.{liftableParameter, liftableSafeType}
 
     val (substitutedByNames, casts) = parameters.zipWithIndex.map {

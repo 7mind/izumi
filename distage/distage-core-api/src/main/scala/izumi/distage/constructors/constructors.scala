@@ -5,6 +5,7 @@ import izumi.distage.model.definition.dsl.ModuleDefDSL
 import izumi.distage.model.exceptions.{TraitInitializationFailedException, UnsupportedDefinitionException}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.SafeType
+import izumi.fundamentals.reflection.Tags.WeakTag
 
 import scala.language.experimental.{macros => enableMacros}
 
@@ -17,8 +18,6 @@ final case class FactoryConstructor[T](provider: ProviderMagnet[T]) extends AnyC
 
 object AnyConstructor {
   def apply[T: AnyConstructor]: AnyConstructor[T] = implicitly
-
-  def generateUnsafeWeakSafeTypes[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructorUnsafeWeakSafeTypes[T]
 
   implicit def materialize[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 }
@@ -34,9 +33,10 @@ object TraitConstructor {
 
   implicit def materialize[T]: TraitConstructor[T] = macro TraitConstructorMacro.mkTraitConstructor[T]
 
-  def wrapInitialization[A](tpe: SafeType)(init: => A): A = {
+  def wrapInitialization[A](init: => A)(implicit weakTag: WeakTag[A]): A = {
     try init catch {
       case e: Throwable =>
+        val tpe = SafeType.unsafeGetWeak[A]
         throw new TraitInitializationFailedException(s"Failed to initialize trait $tpe. It may be an issue with the trait or a framework bug", tpe, e)
     }
   }
