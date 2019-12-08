@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   // Core DIStage library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
   // Testkit for ScalaTest
-  "io.7mind.izumi" %% "distage-testkit" % "$izumi.version$" % Test,
+  "io.7mind.izumi" %% "distage-testkit-scalatest" % "$izumi.version$" % Test,
   // Typesafe Config support
   "io.7mind.izumi" %% "distage-config" % "$izumi.version$",
   // Classpath discovery support

@@ -71,9 +71,9 @@ Further reading
 - @ref[Advanced features](advanced-features.md)
 - @ref[Debugging](debugging.md)
 - @ref[distage-config](distage-config.md)
-- @ref[distage-docker](distage-docker.md)
 - @ref[distage-framework](distage-framework.md)
-- @ref[distage-testkit](distage-testkit.md)
+- @ref[distage-framework-docker](distage-framework-docker.md)
+- @ref[distage-testkit-scalatest](distage-testkit-scalatest.md)
 - @ref[Syntax summary](reference.md)
 
 @@@ index
@@ -82,9 +82,9 @@ Further reading
 * [Advanced features](advanced-features.md)
 * [Debugging](debugging.md)
 * [distage-config](distage-config.md)
-* [distage-docker](distage-docker.md)
 * [distage-framework](distage-framework.md)
-* [distage-testkit](distage-testkit.md)
+* [distage-framework-docker](distage-framework-docker.md)
+* [distage-testkit-scalatest](distage-testkit-scalatest.md)
 * [Syntax summary](reference.md)
 
 @@@

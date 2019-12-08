@@ -1,11 +1,11 @@
-distage-testkit
+distage-testkit-scalatest
 =======
 
 @@toc { depth=2 }
 
 ### Testkit
 
-[distage Livecode project](https://github.com/7mind/distage-livecode) project shows how to use `distage-testkit`:
+[distage Livecode project](https://github.com/7mind/distage-livecode) project shows how to use `distage-testkit-scalatest`:
 
 ```scala
 package livecode
@@ -93,12 +93,12 @@ class LadderTest extends LivecodeTest with DummyTest {
 ### Integration Checks
 
 Implementation classes that inherit from `izumi.distage.roles.model.IntegrationCheck` can specify a `resourceCheck()` method
-that will be called before test instantiation to check if **external test dependencies** (such as docker containers in @ref[distage-docker](distage-docker.md#docker-test-resources))
+that will be called before test instantiation to check if **external test dependencies** (such as docker containers in @ref[distage-framework-docker](distage-framework-docker.md#docker-test-resources))
 are available for the test or role. If not, the test will be canceled/ignored.
 
 This feature allows you to e.g. selectively run only the fast in-memory tests that have no external dependencies if you have 
 shut down your test environment.
 
-Integration checks are executed only in `distage-testkit` tests and `distage-framework`'s @ref[Roles](distage-framework.md#roles).
+Integration checks are executed only in `distage-testkit-scalatest` tests and `distage-framework`'s @ref[Roles](distage-framework.md#roles).
 
 Use @scaladoc[StartupPlanExecutor](izumi.distage.roles.services.StartupPlanExecutor) to execute the checks manually.

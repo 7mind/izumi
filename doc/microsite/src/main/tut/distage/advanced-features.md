@@ -10,7 +10,7 @@ are neither direct nor transitive dependencies of the supplied roots – these b
 
 GC serves two important purposes:
 
-* It enables faster @ref[tests](distage-testkit.md#distage-testkit) by omitting unrequired instantiations and initialization of potentially heavy resources,
+* It enables faster @ref[tests](distage-testkit-scalatest.md#distage-testkit-scalatest) by omitting unrequired instantiations and initialization of potentially heavy resources,
 * It enables multiple independent applications, aka "@ref[Roles](distage-framework.md#roles)" to be hosted within a single `.jar` file.
 
 To use garbage collector, pass GC roots as an argument to `Injector.produce*` methods:

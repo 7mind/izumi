@@ -164,7 +164,7 @@ In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppL
 ./launcher -u repo:dummy app1
 ```
 
-In `distage-testkit`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
+In `distage-testkit-scalatest`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
 
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
