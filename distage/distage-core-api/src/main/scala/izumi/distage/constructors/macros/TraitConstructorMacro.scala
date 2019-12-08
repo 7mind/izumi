@@ -3,7 +3,7 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{DebugProperties, TraitConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -12,28 +12,23 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import scala.reflect.macros.blackbox
 
 object TraitConstructorMacro {
-  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] =
-    mkTraitConstructorImpl[T](c, generateUnsafeWeakSafeTypes = false)
-
-  def mkTraitConstructorImpl[T: c.WeakTypeTag](c: blackbox.Context, generateUnsafeWeakSafeTypes: Boolean): c.Expr[TraitConstructor[T]] = {
+  def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
     val macroUniverse = StaticDIUniverse(c)
-    val tools = DIUniverseLiftables(macroUniverse)
 
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val (associations, constructor) = mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(tools, reflectionProvider, logger)(targetType)
+    val (associations, constructor) = mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
         fun = constructor,
-        generateUnsafeWeakSafeTypes = generateUnsafeWeakSafeTypes,
         isGenerated = true
       )
     }
@@ -48,8 +43,7 @@ object TraitConstructorMacro {
 
   def mkTraitConstructorUnwrappedImpl(c: blackbox.Context)
                                      (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                     (tools: DIUniverseLiftables[macroUniverse.type],
-                                      reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
                                       logger: TrivialLogger)
                                      (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
@@ -68,12 +62,12 @@ object TraitConstructorMacro {
         c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
     }
 
-    val AbstractSymbol(unsafeRet, wireables, _) = reflectionProvider.symbolToWiring(targetType)
+    val AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
     val (associations, wireArgs, wire0) = wireables.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)).unzip3
     val (wireMethods, _) = wire0.unzip
 
     val instantiate = newWithMethods(c)(targetType, wireMethods)
-    val constructor = q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType](${tools.liftableSafeType(unsafeRet)})($instantiate)"
+    val constructor = q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
 
     (associations, constructor)
   }

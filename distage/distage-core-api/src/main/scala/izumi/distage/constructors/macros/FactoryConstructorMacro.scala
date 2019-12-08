@@ -3,7 +3,7 @@ package izumi.distage.constructors.macros
 import izumi.distage.constructors.{DebugProperties, FactoryConstructor}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
-import izumi.distage.model.reflection.macros.{DIUniverseLiftables, ProviderMagnetMacro0}
+import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
 import izumi.distage.model.reflection.universe.StaticDIUniverse
 import izumi.distage.reflection.ReflectionProviderDefaultImpl
 import izumi.fundamentals.platform.console.TrivialLogger
@@ -22,25 +22,12 @@ object FactoryConstructorMacro {
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    // A hack to support generic methods inside factories. No viable type info is available for generic parameters of these methods
-    // so we have to resort to WeakTypeTags and thread this ugly fucking `if` everywhere ;_;
-    val tools = DIUniverseLiftables.generateUnsafeWeakSafeTypes(macroUniverse)
-
     import macroUniverse.Wiring._
     import macroUniverse._
 
-//    def _unsafeWrong_convertReflectiveWiringToFunctionWiring(w: Wiring.SingletonWiring.ReflectiveInstantiationWiring): Tree = {
-//      w.instanceType.use {
-//        tpe =>
-//          q"""{
-//            ${symbolOf[AnyConstructor.type].asClass.module}.generateUnsafeWeakSafeTypes[$tpe].provider.get
-//          }"""
-//      }
-//    }
-
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val factory@Factory(unsafeRet, factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
+    val factory@Factory(_, factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
     val traitMeta = factory.traitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val paramMeta = factory.factoryProductDepsFromObjectGraph.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val allMeta = traitMeta ++ paramMeta
@@ -73,7 +60,7 @@ object FactoryConstructorMacro {
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
 
-        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(tools, reflectionProvider, logger)(productConstructor.instanceType.use(identity))
+        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType.use(identity))
         val args = associations.map {
           param =>
             dependencyArgMap.get(param.key)
@@ -106,14 +93,13 @@ object FactoryConstructorMacro {
 
     val instantiate = TraitConstructorMacro.newWithMethods(c)(targetType, allMethods)
 
-    val constructor = q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization(${tools.liftableSafeType(unsafeRet)})($instantiate): $targetType"
+    val constructor = q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
 
     val provided: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         parameters = dependencyAssociations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
         fun = constructor,
-        generateUnsafeWeakSafeTypes = false,
         isGenerated = true
       )
     }
@@ -131,8 +117,7 @@ object FactoryConstructorMacro {
 
   def mkAnyProductConstructorUnwrapped(c: blackbox.Context)
                                       (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                      (tools: DIUniverseLiftables[macroUniverse.type],
-                                       reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                      (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
                                        logger: TrivialLogger)
                                       (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
 
@@ -141,7 +126,7 @@ object FactoryConstructorMacro {
     if (reflectionProvider.isConcrete(tpe)) {
       ConcreteConstructorMacro.mkConcreteConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else if (reflectionProvider.isWireableAbstract(tpe)) {
-      TraitConstructorMacro.mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(tools, reflectionProvider, logger)(tpe)
+      TraitConstructorMacro.mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else {
       c.abort(
         c.enclosingPosition,
