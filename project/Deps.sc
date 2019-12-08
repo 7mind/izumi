@@ -273,7 +273,7 @@ object Izumi {
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkit = ArtifactId("distage-testkit")
-      final lazy val legacyTestkit = ArtifactId("distage-legacy-testkit")
+      final lazy val legacyTestkit = ArtifactId("distage-testkit-legacy")
     }
 
     object logstage {
