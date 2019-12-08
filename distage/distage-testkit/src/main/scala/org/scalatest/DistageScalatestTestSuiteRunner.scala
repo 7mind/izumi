@@ -21,9 +21,10 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   protected def makeSpecEnvironment(): SpecEnvironment = {
     val c = makeSpecConfig()
+    val clazz = this.getClass
 
     new SpecEnvironment.Impl[F](
-      suiteClass = this.getClass,
+      suiteClass = clazz,
       contextOptions = c.contextOptions,
       bootstrapOverrides = c.bootstrapOverrides,
       moduleOverrides = c.moduleOverrides,

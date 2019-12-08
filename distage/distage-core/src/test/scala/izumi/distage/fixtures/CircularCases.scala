@@ -239,8 +239,8 @@ object CircularCases {
   object CircularCase10 {
     class Component1
     class Component2
-    class ComponentWithByNameFwdRef(@unused fwd: => ComponentHolder) {
-      def get = fwd
+    class ComponentWithByNameFwdRef(fwd: => ComponentHolder) {
+      def get: ComponentHolder = fwd
     }
 
     class ComponentHolder(val component1: Component1, val component2: Component2, val componentFwdRef: ComponentWithByNameFwdRef)
