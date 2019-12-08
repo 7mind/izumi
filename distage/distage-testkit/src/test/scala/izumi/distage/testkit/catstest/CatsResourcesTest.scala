@@ -8,7 +8,8 @@ import izumi.distage.testkit.catstest.CatsResourcesTest.{DBConnection, MessageQu
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
 import izumi.distage.model.plan.GCMode
-import org.scalatest.{GivenWhenThen, WordSpec}
+import org.scalatest.GivenWhenThen
+import org.scalatest.wordspec.AnyWordSpec
 
 object CatsResourcesTest {
   class Res { var initialized = false }
@@ -25,7 +26,7 @@ object CatsResourcesTest {
   }
 }
 
-class CatsResourcesTest extends WordSpec with GivenWhenThen {
+class CatsResourcesTest extends AnyWordSpec with GivenWhenThen {
 
   "`No More Orphans` type provider is accessible" in {
     def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()

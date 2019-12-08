@@ -1,10 +1,10 @@
 package izumi.idealingua.il.parser.structure
 
 import izumi.idealingua.il.parser.ParserTestTools
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 class CommentsAndDocstringsTest
-  extends WordSpec with ParserTestTools {
+  extends AnyWordSpec with ParserTestTools {
 
   "IL parser" should {
 

@@ -5,9 +5,9 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.StandardAxis.Repo
 import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class AxisTest extends WordSpec with MkInjector {
+class AxisTest extends AnyWordSpec with MkInjector {
 
   "choose between dependency implementations" in {
     import izumi.distage.fixtures.BasicCases.BasicCase1._

@@ -1,9 +1,9 @@
 package izumi.fundamentals.collections
 
 import izumi.fundamentals.graphs.{AbstractGCTracer, Loops}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class AbstractDIGcTest extends WordSpec {
+class AbstractDIGcTest extends AnyWordSpec {
   import AbstractDIGcTest._
 
   private val graph = Vector(

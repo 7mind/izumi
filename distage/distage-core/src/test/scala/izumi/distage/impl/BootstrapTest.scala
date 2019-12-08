@@ -5,9 +5,9 @@ import izumi.distage.model.exceptions.MissingInstanceException
 import izumi.distage.model.planning.PlanAnalyzer
 import izumi.distage.planning.PlanAnalyzerDefaultImpl
 import distage.DIKey
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class BootstrapTest extends WordSpec {
+class BootstrapTest extends AnyWordSpec {
 
   "Bootstrap Context" should {
     "contain expected definitions" in {

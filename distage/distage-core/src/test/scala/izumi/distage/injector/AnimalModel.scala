@@ -3,11 +3,11 @@ package izumi.distage.injector
 import izumi.distage.model.PlannerInput
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import distage._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
 
 
-class AnimalModel extends WordSpec with MkInjector {
+class AnimalModel extends AnyWordSpec with MkInjector {
   "animal model" must {
     "produce valid plans" in {
       import AnimalModel._

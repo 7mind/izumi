@@ -1,9 +1,9 @@
 package izumi.logstage.sink
 
 import izumi.logstage.api.IzLogger
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LoggingConsoleSinkTest extends WordSpec {
+class LoggingConsoleSinkTest extends AnyWordSpec {
   import LoggingConsoleSinkTest._
 
   "Log macro" should {

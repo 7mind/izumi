@@ -5,9 +5,9 @@ import izumi.distage.fixtures.CircularCases.{CircularCase1, CircularCase2}
 import izumi.distage.injector.MkInjector
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class StaticCircularDependenciesTest extends WordSpec with MkInjector {
+class StaticCircularDependenciesTest extends AnyWordSpec with MkInjector {
 
   "support circular dependencies (with cglib on JVM)" in {
     import CircularCase1._

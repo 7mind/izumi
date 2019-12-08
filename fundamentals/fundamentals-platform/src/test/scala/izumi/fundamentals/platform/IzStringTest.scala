@@ -2,9 +2,9 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.strings.IzString._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzStringTest extends WordSpec {
+class IzStringTest extends AnyWordSpec {
 
   "Extended string" should {
     "support boolean parsing" in {

@@ -18,9 +18,9 @@ import izumi.distage.roles.test.fixtures._
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class RoleAppTest extends WordSpec
+class RoleAppTest extends AnyWordSpec
   with WithProperties {
   private val prefix = "target/configwriter"
 

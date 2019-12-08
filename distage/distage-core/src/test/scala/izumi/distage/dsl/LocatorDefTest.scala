@@ -3,9 +3,9 @@ package izumi.distage.dsl
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.model.definition.{Id, LocatorDef}
 import izumi.distage.model.exceptions.LocatorDefUninstantiatedBindingException
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LocatorDefTest extends WordSpec {
+class LocatorDefTest extends AnyWordSpec {
 
   "LocatorDef" should {
     "support singleton instances" in {

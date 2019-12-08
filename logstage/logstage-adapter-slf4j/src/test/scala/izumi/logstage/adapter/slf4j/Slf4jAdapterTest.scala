@@ -2,11 +2,11 @@ package izumi.logstage.adapter.slf4j
 
 import izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
 import izumi.logstage.api.{IzLogger, TestSink}
-import org.scalatest.WordSpec
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.StaticLoggerBinder
+import org.scalatest.wordspec.AnyWordSpec
 
-class Slf4jAdapterTest extends WordSpec {
+class Slf4jAdapterTest extends AnyWordSpec {
 
   private final val logger = LoggerFactory.getLogger(getClass)
 

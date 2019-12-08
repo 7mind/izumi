@@ -5,11 +5,11 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import org.scalatest.WordSpec
 
 import scala.language.reflectiveCalls
+import org.scalatest.wordspec.AnyWordSpec
 
-class AdvancedTypesTest extends WordSpec with MkInjector {
+class AdvancedTypesTest extends AnyWordSpec with MkInjector {
 
   "support generics" in {
     import TypesCase1._

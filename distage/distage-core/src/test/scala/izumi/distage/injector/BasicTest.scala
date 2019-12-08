@@ -8,10 +8,10 @@ import izumi.distage.model.definition.Binding.SetElementBinding
 import izumi.distage.model.definition.{BindingTag, Id}
 import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
-class BasicTest extends WordSpec with MkInjector {
+class BasicTest extends AnyWordSpec with MkInjector {
 
   "maintain correct operation order" in {
     import BasicCase1._

@@ -5,12 +5,12 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.UnsupportedOpException
 import distage.DIKey
 import izumi.distage.model.plan.GCMode
-import org.scalatest.WordSpec
 
 import scala.collection.immutable
+import org.scalatest.wordspec.AnyWordSpec
 
 
-class GcBasicTests extends WordSpec with MkGcInjector {
+class GcBasicTests extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
     "keep proxies alive in case of intersecting loops" in {
       import GcCases.InjectorCase1._

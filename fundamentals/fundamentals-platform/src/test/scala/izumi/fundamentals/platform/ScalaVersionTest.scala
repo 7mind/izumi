@@ -2,9 +2,9 @@ package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.language.IzScala
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class ScalaVersionTest extends WordSpec {
+class ScalaVersionTest extends AnyWordSpec {
   "ScalaVersion" should {
     "support comparison" in {
       import Ordering.Implicits._

@@ -1,12 +1,12 @@
 package izumi
 
 import izumi.fundamentals.platform.language.unused
-import org.scalatest.WordSpec
 
 import scala.annotation.{StaticAnnotation, TypeConstraint}
 import scala.language.implicitConversions
+import org.scalatest.wordspec.AnyWordSpec
 
-class TypeConstraintExperiment extends WordSpec {
+class TypeConstraintExperiment extends AnyWordSpec {
 
   // Making DIAnnotation inherit type constraint could maybe allow
   // extraction without using a macro...

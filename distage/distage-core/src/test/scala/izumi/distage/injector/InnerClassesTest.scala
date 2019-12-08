@@ -7,10 +7,10 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.core.CodeGenerationException
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.wordspec.AnyWordSpec
 
-class InnerClassesTest extends WordSpec with MkInjector {
+class InnerClassesTest extends AnyWordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
     import InnerClassStablePathsCase._
 

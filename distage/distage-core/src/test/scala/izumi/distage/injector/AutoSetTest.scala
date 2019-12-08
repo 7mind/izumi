@@ -5,9 +5,9 @@ import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class AutoSetTest extends WordSpec with MkInjector {
+class AutoSetTest extends AnyWordSpec with MkInjector {
 
   "AutoSets preserve dependency order" in {
     import SetCase3._

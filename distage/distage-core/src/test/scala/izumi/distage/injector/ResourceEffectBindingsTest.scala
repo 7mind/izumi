@@ -9,14 +9,14 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
 import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.util.Try
+import org.scalatest.wordspec.AnyWordSpec
 
-class ResourceEffectBindingsTest extends WordSpec with MkInjector {
+class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector {
 
   final type Fn[+A] = Suspend2[Nothing, A]
   final type Ft[+A] = Suspend2[Throwable, A]

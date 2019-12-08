@@ -7,11 +7,11 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.HKTag
 import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
-import org.scalatest.WordSpec
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
+import org.scalatest.wordspec.AnyWordSpec
 
 trait X[Y] {
   type Z = id[Y]
@@ -44,7 +44,7 @@ final case class testTag3[F[_]: TagK]() {
   val res = SafeType.get[X]
 }
 
-class TagTest extends WordSpec with X[String] {
+class TagTest extends AnyWordSpec with X[String] {
 
   def safe[T: TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
     SafeType(

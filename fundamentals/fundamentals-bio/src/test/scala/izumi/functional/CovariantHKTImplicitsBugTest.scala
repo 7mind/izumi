@@ -1,8 +1,9 @@
 package izumi.functional
 
-import org.scalatest.{GivenWhenThen, WordSpec}
+import org.scalatest.GivenWhenThen
+import org.scalatest.wordspec.AnyWordSpec
 
-class CovariantHKTImplicitsBugTest extends WordSpec with GivenWhenThen {
+class CovariantHKTImplicitsBugTest extends AnyWordSpec with GivenWhenThen {
 
   "progression test: covariant HKT implicits are broken" in {
     And("quite broken")

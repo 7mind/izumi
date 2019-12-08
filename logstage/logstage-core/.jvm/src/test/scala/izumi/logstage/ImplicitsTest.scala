@@ -8,9 +8,9 @@ import izumi.fundamentals.platform.language.Quirks._
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
 import logstage.{LogBIO, LogIO}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class ImplicitsTest extends WordSpec {
+class ImplicitsTest extends AnyWordSpec {
 
   "create LogIO from IO and Sync" in {
     val log: LogIO[cats.effect.IO] = LogIO.fromLogger(IzLogger())

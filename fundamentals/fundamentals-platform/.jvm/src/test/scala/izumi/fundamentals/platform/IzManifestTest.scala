@@ -1,9 +1,9 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.resources.IzManifest
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IzManifestTest extends WordSpec {
+class IzManifestTest extends AnyWordSpec {
 
   "Manifest reader" should {
     "support classpath manifest loading" in {
@@ -20,7 +20,7 @@ class IzManifestTest extends WordSpec {
     }
 
     "support jar manifest loading" in {
-      val maybeMf = IzManifest.manifest[WordSpec]().map(IzManifest.read)
+      val maybeMf = IzManifest.manifest[AnyWordSpec]().map(IzManifest.read)
       assert(maybeMf.isDefined)
       val mf = maybeMf.get
       assert(mf.version.version.length > 2)

@@ -3,9 +3,9 @@ package izumi.idealingua
 import java.util._
 
 import izumi.idealingua.runtime.model._
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class IdTest extends WordSpec {
+class IdTest extends AnyWordSpec {
   import IdTest._
 
   "Identifiers" should {

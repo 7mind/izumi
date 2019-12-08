@@ -6,9 +6,9 @@ import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.language.Quirks._
 import distage._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class ProviderMagnetTest extends WordSpec {
+class ProviderMagnetTest extends AnyWordSpec {
   import ProviderCase1._
 
   def priv(@Id("locargann") x: Int): Unit = x.discard()

@@ -10,9 +10,10 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.plan.ExecutableOp.WiringOp.UseInstance
 import distage._
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import org.scalatest.{GivenWhenThen, WordSpec}
+import org.scalatest.GivenWhenThen
+import org.scalatest.wordspec.AnyWordSpec
 
-class CatsExtensionsTest extends WordSpec with GivenWhenThen {
+class CatsExtensionsTest extends AnyWordSpec with GivenWhenThen {
 
   "cats-effect extensions" should {
     "work" in {

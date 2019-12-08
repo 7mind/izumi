@@ -4,10 +4,10 @@ import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.fundamentals.reflection.macrortti._
-import org.scalatest.WordSpec
 
 import scala.collection.immutable.ListSet
 import scala.collection.{BitSet, immutable, mutable}
+import org.scalatest.wordspec.AnyWordSpec
 
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
@@ -15,7 +15,7 @@ trait YieldOpCounts {
 }
 object YieldOpCounts extends YieldOpCounts
 
-class LightTypeTagTest extends WordSpec {
+class LightTypeTagTest extends AnyWordSpec {
   trait T0[A[_], B[_]]
   final val str = "str"
 

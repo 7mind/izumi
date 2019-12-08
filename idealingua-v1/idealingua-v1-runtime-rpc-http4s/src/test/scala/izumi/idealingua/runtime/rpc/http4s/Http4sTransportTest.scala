@@ -7,12 +7,12 @@ import izumi.r2.idealingua.test.generated.{GreeterServiceClientWrapped, GreeterS
 import org.http4s._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
-import org.scalatest.WordSpec
 import zio.Task
 import zio.interop.catz._
 import zio.interop.catz.implicits._
+import org.scalatest.wordspec.AnyWordSpec
 
-class Http4sTransportTest extends WordSpec {
+class Http4sTransportTest extends AnyWordSpec {
 
   import fixtures._
   import Http4sTestContext._

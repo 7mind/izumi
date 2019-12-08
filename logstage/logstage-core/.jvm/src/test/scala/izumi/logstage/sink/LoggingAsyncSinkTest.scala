@@ -1,9 +1,9 @@
 package izumi.logstage.sink
 
 import izumi.logstage.api.{IzLogger, TestSink}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LoggingAsyncSinkTest extends WordSpec {
+class LoggingAsyncSinkTest extends AnyWordSpec {
   "Log macro" should {
     "support async sinks" in {
       val testSink = new TestSink()

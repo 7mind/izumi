@@ -2,9 +2,9 @@ package izumi.logstage.sink.slf4j
 
 import izumi.logstage.api.IzLogger
 import izumi.logstage.sink.{ConsoleSink, ExampleService}
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class LoggingSlf4jSinkTest extends WordSpec {
+class LoggingSlf4jSinkTest extends AnyWordSpec {
 
   import LoggingSlf4jSinkTest._
 

@@ -4,9 +4,9 @@ import distage.ModuleDef
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases.TypesCase3
 import izumi.distage.model.PlannerInput
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class AutoTraitsTest extends WordSpec with MkInjector {
+class AutoTraitsTest extends AnyWordSpec with MkInjector {
 
   "support trait fields" in {
     import TraitCase3._

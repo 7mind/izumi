@@ -4,12 +4,12 @@ import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
 import scala.language.reflectiveCalls
+import org.scalatest.wordspec.AnyWordSpec
 
-class FactoriesTest extends WordSpec with MkInjector {
+class FactoriesTest extends AnyWordSpec with MkInjector {
 
   "handle factory injections" in {
     import FactoryCase1._

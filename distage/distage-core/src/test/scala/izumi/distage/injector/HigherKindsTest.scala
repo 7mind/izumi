@@ -4,9 +4,9 @@ import distage._
 import izumi.distage.fixtures.HigherKindCases._
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.reflection.macrortti.LTag
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class HigherKindsTest extends WordSpec with MkInjector {
+class HigherKindsTest extends AnyWordSpec with MkInjector {
 
   "support tagless final style module definitions" in {
     import HigherKindsCase1._
