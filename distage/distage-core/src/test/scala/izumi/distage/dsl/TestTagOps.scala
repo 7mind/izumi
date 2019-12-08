@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 @ExposedTestScope
 object TestTagOps {
 
-  implicit def apply(tag: String): BindingTag = TestAxis.TestTag(tag)
+  def apply(tag: String): BindingTag = TestAxis.TestTag(tag)
 
   object TestAxis extends Axis {
     override def name: String = "test"

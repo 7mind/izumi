@@ -27,44 +27,42 @@ import scala.reflect.{ClassTag, classTag}
 
 object StaticPluginCheckerMacro {
 
-  def implDefault[T <: PluginBase : c.WeakTypeTag, R <: ModuleRequirements : c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String]): c.Expr[Unit] = {
+  def implDefault[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithConfig[T <: PluginBase : c.WeakTypeTag, R <: ModuleRequirements : c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     implWithPluginConfig[T, R](c)(c.Expr[String](q"${""}"), activations, configFileRegex)
   }
 
-  def implWithPlugin[T <: PluginBase : c.WeakTypeTag, R <: ModuleRequirements : c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPlugin[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     implWithPluginConfig[T, R](c)(pluginPath, activations, c.Expr[String](q"${""}"))
   }
 
-  def implWithPluginConfig[T <: PluginBase : c.WeakTypeTag, R <: ModuleRequirements : c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
+  def implWithPluginConfig[T <: ModuleBase: c.WeakTypeTag, R <: ModuleRequirements: c.WeakTypeTag](c: blackbox.Context)(pluginPath: c.Expr[String], activations: c.Expr[String], configFileRegex: c.Expr[String]): c.Expr[Unit] = {
     import c.universe._
 
     StaticPluginCheckerMacro.check(c)(
-      pluginPath,
-      c.Expr[String](q"${weakTypeOf[T].typeSymbol.asClass.fullName}"),
-      c.Expr[String](q"${weakTypeOf[R].typeSymbol.asClass.fullName}"),
-      activations,
-      configFileRegex,
+      pluginsPackage = pluginPath,
+      gcRoot = c.Expr[String](q"${weakTypeOf[T].typeSymbol.asClass.fullName}"),
+      requirements = c.Expr[String](q"${weakTypeOf[R].typeSymbol.asClass.fullName}"),
+      activations = activations,
+      configFileRegex = configFileRegex,
     )
   }
 
   def check(c: blackbox.Context)
-           (
-             pluginsPackage: c.Expr[String],
-             gcRoot: c.Expr[String],
-             requirements: c.Expr[String],
-             activations: c.Expr[String],
-             configFileRegex: c.Expr[String],
-           ): c.Expr[Unit] = {
+           (pluginsPackage: c.Expr[String],
+            gcRoot: c.Expr[String],
+            requirements: c.Expr[String],
+            activations: c.Expr[String],
+            configFileRegex: c.Expr[String]): c.Expr[Unit] = {
 
     val abort = c.abort(c.enclosingPosition, _: String): Unit
 
@@ -74,9 +72,9 @@ object StaticPluginCheckerMacro {
       Seq.empty
     } else {
       val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
-        debug = false
-        , packagesEnabled = Seq(pluginPath)
-        , packagesDisabled = Seq.empty
+        debug = false,
+        packagesEnabled = Seq(pluginPath),
+        packagesDisabled = Seq.empty,
       ))
 
       pluginLoader.load()
@@ -102,10 +100,10 @@ object StaticPluginCheckerMacro {
 
     val gcRootPath = ReflectionUtil.getStringLiteral(c)(gcRoot.tree)
 
-    val gcRootModule = if (gcRootPath == "") {
+    val gcRootModule: Option[ModuleBase] = if (gcRootPath == "") {
       None
     } else {
-      Some(constructClass[PluginBase](gcRootPath, abort))
+      Some(constructClass[ModuleBase](gcRootPath, abort))
     }
 
     val requirementsPath = ReflectionUtil.getStringLiteral(c)(requirements.tree)
@@ -118,7 +116,15 @@ object StaticPluginCheckerMacro {
 
     val activationsVals = ReflectionUtil.getStringLiteral(c)(activations.tree).split(',').toSeq
 
-    check(loadedPlugins, configModule, additional = Module.empty, gcRootModule, requirementsModule, activationsVals, abort = abort)
+    check(
+      loadedPlugins = loadedPlugins,
+      configModule = configModule,
+      additional = Module.empty,
+      root = gcRootModule,
+      moduleRequirements = requirementsModule,
+      activations = activationsVals,
+      abort = abort
+    )
 
     c.universe.reify(())
   }
@@ -176,7 +182,7 @@ object StaticPluginCheckerMacro {
       )
   }
 
-  private[this] def constructClass[T: ClassTag : ru.TypeTag](path: String, abort: String => Unit): T = {
+  private[this] def constructClass[T: ClassTag: ru.TypeTag](path: String, abort: String => Unit): T = {
     val mirror: ru.Mirror = currentMirror
 
     val clazz = mirror.staticClass(path)
@@ -186,12 +192,17 @@ object StaticPluginCheckerMacro {
       abort(s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!""")
     }
 
-    val instance = mirror.reflectClass(clazz)
-      .reflectConstructor {
-        tpe.decls.collectFirst {
-          case m: ru.MethodSymbol@unchecked if m.isPrimaryConstructor => m
-        }.get
-      }.apply()
+    val instance = {
+      if (clazz.isModuleClass) {
+        mirror.reflectModule(clazz.thisPrefix.termSymbol.asModule).instance.asInstanceOf[T]
+      } else {
+        mirror.reflectClass(clazz).reflectConstructor {
+          tpe.decls.collectFirst {
+            case m: ru.MethodSymbol@unchecked if m.isPrimaryConstructor => m
+          }.get
+        }.apply()
+      }
+    }
 
     classTag[T].runtimeClass.cast(instance).asInstanceOf[T]
   }

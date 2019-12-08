@@ -28,8 +28,9 @@ Further reading: [Roles: a viable alternative to Microservices](https://github.c
 ### Plugins
 
 `distage-plugins` module adds classpath discovery for modules that inherit a marker trait `PluginBase`. 
-Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time by adding new `Plugin` classes
-to the classpath. Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long as they're defined in a separate module.
+Plugins enable extreme late-binding; e.g. they allow a program to extend itself at launch time with new `Plugin` classes
+on the classpath. Plugins are compatible with @ref[compile-time checks](distage-framework.md#compile-time-checks) as long
+as they're defined in a separate module.
 
 To use plugins, first add the `distage-plugins` library:
 

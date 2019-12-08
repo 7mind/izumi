@@ -8,9 +8,9 @@ import izumi.logstage.api.logger.LogRouter
 
 class ModuleRequirements(val requiredKeys: Set[DIKey])
 
-class NoModuleRequirements extends ModuleRequirements(Set.empty)
+final class NoModuleRequirements extends ModuleRequirements(Set.empty)
 
-class LogstageModuleRequirements extends ModuleRequirements(Set(
+final class LogstageModuleRequirements extends ModuleRequirements(Set(
   DIKey.get[LogRouter],
   DIKey.get[CustomContext],
   DIKey.get[IzLogger],

@@ -33,7 +33,6 @@ object CircularCases {
 
     trait Circular3 {
       def arg: Circular4
-
       def arg2: Circular5
 
       def method: Long = 2L
@@ -240,7 +239,9 @@ object CircularCases {
   object CircularCase10 {
     class Component1
     class Component2
-    class ComponentWithByNameFwdRef(@unused fwd: => ComponentHolder)
+    class ComponentWithByNameFwdRef(@unused fwd: => ComponentHolder) {
+      def get = fwd
+    }
 
     class ComponentHolder(val component1: Component1, val component2: Component2, val componentFwdRef: ComponentWithByNameFwdRef)
 

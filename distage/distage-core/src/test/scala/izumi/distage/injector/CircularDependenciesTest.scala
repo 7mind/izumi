@@ -394,6 +394,25 @@ class CircularDependenciesTest extends WordSpec with MkInjector {
     assert(context.get[Dependency {def dep: RefinedCircular}] eq context.get[RefinedCircular].dep)
   }
 
+  "support simple by-name forward ref when there are non-by-name references" in {
+    import CircularCase10._
+
+    val definition = PlannerInput(new ModuleDef {
+      make[Component1]
+      make[Component2]
+      make[ComponentWithByNameFwdRef]
+      make[ComponentHolder]
+      make[Root]
+    }, GCMode(DIKey.get[Root]))
+
+    val injector = mkInjector()
+    val context = injector.produceUnsafe(definition)
+
+    assert(context.get[ComponentHolder].componentFwdRef eq context.get[ComponentWithByNameFwdRef])
+    assert(context.get[ComponentWithByNameFwdRef].get eq context.get[ComponentHolder])
+    assert(context.get[Root].holder eq context.get[ComponentHolder])
+  }
+
   "Regression test 1: isolated cycles causing spooky action at a distance" in {
     import CircularCase7._
 
