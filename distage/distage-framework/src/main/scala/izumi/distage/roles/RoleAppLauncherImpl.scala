@@ -3,7 +3,7 @@ package izumi.distage.roles
 import distage._
 import izumi.distage.config.model.AppConfig
 import izumi.distage.framework.config.PlanningOptions
-import izumi.distage.framework.model.{AllLoadedPlugins, PluginSource}
+import izumi.distage.framework.model.{ActivationInfo, AllLoadedPlugins, PluginSource}
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.definition.{Activation, Axis}
@@ -12,8 +12,8 @@ import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.meta.{LibraryReference, RolesInfo}
-import izumi.distage.roles.model.{ActivationInfo, DIAppBootstrapException}
+import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
+import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services.{RoleAppActivationParser, _}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs

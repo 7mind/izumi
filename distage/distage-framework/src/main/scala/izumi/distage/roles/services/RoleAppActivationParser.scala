@@ -1,10 +1,12 @@
 package izumi.distage.roles.services
 
 import distage.ModuleBase
+import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.definition.{Activation, Axis}
 import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.model.{ActivationInfo, DIAppBootstrapException}
+import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
@@ -17,7 +19,7 @@ class RoleAppActivationParser {
                        defaultActivations: Map[Axis, AxisValue],
                      ): (ActivationInfo, Activation) = {
     val uses = parameters.globalParameters.findValues(Options.use)
-    val availableUses = ActivationInfo.findAvailableChoices(logger, appModule)
+    val availableUses = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
 
     def options: String = {
       availableUses.availableChoices.map {

@@ -21,6 +21,8 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 With default `RoleLauncher` implementation, roles to be launched are chosen by command-line parameters: `./launcher role1 role2 role3`.
 Only the components required by the chosen roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
 
+There are 2 bundled roles: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
+
 Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
 
 ### Plugins

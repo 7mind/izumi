@@ -6,8 +6,9 @@ import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.roles._
-import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.{AbstractRole, DIAppBootstrapException, RoleService, RoleTask}
+import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.distage.roles.model.{AbstractRole, RoleService, RoleTask}
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.logstage.api.IzLogger

@@ -3,10 +3,10 @@ package izumi.distage.testkit.services.dstest
 import distage.ModuleBase
 import distage.config.AppConfig
 import izumi.distage.framework.config.PlanningOptions
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.{Activation, BootstrapModule}
-import izumi.distage.roles.meta.RolesInfo
-import izumi.distage.roles.model.ActivationInfo
+import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
 import izumi.fundamentals.reflection.Tags.TagK
 import izumi.logstage.api.{IzLogger, Log}

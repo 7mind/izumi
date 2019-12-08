@@ -7,8 +7,6 @@ trait DIUniverse
   extends DIUniverseBase
     with WithDISafeType
     with WithDISymbolInfo
-    with WithDITypedRef
-    with WithDICallable
     with WithDIKey
     with WithDIAssociation
     with WithDIWiring
