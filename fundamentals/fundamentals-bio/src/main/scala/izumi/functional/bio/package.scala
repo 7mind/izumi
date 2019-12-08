@@ -160,6 +160,9 @@ package object bio extends BIOSyntax {
     @inline def tapBoth[E, A, E2 >: E](r: F[E, A])(err: E => F[E2, Unit], succ: A => F[E2, Unit]): F[E2, A] = {
       tap(tapError[E, A, E2](r)(err))(succ)
     }
+    @inline def withFilter[E, A](r: F[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): F[E, A] = {
+      flatMap(r)(a => if (predicate(a)) pure(a) else fail(new NoSuchElementException("The value doesn't satisfy the predicate")))
+    }
   }
 
   trait BIOBracket[F[+_, +_]] extends BIOMonadError[F] {

@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOPrimitives, F}
+import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOMonadError, BIOPrimitives, F}
 import izumi.fundamentals.bio.test.masking._
 import org.scalatest.WordSpec
 
@@ -48,6 +48,22 @@ class BIOSyntaxTest extends WordSpec {
       F.when(F.pure(false): F[RuntimeException, Boolean])(F.pure(()): F[Throwable, Unit])
     }
 
+    x[zio.IO]
+  }
+
+  "withFilter test" in {
+    def x[F[+_, +_]: BIOMonadError]: F[NoSuchElementException, Unit] = {
+      assertDoesNotCompile(
+        """
+        for {
+          (1, 2) <- F.pure(Option(2, 1))
+        } yield ()
+        """
+      )
+      for {
+        (1, 2) <- F.pure((2, 1))
+      } yield ()
+    }
     x[zio.IO]
   }
 
