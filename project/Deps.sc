@@ -449,7 +449,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.docker,
-        libs = Seq(docker_java in Scope.Compile.jvm),
+        libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.logstage.di).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkit in Scope.Test.all),
       ),
