@@ -269,7 +269,7 @@ object Izumi {
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-config")
       final lazy val plugins = ArtifactId("distage-plugins")
-      final lazy val docker = ArtifactId("distage-docker")
+      final lazy val docker = ArtifactId("distage-framework-docker")
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkit = ArtifactId("distage-testkit")

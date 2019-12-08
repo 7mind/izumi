@@ -1216,7 +1216,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-docker` = project.in(file("distage/distage-docker"))
+lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
   .dependsOn(
     `distage-core` % "test->compile;compile->compile",
     `distage-config` % "test->compile;compile->compile",
@@ -2892,7 +2892,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-plugins` % "test->compile;compile->compile",
     `distage-framework-api` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
-    `distage-docker` % "test->compile;compile->compile",
+    `distage-framework-docker` % "test->compile;compile->compile",
     `distage-testkit` % "test->compile;compile->compile",
     `distage-testkit-legacy` % "test->compile;compile->compile",
     `logstage-api` % "test->compile;compile->compile",
@@ -3178,7 +3178,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-plugins`,
     `distage-framework-api`,
     `distage-framework`,
-    `distage-docker`,
+    `distage-framework-docker`,
     `distage-testkit`,
     `distage-testkit-legacy`
   )
@@ -3201,7 +3201,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-plugins`,
     `distage-framework-api`,
     `distage-framework`,
-    `distage-docker`,
+    `distage-framework-docker`,
     `distage-testkit`,
     `distage-testkit-legacy`
   )
