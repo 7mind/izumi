@@ -23,16 +23,16 @@ To use, add the following into `project/build.sbt`,
 ```scala
 
 libraryDependencies ++= Seq(
-  // Core DIStage library
+  // Core distage library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
-  // Testkit for ScalaTest
+  // distage-testkit for ScalaTest
   "io.7mind.izumi" %% "distage-testkit-scalatest" % "$izumi.version$" % Test,
+  // distage-framework: Roles, Entrypoints, Effect modules
+  "io.7mind.izumi" %% "distage-framework" % "$izumi.version$",
   // Typesafe Config support
   "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$",
   // Classpath discovery support
   "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi.version$",
-  // distage Framework: Roles, Entrypoints, Effect modules
-  "io.7mind.izumi" %% "distage-framework" % "$izumi.version$",
   
   // Core LogStage library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",

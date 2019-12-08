@@ -5,8 +5,8 @@ distage-framework
 
 ### Roles
 
-A "Role" is an entrypoint for a specific application hosted in a larger software suite. Bundling multiple roles in a
-single `.jar` file can simplify deployment and operations.
+A "Role" is an entrypoint for a specific application hosted in a larger software suite.
+Bundling multiple roles in a single `.jar` file can simplify deployment and operations.
 
 `distage-framework` module contains the distage Role API:
 
@@ -18,12 +18,81 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 
 @@@
 
-With default `RoleLauncher` implementation, roles to be launched are chosen by command-line parameters: `./launcher role1 role2 role3`.
-Only the components required by the chosen roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
+With default @scaladoc[RoleAppLauncherImpl](izumi.distage.roles.RoleAppLauncherImpl), roles launch are specified on the command-line: `./launcher role1 role2 role3`.
+Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
 
-There are 2 bundled roles: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
+Two roles are bundled by default: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
 
 Further reading: [Roles: a viable alternative to Microservices](https://github.com/7mind/slides/blob/master/02-roles/target/roles.pdf)
+
+### Typesafe Config
+
+`distage-extension-config` library allows summoning case classes and sealed traits from `typesafe-config` configuration
+
+To use it, add `distage-extension-config` library:
+
+@@@vars
+
+```scala
+libraryDependencies += "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$"
+```
+
+@@@
+
+Add a configuration file in HOCON format:
+
+```hocon
+# resources/application.conf
+conf {
+    name = "John"
+    age = 33
+    other = true
+}
+```
+
+Parse it into case classes and summon into your object graph:
+
+```scala mdoc:reset-object:to-string
+import distage.{DIKey, GCMode, ModuleDef, Id, Injector}
+import distage.config.{AppConfigModule, ConfigModuleDef}
+import com.typesafe.config.ConfigFactory
+
+final case class Conf(name: String, age: Int)
+
+final case class OtherConf(other: Boolean)
+
+final class ConfigPrinter(conf: Conf, otherConf: OtherConf @Id("other")) {
+  def print() = {
+    println(s"name: ${conf.name}, age: ${conf.age}, other: ${otherConf.other}")
+  }
+}
+
+// load
+val config = ConfigFactory.defaultApplication()
+
+// declare paths to parse
+val configModule = new ConfigModuleDef {
+  makeConfig[Conf]("conf")
+  makeConfig[OtherConf]("conf").named("other")
+}
+
+// add config itself to the graph
+val appConfigModule = AppConfigModule(config)
+
+val appModule = new ModuleDef {
+  make[ConfigPrinter]
+}
+
+val objects = Injector().produceUnsafe(
+  input = Seq(appModule, configModule, appConfigModule).merge,
+  mode  = GCMode(DIKey.get[ConfigPrinter])
+)
+
+objects.get[ConfigPrinter].print()
+```
+
+Automatic derivation of config codecs is based on [circe-config](https://github.com/circe/circe-config) & [circe-derivation](https://github.com/circe/circe-derivation). 
+[Circe](https://github.com/circe/circe) codecs for a type will be reused if they exist.
 
 ### Plugins
 
@@ -44,7 +113,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi
 
 Create a module extending the `PluginDef` trait instead of `ModuleDef`:
 
-```scala mdoc:invisible
+```scala mdoc:reset:invisible
 import com.example.petstore._
 ```
 

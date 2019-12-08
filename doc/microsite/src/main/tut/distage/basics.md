@@ -5,11 +5,11 @@ Basics
 
 ### Quick Start
 
-Suppose we have an abstract `Greeter` component and some other components that depend on `Greeter`:
+Suppose we have an abstract `Greeter` component and some other components that depend on it:
 
 ```scala mdoc:reset:invisible:to-string
 var counter = 0
-val names = Array("kai", "xai", "mai")
+val names = Array("izumi", "kai", "Pavel")
 def readLine() = {
   val n = names(counter % names.length)
   counter += 1
@@ -48,8 +48,8 @@ final class HelloByeApp(greeter: Greeter, byer: Byer) {
 }
 ```
 
-To actually run the `HelloByeApp`, we have to create the real implementations of `Greeter` and `Byer` and wire them together.
-We'll start by describing the component interfaces we have and the implementations we want for them:
+To actually run the `HelloByeApp`, we have to wire implementations of `Greeter` and `Byer` into it.
+We will not do it directly. First we'll only declare the component interfaces we have and the implementations we want for them:
 
 ```scala mdoc:to-string
 val HelloByeModule = new ModuleDef {
@@ -67,8 +67,7 @@ actionable series of steps - an @scaladoc[OrderedPlan](izumi.distage.model.plan.
 val plan = Injector().plan(HelloByeModule, GCMode.NoGC)
 ```
 
-We do need to interpret it to create an actual object graph, though.<br/>
-The default interpreter is `Injector.produce` - it will return a @ref[Resource](basics.md#resource-bindings-lifecycle) value with the lifecycle of the object graph:
+The series of steps must be executed to produce the object graph. `Injector.produce` will interpret the steps into a @ref[Resource](basics.md#resource-bindings-lifecycle) value, that holds the lifecycle of the object graph:
 
 ```scala mdoc:to-string
 // Interpret into DIResource
@@ -85,8 +84,8 @@ resource.use {
 }
 ```
 
-`distage` always creates components exactly once, even if multiple other objects depend on them. Aka there's only a `Singleton` scope.
-It's *impossible* to create non-singletons in `distage`.
+`distage` always creates components exactly once, even if multiple other objects depend on them. There is only a "Singleton" scope.
+It's impossible to create non-singletons in `distage`.
 If you need multiple singleton instances of the same type, you can create `named` instances and disambiguate between them using `@Id` annotation. 
 
 ```scala mdoc:to-string
@@ -164,7 +163,7 @@ In `distage-framework`'s @scaladoc[RoleAppLauncher](izumi.distage.roles.RoleAppL
 ./launcher -u repo:dummy app1
 ```
 
-In `distage-testkit-scalatest`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
+In `distage-testkit`, specify axes via @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
 
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
