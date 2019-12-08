@@ -146,7 +146,7 @@ object Izumi {
   object Targets {
     val targetScala = Seq(scala212, scala213)
     // switch order to use 2.13 in IDEA
-//    val targetScala = Seq(scala213, scala212)
+    //    val targetScala = Seq(scala213, scala212)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
@@ -272,7 +272,8 @@ object Izumi {
       final lazy val docker = ArtifactId("distage-framework-docker")
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
-      final lazy val testkit = ArtifactId("distage-testkit")
+      final lazy val testkitCore = ArtifactId("distage-testkit-core")
+      final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val legacyTestkit = ArtifactId("distage-testkit-legacy")
     }
 
@@ -325,7 +326,7 @@ object Izumi {
   }
 
   final val forkTests = Seq(
-    "fork" in (SettingScope.Test, Platform.Jvm) := true,
+    "fork" in(SettingScope.Test, Platform.Jvm) := true,
   )
 
   final val crossScalaSources = Seq(
@@ -386,7 +387,7 @@ object Izumi {
         depends = Seq.empty,
         settings = crossScalaSources ++ Seq(
           SettingDef.RawSettingDef(
-          """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
+            """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
             FullSettingScope(SettingScope.Compile, Platform.All),
           ),
         ),
@@ -451,13 +452,24 @@ object Izumi {
         name = Projects.distage.docker,
         libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.logstage.di).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.testkit in Scope.Test.all),
+          Seq(Projects.distage.testkitScalatest in Scope.Test.all),
       ),
       Artifact(
-        name = Projects.distage.testkit,
-        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        name = Projects.distage.testkitCore,
+        libs = allMonadsOptional,
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+            Seq(Projects.distage.core).map(_ tin Scope.Compile.all),
+
+        settings = Seq(
+          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitScalatest,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        depends =
+          Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
@@ -468,7 +480,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
         depends =
           Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
-            Seq(Projects.distage.core, Projects.distage.testkit).map(_ in Scope.Compile.all),
+            Seq(Projects.distage.core, Projects.distage.testkitCore).map(_ in Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),

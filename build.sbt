@@ -1222,7 +1222,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     `distage-config` % "test->compile;compile->compile",
     `distage-framework-api` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
-    `distage-testkit` % "test->compile"
+    `distage-testkit-scalatest` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1307,11 +1307,99 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-testkit` = project.in(file("distage/distage-testkit"))
+lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"))
   .dependsOn(
     `distage-config` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
+    `distage-core` % "test->test;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Optional,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+      "dev.zio" %% "zio" % V.zio % Optional
+    )
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    unmanagedSourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/scala" ,
+    unmanagedResourceDirectories in Compile += baseDirectory.value / ".jvm/src/main/resources" ,
+    unmanagedSourceDirectories in Test += baseDirectory.value / ".jvm/src/test/scala" ,
+    unmanagedResourceDirectories in Test += baseDirectory.value / ".jvm/src/test/resources" ,
+    classLoaderLayeringStrategy in Test := ClassLoaderLayeringStrategy.Flat,
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    testOptions in Test += Tests.Argument("-oDF"),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.12.10") => Seq(
+        "-Xsource:2.13",
+        "-Ypartial-unification",
+        "-Yno-adapted-args",
+        "-Xlint:adapted-args",
+        "-Xlint:by-name-right-associative",
+        "-Xlint:constant",
+        "-Xlint:delayedinit-select",
+        "-Xlint:doc-detached",
+        "-Xlint:inaccessible",
+        "-Xlint:infer-any",
+        "-Xlint:missing-interpolator",
+        "-Xlint:nullary-override",
+        "-Xlint:nullary-unit",
+        "-Xlint:option-implicit",
+        "-Xlint:package-object-classes",
+        "-Xlint:poly-implicit-overload",
+        "-Xlint:private-shadow",
+        "-Xlint:stars-align",
+        "-Xlint:type-parameter-shadow",
+        "-Xlint:unsound-match",
+        "-opt-warnings:_",
+        "-Ywarn-extra-implicit",
+        "-Ywarn-unused:_",
+        "-Ywarn-adapted-args",
+        "-Ywarn-dead-code",
+        "-Ywarn-inaccessible",
+        "-Ywarn-infer-any",
+        "-Ywarn-nullary-override",
+        "-Ywarn-nullary-unit",
+        "-Ywarn-numeric-widen",
+        "-Ywarn-unused-import",
+        "-Ywarn-value-discard"
+      )
+      case (_, "2.13.1") => Seq(
+        "-Xlint:_,-eta-sam",
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wunused:_",
+        "-Wvalue-discard"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, _) => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalaVersion := crossScalaVersions.value.head,
+    crossScalaVersions := Seq(
+      "2.12.10",
+      "2.13.1"
+    )
+  )
+  .disablePlugins(AssemblyPlugin)
+
+lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-scalatest"))
+  .dependsOn(
+    `distage-testkit-core` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
     `distage-plugins` % "test->test;compile->compile"
   )
@@ -1405,7 +1493,7 @@ lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-leg
     `distage-framework` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
-    `distage-testkit` % "test->compile;compile->compile"
+    `distage-testkit-core` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2893,7 +2981,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-framework-api` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `distage-framework-docker` % "test->compile;compile->compile",
-    `distage-testkit` % "test->compile;compile->compile",
+    `distage-testkit-core` % "test->compile;compile->compile",
+    `distage-testkit-scalatest` % "test->compile;compile->compile",
     `distage-testkit-legacy` % "test->compile;compile->compile",
     `logstage-api` % "test->compile;compile->compile",
     `logstage-core` % "test->compile;compile->compile",
@@ -3179,7 +3268,8 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-framework-api`,
     `distage-framework`,
     `distage-framework-docker`,
-    `distage-testkit`,
+    `distage-testkit-core`,
+    `distage-testkit-scalatest`,
     `distage-testkit-legacy`
   )
 
@@ -3202,7 +3292,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-framework-api`,
     `distage-framework`,
     `distage-framework-docker`,
-    `distage-testkit`,
+    `distage-testkit-core`,
+    `distage-testkit-scalatest`,
     `distage-testkit-legacy`
   )
 
