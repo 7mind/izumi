@@ -606,7 +606,7 @@ lazy val `fundamentals-json-circe` = project.in(file("fundamentals/fundamentals-
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-model` = project.in(file("distage/distage-model"))
+lazy val `distage-core-api` = project.in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-collections` % "test->compile;compile->compile",
@@ -697,9 +697,9 @@ lazy val `distage-model` = project.in(file("distage/distage-model"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
+lazy val `distage-core-proxy-cglib` = project.in(file("distage/distage-core-proxy-cglib"))
   .dependsOn(
-    `distage-model` % "test->compile;compile->compile"
+    `distage-core-api` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -783,8 +783,8 @@ lazy val `distage-proxy-cglib` = project.in(file("distage/distage-proxy-cglib"))
 
 lazy val `distage-core` = project.in(file("distage/distage-core"))
   .dependsOn(
-    `distage-model` % "test->compile;compile->compile",
-    `distage-proxy-cglib` % "test->compile;compile->compile"
+    `distage-core-api` % "test->compile;compile->compile",
+    `distage-core-proxy-cglib` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -865,9 +865,9 @@ lazy val `distage-core` = project.in(file("distage/distage-core"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-config` = project.in(file("distage/distage-config"))
+lazy val `distage-extension-config` = project.in(file("distage/distage-extension-config"))
   .dependsOn(
-    `distage-model` % "test->compile;compile->compile",
+    `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile,test"
   )
   .settings(
@@ -953,11 +953,11 @@ lazy val `distage-config` = project.in(file("distage/distage-config"))
   )
   .disablePlugins(AssemblyPlugin)
 
-lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
+lazy val `distage-extension-plugins` = project.in(file("distage/distage-extension-plugins"))
   .dependsOn(
-    `distage-model` % "test->compile;compile->compile",
+    `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile,test",
-    `distage-config` % "test->compile",
+    `distage-extension-config` % "test->compile",
     `logstage-core` % "test->compile"
   )
   .settings(
@@ -1042,7 +1042,7 @@ lazy val `distage-plugins` = project.in(file("distage/distage-plugins"))
 
 lazy val `distage-framework-api` = project.in(file("distage/distage-framework-api"))
   .dependsOn(
-    `distage-model` % "test->compile;compile->compile"
+    `distage-core-api` % "test->compile;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1130,8 +1130,8 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
     `logstage-rendering-circe` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
     `distage-framework-api` % "test->test;compile->compile",
-    `distage-plugins` % "test->test;compile->compile",
-    `distage-config` % "test->test;compile->compile"
+    `distage-extension-plugins` % "test->test;compile->compile",
+    `distage-extension-config` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1219,7 +1219,7 @@ lazy val `distage-framework` = project.in(file("distage/distage-framework"))
 lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
   .dependsOn(
     `distage-core` % "test->compile;compile->compile",
-    `distage-config` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
     `distage-framework-api` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-testkit-scalatest` % "test->compile"
@@ -1309,7 +1309,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
 
 lazy val `distage-testkit-core` = project.in(file("distage/distage-testkit-core"))
   .dependsOn(
-    `distage-config` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile"
@@ -1401,7 +1401,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
     `distage-core` % "test->test;compile->compile",
-    `distage-plugins` % "test->test;compile->compile"
+    `distage-extension-plugins` % "test->test;compile->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -1489,7 +1489,7 @@ lazy val `distage-testkit-scalatest` = project.in(file("distage/distage-testkit-
 
 lazy val `distage-testkit-legacy` = project.in(file("distage/distage-testkit-legacy"))
   .dependsOn(
-    `distage-config` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `logstage-di` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
@@ -1840,8 +1840,8 @@ lazy val `logstage-rendering-circe` = project.in(file("logstage/logstage-renderi
 
 lazy val `logstage-di` = project.in(file("logstage/logstage-di"))
   .dependsOn(
-    `distage-config` % "test->compile;compile->compile",
-    `distage-model` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
+    `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
     `logstage-core` % "test->test;compile->compile"
   )
@@ -2973,11 +2973,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-reflection` % "test->compile;compile->compile",
     `fundamentals-thirdparty-boopickle-shaded` % "test->compile;compile->compile",
     `fundamentals-json-circe` % "test->compile;compile->compile",
-    `distage-model` % "test->compile;compile->compile",
-    `distage-proxy-cglib` % "test->compile;compile->compile",
+    `distage-core-api` % "test->compile;compile->compile",
+    `distage-core-proxy-cglib` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
-    `distage-config` % "test->compile;compile->compile",
-    `distage-plugins` % "test->compile;compile->compile",
+    `distage-extension-config` % "test->compile;compile->compile",
+    `distage-extension-plugins` % "test->compile;compile->compile",
     `distage-framework-api` % "test->compile;compile->compile",
     `distage-framework` % "test->compile;compile->compile",
     `distage-framework-docker` % "test->compile;compile->compile",
@@ -3260,11 +3260,11 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `distage-model`,
-    `distage-proxy-cglib`,
+    `distage-core-api`,
+    `distage-core-proxy-cglib`,
     `distage-core`,
-    `distage-config`,
-    `distage-plugins`,
+    `distage-extension-config`,
+    `distage-extension-plugins`,
     `distage-framework-api`,
     `distage-framework`,
     `distage-framework-docker`,
@@ -3284,11 +3284,11 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   )
   .disablePlugins(AssemblyPlugin)
   .aggregate(
-    `distage-model`,
-    `distage-proxy-cglib`,
+    `distage-core-api`,
+    `distage-core-proxy-cglib`,
     `distage-core`,
-    `distage-config`,
-    `distage-plugins`,
+    `distage-extension-config`,
+    `distage-extension-plugins`,
     `distage-framework-api`,
     `distage-framework`,
     `distage-framework-docker`,
