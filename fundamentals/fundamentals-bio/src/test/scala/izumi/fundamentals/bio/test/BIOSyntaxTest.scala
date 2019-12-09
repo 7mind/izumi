@@ -56,7 +56,7 @@ class BIOSyntaxTest extends WordSpec {
       assertDoesNotCompile(
         """
         for {
-          (1, 2) <- F.pure(Option(2, 1))
+          (1, 2) <- F.pure(Option((2, 1)))
         } yield ()
         """
       )
