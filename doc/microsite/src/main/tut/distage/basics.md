@@ -172,7 +172,7 @@ import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 
 class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
   override protected def config: TestConfig = TestConfig(
-    // choose implementations tagged `Repo.Dummy` when multiple implemenations with `Repo.*` tags are available
+    // choose implementations tagged `Repo.Dummy` when multiple implementations with `Repo.*` tags are available
     activation = Activation(Repo -> Repo.Dummy)
   )
 }
