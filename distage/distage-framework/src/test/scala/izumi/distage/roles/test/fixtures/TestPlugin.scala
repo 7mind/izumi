@@ -2,13 +2,14 @@ package izumi.distage.roles.test.fixtures
 
 import cats.effect.IO
 import izumi.distage.config.ConfigModuleDef
-import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.effect.modules.CatsDIEffectModule
+import izumi.distage.model.definition.StandardAxis._
 import izumi.distage.plugins.PluginDef
 import izumi.distage.roles.examples.{ConfigWriter, Help}
 import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
-import izumi.distage.roles.test.fixtures.TestRole00.{IntegrationOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
+import izumi.distage.roles.test.fixtures.roles.TestRole00
+import izumi.distage.roles.test.fixtures.roles.TestRole00.{IntegrationOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.fundamentals.reflection.Tags.TagK
 
