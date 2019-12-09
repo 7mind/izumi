@@ -85,7 +85,7 @@ YourKit is the creator of [YourKit Java Profiler](https://www.yourkit.com/java/p
 Contributors
 ============
 
-* Run `./sbtgen.sc` to generate JVM-only sbt projects, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossprojects
+* Run `./sbtgen.sc` to generate a JVM-only sbt project, run `./sbtgen.sc --js` to generate a JVM+JS sbt crossproject
 
 See:
 
