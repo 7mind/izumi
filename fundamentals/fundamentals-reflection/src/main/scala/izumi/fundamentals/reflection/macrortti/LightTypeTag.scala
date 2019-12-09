@@ -139,9 +139,10 @@ abstract class LightTypeTag
     }
   }
 
-  override def hashCode(): Int = {
-    val state = Seq(ref)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  override def hashCode(): Int = hashcode
+
+  private lazy val hashcode: Int = {
+    ref.hashCode() * 31
   }
 }
 

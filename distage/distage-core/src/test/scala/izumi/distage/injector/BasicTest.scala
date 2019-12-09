@@ -11,6 +11,16 @@ import izumi.distage.model.plan.ExecutableOp.ImportDependency
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
+object InjectorPerf {
+  def main(args: Array[String]): Unit = {
+    val t1 = System.currentTimeMillis()
+    val i = Injector()
+    val t2 = System.currentTimeMillis()
+    println(i)
+    println(t2 - t1)
+  }
+}
+
 class BasicTest extends WordSpec with MkInjector {
 
   "maintain correct operation order" in {

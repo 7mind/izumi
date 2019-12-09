@@ -20,7 +20,9 @@ sealed trait Binding {
   protected[this] def withTags(tags: Set[BindingTag]): Binding
 
   override final def toString: String = BindingFormatter(KeyFormatter.Full).formatBinding(this)
-  override final def hashCode(): Int = group.hashCode()
+
+  override final def hashCode(): Int = group.hashCode
+
   override final def equals(obj: Any): Boolean = obj match {
     case b: Binding =>
       b.group == this.group && b.tags == this.tags
@@ -33,6 +35,7 @@ object Binding {
 
   sealed trait GroupingKey {
     def key: DIKey
+    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
   }
   object GroupingKey {
     final case class KeyImpl(key: DIKey, impl: ImplDef) extends GroupingKey

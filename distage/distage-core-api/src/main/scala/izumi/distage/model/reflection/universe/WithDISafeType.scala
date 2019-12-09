@@ -14,7 +14,7 @@ trait WithDISafeType {
                                 private[distage] val cls: Class[_],
                               ) {
 
-    override final val hashCode: Int = tag.hashCode()
+    override final lazy val hashCode: Int = tag.hashCode()
     override final lazy val toString: String = tag.repr
 
     override final def equals(obj: Any): Boolean = {

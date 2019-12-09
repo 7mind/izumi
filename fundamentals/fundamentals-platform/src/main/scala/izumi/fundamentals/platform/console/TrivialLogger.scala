@@ -96,11 +96,19 @@ object TrivialLogger {
   private[this] def checkLog(sysProperty: String, config: Config, default: Boolean): Boolean = enabled.synchronized {
     config.forceLog || enabled.getOrElseUpdate(sysProperty, {
       val parts = sysProperty.split('.')
-      val candidates = parts.tail.scanLeft(parts.head) {
-        case (acc, chunk) =>
-          acc + "." + chunk
+      var current = parts.head
+      def cond: Boolean = {
+        System.getProperty(current).asBoolean().getOrElse(default)
       }
-      candidates.exists(System.getProperty(_).asBoolean().getOrElse(default))
+      parts.tail.foreach {
+        p =>
+          if (cond) {
+            return true
+          } else {
+            current = s"$current.$p"
+          }
+      }
+      return cond
     })
   }
 }

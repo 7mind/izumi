@@ -97,17 +97,17 @@ object BootstrapLocator {
     )
   }
 
-  final val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
+  final lazy val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
     make[ProxyProvider].from[ProxyProviderFailingImpl]
   }
 
-  final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
+  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
     make[Boolean].named("distage.init-proxies-asap").fromValue(true)
     make[Activation].fromValue(Activation.empty)
 
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
-    make[MirrorProvider].from[MirrorProvider.Impl.type]
+    make[MirrorProvider].fromValue(mirrorProvider)
     make[DIGarbageCollector].from[TracingDIGC.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
@@ -135,9 +135,9 @@ object BootstrapLocator {
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }
 
-  final val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
+  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
-  final val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
+  final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
   }
 }

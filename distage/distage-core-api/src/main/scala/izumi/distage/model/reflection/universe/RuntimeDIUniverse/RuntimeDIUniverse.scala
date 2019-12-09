@@ -52,7 +52,7 @@ final case class SafeType private(
                                    tag: LightTypeTag,
                                    /*private[distage] val */ cls: Class[_],
                                  ) {
-  override final val hashCode: Int = tag.hashCode()
+  override final lazy val hashCode: Int = tag.hashCode()
   override final def toString: String = tag.repr
 
   override final def equals(obj: Any): Boolean = {
@@ -87,6 +87,7 @@ object SafeType {
 
 sealed trait DIKey {
   def tpe: SafeType
+  override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this.asInstanceOf[Product])
 }
 
 object DIKey {
@@ -129,13 +130,13 @@ object DIKey {
   final case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
     override final def tpe: SafeType = reference.tpe
 
-    override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode().toString)}"
+    override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
   }
 
   final case class MultiSetImplId(set: DIKey, impl: ImplDef)
   object MultiSetImplId {
     implicit object SetImplIdContract extends IdContract[MultiSetImplId] {
-      override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode()}"
+      override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode}"
     }
   }
 }
