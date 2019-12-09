@@ -143,8 +143,8 @@ object LightTypeTagRef {
     def paramRefs: Set[NameReference] = input.map(n => NameReference(n.name)).toSet
     def allArgumentsReferenced: Boolean = paramRefs.diff(referenced).isEmpty
 
-    def normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
-    def normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
+    lazy val normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
+    lazy val normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
 
     override def equals(obj: Any): Boolean = {
       obj match {
@@ -158,6 +158,10 @@ object LightTypeTagRef {
         case _ =>
           false
       }
+    }
+
+    override def hashCode(): Int = {
+      normalizedOutput.hashCode()
     }
 
     override def toString: String = this.render()
