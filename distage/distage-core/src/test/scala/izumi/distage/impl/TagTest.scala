@@ -367,12 +367,11 @@ class TagTest extends WordSpec with X[String] {
       assert(TagK[Either[Nothing, ?]].tag <:< tagEitherThrowable)
     }
 
-    "progression test: type parameter covariance doesn't work after combine" ignore {
+    "type parameter covariance works after combine" in {
       def getTag[F[+_, +_]: TagKK] = TagK[F[Throwable, ?]]
       val tagEitherThrowable = getTag[Either].tag
-      val tagEitherSerializable = TagK[Either[Serializable, ?]]
-
-      assert(!(tagEitherThrowable <:< tagEitherSerializable.tag))
+      val tagEitherSerializable = TagK[Either[java.io.Serializable, ?]]
+      assert(tagEitherThrowable <:< tagEitherSerializable.tag)
     }
 
     "combine Const Lambda to TagK" in {
