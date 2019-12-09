@@ -17,7 +17,7 @@ object PluginLoader {
   lazy val empty: PluginLoader = () => Nil
 
   final case class PluginConfig(
-                                 debug: Boolean,
+                                 debug: Boolean = false,
                                  packagesEnabled: Seq[String],
                                  packagesDisabled: Seq[String] = Nil,
                                )

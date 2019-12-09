@@ -1,6 +1,5 @@
 package izumi.distage.impl
 
-import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.fundamentals.reflection.macrortti._
@@ -304,8 +303,12 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtyping of parents parameterized with type lambdas" in {
-      implicitly[RoleChild[Either] <:< RoleParent[Either[Throwable, ?]]]
       assertChild(LTT[RoleChild[Either]], LTT[RoleParent[Either[Throwable, ?]]])
+    }
+
+    "support subtyping of parents parameterized with type lambdas in combined tags" in {
+      val combinedTag = `LTT[_[_,_]]`[RoleChild].combine(`LTT[_,_]`[Either])
+      assertChild(combinedTag, LTT[RoleParent[Either[Throwable, ?]]])
     }
 
     "support complex type lambdas" in {
@@ -344,7 +347,7 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support structural & refinement type equality" in {
-      assertDifferent(LTT[With[str.type] with ({ type T = str.type with Int })], LTT[With[str.type] with ({ type T = str.type with Long })])
+      assertDifferent(LTT[W4[str.type] with ({ type T = str.type with Int })], LTT[W4[str.type] with ({ type T = str.type with Long })])
 
       type C1 = C
       assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
