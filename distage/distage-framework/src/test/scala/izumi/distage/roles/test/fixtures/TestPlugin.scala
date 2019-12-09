@@ -10,8 +10,9 @@ import izumi.distage.roles.test.fixtures.Fixture._
 import izumi.distage.roles.test.fixtures.TestPlugin.{InheritedCloseable, NotCloseable}
 import izumi.distage.roles.test.fixtures.TestRole00.{IntegrationOnlyCfg, TestRole00Resource, TestRole00ResourceIntegrationCheck}
 import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.reflection.Tags.TagK
 
-class TestPlugin extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
+class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
   tag(Env.Prod)
 
   private val version = Option(System.getProperty(TestPlugin.versionProperty)) match {
@@ -24,21 +25,23 @@ class TestPlugin extends CatsDIEffectModule with PluginDef with ConfigModuleDef 
   make[ArtifactVersion].named("launcher-version").from(ArtifactVersion(version))
   many[Dummy]
 
-  make[TestTask00[IO]]
-  make[TestRole00[IO]]
-  make[TestRole01[IO]]
-  make[TestRole02[IO]]
+  make[TestTask00[F]]
+  make[TestRole00[F]]
+  make[TestRole01[F]]
+  make[TestRole02[F]]
 
-  make[TestRole00Resource[IO]]
+  make[TestRole00Resource[F]]
   make[TestRole00ResourceIntegrationCheck]
 
   make[NotCloseable].from[InheritedCloseable]
-  make[ConfigWriter[IO]]
-  make[Help[IO]]
+  make[ConfigWriter[F]]
+  make[Help[F]]
 
   makeConfig[TestServiceConf]("testservice")
   makeConfig[IntegrationOnlyCfg]("integrationOnlyCfg")
 }
+
+class TestPlugin extends TestPluginBase[IO]
 
 object TestPlugin {
   trait NotCloseable

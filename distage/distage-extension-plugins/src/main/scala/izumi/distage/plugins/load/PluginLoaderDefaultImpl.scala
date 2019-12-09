@@ -17,7 +17,7 @@ class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
     val enabledPackages: Seq[String] = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
     val disabledPackages: Seq[String] = config.packagesDisabled
 
-    PluginLoaderDefaultImpl.load[PluginBase](base, Seq(defClass.getCanonicalName), enabledPackages, disabledPackages, config.debug)
+    PluginLoaderDefaultImpl.load[PluginBase](base, Seq(defClass.getName), enabledPackages, disabledPackages, config.debug)
   }
 }
 
@@ -25,7 +25,7 @@ object PluginLoaderDefaultImpl {
   def load[T](base: Class[_], whitelist: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
-      .map(_.whitelistClasses(whitelist :+ base.getCanonicalName: _*))
+      .map(_.whitelistClasses(whitelist :+ base.getName: _*))
       .map(_.blacklistPackages(disabledPackages: _*))
       .map(_.enableMethodInfo())
       .map(if (debug) _.verbose() else identity)
@@ -33,7 +33,7 @@ object PluginLoaderDefaultImpl {
       .get
 
     try {
-      val implementors = scanResult.getClassesImplementing(base.getCanonicalName)
+      val implementors = scanResult.getClassesImplementing(base.getName)
       implementors
         .asScala
         .filterNot(_.isAbstract)
