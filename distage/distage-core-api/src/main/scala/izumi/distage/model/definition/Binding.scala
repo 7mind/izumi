@@ -56,8 +56,7 @@ object Binding {
   sealed trait SetBinding extends Binding
 
   final case class SingletonBinding[+K <: DIKey](key: K, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with WithTarget {
-    override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
-
+    override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SingletonBinding[K] = copy(implementation = implDef)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): SingletonBinding[T] = copy(key = key)
     protected[this] def withTags(newTags: Set[BindingTag]): SingletonBinding[K] = copy(tags = newTags)
@@ -65,14 +64,14 @@ object Binding {
   }
 
   final case class SetElementBinding(key: DIKey.SetElementKey, implementation: ImplDef, tags: Set[BindingTag], origin: SourceFilePosition) extends ImplBinding with SetBinding {
-    override def group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
+    override lazy val group: GroupingKey = GroupingKey.KeyImpl(key, implementation)
     override def withImplDef(implDef: ImplDef): SetElementBinding = copy(implementation = implDef)
     protected[this] def withTags(newTags: Set[BindingTag]): SetElementBinding = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): SetElementBinding = withTags(this.tags ++ moreTags)
   }
 
   final case class EmptySetBinding[+K <: DIKey](key: K, tags: Set[BindingTag], origin: SourceFilePosition) extends SetBinding with WithTarget {
-    override def group: GroupingKey = GroupingKey.Key(key)
+    override lazy val group: GroupingKey = GroupingKey.Key(key)
     override def withTarget[T <: RuntimeDIUniverse.DIKey](key: T): EmptySetBinding[T] = copy(key = key)
     protected[this] def withTags(newTags: Set[BindingTag]): EmptySetBinding[K] = copy(tags = newTags)
     override def addTags(moreTags: Set[BindingTag]): EmptySetBinding[K] = withTags(this.tags ++ moreTags)
