@@ -10,9 +10,9 @@ import scala.reflect.api.Universe
 import scala.reflect.macros.blackbox
 
 object AnyConstructorMacro {
+
   def make[B[_], T: c.WeakTypeTag](c: blackbox.Context): c.Expr[B[T]] = {
     import c.universe._
-
     c.Expr[B[T]](q"""${c.prefix}._make[${weakTypeOf[T]}]((${c.inferImplicitValue(weakTypeOf[AnyConstructorOptionalMakeDSL[T]], silent = false)}).provider)""")
   }
 

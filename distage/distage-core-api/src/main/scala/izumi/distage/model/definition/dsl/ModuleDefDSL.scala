@@ -78,13 +78,13 @@ trait ModuleDefDSL
       .++(asIsIncludes)
   }
 
-  override private[definition] final def _bindDSL[T: Tag](ref: SingletonRef): MakeDSL[T] =
+  override private[definition] final def _bindDSL[T](ref: SingletonRef): MakeDSL[T] =
     new MakeDSL[T](ref, ref.key)
 
-  override private[definition] final def _multipleDSL[T: Tag](ref: MultipleRef): MultipleDSL[T] =
+  override private[definition] final def _multipleDSL[T](ref: MultipleRef): MultipleDSL[T] =
     new MultipleDSL[T](ref, ref.key)
 
-  override private[definition] final def _setDSL[T: Tag](ref: SetRef): SetDSL[T] =
+  override private[definition] final def _setDSL[T](ref: SetRef): SetDSL[T] =
     new SetDSL[T](ref)
 
   /**

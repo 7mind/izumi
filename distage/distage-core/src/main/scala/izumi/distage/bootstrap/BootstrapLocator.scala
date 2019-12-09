@@ -126,8 +126,9 @@ object BootstrapLocator {
 
     many[PlanningObserver]
     many[PlanningHook]
-    make[PlanningHook].from[PlanningHookAggregate]
+
     make[PlanningObserver].from[PlanningObserverAggregate]
+    make[PlanningHook].from[PlanningHookAggregate]
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 

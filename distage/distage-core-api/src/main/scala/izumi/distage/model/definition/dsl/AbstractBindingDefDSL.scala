@@ -23,9 +23,9 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
   private[this] final val mutableState: mutable.ArrayBuffer[BindingRef] = _initialState
   protected[this] def _initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
 
-  private[definition] def _bindDSL[T: Tag](ref: SingletonRef): BindDSL[T]
-  private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): MultipleDSL[T]
-  private[definition] def _setDSL[T: Tag](ref: SetRef): SetDSL[T]
+  private[definition] def _bindDSL[T](ref: SingletonRef): BindDSL[T]
+  private[definition] def _multipleDSL[T](ref: MultipleRef): MultipleDSL[T]
+  private[definition] def _setDSL[T](ref: SetRef): SetDSL[T]
 
   private[definition] def frozenState: collection.Seq[Binding] = {
     mutableState.flatMap(_.interpret)
@@ -89,7 +89,7 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     *
     * @see Guice wiki on Multibindings: https://github.com/google/guice/wiki/Multibindings
     */
-  final protected[this] def many[T: Tag](implicit pos: CodePositionMaterializer): SetDSL[T] = {
+  final protected[this] def many[T](implicit tag: Tag[Set[T]], pos: CodePositionMaterializer): SetDSL[T] = {
     val setRef = _registered(new SetRef(Bindings.emptySet[T]))
     _setDSL(setRef)
   }
@@ -120,11 +120,11 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[T](ImplDef.ProviderImpl(SafeType.get[T], function.get))
   }
 
-  final protected[this] def bindEffect[F[_] : TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected[this] def bindEffect[F[_]: TagK, T: Tag](instance: F[T])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.InstanceImpl(SafeType.get[F[T]], instance)))
   }
 
-  final protected[this] def bindEffect[F[_] : TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
+  final protected[this] def bindEffect[F[_]: TagK, T: Tag](function: ProviderMagnet[F[T]])(implicit pos: CodePositionMaterializer): MultipleDSL[T] = {
     bindImpl[T](ImplDef.EffectImpl(SafeType.get[T], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[F[T]], function.get)))
   }
 
@@ -142,10 +142,11 @@ trait AbstractBindingDefDSL[BindDSL[_], MultipleDSL[_], SetDSL[_]] {
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], function.get)))
   }
 
-  final protected[this] def bindResource[R0, R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R0])(implicit
-                                                                                                    adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, Any]],
-                                                                                                    tag: ResourceTag[R],
-                                                                                                    pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
+  final protected[this] def bindResource[R0, R <: DIResourceBase[Any, Any]](function: ProviderMagnet[R0])
+                                                                           (implicit
+                                                                            adapt: ProviderMagnet[R0] => ProviderMagnet[R with DIResourceBase[Any, Any]],
+                                                                            tag: ResourceTag[R],
+                                                                            pos: CodePositionMaterializer): MultipleDSL[tag.A] = {
     import tag._
     bindImpl[A](ImplDef.ResourceImpl(SafeType.get[A], SafeType.getK[F], ImplDef.ProviderImpl(SafeType.get[R], adapt(function).get)))
   }

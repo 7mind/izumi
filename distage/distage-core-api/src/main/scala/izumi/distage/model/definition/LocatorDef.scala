@@ -32,13 +32,13 @@ trait LocatorDef
 
   override def finalizers[F[_]: TagK]: immutable.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
-  override private[definition] def _bindDSL[T: Tag](ref: SingletonRef): LocatorDef.BindDSL[T] =
+  override private[definition] def _bindDSL[T](ref: SingletonRef): LocatorDef.BindDSL[T] =
     new definition.LocatorDef.BindDSL[T](ref, ref.key)
 
-  override private[definition] def _multipleDSL[T: Tag](ref: MultipleRef): LocatorDef.MultipleDSL[T] =
+  override private[definition] def _multipleDSL[T](ref: MultipleRef): LocatorDef.MultipleDSL[T] =
     new definition.LocatorDef.MultipleDSL[T](ref)
 
-  override private[definition] def _setDSL[T: Tag](ref: SetRef): LocatorDef.SetDSL[T] =
+  override private[definition] def _setDSL[T](ref: SetRef): LocatorDef.SetDSL[T] =
     new definition.LocatorDef.SetDSL[T](ref)
 
   protected def initialState: mutable.ArrayBuffer[BindingRef] = mutable.ArrayBuffer.empty
