@@ -387,13 +387,12 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   private def makeLambdaParams(@unused ctxid: Option[String], targs: List[Symbol]): List[(String, LambdaParameter)] = {
     val lamParams = targs.zipWithIndex.map {
       case (p, idx) =>
-        val name = idx.toString /*ctxid match {
+        val name = ctxid match {
           case Some(value) =>
-            //s"$value:${idx.toString}"
-            idx.toString
+            s"$value:${idx.toString}"
           case None =>
             idx.toString
-        }*/ // TODO: re-check lambda param disambiguation
+        }
 
         p.fullName -> LambdaParameter(name)
     }

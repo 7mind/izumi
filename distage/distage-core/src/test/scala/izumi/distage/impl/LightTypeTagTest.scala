@@ -307,8 +307,13 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtyping of parents parameterized with type lambdas in combined tags" in {
-      val combinedTag = `LTT[_[_,_]]`[RoleChild].combine(`LTT[_,_]`[Either])
-      assertChild(combinedTag, LTT[RoleParent[Either[Throwable, ?]]])
+      val childBase = `LTT[_[_,_]]`[RoleChild]
+      val childArg = `LTT[_,_]`[Either]
+      val combinedTag = childBase.combine(childArg)
+      val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
+
+      assertSame(combinedTag, LTT[RoleChild[Either]])
+      assertChild(combinedTag, expectedTag)
     }
 
     "support complex type lambdas" in {

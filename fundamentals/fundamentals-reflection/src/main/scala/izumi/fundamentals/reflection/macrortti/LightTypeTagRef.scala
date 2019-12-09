@@ -7,13 +7,9 @@ import scala.annotation.tailrec
 
 sealed trait LightTypeTagRef {
   final def combine(args: Seq[LightTypeTagRef]): AbstractReference = {
-    applyParameters {
-      l =>
-        l.input.zip(args).map {
-          case (p, v: AbstractReference) =>
-            p.name -> v
-        }.toMap
-    }
+    val out = applySeq(args .map {case v: AbstractReference => v})
+    //println(s"combining $this with $args => $out")
+    out
   }
 
   final def combineNonPos(args: Seq[Option[LightTypeTagRef]]): AbstractReference = {
@@ -76,7 +72,8 @@ sealed trait LightTypeTagRef {
     getName(LTTRenderables.Long.r_SymName(_, hasPrefix = false), this)
   }
 
-  @tailrec @inline
+  @tailrec
+  @inline
   private[this] def getName(render: SymName => String, self: LightTypeTagRef): String = {
     self match {
       case Lambda(_, output) => getName(render, output)
@@ -107,8 +104,16 @@ sealed trait LightTypeTagRef {
         reference.typeArgs
     }
   }
-
-  private[this] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
+  protected[macrortti] def applySeq(refs: Seq[AbstractReference]): AbstractReference = {
+    applyParameters {
+      l =>
+        l.input.zip(refs).map {
+          case (p, v) =>
+            p.name -> v
+        }.toMap
+    }
+  }
+  protected[macrortti] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
     this match {
       case l: Lambda =>
         val parameters = p(l)

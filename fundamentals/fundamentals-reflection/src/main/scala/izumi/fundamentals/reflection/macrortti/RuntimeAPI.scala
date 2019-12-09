@@ -1,5 +1,6 @@
 package izumi.fundamentals.reflection.macrortti
 
+import izumi.fundamentals.platform.language.Quirks
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
 
 private[izumi] object RuntimeAPI {
@@ -41,8 +42,7 @@ private[izumi] object RuntimeAPI {
 
   def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
     val newParams = lambda.input.filterNot(parameters contains _.name)
-
-    val rewriter = new Rewriter(parameters)((_, _, v) => v)
+    val rewriter = new Rewriter(parameters)
     val replaced = rewriter.replaceRefs(lambda.output)
 
     if (newParams.isEmpty) {
@@ -53,13 +53,19 @@ private[izumi] object RuntimeAPI {
       // such lambdas are legal: see "regression test: combine Const Lambda to TagK"
       out
     }
+
   }
 
-  final class Rewriter[T](rules: Map[String, T])(complete: (Rewriter[T], NameReference, T) => AbstractReference) {
+  final class Rewriter(rules: Map[String, AbstractReference]) {
+    def complete(context: AppliedNamedReference, ref: AbstractReference): AbstractReference = {
+      Quirks.discard(context)
+      ref
+    }
+
     def replaceRefs(reference: AbstractReference): AbstractReference = {
       reference match {
         case l: Lambda =>
-          l
+          l.copy(output = replaceRefs(l.output))
         case o: AppliedReference =>
           replaceApplied(o)
       }
@@ -99,21 +105,43 @@ private[izumi] object RuntimeAPI {
     }
 
     private def replaceNamed(reference: AppliedNamedReference): AbstractReference = {
+      def returnFullRef(fixedRef: String, parameters: List[TypeParam], prefix: Option[AppliedReference]): FullReference = {
+        val p = parameters.map {
+          case TypeParam(pref, variance) =>
+            TypeParam(replaceRefs(pref), variance)
+        }
+        FullReference(fixedRef, p, prefix)
+      }
+
       reference match {
         case n@NameReference(ref, boundaries, prefix) =>
           rules.get(ref.name) match {
             case Some(value) =>
-              complete(this, n, value)
+              complete(n, value)
             case None =>
               NameReference(ref, replaceBoundaries(boundaries), replacePrefix(prefix))
           }
 
-        case FullReference(ref, parameters, prefix) =>
-          val p = parameters.map {
-            case TypeParam(pref, variance) =>
-              TypeParam(replaceRefs(pref), variance)
+        case f@FullReference(ref, parameters, prefix) =>
+          rules.get(ref) match {
+            case Some(value) =>
+              complete(f, value) match {
+                case out: Lambda =>
+                  val refs = parameters.map(_.ref)
+                  out.applySeq(refs)
+
+                case n: NameReference =>
+                  // we need this to support fakes only (see LightTypeTagRef#makeFakeParams)
+                  returnFullRef(n.ref.name, parameters, prefix)
+
+                case out =>
+                  throw new IllegalStateException(s"Lambda expected for context-bound $f, but got $out")
+
+              }
+            case None =>
+              returnFullRef(ref, parameters, prefix)
           }
-          FullReference(ref, p, prefix)
+
       }
     }
 

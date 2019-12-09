@@ -37,9 +37,9 @@ class CompactPlanFormatterTest extends WordSpec with MkInjector {
     assert(!formatted.contains(classOf[Impl1].getName))
     assert(formatted.contains("{type.BasicCases::BasicCase1::JustTrait}"))
     assert(formatted.contains("BasicCases::BasicCase1::Impl1"))
-    assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %0 → Either[+Nothing,+0],=Unit]}"))
+    assert(formatted.contains("{type.HigherKindCases::HigherKindsCase1::OptionT[=λ %1:0 → Either[+Nothing,+1:0],=Unit]}"))
     assert(formatted.contains("{type.CompactPlanFormatterTest::W1::T2}"))
-    assert(formatted.contains("{type.CompactPlanFormatterTest::K1[=λ %0,%1 → CompactPlanFormatterTest::T1[=0,=1]]}"))
+    assert(formatted.contains("{type.CompactPlanFormatterTest::K1[=λ %1:0,%1:1 → CompactPlanFormatterTest::T1[=1:0,=1:1]]}"))
   }
 }
 

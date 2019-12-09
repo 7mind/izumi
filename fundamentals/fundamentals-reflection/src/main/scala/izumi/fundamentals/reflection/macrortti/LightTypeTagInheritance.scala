@@ -123,7 +123,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
     def parameterShapeCompatible: Boolean = {
       self.parameters.zip(that.parameters).forall {
         case (ps, pt) =>
-          ps.variance match {
+          pt.variance match {
             case Variance.Invariant =>
               ps.ref == pt.ref
             case Variance.Contravariant =>
@@ -138,7 +138,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       self.parameters.size == that.parameters.size
     }
 
-    ctx.logger.log(s"⚠️ comparing parameterized references, $self <:< $that, context = ${ctx.params}")
+    ctx.logger.log(s"⚠️ comparing parameterized references, $self <:< $that, context = ${ctx.params}; sameArity = $sameArity, shapeOk = $parameterShapeCompatible")
 
     if (self.asName == that.asName) {
       sameArity && parameterShapeCompatible
