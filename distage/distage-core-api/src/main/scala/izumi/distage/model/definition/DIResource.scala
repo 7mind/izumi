@@ -9,6 +9,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.TagMacro
 import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import zio.{Exit, Reservation, ZIO, ZManaged}
@@ -256,7 +257,7 @@ object DIResource {
     *   )(release = _ => IO.unit)
     * }}}
     */
-  class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @deprecated("unused", "") dummy: Boolean = false) extends DIResource[F, A] {
+  class Make[+F[_], A] private[this](acquire0: () => F[A])(release: A => F[Unit], @unused dummy: Boolean = false) extends DIResource[F, A] {
     def this(acquire: => F[A])(release: A => F[Unit]) = this(() => acquire)(release)
 
     override final def acquire: F[A] = acquire0()
@@ -271,6 +272,19 @@ object DIResource {
     * }}}
     */
   class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
+
+  /**
+    * Class-based variant of [[makePair]]:
+    *
+    * {{{
+    *   class IntRes extends DIResource.MakePair(IO(1000 -> IO.unit))
+    * }}}
+    */
+  class MakePair[F[_], A] private[this](acquire0: () => F[(A, F[Unit])], @unused dummy: Boolean = false) extends Cats[F, A] {
+    def this(acquire: => F[(A, F[Unit])]) = this(() => acquire)
+
+    override def acquire: F[(A, F[Unit])] = acquire0()
+  }
 
   /**
     * Class-based variant of [[liftF]]:
