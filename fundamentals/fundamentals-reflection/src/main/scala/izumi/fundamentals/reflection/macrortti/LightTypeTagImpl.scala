@@ -2,7 +2,6 @@ package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.collections.IzCollections._
 import izumi.fundamentals.platform.console.TrivialLogger
-import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.platform.strings.IzString._
 import izumi.fundamentals.reflection.macrortti.LightTypeTagImpl.{Broken, globalCache}
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.RefinementDecl.TypeMember
@@ -384,7 +383,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     out
   }
 
-  private def makeLambdaParams(@unused ctxid: Option[String], targs: List[Symbol]): List[(String, LambdaParameter)] = {
+  private def makeLambdaParams(ctxid: Option[String], targs: List[Symbol]): List[(String, LambdaParameter)] = {
     val lamParams = targs.zipWithIndex.map {
       case (p, idx) =>
         val name = ctxid match {

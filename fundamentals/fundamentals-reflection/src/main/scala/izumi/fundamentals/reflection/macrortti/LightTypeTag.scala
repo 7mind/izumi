@@ -140,7 +140,6 @@ abstract class LightTypeTag
   }
 
   override def hashCode(): Int = {
-    //val state = Seq(ref.shortName)
     val state = Seq(ref)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }

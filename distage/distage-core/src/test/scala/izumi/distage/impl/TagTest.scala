@@ -364,8 +364,15 @@ class TagTest extends WordSpec with X[String] {
       assert(tagEitherThrowable =:= tag)
       assert(tagEitherThrowable <:< tag)
       assert(tagEitherThrowable <:< TagK[Either[Any, ?]].tag)
-//      assert(tagEitherThrowable <:< TagK[Either[Serializable, ?]].tag)
       assert(TagK[Either[Nothing, ?]].tag <:< tagEitherThrowable)
+    }
+
+    "progression test: type parameter covariance doesn't work after combine" in {
+      def getTag[F[+_, +_]: TagKK] = TagK[F[Throwable, ?]]
+      val tagEitherThrowable = getTag[Either].tag
+      val tagEitherSerializable = TagK[Either[Serializable, ?]]
+
+      assert(!(tagEitherThrowable <:< tagEitherSerializable.tag))
     }
 
     "combine Const Lambda to TagK" in {
@@ -374,6 +381,7 @@ class TagTest extends WordSpec with X[String] {
 
       assert(tag.tag =:= TagK[Const[Int, ?]].tag)
       assert(tag.tag <:< TagK[Const[AnyVal, ?]].tag)
+      assert(tag.tag.hashCode() == TagK[Const[Int, ?]].tag.hashCode())
     }
 
     "combined TagK 3 & 2 parameter coherence" in {
@@ -383,7 +391,6 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag =:= TagK[IO[Throwable, ?]].tag)
       assert(tag.tag <:< TagK[IO[Throwable, ?]].tag)
       assert(tag.tag <:< TagK[IO[Any, ?]].tag)
-//      assert(tag.tag <:< TagK[IO[Serializable, ?]].tag)
     }
 
     "resolve TagKK from an odd higher-kinded Tag and with parameters out of order" in {

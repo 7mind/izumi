@@ -15,6 +15,7 @@ import izumi.distage.model.definition.{BootstrapModule, DIResource}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.test.fixtures.Fixture.{Resource0, Resource1, Resource2, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
+import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.ArtifactVersion
 import izumi.logstage.api.IzLogger
