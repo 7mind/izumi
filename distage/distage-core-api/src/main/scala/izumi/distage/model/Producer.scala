@@ -5,8 +5,8 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.OrderedPlan
 import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, FinalizerFilter}
-import izumi.fundamentals.reflection.Tags.TagK
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.reflection.Tags.TagK
 
 /** Executes instructions in [[OrderedPlan]] to produce a [[Locator]] */
 trait Producer {

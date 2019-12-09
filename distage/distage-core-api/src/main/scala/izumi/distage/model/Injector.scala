@@ -4,7 +4,8 @@ import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.plan.GCMode
-import izumi.fundamentals.reflection.Tags.TagK
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
+import izumi.fundamentals.reflection.Tags.{Tag, TagK}
 import izumi.fundamentals.platform.functional.Identity
 
 /**
@@ -16,7 +17,7 @@ import izumi.fundamentals.platform.functional.Identity
 trait Injector extends Planner with Producer {
 
   /**
-    * Create an effectful [[DIResourceBase]] value that encapsulates the
+    * Create an effectful [[izumi.distage.model.definition.DIResource]] value that encapsulates the
     * allocation and cleanup of an object graph described by `input`
     *
     * @param input Bindings created by [[izumi.distage.model.definition.ModuleDef]] DSL
@@ -36,12 +37,37 @@ trait Injector extends Planner with Producer {
     produceF[F](plan(PlannerInput(input, mode)))
   }
 
+  /**
+    * Create an object graph described by the `input` module,
+    * designate `A` as the root of the graph and retrieve `A` from the result.
+    *
+    * This is useful for the common case when your main logic class
+    * is the root of your graph AND the object you want to use immediately.
+    *
+    * A short-hand for:
+    *
+    * {{{
+    *   Injector()
+    *     .produceF[F](input, GCMode(DIKey.get[A]))
+    *     .map(_.get[A])
+    * }}}
+    * */
+  final def produceFGet[F[_]: TagK: DIEffect, A: Tag](input: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A])))).map(_.get[A])
+  }
+  final def produceFGet[F[_]: TagK: DIEffect, A: Tag](name: String)(input: ModuleBase): DIResourceBase[F, A] = {
+    produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A].named(name))))).map(_.get[A](name))
+  }
+
   final def produce(input: PlannerInput): DIResourceBase[Identity, Locator] = {
     produce(plan(input))
   }
   final def produce(input: ModuleBase, mode: GCMode): DIResourceBase[Identity, Locator] = {
     produce(plan(PlannerInput(input, mode)))
   }
+
+  final def produceGet[A: Tag](input: ModuleBase): DIResourceBase[Identity, A] = produceFGet[Identity, A](input)
+  final def produceGet[A: Tag](name: String)(input: ModuleBase): DIResourceBase[Identity, A] = produceFGet[Identity, A](name)(input)
 
   final def produceUnsafeF[F[_]: TagK: DIEffect](input: PlannerInput): F[Locator] = {
     produceUnsafeF[F](plan(input))

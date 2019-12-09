@@ -605,19 +605,20 @@ Brief introduction to tagless final:
 Advantages of `distage` as a driver for TF compared to implicits:
 
 - easy explicit overrides
-- easy @ref[effectful instantiation](#effect-bindings) and @ref[resource management](#resource-bindings-lifecycle)
-- extremely easy & scalable [test](#testkit) context setup due to the above
-- multiple different implementations via `@Id` annotation
+- easy @ref[effectful instantiation](basics.md#effect-bindings) and @ref[resource management](basics.md#resource-bindings-lifecycle)
+- extremely easy & scalable @ref[test](distage-testkit.md#testkit) context setup due to the above
+- multiple different implementations for a type using disambiguation by `@Id`
 
-As an example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
+For example, let's take [freestyle's tagless example](http://frees.io/docs/core/handlers/#tagless-interpretation)
 and make it safer and more flexible by replacing dependencies on global `import`ed implementations from with explicit modules.
 
 First, the program we want to write:
 
 ```scala mdoc:reset:to-string
-import cats._
-import cats.implicits._
-import distage._
+import cats.Monad
+import cats.effect.{ExitCode, Sync, IO}
+import cats.syntax.all._
+import distage.{GCMode, Module, ModuleDef, Injector, Tag, TagK, TagKK}
 
 trait Validation[F[_]] {
   def minSize(s: String, n: Int): F[Boolean]
@@ -635,10 +636,8 @@ class TaglessProgram[F[_]: Monad: Validation: Interaction] {
   def program: F[Unit] = for {
     userInput <- Interaction[F].ask("Give me something with at least 3 chars and a number on it")
     valid     <- (Validation[F].minSize(userInput, 3), Validation[F].hasNumber(userInput)).mapN(_ && _)
-    _         <- if (valid) 
-                    Interaction[F].tell("awesomesauce!")
-                 else 
-                    Interaction[F].tell(s"$userInput is not valid")
+    _         <- if (valid) Interaction[F].tell("awesomesauce!")
+                 else       Interaction[F].tell(s"$userInput is not valid")
   } yield ()
 }
 
@@ -649,82 +648,80 @@ def ProgramModule[F[_]: TagK: Monad]: Module = new ModuleDef {
 ```
 
 @scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) is distage's analogue of `TypeTag` for higher-kinded types such as `F[_]`,
-it allows preserving type-information at runtime for types that aren't yet known at definition.
+it allows preserving type-information at runtime for type parameters.
 You'll need to add a @scaladoc[TagK](izumi.fundamentals.reflection.Tags.TagK) context bound to create a module parameterized by an abstract `F[_]`.
-Use @scaladoc[Tag](izumi.fundamentals.reflection.Tags.Tag) to create modules parameterized by non-higher-kinded types.
+To parameterize by non-higher-kinded types, use just @scaladoc[Tag](izumi.fundamentals.reflection.Tags.Tag).
 
-Interpreters:
-
-```scala mdoc:invisible:to-string
-import cats.instances.try_.catsStdInstancesForTry
-```
+Now the interpreters for `Validation` and `Interaction`:
 
 ```scala mdoc:to-string
-import scala.util.Try
-import cats.instances.all._
-
-def tryValidation = new Validation[Try] {
-  def minSize(s: String, n: Int): Try[Boolean] = Try(s.size >= n)
-  def hasNumber(s: String): Try[Boolean] = Try(s.exists(c => "0123456789".contains(c)))
+final class SyncValidation[F[_]](implicit F: Sync[F]) extends Validation[F] {
+  def minSize(s: String, n: Int): F[Boolean] = F.delay(s.size >= n)
+  def hasNumber(s: String): F[Boolean]       = F.delay(s.exists(c => "0123456789".contains(c)))
 }
   
-def tryInteraction = new Interaction[Try] {
-  def tell(s: String): Try[Unit] = Try(println(s))
-  def ask(s: String): Try[String] = Try("This could have been user input 1")
+final class SyncInteraction[F[_]](implicit F: Sync[F]) extends Interaction[F] {
+  def tell(s: String): F[Unit]  = F.delay(println(s))
+  def ask(s: String): F[String] = F.delay("This could have been user input 1")
 }
 
-val TryInterpreters = new ModuleDef {
-  make[Validation[Try]].from(tryValidation)
-  make[Interaction[Try]].from(tryInteraction)
+def SyncInterpreters[F[_]: TagK: Sync] = {
+  new ModuleDef {
+    make[Validation[F]].from[SyncValidation[F]]
+    make[Interaction[F]].from[SyncInteraction[F]]
+    addImplicit[Sync[F]]
+  }
 }
 
 // combine all modules
-val TryProgram = ProgramModule[Try] ++ TryInterpreters
 
-// create object graph
-val objects = Injector().produceUnsafe(TryProgram, GCMode.NoGC)
+def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
+
+// create object graph Resource
+
+val objectsResource = Injector().produceF[IO](SyncProgram[IO], GCMode.NoGC)
 
 // run
-objects.get[TaglessProgram[Try]].program
+
+objectsResource.use(_.get[TaglessProgram[IO]].program).unsafeRunSync()
 ```
 
-The program module is polymorphic over the eventual effect type, we can easily parameterize it by a different effect:
+The program module is polymorphic over effect type. It can be instantiated by a different effect:
 
 ```scala mdoc:to-string
-import cats.effect._
+import zio.interop.catz._
+import zio.Task
 
-def SyncInterpreters[F[_]: TagK](implicit F: Sync[F]) = new ModuleDef {
-  make[Validation[F]].from(new Validation[F] {
-    def minSize(s: String, n: Int): F[Boolean] = F.delay(s.size >= n)
-    def hasNumber(s: String): F[Boolean] = F.delay(s.exists(c => "0123456789".contains(c)))
-  })
-  make[Interaction[F]].from(new Interaction[F] {
-    def tell(s: String): F[Unit] = F.delay(println(s))
-    def ask(s: String): F[String] = F.delay("This could have been user input 1")
-  })
+val ZIOProgram = ProgramModule[Task] ++ SyncInterpreters[Task]
+```
+
+We may even choose different interpreters at runtime:
+
+```scala mdoc:to-string
+import zio.RIO
+import zio.console.{Console, getStrLn, putStrLn}
+
+object RealInteractionZIO extends Interaction[RIO[Console, ?]] {
+  def tell(s: String): RIO[Console, Unit]  = putStrLn(s)
+  def ask(s: String): RIO[Console, String] = putStrLn(s) *> getStrLn
 }
 
-def IOProgram = ProgramModule[IO] ++ SyncInterpreters[IO]
-```
-
-We can leave it completely polymorphic:
-
-```scala mdoc:to-string
-def SyncProgram[F[_]: TagK: Sync] = ProgramModule[F] ++ SyncInterpreters[F]
-```
-
-Or choose different interpreters at runtime:
-
-```scala mdoc:invisible:to-string
-import cats.instances.try_.catsStdInstancesForTry
-```
-
-```scala mdoc:to-string
-def DifferentTryInterpreters = ???
-def chooseInterpreters(default: Boolean) = {
-  val interpreters = if (default) TryInterpreters else DifferentTryInterpreters
-  ProgramModule[Try] ++ interpreters
+val RealInterpretersZIO = {
+  SyncInterpreters[RIO[Console, ?]] overridenBy new ModuleDef {
+    make[Interaction[RIO[Console, ?]]].from(RealInteractionZIO)
+  }
 }
+
+def chooseInterpreters(isDummy: Boolean) = {
+  val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
+                     else         RealInterpretersZIO
+  val module = ProgramModule[RIO[Console, ?]] ++ interpreters
+  Injector().produceFGet[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module)
+}
+
+// execute
+
+chooseInterpreters(true)
 ```
 
 Modules can be polymorphic over arbitrary kinds - use `TagKK` to abstract over bifunctors:
@@ -767,6 +764,9 @@ object DBConnection {
 ```
 
 ```scala mdoc:to-string
+import cats.effect.IOApp
+import distage.DIKey
+
 trait AppEntrypoint {
   def run: IO[Unit]
 }
