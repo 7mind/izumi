@@ -62,7 +62,7 @@ class KeyMinimizer(allKeys: Set[DIKey]) {
         s"{resource.${renderKey(key)}"
 
       case DIKey.SetElementKey(set, reference, disambiguator) =>
-        s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode().toString)}"
+        s"{set.${renderKey(set)}/${renderKey(reference)}#${disambiguator.fold("0")(_.hashCode.toString)}"
     }
   }
 

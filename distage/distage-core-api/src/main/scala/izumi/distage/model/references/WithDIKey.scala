@@ -52,13 +52,13 @@ trait WithDIKey {
     case class SetElementKey(set: DIKey, reference: DIKey, disambiguator: Option[ImplDef]) extends DIKey {
       override final def tpe: SafeType = reference.tpe
 
-      override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode().toString)}"
+      override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
     }
 
     case class MultiSetImplId(set: DIKey, impl: ImplDef)
     object MultiSetImplId {
       implicit object SetImplIdContract extends IdContractApi[MultiSetImplId] {
-        override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode()}"
+        override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode}"
       }
     }
   }
