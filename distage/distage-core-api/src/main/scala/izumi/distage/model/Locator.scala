@@ -43,9 +43,10 @@ trait Locator {
   def finalizers[F[_]: TagK]: collection.Seq[Finalizer[F]]
   private[distage] def lookupLocal[T: Tag](key: DIKey): Option[TypedRef[T]]
 
-  def index: Map[DIKey, Any] = {
-    instances.map(i => i.key -> i.value).toMap
-  }
+  def lookupRefOrThrow[T: Tag](key: DIKey): TypedRef[T]
+  def lookupRef[T: Tag](key: DIKey): Option[TypedRef[T]]
+
+  def index: Map[DIKey, Any] = instances.map(i => i.key -> i.value).toMap
 
   /** ALL instances contained in this locator and in ALL the parent locators, including injector bootstrap environment.
     * Returned keys may overlap, if parent locators contain objects for the same key.
@@ -65,23 +66,22 @@ trait Locator {
     */
   final def run[T](function: ProviderMagnet[T]): T = {
     val fn = function.get
-    fn.fun(fn.diKeys.map {
+    fn.unsafeApply(fn.diKeys.map {
       key =>
-        lookupInstanceOrThrow[Any](key)
+        lookupRefOrThrow[Any](key)
     }).asInstanceOf[T]
   }
 
   final def runOption[T](function: ProviderMagnet[T]): Option[T] = {
     val fn = function.get
-    val args: Option[Queue[Any]] = fn.diKeys.foldLeft(Option(Queue.empty[Any])) {
+    val args: Option[Queue[TypedRef[Any]]] = fn.diKeys.foldLeft(Option(Queue.empty[TypedRef[Any]])) {
       (maybeQueue, key) =>
         maybeQueue.flatMap {
-          q =>
-            lookupInstance[Any](key)
-              .map(q :+ _)
+          queue =>
+            lookupRef[Any](key).map(queue :+ _)
         }
     }
-    args.map(fn.fun(_).asInstanceOf[T])
+    args.map(fn.unsafeApply(_).asInstanceOf[T])
   }
 }
 

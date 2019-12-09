@@ -129,7 +129,7 @@ object OpFormatter {
             p.name
           }
 
-          s"""arg $fname: ${formatType(p.tpe)} = lookup(${formatKey(p.key)})"""
+          s"""arg $fname: ${formatType(p.symbol.finalResultType)} = lookup(${formatKey(p.key)})"""
       }
     }
 

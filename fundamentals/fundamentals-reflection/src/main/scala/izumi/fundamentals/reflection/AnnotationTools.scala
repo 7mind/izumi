@@ -1,15 +1,17 @@
 package izumi.fundamentals.reflection
 
+import izumi.fundamentals.reflection.ReflectionUtil.stripByName
+
 import scala.reflect.api.Universe
 
 object AnnotationTools {
 
   def getAllAnnotations(u: Universe)(symb: u.Symbol): List[u.Annotation] =
-    symb.annotations ++ getAllTypeAnnotations(u)(symb.typeSignature.finalResultType)
+    symb.annotations ++ getAllTypeAnnotations(u)(symb.typeSignature)
 
   def find(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] =
     findSymbolAnnotation(u)(annType, symb)
-      .orElse(findTypeAnnotation(u)(annType, symb.typeSignature.finalResultType))
+      .orElse(findTypeAnnotation(u)(annType, symb.typeSignature))
 
   def findSymbolAnnotation(u: Universe)(annType: u.Type, symb: u.Symbol): Option[u.Annotation] =
     symb.annotations.find(annotationTypeEq(u)(annType, _))
@@ -18,7 +20,7 @@ object AnnotationTools {
     getAllTypeAnnotations(u)(typ).find(annotationTypeEq(u)(annType, _))
 
   def getAllTypeAnnotations(u: Universe)(typ: u.Type): List[u.Annotation] =
-    typ match {
+    stripByName(u)(typ.finalResultType) match {
       case t: u.AnnotatedTypeApi =>
         t.annotations
       case _ =>

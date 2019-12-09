@@ -75,7 +75,7 @@ object Injector {
 
   private[Injector] sealed trait InjectorBootstrap {
     def apply(overrides: BootstrapModule*): Injector
-    def apply(): Injector = apply(overrides = Nil: _*)
+    def apply(): Injector = apply(overrides = Seq.empty[BootstrapModule]: _*)
 
     final def apply(activation: Activation, overrides: BootstrapModule*): Injector = {
       apply(overrides :+ activationModule(activation): _*)

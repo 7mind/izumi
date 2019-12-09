@@ -2,7 +2,7 @@ package izumi.distage.model.reflection.universe.RuntimeDIUniverse
 
 import izumi.distage.model.definition.ImplDef
 import izumi.distage.model.exceptions.UnsafeCallArgsMismatched
-import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameWrapper
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.{Tag, TagK, WeakTag}
 import izumi.fundamentals.reflection.macrortti.LightTypeTag
@@ -14,7 +14,6 @@ final class IdContractImpl[T] extends IdContract[T] {
 sealed trait Association {
   def symbol: SymbolInfo
   def key: DIKey.BasicKey
-  def tpe: SafeType
   def name: String
   def isByName: Boolean
 
@@ -24,7 +23,6 @@ sealed trait Association {
 object Association {
   final case class Parameter(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
     override final def name: String = symbol.name
-    override final def tpe: SafeType = symbol.finalResultType
     override final def isByName: Boolean = symbol.isByName
     override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
 
@@ -52,7 +50,7 @@ object SymbolInfo {
 
 final case class SafeType private(
                                    tag: LightTypeTag,
-                                   /*private[distage] val */cls: Class[_],
+                                   /*private[distage] val */ cls: Class[_],
                                  ) {
   override final val hashCode: Int = tag.hashCode()
   override final def toString: String = tag.repr
@@ -153,7 +151,7 @@ object IdContract {
 //
 
 trait DIFunction {
-  def associations: Seq[Association.Parameter]
+  def parameters: Seq[Association.Parameter]
   def argTypes: Seq[SafeType]
   def diKeys: Seq[DIKey]
 
@@ -164,33 +162,39 @@ trait DIFunction {
 
   def isGenerated: Boolean
 
-  def unsafeApply(refs: TypedRef[_]*): Any = {
+  def unsafeApply(refs: Seq[TypedRef[_]]): Any = {
     val args = verifyArgs(refs)
     fun(args)
   }
 
   private[this] def verifyArgs(refs: Seq[TypedRef[_]]): Seq[Any] = {
-    val countOk = refs.size == argTypes.size
+    val (newArgs, types, typesCmp) = parameters.zip(refs).map {
+      case (param, TypedRef(v, tpe, isByName)) =>
 
-    val typesOk = argTypes.zip(refs).forall {
-      case (tpe, arg) =>
-        arg.symbol <:< tpe
-    }
+        val newArg = if (param.isByName && !isByName) {
+          () => v
+        } else if (isByName && !param.isByName) {
+          v.asInstanceOf[Function0[Any]].apply()
+        } else v
 
-    val (args, types) = refs.map { case TypedRef(v, t) => (v, t) }.unzip
+        (newArg, tpe, tpe <:< param.key.tpe)
+    }.unzip3
+
+    val countOk = refs.size == parameters.size
+    val typesOk = !typesCmp.contains(false)
 
     if (countOk && typesOk) {
-      args
+      newArgs
     } else {
       throw new UnsafeCallArgsMismatched(
         message =
           s"""Mismatched arguments for unsafe call:
              | ${if (!typesOk) "Wrong types!" else ""}
-             | ${if (!countOk) s"Expected number of arguments ${argTypes.size}, but got ${refs.size}" else ""}
-             |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${args.mkString(",")})""".stripMargin,
+             | ${if (!countOk) s"Expected number of arguments $arity, but got ${refs.size}" else ""}
+             |Expected types [${argTypes.mkString(",")}], got types [${types.mkString(",")}], values: (${newArgs.mkString(",")})""".stripMargin,
         expected = argTypes,
         actual = types,
-        actualValues = args,
+        actualValues = newArgs,
       )
     }
   }
@@ -200,9 +204,9 @@ trait Provider extends DIFunction {
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
 
-  override final val diKeys: Seq[DIKey] = associations.map(_.key)
-  override final val argTypes: Seq[SafeType] = associations.map(_.key.tpe)
-  override final val arity: Int = argTypes.size
+  override final def diKeys: Seq[DIKey] = parameters.map(_.key)
+  override final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
+  override final val arity: Int = parameters.size
 
   private def eqField: AnyRef = if (isGenerated) ret else fun
   override final def equals(obj: Any): Boolean = {
@@ -220,21 +224,21 @@ trait Provider extends DIFunction {
 object Provider {
 
   final case class ProviderImpl[+A](
-                                     associations: Seq[Association.Parameter],
+                                     parameters: Seq[Association.Parameter],
                                      ret: SafeType,
                                      fun: Seq[Any] => Any,
                                      isGenerated: Boolean,
                                    ) extends Provider {
 
-    override final def unsafeApply(refs: TypedRef[_]*): A =
-      super.unsafeApply(refs: _*).asInstanceOf[A]
+    override final def unsafeApply(refs: Seq[TypedRef[_]]): A =
+      super.unsafeApply(refs).asInstanceOf[A]
 
     override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
       copy(ret = newRet, fun = xs => f.apply(fun(xs)))
 
     override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
       ProviderImpl(
-        associations ++ that.associations,
+        parameters ++ that.parameters,
         newRet,
         { args0 =>
           val (args1, args2) = args0.splitAt(arity)
@@ -302,13 +306,13 @@ object Wiring {
 
 }
 
-final case class TypedRef[+T](private val v: T, symbol: SafeType) {
+final case class TypedRef[+T](private val v: T, tpe: SafeType, isByName: Boolean) {
   def value: T = v match {
-    case d: ByNameWrapper => d.apply().asInstanceOf[T]
+    case d: ByNameDispatcher => d.apply().asInstanceOf[T]
     case o => o
   }
 }
 object TypedRef {
-  def apply[T: Tag](value: T): TypedRef[T] = TypedRef(value, SafeType.get[T])
-  def byName[T: Tag](value: => T): TypedRef[T] = TypedRef((() => value).asInstanceOf[T], SafeType.get[T])
+  def apply[T: Tag](value: T): TypedRef[T] = TypedRef(value, SafeType.get[T], isByName = false)
+  def byName[T: Tag](value: => T): TypedRef[T] = TypedRef((() => value).asInstanceOf[T], SafeType.get[T], isByName = true)
 }

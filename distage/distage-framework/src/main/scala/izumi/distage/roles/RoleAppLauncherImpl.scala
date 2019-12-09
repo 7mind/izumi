@@ -6,14 +6,12 @@ import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.{ActivationInfo, AllLoadedPlugins, PluginSource}
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
-import izumi.distage.model.definition.{Activation, Axis}
-import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.StandardAxis.{Env, ExternalApi, Repo}
+import izumi.distage.model.definition.Activation
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.RoleAppLauncher.Options
-import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.distage.roles.model.meta.{LibraryReference, RolesInfo}
 import izumi.distage.roles.services.StartupPlanExecutor.Filters
 import izumi.distage.roles.services.{RoleAppActivationParser, _}
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -52,14 +50,8 @@ abstract class RoleAppLauncherImpl[F[_]: TagK: DIEffect] extends RoleAppLauncher
   protected def appOverride: ModuleBase = ModuleBase.empty
   protected def bsOverride: BootstrapModule = BootstrapModule.empty
 
-  protected def defaultActivations: Map[Axis, AxisValue] = {
-    Map(
-      Env -> Env.Prod,
-      Repo -> Repo.Prod,
-      ExternalApi -> ExternalApi.Prod,
-    )
-  }
-  protected def requiredActivations: Map[Axis, AxisValue] = Map.empty
+  protected def defaultActivations: Activation = StandardAxis.prodActivation
+  protected def requiredActivations: Activation = Activation.empty
 
   def launch(parameters: RawAppArgs): Unit = {
     val earlyLogger = EarlyLoggers.makeEarlyLogger(parameters)

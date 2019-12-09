@@ -5,6 +5,7 @@ import cats.kernel.{BoundedSemilattice, PartialOrder}
 import izumi.distage.model.definition.ModuleBaseInstances.{CatsBoundedSemilattice, CatsPartialOrderHash, ModuleBaseSemilattice}
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 import izumi.fundamentals.collections.IzCollections._
+import izumi.fundamentals.platform.language.unused
 
 import scala.collection.immutable.ListSet
 
@@ -195,7 +196,7 @@ private object ModuleBaseInstances {
   type PartialOrderHash[T] = PartialOrder[T] with Hash[T]
   sealed abstract class CatsPartialOrderHash[K[_]]
   object CatsPartialOrderHash {
-    @inline implicit final def get[K[_]](implicit @deprecated("unused", "unused") guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
+    @inline implicit final def get[K[_]](implicit @unused guard: CatsBoundedSemilattice[K]): CatsPartialOrderHash[PartialOrderHash] = null
   }
 
 }

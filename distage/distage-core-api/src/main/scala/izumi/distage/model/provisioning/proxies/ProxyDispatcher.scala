@@ -20,14 +20,9 @@ object ProxyDispatcher {
     }
   }
 
-  abstract class ByNameWrapper extends (() => Any)
-  object ByNameWrapper {
-    def apply(a: => Any): ByNameWrapper = () => a
-  }
-
-  final class ByNameDispatcher(val key: DIKey)
-    extends ByNameWrapper
-      with AtomicProxyDispatcher {
+  class ByNameDispatcher(val key: DIKey)
+    extends AtomicProxyDispatcher
+      with (() => Any) {
     override def apply(): Any = {
       Option(reference.get()) match {
         case Some(value) =>

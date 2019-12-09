@@ -110,6 +110,13 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("deftypeann2"))
     }
 
+    "handle opaque by-name references with type annotations" in {
+      val fn = ProviderMagnet.apply(deftypeannfnbyname _).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("deftypeann"))
+      assert(fn.diKeys contains DIKey.get[Int].named("deftypeann2"))
+    }
+
     "handle opaque references with argument annotations" in {
       val fn = ProviderMagnet.apply(defargannfn _).get
 
@@ -194,8 +201,15 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn.diKeys contains DIKey.get[Int].named("classargann2"))
     }
 
-    "handle constructor references with type annotations with a lossy wrapper lambda" in {
+    "handle constructor references with by-name type annotations with a lossy wrapper lambda" in {
       val fn = ProviderMagnet.apply((x, y) => new ClassTypeAnn(x, y)).get
+
+      assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
+      assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
+    }
+
+    "handle constructor references with type annotations with a lossy wrapper lambda" in {
+      val fn = ProviderMagnet.apply((x, y) => new ClassTypeAnnByName(x, y)).get
 
       assert(fn.diKeys contains DIKey.get[String].named("classtypeann1"))
       assert(fn.diKeys contains DIKey.get[Int].named("classtypeann2"))
@@ -229,13 +243,13 @@ class ProviderMagnetTest extends WordSpec {
       assert(fn[Set].diKeys contains DIKey.get[Set[Int]].named("gentypeann"))
     }
 
-    "handle by-name vals" in {
+    "handle by-name val calls" in {
       val fn = ProviderMagnet.apply(testValByName).get
 
       assert(fn.diKeys contains DIKey.get[Any])
       var counter = 0
       class CountInstantiations { counter += 1 }
-      fn.unsafeApply(RuntimeDIUniverse.TypedRef(() => new CountInstantiations))
+      fn.unsafeApply(Seq(RuntimeDIUniverse.TypedRef.byName(new CountInstantiations)))
       assert(counter == 0)
     }
 

@@ -106,7 +106,7 @@ object BindingTranslator {
     private[this] def directImplToPureWiring(implementation: ImplDef.DirectImplDef): SingletonWiring = {
       implementation match {
         case p: ImplDef.ProviderImpl =>
-          Wiring.SingletonWiring.Function(p.function, p.function.associations)
+          Wiring.SingletonWiring.Function(p.function, p.function.parameters)
 
         case i: ImplDef.InstanceImpl =>
           SingletonWiring.Instance(i.implType, i.instance)

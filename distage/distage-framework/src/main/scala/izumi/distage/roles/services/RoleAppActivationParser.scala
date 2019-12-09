@@ -3,8 +3,7 @@ package izumi.distage.roles.services
 import distage.ModuleBase
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ActivationInfoExtractor
-import izumi.distage.model.definition.Axis.AxisValue
-import izumi.distage.model.definition.{Activation, Axis}
+import izumi.distage.model.definition.Activation
 import izumi.distage.roles.RoleAppLauncher.Options
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.cli.model.raw.RawAppArgs
@@ -16,7 +15,7 @@ class RoleAppActivationParser {
                        logger: IzLogger,
                        parameters: RawAppArgs,
                        appModule: ModuleBase,
-                       defaultActivations: Map[Axis, AxisValue],
+                       defaultActivations: Activation,
                      ): (ActivationInfo, Activation) = {
     val uses = parameters.globalParameters.findValues(Options.use)
     val availableUses = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
@@ -61,7 +60,7 @@ class RoleAppActivationParser {
       throw new DIAppBootstrapException(s"Conflicting choices, you can activate one choice on each axis $conflicts")
     }
 
-    availableUses -> Activation(defaultActivations ++ activeChoices)
+    availableUses -> Activation(defaultActivations.activeChoices ++ activeChoices)
   }
 
 }

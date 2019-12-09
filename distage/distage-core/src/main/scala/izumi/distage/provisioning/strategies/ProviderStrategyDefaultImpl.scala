@@ -14,14 +14,14 @@ class ProviderStrategyDefaultImpl extends ProviderStrategy  {
       param =>
         context.fetchKey(param.key, param.isByName) match {
           case Some(dep) =>
-            RuntimeDIUniverse.TypedRef(dep, param.key.tpe)
+            RuntimeDIUniverse.TypedRef(dep, param.key.tpe, param.isByName)
           case _ =>
             throw new InvalidPlanException("The impossible happened! Tried to instantiate class," +
                 s" but the dependency has not been initialized: Class: $op.target, dependency: $param")
         }
     }
 
-    val instance = op.wiring.provider.unsafeApply(args: _*)
+    val instance = op.wiring.provider.unsafeApply(args)
     Seq(NewObjectOp.NewInstance(op.target, instance))
   }
 }

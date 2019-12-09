@@ -3,12 +3,14 @@ package izumi.distage.fixtures
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.platform.language.unused
 
 @ExposedTestScope
 object ProviderCases {
 
   object ProviderCase1 {
     def deftypeannfn(y: String @Id("deftypeann"), z: Int @Id("deftypeann2")): String = Function.const(y)(z)
+    def deftypeannfnbyname(y: => String @Id("deftypeann"), z: => Int @Id("deftypeann2")): String = Function.const(y)(z)
 
     def defargannfn(@Id("defargann") y: String, @Id("defargann2") z: Int): String = Function.const(y)(z)
 
@@ -28,7 +30,8 @@ object ProviderCases {
     val testValByName: (=> Any) => Unit = _ => ()
 
     case class ClassArgAnn(@Id("classargann1") x: String, @Id("classargann2") y: Int)
-    case class ClassTypeAnn(val x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+    case class ClassTypeAnn(x: String @Id("classtypeann1"), y: Int @Id("classtypeann2"))
+    class ClassTypeAnnByName(@unused x: => String @Id("classtypeann1"), @unused y: => Int @Id("classtypeann2"))
 
     class Poly[F[_]]
 

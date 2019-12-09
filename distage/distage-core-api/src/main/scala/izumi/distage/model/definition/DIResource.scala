@@ -293,7 +293,7 @@ object DIResource {
     *   class IntRes extends DIResource.LiftF(acquire = IO(1000))
     * }}}
     */
-  class LiftF[+F[_]: DIEffect, A] private[this](acquire0: () => F[A], @deprecated("unused", "") dummy: Boolean = false) extends NoClose[F, A] {
+  class LiftF[+F[_]: DIEffect, A] private[this](acquire0: () => F[A], @unused dummy: Boolean = false) extends NoClose[F, A] {
     def this(acquire: => F[A]) = this(() => acquire)
 
     override final def acquire: F[A] = acquire0()

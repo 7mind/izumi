@@ -14,7 +14,7 @@ class MacroAutoTraitsTest extends WordSpec with MkInjector {
   "construct a basic trait" in {
     val traitCtor = AnyConstructor[Aaa].provider.get
 
-    val value = traitCtor.unsafeApply(TypedRef.byName(5), TypedRef.byName(false)).asInstanceOf[Aaa]
+    val value = traitCtor.unsafeApply(Seq(TypedRef.byName(5), TypedRef.byName(false))).asInstanceOf[Aaa]
 
     assert(value.a == 5)
     assert(value.b == false)

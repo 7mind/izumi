@@ -148,7 +148,7 @@ object StaticPluginCheckerMacro {
 
     val logger = IzLogger.NullLogger
     val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
-    val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Map.empty)
+    val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Activation.empty)
     val policy = new PruningPlanMergingPolicy(logger, activation)
 
     val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap overridenBy new BootstrapModuleDef {
