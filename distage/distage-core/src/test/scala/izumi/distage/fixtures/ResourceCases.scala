@@ -123,7 +123,8 @@ object ResourceCases {
 
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())
-    def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
+//    def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
+    def update(f:  A => A): F[A] = ??? // DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
     def set(a: A): F[A] = update(_ => a)
   }
 

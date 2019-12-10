@@ -418,11 +418,12 @@ object Izumi {
         name = Projects.distage.proxyCglib,
         libs = Seq(cglib_nodep),
         depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.distage.core,
         libs = Seq.empty,
-        depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.model in Scope.Compile.all, Projects.distage.proxyCglib in Scope.Compile.jvm),
       ),
       Artifact(
         name = Projects.distage.config,
@@ -487,7 +488,7 @@ object Izumi {
       ),
     ),
     pathPrefix = Projects.distage.basePath,
-    defaultPlatforms = Targets.jvm,
+    defaultPlatforms = Targets.cross,
     groups = Groups.distage,
   )
 
@@ -517,7 +518,6 @@ object Izumi {
         depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvm,
         groups = Groups.distage,
       ),
       Artifact(

@@ -2,7 +2,6 @@ package distage
 
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
-import izumi.distage.planning.extensions
 import izumi.distage.{model, planning}
 import izumi.fundamentals.reflection.Tags
 
@@ -48,11 +47,11 @@ trait Distage {
   type PlannerInput = model.PlannerInput
   val PlannerInput: model.PlannerInput.type = model.PlannerInput
 
-  type GraphDumpObserver = extensions.GraphDumpObserver
-  val GraphDumpObserver: extensions.GraphDumpObserver.type = extensions.GraphDumpObserver
-
-  type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
-  val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
+//  type GraphDumpObserver = extensions.GraphDumpObserver
+//  val GraphDumpObserver: extensions.GraphDumpObserver.type = extensions.GraphDumpObserver
+//
+//  type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
+//  val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
   type OrderedPlan = model.plan.OrderedPlan
   val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan

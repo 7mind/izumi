@@ -46,7 +46,7 @@ object PlanInterpreter {
           val pos = OpFormatter.formatBindingPosition(op.origin)
           val name = f match {
             case di: DIException => di.getClass.getSimpleName
-            case o => o.getClass.getCanonicalName
+            case o => o.getClass.getName
           }
           s"${op.target} $pos, $name: ${f.getMessage}"
       }
