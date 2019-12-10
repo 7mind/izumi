@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.language.Quirks
 import scala.collection.mutable
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
-  private val allOpen = mutable.LinkedHashMap.empty[TestMeta, TestStatus]
+  private val delayedReports = mutable.LinkedHashMap.empty[TestMeta, TestStatus]
   private var signalled: Option[TestMeta] = None
   private var openSuite: Option[SuiteData] = None
 
@@ -30,14 +30,12 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     Quirks.discard(id)
   }
 
-
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     testStatus match {
       case TestStatus.Scheduled =>
         reportStatus(test, testStatus)
 
       case TestStatus.Running =>
-        allOpen.put(test, testStatus)
         signalled match {
           case Some(_) =>
           case None =>
@@ -45,28 +43,23 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
             signalled = Some(test)
         }
 
-
       case _: Ignored =>
-        if (allOpen.isEmpty) {
-          reportStatus(test, TestStatus.Running)
-          reportStatus(test, testStatus)
-        } else {
-          allOpen.put(test, testStatus)
-        }
+        delayedReports.put(test, testStatus)
 
       case _: Finished =>
-        allOpen.put(test, testStatus)
         signalled match {
           case Some(value) if value == test =>
             finishTest(test, testStatus)
+            signalled = None
+            finish()
           case _ =>
+            delayedReports.put(test, testStatus)
         }
-        finish()
     }
     ()
   }
 
-  private def reportStatus(test: TestMeta, testStatus: TestStatus): Unit = {
+  private def reportStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     val fakeSuite = SuiteData(test.id.suiteName, test.id.suiteId, test.id.suiteClassName)
 
     nextSuite(fakeSuite)
@@ -90,9 +83,8 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
     }
   }
 
-
   private def finish(): Unit = {
-    val finishedTests = allOpen.collect { case (t, s: Done) => (t, s) }
+    val finishedTests = delayedReports.collect { case (t, s: Done) => (t, s) }
 
     finishedTests
       .foreach {
@@ -104,6 +96,6 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   private def finishTest(test: TestMeta, testStatus: TestStatus): Option[TestStatus] = {
     reportStatus(test, testStatus)
-    allOpen.remove(test)
+    delayedReports.remove(test)
   }
 }

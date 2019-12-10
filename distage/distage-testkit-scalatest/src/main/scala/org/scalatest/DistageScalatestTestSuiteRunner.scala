@@ -172,23 +172,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
           scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
           throwable = failure
         ))
-
       case None =>
-        args.reporter(TestStarting(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          FUCK_SCALATEST,
-          FUCK_SCALATEST,
-        ))
-        args.reporter(TestCanceled(
-          tracker.nextOrdinal(),
-          s"ignored",
-          suiteName, suiteId, Some(suiteId),
-          FUCK_SCALATEST,
-          FUCK_SCALATEST,
-          scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-        ))
-
     }
 
   }
