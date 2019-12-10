@@ -53,7 +53,7 @@ class SimpleLoggerConfigurator
   private[this] def readConfig(config: Config): SinksConfig = {
     SinksConfig.configReader(config.root) match {
       case Failure(exception) =>
-        exceptionLogger.error(s"Failed to read `logger` config section, using defaults: $exception")
+        exceptionLogger.warn(s"Failed to read `logger` config section, using defaults: $exception")
         SinksConfig(Map.empty, None, json = None, None)
 
       case Success(value) =>

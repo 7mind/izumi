@@ -307,7 +307,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
       if (!out.allArgumentsReferenced) {
-        thisLevel.err(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${
+        thisLevel.log(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${
           lamParams.map { case (k, v) => s"$v = $k" }
         }, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
       }
