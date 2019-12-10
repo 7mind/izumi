@@ -1,6 +1,6 @@
 package izumi.fundamentals.bio.test
 
-import izumi.functional.bio.{BIO, BIOAsync, BIOFunctor, BIOMonad, BIOMonadError, BIOPrimitives, F}
+import izumi.functional.bio.{BIO, BIOFunctor, BIOMonad, BIOMonadError, BIOPrimitives, BIOTemporal, F}
 import izumi.fundamentals.bio.test.masking._
 import org.scalatest.WordSpec
 
@@ -71,7 +71,7 @@ class BIOSyntaxTest extends WordSpec {
     def x[F[+_, +_]: BIOMonad] = {
       F.when(false)(F.unit)
     }
-    def y[F[+_, +_]: BIOAsync] = {
+    def y[F[+_, +_]: BIOTemporal] = {
       F.timeout(F.forever(F.unit))(5.seconds)
     }
     def z[F[+_, +_]: BIOFunctor]: F[Nothing, Unit] = {
@@ -87,7 +87,7 @@ class BIOSyntaxTest extends WordSpec {
     }
     lazy val _ = (
       x,
-      y[zio.IO](_: BIOAsync[zio.IO]),
+      y[zio.IO](_: BIOTemporal[zio.IO]),
       z,
       `attach BIOPrimitives & BIOFork methods even when they aren't imported`[zio.IO],
       `attach BIOPrimitives & BIOFork3 methods to a trifunctor BIO even when not imported`[zio.ZIO],

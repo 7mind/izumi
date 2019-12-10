@@ -3,7 +3,7 @@ package izumi.distage.model.effect
 import cats.Parallel
 import cats.effect.Timer
 import izumi.distage.model.effect.LowPriorityDIEffectAsyncInstances.{_Parallel, _Timer}
-import izumi.functional.bio.{BIOAsync, F}
+import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.functional.Identity
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -36,7 +36,7 @@ object DIEffectAsync extends LowPriorityDIEffectAsyncInstances {
     }
   }
 
-  implicit def fromBIOAsync[F[+_, +_]: BIOAsync]: DIEffectAsync[F[Throwable, ?]] = {
+  implicit def fromBIOTemporal[F[+_, +_]: BIOTemporal]: DIEffectAsync[F[Throwable, ?]] = {
     new DIEffectAsync[F[Throwable, ?]] {
       override def parTraverse_[A](l: Iterable[A])(f: A => F[Throwable, Unit]): F[Throwable, Unit] = {
         F.parTraverse_(l)(f)

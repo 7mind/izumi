@@ -3,7 +3,7 @@ package izumi.functional
 import java.util.concurrent.CompletionStage
 
 import cats.~>
-import izumi.functional.bio.impl.{BIOAsyncZio, BIOZio}
+import izumi.functional.bio.impl.{BIOZio, BIOTemporalZio}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import zio.ZIO
 
@@ -19,7 +19,7 @@ package object bio extends BIOSyntax {
     * Auto-narrows to the most powerful available class:
     *
     * {{{
-    *   def y[F[+_, +_]: BIOAsync] = {
+    *   def y[F[+_, +_]: BIOTemporal] = {
     *     F.timeout(5.seconds)(F.forever(F.unit))
     *   }
     * }}}
@@ -59,6 +59,7 @@ package object bio extends BIOSyntax {
     @inline def leftMap[E, A, E2](r: F[E, A])(f: E => E2): F[E2, A] = bimap(r)(f, identity)
 
     @inline final def widenError[E, A, E1](r: F[E, A])(implicit @deprecated("unused","") ev: E <:< E1): F[E1, A] = r.asInstanceOf[F[E1, A]]
+    @inline final def widenBoth[E, A, E1, A1](r: F[E, A])(implicit @deprecated("unused","") ev: E <:< E1, @deprecated("unused", "") ev2: A <:< A1): F[E1, A1] = r.asInstanceOf[F[E1, A1]]
   }
 
   trait BIOApplicative[F[+_, +_]] extends BIOBifunctor[F] {
@@ -226,7 +227,7 @@ package object bio extends BIOSyntax {
     }
   }
 
-  trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOAsyncInstances {
+  trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOTemporalInstances {
     final type Canceler = F[Nothing, Unit]
 
     def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
@@ -242,15 +243,11 @@ package object bio extends BIOSyntax {
     def race[E, A](r1: F[E, A], r2: F[E, A]): F[E, A]
     def racePair[E, A, B](fa: F[E, A], fb: F[E, B]): F[E, Either[(A, BIOFiber[F, E, B]), (BIOFiber[F, E, A], B)]]
 
-    def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
     def parTraverseN[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
     def parTraverse[E, A, B](l: Iterable[A])(f: A => F[E, B]): F[E, List[B]]
 
-    def sleep(duration: Duration): F[Nothing, Unit]
-
     def uninterruptible[E, A](r: F[E, A]): F[E, A]
 
-    def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
 
     // defaults
     @inline def never: F[Nothing, Nothing] = async(_ => ())
@@ -259,6 +256,13 @@ package object bio extends BIOSyntax {
     @inline def parTraverseN_[E, A, B](maxConcurrent: Int)(l: Iterable[A])(f: A => F[E, B]): F[E, Unit] = void(parTraverseN(maxConcurrent)(l)(f))
 
     @inline final def fromFuture[A](mkFuture: => Future[A]): F[Throwable, A] = fromFuture(_ => mkFuture)
+
+  }
+
+  trait BIOTemporal[F[+_, +_]] extends BIOAsync[F] with BIOTemporalInstances {
+    def sleep(duration: Duration): F[Nothing, Unit]
+    def timeout[E, A](r: F[E, A])(duration: Duration): F[E, Option[A]]
+    def retryOrElse[A, E, A2 >: A, E2](r: F[E, A])(duration: FiniteDuration, orElse: => F[E2, A2]): F[E2, A2]
 
     @inline final def repeatUntil[E, A](action: F[E, Option[A]])(onTimeout: => E, sleep: FiniteDuration, maxAttempts: Int): F[E, A] = {
       def go(n: Int): F[E, A] = {
@@ -278,9 +282,9 @@ package object bio extends BIOSyntax {
     }
   }
 
-  private[bio] sealed trait BIOAsyncInstances
-  object BIOAsyncInstances {
-    implicit def BIOAsyncZio[R](implicit clockService: zio.clock.Clock): BIOAsync[ZIO[R, +?, +?]] = new BIOAsyncZio[R](clockService)
+  private[bio] sealed trait BIOTemporalInstances
+  object BIOTemporalInstances {
+    implicit def BIOTemporalZio[R](implicit clockService: zio.clock.Clock): BIOTemporal[ZIO[R, +?, +?]] = new BIOTemporalZio[R](clockService)
   }
 
   trait BIOFork3[F[-_, +_, +_]] extends BIOForkInstances {

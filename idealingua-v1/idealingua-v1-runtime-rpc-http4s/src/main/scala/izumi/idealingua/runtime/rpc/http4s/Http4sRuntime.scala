@@ -1,13 +1,13 @@
 package izumi.idealingua.runtime.rpc.http4s
 
 import cats.effect.{ConcurrentEffect, Timer}
-import izumi.functional.bio.{BIOAsync, BIORunner}
+import izumi.functional.bio.{BIOTemporal, BIORunner}
 import org.http4s.dsl._
 
 import scala.concurrent.ExecutionContext
 
 class Http4sRuntime[
-  _BiIO[+ _, + _] : BIOAsync : BIORunner
+  _BiIO[+ _, + _] : BIOTemporal : BIORunner
   , _RequestContext
   , _MethodContext
   , _ClientId
@@ -34,7 +34,7 @@ class Http4sRuntime[
 
   override type ClientMethodContext = _ClientMethodContext
 
-  override val F: BIOAsync[BiIO] = implicitly
+  override val F: BIOTemporal[BiIO] = implicitly
 
   override val CIO: ConcurrentEffect[MonoIO] = implicitly
 

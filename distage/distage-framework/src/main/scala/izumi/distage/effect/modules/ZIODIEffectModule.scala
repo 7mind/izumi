@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 trait ZIODIEffectModule extends ModuleDef {
   make[DIEffectRunner2[IO]].from[DIEffectRunner.BIOImpl[IO]]
   addImplicit[DIEffect2[IO]]
-  make[DIEffectAsync2[IO]].from(DIEffectAsync.fromBIOAsync(_: BIOAsync[IO]))
+  make[DIEffectAsync2[IO]].from(DIEffectAsync.fromBIOTemporal(_: BIOTemporal[IO]))
 
   make[ExecutionContext].named("zio.cpu").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.cpu")))
   make[ExecutionContext].named("zio.io").from(ExecutionContext.fromExecutor(_: ThreadPoolExecutor @Id("zio.io")))
@@ -50,8 +50,9 @@ trait ZIODIEffectModule extends ModuleDef {
   addImplicit[BIOBracket[IO]]
   addImplicit[BIOPanic[IO]]
   addImplicit[BIO[IO]]
-  make[BIOAsync[IO]].from {
-    implicit r: zio.clock.Clock => BIOAsync[IO]
+  addImplicit[BIOAsync[IO]]
+  make[BIOTemporal[IO]].from {
+    r: zio.clock.Clock => BIOTemporalInstances.BIOTemporalZio[Any](r)
   }
   make[zio.clock.Clock].fromValue(zio.clock.Clock.Live)
 
