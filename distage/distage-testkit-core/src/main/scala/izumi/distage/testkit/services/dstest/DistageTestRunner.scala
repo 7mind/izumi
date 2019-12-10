@@ -74,7 +74,7 @@ class DistageTestRunner[F[_]: TagK]
             plan.steps.filter(env memoizedKeys _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
-        logger.info(s"Memoized components in env $sharedKeys")
+        logger.info(s"Memoized components in env=$env $sharedKeys")
 
         val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
