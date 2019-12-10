@@ -716,7 +716,7 @@ def chooseInterpreters(isDummy: Boolean) = {
   val interpreters = if (isDummy) SyncInterpreters[RIO[Console, ?]]
                      else         RealInterpretersZIO
   val module = ProgramModule[RIO[Console, ?]] ++ interpreters
-  Injector().produceFGet[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module)
+  Injector().produceGetF[RIO[Console, ?], TaglessProgram[RIO[Console, ?]]](module)
 }
 
 // execute

@@ -52,10 +52,10 @@ trait Injector extends Planner with Producer {
     *     .map(_.get[A])
     * }}}
     * */
-  final def produceFGet[F[_]: TagK: DIEffect, A: Tag](input: ModuleBase): DIResourceBase[F, A] = {
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](input: ModuleBase): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A])))).map(_.get[A])
   }
-  final def produceFGet[F[_]: TagK: DIEffect, A: Tag](name: String)(input: ModuleBase): DIResourceBase[F, A] = {
+  final def produceGetF[F[_]: TagK: DIEffect, A: Tag](name: String)(input: ModuleBase): DIResourceBase[F, A] = {
     produceF[F](plan(PlannerInput(input, GCMode(DIKey.get[A].named(name))))).map(_.get[A](name))
   }
 
@@ -66,8 +66,8 @@ trait Injector extends Planner with Producer {
     produce(plan(PlannerInput(input, mode)))
   }
 
-  final def produceGet[A: Tag](input: ModuleBase): DIResourceBase[Identity, A] = produceFGet[Identity, A](input)
-  final def produceGet[A: Tag](name: String)(input: ModuleBase): DIResourceBase[Identity, A] = produceFGet[Identity, A](name)(input)
+  final def produceGet[A: Tag](input: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](input)
+  final def produceGet[A: Tag](name: String)(input: ModuleBase): DIResourceBase[Identity, A] = produceGetF[Identity, A](name)(input)
 
   final def produceUnsafeF[F[_]: TagK: DIEffect](input: PlannerInput): F[Locator] = {
     produceUnsafeF[F](plan(input))
