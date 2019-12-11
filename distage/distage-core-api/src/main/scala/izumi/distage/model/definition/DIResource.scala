@@ -467,7 +467,7 @@ object DIResource {
       * dependency on `Bracket[F, Throwable]` for
       * your corresponding `F` type
       */
-    implicit final def providerFromCatsProvider[F[_], A]: Resource[F, A] Aux DIResource.Cats[F, A] = {
+    implicit final def providerFromCatsProvider[F[_], A]: AdaptProvider.Aux[Resource[F, A], DIResource.Cats[F, A]] = {
       new AdaptProvider[Resource[F, A]] {
         type Out = DIResource.Cats[F, A]
 
@@ -484,7 +484,7 @@ object DIResource {
     /**
       * Allows you to bind [[zio.ZManaged]]-based constructor functions in `ModuleDef`:
       */
-    implicit final def providerFromZIOProvider[R, E, A]: ZManaged[R, E, A] Aux Zio[R, E, A] = {
+    implicit final def providerFromZIOProvider[R, E, A]: AdaptProvider.Aux[ZManaged[R, E, A], Zio[R, E, A]] = {
       new AdaptProvider[ZManaged[R, E, A]] {
         type Out = DIResource.Zio[R, E, A]
 

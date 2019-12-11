@@ -32,7 +32,7 @@ final class DistageTestDockerBIO extends DistageBIOSpecScalatest[IO] {
 
   override protected def config: TestConfig = {
     TestConfig(
-      memoizedKeys = Set(
+      memoizationRoots = Set(
         DIKey.get[DynamoDocker.Container],
         DIKey.get[PostgresDocker.Container],
       ))

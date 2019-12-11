@@ -14,7 +14,7 @@ import zio.Task
 trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
   override protected def config: TestConfig = {
     TestConfig(
-      memoizedKeys = Set(
+      memoizationRoots = Set(
         DIKey.get[MockCache[CIO]],
         DIKey.get[MockCache[Task]],
       ))

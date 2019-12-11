@@ -37,7 +37,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
     new TestEnvironmentProvider.Impl(
       pluginSource,
       conf.activation,
-      conf.memoizedKeys,
+      conf.memoizationRoots,
       conf.bootstrapOverrides,
       conf.moduleOverrides,
     )

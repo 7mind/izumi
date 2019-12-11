@@ -10,7 +10,7 @@ import izumi.distage.model.definition.{Activation, StandardAxis}
   *                           each pluginSource creates a distinct memoization group, i.e.
   *                           objects will be memoized only between tests with the same plugins
   * @param activation         Chosen configurations. Different Activations have distinct memoization groups
-  * @param memoizedKeys       Setting `memoizedKeys` will create a distinct memoization group
+  * @param memoizationRoots   Every distinct set of `memoizationRoots` will have a distinct memoization group
   *                           of tests with the exact same `memoizedKeys`
   * @param moduleOverrides    Override loaded plugins with a given [[Module]]. Using overrides
   *                           will create a distinct memoization group, i.e. objects will be
@@ -20,7 +20,7 @@ import izumi.distage.model.definition.{Activation, StandardAxis}
 final case class TestConfig(
                              pluginSource: Option[PluginSource] = None,
                              activation: Activation = StandardAxis.testProdActivation,
-                             memoizedKeys: Set[DIKey] = Set.empty,
+                             memoizationRoots: Set[DIKey] = Set.empty,
                              moduleOverrides: Module = Module.empty,
                              bootstrapOverrides: BootstrapModule = definition.BootstrapModule.empty,
                            )
