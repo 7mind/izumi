@@ -11,6 +11,7 @@ import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
@@ -51,14 +52,14 @@ object ContainerDef {
   type Aux[T] = ContainerDef {type Tag = T}
 }
 
-case class DockerContainer[Tag](
-                                 id: Docker.ContainerId,
-                                 name: String,
-                                 ports: Map[Docker.DockerPort, Seq[ServicePort]],
-                                 containerConfig: ContainerConfig[Tag],
-                                 clientConfig: ClientConfig,
-                                 availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
-                               ) {
+final case class DockerContainer[Tag](
+                                       id: Docker.ContainerId,
+                                       name: String,
+                                       ports: Map[Docker.DockerPort, Seq[ServicePort]],
+                                       containerConfig: ContainerConfig[Tag],
+                                       clientConfig: ClientConfig,
+                                       availablePorts: Map[Docker.DockerPort, Seq[AvailablePort]],
+                                     ) {
   override def toString: String = s"$name:${id.name} ports=${ports.mkString("{", ", ", "}")} available=${availablePorts.mkString("{", ", ", "}")}"
 }
 
@@ -96,7 +97,7 @@ object DockerContainer {
       }
     }
 
-    case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+    final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
     override def acquire: F[DockerContainer[T]] = {
       val ports = config.ports.map {
@@ -118,12 +119,18 @@ object DockerContainer {
 
         for {
           containers <- DIEffect[F]
-            .maybeSuspend(
-              client.listContainersCmd()
-                .withAncestorFilter(List(config.image).asJava)
-                .withStatusFilter(List("running").asJava)
-                .exec()
-            )
+            .maybeSuspend {
+              // FIXME: temporary hack to allow missing containers to skip tests
+              try {
+                client.listContainersCmd()
+                  .withAncestorFilter(List(config.image).asJava)
+                  .withStatusFilter(List("running").asJava)
+                  .exec()
+              } catch {
+                case c: java.net.ConnectException =>
+                  throw new IntegrationCheckFailedException(c.getMessage, Some(c))
+              }
+            }
             .map(_.asScala.toList.sortBy(_.getId))
 
           candidates = containers.view.flatMap {
@@ -187,7 +194,7 @@ object DockerContainer {
       }
     }
 
-    private def doRun(ports: Seq[PortDecl]) = {
+    private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client
         .createContainerCmd(config.image)

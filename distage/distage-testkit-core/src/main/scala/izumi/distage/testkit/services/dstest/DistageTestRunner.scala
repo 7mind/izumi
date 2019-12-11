@@ -9,8 +9,10 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
+import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -42,7 +44,7 @@ class DistageTestRunner[F[_]: TagK]
     logger.trace(s"Env contents: ${groups.keys -> "test environments"}")
 
     groups.foreach {
-      case (env, group) =>
+      case (env, tests) =>
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
@@ -62,19 +64,19 @@ class DistageTestRunner[F[_]: TagK]
 
         assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
         // here we plan all the job for each individual test
-        val testplans = group.map {
-          pm =>
-            val keys = pm.test.get.diKeys.toSet
-            pm -> injector.plan(PlannerInput(appModule, keys))
+        val testPlans = tests.map {
+          distageTest =>
+            val keys = distageTest.test.get.diKeys.toSet
+            distageTest -> injector.plan(PlannerInput(appModule, keys))
         }
 
         // here we find all the shared components in each of our individual tests
-        val sharedKeys = testplans.map(_._2).flatMap {
+        val sharedKeys = testPlans.map(_._2).flatMap {
           plan =>
             plan.steps.filter(env memoizedKeys _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
-        logger.info(s"Memoized components in env=$env $sharedKeys")
+        logger.info(s"Memoized components in env: $sharedKeys")
 
         val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
@@ -89,38 +91,47 @@ class DistageTestRunner[F[_]: TagK]
             implicit val F: DIEffect[F] = runtimeLocator.get[DIEffect[F]]
             implicit val P: DIEffectAsync[F] = runtimeLocator.get[DIEffectAsync[F]]
 
-            runner.run {
-              // now we produce integration components for our shared plan
-              checker.verify(shared.side)
+            try {
+              runner.run {
+                // now we produce integration components for our shared plan
+                checker.verify(shared.side)
 
-              Injector.inherit(runtimeLocator).produceF[F](shared.shared).use {
-                sharedLocator =>
+                Injector.inherit(runtimeLocator).produceF[F](shared.shared).use {
+                  sharedLocator =>
 
-                  Injector.inherit(sharedLocator).produceF[F](shared.side).use {
-                    sharedIntegrationLocator =>
-                      ifIntegChecksOk(F, sharedIntegrationLocator)(testplans.map(_._1), shared) {
-                        proceed(appModule, checker, testplans, shared, sharedLocator)
-                      }
-                  }
+                    Injector.inherit(sharedLocator).produceF[F](shared.side).use {
+                      sharedIntegrationLocator =>
+                        ifIntegChecksOk(sharedIntegrationLocator)(tests, shared) {
+                          proceed(appModule, checker, testPlans, shared, sharedLocator)
+                        }
+                    }
+                }
               }
-
+            } catch {
+              case p: ProvisioningException =>
+                val integrations = p.getSuppressed.collect { case i: IntegrationCheckFailedException => i.toResourceCheck }
+                if (integrations.nonEmpty) {
+                  ignoreIntegrationCheckFailedTests(tests, integrations)
+                } else throw p
             }
         }
     }
   }
 
-  private def ifIntegChecksOk(F: DIEffect[F], integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit]): F[Unit] = {
-    implicit val FF: DIEffect[F] = F
+  private def ifIntegChecksOk(integLocator: Locator)(testplans: Seq[DistageTest[F]], plans: TriSplittedPlan)(onSuccess: => F[Unit])(implicit F: DIEffect[F]): F[Unit] = {
     integrationChecker.collectFailures(plans.side.declaredRoots, integLocator).flatMap {
-      case Left(value) =>
-        F.traverse_(testplans) {
-          test =>
-            F.maybeSuspend(reporter.testStatus(test.meta, TestStatus.Ignored(value)))
-        }
+      case Left(failures) =>
+        F.maybeSuspend(ignoreIntegrationCheckFailedTests(testplans, failures))
 
       case Right(_) =>
         onSuccess
+    }
+  }
 
+  private def ignoreIntegrationCheckFailedTests(tests: Seq[DistageTest[F]], failures: Seq[ResourceCheck.Failure]): Unit = {
+    tests.foreach {
+      test =>
+        reporter.testStatus(test.meta, TestStatus.Ignored(failures))
     }
   }
 
@@ -162,7 +173,7 @@ class DistageTestRunner[F[_]: TagK]
                     sharedLocator =>
                       Injector.inherit(sharedLocator).produceF[F](newtestplan.side).use {
                         integLocator =>
-                          ifIntegChecksOk(F, integLocator)(Seq(test), newtestplan) {
+                          ifIntegChecksOk(integLocator)(Seq(test), newtestplan) {
                             proceedIndividual(test, newtestplan, sharedLocator)
                           }
                       }

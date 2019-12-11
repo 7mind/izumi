@@ -44,7 +44,13 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
         }
 
       case _: Ignored =>
-        delayedReports.put(test, testStatus)
+        signalled match {
+          case None =>
+            reportStatus(test, TestStatus.Running)
+            reportStatus(test, testStatus)
+          case Some(_) =>
+            delayedReports.put(test, testStatus)
+        }
 
       case _: Finished =>
         signalled match {
