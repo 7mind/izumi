@@ -17,7 +17,7 @@ object RawAppArgs {
 final case class RawRoleParams(role: String, roleParameters: RawEntrypointParams, freeArgs: Vector[String])
 
 object RawRoleParams {
-  def empty(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
+  def apply(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
 }
 
 final case class RawEntrypointParams(flags: Vector[RawFlag], values: Vector[RawValue]) {

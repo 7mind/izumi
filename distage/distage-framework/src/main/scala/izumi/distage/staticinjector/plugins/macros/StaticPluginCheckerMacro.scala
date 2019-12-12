@@ -23,7 +23,6 @@ import izumi.logstage.api.IzLogger
 import scala.jdk.CollectionConverters._
 import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{currentMirror, universe => ru}
-import scala.reflect.{ClassTag, classTag}
 
 object StaticPluginCheckerMacro {
 
@@ -182,29 +181,32 @@ object StaticPluginCheckerMacro {
       )
   }
 
-  private[this] def constructClass[T: ClassTag: ru.TypeTag](path: String, abort: String => Unit): T = {
+  private[this] def constructClass[T: ru.TypeTag](path: String, abort: String => Unit): T = {
     val mirror: ru.Mirror = currentMirror
 
-    val clazz = mirror.staticClass(path)
+    val clazz = mirror.staticClass(path) match {
+      case r if r.baseClasses == Nil =>
+        mirror.staticModule(path).moduleClass.asClass
+      case o => o
+    }
     val tpe = clazz.toType
     val expectTpe = ru.typeOf[T]
     if (!(tpe weak_<:< expectTpe)) {
-      abort(s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!""")
+      abort(
+        s"""Can't construct a value of `$expectTpe` from class found at "$path" - its class `$tpe` is NOT a subtype of `$expectTpe`!
+           |baseClasses were: ${tpe.baseClasses}; symbol: $clazz
+           |""".stripMargin)
     }
 
-    val instance = {
-      if (clazz.isModuleClass) {
-        mirror.reflectModule(clazz.thisPrefix.termSymbol.asModule).instance.asInstanceOf[T]
-      } else {
-        mirror.reflectClass(clazz).reflectConstructor {
-          tpe.decls.collectFirst {
-            case m: ru.MethodSymbol@unchecked if m.isPrimaryConstructor => m
-          }.get
-        }.apply()
-      }
+    if (clazz.isModuleClass) {
+      mirror.reflectModule(clazz.thisPrefix.termSymbol.asModule).instance.asInstanceOf[T]
+    } else {
+      mirror.reflectClass(clazz).reflectConstructor {
+        tpe.decls.collectFirst {
+          case m: ru.MethodSymbol@unchecked if m.isPrimaryConstructor => m
+        }.get
+      }.apply().asInstanceOf[T]
     }
-
-    classTag[T].runtimeClass.cast(instance).asInstanceOf[T]
   }
 
 }

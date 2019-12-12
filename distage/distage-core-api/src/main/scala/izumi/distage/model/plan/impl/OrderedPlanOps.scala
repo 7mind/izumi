@@ -52,8 +52,8 @@ private[plan] trait OrderedPlanOps extends Any {
     *
     * @throws InvalidPlanException
     */
-  final def assertImportsResolvedOrThrow: OrderedPlan = {
-    assertImportsResolved.fold(throw _, identity)
+  final def assertImportsResolvedOrThrow(): Unit = {
+    assertImportsResolved.fold(throw _, _ => ())
   }
 
   /**
