@@ -1,6 +1,6 @@
 object V {
   // foundation
-  val collection_compat = "2.1.2"
+  val collection_compat = "2.1.3"
 
   val kind_projector = "0.11.0"
   val scalatest = "3.0.8"
