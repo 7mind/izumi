@@ -1,9 +1,9 @@
 package izumi.distage.injector
 
-import distage.{BootstrapModule, Injector}
+import distage.Injector
 
 trait MkInjector {
   def mkInjector(): Injector = Injector.Standard()
-  def mkStaticInjector(overrides: BootstrapModule*): Injector = Injector.NoCogen(overrides: _*)
-  def mkInjectorWithProxy(): Injector = Injector.Standard()
+  def mkNoReflectionInjector(): Injector = Injector.NoCycles()
+  def mkNoProxyInjector(): Injector = Injector.NoProxies()
 }

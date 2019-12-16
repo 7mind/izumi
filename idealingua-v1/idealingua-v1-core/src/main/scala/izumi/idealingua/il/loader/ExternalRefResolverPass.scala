@@ -75,7 +75,7 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
           out =>
             out.fold(issue => Left(Vector(issue)), right => right.fold(issues => Left(issues), good => Right(good)))
         }
-        .collect({ case Left(issues) => issues })
+        .collect { case Left(issues) => issues }
         .flatten
         .toVector
 
@@ -146,12 +146,12 @@ private[loader] class ExternalRefResolverPass(domains: UnresolvedDomains) {
   }
 
   private def merge(model: ParsedModel, subincludes: Seq[Either[Vector[RefResolverIssue], LoadedModel]]): Either[Vector[RefResolverIssue], LoadedModel] = {
-    val issues = subincludes.collect({ case Left(subissues) => subissues }).flatten.toVector
+    val issues = subincludes.collect { case Left(subissues) => subissues }.flatten.toVector
 
     if (issues.nonEmpty) {
       Left(issues)
     } else {
-      val submodels = subincludes.collect({ case Right(m) => m })
+      val submodels = subincludes.collect { case Right(m) => m }
       val folded = submodels.fold(LoadedModel(model.definitions)) {
         case (acc, m) => acc ++ m
       }

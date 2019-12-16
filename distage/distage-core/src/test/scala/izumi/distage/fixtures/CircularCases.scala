@@ -13,11 +13,9 @@ object CircularCases {
     trait Circular1 {
       def arg: Circular2
     }
-
-    final class Circular1Impl(override val arg: Circular2) extends Circular1
-
     class Circular2(val arg: Circular1)
 
+    final class Circular1Impl(override val arg: Circular2) extends Circular1
     final class Circular2Impl(override val arg: Circular1) extends Circular2(arg)
 
   }
@@ -32,10 +30,8 @@ object CircularCases {
       def arg: Circular3
     }
 
-
     trait Circular3 {
       def arg: Circular4
-
       def arg2: Circular5
 
       def method: Long = 2L
@@ -43,7 +39,6 @@ object CircularCases {
 
     trait Circular4 {
       def arg: Circular1
-
       def factoryFun(c4: Circular4, c5: Circular5): Circular3
 
       def testVal: Int = 1
@@ -87,6 +82,16 @@ object CircularCases {
 
     class ByNameSelfReference(_self: => ByNameSelfReference) {
       final lazy val self = _self
+    }
+
+    trait TraitSelfReference {
+      def self: TraitSelfReference
+    }
+
+    trait FactorySelfReference {
+      def self: FactorySelfReference
+      def mkByNameSelfReference(inner: ByNameSelfReference): ByNameSelfReference
+      def mkByNameSelfReferenceByName(inner: => ByNameSelfReference): ByNameSelfReference
     }
 
   }
@@ -201,6 +206,45 @@ object CircularCases {
                  val TgHttpComponent: TgHttpComponent
                , val dynamoDDL: DynamoDDLService
                ) extends RoleService
+  }
+
+  object CircularCase8 {
+    class Circular1(arg: Circular2) {
+      def test: Object = arg
+    }
+
+    class Circular2(arg: Circular1, int: Int) {
+      def test: Object = arg
+      def testInt: Int = int
+    }
+  }
+
+  object CircularCase9 {
+    class Circular1(arg: Circular2, int: IntHolder) {
+      val int1 = int.int + 1
+      def test: Object = arg
+    }
+
+    class Circular2(arg: Circular1, int: IntHolder) {
+      val int2 = int.int + 2
+      def test: Object = arg
+    }
+
+    class IntHolder {
+      val int: Int = 1
+    }
+  }
+
+  object CircularCase10 {
+    class Component1
+    class Component2
+    class ComponentWithByNameFwdRef(fwd: => ComponentHolder) {
+      def get: ComponentHolder = fwd
+    }
+
+    class ComponentHolder(val component1: Component1, val component2: Component2, val componentFwdRef: ComponentWithByNameFwdRef)
+
+    class Root(val holder: ComponentHolder)
   }
 
   object ByNameCycle {

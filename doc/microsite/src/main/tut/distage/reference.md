@@ -1,9 +1,7 @@
 Syntax Summary
 ==============
 
-### Syntax Summary
-
-@scaladoc[ModuleDef](izumi.distage.model.definition.ModuleDef) DSL syntax:
+@scaladoc[ModuleDefDSL](izumi.distage.model.definition.ModuleDefDSL) syntax:
 
 ```
 Singleton bindings:

@@ -36,15 +36,14 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
 
     logger.log(
       s"""⚙️ Inheritance check: $self vs $other
-         |⚡️bases: ${bdb.mapValues(_.niceList().shift(2)).niceList()}
-         |⚡️inheritance: ${ib.mapValues(_.niceList().shift(2)).niceList()}""".stripMargin)
+         |⚡️bases: ${bdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚡️inheritance: ${ib.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}""".stripMargin)
 
     isChild(Ctx(List.empty, logger))(st, ot)
   }
 
   implicit class CtxExt(val ctx: Ctx) {
     def isChild(selfT0: LightTypeTagRef, thatT0: LightTypeTagRef): Boolean = LightTypeTagInheritance.this.isChild(ctx.next())(selfT0, thatT0)
-
   }
 
   private def isChild(ctx: Ctx)(selfT: LightTypeTagRef, thatT: LightTypeTagRef): Boolean = {
@@ -113,8 +112,8 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
         ctx.isChild(s.reference, t.reference) && t.decls.diff(s.decls).isEmpty
       case (s: Refinement, t: LightTypeTagRef) =>
         ctx.isChild(s.reference, t)
-      case (_: LightTypeTagRef, _: Refinement) =>
-        false
+      case (s: AbstractReference, t: Refinement) =>
+        oneOfKnownParentsIsInheritedFrom(ctx)(s, t)
     }
     logger.log(s"${if (result) "✅" else "⛔️"} $selfT <:< $thatT == $result")
     result
@@ -124,7 +123,7 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
     def parameterShapeCompatible: Boolean = {
       self.parameters.zip(that.parameters).forall {
         case (ps, pt) =>
-          ps.variance match {
+          pt.variance match {
             case Variance.Invariant =>
               ps.ref == pt.ref
             case Variance.Contravariant =>
@@ -139,18 +138,17 @@ final class LightTypeTagInheritance(self: LightTypeTag, other: LightTypeTag) {
       self.parameters.size == that.parameters.size
     }
 
-    ctx.logger.log(s"⚠️ comparing parameterized references, $self <:< $that, context = ${ctx.params}")
+    ctx.logger.log(s"⚠️ comparing parameterized references, $self <:< $that, context = ${ctx.params}; sameArity = $sameArity, shapeOk = $parameterShapeCompatible")
 
     if (self.asName == that.asName) {
       sameArity && parameterShapeCompatible
     } else if (ctx.isChild(self.asName, that.asName)) {
       val allParents = safeParentsOf(self)
-      val moreParents = bdb.collect({
-        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect({
+      val moreParents = bdb.collect {
+        case (l: Lambda, b) if isSame(l.output, self.asName) => b.collect {
           case l: Lambda if l.input.size == self.parameters.size => l
-        })
-          .map(l => l.combine(self.parameters.map(_.ref)))
-      }).flatten
+        }.map(l => l.combine(self.parameters.map(_.ref)))
+      }.flatten
       ctx.logger.log(s"ℹ️ all parents of $self: $allParents ==> $moreParents")
       (allParents ++ moreParents)
         .exists {

@@ -1,6 +1,6 @@
 object V {
   // foundation
-  val collection_compat = "2.1.2"
+  val collection_compat = "2.1.3"
 
   val kind_projector = "0.11.0"
   val scalatest = "3.0.8"
@@ -17,6 +17,7 @@ object V {
   val circe = "0.12.3"
   val circe_generic_extras = "0.12.2"
   val circe_derivation = "0.12.0-M7"
+  val circe_config = "0.7.0"
   val jawn = "0.14.3"
 
   val http4s = "0.21.0-M6"
@@ -30,12 +31,12 @@ object V {
   // java, we need it bcs http4s ws client isn't ready yet
   val asynchttpclient = "2.10.4"
 
-  val classgraph = "4.8.57"
+  val classgraph = "4.8.58"
   val slf4j = "1.7.29"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
   val cglib_nodep = "3.3.0"
   val scala_java_time = "2.0.0-RC3"
-  val docker_java = "3.2.0-rc1"
+  val docker_java = "3.2.0-rc2"
 }

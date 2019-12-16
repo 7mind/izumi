@@ -1,5 +1,6 @@
 package izumi.distage.fixtures
 
+import distage.ModuleDef
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.build.ExposedTestScope
@@ -30,8 +31,8 @@ object BasicCases {
 
     class TestClass
     (
-      val fieldArgDependency: TestDependency0
-      , argDependency: TestDependency1
+      val fieldArgDependency: TestDependency0,
+      argDependency: TestDependency1,
     ) {
       val x = argDependency
       val y = fieldArgDependency
@@ -99,6 +100,19 @@ Forest fire, climbin' higher, real life, it can wait""")
 
     class Impl2 extends Dependency
 
+  }
+
+  object BasicCaseIssue762 {
+    class MyClass(val a: (scala.Predef.String {}) @Id("a"), val b: String @Id("b"))
+
+    object MyClassModule extends ModuleDef {
+      make[MyClass]
+    }
+
+    object ConfigModule extends ModuleDef {
+      make[scala.Predef.String].named("a").from("applicationId")
+      make[Predef.String].named("b").from { a: String @Id("a") => a }
+    }
   }
 
   object BadAnnotationsCase {

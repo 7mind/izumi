@@ -1,9 +1,12 @@
 package izumi.distage.impl
 
-import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.language.Quirks._
+import izumi.fundamentals.reflection.ReflectionUtil
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
+
+import scala.collection.immutable.ListSet
+import scala.collection.{BitSet, immutable, mutable}
 
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
@@ -52,8 +55,8 @@ class LightTypeTagTest extends WordSpec {
   trait I2 extends I1
 
   trait F1[+A]
-
   trait F2[+A] extends F1[A]
+  trait F3 extends F2[Int]
 
   trait FT1[+A[+ _[+ _]]]
 
@@ -73,6 +76,8 @@ class LightTypeTagTest extends WordSpec {
 
   type Const[A, B] = B
 
+  type XS <: { type X }
+
   trait H1
   trait H2 extends H1
   trait H3 extends H2
@@ -88,8 +93,17 @@ class LightTypeTagTest extends WordSpec {
     type T
   }
 
+  trait P0[A[_], B[_]]
+  trait P1[A[_], B[_]] extends P0[B, A]
+  trait X1[_]
+  trait X2[_]
+
+  trait XP1[A[_]] extends P0[X2, A]
+
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
+
+  class ApplePaymentProvider[F[_]] extends H1
 
   def println(o: Any): Unit = info(o.toString)
 
@@ -97,6 +111,10 @@ class LightTypeTagTest extends WordSpec {
 
   def assertRepr(t: LightTypeTag, expected: String): Unit = {
     assert(t.toString == expected).discard()
+  }
+
+  def assertDebugSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
+    assert(t.debug("assert") == expected.debug("assert")).discard()
   }
 
   def assertSame(t: LightTypeTag, expected: LightTypeTag): Unit = {
@@ -122,7 +140,6 @@ class LightTypeTagTest extends WordSpec {
     info(clue)
     assert(!(child <:< parent), clue).discard()
   }
-
 
   def assertCombine(outer: LightTypeTag, inner: Seq[LightTypeTag], expected: LightTypeTag): Unit = {
     val combined = outer.combine(inner: _*)
@@ -194,6 +211,12 @@ class LightTypeTagTest extends WordSpec {
       assertChild(LTT[F2[I2]], LTT[F1[I1]])
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT1]])
       assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT2].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
+      assertChild(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertDifferent(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT2]), LTT[FT1[IT1]])
+      assertSame(`LTT[_[_[_]]]`[FT1].combine(`LTT[_[_]]`[IT1]), LTT[FT1[IT1]])
 
       assertChild(LTT[FT2[IT2]], LTT[FT1[IT2]])
 
@@ -219,6 +242,15 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(LTT[Option[H5]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
       // allTypeReferences: we need to use tpe.etaExpand but 2.13 has a bug: https://github.com/scala/bug/issues/11673#
       //assertChild(LTT[Option[H3]], `LTT[A,B,_>:B<:A]`[H2, H4, X])
+
+      assertChild(`LTT[_[_],_[_]]`[P1].combine(`LTT[_]`[X1], `LTT[_]`[X2]), LTT[P0[X2, X1]])
+      assertNotChild(`LTT[_[_],_[_]]`[P1].combine(`LTT[_]`[X1], `LTT[_]`[X2]), LTT[P0[X1, X2]])
+
+      assertChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X1]), LTT[P0[X2, X1]])
+      assertChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X2, X2]])
+      assertNotChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X2, X1]])
+      assertNotChild(`LTT[_[_]]`[XP1].combine(`LTT[_]`[X2]), LTT[P0[X1, X2]])
+
     }
 
     "support additional mixin traits after first trait with a HKT parameter" in {
@@ -271,8 +303,17 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support subtyping of parents parameterized with type lambdas" in {
-      implicitly[RoleChild[Either] <:< RoleParent[Either[Throwable, ?]]]
       assertChild(LTT[RoleChild[Either]], LTT[RoleParent[Either[Throwable, ?]]])
+    }
+
+    "support subtyping of parents parameterized with type lambdas in combined tags" in {
+      val childBase = `LTT[_[_,_]]`[RoleChild]
+      val childArg = `LTT[_,_]`[Either]
+      val combinedTag = childBase.combine(childArg)
+      val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
+
+      assertSame(combinedTag, LTT[RoleChild[Either]])
+      assertChild(combinedTag, expectedTag)
     }
 
     "support complex type lambdas" in {
@@ -311,7 +352,7 @@ class LightTypeTagTest extends WordSpec {
     }
 
     "support structural & refinement type equality" in {
-      assertDifferent(LTT[With[str.type] with ({ type T = str.type with Int })], LTT[With[str.type] with ({ type T = str.type with Long })])
+      assertDifferent(LTT[W4[str.type] with ({ type T = str.type with Int })], LTT[W4[str.type] with ({ type T = str.type with Long })])
 
       type C1 = C
       assertSame(LTT[ {def a: Int}], LTT[ {def a: Int}])
@@ -346,6 +387,10 @@ class LightTypeTagTest extends WordSpec {
       assertNotChild(LTT[C {def a: Int}], LTT[C {def a: Int; def b: Int}])
 
       assertChild(LTT[C {def a: Int}], LTT[ {def a: Int}])
+    }
+
+    "support type alias and refinement subtype checks" in {
+      assertChild(LTT[XS], LTT[{type X}])
     }
 
     "support literal types" in {
@@ -391,10 +436,70 @@ class LightTypeTagTest extends WordSpec {
       assertCompiles("def x1 = { object x { type T <: { type Array } }; LTag[x.T#Array].discard() }")
       assertCompiles("def x1 = { object x { type T }; LTag[Array[Int] with List[x.T]].discard() }")
       assertCompiles("def x1 = { object x { type F[_] }; LTag[x.F[Int]].discard() }")
+      assertCompiles("def x1 = { object x { type F[_[_]]; type Id[A] = A }; LTag[x.F[x.Id]].discard() }")
     }
 
     "resolve prefixes of annotated types" in {
       assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
+    }
+
+    "allPartsStrong for typelambda" in {
+      import scala.reflect.runtime.{universe => ru}
+      val res1 = ReflectionUtil.allPartsStrong(ru.typeOf[Id[C]].typeConstructor)
+      assert(res1)
+    }
+
+    "`withoutArgs` comparison works" in {
+      assert(LTT[Set[Int]].ref.withoutArgs == LTT[Set[Any]].ref.withoutArgs)
+      assert(LTT[Either[Int, String]].ref.withoutArgs == LTT[Either[Boolean, List[Int]]].ref.withoutArgs)
+
+      assertSame(LTT[Set[Int]].withoutArgs, LTT[Set[Any]].withoutArgs)
+
+      assertChild(LTT[mutable.LinkedHashSet[Int]].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+      assertChild(LTT[ListSet[Int]].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+      assertChild(LTT[ListSet[Int]].withoutArgs, LTT[immutable.Set[Any]].withoutArgs)
+      assertChild(LTT[BitSet].withoutArgs, LTT[collection.Set[Any]].withoutArgs)
+    }
+
+    "`typeArgs` works" in {
+      assertSame(LTT[Set[Int]].typeArgs.head, LTT[collection.Set[Int]].typeArgs.head)
+      assertChild(LTT[Set[Int]].typeArgs.head, LTT[collection.Set[AnyVal]].typeArgs.head)
+
+      assert(`LTT[_,_]`[Either].typeArgs.isEmpty)
+      assert(`LTT[_]`[Either[String, ?]].typeArgs == List(LTT[String]))
+      assert(`LTT[_[_]]`[T0[List, ?[_]]].typeArgs == List(`LTT[_]`[List]))
+    }
+
+    "progression test: wildcards are not supported" in {
+      assertDifferent(LTT[Set[Int]], LTT[Set[_]])
+    }
+
+    "progression test: subtype check fails when child type has absorbed a covariant type parameter of the supertype" in {
+      assertChild(LTT[Set[Int]], LTT[Iterable[AnyVal]])
+      val tagF3 = LTT[F3]
+      assertChild(tagF3, LTT[F2[Int]])
+      assertDifferent(tagF3, LTT[F2[AnyVal]])
+    }
+
+    "regression test: support subtyping of a simple combined type (fixed in 0.10)" in {
+      val ctor = `LTT[_[_]]`[ApplePaymentProvider]
+      val arg = `LTT[_]`[Id]
+      val combined = ctor.combine(arg)
+      assertChild(combined, LTT[H1])
+    }
+
+    "issue #762: properly strip away annotated types / empty refinements / type aliases" in {
+      val predefString = LTT[String]
+      val javaLangString = LTT[java.lang.String]
+      val weirdPredefString = LTT[(scala.Predef.String {}) @distage.Id("abc")]
+
+      assertSame(predefString, javaLangString)
+      assertSame(predefString, weirdPredefString)
+      assertSame(javaLangString, weirdPredefString)
+
+      assertDebugSame(predefString, javaLangString)
+      assertDebugSame(predefString, weirdPredefString)
+      assertDebugSame(javaLangString, weirdPredefString)
     }
 
   }

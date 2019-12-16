@@ -1,34 +1,44 @@
-import izumi.distage.model.definition.Axis.AxisValue
 import izumi.distage.model.plan.ExecutableOp
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.planning.extensions
 import izumi.distage.{model, planning}
+import izumi.fundamentals.reflection.Tags
 
 package object distage extends Distage {
 
   override type ModuleDef = model.definition.ModuleDef
+
+  override type Activation = model.definition.Activation
+  override val Activation: model.definition.Activation.type = model.definition.Activation
+
   override type Injector = model.Injector
+  override type Planner = model.Planner
+  override type Producer = model.Producer
 
-  override type Tag[T] = RuntimeDIUniverse.Tag[T]
-  override val Tag: RuntimeDIUniverse.Tag.type = RuntimeDIUniverse.Tag
+  override type Locator = model.Locator
+  override type LocatorRef = model.Locator.LocatorRef
 
-  override type TagK[T[_]] = RuntimeDIUniverse.TagK[T]
-  override val TagK: RuntimeDIUniverse.TagK.type = RuntimeDIUniverse.TagK
+  override type Tag[T] = Tags.Tag[T]
+  override val Tag: Tags.Tag.type = Tags.Tag
+
+  override type TagK[T[_]] = Tags.TagK[T]
+  override val TagK: Tags.TagK.type = Tags.TagK
 
   override type DIResource[+F[_], Resource] = model.definition.DIResource[F, Resource]
   override val DIResource: model.definition.DIResource.type = model.definition.DIResource
 
   override type DIResourceBase[+F[_], +Resource] = model.definition.DIResource.DIResourceBase[F, Resource]
 
-  override type Planner = model.Planner
-  override type Locator = model.Locator
-  override type Producer = model.Producer
+  override type ProviderMagnet[+A] = model.providers.ProviderMagnet[A]
+  override val ProviderMagnet: model.providers.ProviderMagnet.type = model.providers.ProviderMagnet
+
 
   override type GCMode = model.plan.GCMode
   override val GCMode: model.plan.GCMode.type = model.plan.GCMode
 
   override val StandardAxis: model.definition.StandardAxis.type = model.definition.StandardAxis
 
-  override type Axis[+MM <: AxisValue] = model.definition.Axis[MM]
+  override type Axis = model.definition.Axis
   override val Axis: model.definition.Axis.type = model.definition.Axis
 
   override type BindingTag = model.definition.BindingTag
@@ -36,6 +46,12 @@ package object distage extends Distage {
 
   override type PlannerInput = model.PlannerInput
   override val PlannerInput: model.PlannerInput.type = model.PlannerInput
+
+  override type GraphDumpObserver = extensions.GraphDumpObserver
+  override val GraphDumpObserver: extensions.GraphDumpObserver.type = extensions.GraphDumpObserver
+
+  override type GraphDumpBootstrapModule = extensions.GraphDumpBootstrapModule
+  override val GraphDumpBootstrapModule: extensions.GraphDumpBootstrapModule.type = extensions.GraphDumpBootstrapModule
 
   override type OrderedPlan = model.plan.OrderedPlan
   override val OrderedPlan: model.plan.OrderedPlan.type = model.plan.OrderedPlan
@@ -61,28 +77,26 @@ package object distage extends Distage {
   override type BootstrapModule = model.definition.BootstrapModule
   override val BootstrapModule: model.definition.BootstrapModule.type = model.definition.BootstrapModule
 
-  override val CompactPlanFormatter: model.plan.repr.CompactPlanFormatter.type = model.plan.repr.CompactPlanFormatter
-
   override type BootstrapModuleDef = model.definition.BootstrapModuleDef
 
   override type AutoSetModule = planning.AutoSetModule
   override val AutoSetModule: planning.AutoSetModule.type = planning.AutoSetModule
 
-  override type TagKK[T[_, _]] = RuntimeDIUniverse.TagKK[T]
-  override val TagKK: RuntimeDIUniverse.TagKK.type = RuntimeDIUniverse.TagKK
+  override type TagKK[T[_, _]] = Tags.TagKK[T]
+  override val TagKK: Tags.TagKK.type = Tags.TagKK
 
-  override type TagK3[T[_, _, _]] = RuntimeDIUniverse.TagK3[T]
-  override val TagK3: RuntimeDIUniverse.TagK3.type = RuntimeDIUniverse.TagK3
+  override type TagK3[T[_, _, _]] = Tags.TagK3[T]
+  override val TagK3: Tags.TagK3.type = Tags.TagK3
 
-  override type TagT[T[_[_]]] = RuntimeDIUniverse.TagT[T]
-  override val TagT: RuntimeDIUniverse.TagT.type = RuntimeDIUniverse.TagT
+  override type TagT[T[_[_]]] = Tags.TagT[T]
+  override val TagT: Tags.TagT.type = Tags.TagT
 
-  override type TagTK[T[_[_], _]] = RuntimeDIUniverse.TagTK[T]
-  override val TagTK: RuntimeDIUniverse.TagTK.type = RuntimeDIUniverse.TagTK
+  override type TagTK[T[_[_], _]] = Tags.TagTK[T]
+  override val TagTK: Tags.TagTK.type = Tags.TagTK
 
-  override type TagTKK[T[_[_], _, _]] = RuntimeDIUniverse.TagTKK[T]
-  override val TagTKK: RuntimeDIUniverse.TagTKK.type = RuntimeDIUniverse.TagTKK
+  override type TagTKK[T[_[_], _, _]] = Tags.TagTKK[T]
+  override val TagTKK: Tags.TagTKK.type = Tags.TagTKK
 
-  override type TagTK3[T[_[_], _, _, _]] = RuntimeDIUniverse.TagTK3[T]
-  override val TagTK3: RuntimeDIUniverse.TagTK3.type = RuntimeDIUniverse.TagTK3
+  override type TagTK3[T[_[_], _, _, _]] = Tags.TagTK3[T]
+  override val TagTK3: Tags.TagTK3.type = Tags.TagTK3
 }

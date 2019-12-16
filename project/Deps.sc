@@ -16,6 +16,7 @@ object Izumi {
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
+    val circe_config = Version.VExpr("V.circe_config")
     val jawn = Version.VExpr("V.jawn")
     val http4s = Version.VExpr("V.http4s")
     val scalameta = Version.VExpr("V.scalameta")
@@ -51,7 +52,7 @@ object Izumi {
 
   val settings = GlobalSettings(
     groupId = "io.7mind.izumi",
-    sbtVersion = "1.3.4",
+    sbtVersion = "1.3.5",
     scalaJsVersion = PV.scala_js_version,
     crossProjectVersion = PV.crossproject_version,
     bundlerVersion = PV.scalajs_bundler_version,
@@ -68,13 +69,17 @@ object Izumi {
       cats_effect,
     )
 
+
+    final val circe_core = Library("io.circe", "circe-core", V.circe, LibraryType.Auto)
+    final val circe_derivation = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
     final val circe = Seq(
-      Library("io.circe", "circe-core", V.circe, LibraryType.Auto),
+      circe_core,
       Library("io.circe", "circe-parser", V.circe, LibraryType.Auto),
       Library("io.circe", "circe-literal", V.circe, LibraryType.Auto),
       Library("io.circe", "circe-generic-extras", V.circe_generic_extras, LibraryType.Auto),
-      Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto),
+      circe_derivation,
     ).map(_ in Scope.Compile.all)
+    final val circe_config = Library("io.circe", "circe-config", V.circe_config, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
     final val zio_interop_cats = Library("dev.zio", "zio-interop-cats", V.zio_interop_cats, LibraryType.Auto)
@@ -140,6 +145,8 @@ object Izumi {
 
   object Targets {
     val targetScala = Seq(scala212, scala213)
+    // switch order to use 2.13 in IDEA
+    //    val targetScala = Seq(scala213, scala212)
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala,
@@ -257,14 +264,17 @@ object Izumi {
       final val id = ArtifactId("distage")
       final val basePath = Seq("distage")
 
-      final lazy val model = ArtifactId("distage-model")
-      final lazy val proxyCglib = ArtifactId("distage-proxy-cglib")
+      final lazy val model = ArtifactId("distage-core-api")
+      final lazy val proxyCglib = ArtifactId("distage-core-proxy-cglib")
       final lazy val core = ArtifactId("distage-core")
-      final lazy val config = ArtifactId("distage-config")
-      final lazy val rolesApi = ArtifactId("distage-roles-api")
-      final lazy val plugins = ArtifactId("distage-plugins")
-      final lazy val roles = ArtifactId("distage-roles")
-      final lazy val testkit = ArtifactId("distage-testkit")
+      final lazy val config = ArtifactId("distage-extension-config")
+      final lazy val plugins = ArtifactId("distage-extension-plugins")
+      final lazy val docker = ArtifactId("distage-framework-docker")
+      final lazy val frameworkApi = ArtifactId("distage-framework-api")
+      final lazy val framework = ArtifactId("distage-framework")
+      final lazy val testkitCore = ArtifactId("distage-testkit-core")
+      final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
+      final lazy val legacyTestkit = ArtifactId("distage-testkit-legacy")
     }
 
     object logstage {
@@ -275,7 +285,6 @@ object Izumi {
       final lazy val core = ArtifactId("logstage-core")
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
       final lazy val di = ArtifactId("logstage-di")
-      final lazy val config = ArtifactId("logstage-config")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
       final lazy val sinkSlf4j = ArtifactId("logstage-sink-slf4j")
     }
@@ -317,7 +326,7 @@ object Izumi {
   }
 
   final val forkTests = Seq(
-    "fork" in (SettingScope.Test, Platform.Jvm) := true,
+    "fork" in(SettingScope.Test, Platform.Jvm) := true,
   )
 
   final val crossScalaSources = Seq(
@@ -364,12 +373,6 @@ object Izumi {
         depends = Seq.empty,
       ),
       Artifact(
-        name = Projects.fundamentals.typesafeConfig,
-        libs = Seq(typesafe_config, scala_reflect in Scope.Compile.jvm),
-        depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.reflection in Scope.Runtime.jvm),
-        platforms = Targets.jvm,
-      ),
-      Artifact(
         name = Projects.fundamentals.reflection,
         libs = Seq(scala_reflect in Scope.Provided.all),
         depends = Seq(
@@ -384,7 +387,7 @@ object Izumi {
         depends = Seq.empty,
         settings = crossScalaSources ++ Seq(
           SettingDef.RawSettingDef(
-          """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
+            """scalacOptions in Compile --= Seq("-Ywarn-value-discard","-Ywarn-unused:_", "-Wvalue-discard", "-Wunused:_")""",
             FullSettingScope(SettingScope.Compile, Platform.All),
           ),
         ),
@@ -408,7 +411,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.distage.model,
-        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Compile.all),
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
         depends = Projects.fundamentals.basics ++ Seq(Projects.fundamentals.bio, Projects.fundamentals.reflection).map(_ in Scope.Compile.all),
       ),
       Artifact(
@@ -418,19 +421,14 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
-        libs = Seq(cglib_nodep),
+        libs = Seq.empty,
         depends = Seq(Projects.distage.model, Projects.distage.proxyCglib).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.config,
-        libs = Seq(typesafe_config),
-        depends = Seq(Projects.distage.model, Projects.fundamentals.typesafeConfig).map(_ in Scope.Compile.all) ++
+        libs = Seq(circe_core, circe_derivation, circe_config).map(_ in Scope.Compile.all) ++ Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ tin Scope.Test.all),
-      ),
-      Artifact(
-        name = Projects.distage.rolesApi,
-        libs = Seq.empty,
-        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -440,17 +438,49 @@ object Izumi {
           Seq(Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all),
       ),
       Artifact(
-        name = Projects.distage.roles,
-        libs = allMonadsOptional,
-        depends = Seq(Projects.distage.rolesApi, Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+        name = Projects.distage.frameworkApi,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.model).map(_ in Scope.Compile.all),
       ),
       Artifact(
-        name = Projects.distage.testkit,
-        libs = Seq(scalatest.dependency, docker_java).map(_ in Scope.Compile.all) ++ allMonadsOptional,
+        name = Projects.distage.framework,
+        libs = allMonadsOptional ++ Seq(scala_reflect in Scope.Provided.all),
+        depends = Seq(Projects.logstage.di, Projects.logstage.adapterSlf4j, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ tin Scope.Compile.all),
+      ),
+      Artifact(
+        name = Projects.distage.docker,
+        libs = allMonadsTest ++ Seq(docker_java in Scope.Compile.jvm),
+        depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.testkitScalatest in Scope.Test.all),
+      ),
+      Artifact(
+        name = Projects.distage.testkitCore,
+        libs = allMonadsOptional,
         depends =
-          Seq(Projects.distage.config, Projects.distage.roles, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+            Seq(Projects.distage.core).map(_ tin Scope.Compile.all),
+
+        settings = Seq(
+          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitScalatest,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        depends =
+          Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
             Seq(Projects.distage.core, Projects.distage.plugins).map(_ tin Scope.Compile.all),
+        settings = Seq(
+          "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.legacyTestkit,
+        libs = allMonadsOptional ++ Seq(scalatest.dependency).map(_ in Scope.Compile.all),
+        depends =
+          Seq(Projects.distage.config, Projects.distage.framework, Projects.logstage.di).map(_ in Scope.Compile.all) ++
+            Seq(Projects.distage.core, Projects.distage.testkitCore).map(_ in Scope.Compile.all),
         settings = Seq(
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
         ),
@@ -484,17 +514,11 @@ object Izumi {
       Artifact(
         name = Projects.logstage.di,
         libs = Seq.empty,
-        depends = Seq(Projects.logstage.config, Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.config, Projects.distage.model).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
         groups = Groups.distage,
-      ),
-      Artifact(
-        name = Projects.logstage.config,
-        libs = Seq.empty,
-        depends = Seq(Projects.fundamentals.typesafeConfig, Projects.logstage.core).map(_ in Scope.Compile.all),
-        platforms = Targets.jvm,
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,
@@ -646,7 +670,7 @@ object Izumi {
 
           SettingDef.RawSettingDef("ParadoxMaterialThemePlugin.paradoxMaterialThemeSettings(Paradox)"),
           SettingDef.RawSettingDef("addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)"),
-          SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`izumi-jvm`, transitive=true)"),
+          SettingDef.RawSettingDef("unidocProjectFilter in(ScalaUnidoc, unidoc) := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"),
 
           SettingDef.RawSettingDef(
             """paradoxMaterialTheme in Paradox ~= {

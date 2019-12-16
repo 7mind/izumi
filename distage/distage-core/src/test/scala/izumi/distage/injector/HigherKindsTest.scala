@@ -1,11 +1,10 @@
 package izumi.distage.injector
 
+import distage._
 import izumi.distage.fixtures.HigherKindCases._
 import izumi.distage.model.PlannerInput
-import distage._
+import izumi.fundamentals.reflection.macrortti.LTag
 import org.scalatest.WordSpec
-
-import scala.reflect.runtime.universe.typeOf
 
 class HigherKindsTest extends WordSpec with MkInjector {
 
@@ -155,9 +154,9 @@ class HigherKindsTest extends WordSpec with MkInjector {
     val context = Injector.Standard().produceUnsafe(PlannerInput.noGc(definition))
     assert(context != null)
 
-    assert(definition.t0.tpe.tpe =:= typeOf[TestCovariantTC[Either]])
-    assert(definition.t1.tpe.tpe =:= typeOf[TestClassFG[Either, Option]])
-    assert(definition.t2.tpe.tpe =:= typeOf[TestClassFA[Either, Int]])
+    assert(definition.t0.tag =:= LTag[TestCovariantTC[Either]].tag)
+    assert(definition.t1.tag =:= LTag[TestClassFG[Either, Option]].tag)
+    assert(definition.t2.tag =:= LTag[TestClassFA[Either, Int]].tag)
     assert(context.get[Either[String, Int]] == value)
   }
 

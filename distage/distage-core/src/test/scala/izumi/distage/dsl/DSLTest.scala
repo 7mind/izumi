@@ -1,6 +1,7 @@
 package izumi.distage.dsl
 
 import distage._
+import izumi.distage.constructors.ConcreteConstructor
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
@@ -337,7 +338,7 @@ class DSLTest extends WordSpec with MkInjector {
           .to[TraitZ]
       }
 
-      assert(definition === Module.make(
+      assert(definition == Module.make(
         Set(
           Bindings.binding[ImplXYZ]
           , Bindings.reference[TraitX, ImplXYZ]
@@ -350,7 +351,7 @@ class DSLTest extends WordSpec with MkInjector {
         bindEffect(implXYZ).to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definitionEffect === Module.make(
+      assert(definitionEffect == Module.make(
         Set(
           SingletonBinding(DIKey.get[ImplXYZ], ImplDef.EffectImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity],
             ImplDef.InstanceImpl(SafeType.get[ImplXYZ], implXYZ)), Set.empty, SourceFilePosition.unknown)
@@ -360,26 +361,37 @@ class DSLTest extends WordSpec with MkInjector {
         )
       ))
 
-      val definitionResource = new ModuleDef {
-        bindResource[DIResource.Simple[ImplXYZ]].to[TraitX].to[TraitY].to[TraitZ]
+      class X extends DIResource.Simple[ImplXYZ] {
+        override def acquire: ImplXYZ = new ImplXYZ
+        override def release(resource: ImplXYZ): Unit = ()
       }
 
-      assert(definitionResource === Module.make(
+      val definitionResource = new ModuleDef {
+        bindResource[X].to[TraitX].to[TraitY].to[TraitZ]
+      }
+      val expectedResource = Module.make(
         Set(
-          SingletonBinding(DIKey.get[ImplXYZ]
-            , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.TypeImpl(SafeType.get[DIResource.Simple[ImplXYZ]]))
-            , Set.empty, SourceFilePosition.unknown)
+          SingletonBinding(DIKey.get[ImplXYZ],
+            ImplDef.ResourceImpl(
+              SafeType.get[ImplXYZ],
+              SafeType.getK[Identity],
+              ImplDef.ProviderImpl(SafeType.get[X], ConcreteConstructor[X].provider.get),
+            ),
+            Set.empty,
+            SourceFilePosition.unknown
+          )
           , Bindings.reference[TraitX, ImplXYZ]
           , Bindings.reference[TraitY, ImplXYZ]
           , Bindings.reference[TraitZ, ImplXYZ]
         )
-      ))
+      )
+      assert(definitionResource == expectedResource)
 
       val definitionResourceFn = new ModuleDef {
         bindResource(implXYZResource).to[TraitX].to[TraitY].to[TraitZ]
       }
 
-      assert(definitionResourceFn === Module.make(
+      assert(definitionResourceFn == Module.make(
         Set(
           SingletonBinding(DIKey.get[ImplXYZ]
             , ImplDef.ResourceImpl(SafeType.get[ImplXYZ], SafeType.getK[Identity], ImplDef.InstanceImpl(SafeType.get[DIResource[Identity, ImplXYZ]], implXYZResource))

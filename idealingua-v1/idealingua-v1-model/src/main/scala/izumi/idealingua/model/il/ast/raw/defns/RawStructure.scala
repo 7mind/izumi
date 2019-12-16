@@ -47,11 +47,11 @@ object RawStructure {
     def apply(v: Seq[StructOp]): Aux = {
       import StructOp._
       Aux(RawStructure(
-        v.collect({ case Extend(i) => i }).toList
-        , v.collect({ case Mix(i) => i }).toList
-        , v.collect({ case Drop(i) => i }).toList
-        , v.collect({ case AddField(i) => i }).toList
-        , v.collect({ case RemoveField(i) => i }).toList
+        v.collect { case Extend(i) => i }.toList
+        , v.collect { case Mix(i) => i }.toList
+        , v.collect { case Drop(i) => i }.toList
+        , v.collect { case AddField(i) => i }.toList
+        , v.collect { case RemoveField(i) => i }.toList
       ))
     }
   }

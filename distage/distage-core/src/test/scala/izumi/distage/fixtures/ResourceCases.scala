@@ -3,9 +3,8 @@ package izumi.distage.fixtures
 import java.util.concurrent.atomic.AtomicReference
 
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
-import distage.Id
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.fundamentals.platform.language.Quirks._
 
 import scala.collection.immutable.Queue
@@ -121,8 +120,6 @@ object ResourceCases {
     override def acquire: Unit = { init = true }
     override def release: Unit = ()
   }
-
-  class IntSuspend(i: Int @Id("2")) extends Suspend2(() => Right(10 + i))
 
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())

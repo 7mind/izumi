@@ -1,23 +1,30 @@
 package izumi.fundamentals.reflection
 
-import izumi.fundamentals.reflection.ReflectionUtil.{Kind, kindOf}
-import izumi.fundamentals.reflection.Tags.hktagFormat
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag}
 
 import scala.annotation.implicitNotFound
 import scala.language.experimental.macros
-import scala.reflect.api
-import scala.reflect.api.{TypeCreator, Universe}
 
-trait Tags extends UniverseGeneric { self =>
+object Tags {
 
-  import ReflectionUtil.WeakTypeTagMigrate
-  import u._
-
-  protected[izumi] trait TagInterface[T, NativeTag[_]] {
+  trait AnyTag {
     def tag: LightTypeTag
 
-    def tpe: NativeTag[_]
+    /**
+      * Closest class found for the type or for a LUB of all intersection
+      * members in case of an intersection type.
+      *
+      * A Scala type may not have an associated JVM class, as such
+      * this class may not be sufficient to create instances of `T`
+      *
+      * Only if `tag.hasPreciseClass` returns true
+      * it may be safe to reflect on `closestClass`
+      */
+    def closestClass: Class[_]
+
+    final def hasPreciseClass: Boolean = {
+      tag.shortName == closestClass.getSimpleName
+    }
   }
 
   /**
@@ -37,21 +44,23 @@ trait Tags extends UniverseGeneric { self =>
     * Without a `TagK` constraint above, this example would fail with `no TypeTag available for MyService[F]` error
     *
     * Currently some limitations apply as to when a `Tag` will be correctly constructed:
-    * * Type Parameters do not yet resolve inside structural refinements, e.g. T in {{{ Tag[{ def x: T}] }}}
-    * * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
-    * * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
-    * (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
-    * * Further details at [[https://github.com/7mind/izumi/pull/369]]
+    *   * Type Parameters do not yet resolve inside structural refinements, e.g. T in {{{ Tag[{ def x: T}] }}}
+    *   * Type Parameters do not yet resolve inside higher-kinded type lambdas, e.g. T in {{{ TagK[Either[T, ?]] }}}
+    *   * TagK* does not resolve for constructors with bounded parameters, e.g. S in {{{ class Abc[S <: String]; TagK[Abc] }}}
+    *     (You can still have a bound in partial application: e.g. {{{ class Abc[S <: String, A]; TagK[Abc["hi", ?]] }}}
+    *   * Further details at [[https://github.com/7mind/izumi/pull/369]]
+    *
+    * @see "Lightweight Scala Reflection and why Dotty needs TypeTags reimplemented" https://blog.7mind.io/lightweight-reflection.html
     */
   @implicitNotFound("could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ...")
-  trait Tag[T] extends TagInterface[T, TypeTag] {
+  trait Tag[T] extends AnyTag {
     def tag: LightTypeTag
-    def tpe: TypeTag[T]
+    def closestClass: Class[_]
 
-    override final def toString: String = s"Tag[${tpe.tpe}]@@[$tag]"
+    override final def toString: String = s"Tag[$tag]"
   }
 
-  object Tag extends LowPriorityTagInstances {
+  object Tag {
 
     /**
       * Use `Tag.auto.T[TYPE_PARAM]` syntax to summon a `Tag` for a type parameter of any kind:
@@ -77,22 +86,13 @@ trait Tags extends UniverseGeneric { self =>
       **/
     def auto: Any = macro TagLambdaMacro.lambdaImpl
 
-    def apply[T: Tag]: Tag[T] = implicitly
+    @inline def apply[T: Tag]: Tag[T] = implicitly
 
-    def apply[T](t: TypeTag[T], FLTT: LightTypeTag): Tag[T] = {
+    def apply[T](cls: Class[_], tag0: LightTypeTag): Tag[T] = {
       new Tag[T] {
-        override val tpe: TypeTag[T] = t
-        override def tag: LightTypeTag = FLTT
+        override val tag: LightTypeTag = tag0
+        override val closestClass: Class[_] = cls
       }
-    }
-
-    /**
-      * Resulting [Tag] will not have the ability to migrate into a different universe
-      * (which is not usually a problem, but still worth naming it 'unsafe')
-      */
-    @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
-    def unsafeFromSafeType[T](mirror: u.Mirror)(tpe: SafeType0[u.type]): Tag[T] = {
-      tpe.use(t => Tag(ReflectionUtil.typeToTypeTag[T](u: u.type)(t, mirror), tpe.tag))
     }
 
     /**
@@ -100,52 +100,27 @@ trait Tags extends UniverseGeneric { self =>
       *
       * Example:
       * {{{
-      * implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: TypeTag[T[Nothing, Nothing, Nothing]): Tag[T[A0, K, A1]] =
-      *   Tag.appliedTag(t, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
+      *   implicit def tagFromTagTAKA[T[_, _[_], _], K[_]: TagK, A0: Tag, A1: Tag](implicit t: LTagK3[T]): Tag[T[A0, K, A1]] =
+      *     Tag.appliedTag(t.tag, List(Tag[A0].tag, TagK[K].tag, Tag[A1].tag))
       * }}}
       **/
-    def appliedTag[R](tag: WeakTypeTag[_], args: List[TypeTag[_]]): Tag[R] = {
-      val appliedTypeCreator = new TypeCreator {
-        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-          m.universe.appliedType(tag.migrate(m).tpe.typeConstructor, args.map(_.migrate(m).tpe))
-        }
-      }
-      val newTypeTag = TypeTag[R](tag.mirror, appliedTypeCreator)
-      Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
+    def appliedTag[R](tag: HKTag[_], args: List[LightTypeTag]): Tag[R] = {
+      Tag(tag.closestClass, tag.tag.combine(args: _*))
     }
 
     /**
       * Create a Tag of a type formed from an `intersection` of types (A with B) with a structural refinement taken from `structType`
       *
-      * `structType` is assumed to be a weak type of final result type, e.g.
+      * `structType` is assumed to be a weak type of the entire type, e.g.
       * {{{
-      * Tag[A with B {def abc: Unit}] == refinedTag(List(typeTag[A], typeTag[B]), weakTypeTag[A with B { def abc: Unit }])
+      *   Tag[A with B {def abc: Unit}] == refinedTag(List(LTag[A].tag, LTag[B].tag), LTag.Weak[A with B { def abc: Unit }].tag)
       * }}}
       **/
-    def refinedTag[R](intersection: List[TypeTag[_]], structType: WeakTypeTag[_]): Tag[R] = {
-      val refinedTypeCreator = new TypeCreator {
-        override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-          val parents = intersection.map(_.migrate(m).tpe)
-          val struct = structType.migrate(m).tpe
-          m.universe.internal.reificationSupport.setInfo(struct.typeSymbol, m.universe.internal.refinedType(parents, struct.decls))
-          m.universe.internal.refinedType(parents, struct.decls, struct.typeSymbol)
-        }
-      }
-      val newTypeTag = TypeTag[R](intersection.headOption.fold(structType.mirror)(_.mirror), refinedTypeCreator)
-      Tag(newTypeTag, LightTypeTagImpl.makeLightTypeTag(u)(newTypeTag.tpe))
+    def refinedTag[R](lubClass: Class[_], intersection: List[LightTypeTag], structType: LightTypeTag): Tag[R] = {
+      Tag(lubClass, LightTypeTag.refinedType(intersection, structType))
     }
 
-    /** For construction from [[TagLambdaMacro]] */
-    type HKTagRef[T] = HKTag[T]
-
-    // workaround for a scalac bug - `Nothing` type is lost when two implicits for it are summoned from one implicit as in:
-    //  implicit final def tagFromTypeTag[T](implicit t: TypeTag[T], l: LTag[T]): Tag[T] = Tag(t, l.fullLightTypeTag)
-    // https://github.com/scala/bug/issues/11715
-    implicit final def tagFromTypeTag[T](implicit t: TypeTag[T]): Tag[T] = macro TagMacro.FIXMEgetLTagAlso[self.type, T]
-  }
-
-  trait LowPriorityTagInstances {
-    @inline implicit final def tagFromTagMaterializer[T](implicit t: TagMaterializer[self.type, T]): Tag[T] = t.value
+    implicit final def tagFromTagMacro[T]: Tag[T] = macro TagMacro.makeTag[T]
   }
 
   /**
@@ -163,68 +138,45 @@ trait Tags extends UniverseGeneric { self =>
     *   type TagFGC[K[_[_, _], _[_], _[_[_], _, _, _]] = HKTag[ { type Arg[A[_, _], B[_], C[_[_], _, _, _]] = K[A, B, C] } ]
     * }}}
     *
-    * A convenience macro `Tag.auto.T` is available to automatically create a type lambda from a type of any kind:
+    * A convenience macro `Tag.auto.T` is available to automatically create a type lambda for a type of any kind:
     *
     * {{{
     *   def x[K[_[_, _], _[_], _[_[_], _, _, _]: Tag.auto.T]: Tag.auto.T[K] = implicitly[Tag.auto.T[K]]
     * }}}
-    *
     */
-  trait HKTag[T] extends TagInterface[T, TypeTag] {
-    /** Internal `TypeTag` holding the `typeConstructor` of type `T` */
-    def tpe: TypeTag[_]
+  trait HKTag[T] extends AnyTag {
+    /** Internal `LightTypeTag` holding the `typeConstructor` of type `T` */
     def tag: LightTypeTag
+    def closestClass: Class[_]
 
-    override final def toString: String = s"${hktagFormat(tpe.tpe)}@@[$tag]"
+    override final def toString: String = s"HKTag[$tag]"
   }
 
-  object HKTag extends LowPriorityHKTagInstances {
-    def apply[T](k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
-      new HKTag[T] {
-        override val tpe: TypeTag[_] = {
-          val ctorCreator = new TypeCreator {
-            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-              val t = k.migrate(m).tpe.decls.head.info
-              t.typeConstructor
-            }
-          }
-
-          TypeTag(k.mirror, ctorCreator)
-        }
-        override val tag: LightTypeTag = l.tag
-      }
+  object HKTag {
+    def apply[T](cls: Class[_], lightTypeTag: LightTypeTag): HKTag[T] = new HKTag[T] {
+      override val tag: LightTypeTag = lightTypeTag
+      override val closestClass: Class[_] = cls
     }
 
-    implicit def hktagFromTypeTag[T](implicit k: TypeTag[T], l: LTag.WeakHK[T]): HKTag[T] = {
-      new HKTag[T] {
-        override val tpe: TypeTag[_] = {
-          val ctorCreator = new TypeCreator {
-            override def apply[U <: SingletonUniverse](m: api.Mirror[U]): U#Type = {
-              val t = k.migrate(m).tpe.decls.head.info
-              t.typeConstructor
-            }
-          }
-
-          TypeTag(k.mirror, ctorCreator)
-        }
-        override val tag: LightTypeTag = l.tag
-      }
+    def appliedTagNonPos[R](tag: HKTag[_], args: List[Option[LightTypeTag]]): HKTag[R] = {
+      HKTag(tag.closestClass, tag.tag.combineNonPos(args: _*))
     }
 
+    @inline implicit final def hktagFromTagMacro[T](implicit materializer: HKTagMaterializer[T]): HKTag[T] = materializer.value
   }
 
-  trait LowPriorityHKTagInstances {
-    /**
-      * Workaround for a scalac bug whereby it loses the correct type of HKTag argument
-      * Here, if implicit resolution fails because scalac thinks that `ArgStruct` is a WeakType,
-      * we just inspect it and recreate HKTag Arg again.
-      *
-      * See: TagTest, "scalac bug: can't find HKTag when obscured by type lambda"
-      *
-      * TODO: report scalac bug
-      */
-    implicit def hktagFixupArgStruct[T]: HKTag[T] = macro TagMacro.fixupHKTagArgStruct[self.type, T]
+  /**
+    * Force eager expansion for all recursive implicit searches inside TagMacro
+    * to display better error messages!
+    *
+    * @see test ResourceEffectBindingsTest."Display tag macro stack trace when ResourceTag is not found"
+    */
+  final class HKTagMaterializer[T](val value: HKTag[T]) extends AnyVal
+  object HKTagMaterializer {
+    // FIXME: TagK construction macro
+    implicit def materializeHKTag[T]: HKTagMaterializer[T] = macro TagMacro.makeHKTagMaterializer[T]
   }
+
 
   /**
     * `TagK` is a [[scala.reflect.api.TypeTags.TypeTag]] for higher-kinded types.
@@ -255,38 +207,35 @@ trait Tags extends UniverseGeneric { self =>
       *     TagK[Option]
       * }}}
       **/
-    def apply[K[_] : TagK]: TagK[K] = {
-      implicitly
-    }
+    @inline def apply[K[_]: TagK]: TagK[K] = implicitly
   }
 
   object TagKK {
-    def apply[K[_, _]: TagKK]: TagKK[K] = implicitly
+    @inline def apply[K[_, _]: TagKK]: TagKK[K] = implicitly
   }
 
   object TagK3 {
-    def apply[K[_, _, _]: TagK3]: TagK3[K] = implicitly
+    @inline def apply[K[_, _, _]: TagK3]: TagK3[K] = implicitly
   }
 
   object TagT {
-    def apply[K[_[_]]: TagT]: TagT[K] = implicitly
+    @inline def apply[K[_[_]]: TagT]: TagT[K] = implicitly
   }
 
   object TagTK {
-    def apply[K[_[_], _]: TagTK]: TagTK[K] = implicitly
+    @inline def apply[K[_[_], _]: TagTK]: TagTK[K] = implicitly
   }
 
   object TagTKK {
-    def apply[K[_[_], _, _]: TagTKK]: TagTKK[K] = implicitly
+    @inline def apply[K[_[_], _, _]: TagTKK]: TagTKK[K] = implicitly
   }
 
   object TagTK3 {
-    def apply[K[_[_], _, _, _]: TagTK3]: TagTK3[K] = implicitly
+    @inline def apply[K[_[_], _, _, _]: TagTK3]: TagTK3[K] = implicitly
   }
 
 // TODO
 //  type TagKUBound[U, K[_ <: U]] = HKTag[{ type Arg[A <: U] = K[A] }]
-//
 //  object TagKUBound {
 //    def apply[U, K[_ <: U]](implicit ev: TagKUBound[U, K]): TagKUBound[U, K] = implicitly
 //  }
@@ -295,64 +244,27 @@ trait Tags extends UniverseGeneric { self =>
   //
   // We need to construct a SafeType signature for a generic method, but generic parameters have no type tags
   // So we resort to weak type parameters and pointer equality
-  trait WeakTag[T] extends TagInterface[T, WeakTypeTag] {
+  trait WeakTag[T] extends AnyTag {
     def tag: LightTypeTag
-    def tpe: u.WeakTypeTag[_]
+    def closestClass: Class[_]
+
     override final def toString: String = s"WeakTag[$tag]"
   }
 
-  object WeakTag extends WeakTagInstances0 {
+  object WeakTag extends WeakTagInstances1 {
     def apply[T: WeakTag]: WeakTag[T] = implicitly
 
-    def apply[T](t: WeakTypeTag[T], l: LightTypeTag): WeakTag[T] = {
+    def apply[T](cls: Class[_], l: LightTypeTag): WeakTag[T] = {
       new WeakTag[T] {
-        override def tag: LightTypeTag = l
-        override val tpe: WeakTypeTag[T] = t
+        override val tag: LightTypeTag = l
+        override val closestClass: Class[_] = cls
       }
     }
-  }
 
-  trait WeakTagInstances0 extends WeakTagInstances1 {
-    implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].tpe, Tag[T].tag)
+    implicit def weakTagFromTag[T: Tag]: WeakTag[T] = WeakTag(Tag[T].closestClass, Tag[T].tag)
   }
-
   trait WeakTagInstances1 {
-    implicit def weakTagFromWeakTypeTag[T](implicit t: WeakTypeTag[T], l: LTag.Weak[T]): WeakTag[T] = WeakTag(t, l.tag)
+    implicit def weakTagFromWeakTypeTag[T](implicit l: LTag.Weak[T]): WeakTag[T] = WeakTag(classOf[Any], l.tag)
   }
 
-  // workaround for a strange (prefix?) equality issue when splicing calls to `implicitly[RuntimeDIUniverse.u.TypeTag[X[Y]]`
-  type ScalaReflectTypeTag[T] = u.TypeTag[T]
-  type ScalaReflectWeakTypeTag[T] = u.WeakTypeTag[T]
-
-  // workaround for being unable to refer to Tag object's type from a type projection (?)
-  type TagObject = Tag.type
-  type HKTagObject = HKTag.type
-}
-
-object Tags extends Tags {
-  override final val u: scala.reflect.runtime.universe.type = scala.reflect.runtime.universe
-
-  final val defaultTagImplicitError: String =
-    "could not find implicit value for Tag[${T}]. Did you forget to put on a Tag, TagK or TagKK context bound on one of the parameters in ${T}? e.g. def x[T: Tag, F[_]: TagK] = ..."
-
-  final def hktagFormatMap: Map[Kind, String] = {
-    Map(
-      Kind(Nil) -> "Tag",
-      Kind(Kind(Nil) :: Nil) -> "TagK",
-      Kind(Kind(Nil) :: Kind(Nil) :: Nil) -> "TagKK",
-      Kind(Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagK3",
-      Kind(Kind(Kind(Nil) :: Nil) :: Nil) -> "TagT",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Nil) -> "TagTK",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTKK",
-      Kind(Kind(Kind(Nil) :: Nil) :: Kind(Nil) :: Kind(Nil) :: Kind(Nil) :: Nil) -> "TagTK3",
-    )
-  }
-
-  final def hktagFormat(tpe: Universe#Type): String = {
-    val kind = kindOf(tpe)
-    hktagFormatMap.get(kind) match {
-      case Some(t) => s"$t[$tpe]"
-      case _ => s"HKTag for $tpe of kind $kind"
-    }
-  }
 }

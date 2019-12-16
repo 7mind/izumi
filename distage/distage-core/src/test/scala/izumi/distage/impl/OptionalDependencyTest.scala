@@ -3,11 +3,11 @@ package izumi.distage.impl
 import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
-import izumi.distage.model.monadic.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIOAsync}
+import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
+import izumi.functional.bio.BIOSyntax.BIOTemporalOps
+import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}
-import izumi.fundamentals.platform.language.Quirks._
 
 class OptionalDependencyTest extends WordSpec with GivenWhenThen {
 
@@ -22,18 +22,21 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
     try DIEffect.fromBIO(null) catch { case _: NullPointerException => }
     try BIO[Either, Unit](())(null) catch { case _: NullPointerException => }
 
-    And("Methods that mention cats/ZIO types directly cannot be referred to in code")
+    And("Methods that mention cats/ZIO types directly cannot be referred")
 //    assertDoesNotCompile("DIEffect.fromBIO(BIO.BIOZio)")
 //    assertDoesNotCompile("DIResource.fromCats(null)")
 //    assertDoesNotCompile("DIResource.providerFromCats(null)(null)")
     BIOAsync[Either](null)
 
     And("Can search for BIO/BIOAsync")
-    assertTypeError("implicitly[BIOAsync[Either]]")
-    assertTypeError("implicitly[BIO[Either]]")
+    def optSearch[A >: Null](implicit a: A = null) = a
+    optSearch[BIOTemporal[Either]]
+    optSearch[BIOAsync[Either]]
+    optSearch[BIO[Either]]
 
-    And("`No More Orphans` type provider is inacessible")
-    LowPriorityDIEffectInstances.discard()
+    And("`No More Orphans` type provider object is accessible")
+    LowPriorityDIEffectInstances._Sync.hashCode()
+    And("`No More Orphans` type provider implicit is not found when cats is not on the classpath")
     assertTypeError(
       """
          def y[R[_[_]]: LowPriorityDIEffectInstances._Sync]() = ()
@@ -45,10 +48,8 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
       DIEffect.fromCatsEffect[Option, DIResource[?[_], Int]](null, null)
     }
 
-    And("Methods that mention cats types only in generics can be called with nulls, but will error")
-    intercept[ScalaReflectionException] {
-      DIResource.providerFromCatsProvider[Identity, Int](null)
-    }
+    And("Methods that mention cats types only in generics will error on call")
+//    assertDoesNotCompile("DIResource.providerFromCatsProvider[Identity, Int](() => null)")
 
     Then("DIResource.use syntax works")
     var open = false

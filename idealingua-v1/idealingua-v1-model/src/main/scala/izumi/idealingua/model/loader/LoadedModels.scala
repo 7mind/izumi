@@ -49,7 +49,7 @@ class LoadedModels(loaded: Seq[LoadedDomain], diagnostics: IDLDiagnostics) {
       Seq.empty
     }
 
-    (pf ++ loaded.collect({ case f: Failure => f }))
+    (pf ++ loaded.collect { case f: Failure => f })
       .map {
         case ParsingFailed(path, message) =>
           s"Parsing phase (0) failed on $path: $message"

@@ -2,14 +2,14 @@ package izumi.idealingua.runtime.rpc.http4s
 
 import java.util.concurrent.ConcurrentHashMap
 
-import izumi.functional.bio.{BIOAsync, F}
+import izumi.functional.bio.{BIOTemporal, F}
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.idealingua.runtime.rpc._
 import io.circe.Json
 
 import scala.concurrent.duration.FiniteDuration
 
-class RequestState[F[+ _, + _]: BIOAsync] {
+class RequestState[F[+ _, + _]: BIOTemporal] {
 
   // TODO: stale item cleanups
   protected val requests: ConcurrentHashMap[RpcPacketId, IRTMethodId] = new ConcurrentHashMap[RpcPacketId, IRTMethodId]()

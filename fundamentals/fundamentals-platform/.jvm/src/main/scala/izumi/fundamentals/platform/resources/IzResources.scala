@@ -22,7 +22,6 @@ class IzResources(clazz: Class[_]) {
 
   import IzResources._
 
-
   def jarResource[C: ClassTag](name: String): ResourceLocation = {
     classLocationUrl[C]()
       .flatMap {

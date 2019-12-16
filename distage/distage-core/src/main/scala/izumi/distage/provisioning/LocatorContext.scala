@@ -1,19 +1,21 @@
 package izumi.distage.provisioning
 
 import izumi.distage.model.Locator
-import izumi.distage.model.provisioning.strategies.ByNameDispatcher
+import izumi.distage.model.provisioning.proxies.ProxyDispatcher.ByNameDispatcher
 import izumi.distage.model.provisioning.{Provision, ProvisioningKeyProvider}
-import izumi.distage.model.reflection.universe
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.DIKey
 
-final case class LocatorContext(
-                                 provision: Provision[Any]
-                               , locator: Locator
-                               ) extends ProvisioningKeyProvider {
+final case class LocatorContext
+(
+  provision: Provision[Any],
+  locator: Locator,
+) extends ProvisioningKeyProvider {
 
-  override def fetchUnsafe(key: universe.RuntimeDIUniverse.DIKey): Option[Any] = provision.get(key)
+  override def fetchUnsafe(key: DIKey): Option[Any] = {
+    provision.get(key)
+  }
 
-  override def fetchKey(key: RuntimeDIUniverse.DIKey, byName: Boolean): Option[Any] = {
+  override def fetchKey(key: DIKey, byName: Boolean): Option[Any] = {
     fetchUnsafe(key).map {
       case dep: ByNameDispatcher if !byName =>
         dep.apply()
@@ -26,13 +28,15 @@ final case class LocatorContext(
     }
   }
 
-  override def importKey(key: RuntimeDIUniverse.DIKey): Option[Any] = locator.lookupInstance[Any](key)
+  override def importKey(key: DIKey): Option[Any] = {
+    locator.lookupInstance[Any](key)
+  }
 
-  override def narrow(allRequiredKeys: Set[RuntimeDIUniverse.DIKey]): ProvisioningKeyProvider = {
+  override def narrow(allRequiredKeys: Set[DIKey]): ProvisioningKeyProvider = {
     LocatorContext(provision.narrow(allRequiredKeys), locator)
   }
 
-  override def extend(values: Map[RuntimeDIUniverse.DIKey, Any]): ProvisioningKeyProvider = {
-    LocatorContext(provision.extend(values: Map[RuntimeDIUniverse.DIKey, Any]), locator)
+  override def extend(values: Map[DIKey, Any]): ProvisioningKeyProvider = {
+    LocatorContext(provision.extend(values: Map[DIKey, Any]), locator)
   }
 }

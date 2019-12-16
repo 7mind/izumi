@@ -5,15 +5,16 @@ import izumi.distage.model.Locator
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.definition.DIResource.DIResourceBase
 import izumi.distage.model.exceptions.IncompatibleEffectTypesException
-import izumi.distage.model.monadic.DIEffect
-import izumi.distage.model.monadic.DIEffect.syntax._
+import izumi.distage.model.effect.DIEffect
+import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.plan.ExecutableOp.{MonadicOp, _}
 import izumi.distage.model.plan.{ExecutableOp, OrderedPlan}
-import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizersFilter}
+import izumi.distage.model.provisioning.PlanInterpreter.{FailedProvision, Finalizer, FinalizerFilter}
 import izumi.distage.model.provisioning.Provision.ProvisionMutable
 import izumi.distage.model.provisioning._
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -23,11 +24,7 @@ class PlanInterpreterDefaultRuntimeImpl
 (
   setStrategy: SetStrategy
 , proxyStrategy: ProxyStrategy
-, factoryStrategy: FactoryStrategy
-, traitStrategy: TraitStrategy
-, factoryProviderStrategy: FactoryProviderStrategy
 , providerStrategy: ProviderStrategy
-, classStrategy: ClassStrategy
 , importStrategy: ImportStrategy
 , instanceStrategy: InstanceStrategy
 , effectStrategy: EffectStrategy
@@ -35,18 +32,16 @@ class PlanInterpreterDefaultRuntimeImpl
 
 , failureHandler: ProvisioningFailureInterceptor
 , verifier: ProvisionOperationVerifier,
-) extends PlanInterpreter
-     with OperationExecutor
-     with WiringExecutor {
+) extends PlanInterpreter with OperationExecutor {
 
-  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizersFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
+  override def instantiate[F[_]: TagK](plan: OrderedPlan, parentContext: Locator, filterFinalizers: FinalizerFilter[F])(implicit F: DIEffect[F]): DIResourceBase[F, Either[FailedProvision[F], Locator]] = {
     DIResource.make(
       acquire = instantiateImpl(plan, parentContext)
     )(release = {
       resource =>
         val finalizers = resource match {
           case Left(failedProvision) => failedProvision.failed.finalizers
-          case Right(locator) => locator.dependencyMap.finalizers
+          case Right(locator) => locator.finalizers
         }
         filterFinalizers.filter(finalizers).foldLeft(F.unit) {
           case (acc, f) => acc.guarantee(F.suspendF(f.effect()))
@@ -143,16 +138,16 @@ class PlanInterpreterDefaultRuntimeImpl
   override def execute[F[_]: TagK](context: ProvisioningKeyProvider, step: ExecutableOp)(implicit F: DIEffect[F]): F[Seq[NewObjectOp]] = {
     step match {
       case op: ImportDependency =>
-        F pure importStrategy.importDependency(context, op)
+        F pure importStrategy.importDependency(context, this, op)
 
       case op: CreateSet =>
-        F pure setStrategy.makeSet(context, op)
+        F pure setStrategy.makeSet(context, this, op)
 
       case op: WiringOp =>
         F pure execute(context, op)
 
       case op: ProxyOp.MakeProxy =>
-        F pure proxyStrategy.makeProxy(context, op)
+        F pure proxyStrategy.makeProxy(context, this, op)
 
       case op: ProxyOp.InitProxy =>
         proxyStrategy.initProxy(context, this, op)
@@ -167,30 +162,18 @@ class PlanInterpreterDefaultRuntimeImpl
 
   override def execute(context: ProvisioningKeyProvider, step: WiringOp): Seq[NewObjectOp] = {
     step match {
-      case op: WiringOp.ReferenceInstance =>
-        instanceStrategy.getInstance(context, op)
+      case op: WiringOp.UseInstance =>
+        instanceStrategy.getInstance(context, this, op)
 
       case op: WiringOp.ReferenceKey =>
-        instanceStrategy.getInstance(context, op)
+        instanceStrategy.getInstance(context, this, op)
 
       case op: WiringOp.CallProvider =>
-        providerStrategy.callProvider(context, op)
-
-      case op: WiringOp.InstantiateClass =>
-        classStrategy.instantiateClass(context, op)
-
-      case op: WiringOp.InstantiateTrait =>
-        traitStrategy.makeTrait(context, op)
-
-      case op: WiringOp.CallFactoryProvider =>
-        factoryProviderStrategy.callFactoryProvider(context, this, op)
-
-      case op: WiringOp.InstantiateFactory =>
-        factoryStrategy.makeFactory(context, this, op)
+        providerStrategy.callProvider(context, this, op)
     }
   }
 
-  private[this] def interpretResult[F[_] : TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
+  private[this] def interpretResult[F[_]: TagK](active: ProvisionMutable[F], result: NewObjectOp): Unit = {
     result match {
       case NewObjectOp.NewImport(target, instance) =>
         verifier.verify(target, active.imports.keySet, instance, s"import")
@@ -204,18 +187,15 @@ class PlanInterpreterDefaultRuntimeImpl
         verifier.verify(target, active.instances.keySet, instance, "resource")
         active.instances += (target -> instance)
         val finalizer = r.asInstanceOf[NewObjectOp.NewResource[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer[F](target, finalizer)
 
       case r@NewObjectOp.NewFinalizer(target, _) =>
         val finalizer = r.asInstanceOf[NewObjectOp.NewFinalizer[F]].finalizer
-        active.finalizers prepend Finalizer(target, finalizer)
+        active.finalizers prepend Finalizer[F](target, finalizer)
 
       case NewObjectOp.UpdatedSet(target, instance) =>
         verifier.verify(target, active.instances.keySet, instance, "set")
         active.instances += (target -> instance)
-
-      case NewObjectOp.DoNothing() =>
-        ()
     }
   }
 
@@ -224,7 +204,7 @@ class PlanInterpreterDefaultRuntimeImpl
     val monadicOps = ops.collect { case m: MonadicOp => m }
     F.traverse_(monadicOps) {
       op =>
-        val actionEffectType = op.wiring.effectHKTypeCtor
+        val actionEffectType = op.effectHKTypeCtor
         val isEffect = actionEffectType != identityEffectType
 
         if (isEffect && !(actionEffectType <:< provisionerEffectType)) {

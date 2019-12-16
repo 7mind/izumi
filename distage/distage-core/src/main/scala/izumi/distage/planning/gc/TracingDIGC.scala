@@ -23,23 +23,15 @@ class TracingDIGC[OpType <: ExecutableOp]
           case w: WiringOp =>
             w.wiring.requiredKeys
           case w: MonadicOp =>
-            w.effectWiring.requiredKeys
+            Set(w.effectKey)
           case c: CreateSet =>
             c.members.filterNot {
-              key =>
-                index.get(key)
-                  .collect {
-                    case o: ExecutableOp.WiringOp =>
-                      o.wiring
-                    case o: ExecutableOp.MonadicOp =>
-                      o.effectWiring
-                  }
-                  .exists {
-                    case r: Wiring.SingletonWiring.Reference =>
-                      r.weak
-                    case _ =>
-                      false
-                  }
+              index.get(_).exists {
+                case ExecutableOp.WiringOp.ReferenceKey(_, Wiring.SingletonWiring.Reference(_, _, weak), _) =>
+                  weak
+                case _ =>
+                  false
+              }
             }
         }
       case _: ImportDependency =>
@@ -68,8 +60,6 @@ class TracingDIGC[OpType <: ExecutableOp]
           .collect {
             case (k, Some(op: ExecutableOp.WiringOp)) =>
               (k, op.wiring)
-            case (k, Some(op: ExecutableOp.MonadicOp)) =>
-              (k, op.effectWiring)
           }
           .collect {
             case (k, r: Wiring.SingletonWiring.Reference) if r.weak =>

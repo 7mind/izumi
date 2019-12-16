@@ -98,7 +98,7 @@ final class GraphDumpObserver
         val attrs = mutable.Map("style" -> "filled", "shape" -> "box") ++ rootStyle
 
         val op = finalPlan.toSemi.index(k)
-        val name = km.render(k)
+        val name = km.renderKey(k)
         modify(name, attrs, op)
         main.node(name, attrs = attrs)
     }
@@ -107,7 +107,7 @@ final class GraphDumpObserver
       case (k, deps) =>
         deps.foreach {
           d =>
-            main.edge(km.render(k), km.render(d))
+            main.edge(km.renderKey(k), km.renderKey(d))
         }
     }
 
@@ -116,7 +116,7 @@ final class GraphDumpObserver
         k =>
           val attrs = mutable.Map("style" -> "filled", "shape" -> "box", "fillcolor" -> "coral1")
           val op = preGcPlan.index(k)
-          val name = km.render(k)
+          val name = km.renderKey(k)
           modify(name, attrs, op)
           collected.node(name, attrs = attrs)
       }
@@ -126,9 +126,9 @@ final class GraphDumpObserver
           deps.foreach {
             d =>
               if ((missingKeys.contains(k) && !missingKeys.contains(d)) || (missingKeys.contains(d) && !missingKeys.contains(k))) {
-                collected.edge(km.render(k), km.render(d), attrs = mutable.Map("color" -> "coral1"))
+                collected.edge(km.renderKey(k), km.renderKey(d), attrs = mutable.Map("color" -> "coral1"))
               } else if (missingKeys.contains(d) && missingKeys.contains(k)) {
-                collected.edge(km.render(k), km.render(d))
+                collected.edge(km.renderKey(k), km.renderKey(d))
               }
           }
       }
@@ -151,25 +151,15 @@ final class GraphDumpObserver
             "newset"
           case op: ExecutableOp.WiringOp =>
             op.wiring match {
-              case w: RuntimeDIUniverse.Wiring.SingletonWiring =>
-                w match {
-                  case _: RuntimeDIUniverse.Wiring.SingletonWiring.ReflectiveInstantiationWiring =>
-                    "make"
-                  case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
-                    "lambda"
-                  case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
-                    "instance"
-                  case RuntimeDIUniverse.Wiring.SingletonWiring.Reference(_, _, weak) =>
-                    if (weak) {
-                      attrs.put("style", "filled,dashed")
-                    }
-                    "ref"
+              case RuntimeDIUniverse.Wiring.SingletonWiring.Function(_, _) =>
+                "lambda"
+              case RuntimeDIUniverse.Wiring.SingletonWiring.Instance(_, _) =>
+                "instance"
+              case RuntimeDIUniverse.Wiring.SingletonWiring.Reference(_, _, weak) =>
+                if (weak) {
+                  attrs.put("style", "filled,dashed")
                 }
-
-              case RuntimeDIUniverse.Wiring.Factory(_, _, _) =>
-                "factory"
-              case RuntimeDIUniverse.Wiring.FactoryFunction(_, _, _) =>
-                "factoryfun"
+                "ref"
             }
         case op: ExecutableOp.MonadicOp =>
           op match {

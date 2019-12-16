@@ -3,6 +3,7 @@ package izumi.fundamentals.reflection
 import java.nio.file.{Path, Paths}
 import java.time.LocalDateTime
 
+import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
@@ -44,7 +45,7 @@ object ProjectAttributeMacro {
   }
 
   def extractAttrMacro(c: blackbox.Context)(name: c.Expr[String]): c.Expr[Option[String]] = {
-    val nameStr = TreeUtil.stringLiteral(c)(c.universe)(name.tree)
+    val nameStr = ReflectionUtil.getStringLiteral(c)(name.tree)
     extractAttr(c, nameStr)
   }
 
@@ -92,7 +93,7 @@ object ProjectAttributeMacro {
     c.Expr[Option[String]](q"$result")
   }
 
-  @scala.annotation.tailrec
+  @tailrec
   private def projectRoot(cp: Path): Option[Path] = {
     if (cp.resolve("build.sbt").toFile.exists()) {
       Some(cp)

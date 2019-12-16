@@ -13,13 +13,4 @@ class ModelTest extends WordSpec {
     }
   }
 
-  "SafeType" should {
-    "support construction from method type signatures" in {
-      import izumi.distage.model.reflection.universe.RuntimeDIUniverse.u._
-      assert(SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature) ==
-        SafeType(typeOf[PlanAnalyzer].member(TermName("resolve")).typeSignature))
-    }
-  }
-
-
 }

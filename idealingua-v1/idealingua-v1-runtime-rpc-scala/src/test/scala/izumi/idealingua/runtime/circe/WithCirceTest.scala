@@ -1,5 +1,7 @@
 package izumi.idealingua.runtime.circe
 
+import java.time.ZonedDateTime
+
 import io.circe
 import io.circe.Codec
 import io.circe.syntax._
@@ -29,6 +31,24 @@ final class WithCirceTest extends WordSpec {
       assert((Enum1: Enum).asJson.as[Enum].right.get == Enum1)
       assert((Enum2: Enum).asJson.noSpaces != """"Enum2"""")
       assert((Enum2: Enum).asJson.noSpaces == """{"Enum2":{}}""")
+    }
+
+    "WithCirce always uses IRTTimeInstances codecs, even when they're not in surrounding scope" in {
+      final case class TimeCirce(zonedDateTime: ZonedDateTime)
+      object TimeCirce {
+        implicit val codec: Codec.AsObject[TimeCirce] = circe.derivation.deriveCodec
+      }
+
+      final case class TimeIRT(zonedDateTime: ZonedDateTime)
+      object TimeIRT extends IRTWithCirce[TimeIRT]
+
+      val t = ZonedDateTime.parse("2019-12-04T00:07:12.363856Z[UTC]")
+
+      val circeJson = TimeCirce(t).asJson
+      val irtJson = TimeIRT(t).asJson
+
+      assert(circeJson.noSpaces == """{"zonedDateTime":"2019-12-04T00:07:12.363856Z[UTC]"}""")
+      assert(irtJson.noSpaces == """{"zonedDateTime":"2019-12-04T00:07:12.363Z"}""")
     }
   }
 

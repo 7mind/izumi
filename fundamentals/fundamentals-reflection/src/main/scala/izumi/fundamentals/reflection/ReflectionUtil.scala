@@ -2,22 +2,17 @@ package izumi.fundamentals.reflection
 
 import java.lang.reflect.Method
 
-import scala.collection.immutable.ListMap
+import scala.annotation.tailrec
 import scala.language.reflectiveCalls
 import scala.reflect.api
 import scala.reflect.api.{Mirror, TypeCreator, Universe}
 import scala.reflect.internal.Symbols
+import scala.reflect.macros.blackbox
 import scala.reflect.runtime.{universe => ru}
 import scala.util.{Failure, Success, Try}
 
-abstract class ReflectionException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
-
-class RefinedTypeException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
-
-class MethodMirrorException(message: String, cause: Throwable = null) extends ReflectionException(message, cause)
-
 object ReflectionUtil {
-  val mm: ru.Mirror = scala.reflect.runtime.currentMirror
+  final class MethodMirrorException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)
 
   def toJavaMethod(definingClass: ru.Type, methodSymbol: ru.Symbol): Method = {
     // https://stackoverflow.com/questions/16787163/get-a-java-lang-reflect-method-from-a-reflect-runtime-universe-methodsymbol
@@ -28,7 +23,7 @@ object ReflectionUtil {
           s"Failed to reflect method: That would require runtime code generation for refined type $definingClass with parents ${r.parents} and scope ${r.decls}")
 
       case o =>
-        toJavaMethod(mm.runtimeClass(o), method) match {
+        toJavaMethod((scala.reflect.runtime.currentMirror: ru.Mirror).runtimeClass(o), method) match {
           case Failure(exception) =>
             throw new MethodMirrorException(s"Failed to reflect method: $methodSymbol in $definingClass", exception)
           case Success(value) =>
@@ -48,10 +43,7 @@ object ReflectionUtil {
     }
   }
 
-  def typeToTypeTag[T](u: Universe)(
-    tpe: u.Type,
-    mirror: Mirror[u.type],
-  ): u.TypeTag[T] = {
+  def typeToTypeTag[T](u: Universe)(tpe: u.Type, mirror: Mirror[u.type]): u.TypeTag[T] = {
     val creator: TypeCreator = new reflect.api.TypeCreator {
       def apply[U <: SingletonUniverse](m: Mirror[U]): U#Type = {
         assert(m eq mirror, s"TypeTag[$tpe] defined in $mirror cannot be migrated to $m.")
@@ -77,6 +69,19 @@ object ReflectionUtil {
     }
   }
 
+  /** Mini `normalize`. `normalize` is deprecated and we don't want to do scary things such as evaluate type-lambdas anyway.
+    * And AFAIK the only case that can make us confuse a type-parameter for a non-parameter is an empty refinement `T {}`.
+    * So we just strip it when we get it. */
+  @tailrec
+  final def norm(u: Universe)(x: u.Type): u.Type = {
+    import u._
+    x match {
+      case RefinedType(t :: Nil, m) if m.isEmpty => norm(u)(t)
+      case AnnotatedType(_, t) => norm(u)(t)
+      case _ => x
+    }
+  }
+
   def toTypeRef[U <: SingletonUniverse](tpe: U#TypeApi): Option[U#TypeRefApi] = {
     tpe match {
       case typeRef: U#TypeRefApi =>
@@ -86,15 +91,47 @@ object ReflectionUtil {
     }
   }
 
-  /**
-    * This function is here to just just hide a warning coming from Annotation.apply when macro is expanded.
-    * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
-    * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
-    * calling this method.
-    */
-  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation = {
-    ru.Annotation.apply(tpe, scalaArgs, javaArgs)
+  def stripByName(u: Universe)(tpe: u.Type): u.Type = {
+    if (isByName(u)(tpe)) tpe.typeArgs.head.finalResultType else tpe
   }
+
+  def isByName(u: Universe)(tpe: u.Type): Boolean = {
+    tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == u.definitions.ByNameParamClass
+  }
+
+  final def allPartsStrong(tpe: Universe#Type): Boolean = {
+    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.exists(_.typeSignature == tpe.typeSymbol.typeSignature)
+    def prefixStrong = {
+      tpe match {
+        case t: Universe#TypeRefApi =>
+          allPartsStrong(t.pre.dealias)
+        case _ =>
+          true
+      }
+    }
+    def argsStrong = tpe.typeArgs.forall(allPartsStrong)
+
+    def intersectionStructStrong = {
+      tpe match {
+        case t: Universe#RefinedTypeApi =>
+          t.parents.forall(allPartsStrong) &&
+            t.decls.forall(s => s.isTerm || allPartsStrong(s.asType.typeSignature.dealias))
+        case _ =>
+          true
+      }
+    }
+    selfStrong && prefixStrong && argsStrong && intersectionStructStrong
+  }
+
+//  /**
+//    * This function is here to just just hide a warning coming from Annotation.apply when macro is expanded.
+//    * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
+//    * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
+//    * calling this method.
+//    */
+//  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation = {
+//    ru.Annotation.apply(tpe, scalaArgs, javaArgs)
+//  }
 
   def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
     def go(tpe: U#Type): List[U#Type] = {
@@ -110,10 +147,21 @@ object ReflectionUtil {
     Kind(tpe.typeParams.map(t => kindOf(t.typeSignature)))
   }
 
-  final case class Kind(args: List[Kind]) {
-    override def toString: String = format("_")
-
-    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
+  def getStringLiteral(c: blackbox.Context)(tree: c.universe.Tree): String = {
+    findStringLiteral(tree).getOrElse(c.abort(c.enclosingPosition, "must use string literal"))
   }
+
+  def findStringLiteral(tree: Universe#Tree): Option[String] = {
+    tree.collect {
+      case l: Universe#LiteralApi if l.value.value.isInstanceOf[String] =>
+        l.value.value.asInstanceOf[String]
+    }.headOption
+  }
+
+  final case class Kind(args: List[Kind]) {
+    def format(typeName: String) = s"$typeName${if (args.nonEmpty) args.mkString("[", ", ", "]") else ""}"
+    override def toString: String = format("_")
+  }
+
 }
 

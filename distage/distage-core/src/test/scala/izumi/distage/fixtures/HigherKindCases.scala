@@ -65,25 +65,10 @@ object HigherKindCases {
       override def get: F[_] = Pointed[F].point(getResult * 2)
     }
 
-    abstract class TestProvider[A, F[_]: Pointed] {
-      def f(a: A): F[A]
-    }
-
-    abstract class TestProvider0[A, B, F[_]: Pointed] {
-      def f(a: A): F[A]
-    }
-
-    abstract class TestProvider1[A, G[_]: Pointed, F[_]: Pointed] {
-      def f(a: A): F[A]
-    }
-
-    abstract class TestProvider2[G[_]: Pointed, F[_]: Pointed, A] {
-      def f(a: A): F[A]
-    }
-
-    abstract class TestProvider3[A, B, C, F[_]: Pointed] {
-      def f(a: A): F[A]
-    }
+    class TestProvider[A, F[_]: Pointed]
+    class TestProvider0[A, B, F[_]: Pointed]
+    class TestProvider1[A, G[_]: Pointed, F[_]: Pointed]
+    class TestProvider2[G[_]: Pointed, F[_]: Pointed, A]
   }
 
   object HigherKindsCase2 {

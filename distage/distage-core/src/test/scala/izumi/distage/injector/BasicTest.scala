@@ -4,13 +4,14 @@ import distage._
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.Binding.{SetElementBinding, SingletonBinding}
-import izumi.distage.model.definition.{Binding, BindingTag, Id, ImplDef}
-import izumi.distage.model.exceptions.{BadIdAnnotationException, ConflictingDIKeyBindingsException, ProvisioningException, UnsupportedWiringException}
+import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.{BindingTag, Id}
+import izumi.distage.model.exceptions.{ConflictingDIKeyBindingsException, ProvisioningException}
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.reflection.SymbolIntrospectorDefaultImpl
-import izumi.fundamentals.platform.language.CodePositionMaterializer
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
+
+
 
 class BasicTest extends WordSpec with MkInjector {
 
@@ -61,21 +62,35 @@ class BasicTest extends WordSpec with MkInjector {
     assert(ss.isEmpty)
   }
 
+  "fails on wrong @Id annotation at compile-time" in {
+    val exc = intercept[TestFailedException] {
+      assertCompiles("""
+        import BadAnnotationsCase._
 
-  "fails on wrong @Id annotation" in {
-    import BadAnnotationsCase._
-    val definition = PlannerInput.noGc(new ModuleDef {
-      make[TestDependency0]
-      make[TestClass]
-    })
+        val definition = PlannerInput.noGc(new ModuleDef {
+          make[TestDependency0]
+          make[TestClass]
+        })
+
+        val injector = mkInjector()
+        injector.produceUnsafe(injector.plan(definition)).get[TestClass]
+        """)
+    }
+    assert(exc.getMessage.contains("BadIdAnnotationException"))
+  }
+
+  "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
+    import BasicCaseIssue762._
+
+    val definition = PlannerInput.noGc(MyClassModule ++ ConfigModule)
 
     val injector = mkInjector()
 
-    val exc = intercept[BadIdAnnotationException] {
-      injector.plan(definition)
-    }
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
 
-    assert(exc.getMessage == "Wrong annotation value, only constants are supported. Got: @izumi.distage.model.definition.Id(izumi.distage.model.definition.Id(BadAnnotationsCase.this.value))")
+    assert(context.get[MyClass].a eq context.get[String]("a"))
+    assert(context.get[MyClass].b eq context.get[String]("b"))
   }
 
   "support multiple bindings" in {
@@ -134,7 +149,8 @@ class BasicTest extends WordSpec with MkInjector {
         .from[TestImpl0Good]
       make[TestInstanceBinding].named("named.test")
         .from(TestInstanceBinding())
-      make[TestDependency0].namedByImpl
+      make[TestDependency0]
+        .namedByImpl // tests SetIdFromImplName
         .from[TestImpl0Good]
     })
 
@@ -143,21 +159,6 @@ class BasicTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass]("named.test.class").correctWired())
-  }
-
-  "fail on unbindable" in {
-    import BasicCase3._
-
-    val definition = PlannerInput.noGc(new ModuleBase {
-      override def bindings: Set[Binding] = Set(
-        SingletonBinding(DIKey.get[Dependency], ImplDef.TypeImpl(SafeType.get[Long]), Set.empty, CodePositionMaterializer().get.position)
-      )
-    })
-
-    val injector = mkInjector()
-    intercept[UnsupportedWiringException] {
-      injector.plan(definition)
-    }
   }
 
   "fail on unsolvable conflicts" in {
@@ -270,17 +271,6 @@ class BasicTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     assert(context.get[TestClass] != null)
-  }
-
-  "handle reflected constructor references" in {
-    import BasicCase4._
-
-    val symbolIntrospector = new SymbolIntrospectorDefaultImpl.Runtime
-    val safeType = SafeType.get[ClassTypeAnnT[String, Int]]
-    val constructor = symbolIntrospector.selectConstructor(safeType)
-
-    val allArgsHaveAnnotations = constructor.map(_.arguments.flatten.map(_.annotations)).toSeq.flatten.forall(_.nonEmpty)
-    assert(allArgsHaveAnnotations)
   }
 
   "handle set inclusions" in {

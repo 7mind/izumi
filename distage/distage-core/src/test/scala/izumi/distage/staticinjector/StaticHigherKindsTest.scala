@@ -1,10 +1,10 @@
 package izumi.distage.staticinjector
 
-import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
-import izumi.distage.model.PlannerInput
 import distage.{Id, TagK}
-import izumi.distage.constructors.StaticModuleDef
+import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1
 import izumi.distage.injector.MkInjector
+import izumi.distage.model.PlannerInput
+import izumi.distage.model.definition.ModuleDef
 import org.scalatest.WordSpec
 
 class StaticHigherKindsTest extends WordSpec with MkInjector {
@@ -12,13 +12,13 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
   "macros support tagless final style module definitions" in {
     import HigherKindsCase1._
 
-    case class Definition[F[_] : TagK : Pointed](getResult: Int) extends StaticModuleDef {
+    case class Definition[F[_]: TagK: Pointed](getResult: Int) extends ModuleDef {
       // TODO: hmmm, what to do with this
       make[Pointed[F]].from(Pointed[F])
 
-      make[TestTrait].stat[TestServiceClass[F]]
-      stat[TestServiceClass[F]]
-      stat[TestServiceTrait[F]]
+      make[TestTrait].from[TestServiceClass[F]]
+      make[TestServiceClass[F]]
+      make[TestServiceTrait[F]]
       make[Int].named("TestService").from(getResult)
       make[F[String]].from { res: Int @Id("TestService") => Pointed[F].point(s"Hello $res!") }
       make[Either[String, Boolean]].from(Right(true))
@@ -31,7 +31,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
-    val listInjector = mkStaticInjector()
+    val listInjector = mkNoReflectionInjector()
     val listPlan = listInjector.plan(PlannerInput.noGc(Definition[List](5)))
     val listContext = listInjector.produceUnsafe(listPlan)
 
@@ -44,7 +44,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-    val optionTInjector = mkStaticInjector()
+    val optionTInjector = mkNoReflectionInjector()
     val optionTPlan = optionTInjector.plan(PlannerInput.noGc(Definition[OptionT[List, ?]](5)))
     val optionTContext = optionTInjector.produceUnsafe(optionTPlan)
 
@@ -53,7 +53,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
-    val idInjector = mkStaticInjector()
+    val idInjector = mkNoReflectionInjector()
     val idPlan = idInjector.plan(PlannerInput.noGc(Definition[id](5)))
     val idContext = idInjector.produceUnsafe(idPlan)
 

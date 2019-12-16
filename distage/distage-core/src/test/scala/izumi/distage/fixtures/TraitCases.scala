@@ -59,26 +59,20 @@ object TraitCases {
     trait Dep {
       def isA: Boolean
     }
-
     class DepA extends Dep {
       override def isA: Boolean = true
     }
-
     class DepB extends Dep {
       override def isA: Boolean = false
     }
 
     trait Trait {
-      @Id("A")
-      def depA: Dep
-
-      @Id("B")
-      def depB: Dep
+      @Id("A") def depA: Dep
+      @Id("B") def depB: Dep
     }
 
     trait Trait1 {
       def depA: Dep @Id("A")
-
       def depB: Dep @Id("B")
     }
 

@@ -34,7 +34,7 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
         w.wiring.requiredKeys
 
       case w: MonadicOp =>
-        w.effectWiring.requiredKeys
+        Set(w.effectKey)
 
       case c: CreateSet =>
         c.members
@@ -49,6 +49,8 @@ class PlanAnalyzerDefaultImpl extends PlanAnalyzer {
         Set(i.proxy.target) ++ requirements(i.proxy.op)
     }
   }
+
+  private type Accumulator = mutable.HashMap[DIKey, mutable.Set[DIKey]]
 
   private type RefFilter = Accumulator => DIKey => Boolean
 

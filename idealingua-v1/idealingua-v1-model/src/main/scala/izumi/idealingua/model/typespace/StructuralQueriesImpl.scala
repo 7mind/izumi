@@ -125,7 +125,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
       .filterNot(_.id == tid)
       .distinct
       .filterNot(id => ts.inheritance.parentsInherited(id.id).contains(tid))
-      .collect({ case t: DTO => t })
+      .collect { case t: DTO => t }
       .toList
   }
 
@@ -219,7 +219,7 @@ protected[typespace] class StructuralQueriesImpl(ts: Typespace) extends Structur
           val mixinInstanceFieldsCandidates = istruct
             .unambigiousInherited
             .map(_.defn.definedBy)
-            .collect({ case i: StructureId => i })
+            .collect { case i: StructureId => i }
             .flatMap(mi => structure(ts.resolver.get(mi)).all)
             .filter(f => all.contains(f.field)) // to drop removed fields
             .filterNot(f => parentInstanceFields.contains(f.field))

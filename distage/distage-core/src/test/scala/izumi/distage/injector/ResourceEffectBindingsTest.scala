@@ -1,14 +1,14 @@
 package izumi.distage.injector
 
+import distage.{DIKey, Id, ModuleDef, PlannerInput}
 import izumi.distage.fixtures.BasicCases.BasicCase1
 import izumi.distage.fixtures.ResourceCases._
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.exceptions.ProvisioningException
+import izumi.distage.model.plan.GCMode
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
-import distage.{DIKey, Id, ModuleDef, PlannerInput}
-import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
@@ -46,20 +46,6 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val plan = injector.plan(definition)
 
       val context = injector.produceUnsafeF[Suspend2[Throwable, ?]](plan).unsafeRun()
-
-      assert(context.get[Int] == 12)
-    }
-
-    "work with constructor binding" in {
-      val definition = PlannerInput(new ModuleDef {
-        make[Int].named("2").from(2)
-        make[Int].fromEffect[Suspend2[Nothing, ?], Int, IntSuspend]
-      }, GCMode(DIKey.get[Int]))
-
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-
-      val context = injector.produceUnsafeF[Suspend2[Nothing, ?]](plan).unsafeRun()
 
       assert(context.get[Int] == 12)
     }
@@ -358,7 +344,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
         failure.throwException().unsafeRun()
       }
 
-      assert(exc.getMessage.startsWith("Provisioner stopped after 1 instances, 1/9 operations failed"))
+      assert(exc.getMessage.contains("Incompatible effect types"))
     }
 
     "deallocate correctly in case of exceptions" in {
@@ -390,20 +376,23 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
       val ops = resource.use(ops => Suspend2(ops)).run().right.get
 
       assert(ops == Seq(XStart, YStart, YStop, XStop))
+//      def y[F[_]] = Tag[DIResource[F, Any]]
+
     }
 
     "Display tag macro stack trace when ResourceTag is not found" in {
-      try {
-        assertCompiles(
+      val t = intercept[TestFailedException] {
+        assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
-            make[Any].fromResource[DIResource[F, Any]]
-          }
-        """
-        )
-      } catch {
-        case t: TestFailedException if t.message.get contains "<trace>" =>
+            make[Any].fromResource[DIResource[F, Any]](() => ???)
+          }; ""
+          """
+        }
       }
+
+      assert(t.message.get contains "<trace>")
+      assert(t.message.get contains "could not find implicit value for TagK[F]")
     }
 
   }

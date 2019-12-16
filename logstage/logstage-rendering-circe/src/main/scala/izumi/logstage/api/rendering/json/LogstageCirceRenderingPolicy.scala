@@ -119,9 +119,9 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
       Json.fromLong(a)
     case a: Throwable =>
       Json.fromFields(Seq(
-        "type" -> Json.fromString(a.getClass.getName)
-        , "message" -> Json.fromString(a.getMessage)
-        , "stacktrace" -> Json.fromString(a.stackTrace)
+        "type" -> Json.fromString(a.getClass.getName),
+        "message" -> Json.fromString(a.getMessage),
+        "stacktrace" -> Json.fromString(a.stackTrace),
       ))
   }
 

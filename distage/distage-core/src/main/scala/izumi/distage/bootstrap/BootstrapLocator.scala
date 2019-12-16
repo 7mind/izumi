@@ -4,23 +4,22 @@ import java.util.concurrent.atomic.AtomicReference
 
 import distage.TagK
 import izumi.distage._
-import izumi.distage.commons.{TraitInitTool, UnboxingTool}
 import izumi.distage.model._
-import izumi.distage.model.definition.{BootstrapContextModule, BootstrapContextModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapContextModule, BootstrapContextModuleDef}
 import izumi.distage.model.exceptions.{MissingInstanceException, SanityCheckFailedException}
 import izumi.distage.model.plan._
 import izumi.distage.model.planning._
-import izumi.distage.model.provisioning.PlanInterpreter.FinalizersFilter
+import izumi.distage.model.provisioning.PlanInterpreter.FinalizerFilter
+import izumi.distage.model.provisioning.proxies.ProxyProvider
+import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFailingImpl
 import izumi.distage.model.provisioning.strategies._
-import izumi.distage.model.provisioning.{PlanInterpreter, _}
+import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
-import izumi.distage.model.reflection.{DependencyKeyProvider, ReflectionProvider, SymbolIntrospector}
 import izumi.distage.planning._
 import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import izumi.distage.provisioning._
 import izumi.distage.provisioning.strategies._
-import izumi.distage.reflection._
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 
@@ -30,7 +29,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
   private val bootstrappedContext: Locator = {
-    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizersFilter.all)
+    val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
 
@@ -45,7 +44,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
     }
   }
 
-  override protected[distage] def finalizers[F[_] : TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = collection.Seq.empty
+  override def finalizers[F[_]: TagK]: collection.Seq[PlanInterpreter.Finalizer[F]] = Nil
 
   override protected def lookupLocalUnsafe(key: RuntimeDIUniverse.DIKey): Option[Any] = {
     Option(_instances.get()) match {
@@ -58,14 +57,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 }
 
 object BootstrapLocator {
-  final val symbolIntrospector: SymbolIntrospectorDefaultImpl.Runtime = new SymbolIntrospectorDefaultImpl.Runtime
-
-  final val reflectionProvider: ReflectionProviderDefaultImpl.Runtime = new ReflectionProviderDefaultImpl.Runtime(
-    keyProvider = new DependencyKeyProviderDefaultImpl.Runtime(symbolIntrospector),
-    symbolIntrospector = symbolIntrospector,
-  )
-
-  final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
+  @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
   final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
@@ -76,95 +68,77 @@ object BootstrapLocator {
     ))
 
     val hook = new PlanningHookAggregate(Set.empty)
-    val translator = new BindingTranslatorImpl(reflectionProvider, hook)
+    val translator = new BindingTranslator.Impl(hook)
     new PlannerDefaultImpl(
-      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, reflectionProvider, true),
+      forwardingRefResolver = new ForwardingRefResolverDefaultImpl(analyzer, true),
       sanityChecker = new SanityCheckerDefaultImpl(analyzer),
       gc = NoopDIGC,
       planningObserver = bootstrapObserver,
-      planMergingPolicy = new PlanMergingPolicyDefaultImpl,
+      planMergingPolicy = new PruningPlanMergingPolicyDefaultImpl(Activation.empty),
       hook = hook,
       bindingTranslator = translator,
       analyzer = analyzer,
-      symbolIntrospector = symbolIntrospector,
+      mirrorProvider = mirrorProvider
     )
   }
 
   final val bootstrapProducer: PlanInterpreter = {
-    val loggerHook = new LoggerHookDefaultImpl // TODO: add user-controllable logs
-    val unboxingTool = new UnboxingTool(mirrorProvider)
-    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider, unboxingTool)
+    val verifier = new ProvisionOperationVerifier.Default(mirrorProvider)
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
       proxyStrategy = new ProxyStrategyFailingImpl,
-      factoryStrategy = new FactoryStrategyFailingImpl,
-      traitStrategy = new TraitStrategyFailingImpl,
-      factoryProviderStrategy = new FactoryProviderStrategyDefaultImpl(loggerHook),
       providerStrategy = new ProviderStrategyDefaultImpl,
-      classStrategy = new ClassStrategyDefaultImpl(symbolIntrospector, mirrorProvider, unboxingTool),
       importStrategy = new ImportStrategyDefaultImpl,
       instanceStrategy = new InstanceStrategyDefaultImpl,
       effectStrategy = new EffectStrategyDefaultImpl,
       resourceStrategy = new ResourceStrategyDefaultImpl,
-      failureHandler = new ProvisioningFailureInterceptorDefaultImpl,
+      failureHandler = new ProvisioningFailureInterceptor.DefaultImpl,
       verifier = verifier,
     )
   }
 
-  final val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
+  final lazy val noProxies: BootstrapContextModule = new BootstrapContextModuleDef {
     make[ProxyProvider].from[ProxyProviderFailingImpl]
   }
 
-  final val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
-    make[ReflectionProvider.Runtime].from[ReflectionProviderDefaultImpl.Runtime]
-    make[SymbolIntrospector.Runtime].from[SymbolIntrospectorDefaultImpl.Runtime]
-    make[DependencyKeyProvider.Runtime].from[DependencyKeyProviderDefaultImpl.Runtime]
+  final lazy val defaultBootstrap: BootstrapContextModule = new BootstrapContextModuleDef {
+    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
+    make[Activation].fromValue(Activation.empty)
 
-    make[LoggerHook].from[LoggerHookDefaultImpl]
-    make[MirrorProvider].from[MirrorProvider.Impl.type]
-
-    make[UnboxingTool]
-    make[TraitInitTool]
     make[ProvisionOperationVerifier].from[ProvisionOperationVerifier.Default]
 
+    make[MirrorProvider].fromValue(mirrorProvider)
     make[DIGarbageCollector].from[TracingDIGC.type]
 
     make[PlanAnalyzer].from[PlanAnalyzerDefaultImpl]
-    make[PlanMergingPolicy].from[PlanMergingPolicyDefaultImpl]
-    make[Boolean].named("distage.init-proxies-asap").fromValue(true)
+    make[PlanMergingPolicy].from[PruningPlanMergingPolicyDefaultImpl]
     make[ForwardingRefResolver].from[ForwardingRefResolverDefaultImpl]
     make[SanityChecker].from[SanityCheckerDefaultImpl]
     make[Planner].from[PlannerDefaultImpl]
     make[SetStrategy].from[SetStrategyDefaultImpl]
     make[ProviderStrategy].from[ProviderStrategyDefaultImpl]
-    make[FactoryProviderStrategy].from[FactoryProviderStrategyDefaultImpl]
-    make[ClassStrategy].from[ClassStrategyDefaultImpl]
     make[ImportStrategy].from[ImportStrategyDefaultImpl]
     make[InstanceStrategy].from[InstanceStrategyDefaultImpl]
     make[EffectStrategy].from[EffectStrategyDefaultImpl]
     make[ResourceStrategy].from[ResourceStrategyDefaultImpl]
     make[PlanInterpreter].from[PlanInterpreterDefaultRuntimeImpl]
-    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptorDefaultImpl]
+    make[ProvisioningFailureInterceptor].from[ProvisioningFailureInterceptor.DefaultImpl]
 
     many[PlanningObserver]
     many[PlanningHook]
-    make[PlanningHook].from[PlanningHookAggregate]
-    make[PlanningObserver].from[PlanningObserverAggregate]
 
-    make[BindingTranslator].from[BindingTranslatorImpl]
+    make[PlanningObserver].from[PlanningObserverAggregate]
+    make[PlanningHook].from[PlanningHookAggregate]
+
+    make[BindingTranslator].from[BindingTranslator.Impl]
 
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
-    make[FactoryStrategy].from[FactoryStrategyDefaultImpl]
-    make[TraitStrategy].from[TraitStrategyDefaultImpl]
   }
 
-  final val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
+  final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
-  final val noReflectionBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
-    make[ClassStrategy].from[ClassStrategyFailingImpl]
+  final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
-    make[FactoryStrategy].from[FactoryStrategyFailingImpl]
-    make[TraitStrategy].from[TraitStrategyFailingImpl]
   }
 }
 

@@ -1,23 +1,21 @@
 package izumi.fundamentals.reflection.macrortti
 
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.SymName.SymTypeName
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, Lambda}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef._
+
+import scala.annotation.tailrec
 
 sealed trait LightTypeTagRef {
-  final def combine(o: Seq[LightTypeTagRef]): AbstractReference = {
-    applyParameters {
-      l =>
-        l.input.zip(o).map {
-          case (p, v: AbstractReference) =>
-            p.name -> v
-        }.toMap
-    }
+  final def combine(args: Seq[LightTypeTagRef]): AbstractReference = {
+    val out = applySeq(args .map {case v: AbstractReference => v})
+    //println(s"combining $this with $args => $out")
+    out
   }
 
-  final def combineNonPos(o: Seq[Option[LightTypeTagRef]]): AbstractReference = {
+  final def combineNonPos(args: Seq[Option[LightTypeTagRef]]): AbstractReference = {
     applyParameters {
       l =>
-        l.input.zip(o).flatMap {
+        l.input.zip(args).flatMap {
           case (p, v) =>
             v match {
               case Some(value: AbstractReference) =>
@@ -29,16 +27,93 @@ sealed trait LightTypeTagRef {
     }
   }
 
-  final def combine(o: Map[String, LightTypeTagRef]): AbstractReference = {
-    val parameters = o.map {
-      case (p, v: AbstractReference) =>
-        p -> v
-    }
+  final def combine(args: Map[String, LightTypeTagRef]): AbstractReference = {
+    val parameters = args.map { case (p, v: AbstractReference) => p -> v }
 
     applyParameters(_ => parameters)
   }
 
-  private[this] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
+  final def withoutArgs: AbstractReference = {
+    def appliedNamedReference(reference: AppliedNamedReference) = {
+      reference match {
+        case LightTypeTagRef.NameReference(_, _, _) => reference
+        case LightTypeTagRef.FullReference(ref, parameters@_, prefix) => NameReference(SymTypeName(ref), Boundaries.Empty, prefix)
+      }
+    }
+
+    def appliedReference(reference: AppliedReference): AppliedReference = {
+      reference match {
+        case reference: AppliedNamedReference => appliedNamedReference(reference)
+        case LightTypeTagRef.IntersectionReference(refs) =>
+          LightTypeTagRef.IntersectionReference(refs.map(appliedNamedReference))
+        case LightTypeTagRef.Refinement(reference, decls) =>
+          LightTypeTagRef.Refinement(appliedReference(reference), decls)
+      }
+    }
+
+    @tailrec
+    def go(self: LightTypeTagRef): AbstractReference = {
+      self match {
+        case Lambda(_, output) =>
+          go(output)
+        case reference: AppliedReference =>
+          appliedReference(reference)
+      }
+    }
+
+    go(this)
+  }
+
+  final def shortName: String = {
+    getName(LTTRenderables.Short.r_SymName(_, hasPrefix = false), this)
+  }
+
+  final def longName: String = {
+    getName(LTTRenderables.Long.r_SymName(_, hasPrefix = false), this)
+  }
+
+  @tailrec
+  @inline
+  private[this] def getName(render: SymName => String, self: LightTypeTagRef): String = {
+    self match {
+      case Lambda(_, output) => getName(render, output)
+      case NameReference(ref, _, _) => render(ref)
+      case FullReference(ref, _, _) => render(SymTypeName(ref))
+      case IntersectionReference(refs) => refs.map(_.shortName).mkString(" & ")
+      case Refinement(reference, _) => getName(render, reference)
+    }
+  }
+
+  final def typeArgs: List[AbstractReference] = {
+    this match {
+      case Lambda(input, output) =>
+        val params = input.iterator.map(_.name).toSet
+        output.typeArgs.filter {
+          case n: AppliedNamedReference =>
+            !params.contains(n.asName.ref.name)
+          case _ =>
+            true
+        }
+      case NameReference(_, _, _) =>
+        Nil
+      case FullReference(_, parameters, _) =>
+        parameters.map(_.ref)
+      case IntersectionReference(_) =>
+        Nil
+      case Refinement(reference, _) =>
+        reference.typeArgs
+    }
+  }
+  protected[macrortti] def applySeq(refs: Seq[AbstractReference]): AbstractReference = {
+    applyParameters {
+      l =>
+        l.input.zip(refs).map {
+          case (p, v) =>
+            p.name -> v
+        }.toMap
+    }
+  }
+  protected[macrortti] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
     this match {
       case l: Lambda =>
         val parameters = p(l)
@@ -51,8 +126,7 @@ sealed trait LightTypeTagRef {
           throw new IllegalArgumentException(s"$this takes parameters: $expected but got unexpected ones: $unknownKeys")
         }
 
-        val applied = RuntimeAPI.applyLambda(l, parameters)
-        applied
+        RuntimeAPI.applyLambda(l, parameters)
       case _ =>
         throw new IllegalArgumentException(s"$this is not a type lambda, it cannot be parameterized")
     }
@@ -61,7 +135,6 @@ sealed trait LightTypeTagRef {
 
 object LightTypeTagRef {
   import LTTRenderables.Short._
-  //import LTTRenderables.Long._
 
   sealed trait AbstractReference extends LightTypeTagRef
 
@@ -70,8 +143,8 @@ object LightTypeTagRef {
     def paramRefs: Set[NameReference] = input.map(n => NameReference(n.name)).toSet
     def allArgumentsReferenced: Boolean = paramRefs.diff(referenced).isEmpty
 
-    def normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
-    def normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
+    lazy val normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
+    lazy val normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
 
     override def equals(obj: Any): Boolean = {
       obj match {
@@ -85,6 +158,10 @@ object LightTypeTagRef {
         case _ =>
           false
       }
+    }
+
+    override def hashCode(): Int = {
+      normalizedOutput.hashCode()
     }
 
     override def toString: String = this.render()

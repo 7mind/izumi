@@ -39,10 +39,10 @@ class IDLPretyper(defn: DomainMeshResolved) {
       i =>
         i.identifiers.map(SingleImport(i.id, _))
     }
-    val services = defn.members.collect({ case d: RawTopLevelDefn.TLDService => d.v })
-    val buzzers = defn.members.collect({ case d: RawTopLevelDefn.TLDBuzzer => d.v })
-    val streams = defn.members.collect({ case d: RawTopLevelDefn.TLDStreams => d.v })
-    val consts = defn.members.collect({ case d: RawTopLevelDefn.TLDConsts => d.v })
+    val services = defn.members.collect { case d: RawTopLevelDefn.TLDService => d.v }
+    val buzzers = defn.members.collect { case d: RawTopLevelDefn.TLDBuzzer => d.v }
+    val streams = defn.members.collect { case d: RawTopLevelDefn.TLDStreams => d.v }
+    val consts = defn.members.collect { case d: RawTopLevelDefn.TLDConsts => d.v }
 
     val allImportNames = imports.map(_.imported.importedAs)
     val allTypeNames = defn.members.collect {

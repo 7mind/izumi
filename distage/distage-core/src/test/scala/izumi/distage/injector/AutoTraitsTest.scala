@@ -4,8 +4,6 @@ import distage.ModuleDef
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases.TypesCase3
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.exceptions.ProvisioningException
-import izumi.fundamentals.reflection.MethodMirrorException
 import org.scalatest.WordSpec
 
 class AutoTraitsTest extends WordSpec with MkInjector {
@@ -39,11 +37,10 @@ class AutoTraitsTest extends WordSpec with MkInjector {
 
     val context = injector.produceUnsafe(plan)
     val instantiated = context.get[Trait]
+    val instantiated1 = context.get[Trait1]
 
     assert(instantiated.depA.isA)
     assert(!instantiated.depB.isA)
-
-    val instantiated1 = context.get[Trait1]
 
     assert(instantiated1.depA.isA)
     assert(!instantiated1.depB.isA)
@@ -66,67 +63,57 @@ class AutoTraitsTest extends WordSpec with MkInjector {
     assert(instantiated.rd == Dep().toString)
   }
 
-  "progression test: can't instantiate traits with refinements (macros can)" in {
-    val ex = intercept[ProvisioningException] {
-      import TraitCase5._
+  "can instantiate traits with refinements" in {
+    import TraitCase5._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[TestTraitAny {def dep: Dep}]
-        make[Dep]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[TestTraitAny {def dep: Dep}]
+      make[Dep]
+    })
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
-      val instantiated = context.get[TestTraitAny {def dep: Dep}]
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+    val instantiated = context.get[TestTraitAny {def dep: Dep}]
 
-      assert(instantiated.dep eq context.get[Dep])
-    }
-    assert(ex.getSuppressed.exists(_.isInstanceOf[MethodMirrorException]))
+    assert(instantiated.dep eq context.get[Dep])
   }
 
-  "progression test: can't instantiate `with` types (macros can)" in {
-    val ex = intercept[ProvisioningException] {
-      import TypesCase3._
+  "can instantiate `with` types" in {
+    import TypesCase3._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Dep]
-        make[Dep2]
-        make[Trait2 with Trait1]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep]
+      make[Dep2]
+      make[Trait2 with Trait1]
+    })
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
 
-      val instantiated = context.get[Trait2 with Trait1]
+    val instantiated = context.get[Trait2 with Trait1]
 
-      assert(instantiated.dep eq context.get[Dep])
-      assert(instantiated.dep2 eq context.get[Dep2])
-    }
-    assert(ex.getSuppressed.exists(_.isInstanceOf[MethodMirrorException]))
+    assert(instantiated.dep eq context.get[Dep])
+    assert(instantiated.dep2 eq context.get[Dep2])
   }
 
-  "progression test: can't handle AnyVals" in {
-    intercept[ClassCastException] {
-      import TraitCase6._
+  "can handle AnyVals" in {
+    import TraitCase6._
 
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Dep]
-        make[AnyValDep].from(AnyValDep(_))
-        make[TestTrait]
-      })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dep]
+      make[AnyValDep].from(AnyValDep(_))
+      make[TestTrait]
+    })
 
-      val injector = mkInjector()
-      val plan = injector.plan(definition)
-      val context = injector.produceUnsafe(plan)
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
 
-      assert(context.get[TestTrait].anyValDep != null)
-
-      // AnyVal reboxing happened
-      assert(context.get[TestTrait].anyValDep ne context.get[AnyValDep].asInstanceOf[AnyRef])
-      assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
-    }
+    assert(context.get[TestTrait].anyValDep != null)
+    assert(context.get[TestTrait].anyValDep ne context.get[AnyValDep].asInstanceOf[AnyRef])
+    assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
   }
 
 }

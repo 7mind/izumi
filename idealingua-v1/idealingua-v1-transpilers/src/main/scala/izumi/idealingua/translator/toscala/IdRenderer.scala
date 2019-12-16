@@ -29,7 +29,7 @@ class IdRenderer(ctx: STContext) {
 
     val parsers = sortedFields
       .zipWithIndex
-      .map({ case (field, idx) => (field, idx, field.field.field.typeId) })
+      .map { case (field, idx) => (field, idx, field.field.field.typeId) }
       .map {
         case (field, idx, t: EnumId) =>
           q"${field.name} = ${conv.toScala(t).termFull}.parse(parts(${Lit.Int(idx)}))"

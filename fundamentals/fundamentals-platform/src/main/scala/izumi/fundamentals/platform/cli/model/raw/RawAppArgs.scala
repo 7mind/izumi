@@ -3,7 +3,12 @@ package izumi.fundamentals.platform.cli.model.raw
 import java.io.File
 import java.nio.file.Path
 
-final case class RawAppArgs(globalParameters: RawEntrypointParams, roles: Vector[RawRoleParams])
+import izumi.fundamentals.platform.cli.model.schema.ParserDef.ArgDef
+
+final case class RawAppArgs(
+                             globalParameters: RawEntrypointParams,
+                             roles: Vector[RawRoleParams],
+                           )
 
 object RawAppArgs {
   def empty: RawAppArgs = RawAppArgs(RawEntrypointParams.empty, Vector.empty)
@@ -12,10 +17,15 @@ object RawAppArgs {
 final case class RawRoleParams(role: String, roleParameters: RawEntrypointParams, freeArgs: Vector[String])
 
 object RawRoleParams {
-  def empty(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
+  def apply(role: String): RawRoleParams = RawRoleParams(role, RawEntrypointParams.empty, Vector.empty)
 }
 
-final case class RawEntrypointParams(flags: Vector[RawFlag], values: Vector[RawValue])
+final case class RawEntrypointParams(flags: Vector[RawFlag], values: Vector[RawValue]) {
+  def findValue(parameter: ArgDef): Option[RawValue] = values.find(parameter.name matches _.name)
+  def findValues(parameter: ArgDef): Vector[RawValue] = values.filter(parameter.name matches _.name)
+  def hasFlag(parameter: ArgDef): Boolean = flags.exists(parameter.name matches _.name)
+  def hasNoFlag(parameter: ArgDef): Boolean = !hasFlag(parameter)
+}
 
 object RawEntrypointParams {
   def empty: RawEntrypointParams = RawEntrypointParams(Vector.empty, Vector.empty)

@@ -2,20 +2,20 @@ package izumi.fundamentals.reflection.macrortti
 
 import java.nio.ByteBuffer
 
-import izumi.thirdparty.internal.boopickle.Default.Pickler
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.SubtypeDBs
-import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedReference, NameReference}
+import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference}
+import izumi.thirdparty.internal.boopickle.Default.Pickler
 
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],
-  db: () => Map[NameReference, Set[NameReference]],
+  inheritanceDb: () => Map[NameReference, Set[NameReference]],
 ) extends Serializable {
 
   def ref: LightTypeTagRef
   protected[macrortti] lazy val basesdb: Map[AbstractReference, Set[AbstractReference]] = bases()
-  protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = db()
+  protected[macrortti] lazy val idb: Map[NameReference, Set[NameReference]] = inheritanceDb()
 
   @inline final def <:<(maybeParent: LightTypeTag): Boolean = {
     new LightTypeTagInheritance(this, maybeParent).isChild()
@@ -25,51 +25,110 @@ abstract class LightTypeTag
     this == other
   }
 
-  def combine(o: LightTypeTag*): LightTypeTag = {
-
-    def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      o.foldLeft(idb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.idb)
-      }
+  /**
+    * Parameterize this type tag with `args` if it describes an unapplied type lambda
+    *
+    * If there are less `args` given than this type takes parameters, it will remain a type
+    * lambda taking remaining arguments:
+    *
+    * {{{
+    *   F[?, ?, ?].combine(A, B) = F[A, B, ?]
+    * }}}
+    */
+  def combine(args: LightTypeTag*): LightTypeTag = {
+    val argRefs = args.map(_.ref)
+    val appliedBases = basesdb ++ basesdb.map {
+      case (self: LightTypeTagRef.Lambda, parents) =>
+        self.combine(argRefs) -> parents.map {
+          case l: LightTypeTagRef.Lambda =>
+            l.combine(argRefs)
+          case o => o
+        }
+      case o => o
     }
-    def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      o.foldLeft(basesdb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.basesdb)
-      }
-    }
 
-    LightTypeTag(ref.combine(o.map(_.ref)), mergedBases, mergedInhDb)
+    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.basesdb))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.idb))
+
+    LightTypeTag(ref.combine(argRefs), mergedBasesDB, mergedInheritanceDb)
   }
 
-  def combineNonPos(o: Option[LightTypeTag]*): LightTypeTag = {
-
-    def mergedInhDb: Map[NameReference, Set[NameReference]] = {
-      o.foldLeft(idb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.map(_.idb).getOrElse(Map.empty))
-      }
+  /**
+    * Parameterize this type tag with `args` if it describes an unapplied type lambda
+    *
+    * The resulting type lambda will take parameters in places where `args` was None:
+    *
+    * {{{
+    *   F[?, ?, ?].combine(Some(A), None, Some(C)) = F[A, ?, C]
+    * }}}
+    */
+  def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
+    val argRefs = args.map(_.map(_.ref))
+    val appliedBases = basesdb ++ basesdb.map {
+      case (self: LightTypeTagRef.Lambda, parents) =>
+        self.combineNonPos(argRefs) -> parents.map {
+          case l: LightTypeTagRef.Lambda =>
+            l.combineNonPos(argRefs)
+          case o => o
+        }
+      case o => o
     }
 
-    def mergedBases: Map[AbstractReference, Set[AbstractReference]] = {
-      o.foldLeft(basesdb) {
-        case (acc, v) =>
-          LightTypeTag.mergeIDBs(acc, v.map(_.basesdb).getOrElse(Map.empty))
-      }
-    }
+    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
 
-    LightTypeTag(ref.combineNonPos(o.map(_.map(_.ref))), mergedBases, mergedInhDb)
+    LightTypeTag(ref.combineNonPos(argRefs), mergedBasesDB, mergedInheritanceDb)
   }
 
+  /**
+    * Strip all args from type tag of parameterized type and its supertypes
+    * Useful for very rough type-constructor / class-only comparisons.
+    *
+    * NOTE: This DOES NOT RESTORE TYPE CONSTRUCTOR/LAMBDA and is
+    *       NOT equivalent to .typeConstructor call in scala-reflect
+    *       - You won't be able to call [[combine]] on result type
+    *       and partially applied types will not work correctly
+    */
+  def withoutArgs: LightTypeTag = {
+    LightTypeTag(ref.withoutArgs, basesdb.mapValues(_.map(_.withoutArgs)).toMap, idb)
+  }
+
+  /**
+    * Extract arguments applied to this type constructor
+    */
+  def typeArgs: List[LightTypeTag] = {
+    ref.typeArgs.map(LightTypeTag(_, basesdb, idb))
+  }
+
+  /** Render to string, omitting package names */
   override def toString: String = {
     ref.toString
   }
 
-  /** Fully-qualified printing of a type, use [[toString]] for a printing that omits package names */
+  /** Fully-qualified rendering of a type, including packages and prefix types.
+    * Use [[toString]] for a rendering that omits package names */
   def repr: String = {
     import izumi.fundamentals.reflection.macrortti.LTTRenderables.Long._
     ref.render()
+  }
+
+  /** Short class or type-constructor name of this type, without package or prefix names */
+  def shortName: String = {
+    ref.shortName
+  }
+
+  /** Class or type-constructor name of this type, WITH package name, but without prefix names */
+  def longName: String = {
+    ref.longName
+  }
+
+  /** Print internal structures state */
+  def debug(name: String = ""): String = {
+    import izumi.fundamentals.platform.strings.IzString._
+      s"""⚙️ $name: ${this.toString}
+         |⚡️bases: ${basesdb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚡️inheritance: ${idb.mapValues(_.niceList(prefix = "* ").shift(2)).niceList()}
+         |⚙️ end $name""".stripMargin
   }
 
   override def equals(other: Any): Boolean = {
@@ -80,9 +139,10 @@ abstract class LightTypeTag
     }
   }
 
-  override def hashCode(): Int = {
-    val state = Seq(ref)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  override def hashCode(): Int = hashcode
+
+  private lazy val hashcode: Int = {
+    ref.hashCode() * 31
   }
 }
 
@@ -91,6 +151,23 @@ object LightTypeTag {
     new LightTypeTag(() => bases, () => db) {
       override final val ref: LightTypeTagRef = ref0
     }
+  }
+
+  def refinedType(intersection: List[LightTypeTag], structure: LightTypeTag): LightTypeTag = {
+    def mergedBasesDB = LightTypeTag.mergeIDBs(structure.basesdb, intersection.iterator.map(_.basesdb))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(structure.idb, intersection.iterator.map(_.idb))
+
+    val intersectionRef = LightTypeTagRef.IntersectionReference(
+      intersection.iterator.collect { case l if l.ref.isInstanceOf[AppliedNamedReference] => l.ref.asInstanceOf[AppliedNamedReference] }.toSet
+    )
+    val ref = structure.ref match {
+      case LightTypeTagRef.Refinement(_, decls) if decls.nonEmpty =>
+        LightTypeTagRef.Refinement(intersectionRef, decls)
+      case _ =>
+        intersectionRef
+    }
+
+    LightTypeTag(ref, mergedBasesDB, mergedInheritanceDb)
   }
 
   def parse[T](refString: String, basesString: String): LightTypeTag = {
@@ -149,6 +226,8 @@ object LightTypeTag {
     both.toMultimap.mapValues(_.flatten).toMap
   }
 
-  private[izumi] object ReflectionLock
+  private[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], others: Iterator[Map[T, Set[T]]]): Map[T, Set[T]] = {
+    others.foldLeft(self)(mergeIDBs[T])
+  }
 
 }

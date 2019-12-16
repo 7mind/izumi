@@ -26,7 +26,7 @@ class AnimalModel extends WordSpec with MkInjector {
       val debug = false
 
       val injector = if (debug) {
-        Injector.Standard(new GraphDumpBootstrapModule())
+        Injector.Standard(GraphDumpBootstrapModule())
       } else {
         Injector.Standard()
       }

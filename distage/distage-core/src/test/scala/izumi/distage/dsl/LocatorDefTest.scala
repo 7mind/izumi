@@ -90,7 +90,21 @@ class LocatorDefTest extends WordSpec {
       }
 
       assert(ctx.run { i: Int => i + 5 } == 10)
+      assert(ctx.runOption { i: Int => i + 5 } == Some(10))
       assert(ctx.runOption { i: Int @Id("special") => i }.isEmpty)
+    }
+
+    ".run and .runOption work for by-name lambdas" in {
+      val ctx = new LocatorDef {
+        make[Int].fromValue(5)
+      }
+
+      def l1(i: => Int) = i + 5
+      def l2(i: => Int @Id("special")) = i
+
+      assert(ctx.run(l1 _) == 10)
+      assert(ctx.runOption(l1 _) == Some(10))
+      assert(ctx.runOption(l2 _).isEmpty)
     }
 
   }

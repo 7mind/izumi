@@ -6,6 +6,7 @@ import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, SemiPlan}
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
+import izumi.fundamentals.reflection.Tags.Tag
 
 import scala.collection.immutable.ListSet
 
@@ -105,7 +106,7 @@ class AutoSetHook[INSTANCE: Tag, BINDING: Tag](private val wrap: INSTANCE => BIN
             } else {
               val provider = ProviderMagnet(wrap).get
               val newKey = DIKey.SetElementKey(setKey, op.target, Some(ImplDef.ProviderImpl(op.target.tpe, provider)))
-              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.associations), op.origin)
+              val newOp = ExecutableOp.WiringOp.CallProvider(newKey, Wiring.SingletonWiring.Function(provider, provider.parameters), op.origin)
               newMembers += newKey
               Seq(op, newOp)
             }
