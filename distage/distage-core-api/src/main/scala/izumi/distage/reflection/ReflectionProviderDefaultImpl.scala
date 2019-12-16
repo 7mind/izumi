@@ -229,6 +229,9 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
         // rt.parents.size == 1 && !rt.decls.exists(_.isAbstract)
         false
 
+      case _: u.u.SingletonTypeApi =>
+        true
+
       case _ =>
         tpe.typeSymbol.isClass && !tpe.typeSymbol.isAbstract && selectConstructorMethod(tpe).nonEmpty
     }
