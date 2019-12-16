@@ -77,6 +77,9 @@ class TagTest extends WordSpec with X[String] {
   trait ZIO[-R, +E, +A]
   type IO[+E, +A] = ZIO[Any, E, A]
 
+  class BlockingIO3[F[_, _, _]]
+  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+
   class ApplePaymentProvider[F0[_]] extends H1
 
   "Tag" should {
@@ -401,6 +404,13 @@ class TagTest extends WordSpec with X[String] {
       assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Throwable]].tag)
       assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Any]].tag)
       assert(TagKK[EitherR[?, ?, Nothing]].tag <:< tagEitherThrowable)
+    }
+
+    "regression test: combine higher-kinded types without losing ignored type arguments" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO[F]]
+      val tag = mk[IO]
+
+      assert(tag.tag == Tag[BlockingIO[IO]].tag)
     }
 
     "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {
