@@ -27,7 +27,7 @@ final class WithCirceTest extends WordSpec {
       assert(Nested(Cba(1, 2)).asJson.noSpaces == """{"Nested1":{"cba":{"a":1,"b":2}}}""")
     }
 
-    "WithCirce does not encode case objects as strings (circe-generic-extras deriveEnumCodec is still required)" in {
+    "progression test: WithCirce DOES NOT encode case objects as strings (circe-generic-extras deriveEnumCodec is still required)" in {
       assert((Enum1: Enum).asJson.as[Enum].right.get == Enum1)
       assert((Enum2: Enum).asJson.noSpaces != """"Enum2"""")
       assert((Enum2: Enum).asJson.noSpaces == """{"Enum2":{}}""")
@@ -49,6 +49,13 @@ final class WithCirceTest extends WordSpec {
 
       assert(circeJson.noSpaces == """{"zonedDateTime":"2019-12-04T00:07:12.363856Z[UTC]"}""")
       assert(irtJson.noSpaces == """{"zonedDateTime":"2019-12-04T00:07:12.363Z"}""")
+    }
+
+    "derivations for encoder/decoder" in {
+      final case class Abc(a: Int)
+      implicitly[DerivationDerivedEncoder[Abc]]
+      implicitly[DerivationDerivedDecoder[Abc]]
+      implicitly[DerivationDerivedCodec[Abc]]
     }
   }
 

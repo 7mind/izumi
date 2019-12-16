@@ -42,9 +42,9 @@ trait ConfigReader[T] {
 object ConfigReader extends LowPriorityConfigReaderInstances {
   def apply[T: ConfigReader]: ConfigReader[T] = implicitly
 
-  def deriveDecoder[T](implicit dec: CirceDerivationWithAdditionalConfigCodecs[T]): Decoder[T] = dec.value
+  def derive[T](implicit dec: CirceDerivationConfigStyle[T]): ConfigReader[T] = ConfigReader.deriveFromCirce(dec.value)
 
-  implicit def fromCirce[T](implicit dec: Decoder[T]): ConfigReader[T] = {
+  implicit def deriveFromCirce[T](implicit dec: Decoder[T]): ConfigReader[T] = {
     cv =>
       val (wrappedValue, path) = cv match {
         case configObject: ConfigObject =>
@@ -61,7 +61,7 @@ object ConfigReader extends LowPriorityConfigReaderInstances {
 }
 
 trait LowPriorityConfigReaderInstances {
-  implicit def materializeFromCirceDerivationWithCirceConfigInstances[T](implicit dec: CirceDerivationWithAdditionalConfigCodecs[T]): ConfigReader[T] = {
-    ConfigReader.fromCirce(dec.value)
+  implicit def materializeFromCirceDerivationWithCirceConfigInstances[T](implicit dec: CirceDerivationConfigStyle[T]): ConfigReader[T] = {
+    ConfigReader.deriveFromCirce(dec.value)
   }
 }
