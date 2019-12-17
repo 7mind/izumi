@@ -406,7 +406,7 @@ class TagTest extends WordSpec with X[String] {
       assert(TagKK[EitherR[?, ?, Nothing]].tag <:< tagEitherThrowable)
     }
 
-    "regression test: combine higher-kinded types without losing ignored type arguments" in {
+    "combine higher-kinded types without losing ignored type arguments" in {
       def mk[F[+_, +_]: TagKK] = Tag[BlockingIO[F]]
       val tag = mk[IO]
 

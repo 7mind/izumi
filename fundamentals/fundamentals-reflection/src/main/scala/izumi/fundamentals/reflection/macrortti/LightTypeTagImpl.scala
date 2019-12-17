@@ -295,7 +295,7 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       val asPoly = t.etaExpand
       val result = asPoly.resultType.dealias
 
-      val targs = t.typeParams
+      val targs = asPoly.typeParams
       val ctxId = if (level > 0) {
         Some(level.toString)
       } else {

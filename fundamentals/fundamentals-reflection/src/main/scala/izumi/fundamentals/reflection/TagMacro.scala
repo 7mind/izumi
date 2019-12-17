@@ -118,7 +118,7 @@ class TagMacro(val c: blackbox.Context) {
       addImplicitError("\n\n<trace>: ")
     }
 
-    val tgt = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
+    val tgt = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
     addImplicitError(s"  deriving Tag for $tgt:")
 
