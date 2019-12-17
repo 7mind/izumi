@@ -105,6 +105,12 @@ class LightTypeTagTest extends WordSpec {
 
   class ApplePaymentProvider[F[_]] extends H1
 
+  trait ZIO[-R0, +E, +A]
+  type IO[+E, +A] = ZIO[Any, E, A]
+
+  class BlockingIO3[F[_, _, _]]
+  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+
   def println(o: Any): Unit = info(o.toString)
 
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
@@ -481,7 +487,7 @@ class LightTypeTagTest extends WordSpec {
       assertDifferent(tagF3, LTT[F2[AnyVal]])
     }
 
-    "regression test: support subtyping of a simple combined type (fixed in 0.10)" in {
+    "support subtyping of a simple combined type" in {
       val ctor = `LTT[_[_]]`[ApplePaymentProvider]
       val arg = `LTT[_]`[Id]
       val combined = ctor.combine(arg)
@@ -500,6 +506,14 @@ class LightTypeTagTest extends WordSpec {
       assertDebugSame(predefString, javaLangString)
       assertDebugSame(predefString, weirdPredefString)
       assertDebugSame(javaLangString, weirdPredefString)
+    }
+
+    "combine higher-kinded type lambdas without losing ignored type arguments" in {
+      val tag = `LTT[_[_,_]]`[Lambda[`F[+_, +_]` => BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]]]
+
+      val res = tag.combine(`LTT[_,_]`[IO])
+      println(res)
+      assert(res == LTT[BlockingIO[IO]])
     }
 
   }

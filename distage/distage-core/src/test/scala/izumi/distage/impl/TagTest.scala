@@ -413,6 +413,13 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag == Tag[BlockingIO[IO]].tag)
     }
 
+    "combine higher-kinded type lambdas without losing ignored type arguments" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]]
+      val tag = mk[IO]
+
+      assert(tag.tag == Tag[BlockingIO[IO]].tag)
+    }
+
     "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {
       intercept[IllegalArgumentException] {
         class Path {
