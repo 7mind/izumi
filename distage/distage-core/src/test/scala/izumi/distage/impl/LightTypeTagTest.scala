@@ -102,6 +102,7 @@ class LightTypeTagTest extends WordSpec {
 
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
+  class RoleChild2[F[+ _, + _], A, B] extends RoleParent[F[Throwable, ?]]
 
   class ApplePaymentProvider[F[_]] extends H1
 
@@ -319,6 +320,19 @@ class LightTypeTagTest extends WordSpec {
       val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
 
       assertSame(combinedTag, LTT[RoleChild[Either]])
+      assertChild(combinedTag, expectedTag)
+    }
+
+    "support subtyping of parents parameterized with type lambdas in combined tags with multiple parameters" in {
+      val childBase = `LTT[_[_,_],_,_]`[RoleChild2]
+      val childArgs = Seq(`LTT[_,_]`[Either], LTT[Int], LTT[String])
+      val combinedTag = childBase.combine(childArgs: _*)
+      val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
+
+      val noncombinedTag = LTT[RoleChild2[Either, Int, String]]
+
+      assertChild(noncombinedTag, expectedTag)
+      assertSame(combinedTag, noncombinedTag)
       assertChild(combinedTag, expectedTag)
     }
 
