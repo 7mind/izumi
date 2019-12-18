@@ -70,13 +70,13 @@ class TagMacro(val c: blackbox.Context) {
         // AND not an intersection type
         // some of its arguments are type parameters that we should resolve
         case None =>
-          logger.log(s"type A $ctor")
+          logger.log(s"HK type A $ctor")
           makeHKTagFromStrongTpe(ctor)
 
         // error: the entire type is just a proper type parameter with no type arguments
         // it cannot be resolved further
         case Some(k) if k == kindOf(tpeOrigKind) =>
-          logger.log(s"type B $ctor")
+          logger.log(s"HK type B $ctor")
           val msg = s"  could not find implicit value for ${tagFormat(tpe)}: $tpe is a type parameter without an implicit Tag!"
           addImplicitError(msg)
           c.abort(c.enclosingPosition, getImplicitError())
@@ -84,7 +84,7 @@ class TagMacro(val c: blackbox.Context) {
         // type constructor is a type parameter AND has type arguments
         // we should resolve type constructor separately from an HKTag
         case Some(hktKind) =>
-          logger.log(s"type C $ctor")
+          logger.log(s"HK type C $ctor")
           summonHKTag(ctor, hktKind)
       }
     }
@@ -121,9 +121,9 @@ class TagMacro(val c: blackbox.Context) {
       addImplicitError("\n\n<trace>: ")
     }
 
-    val tgt = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
+    val tgt = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T].dealias)
 
-    addImplicitError(s"  deriving Tag for $tgt:")
+    addImplicitError(s"  deriving Tag for ${weakTypeOf[T]}, dealiased: $tgt:")
 
     val res = tgt match {
       case RefinedType(intersection, _) =>
@@ -201,6 +201,7 @@ class TagMacro(val c: blackbox.Context) {
     }
     val argTags = {
       val args = tpe.typeArgs.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias))
+      logger.log(s"Now summoning tags for args=$args")
       c.Expr[List[LightTypeTag]](Liftable.liftList[c.Expr[LightTypeTag]].apply(args.map(summonLightTypeTagOfAppropriateKind)))
     }
 
