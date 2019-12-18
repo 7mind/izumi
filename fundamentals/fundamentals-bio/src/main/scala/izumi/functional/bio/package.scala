@@ -3,9 +3,9 @@ package izumi.functional
 import java.util.concurrent.CompletionStage
 
 import cats.~>
-import izumi.functional.bio.impl.{BIOZio, BIOTemporalZio}
+import izumi.functional.bio.impl.{BIOTemporalZio, BIOZio}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
-import zio.ZIO
+import zio.{IO, ZIO}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
