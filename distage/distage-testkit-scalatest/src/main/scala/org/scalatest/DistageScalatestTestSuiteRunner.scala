@@ -152,7 +152,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   private def addStub(args: Args, failure: Option[Throwable]): Unit = {
     val tracker = args.tracker
-    val FUCK_SCALATEST = "Scalatest and IDEA aren't so nice"
     val SUITE_FAILED = "Whole suite failed :/"
 
     failure match {

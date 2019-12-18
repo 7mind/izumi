@@ -110,7 +110,6 @@ object ReflectionUtil {
       }
     }
     def argsStrong = tpe.typeArgs.forall(allPartsStrong)
-
     def intersectionStructStrong = {
       tpe match {
         case t: Universe#RefinedTypeApi =>
@@ -120,6 +119,7 @@ object ReflectionUtil {
           true
       }
     }
+
     selfStrong && prefixStrong && argsStrong && intersectionStructStrong
   }
 

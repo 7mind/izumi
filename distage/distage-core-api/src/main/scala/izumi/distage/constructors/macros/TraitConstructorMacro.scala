@@ -92,7 +92,7 @@ object TraitConstructorMacro {
 
     association match {
       case method: AbstractMethod =>
-        val paramTpe = method.symbol.finalResultType.use(identity)
+        val paramTpe = method.symbol.finalResultType
         val methodName = TermName(method.name)
         val freshArgName = c.freshName(methodName)
         // force by-name
@@ -103,7 +103,7 @@ object TraitConstructorMacro {
 
         (parameter, q"val $freshArgName: $byNameParamTpe", q"final lazy val $methodName: $paramTpe = $freshArgName" -> freshArgName)
       case parameter: Parameter =>
-        val paramTpe = parameter.symbol.finalResultType.use(identity)
+        val paramTpe = parameter.symbol.finalResultType
         val methodName = TermName(parameter.name)
         val freshArgName = c.freshName(TermName(parameter.name))
 

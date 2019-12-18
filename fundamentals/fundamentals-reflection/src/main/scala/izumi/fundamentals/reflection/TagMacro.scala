@@ -44,7 +44,9 @@ class TagMacro(val c: blackbox.Context) {
   @inline final def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[HKTag[ArgStruct]] = {
     val argStruct = weakTypeOf[ArgStruct]
     val ctor = ltagMacro.unpackArgStruct(argStruct)
+    // FIXME: this check can never succeed for ArgStruct!
     if (ReflectionUtil.allPartsStrong(argStruct)) {
+      logger.log(s"HK: found Strong ArgStruct, returning $argStruct")
       makeHKTagFromStrongTpe(ctor)
     } else {
       makeHKTagImpl(ctor)
@@ -56,7 +58,7 @@ class TagMacro(val c: blackbox.Context) {
     logger.log(s"Got unresolved HKTag summon: ${tagFormat(tpeOrigKind)}")
 
     val tpe = tpeOrigKind.finalResultType
-    val nonPosTypeArgs = tpe.typeArgs.map {
+    val embeddedNonParamTypeArgs = tpe.typeArgs.map {
       arg =>
         if (!tpeOrigKind.typeParams.contains(arg.typeSymbol)) Some(arg) else None
     }
@@ -87,7 +89,8 @@ class TagMacro(val c: blackbox.Context) {
       }
     }
     val argTags = {
-      val args = nonPosTypeArgs.map(_.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias)))
+      val args = embeddedNonParamTypeArgs.map(_.map(t => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias)))
+      logger.log(s"HK Now summoning tags for args=$args")
       c.Expr[List[Option[LightTypeTag]]](q"${args.map(_.map(summonLightTypeTagOfAppropriateKind))}")
     }
 

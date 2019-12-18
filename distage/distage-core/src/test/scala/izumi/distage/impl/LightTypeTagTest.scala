@@ -461,9 +461,13 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
     }
 
-    "allPartsStrong for typelambda" in {
-      import scala.reflect.runtime.{universe => ru}
-      val res1 = ReflectionUtil.allPartsStrong(ru.typeOf[Id[C]].typeConstructor)
+    "allPartsStrong for Identity typelambda" in {
+      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[Id[C]].typeConstructor)
+      assert(res1)
+    }
+
+    "allPartsStrong for eta-expansion typelambda" in {
+      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[FP1[C]].typeConstructor)
       assert(res1)
     }
 

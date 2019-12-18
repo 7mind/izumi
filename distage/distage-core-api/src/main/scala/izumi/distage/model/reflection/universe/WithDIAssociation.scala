@@ -1,7 +1,4 @@
-package izumi.distage.model.plan.operations
-
-import izumi.distage.model.references.WithDIKey
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithDISymbolInfo}
+package izumi.distage.model.reflection.universe
 
 trait WithDIAssociation {
   this:  DIUniverseBase
@@ -13,7 +10,7 @@ trait WithDIAssociation {
   sealed trait Association {
     def symbol: SymbolInfo
     def key: DIKey.BasicKey
-    def tpe: SafeType
+    def tpe: TypeNative
     def name: String
     def isByName: Boolean
 
@@ -24,7 +21,7 @@ trait WithDIAssociation {
   object Association {
     case class Parameter(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
       override final def name: String = symbol.name
-      override final def tpe: SafeType = symbol.finalResultType
+      override final def tpe: TypeNative = symbol.finalResultType
       override final def isByName: Boolean = symbol.isByName
       override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
       override final def asParameter: Association.Parameter = this
@@ -35,7 +32,7 @@ trait WithDIAssociation {
     // FIXME: non-existent wiring, at runtime there are only Parameters
     case class AbstractMethod(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
       override final def name: String = symbol.name
-      override final def tpe: SafeType = symbol.finalResultType
+      override final def tpe: TypeNative = symbol.finalResultType
       override final def isByName: Boolean = true
       override final def withKey(key: DIKey.BasicKey): Association.AbstractMethod = copy(key = key)
       override final def asParameter: Parameter = Parameter(symbol.withIsByName(true), key)

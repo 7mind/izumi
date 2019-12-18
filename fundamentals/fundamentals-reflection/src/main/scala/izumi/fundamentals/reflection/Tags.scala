@@ -167,7 +167,7 @@ object Tags {
 
   /**
     * Force eager expansion for all recursive implicit searches inside TagMacro
-    * to display better error messages!
+    * by introducing a proxy implicit to display better error messages
     *
     * @see test ResourceEffectBindingsTest."Display tag macro stack trace when ResourceTag is not found"
     */

@@ -159,8 +159,9 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
 
   private def makeBaseClasses(tpe: Type): Seq[(AbstractReference, AbstractReference)] = {
     def makeBaseLambdas(tpe: Type): Seq[AbstractReference] = {
-      val basetypes = tpe.baseClasses.map(b => tpe.baseType(b))
-        .filterNot(b => b.typeSymbol.fullName == tpe.typeSymbol.fullName)
+      val basetypes = tpe.baseClasses
+        .map(tpe.baseType)
+        .filterNot(_.typeSymbol.fullName == tpe.typeSymbol.fullName)
 
       val targs = tpe.etaExpand.typeParams
 

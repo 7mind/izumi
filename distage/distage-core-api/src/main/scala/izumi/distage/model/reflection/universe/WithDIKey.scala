@@ -1,20 +1,16 @@
-package izumi.distage.model.references
+package izumi.distage.model.reflection.universe
 
 import izumi.distage.model.definition.ImplDef
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType}
-import izumi.fundamentals.reflection.Tags.Tag
 
 trait WithDIKey {
   this: DIUniverseBase
     with WithDISafeType =>
 
-  sealed trait DIKey {
+  private[distage] sealed trait DIKey {
     def tpe: SafeType
   }
 
-  object DIKey {
-    def get[T: Tag]: DIKey.TypeKey = TypeKey(SafeType.get[T])
-
+  private[distage] object DIKey {
     sealed trait BasicKey extends DIKey {
       def withTpe(tpe: SafeType): DIKey.BasicKey
     }
@@ -33,18 +29,6 @@ trait WithDIKey {
       override final def toString: String = s"{type.${tpe.toString}@${idContract.repr(id)}}"
     }
 
-    case class ProxyElementKey(proxied: DIKey, tpe: SafeType) extends DIKey {
-      override final def toString: String = s"{proxy.${proxied.toString}}"
-    }
-
-    case class ResourceKey(key: DIKey, tpe: SafeType) extends DIKey {
-      override final def toString: String = s"{resource.${key.toString}/$tpe}"
-    }
-
-    case class EffectKey(key: DIKey, tpe: SafeType) extends DIKey {
-      override final def toString: String = s"{effect.${key.toString}/$tpe}"
-    }
-
     /**
       * @param set Key of the parent Set. `set.tpe` must be of type `Set[T]`
       * @param reference Key of `this` individual element. `reference.tpe` must be a subtype of `T`
@@ -53,13 +37,6 @@ trait WithDIKey {
       override final def tpe: SafeType = reference.tpe
 
       override final def toString: String = s"{set.$set/${reference.toString}#${disambiguator.fold("0")(_.hashCode.toString)}"
-    }
-
-    case class MultiSetImplId(set: DIKey, impl: ImplDef)
-    object MultiSetImplId {
-      implicit object SetImplIdContract extends IdContractApi[MultiSetImplId] {
-        override def repr(v: MultiSetImplId): String = s"set/${v.set}#${v.impl.hashCode}"
-      }
     }
   }
 
