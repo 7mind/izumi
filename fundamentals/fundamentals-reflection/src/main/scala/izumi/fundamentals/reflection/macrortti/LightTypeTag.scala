@@ -39,7 +39,7 @@ abstract class LightTypeTag
     */
   def combine(args: LightTypeTag*): LightTypeTag = {
     val argRefs = args.map(_.ref)
-    val appliedBases = basesdb ++ basesdb.map {
+    val appliedBases = basesdb.map {
       case (self: LightTypeTagRef.Lambda, parents) =>
         self.combine(argRefs) -> parents.map {
           case l: LightTypeTagRef.Lambda =>
@@ -228,7 +228,10 @@ object LightTypeTag {
     import izumi.fundamentals.collections.IzCollections._
 
     val both = self.toSeq ++ other.toSeq
-    both.toMultimap.mapValues(_.flatten).toMap
+    both.toMultimap.map {
+      case (k, v) =>
+        (k, v.flatten.filterNot(_ == k))
+    }
   }
 
   private[macrortti] def mergeIDBs[T](self: Map[T, Set[T]], others: Iterator[Map[T, Set[T]]]): Map[T, Set[T]] = {
