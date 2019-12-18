@@ -7,6 +7,8 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.S
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
 
+import scala.collection.immutable
+
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],
@@ -42,7 +44,10 @@ abstract class LightTypeTag
         self.combine(argRefs) -> parents.map {
           case l: LightTypeTagRef.Lambda =>
             l.combine(argRefs)
-          case o => o
+          case o =>
+            val context = self.input.map(_.name).zip(argRefs.collect {case a: AbstractReference => a}).toMap
+            val out = new RuntimeAPI.Rewriter(context).replaceRefs(o)
+            out
         }
       case o => o
     }

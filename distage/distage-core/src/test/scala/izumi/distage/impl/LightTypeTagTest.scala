@@ -328,11 +328,9 @@ class LightTypeTagTest extends WordSpec {
       val childArgs = Seq(`LTT[_,_]`[Either], LTT[Int], LTT[String])
       val combinedTag = childBase.combine(childArgs: _*)
       val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
-
       val noncombinedTag = LTT[RoleChild2[Either, Int, String]]
-
-      assertChild(noncombinedTag, expectedTag)
       assertSame(combinedTag, noncombinedTag)
+      assertChild(noncombinedTag, expectedTag)
       assertChild(combinedTag, expectedTag)
     }
 
