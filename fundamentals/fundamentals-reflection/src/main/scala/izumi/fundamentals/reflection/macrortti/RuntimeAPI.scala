@@ -40,11 +40,17 @@ private[izumi] object RuntimeAPI {
     }
   }
 
-  def applyLambda(lambda: Lambda, parameters: Map[String, AbstractReference]): AbstractReference = {
-    val newParams = lambda.input.filterNot(parameters contains _.name)
-    val rewriter = new Rewriter(parameters)
-    val replaced = rewriter.replaceRefs(lambda.output)
+  def applyLambda(lambda: Lambda, parameters: Seq[(String, AbstractReference)]): AbstractReference = {
+    val pmap = parameters.toMap
 
+    val replaced = parameters.foldLeft(lambda.output) {
+      case (acc, p) =>
+      val rewriter = new Rewriter(Seq(p).toMap)
+       rewriter.replaceRefs(acc)
+    }
+
+
+    val newParams = lambda.input.filterNot(pmap contains _.name)
     if (newParams.isEmpty) {
       replaced
     } else {
@@ -53,7 +59,6 @@ private[izumi] object RuntimeAPI {
       // such lambdas are legal: see "regression test: combine Const Lambda to TagK"
       out
     }
-
   }
 
   final class Rewriter(rules: Map[String, AbstractReference]) {

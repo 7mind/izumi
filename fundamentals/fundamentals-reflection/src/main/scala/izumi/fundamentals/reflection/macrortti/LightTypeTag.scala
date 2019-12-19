@@ -38,33 +38,6 @@ abstract class LightTypeTag
     * }}}
     */
   def combine(args: LightTypeTag*): LightTypeTag = {
-    args.foldLeft(this) {
-      case (acc, arg) =>
-        acc.combineUna(arg)
-    }
-  }
-
-  private def combineUnaNonPos(arg: Option[LightTypeTag]) = {
-    val args = Seq(arg)
-
-    val argRefs = args.map(_.map(_.ref))
-    val appliedBases = basesdb ++ basesdb.map {
-      case (self: LightTypeTagRef.Lambda, parents) =>
-        self.combineNonPos(argRefs) -> parents.map {
-          case l: LightTypeTagRef.Lambda =>
-            l.combineNonPos(argRefs)
-          case o => o
-        }
-      case o => o
-    }
-
-    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
-    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
-
-    LightTypeTag(ref.combineNonPos(argRefs), mergedBasesDB, mergedInheritanceDb)
-  }
-  private def combineUna(arg: LightTypeTag) = {
-    val args = Seq(arg)
     val argRefs = args.map(_.ref)
     val appliedBases = basesdb.map {
       case (self: LightTypeTagRef.Lambda, parents) =>
@@ -95,10 +68,21 @@ abstract class LightTypeTag
     * }}}
     */
   def combineNonPos(args: Option[LightTypeTag]*): LightTypeTag = {
-    args.foldLeft(this) {
-      case (acc, arg) =>
-        acc.combineUnaNonPos(arg)
+    val argRefs = args.map(_.map(_.ref))
+    val appliedBases = basesdb ++ basesdb.map {
+      case (self: LightTypeTagRef.Lambda, parents) =>
+        self.combineNonPos(argRefs) -> parents.map {
+          case l: LightTypeTagRef.Lambda =>
+            l.combineNonPos(argRefs)
+          case o => o
+        }
+      case o => o
     }
+
+    def mergedBasesDB = LightTypeTag.mergeIDBs(appliedBases, args.iterator.map(_.map(_.basesdb).getOrElse(Map.empty)))
+    def mergedInheritanceDb = LightTypeTag.mergeIDBs(idb, args.iterator.map(_.map(_.idb).getOrElse(Map.empty)))
+
+    LightTypeTag(ref.combineNonPos(argRefs), mergedBasesDB, mergedInheritanceDb)
   }
 
   /**

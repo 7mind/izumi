@@ -23,15 +23,15 @@ sealed trait LightTypeTagRef {
               case None =>
                 Seq.empty
             }
-        }.toMap
+        }
     }
   }
 
-  final def combine(args: Map[String, LightTypeTagRef]): AbstractReference = {
-    val parameters = args.map { case (p, v: AbstractReference) => p -> v }
-
-    applyParameters(_ => parameters)
-  }
+//  final def combine(args: Map[String, LightTypeTagRef]): AbstractReference = {
+//    val parameters = args.map { case (p, v: AbstractReference) => p -> v }
+//
+//    applyParameters(_ => parameters)
+//  }
 
   final def withoutArgs: AbstractReference = {
     def appliedNamedReference(reference: AppliedNamedReference) = {
@@ -110,10 +110,10 @@ sealed trait LightTypeTagRef {
         l.input.zip(refs).map {
           case (p, v) =>
             p.name -> v
-        }.toMap
+        }
     }
   }
-  protected[macrortti] def applyParameters(p: Lambda => Map[String, AbstractReference]): AbstractReference = {
+  protected[macrortti] def applyParameters(p: Lambda => Seq[(String, AbstractReference)]): AbstractReference = {
     this match {
       case l: Lambda =>
         val parameters = p(l)
@@ -121,7 +121,7 @@ sealed trait LightTypeTagRef {
           throw new IllegalArgumentException(s"$this expects no more than ${l.input.size} parameters: ${l.input} but got $parameters")
         }
         val expected = l.input.map(_.name).toSet
-        val unknownKeys = parameters.keySet.diff(expected)
+        val unknownKeys = parameters.map(_._1).toSet.diff(expected)
         if (unknownKeys.nonEmpty) {
           throw new IllegalArgumentException(s"$this takes parameters: $expected but got unexpected ones: $unknownKeys")
         }
@@ -144,7 +144,7 @@ object LightTypeTagRef {
     def allArgumentsReferenced: Boolean = paramRefs.diff(referenced).isEmpty
 
     lazy val normalizedParams: List[NameReference] = makeFakeParams.map(_._2)
-    lazy val normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams.toMap)
+    lazy val normalizedOutput: AbstractReference = RuntimeAPI.applyLambda(this, makeFakeParams)
 
     override def equals(obj: Any): Boolean = {
       obj match {
