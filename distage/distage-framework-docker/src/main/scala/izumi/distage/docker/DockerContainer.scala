@@ -3,14 +3,14 @@ package izumi.distage.docker
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
-import com.github.dockerjava.api.model._
+import com.github.dockerjava.api.model.{Bind, ExposedPort, PortBinding, Ports, Volume}
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
+import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
 import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.functional.Value
 import izumi.fundamentals.platform.language.Quirks._
@@ -78,26 +78,29 @@ object DockerContainer {
     }
   }
 
-  class Resource[F[_] : DIEffect : DIEffectAsync, T]
+  private[this] final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+
+  final class Resource[F[_]: DIEffect: DIEffectAsync, T]
   (
     containerDecl: ContainerDef.Aux[T],
   )(
     clientw: DockerClientWrapper[F],
     logger: IzLogger,
   ) extends DIResource[F, DockerContainer[T]] {
-    private val client = clientw.client
-    private val config = containerDecl.config
+
+    private[this] val client = clientw.client
+    private[this] val config = containerDecl.config
 
     implicit class DockerPortEx(port: DockerPort) {
-      def toExposedPort: ExposedPort = port match {
-        case DockerPort.TCP(number) =>
-          ExposedPort.tcp(number)
-        case DockerPort.UDP(number) =>
-          ExposedPort.udp(number)
+      def toExposedPort: ExposedPort = {
+        port match {
+          case DockerPort.TCP(number) =>
+            ExposedPort.tcp(number)
+          case DockerPort.UDP(number) =>
+            ExposedPort.udp(number)
+        }
       }
     }
-
-    final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
 
     override def acquire: F[DockerContainer[T]] = {
       val ports = config.ports.map {
@@ -116,7 +119,6 @@ object DockerContainer {
       }
 
       if (config.reuse && clientw.clientConfig.allowReuse) {
-
         for {
           containers <- DIEffect[F]
             .maybeSuspend {
@@ -144,7 +146,9 @@ object DockerContainer {
                   Seq((c, inspection, value))
               }
           }
-            .find { case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty }
+            .find {
+              case (_, _, eports) => ports.map(_.port).toSet.diff(eports.keySet).isEmpty
+            }
           existing <- candidates match {
             case Some((c, inspection, existingPorts)) =>
               for {
@@ -165,7 +169,6 @@ object DockerContainer {
     }
 
     def await(container: DockerContainer[T]): F[DockerContainer[T]] = {
-
       DIEffect[F].maybeSuspend {
         logger.debug(s"Awaiting until $container gets alive")
         try {
@@ -281,9 +284,7 @@ object DockerContainer {
         Left(bad.map(_._1))
       }
 
-
     }
   }
-
 
 }

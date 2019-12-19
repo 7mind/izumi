@@ -15,7 +15,8 @@ import izumi.distage.model.provisioning.proxies.ProxyProvider.ProxyProviderFaili
 import izumi.distage.model.provisioning.strategies._
 import izumi.distage.model.provisioning.{PlanInterpreter, ProvisioningFailureInterceptor}
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.model.reflection.universe.{MirrorProvider, RuntimeDIUniverse}
+import izumi.distage.model.reflection.MirrorProvider
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse
 import izumi.distage.planning._
 import izumi.distage.planning.gc.{NoopDIGC, TracingDIGC}
 import izumi.distage.provisioning._

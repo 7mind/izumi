@@ -1,8 +1,5 @@
 package izumi.distage.model.reflection.universe
 
-import izumi.distage.model.plan.operations.{WithDIAssociation, WithDIWiring}
-import izumi.distage.model.references._
-
 trait DIUniverse
   extends DIUniverseBase
     with WithDISafeType

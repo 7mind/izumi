@@ -1,7 +1,4 @@
-package izumi.distage.model.plan.operations
-
-import izumi.distage.model.references.WithDIKey
-import izumi.distage.model.reflection.universe.{DIUniverseBase, WithDISafeType, WithDISymbolInfo}
+package izumi.distage.model.reflection.universe
 
 trait WithDIWiring {
   this: DIUniverseBase
@@ -16,15 +13,15 @@ trait WithDIWiring {
     object SingletonWiring {
       sealed trait ReflectiveInstantiationWiring extends PureWiring {
         def prefix: Option[DIKey]
-        def instanceType: SafeType
+        def instanceType: TypeNative
         def associations: Seq[Association]
         def requiredKeys: Set[DIKey] = associations.map(_.key).toSet ++ prefix.toSet
       }
-      case class Constructor(instanceType: SafeType, associations: List[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
-      case class AbstractSymbol(instanceType: SafeType, associations: List[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
+      case class Constructor(instanceType: TypeNative, associations: List[Association.Parameter], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
+      case class AbstractSymbol(instanceType: TypeNative, associations: List[Association.AbstractMethod], prefix: Option[DIKey]) extends ReflectiveInstantiationWiring
     }
 
-    case class Factory(factoryType: SafeType, factoryMethods: List[Factory.FactoryMethod], traitDependencies: List[Association.AbstractMethod]) extends PureWiring {
+    case class Factory(factoryMethods: List[Factory.FactoryMethod], traitDependencies: List[Association.AbstractMethod]) extends PureWiring {
 
       final def factoryProductDepsFromObjectGraph: Seq[Association] = {
         import izumi.fundamentals.collections.IzCollections._

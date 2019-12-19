@@ -1,4 +1,4 @@
-package izumi.distage.model.reflection.universe
+package izumi.distage.model.reflection
 
 import java.lang.reflect.Modifier
 

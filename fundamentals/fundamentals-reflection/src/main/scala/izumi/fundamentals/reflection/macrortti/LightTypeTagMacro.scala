@@ -80,6 +80,8 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
   final def makeParsedLightTypeTagImpl(tpe: Type): c.Expr[LightTypeTag] = {
     val res = impl.makeFullTagImpl(tpe)
 
+    logger.log(s"LightTypeTagImpl: created LightTypeTag: $res")
+
     @inline def serialize[A: Pickler](a: A): String = {
       val bytes = PickleImpl(a).toByteBuffer.array()
       new String(bytes, 0, bytes.length, "ISO-8859-1")
