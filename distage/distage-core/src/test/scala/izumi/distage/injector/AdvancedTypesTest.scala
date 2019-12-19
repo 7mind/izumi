@@ -210,9 +210,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     import izumi.fundamentals.platform.strings.IzString._
-    println(context.allInstances.map(_.key.tpe.tag).niceList())
     val tag = Tag[Trait3[Dep] with Trait4].tag
-    println(tag)
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])

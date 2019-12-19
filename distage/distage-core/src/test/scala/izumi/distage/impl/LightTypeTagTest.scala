@@ -113,7 +113,6 @@ class LightTypeTagTest extends WordSpec {
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
 
   def println(o: Any): Unit = info(o.toString)
-
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
 
   def assertRepr(t: LightTypeTag, expected: String): Unit = {
@@ -330,10 +329,6 @@ class LightTypeTagTest extends WordSpec {
       val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
       val noncombinedTag = LTT[RoleChild2[Either, Int, String]]
 
-      println(childBase.combine(`LTT[_,_]`[Either]))
-      println(childBase.combine(`LTT[_,_]`[Either], LTT[Int]))
-      println(childBase.combine(`LTT[_,_]`[Either], LTT[Int], LTT[String]))
-
       assertSame(combinedTag, noncombinedTag)
       assertChild(noncombinedTag, expectedTag)
       assertChild(combinedTag, expectedTag)
@@ -533,7 +528,6 @@ class LightTypeTagTest extends WordSpec {
       val tag = `LTT[_[_,_]]`[Lambda[`F[+_, +_]` => BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]]]
 
       val res = tag.combine(`LTT[_,_]`[IO])
-      println(res)
       assert(res == LTT[BlockingIO[IO]])
     }
 
