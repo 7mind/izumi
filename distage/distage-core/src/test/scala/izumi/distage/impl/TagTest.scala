@@ -421,9 +421,17 @@ class TagTest extends WordSpec with X[String] {
         )).tag
       val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
 
-      println((ctorTag, eitherRSwapTag, ctorTag.combine(eitherRSwapTag), ctorTag.combine(throwableTag)))
-      println((ctorTag, ctorTag.combine(eitherRSwapTag, throwableTag), ctorTag.combine(throwableTag, throwableTag)))
-      println((combinedTag, expectedTag))
+//      println((ctorTag, eitherRSwapTag, ctorTag.combine(eitherRSwapTag), ctorTag.combine(throwableTag)))
+//      println((ctorTag, ctorTag.combine(eitherRSwapTag, throwableTag), ctorTag.combine(throwableTag, throwableTag)))
+//      println((ctorTag, ))
+//      println((combinedTag, expectedTag))
+
+
+      println(s"expected: $expectedTag")
+      println(s"ctor    : $ctorTag")
+      println(s"args    : ${Seq(eitherRSwapTag, throwableTag)}")
+      println(s"test1   : ${ctorTag.combine(eitherRSwapTag)}")
+      println(s"combined: $combinedTag")
       assert(combinedTag =:= expectedTag)
     }
 
