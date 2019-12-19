@@ -7,8 +7,6 @@ import izumi.fundamentals.reflection.macrortti.LightTypeTag.ParsedLightTypeTag.S
 import izumi.fundamentals.reflection.macrortti.LightTypeTagRef.{AbstractReference, AppliedNamedReference, AppliedReference, NameReference}
 import izumi.thirdparty.internal.boopickle.Default.Pickler
 
-import scala.collection.immutable
-
 abstract class LightTypeTag
 (
   bases: () => Map[AbstractReference, Set[AbstractReference]],

@@ -71,7 +71,7 @@ private[izumi] object RuntimeAPI {
       reference match {
         case l: Lambda =>
           val bad = l.input.map(_.name).toSet
-          val fixed = new Rewriter(rules.filterKeys(k => !bad.contains(k))).replaceRefs(l.output)
+          val fixed = new Rewriter(rules.filterKeys(k => !bad.contains(k)).toMap).replaceRefs(l.output)
           l.copy(output = fixed)
 
         case o: AppliedReference =>
