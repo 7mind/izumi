@@ -421,6 +421,7 @@ class TagTest extends WordSpec with X[String] {
         )).tag
       val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
 
+      println((ctorTag, eitherRSwapTag, ctorTag.combine(eitherRSwapTag), ctorTag.combine(throwableTag)))
       println((ctorTag, ctorTag.combine(eitherRSwapTag, throwableTag), ctorTag.combine(throwableTag, throwableTag)))
       println((combinedTag, expectedTag))
       assert(combinedTag =:= expectedTag)
