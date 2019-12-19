@@ -6,7 +6,7 @@ import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.HKTag
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti.{LTag, LTagK3, LightTypeTag, LightTypeTagImpl}
 import org.scalatest.WordSpec
 
 import scala.reflect.ClassTag
@@ -78,6 +78,8 @@ class TagTest extends WordSpec with X[String] {
   type Const[A, B] = A
   trait ZIO[-R, +E, +A]
   type IO[+E, +A] = ZIO[Any, E, A]
+  type EitherR[-_, +L, +R] = Either[L, R]
+  type EitherRSwap[-_, +L, +R] = Either[R, L]
 
   type F2To3[F[_, _], R, E, A] = F[E, A]
 
@@ -402,19 +404,45 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag <:< TagK[IO[Any, ?]].tag)
     }
 
-//    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters" in {
-//      type EitherR[-_, +L, +R] = Either[L, R]
-//      type EitherRSwap[-_, +L, +R] = Either[R, L]
-//      def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
-//      val tagEitherSwapThrowable = getTag[EitherRSwap].tag
-//      val tagEitherThrowable = TagKK[EitherR[?, ?, Throwable]].tag
-//
-//      assert(!(tagEitherSwapThrowable =:= tagEitherThrowable))
-//      assert(tagEitherSwapThrowable =:= TagKK[EitherRSwap[?, ?, Throwable]].tag)
-//      assert(tagEitherSwapThrowable <:< TagKK[EitherRSwap[?, ?, Throwable]].tag)
-//      assert(tagEitherSwapThrowable <:< TagKK[EitherRSwap[?, ?, Any]].tag)
-//      assert(TagKK[EitherRSwap[?, ?, Nothing]].tag <:< tagEitherSwapThrowable)
-//    }
+    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters (low-level)" in {
+      type Lt[F[_, _, _], _1, _2, _3] = F[_2, _3, _1]
+
+      val ctorTag: LightTypeTag = implicitly[Tag.auto.T[Lt]].tag
+      val eitherRSwapTag = LTagK3[EitherRSwap].tag
+      val throwableTag = LTag[Throwable].tag
+
+      val combinedTag = HKTag.appliedTagNonPosAux(classOf[Any],
+        ctor = ctorTag,
+        args = List(
+          Some(eitherRSwapTag),
+          Some(throwableTag),
+          None,
+          None,
+        )).tag
+      val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
+
+      println((ctorTag, ctorTag.combine(eitherRSwapTag, throwableTag), ctorTag.combine(throwableTag, throwableTag)))
+      println((combinedTag, expectedTag))
+      assert(combinedTag =:= expectedTag)
+    }
+
+    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters" in {
+      def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
+      val tagEitherSwap = getTag[EitherRSwap].tag
+      val tagEitherThrowable = getTag[EitherR].tag
+
+      val expectedTagSwap = TagKK[EitherRSwap[?, ?, Throwable]].tag
+      val expectedTagEitherThrowable = TagKK[EitherR[?, ?, Throwable]].tag
+
+      println(tagEitherSwap -> expectedTagSwap)
+      println(tagEitherThrowable -> expectedTagEitherThrowable)
+
+      assert(!(tagEitherSwap =:= expectedTagEitherThrowable))
+      assert(tagEitherSwap =:= expectedTagSwap)
+      assert(tagEitherSwap <:< expectedTagSwap)
+      assert(tagEitherSwap <:< TagKK[EitherRSwap[?, ?, Any]].tag)
+      assert(TagKK[EitherRSwap[?, ?, Nothing]].tag <:< tagEitherSwap)
+    }
 
     "combine higher-kinded types without losing ignored type arguments" in {
       def mk[F[+_, +_]: TagKK] = Tag[BlockingIO[F]]

@@ -150,13 +150,11 @@ class TagMacro(val c: blackbox.Context) {
                  |res: ${showRaw(res)}
                  |""".stripMargin)
             val argTagsExceptCtor = {
-              val noneTag = c.Expr[Option[LightTypeTag]](q"_root_.scala.None")
-
-              val args = nonParamArgs.map{ case (t, _) => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias)}
+              val args = nonParamArgs.map { case (t, _) => ReflectionUtil.norm(c.universe: c.universe.type)(t.dealias) }
               logger.log(s"HK COMPLEX Now summoning tags for args=$args")
 
               c.Expr[List[Option[LightTypeTag]]] {
-                q"${(args.map(summonLightTypeTagOfAppropriateKind) ++ lambdaParams.map(_ => noneTag))}"
+                q"${args.map(t => Some(summonLightTypeTagOfAppropriateKind(t))) ++ lambdaParams.map(_ => None)}"
               }
             }
 
