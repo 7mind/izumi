@@ -5,7 +5,7 @@ import java.util.concurrent.CompletionStage
 import cats.~>
 import izumi.functional.bio.impl.{BIOTemporalZio, BIOZio}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
-import zio.{IO, ZIO}
+import zio.ZIO
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -227,7 +227,7 @@ package object bio extends BIOSyntax {
     }
   }
 
-  trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOTemporalInstances {
+  trait BIOAsync[F[+_, +_]] extends BIO[F] {
     final type Canceler = F[Nothing, Unit]
 
     def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]

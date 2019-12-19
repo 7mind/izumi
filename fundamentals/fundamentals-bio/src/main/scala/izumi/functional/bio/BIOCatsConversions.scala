@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import cats.Eval
-import cats.effect.{Async, CancelToken, Concurrent, ExitCase, Fiber, Sync}
+import cats.effect.{CancelToken, Concurrent, ExitCase, Fiber}
 import izumi.functional.bio.BIOCatsConversions._
 
 import scala.util.Either
@@ -24,48 +24,39 @@ trait BIOCatsConversions extends BIOCatsConversions1 {
   }
 }
 trait BIOCatsConversions1 extends BIOCatsConversions2 {
-  @inline implicit final def BIOToBifunctor[F[+_, +_]](implicit F0: BIOBifunctor[F]): BIOCatsBifunctor[F] = new BIOCatsBifunctor[F] {
+  /** search for BIOFunctor first to pin F to the closest lexically available effect type */
+  @inline implicit final def BIOToBifunctor[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOBifunctor[F]): BIOCatsBifunctor[F] = new BIOCatsBifunctor[F] {
     override val F: BIOBifunctor[F] = F0
   }
 }
 trait BIOCatsConversions2 extends BIOCatsConversions3 {
-  @inline implicit final def BIOToApplicative[F[+_, +_], E](implicit F0: BIOApplicative[F]): BIOCatsApplicative[F, E] = new BIOCatsApplicative[F, E] {
+  @inline implicit final def BIOToApplicative[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOApplicative[F]): BIOCatsApplicative[F, E] = new BIOCatsApplicative[F, E] {
     override val F: BIOApplicative[F] = F0
   }
 }
 trait BIOCatsConversions3 extends BIOCatsConversions4 {
-  @inline implicit final def BIOToApplicativeError[F[+_, +_], E](implicit F0: BIOError[F]): BIOCatsApplicativeError[F, E] = new BIOCatsApplicativeError[F, E] {
+  @inline implicit final def BIOToApplicativeError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOError[F]): BIOCatsApplicativeError[F, E] = new BIOCatsApplicativeError[F, E] {
     override val F: BIOError[F] = F0
   }
 }
 trait BIOCatsConversions4 extends BIOCatsConversions5 {
-  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit F: BIOMonad[F]): BIOCatsMonad[F, E] = new BIOCatsMonad[F, E](F)
+  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonad[F]): BIOCatsMonad[F, E] = new BIOCatsMonad[F, E](F)
 }
 trait BIOCatsConversions5 extends BIOCatsConversions6 {
-  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit F: BIOMonadError[F]): BIOCatsMonadError[F, E] = new BIOCatsMonadError[F, E](F)
+  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonadError[F]): BIOCatsMonadError[F, E] = new BIOCatsMonadError[F, E](F)
 }
 trait BIOCatsConversions6 extends BIOCatsConversions7 {
-  @inline implicit final def BIOToBracket[F[+_, +_]](implicit F: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F](F)
+  @inline implicit final def BIOToBracket[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F](F)
 }
 trait BIOCatsConversions7 extends BIOCatsConversions8 {
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIO[F]): BIOCatsSync[F] = new BIOCatsSync[F](F)
 }
 trait BIOCatsConversions8 extends BIOCatsConversions9 {
-  @inline implicit final def ExportConv[F[+_, +_], C[_[_]]](implicit ev: ExportConv[F, C]): C[F[Throwable, ?]] = ev.out
-}
-trait BIOCatsConversions9 {
-//  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit F: BIOAsync[F], Fork: BIOFork[F]): BIOCatsConcurrent[F] = new BIOCatsConcurrent[F](F, Fork)
+  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F]): BIOCatsAsync[F] = new BIOCatsAsync[F](F)
 }
 
-final case class ExportConv[F[+_, +_], C[_[_]]](out: C[F[Throwable, ?]]) extends AnyVal
-object ExportConv extends ExportConv1 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit F: BIO[F]): ExportConv[F, Sync] = {
-    new ExportConv[F, Sync](new BIOCatsSync[F](F))
-  }
-}
-trait ExportConv1 {
-  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit F: BIOAsync[F]): ExportConv[F, Async] = {
-    new ExportConv[F, Async](new BIOCatsAsync[F](F))
-  }
+trait BIOCatsConversions9 {
+  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F], Fork: BIOFork[F]): BIOCatsConcurrent[F] = new BIOCatsConcurrent[F](F, Fork)
 }
 
 object BIOCatsConversions {
