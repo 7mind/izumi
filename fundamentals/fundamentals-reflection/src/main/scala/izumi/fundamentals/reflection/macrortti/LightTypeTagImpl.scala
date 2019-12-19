@@ -308,9 +308,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       val reference = sub(result, lamParams.toMap)
       val out = Lambda(lamParams.map(_._2), reference)
       if (!out.allArgumentsReferenced) {
-        thisLevel.log(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: ${
-          lamParams.map { case (k, v) => s"$v = $k" }
-        }, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
+        val kvParams = lamParams.map { case (k, v) => s"$v = $k" }
+        thisLevel.log(s"⚠️ unused 𝝺 args! type $t => $out, context: $terminalNames, 𝝺 params: $kvParams, 𝝺 result: $result => $reference, referenced: ${out.referenced} ")
       }
 
       thisLevel.log(s"✳️ Restored $t => $out")
@@ -385,8 +384,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   }
 
   private def makeLambdaParams(ctxid: Option[String], targs: List[Symbol]): List[(String, LambdaParameter)] = {
-    val lamParams = targs.zipWithIndex.map {
-      case (p, idx) =>
+    targs.zipWithIndex.map {
+      case (targ, idx) =>
         val name = ctxid match {
           case Some(value) =>
             s"$value:${idx.toString}"
@@ -394,9 +393,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
             idx.toString
         }
 
-        p.fullName -> LambdaParameter(name)
+        targ.fullName -> LambdaParameter(name)
     }
-    lamParams
   }
 
   object UniRefinement {

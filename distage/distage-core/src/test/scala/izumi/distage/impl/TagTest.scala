@@ -70,15 +70,22 @@ class TagTest extends WordSpec with X[String] {
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
   trait Y[V] extends X[V]
   case class ZOBA[A, B, C](value: Either[B, C])
+  trait BIOService[F[_, _]]
   type Swap[A, B] = Either[B, A]
+  type SwapF2[F[_, _], A, B] = F[B, A]
   type Id[A] = A
   type Id1[F[_], A] = F[A]
   type Const[A, B] = A
   trait ZIO[-R, +E, +A]
   type IO[+E, +A] = ZIO[Any, E, A]
 
-  class BlockingIO3[F[_, _, _]]
+  type F2To3[F[_, _], R, E, A] = F[E, A]
+
+  trait BlockingIO3[F[_, _, _]]
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+
+  trait BlockingIO3T[F[_, _[_], _]]
+  type BlockingIOT[F[_[_], _]] = BlockingIO3T[Lambda[(R, `E[_]`, A) => F[E, A]]]
 
   class ApplePaymentProvider[F0[_]] extends H1
 
@@ -395,16 +402,19 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag <:< TagK[IO[Any, ?]].tag)
     }
 
-    "resolve TagKK from an odd higher-kinded Tag and with parameters out of order" in {
-      type EitherR[-_, +L, +R] = Either[L, R]
-      def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
-      val tagEitherThrowable = getTag[EitherR].tag
-
-      assert(tagEitherThrowable =:= TagKK[EitherR[?, ?, Throwable]].tag)
-      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Throwable]].tag)
-      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Any]].tag)
-      assert(TagKK[EitherR[?, ?, Nothing]].tag <:< tagEitherThrowable)
-    }
+//    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters" in {
+//      type EitherR[-_, +L, +R] = Either[L, R]
+//      type EitherRSwap[-_, +L, +R] = Either[R, L]
+//      def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
+//      val tagEitherSwapThrowable = getTag[EitherRSwap].tag
+//      val tagEitherThrowable = TagKK[EitherR[?, ?, Throwable]].tag
+//
+//      assert(!(tagEitherSwapThrowable =:= tagEitherThrowable))
+//      assert(tagEitherSwapThrowable =:= TagKK[EitherRSwap[?, ?, Throwable]].tag)
+//      assert(tagEitherSwapThrowable <:< TagKK[EitherRSwap[?, ?, Throwable]].tag)
+//      assert(tagEitherSwapThrowable <:< TagKK[EitherRSwap[?, ?, Any]].tag)
+//      assert(TagKK[EitherRSwap[?, ?, Nothing]].tag <:< tagEitherSwapThrowable)
+//    }
 
     "combine higher-kinded types without losing ignored type arguments" in {
       def mk[F[+_, +_]: TagKK] = Tag[BlockingIO[F]]
@@ -413,11 +423,36 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag == Tag[BlockingIO[IO]].tag)
     }
 
-    "combine higher-kinded type lambdas without losing ignored type arguments" in {
-      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]]
+    "resolve a higher-kinded type inside a named type lambda with ignored type arguments" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO3[F2To3[F, ?, ?, ?]]]
       val tag = mk[IO]
 
       assert(tag.tag == Tag[BlockingIO[IO]].tag)
+    }
+
+    "resolve a higher-kinded type inside an anonymous type lambda with ignored & higher-kinded type arguments" in {
+      def mk[F[_[_], _]: TagTK] = Tag[BlockingIO3T[Lambda[(`-R`, `E[_]`, `A`) => F[E, A]]]]
+      val tag = mk[OptionT]
+
+      assert(tag.tag == Tag[BlockingIOT[OptionT]].tag)
+    }
+
+    "correctly resolve a higher-kinded nested type inside a named swap type lambda" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BIOService[SwapF2[F, ?, ?]]]
+      val tag = mk[Either]
+
+      assert(tag.tag == Tag[BIOService[SwapF2[Either, ?, ?]]].tag)
+      assert(tag.tag == Tag[BIOService[Swap]].tag)
+      assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
+    }
+
+    "correctly resolve a higher-kinded nested type inside an anonymous swap type lambda" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BIOService[Lambda[(E, A) => F[A, E]]]]
+      val tag = mk[Either]
+
+      assert(tag.tag == Tag[BIOService[SwapF2[Either, ?, ?]]].tag)
+      assert(tag.tag == Tag[BIOService[Swap]].tag)
+      assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
     }
 
     "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {

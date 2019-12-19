@@ -162,6 +162,10 @@ object Tags {
       HKTag(tag.closestClass, tag.tag.combineNonPos(args: _*))
     }
 
+    def appliedTagNonPosAux[R](cls: Class[_], ctor: LightTypeTag, args: List[Option[LightTypeTag]]): HKTag[R] = {
+      HKTag(cls, ctor.combineNonPos(args: _*))
+    }
+
     @inline implicit final def hktagFromTagMacro[T](implicit materializer: HKTagMaterializer[T]): HKTag[T] = materializer.value
   }
 

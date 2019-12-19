@@ -58,7 +58,7 @@ object FactoryConstructorMacro {
           paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
         }
 
-        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
+        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
 
         val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType)
         val args = associations.map {
