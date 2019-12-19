@@ -155,6 +155,7 @@ class HigherKindsTest extends WordSpec with MkInjector {
     assert(context != null)
 
     assert(definition.t0.tag =:= LTag[TestCovariantTC[Either]].tag)
+    println((definition.t1.tag, LTag[TestClassFG[Either, Option]].tag))
     assert(definition.t1.tag =:= LTag[TestClassFG[Either, Option]].tag)
     assert(definition.t2.tag =:= LTag[TestClassFA[Either, Int]].tag)
     assert(context.get[Either[String, Int]] == value)

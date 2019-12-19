@@ -70,7 +70,10 @@ private[izumi] object RuntimeAPI {
     def replaceRefs(reference: AbstractReference): AbstractReference = {
       reference match {
         case l: Lambda =>
-          l.copy(output = replaceRefs(l.output))
+          val bad = l.input.map(_.name).toSet
+          val fixed = new Rewriter(rules.filterKeys(k => !bad.contains(k))).replaceRefs(l.output)
+          l.copy(output = fixed)
+
         case o: AppliedReference =>
           replaceApplied(o)
       }
