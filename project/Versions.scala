@@ -32,7 +32,7 @@ object V {
   val asynchttpclient = "2.10.4"
 
   val classgraph = "4.8.59"
-  val slf4j = "1.7.29"
+  val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
