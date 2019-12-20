@@ -6,12 +6,12 @@ import izumi.distage.model.definition.With
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.HKTag
-import izumi.fundamentals.reflection.macrortti.{LTag, LightTypeTag, LightTypeTagImpl}
+import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
+import org.scalatest.exceptions.TestFailedException
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe
-import scala.reflect.runtime.universe._
+import scala.reflect.runtime.{universe => ru}
 
 trait X[Y] {
   type Z = id[Y]
@@ -46,9 +46,9 @@ final case class testTag3[F[_]: TagK]() {
 
 class TagTest extends WordSpec with X[String] {
 
-  def safe[T: TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
+  def safe[T: ru.TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
     SafeType(
-      tag = LightTypeTagImpl.makeLightTypeTag(universe)(typeOf[T]),
+      tag = LightTypeTagImpl.makeLightTypeTag(ru)(ru.typeOf[T]),
       cls = Option(maybeClassTag).fold[Class[_]](classOf[Any])(_.runtimeClass),
     )
   }
@@ -70,12 +70,26 @@ class TagTest extends WordSpec with X[String] {
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
   trait Y[V] extends X[V]
   case class ZOBA[A, B, C](value: Either[B, C])
+  trait BIOService[F[_, _]]
   type Swap[A, B] = Either[B, A]
+  type SwapF2[F[_, _], A, B] = F[B, A]
   type Id[A] = A
   type Id1[F[_], A] = F[A]
   type Const[A, B] = A
   trait ZIO[-R, +E, +A]
   type IO[+E, +A] = ZIO[Any, E, A]
+  type EitherR[-_, +L, +R] = Either[L, R]
+  type EitherRSwap[-_, +L, +R] = Either[R, L]
+
+  type F2To3[F[_, _], R, E, A] = F[E, A]
+
+  trait BlockingIO3[F[_, _, _]]
+  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+
+  trait BlockingIO3T[F[_, _[_], _]]
+  type BlockingIOT[F[_[_], _]] = BlockingIO3T[Lambda[(R, `E[_]`, A) => F[E, A]]]
+
+  type BIOServiceL[F[+_, +_], E, A] = BIOService[Lambda[(X, Y) => F[A, E]]]
 
   class ApplePaymentProvider[F0[_]] extends H1
 
@@ -367,6 +381,24 @@ class TagTest extends WordSpec with X[String] {
       assert(TagK[Either[Nothing, ?]].tag <:< tagEitherThrowable)
     }
 
+    "can materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
+      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+
+      val tag = partialEitherTagK[Int].tag
+      val expectedTag = TagK[Either[Int, ?]].tag
+
+      assert(tag =:= expectedTag)
+    }
+
+    "can materialize TagK for type lambdas that close on a generic parameter with available Tag when the constructor is a type parameter" in {
+      def partialFTagK[F[_, _]: TagKK, A: Tag] = TagK[F[A, ?]]
+
+      val tag = partialFTagK[Either, Int].tag
+      val expectedTag = TagK[Either[Int, ?]].tag
+
+      assert(tag =:= expectedTag)
+    }
+
     "type parameter covariance works after combine" in {
       def getTag[F[+_, +_]: TagKK] = TagK[F[Throwable, ?]]
       val tagEitherThrowable = getTag[Either].tag
@@ -392,15 +424,105 @@ class TagTest extends WordSpec with X[String] {
       assert(tag.tag <:< TagK[IO[Any, ?]].tag)
     }
 
-    "resolve TagKK from an odd higher-kinded Tag and with parameters out of order" in {
-      type EitherR[-_, +L, +R] = Either[L, R]
+    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters (low-level)" in {
+      type Lt[F[_, _, _], _1, _2, _3] = F[_2, _3, _1]
+
+      val ctorTag: LightTypeTag = implicitly[Tag.auto.T[Lt]].tag
+      val eitherRSwapTag = LTagK3[EitherRSwap].tag
+      val throwableTag = LTag[Throwable].tag
+
+      val combinedTag = HKTag.appliedTagNonPosAux(classOf[Any],
+        ctor = ctorTag,
+        args = List(
+          Some(eitherRSwapTag),
+          Some(throwableTag),
+          None,
+          None,
+        )).tag
+      val expectedTag = TagKK[Lt[EitherRSwap, Throwable, ?, ?]].tag
+      assert(combinedTag =:= expectedTag)
+    }
+
+    "resolve TagKK from an odd higher-kinded Tag with swapped & ignored parameters" in {
       def getTag[F[-_, +_, +_]: TagK3] = TagKK[F[?, ?, Throwable]]
+      val tagEitherSwap = getTag[EitherRSwap].tag
       val tagEitherThrowable = getTag[EitherR].tag
 
-      assert(tagEitherThrowable =:= TagKK[EitherR[?, ?, Throwable]].tag)
-      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Throwable]].tag)
-      assert(tagEitherThrowable <:< TagKK[EitherR[?, ?, Any]].tag)
-      assert(TagKK[EitherR[?, ?, Nothing]].tag <:< tagEitherThrowable)
+      val expectedTagSwap = TagKK[EitherRSwap[?, ?, Throwable]].tag
+      val expectedTagEitherThrowable = TagKK[EitherR[?, ?, Throwable]].tag
+
+      assert(!(tagEitherSwap =:= expectedTagEitherThrowable))
+      assert(tagEitherSwap =:= expectedTagSwap)
+      assert(tagEitherSwap <:< expectedTagSwap)
+      assert(tagEitherSwap <:< TagKK[EitherRSwap[?, ?, Any]].tag)
+      assert(TagKK[EitherRSwap[?, ?, Nothing]].tag <:< tagEitherSwap)
+    }
+
+    "combine higher-kinded types without losing ignored type arguments" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO[F]]
+      val tag = mk[IO]
+
+      assert(tag.tag == Tag[BlockingIO[IO]].tag)
+    }
+
+    "resolve a higher-kinded type inside a named type lambda with ignored type arguments" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BlockingIO3[F2To3[F, ?, ?, ?]]]
+      val tag = mk[IO]
+
+      assert(tag.tag == Tag[BlockingIO[IO]].tag)
+    }
+
+    "resolve a higher-kinded type inside an anonymous type lambda with ignored & higher-kinded type arguments" in {
+      def mk[F[_[_], _]: TagTK] = Tag[BlockingIO3T[Lambda[(`-R`, `E[_]`, `A`) => F[E, A]]]]
+      val tag = mk[OptionT]
+
+      assert(tag.tag == Tag[BlockingIOT[OptionT]].tag)
+    }
+
+    "correctly resolve a higher-kinded nested type inside a named swap type lambda" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BIOService[SwapF2[F, ?, ?]]]
+      val tag = mk[Either]
+
+      assert(tag.tag == Tag[BIOService[SwapF2[Either, ?, ?]]].tag)
+      assert(tag.tag == Tag[BIOService[Swap]].tag)
+      assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
+    }
+
+    "correctly resolve a higher-kinded nested type inside an anonymous swap type lambda" in {
+      def mk[F[+_, +_]: TagKK] = Tag[BIOService[Lambda[(E, A) => F[A, E]]]]
+      val tag = mk[Either]
+
+      assert(tag.tag == Tag[BIOService[SwapF2[Either, ?, ?]]].tag)
+      assert(tag.tag == Tag[BIOService[Swap]].tag)
+      assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
+    }
+
+    "progression test: cannot resolve a higher-kinded type in a higher-kinded tag in a named deeply-nested type lambda" in {
+      val t = intercept[TestFailedException] {
+        assertCompiles(
+      """
+      def mk[F[+_, +_]: TagKK] = TagKK[({ type l[A, B] = BIOServiceL[F, A, B] })#l]
+      val tag = mk[Either]
+
+      assert(tag.tag == LTagKK[Lambda[(E, A) => BIOService[Lambda[(X, Y) => Either[A, E]]]]].tag)
+      """
+        )
+      }
+      assert(t.message.get contains "could not find implicit value")
+    }
+
+    "progression test: cannot resolve a higher-kinded type in a higher-kinded tag in an anonymous deeply-nested type lambda" in {
+      val t = intercept[TestFailedException] {
+        assertCompiles(
+      """
+      def mk[F[+_, +_]: TagKK] = TagKK[ ({ type l[E, A] = BIOService[ ({ type l[X, Y] = F[A, E] })#l ] })#l ]
+      val tag = mk[Either]
+
+      assert(tag.tag == LTagKK[Lambda[(E, A) => BIOService[Lambda[(X, Y) => Either[A, E]]]]].tag)
+      """
+        )
+      }
+      assert(t.message.get contains "could not find implicit value")
     }
 
     "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {
@@ -419,9 +541,10 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {
-//      assertTypeError( // stopped working, but it doesn't actually compile though.
-      identity(
-        """
+      val t = intercept[TestFailedException] {
+        assertCompiles(
+          //      identity(
+          """
       import izumi.distage.fixtures.TypesCases.TypesCase3._
 
       type `TagK<:Dep`[K[_ <: Dep]] = HKTag[ { type Arg[A <: Dep] = K[A] } ]
@@ -430,27 +553,20 @@ class TagTest extends WordSpec with X[String] {
 
       assert(t[Trait3, Dep].tag == safe[Trait3[Dep]].tag)
       """)
-//      def t1[U, T[_ <: U], A <: U: Tag](implicit ev: TagKUBound[U, T]) = Tag[T[A]]
-//      assert(t1[Dep, Trait3, Dep].tpe == safe[Trait3[Dep]])
+      }
+      assert(t.message.get contains "could not find implicit value")
     }
 
     "progression test: can't handle parameters in structural types yet" in {
-      assertTypeError(
-        """
+      val t = intercept[TestFailedException] {
+        assertCompiles(
+          """
       def t[T: Tag]: Tag[{ type X = T }] = Tag[{ type X = T }]
 
       assert(t[Int].tpe == safe[{ type X = Int }])
       """)
-    }
-
-    "progression test: Can't materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
-      assertTypeError(
-        """
-        def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
-
-        print(partialEitherTagK[Int])
-        assert(partialEitherTagK[Int] != null)
-      """)
+      }
+      assert(t.message.get contains "could not find implicit value")
     }
 
   }

@@ -72,13 +72,13 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
                                          isGenerated: Boolean,
                                         ): c.Expr[ProviderMagnet[R]] = {
     val tools = DIUniverseLiftables(macroUniverse)
-    import tools.{liftableParameter, liftableSafeType}
+    import tools.{liftableParameter, liftTypeToSafeType}
 
     val (substitutedByNames, casts) = parameters.zipWithIndex.map {
       case (param, i) =>
 
         val strippedByNameTpe = param.copy(symbol = param.symbol.withTpe {
-          param.symbol.finalResultType.use(typeNative => SafeType(ReflectionUtil.stripByName(u)(typeNative)))
+          ReflectionUtil.stripByName(u)(param.symbol.finalResultType)
         })
         strippedByNameTpe -> q"seqAny($i)"
     }.unzip
@@ -90,7 +90,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
         new ${weakTypeOf[ProviderMagnet[R]]}(
           new ${weakTypeOf[RuntimeDIUniverse.Provider.ProviderImpl[R]]}(
             ${Liftable.liftList[Association.Parameter].apply(substitutedByNames)},
-            ${liftableSafeType(SafeType(weakTypeOf[R]))},
+            ${liftTypeToSafeType(weakTypeOf[R])},
             { seqAny => fun.asInstanceOf[(..${casts.map(_ => definitions.AnyTpe)}) => ${definitions.AnyTpe}](..$casts) },
             $isGenerated,
           )
@@ -147,7 +147,7 @@ class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {
       tpe =>
         val symbol = SymbolInfo.Static(
           name = c.freshName(tpe.typeSymbol.name.toString),
-          finalResultType = SafeType(tpe),
+          finalResultType = tpe,
           annotations = AnnotationTools.getAllTypeAnnotations(u)(tpe),
           isByName = tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == definitions.ByNameParamClass,
           wasGeneric = tpe.typeSymbol.isParameter,

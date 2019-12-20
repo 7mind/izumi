@@ -23,10 +23,11 @@ object ConcreteConstructorMacro {
         val providerMagnet = symbolOf[ProviderMagnet.type].asClass.module
         val term = t match {
           case t: ThisTypeApi => This(t.sym)
+          case t: ConstantTypeApi => q"${t.value}"
           case _ => q"${t.termSymbol}"
         }
         c.Expr[ConcreteConstructor[T]] {
-          q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($providerMagnet.pure($term)) }"
+          q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($providerMagnet.pure[$targetType]($term)) }"
         }
 
       case _ =>

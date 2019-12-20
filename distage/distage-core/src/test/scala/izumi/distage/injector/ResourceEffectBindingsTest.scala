@@ -373,7 +373,7 @@ class ResourceEffectBindingsTest extends WordSpec with MkInjector {
             fail(s"Unexpected success! $value")
         }
 
-      val ops = resource.use(ops => Suspend2(ops)).run().right.get
+      val ops = resource.use(ops => Suspend2(ops)).run().toOption.get
 
       assert(ops == Seq(XStart, YStart, YStop, XStop))
 //      def y[F[_]] = Tag[DIResource[F, Any]]

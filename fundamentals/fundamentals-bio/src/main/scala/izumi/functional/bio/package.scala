@@ -3,7 +3,7 @@ package izumi.functional
 import java.util.concurrent.CompletionStage
 
 import cats.~>
-import izumi.functional.bio.impl.{BIOZio, BIOTemporalZio}
+import izumi.functional.bio.impl.{BIOTemporalZio, BIOZio}
 import izumi.functional.mono.{Clock, Entropy, SyncSafe}
 import zio.ZIO
 
@@ -227,7 +227,7 @@ package object bio extends BIOSyntax {
     }
   }
 
-  trait BIOAsync[F[+_, +_]] extends BIO[F] with BIOTemporalInstances {
+  trait BIOAsync[F[+_, +_]] extends BIO[F] {
     final type Canceler = F[Nothing, Unit]
 
     def async[E, A](register: (Either[E, A] => Unit) => Unit): F[E, A]
@@ -311,9 +311,10 @@ package object bio extends BIOSyntax {
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
-  @inline final lazy val BlockingIO: BlockingIO3.type = BlockingIO3
+  object BlockingIO {
+    def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
+  }
 
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
 

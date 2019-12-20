@@ -162,12 +162,16 @@ object Tags {
       HKTag(tag.closestClass, tag.tag.combineNonPos(args: _*))
     }
 
+    def appliedTagNonPosAux[R](cls: Class[_], ctor: LightTypeTag, args: List[Option[LightTypeTag]]): HKTag[R] = {
+      HKTag(cls, ctor.combineNonPos(args: _*))
+    }
+
     @inline implicit final def hktagFromTagMacro[T](implicit materializer: HKTagMaterializer[T]): HKTag[T] = materializer.value
   }
 
   /**
     * Force eager expansion for all recursive implicit searches inside TagMacro
-    * to display better error messages!
+    * by introducing a proxy implicit to display better error messages
     *
     * @see test ResourceEffectBindingsTest."Display tag macro stack trace when ResourceTag is not found"
     */

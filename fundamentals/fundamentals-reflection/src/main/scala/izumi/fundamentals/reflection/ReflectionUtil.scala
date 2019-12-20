@@ -100,7 +100,7 @@ object ReflectionUtil {
   }
 
   final def allPartsStrong(tpe: Universe#Type): Boolean = {
-    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.exists(_.typeSignature == tpe.typeSymbol.typeSignature)
+    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.contains(tpe.typeSymbol)
     def prefixStrong = {
       tpe match {
         case t: Universe#TypeRefApi =>
@@ -109,8 +109,13 @@ object ReflectionUtil {
           true
       }
     }
-    def argsStrong = tpe.typeArgs.forall(allPartsStrong)
-
+    def argsStrong = {
+      tpe.finalResultType.typeArgs.forall {
+        arg =>
+          tpe.typeParams.contains(arg.typeSymbol) ||
+            allPartsStrong(arg)
+      }
+    }
     def intersectionStructStrong = {
       tpe match {
         case t: Universe#RefinedTypeApi =>
@@ -120,18 +125,9 @@ object ReflectionUtil {
           true
       }
     }
+
     selfStrong && prefixStrong && argsStrong && intersectionStructStrong
   }
-
-//  /**
-//    * This function is here to just just hide a warning coming from Annotation.apply when macro is expanded.
-//    * Since c.reifyTree seems to have a bug whereby it injects empty TypeTrees when trying to reify an
-//    * annotation recovered from a symbol via the .annotations method, it doesn't seem possible to avoid
-//    * calling this method.
-//    */
-//  def runtimeAnnotation(tpe: ru.Type, scalaArgs: List[ru.Tree], javaArgs: ListMap[ru.Name, ru.JavaArgument]): ru.Annotation = {
-//    ru.Annotation.apply(tpe, scalaArgs, javaArgs)
-//  }
 
   def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {
     def go(tpe: U#Type): List[U#Type] = {

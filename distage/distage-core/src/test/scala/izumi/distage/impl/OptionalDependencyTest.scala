@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.BIOSyntax.BIOTemporalOps
 import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}

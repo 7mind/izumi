@@ -32,7 +32,7 @@ trait ZIODIEffectModule extends ModuleDef {
 
   make[BlockingIO[IO]].from {
     blockingPool: ThreadPoolExecutor @Id("zio.io") =>
-      BlockingIO.BlockingZIOFromThreadPool[Any](blockingPool)
+      BlockingIOInstances.BlockingZIOFromThreadPool[Any](blockingPool)
   }
 
   addImplicit[BIOTransZio[IO]]

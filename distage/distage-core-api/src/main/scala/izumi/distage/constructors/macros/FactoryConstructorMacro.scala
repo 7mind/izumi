@@ -27,13 +27,13 @@ object FactoryConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val factory@Factory(_, factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
+    val factory@Factory(factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
     val traitMeta = factory.traitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val paramMeta = factory.factoryProductDepsFromObjectGraph.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val allMeta = traitMeta ++ paramMeta
     val (dependencyAssociations, dependencyArgDecls, _) = allMeta.unzip3
     val dependencyMethods = traitMeta.map(_._3._1)
-    val dependencyArgMap = allMeta.map { case (param, _, (_, argName)) => param.key -> argName }.toMap
+    val dependencyArgMap: Map[DIKey.BasicKey, TermName] = allMeta.map { case (param, _, (_, argName)) => param.key -> argName }.toMap
 
     logger.log(
       s"""Got associations: $dependencyAssociations
@@ -58,35 +58,33 @@ object FactoryConstructorMacro {
           paramLists.map(_.map(_._1)) -> paramLists.flatten.map(_._2)
         }
 
-        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(symbol => c.internal.typeDef(symbol))
+        val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
 
-        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType.use(identity))
+        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType)
         val args = associations.map {
           param =>
-            dependencyArgMap.get(param.key)
+            dependencyArgMap
+              .get(param.key)
               .orElse {
                 methodArgsMap.collectFirst {
-                  case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe.use(identity)) =>
+                  case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe) =>
                     tree
                 }
               }
               .getOrElse {
                 c.abort(c.enclosingPosition,
-                  s"Couldn't find anything for ${param.tpe.use(identity)} in ${dependencyAssociations.map(_.tpe.use(identity))} ++ ${methodArgsMap.map(_._1)}"
+                  s"Couldn't find anything for ${param.tpe} in ${dependencyAssociations.map(_.tpe)} ++ ${methodArgsMap.map(_._1)}"
                 )
               }
         }
         val freshName = TermName(c.freshName("wiring"))
 
-        factoryMethod.finalResultType.use {
-          resultTypeOfMethod =>
-            q"""
-            final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgListDecls): $resultTypeOfMethod = {
-              val $freshName = $fnTree
-              $freshName(..$args)
-            }
-            """
+        q"""
+        final def ${TermName(factoryMethod.name)}[..$typeParams](...$methodArgListDecls): ${factoryMethod.finalResultType} = {
+          val $freshName = $fnTree
+          $freshName(..$args)
         }
+        """
     }
 
     val allMethods = producerMethods ++ dependencyMethods

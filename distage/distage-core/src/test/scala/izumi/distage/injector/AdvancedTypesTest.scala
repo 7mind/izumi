@@ -5,8 +5,11 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.platform.language.IzScala.ScalaRelease
 import org.scalatest.WordSpec
 
+import scala.Ordering.Implicits.infixOrderingOps
 import scala.language.reflectiveCalls
 
 class AdvancedTypesTest extends WordSpec with MkInjector {
@@ -207,9 +210,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(plan)
 
     import izumi.fundamentals.platform.strings.IzString._
-    println(context.allInstances.map(_.key.tpe.tag).niceList())
     val tag = Tag[Trait3[Dep] with Trait4].tag
-    println(tag)
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])
@@ -255,6 +256,17 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val context = injector.produceUnsafe(definition)
 
     assert(context.get[Dep {}] != null)
+  }
+
+  "support constant types in class strategy" in {
+    assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
+    assertCompiles(
+      """
+        new ModuleDef {
+          make[5]
+        }
+      """
+    )
   }
 
 }

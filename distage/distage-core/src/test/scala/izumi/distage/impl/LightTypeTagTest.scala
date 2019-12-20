@@ -102,11 +102,17 @@ class LightTypeTagTest extends WordSpec {
 
   trait RoleParent[F[_]]
   trait RoleChild[F[_, _]] extends RoleParent[F[Throwable, ?]]
+  class RoleChild2[F[+ _, + _], A, B] extends RoleParent[F[Throwable, ?]]
 
   class ApplePaymentProvider[F[_]] extends H1
 
-  def println(o: Any): Unit = info(o.toString)
+  trait ZIO[-R0, +E, +A]
+  type IO[+E, +A] = ZIO[Any, E, A]
 
+  class BlockingIO3[F[_, _, _]]
+  type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
+
+  def println(o: Any): Unit = info(o.toString)
   def println(o: LightTypeTag): Unit = info(o.ref.toString)
 
   def assertRepr(t: LightTypeTag, expected: String): Unit = {
@@ -316,6 +322,18 @@ class LightTypeTagTest extends WordSpec {
       assertChild(combinedTag, expectedTag)
     }
 
+    "support subtyping of parents parameterized with type lambdas in combined tags with multiple parameters" in {
+      val childBase = `LTT[_[_,_],_,_]`[RoleChild2]
+      val childArgs = Seq(`LTT[_,_]`[Either], LTT[Int], LTT[String])
+      val combinedTag = childBase.combine(childArgs: _*)
+      val expectedTag = LTT[RoleParent[Either[Throwable, ?]]]
+      val noncombinedTag = LTT[RoleChild2[Either, Int, String]]
+
+      assertSame(combinedTag, noncombinedTag)
+      assertChild(noncombinedTag, expectedTag)
+      assertChild(combinedTag, expectedTag)
+    }
+
     "support complex type lambdas" in {
       assertSame(`LTT[_,_]`[NestedTL[Const, ?, ?]], `LTT[_,_]`[Lambda[(A, B) => FM2[(B, A)]]])
       assertSame(`LTT[_[_]]`[NestedTL2[W1, W2, ?[_]]], `LTT[_[_]]`[Lambda[G[_] => FM2[G[S[W2, W1]]]]])
@@ -443,9 +461,13 @@ class LightTypeTagTest extends WordSpec {
       assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
     }
 
-    "allPartsStrong for typelambda" in {
-      import scala.reflect.runtime.{universe => ru}
-      val res1 = ReflectionUtil.allPartsStrong(ru.typeOf[Id[C]].typeConstructor)
+    "allPartsStrong for Identity typelambda" in {
+      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[Id[C]].typeConstructor)
+      assert(res1)
+    }
+
+    "allPartsStrong for eta-expansion typelambda" in {
+      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[FP1[C]].typeConstructor)
       assert(res1)
     }
 
@@ -481,7 +503,7 @@ class LightTypeTagTest extends WordSpec {
       assertDifferent(tagF3, LTT[F2[AnyVal]])
     }
 
-    "regression test: support subtyping of a simple combined type (fixed in 0.10)" in {
+    "support subtyping of a simple combined type" in {
       val ctor = `LTT[_[_]]`[ApplePaymentProvider]
       val arg = `LTT[_]`[Id]
       val combined = ctor.combine(arg)
@@ -500,6 +522,13 @@ class LightTypeTagTest extends WordSpec {
       assertDebugSame(predefString, javaLangString)
       assertDebugSame(predefString, weirdPredefString)
       assertDebugSame(javaLangString, weirdPredefString)
+    }
+
+    "combine higher-kinded type lambdas without losing ignored type arguments" in {
+      val tag = `LTT[_[_,_]]`[Lambda[`F[+_, +_]` => BlockingIO3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]]]
+
+      val res = tag.combine(`LTT[_,_]`[IO])
+      assert(res == LTT[BlockingIO[IO]])
     }
 
   }

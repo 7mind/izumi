@@ -65,7 +65,7 @@ final class MaterializeDerivationMacros(override val c: blackbox.Context) extend
       q"""{
            import _root_.izumi.idealingua.runtime.circe.IRTTimeInstances._
 
-           new ${weakTypeOf[DerivationDerivedDecoder[A]]}(_root_.io.circe.derivation.deriveEncoder[${weakTypeOf[A]}])
+           new ${weakTypeOf[DerivationDerivedDecoder[A]]}(_root_.io.circe.derivation.deriveDecoder[${weakTypeOf[A]}])
          }"""
     }
 

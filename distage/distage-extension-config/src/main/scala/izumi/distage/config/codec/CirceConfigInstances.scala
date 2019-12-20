@@ -60,7 +60,7 @@ trait CirceConfigInstances extends LowPriorityCirceConfigInstances {
 trait LowPriorityCirceConfigInstances {
 
    /** Yes, this makes circe-derivation derive recursively for configs. */
-  implicit final def recursiveCirceDerivationWithConfigRule[T](implicit codec: CirceDerivationWithAdditionalConfigCodecs[T]): Exported[Decoder[T]] = {
+  implicit final def recursiveCirceDerivationWithConfigRule[T](implicit codec: CirceDerivationConfigStyle[T]): Exported[Decoder[T]] = {
     Exported(codec.value)
   }
 }

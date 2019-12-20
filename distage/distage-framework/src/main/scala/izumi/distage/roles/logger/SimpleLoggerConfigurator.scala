@@ -2,7 +2,7 @@ package izumi.distage.roles.logger
 
 import com.typesafe.config.Config
 import io.circe.Decoder
-import izumi.distage.config.codec.ConfigReader
+import izumi.distage.config.codec.{CirceDerivationConfigStyle, ConfigReader}
 import izumi.distage.roles.logger.SimpleLoggerConfigurator.SinksConfig
 import izumi.logstage.api.config.{LoggerConfig, LoggerPathConfig}
 import izumi.logstage.api.logger.LogRouter
@@ -70,7 +70,7 @@ object SimpleLoggerConfigurator {
                                 layout: Option[String],
                               )
   object SinksConfig {
-    implicit val decoder: Decoder[SinksConfig] = ConfigReader.deriveDecoder
-    implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.fromCirce
+    implicit val decoder: Decoder[SinksConfig] = CirceDerivationConfigStyle.deriveDecoder
+    implicit val configReader: ConfigReader[SinksConfig] = ConfigReader.deriveFromCirce
   }
 }
