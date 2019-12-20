@@ -21,4 +21,13 @@ class CatsConversionTest extends WordSpec {
     implicitly[Concurrent[zio.Task]]
   }
 
+  "pickup conversion to Monad" in {
+    import cats.syntax.applicative._
+    import cats.syntax.monad._
+
+    def conv[F[+_, +_]: BIO]: F[Nothing, Unit] = {
+      ().iterateWhileM(_ => ().pure)(_ => true)
+    }
+  }
+
 }
