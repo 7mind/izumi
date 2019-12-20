@@ -49,15 +49,22 @@ trait BIOCatsConversions6 extends BIOCatsConversions7 {
   @inline implicit final def BIOToBracket[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F](F)
 }
 trait BIOCatsConversions7 extends BIOCatsConversions8 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIO[F]): BIOCatsSync[F] = new BIOCatsSync[F](F)
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIO[F]): BIOCatsSync[F] with Specifier with Specificier = new BIOCatsSync[F](F) with Specifier with Specificier
 }
 trait BIOCatsConversions8 extends BIOCatsConversions9 {
-  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F]): BIOCatsAsync[F] = new BIOCatsAsync[F](F)
+  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F]): BIOCatsAsync[F] with Specifier = new BIOCatsAsync[F](F) with Specifier
+}
+trait BIOCatsConversions9 {
+  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F], Fork: BIOFork[F]): cats.effect.Concurrent[F[Throwable, ?]] = new BIOCatsConcurrent[F](F, Fork)
 }
 
-trait BIOCatsConversions9 {
-  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F], Fork: BIOFork[F]): BIOCatsConcurrent[F] = new BIOCatsConcurrent[F](F, Fork)
-}
+/**
+  * Just packaging conversions into implicit priority traits is not enough,
+  * scalac also has a rule that the most specific return type wins, for some reason. /_\
+  * So we make the higher priority types more specific by... *checks notes*... mixing more empty traits in
+  */
+private[bio] sealed trait Specifier
+private[bio] sealed trait Specificier
 
 object BIOCatsConversions {
 
