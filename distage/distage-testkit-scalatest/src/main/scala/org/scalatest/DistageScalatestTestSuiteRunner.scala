@@ -17,10 +17,10 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
 
-  protected def makeSpecConfig(): SpecConfig = SpecConfig()
+  protected def specConfig: SpecConfig = SpecConfig()
 
   protected def makeSpecEnvironment(): SpecEnvironment = {
-    val c = makeSpecConfig()
+    val c = specConfig
     val clazz = this.getClass
 
     new SpecEnvironment.Impl[F](
@@ -37,7 +37,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
   override def testNames: Set[String] = {
-    TreeSet[String](thisTests.map(_.meta.id.name): _*)
+    TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
   }
   override def tags: Map[String, Set[String]] = Map.empty
 
@@ -49,11 +49,11 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
   }
 
-  private def thisTests: Seq[DistageTest[F]] = {
-    monadTests.filter(_.meta.id.suiteId == suiteId)
+  private[this] def testsInThisTestClass: Seq[DistageTest[F]] = {
+    testsInThisMonad.filter(_.meta.id.suiteId == suiteId)
   }
 
-  private def monadTests: Seq[DistageTest[F]] = {
+  private[this] def testsInThisMonad: Seq[DistageTest[F]] = {
     DistageTestsRegistrySingleton.list[F]
   }
 
@@ -108,8 +108,9 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
         val enabled = args.filter.dynaTags.testTags.toSeq
           .flatMap {
             case (suiteId, tests) =>
-
-              tests.filter(_._2.contains(Suite.SELECTED_TAG)).keys
+              tests
+                .filter(_._2.contains(Suite.SELECTED_TAG))
+                .keys
                 .map {
                   testname =>
                     (suiteId, testname)
@@ -118,15 +119,15 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
           .toSet
 
         if (enabled.isEmpty) {
-          monadTests
+          testsInThisMonad
         } else {
-          monadTests.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
+          testsInThisMonad.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
         }
-      case Some(tn) =>
-        if (!testNames.contains(tn)) {
+      case Some(testName) =>
+        if (!testNames.contains(testName)) {
           throw new IllegalArgumentException(Resources.testNotFound(testName))
         } else {
-          monadTests.filter(_.meta.id.name == tn)
+          testsInThisMonad.filter(_.meta.id.name == testName)
         }
     }
 
@@ -140,18 +141,16 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   }
 
   // FIXME: read scalatest runner configuration???
-  protected def parallelTestsAlways: Boolean = {
-    true
-  }
+  protected def parallelTestsAlways: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
     val scalatestReporter = new ScalatestReporter(args, suiteName, suiteId)
-
     new SafeTestReporter(scalatestReporter)
   }
 
   private def addStub(args: Args, failure: Option[Throwable]): Unit = {
     val tracker = args.tracker
+    val FUCK_SCALATEST = "Scalatest and IDEA aren't so nice"
     val SUITE_FAILED = "Whole suite failed :/"
 
     failure match {
@@ -172,6 +171,13 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
           throwable = failure
         ))
       case None =>
+        args.reporter(TestCanceled(
+          tracker.nextOrdinal(), FUCK_SCALATEST,
+          suiteName, suiteId, Some(suiteId),
+          FUCK_SCALATEST,
+          FUCK_SCALATEST,
+          Vector.empty,
+        ))
     }
 
   }
