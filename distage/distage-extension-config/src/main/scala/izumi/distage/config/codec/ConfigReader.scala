@@ -35,8 +35,11 @@ import scala.util.Try
   *   }
   * }}}
   */
-trait ConfigReader[T] {
-  def apply(configValue: ConfigValue): Try[T]
+trait ConfigReader[A] {
+  def apply(configValue: ConfigValue): Try[A]
+
+  final def map[B](f: A => B): ConfigReader[B] = apply(_).map(f)
+  final def flatMap[B](f: A => ConfigReader[B]): ConfigReader[B] = cv => apply(cv).flatMap(f(_)(cv))
 }
 
 object ConfigReader extends LowPriorityConfigReaderInstances {
