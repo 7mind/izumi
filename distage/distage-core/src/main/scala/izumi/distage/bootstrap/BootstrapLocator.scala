@@ -29,12 +29,12 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
   override val plan: OrderedPlan = BootstrapLocator.bootstrapPlanner.plan(PlannerInput.noGc(bindings))
   override lazy val index: Map[RuntimeDIUniverse.DIKey, Any] = super.index
 
-  private val bootstrappedContext: Locator = {
+  private[this] val bootstrappedContext: Locator = {
     val resource = BootstrapLocator.bootstrapProducer.instantiate[Identity](plan, this, FinalizerFilter.all)
     resource.extract(resource.acquire).throwOnFailure()
   }
 
-  private val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
+  private[this] val _instances = new AtomicReference[collection.Seq[IdentifiedRef]](bootstrappedContext.instances)
 
   override def instances: collection.Seq[IdentifiedRef] = {
     Option(_instances.get()) match {
@@ -60,7 +60,7 @@ final class BootstrapLocator(bindings: BootstrapContextModule) extends AbstractL
 object BootstrapLocator {
   @inline private[this] final val mirrorProvider: MirrorProvider.Impl.type = MirrorProvider.Impl
 
-  final val bootstrapPlanner: Planner = {
+  private final val bootstrapPlanner: Planner = {
     val analyzer = new PlanAnalyzerDefaultImpl
 
     val bootstrapObserver = new PlanningObserverAggregate(Set(
@@ -83,7 +83,7 @@ object BootstrapLocator {
     )
   }
 
-  final val bootstrapProducer: PlanInterpreter = {
+  private final val bootstrapProducer: PlanInterpreter = {
     val verifier = new ProvisionOperationVerifier.Default(mirrorProvider)
     new PlanInterpreterDefaultRuntimeImpl(
       setStrategy = new SetStrategyDefaultImpl,
@@ -136,8 +136,10 @@ object BootstrapLocator {
     make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }
 
+  /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
   final lazy val noProxiesBootstrap: BootstrapContextModule = defaultBootstrap ++ noProxies
 
+  /** Disable all cycle resolution, immediately throw when circular dependencies are found, whether by-name or not */
   final lazy val noCyclesBootstrap: BootstrapContextModule = noProxiesBootstrap overridenBy new BootstrapContextModuleDef {
     make[ProxyStrategy].from[ProxyStrategyFailingImpl]
   }

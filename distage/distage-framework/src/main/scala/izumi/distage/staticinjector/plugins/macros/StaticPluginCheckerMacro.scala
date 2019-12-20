@@ -6,11 +6,8 @@ import io.github.classgraph.ClassGraph
 import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
-import izumi.distage.framework.activation.PruningPlanMergingPolicy
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.planning.PlanMergingPolicy
-import izumi.distage.plugins.PluginBase
-import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.roles.RoleAppLauncher.Options
@@ -148,11 +145,9 @@ object StaticPluginCheckerMacro {
     val logger = IzLogger.NullLogger
     val args = RawAppArgs.empty.copy(globalParameters = RawEntrypointParams(Vector.empty, activations.filter(_.nonEmpty).map(a => RawValue(Options.use.name.long, a)).toVector))
     val (_, activation) = new RoleAppActivationParser().parseActivation(logger, args, module, Activation.empty)
-    val policy = new PruningPlanMergingPolicy(logger, activation)
 
     val bootstrap = new BootstrapLocator(BootstrapLocator.noProxiesBootstrap overridenBy new BootstrapModuleDef {
       make[Activation].fromValue(activation)
-      make[PlanMergingPolicy].fromValue(policy)
     })
     val injector = Injector.inherit(bootstrap)
 

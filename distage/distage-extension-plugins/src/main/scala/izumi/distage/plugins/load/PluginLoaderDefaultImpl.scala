@@ -1,31 +1,32 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.load.PluginLoader.PluginConfig
-import izumi.distage.plugins.{PluginBase, PluginDef}
+import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
 import izumi.functional.Value
 
 import scala.jdk.CollectionConverters._
 
-class PluginLoaderDefaultImpl(pluginConfig: PluginConfig) extends PluginLoader {
+class PluginLoaderDefaultImpl
+(
+  pluginConfig: PluginConfig,
+) extends PluginLoader {
   def load(): Seq[PluginBase] = {
-    val base = classOf[PluginBase]
-    val defClass = classOf[PluginDef]
-    // Add package with PluginDef & PluginBase so that classgraph will resolve them
-    val config = pluginConfig.copy(packagesEnabled = base.getPackage.getName +: defClass.getPackage.getName +: pluginConfig.packagesEnabled)
+    val pluginBase = classOf[PluginBase]
+    val pluginDef = classOf[PluginDef]
+    val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled)
 
     val enabledPackages: Seq[String] = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
     val disabledPackages: Seq[String] = config.packagesDisabled
 
-    PluginLoaderDefaultImpl.load[PluginBase](base, Seq(defClass.getName), enabledPackages, disabledPackages, config.debug)
+    PluginLoaderDefaultImpl.load[PluginBase](pluginBase.getName, Seq(pluginDef.getName), enabledPackages, disabledPackages, config.debug)
   }
 }
 
 object PluginLoaderDefaultImpl {
-  def load[T](base: Class[_], whitelist: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
+  def load[T](base: String, whitelist: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
-      .map(_.whitelistClasses(whitelist :+ base.getName: _*))
+      .map(_.whitelistClasses(whitelist :+ base: _*))
       .map(_.blacklistPackages(disabledPackages: _*))
       .map(_.enableMethodInfo())
       .map(if (debug) _.verbose() else identity)
@@ -33,7 +34,7 @@ object PluginLoaderDefaultImpl {
       .get
 
     try {
-      val implementors = scanResult.getClassesImplementing(base.getName)
+      val implementors = scanResult.getClassesImplementing(base)
       implementors
         .asScala
         .filterNot(_.isAbstract)

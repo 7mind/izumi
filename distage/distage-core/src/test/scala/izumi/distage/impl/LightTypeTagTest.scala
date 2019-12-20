@@ -37,9 +37,8 @@ class LightTypeTagTest extends WordSpec {
     type A
   }
 
-  trait R[K, A <: R[K, A]]
-
-  trait R1[K] extends R[K, R1[K]]
+  trait R0[K, A <: R0[K, A]]
+  trait R1[K] extends R0[K, R1[K]]
 
   type S[A, B] = Either[B, A]
 
@@ -107,7 +106,7 @@ class LightTypeTagTest extends WordSpec {
 
   class ApplePaymentProvider[F[_]] extends H1
 
-  trait ZIO[-R0, +E, +A]
+  trait ZIO[-R, +E, +A]
   type IO[+E, +A] = ZIO[Any, E, A]
 
   class BlockingIO3[F[_, _, _]]

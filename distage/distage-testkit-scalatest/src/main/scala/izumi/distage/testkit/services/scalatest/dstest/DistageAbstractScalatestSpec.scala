@@ -4,7 +4,7 @@ import distage.{Tag, TagK, TagKK}
 import izumi.distage.framework.model.PluginSource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._
@@ -32,7 +32,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   protected def makeTestEnvProvider(): TestEnvironmentProvider = {
     val conf = config
     val pluginSource = conf.pluginSource
-      .getOrElse(PluginSource(PluginConfig(debug = false, Seq(this.getClass.getPackage.getName)), None))
+      .getOrElse(PluginSource(PluginConfig(packagesEnabled = Seq(this.getClass.getPackage.getName)), None))
 
     new TestEnvironmentProvider.Impl(
       pluginSource,
@@ -130,11 +130,11 @@ object DistageAbstractScalatestSpec {
       takeFunAny((_: T) => cancelNow(), pos.get)
     }
 
-    private def cancel(eff: DIEffect[F]) = {
+    private def cancel(eff: DIEffect[F]): F[Nothing] = {
       eff.maybeSuspend(cancelNow())
     }
 
-    private def cancelNow() = {
+    private def cancelNow(): Nothing = {
       TestCancellation.cancel(Some("test skipped!"), None, 1)
     }
   }

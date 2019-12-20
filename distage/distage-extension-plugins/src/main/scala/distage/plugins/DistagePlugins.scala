@@ -15,9 +15,6 @@ trait DistagePlugins {
 
   type PluginLoaderDefaultImpl = load.PluginLoaderDefaultImpl
 
-  type PluginConfig = load.PluginLoader.PluginConfig
-  val PluginConfig: load.PluginLoader.PluginConfig.type = load.PluginLoader.PluginConfig
-
-  type PluginMergeStrategy = plugins.merge.PluginMergeStrategy
-  val SimplePluginMergeStrategy: plugins.merge.SimplePluginMergeStrategy.type = plugins.merge.SimplePluginMergeStrategy
+  type PluginConfig = izumi.distage.plugins.PluginConfig
+  val PluginConfig: izumi.distage.plugins.PluginConfig.type = izumi.distage.plugins.PluginConfig
 }
