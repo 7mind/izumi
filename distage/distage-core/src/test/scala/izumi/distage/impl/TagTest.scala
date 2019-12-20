@@ -382,7 +382,7 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "can materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
-      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
+      def partialEitherTagK[X: Tag] = TagK[Either[X, ?]]
 
       val tag = partialEitherTagK[Int].tag
       val expectedTag = TagK[Either[Int, ?]].tag
@@ -453,6 +453,7 @@ class TagTest extends WordSpec with X[String] {
 
       assert(!(tagEitherSwap =:= expectedTagEitherThrowable))
       assert(tagEitherSwap =:= expectedTagSwap)
+      assert(tagEitherThrowable =:= expectedTagEitherThrowable)
       assert(tagEitherSwap <:< expectedTagSwap)
       assert(tagEitherSwap <:< TagKK[EitherRSwap[?, ?, Any]].tag)
       assert(TagKK[EitherRSwap[?, ?, Nothing]].tag <:< tagEitherSwap)

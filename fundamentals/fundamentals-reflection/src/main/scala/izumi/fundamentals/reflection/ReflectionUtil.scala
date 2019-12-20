@@ -100,7 +100,15 @@ object ReflectionUtil {
   }
 
   final def allPartsStrong(tpe: Universe#Type): Boolean = {
-    def selfStrong = !tpe.typeSymbol.isParameter || tpe.typeParams.contains(tpe.typeSymbol)
+    def selfStrong = {
+      !tpe.typeSymbol.isParameter ||
+        tpe.typeParams.exists {
+          t =>
+            t == tpe.typeSymbol ||
+              t.typeSignature == tpe.typeSymbol.typeSignature ||
+              (t.name eq tpe.typeSymbol.name)
+        }
+    }
     def prefixStrong = {
       tpe match {
         case t: Universe#TypeRefApi =>
