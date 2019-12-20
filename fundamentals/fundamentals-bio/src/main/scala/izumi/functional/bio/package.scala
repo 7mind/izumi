@@ -313,9 +313,10 @@ package object bio extends BIOSyntax {
   type BIOLatch[F[+_, +_]] = BIOPromise[F, Nothing, Unit]
 
   type BIOFork[F[+_, +_]] = BIOFork3[Lambda[(`-R`, `+E`, `+A`) => F[E, A]]]
-
   type BlockingIO[F[_, _]] = BlockingIO3[Lambda[(R, E, A) => F[E, A]]]
-  @inline final lazy val BlockingIO: BlockingIO3.type = BlockingIO3
+  object BlockingIO {
+    def apply[F[_, _]: BlockingIO]: BlockingIO[F] = implicitly
+  }
 
   type BIOPrimitives3[F[-_, +_, +_]] = BIOPrimitives[F[Any, +?, +?]]
 

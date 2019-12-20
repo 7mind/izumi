@@ -1,7 +1,7 @@
 package izumi.fundamentals.bio.test
 
 import cats.effect.concurrent.Ref
-import cats.effect.{Async, Sync}
+import cats.effect.{Async, Concurrent, Sync}
 import izumi.functional.bio.BIO
 import izumi.functional.bio.catz._
 import org.scalatest.WordSpec
@@ -18,6 +18,7 @@ class CatsConversionTest extends WordSpec {
     conv[zio.IO]
     implicitly[Sync[zio.Task]]
     implicitly[Async[zio.Task]]
+    implicitly[Concurrent[zio.Task]]
   }
 
 }
