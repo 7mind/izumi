@@ -28,6 +28,7 @@ class CatsConversionTest extends WordSpec {
     def conv[F[+_, +_]: BIO]: F[Nothing, Unit] = {
       ().iterateWhileM(_ => ().pure)(_ => true)
     }
+    conv[zio.IO]
   }
 
 }

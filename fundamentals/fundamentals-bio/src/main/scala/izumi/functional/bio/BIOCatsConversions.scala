@@ -19,48 +19,64 @@ import scala.util.Either
   * }}}
   */
 trait BIOCatsConversions extends BIOCatsConversions1 {
-  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F], Fork: BIOFork[F]): BIOCatsConcurrent[F] = new BIOCatsConcurrent[F](F, Fork)
-}
-trait BIOCatsConversions1 extends BIOCatsConversions2 {
-  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F]): BIOCatsAsync[F] = new BIOCatsAsync[F](F)
-}
-trait BIOCatsConversions2 extends BIOCatsConversions3 {
-  @inline implicit final def BIOToSync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIO[F]): BIOCatsSync[F] = new BIOCatsSync[F](F)
-}
-trait BIOCatsConversions3 extends BIOCatsConversions4 {
-  @inline implicit final def BIOToBracket[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOPanic[F]): BIOCatsBracket[F] = new BIOCatsBracket[F](F)
-}
-trait BIOCatsConversions4 extends BIOCatsConversions5 {
-  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonadError[F]): BIOCatsMonadError[F, E] = new BIOCatsMonadError[F, E](F)
-}
-trait BIOCatsConversions5 extends BIOCatsConversions6 {
-  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonad[F]): BIOCatsMonad[F, E] = new BIOCatsMonad[F, E](F)
-}
-trait BIOCatsConversions6 extends BIOCatsConversions7 {
-  @inline implicit final def BIOToApplicativeError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOError[F]): BIOCatsApplicativeError[F, E] = new BIOCatsApplicativeError[F, E] {
-    override val F: BIOError[F] = F0
-  }
-}
-trait BIOCatsConversions7 extends BIOCatsConversions8 {
-  @inline implicit final def BIOToApplicative[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOApplicative[F]): BIOCatsApplicative[F, E] = new BIOCatsApplicative[F, E] {
-    override val F: BIOApplicative[F] = F0
-  }
-}
-trait BIOCatsConversions8 extends BIOCatsConversions9 {
-  /** search for BIOFunctor first to pin F to the closest lexically available effect type */
-  @inline implicit final def BIOToBifunctor[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOBifunctor[F]): BIOCatsBifunctor[F] = new BIOCatsBifunctor[F] {
-    override val F: BIOBifunctor[F] = F0
-  }
-}
-trait BIOCatsConversions9 {
-  @inline implicit final def BIOToFunctor[F[_, +_], E](implicit F0: BIOFunctor[F]): BIOCatsFunctor[F, E] = new BIOCatsFunctor[F, E] {
+  @inline implicit final def BIOToFunctor[F[_, +_], E](implicit F0: BIOFunctor[F]): cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S7 with S8 with S9 = new BIOCatsFunctor[F, E] {
     override val F: BIOFunctor[F] = F0
   }
 }
+trait BIOCatsConversions1 extends BIOCatsConversions2 {
+  /** search for BIOFunctor first to pin F to the closest lexically available effect type */
+  @inline implicit final def BIOToBifunctor[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOBifunctor[F]): cats.Bifunctor[F] with S1 with S2 with S3 with S4 with S5 with S7 with S8 = new BIOCatsBifunctor[F] {
+    override val F: BIOBifunctor[F] = F0
+  }
+}
+trait BIOCatsConversions2 extends BIOCatsConversions3 {
+  @inline implicit final def BIOToApplicative[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOApplicative[F]): cats.Applicative[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S7 = new BIOCatsApplicative[F, E] {
+    override val F: BIOApplicative[F] = F0
+  }
+}
+trait BIOCatsConversions3 extends BIOCatsConversions4 {
+  @inline implicit final def BIOToApplicativeError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F0: BIOError[F]): cats.ApplicativeError[F[E, ?], E] with S1 with S2 with S3 with S4 with S5 with S6 = new BIOCatsApplicativeError[F, E] {
+    override val F: BIOError[F] = F0
+  }
+}
+trait BIOCatsConversions4 extends BIOCatsConversions5 {
+  @inline implicit final def BIOToMonad[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonad[F]): cats.Monad[F[E, ?]] with S1 with S2 with S3 with S4 with S5 = new BIOCatsMonad[F, E](F)
+}
+trait BIOCatsConversions5 extends BIOCatsConversions6 {
+  @inline implicit final def BIOToMonadError[F[+_, +_], E](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOMonadError[F]): cats.MonadError[F[E, ?], E] with S1 with S2 with S3 with S4 = new BIOCatsMonadError[F, E](F)
+}
+trait BIOCatsConversions6 extends BIOCatsConversions7 {
+  @inline implicit final def BIOToBracket[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOPanic[F]): cats.effect.Bracket[F[Throwable, ?], Throwable] with S1 with S2 with S3 = new BIOCatsBracket[F](F)
+}
+trait BIOCatsConversions7 extends BIOCatsConversions8 {
+  @inline implicit final def BIOToSync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIO[F]): cats.effect.Sync[F[Throwable, ?]] with S1 with S2 = new BIOCatsSync[F](F)
+}
+trait BIOCatsConversions8 extends BIOCatsConversions9 {
+  @inline implicit final def BIOAsyncToAsync[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F]): cats.effect.Async[F[Throwable, ?]] with S1 = new BIOCatsAsync[F](F)
+}
+trait BIOCatsConversions9 {
+  @inline implicit final def BIOAsyncForkToConcurrent[F[+_, +_]](implicit @deprecated("unused","unused") ev: BIOFunctor[F], F: BIOAsync[F], Fork: BIOFork[F]): cats.effect.Concurrent[F[Throwable, ?]] = new BIOCatsConcurrent[F](F, Fork)
+}
+
+/**
+  * Just packaging conversions into implicit priority traits is not enough,
+  * scalac also has a rule that the most specific return type wins, for some reason. /_\
+  * 2.13 seems to overweight this rule compared to 2.12
+  * So we make the higher priority types more specific by... *checks notes*... mixing more empty traits in
+  */
+private[bio] sealed trait S1
+private[bio] sealed trait S2
+private[bio] sealed trait S3
+private[bio] sealed trait S4
+private[bio] sealed trait S5
+private[bio] sealed trait S6
+private[bio] sealed trait S7
+private[bio] sealed trait S8
+private[bio] sealed trait S9
 
 object BIOCatsConversions {
 
-  trait BIOCatsFunctor[F[_, +_], E] extends cats.Functor[F[E, ?]] {
+  trait BIOCatsFunctor[F[_, +_], E] extends cats.Functor[F[E, ?]] with S1 with S2 with S3 with S4 with S5 with S7 with S8 with S9 {
     def F: BIOFunctor[F]
 
     @inline override final def map[A, B](fa: F[E, A])(f: A => B): F[E, B] = F.map(fa)(f)
