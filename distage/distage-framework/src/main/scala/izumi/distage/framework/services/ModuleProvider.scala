@@ -4,7 +4,7 @@ import distage.{BootstrapModule, TagK}
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.effect.modules.IdentityDIEffectModule
-import izumi.distage.framework.activation.PruningPlanMergingPolicy
+import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ResourceRewriter.RewriteRules
@@ -42,7 +42,7 @@ object ModuleProvider {
         make[RawAppArgs].fromValue(args)
         make[ActivationInfo].fromValue(activationInfo)
         make[Activation].fromValue(activation)
-        make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
+        make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
       }
 
       val loggerModule = new LogstageModule(logger.router, true)

@@ -1,8 +1,7 @@
 package izumi.distage.plugins.load
 
 import io.github.classgraph.ClassGraph
-import izumi.distage.plugins.load.PluginLoader.PluginConfig
-import izumi.distage.plugins.{PluginBase, PluginDef}
+import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
 import izumi.functional.Value
 
 import scala.jdk.CollectionConverters._

@@ -1,14 +1,14 @@
 package izumi.distage.testkit.services.dstest
 
 import distage.DIKey
-import izumi.distage.framework.model.PluginSource
+import izumi.distage.framework.model.{ActivationInfo, PluginSource}
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.{Activation, BootstrapModule, ModuleBase}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.PluginsCache
-import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
-import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
 trait TestEnvironmentProvider {
@@ -27,37 +27,27 @@ object TestEnvironmentProvider {
     protected val moduleOverrides: ModuleBase,
   ) extends TestEnvironmentProvider {
 
-    /**
-      * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
-      */
     override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
-      val bootstrapConfig = pluginSource.bootstrapConfig
-      def env(): CacheValue = {
-        val plugins = pluginSource.load()
-        val mergeStrategy = makeMergeStrategy(logger)
-        val defApp = mergeStrategy.merge(plugins.app)
-        val bootstrap = mergeStrategy.merge(plugins.bootstrap)
-        val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, defApp)
-        CacheValue(plugins, bootstrap, defApp, availableActivations)
-      }
+      val cachedSource = if (memoizePlugins) {
+        PluginsCache.cachePluginSource(pluginSource)
+      } else pluginSource
 
-      val plugins = bootstrapConfig match {
-        case Some(config) if memoizePlugins =>
-          PluginsCache.Instance.getOrCompute(CacheKey(config), env())
-        case _ =>
-          env()
-      }
+      val plugins = cachedSource.load()
+      val mergeStrategy = makeMergeStrategy(logger)
+      val appModule = mergeStrategy.merge(plugins.app)
+      val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
+      val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
 
-      doLoad(logger, plugins)
+      doLoad(logger, appModule, bootstrapModule, availableActivations)
     }
 
-    protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
+    protected final def doLoad(logger: IzLogger, appModule: ModuleBase, bootstrapModule: ModuleBase, availableActivations: ActivationInfo): TestEnvironment = {
       val roles = loadRoles(logger)
       TestEnvironment(
-        baseBsModule = env.bsModule overridenBy bootstrapOverrides,
-        appModule = env.appModule overridenBy moduleOverrides,
+        bsModule = bootstrapModule overridenBy bootstrapOverrides,
+        appModule = appModule overridenBy moduleOverrides,
         roles = roles,
-        activationInfo = env.availableActivations,
+        activationInfo = availableActivations,
         activation = activation,
         memoizedKeys = memoizedKeys,
       )
@@ -66,18 +56,17 @@ object TestEnvironmentProvider {
     protected def memoizePlugins: Boolean = {
       import izumi.fundamentals.platform.strings.IzString._
 
-      System.getProperty("izumi.distage.testkit.plugins.memoize")
+      System
+        .getProperty(DebugProperties.`izumi.distage.testkit.plugins.memoize`)
         .asBoolean(true)
     }
 
-    protected def loadRoles(logger: IzLogger): RolesInfo = {
-      Quirks.discard(logger)
+    protected def loadRoles(@unused logger: IzLogger): RolesInfo = {
       // For all normal scenarios we don't need roles to setup a test
       RolesInfo(Set.empty, Seq.empty, Seq.empty, Seq.empty, Set.empty)
     }
 
-    protected def makeMergeStrategy(lateLogger: IzLogger): PluginMergeStrategy = {
-      Quirks.discard(lateLogger)
+    protected def makeMergeStrategy(@unused lateLogger: IzLogger): PluginMergeStrategy = {
       SimplePluginMergeStrategy
     }
 

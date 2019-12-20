@@ -1,17 +1,17 @@
 package izumi.distage.testkit.services.scalatest.adapter
 
 import distage.SafeType
-import izumi.distage.framework.activation.PruningPlanMergingPolicy
+import izumi.distage.framework.activation.PruningPlanMergingPolicyLoggedImpl
 import izumi.distage.framework.model.{ActivationInfo, BootstrapConfig, PluginSource}
 import izumi.distage.framework.services.ActivationInfoExtractor
 import izumi.distage.model.definition.StandardAxis._
-import izumi.distage.model.definition.{Activation, BootstrapModuleDef}
+import izumi.distage.model.definition.{Activation, BootstrapModuleDef, ModuleBase}
 import izumi.distage.model.planning.PlanMergingPolicy
-import izumi.distage.plugins.load.PluginLoader.PluginConfig
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
+import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.PluginsCache
-import izumi.distage.testkit.services.PluginsCache.{CacheKey, CacheValue}
 import izumi.distage.testkit.services.dstest.TestEnvironment
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK
@@ -34,42 +34,33 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def pluginBootstrapPackages: Option[Seq[String]] = None
 
-  /**
-    * Merge strategy will be applied only once for all the tests with the same bootstrap config when memoization is on
-    */
-  override protected final def loadEnvironment(logger: IzLogger): TestEnvironment = {
-    val config = bootstrapConfig
+  override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
+    val pluginSource = PluginSource(bootstrapConfig)
+    val cachedSource = if (memoizePlugins) {
+      PluginsCache.cachePluginSource(pluginSource)
+    } else pluginSource
 
-    def env(): CacheValue = {
-      val plugins = makePluginLoader(config).load()
-      val mergeStrategy = makeMergeStrategy(logger)
-      val defApp = mergeStrategy.merge(plugins.app)
-      val bootstrap = mergeStrategy.merge(plugins.bootstrap)
-      val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, defApp)
-      CacheValue(plugins, bootstrap, defApp, availableActivations)
-    }
+    val plugins = cachedSource.load()
+    val mergeStrategy = makeMergeStrategy(logger)
+    val appModule = mergeStrategy.merge(plugins.app)
+    val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
+    val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
 
-    val plugins = if (memoizePlugins) {
-      PluginsCache.Instance.getOrCompute(CacheKey(config), env())
-    } else {
-      env()
-    }
-
-    doLoad(logger, plugins)
+    doLoad(logger, appModule, bootstrapModule, availableActivations)
   }
 
-  protected final def doLoad(logger: IzLogger, env: CacheValue): TestEnvironment = {
+  protected final def doLoad(logger: IzLogger, appModule: ModuleBase, bootstrapModule: ModuleBase, availableActivations: ActivationInfo): TestEnvironment = {
     val roles = loadRoles(logger)
-    val bsModule = env.bsModule overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[PruningPlanMergingPolicy]
-      make[ActivationInfo].fromValue(env.availableActivations)
+    val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
+      make[ActivationInfo].fromValue(availableActivations)
       make[Activation].fromValue(activation)
     }
     TestEnvironment(
-      baseBsModule = bsModule,
-      appModule = env.appModule,
+      bsModule = bsModule,
+      appModule = appModule,
       roles = roles,
-      activationInfo = env.availableActivations,
+      activationInfo = availableActivations,
       activation = activation,
       memoizedKeys = Set.empty,
     )
@@ -78,7 +69,8 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
   protected def memoizePlugins: Boolean = {
     import izumi.fundamentals.platform.strings.IzString._
 
-    System.getProperty("izumi.distage.testkit.plugins.memoize")
+    System
+      .getProperty(DebugProperties.`izumi.distage.testkit.plugins.memoize`)
       .asBoolean(true)
   }
 

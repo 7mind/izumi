@@ -55,9 +55,7 @@ class RoleAppTest extends WordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
-            l.copy(app = Seq(l.app.merge overridenBy probe))
-          }
+          override protected def pluginSource: PluginSource = super.pluginSource overridenBy probe
         }
       ).main(Array(
         "-ll", logLevel,
@@ -74,8 +72,8 @@ class RoleAppTest extends WordSpec
 
       new RoleAppMain.Silent(
         new TestLauncher {
-          override protected def pluginSource: PluginSource = super.pluginSource.map { l =>
-            l.copy(app = Seq(
+          override protected def pluginSource: PluginSource = {
+            PluginSource(Seq(
               new ResourcesPluginBase().morph[PluginBase],
               new ConflictPlugin,
               new TestPlugin,

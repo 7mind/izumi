@@ -7,7 +7,7 @@ import izumi.distage.provisioning.strategies.cglib.CglibProxyProvider
 object CglibBootstrap {
   final lazy val cogenBootstrap: BootstrapContextModule = BootstrapLocator.defaultBootstrap ++ defaultCogen
 
-  private final lazy val defaultCogen: ModuleBase = new ModuleDef {
+  private[this] final lazy val defaultCogen: ModuleBase = new ModuleDef {
     make[ProxyProvider].from[CglibProxyProvider]
   }
 }
