@@ -2,7 +2,6 @@ package izumi.functional.bio
 
 import java.util.concurrent.ThreadPoolExecutor
 
-import izumi.functional.bio.BlockingIOInstances.blockingIOZIO3Blocking
 import zio.blocking.Blocking
 import zio.internal.Executor
 import zio.{IO, UIO, ZIO}
