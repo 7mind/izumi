@@ -19,6 +19,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.distage.LogstageModule
 
 trait ModuleProvider {
+  def bootstrapOverrides(): Seq[BootstrapModule]
   def bootstrapModules(): Seq[BootstrapModule]
   def appModules(): Seq[Module]
 }
@@ -36,13 +37,18 @@ object ModuleProvider {
     activation: Activation,
   ) extends ModuleProvider {
 
-    def bootstrapModules(): Seq[BootstrapModule] = {
-      val rolesModule = new BootstrapModuleDef {
-        make[RolesInfo].fromValue(roles)
-        make[RawAppArgs].fromValue(args)
+    override def bootstrapOverrides(): Seq[BootstrapModule] = {
+      Seq(new BootstrapModuleDef {
         make[ActivationInfo].fromValue(activationInfo)
         make[Activation].fromValue(activation)
         make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
+      })
+    }
+
+    override def bootstrapModules(): Seq[BootstrapModule] = {
+      val rolesModule = new BootstrapModuleDef {
+        make[RolesInfo].fromValue(roles)
+        make[RawAppArgs].fromValue(args)
       }
 
       val loggerModule = new LogstageModule(logger.router, true)
@@ -66,7 +72,7 @@ object ModuleProvider {
       ).flatten
     }
 
-    def appModules(): Seq[Module] = {
+    override def appModules(): Seq[Module] = {
       val configModule = new AppConfigModule(config)
       Seq(
         configModule,

@@ -12,6 +12,7 @@ import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrate
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.services.PluginsCache
+import izumi.distage.testkit.services.PluginsCache.CacheKey
 import izumi.distage.testkit.services.dstest.TestEnvironment
 import izumi.fundamentals.platform.language.unused
 import izumi.fundamentals.reflection.Tags.TagK
@@ -36,31 +37,38 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   override final def loadEnvironment(logger: IzLogger): TestEnvironment = {
     val pluginSource = PluginSource(bootstrapConfig)
-    val cachedSource = if (memoizePlugins) {
-      PluginsCache.cachePluginSource(pluginSource)
-    } else pluginSource
 
-    val plugins = cachedSource.load()
-    val mergeStrategy = makeMergeStrategy(logger)
-    val appModule = mergeStrategy.merge(plugins.app)
-    val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
-    val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
+    def env(): PluginsCache.CacheValue = {
+      val plugins = pluginSource.load()
+      val mergeStrategy = makeMergeStrategy(logger)
+      val appModule = mergeStrategy.merge(plugins.app)
+      val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
+      val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
+      PluginsCache.CacheValue(appModule, bootstrapModule, availableActivations)
+    }
 
-    doLoad(logger, appModule, bootstrapModule, availableActivations)
+    val plugins = if (memoizePlugins) {
+      val key = Set(bootstrapConfig)
+      PluginsCache.Instance.getOrCompute(CacheKey(key), env())
+    } else {
+      env()
+    }
+
+    doLoad(logger, plugins)
   }
 
-  protected final def doLoad(logger: IzLogger, appModule: ModuleBase, bootstrapModule: ModuleBase, availableActivations: ActivationInfo): TestEnvironment = {
+  protected final def doLoad(logger: IzLogger, env: PluginsCache.CacheValue): TestEnvironment = {
     val roles = loadRoles(logger)
-    val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
+    val bsModule = env.mergedBsPlugins overridenBy new BootstrapModuleDef {
       make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
-      make[ActivationInfo].fromValue(availableActivations)
+      make[ActivationInfo].fromValue(env.availableActivations)
       make[Activation].fromValue(activation)
     }
     TestEnvironment(
       bsModule = bsModule,
-      appModule = appModule,
+      appModule = env.mergedAppPlugins,
       roles = roles,
-      activationInfo = availableActivations,
+      activationInfo = env.availableActivations,
       activation = activation,
       memoizedKeys = Set.empty,
     )

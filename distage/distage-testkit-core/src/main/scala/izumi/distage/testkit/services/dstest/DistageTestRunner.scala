@@ -48,8 +48,8 @@ class DistageTestRunner[F[_]: TagK]
 
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
-        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
+        val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy provider.bootstrapOverrides().merge overridenBy runnerEnvironment.bootstrapOverrides
+        val appModule = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
         val injector = Injector.Standard(bsModule)
 

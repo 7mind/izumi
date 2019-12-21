@@ -13,5 +13,5 @@ object PluginLoader {
   /** Create a [[PluginLoader]] that returns the specified plugins */
   def apply(plugins: Seq[PluginBase]): PluginLoader = () => plugins
   def apply(plugins: PluginBase): PluginLoader = apply(Seq(plugins))
-  def empty: PluginLoader = () => Nil
+  lazy val empty: PluginLoader = () => Nil
 }

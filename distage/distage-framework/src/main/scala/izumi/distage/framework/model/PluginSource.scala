@@ -32,7 +32,7 @@ object PluginSource {
   def apply(plugins: Seq[PluginBase]): PluginSource = PluginSource(plugins, Seq.empty)
   def apply(plugins: Seq[PluginBase], bootstrapPlugins: Seq[PluginBase]): PluginSource = PluginSource(AllLoadedPlugins(plugins, bootstrapPlugins))
   def apply(allLoadedPlugins: AllLoadedPlugins): PluginSource = Const(allLoadedPlugins)
-  def empty: PluginSource = PluginSource(AllLoadedPlugins.empty)
+  lazy val empty: PluginSource = Const(AllLoadedPlugins.empty)
 
   implicit final class PluginSourcesMerge(private val pluginSources: Iterable[PluginSource]) extends AnyVal {
     def merge: PluginSource = pluginSources.foldLeft(PluginSource.empty)(_ ++ _)
@@ -41,10 +41,17 @@ object PluginSource {
   final case class Join(a: PluginSource, b: PluginSource) extends PluginSource {
     override def load(): AllLoadedPlugins = a.load() ++ b.load()
   }
+
   final case class Map(a: PluginSource, f: AllLoadedPlugins => AllLoadedPlugins) extends PluginSource {
     override def load(): AllLoadedPlugins = f(a.load())
   }
-  final case class Load(pluginLoader: PluginLoader, bootstrapPluginLoader: PluginLoader, bootstrapConfig: Option[BootstrapConfig]) extends PluginSource {
+
+  final case class Load
+  (
+    pluginLoader: PluginLoader,
+    bootstrapPluginLoader: PluginLoader,
+    bootstrapConfig: Option[BootstrapConfig],
+  ) extends PluginSource {
     def load(): AllLoadedPlugins = {
       val bsPlugins = bootstrapPluginLoader.load()
       val appPlugins = pluginLoader.load()
@@ -62,16 +69,4 @@ object PluginSource {
   final case class Const(plugins: AllLoadedPlugins) extends PluginSource.Custom {
     override def load(): AllLoadedPlugins = plugins
   }
-
-  implicit final class ReplaceLoaders(private val pluginSource: PluginSource) extends AnyVal {
-    def replaceLoaders(f: PluginSource.Load => PluginSource): PluginSource = {
-      pluginSource match {
-        case Join(a, b) => Join(a.replaceLoaders(f), b.replaceLoaders(f))
-        case Map(a, g) => Map(a.replaceLoaders(f), g)
-        case i: Load => f(i)
-        case c: Custom => c
-      }
-    }
-  }
-
 }

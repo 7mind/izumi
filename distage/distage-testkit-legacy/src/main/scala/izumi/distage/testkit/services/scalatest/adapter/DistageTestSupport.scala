@@ -59,7 +59,7 @@ abstract class DistageTestSupport[F[_]](implicit val tagK: TagK[F])
     val options = contextOptions()
     val provider = makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
 
-    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy bootstrapOverride
+    val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy provider.bootstrapOverrides().merge overridenBy bootstrapOverride
     val appModule = provider.appModules().merge overridenBy env.appModule
 
     val allRoots = function.get.diKeys.toSet ++ additionalRoots
