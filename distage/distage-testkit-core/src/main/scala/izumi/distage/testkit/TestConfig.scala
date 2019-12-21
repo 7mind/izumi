@@ -1,9 +1,7 @@
 package izumi.distage.testkit
 
-import distage.{BootstrapModule, DIKey, Module}
+import distage.{BootstrapModule, DIKey, Module, StandardAxis, Activation}
 import izumi.distage.framework.model.PluginSource
-import izumi.distage.model.definition
-import izumi.distage.model.definition.{Activation, StandardAxis}
 
 /**
   * @param pluginSource       If `None`, recursively scans packages of the test class itself
@@ -22,5 +20,5 @@ final case class TestConfig(
                              activation: Activation = StandardAxis.testProdActivation,
                              memoizationRoots: Set[DIKey] = Set.empty,
                              moduleOverrides: Module = Module.empty,
-                             bootstrapOverrides: BootstrapModule = definition.BootstrapModule.empty,
+                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
                            )
