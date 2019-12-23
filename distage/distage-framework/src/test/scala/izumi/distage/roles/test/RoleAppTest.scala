@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
+import com.typesafe.config.ConfigFactory
 import distage.plugins.{PluginBase, PluginDef}
 import distage.{DIKey, Injector, Locator}
 import izumi.distage.effect.modules.IdentityDIEffectModule
@@ -13,7 +14,7 @@ import izumi.distage.framework.services.{IntegrationChecker, RoleAppPlanner}
 import izumi.distage.model.Locator.LocatorRef
 import izumi.distage.model.definition.{BootstrapModule, DIResource}
 import izumi.distage.roles.RoleAppMain
-import izumi.distage.roles.test.fixtures.Fixture.{Resource0, Resource1, Resource2, XXX_ResourceEffectsRecorder}
+import izumi.distage.roles.test.fixtures.Fixture.{TestResource, IntegrationResource0, IntegrationResource1, XXX_ResourceEffectsRecorder}
 import izumi.distage.roles.test.fixtures._
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
@@ -63,8 +64,8 @@ class RoleAppTest extends WordSpec
         ":" + TestRole00.id,
       ))
 
-      assert(probe.resources.startedCloseables == probe.resources.closedCloseables.reverse)
-      assert(probe.resources.checkedResources.toSet == Set(probe.locator.get[Resource1], probe.locator.get[Resource2]))
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[IntegrationResource0], probe.locator.get[IntegrationResource1]))
     }
 
     "start roles regression test" in {
@@ -80,9 +81,9 @@ class RoleAppTest extends WordSpec
               new AdoptedAutocloseablesCasePlugin,
               probe,
               new PluginDef {
-                make[Resource0].from[Resource1]
-                many[Resource0]
-                  .ref[Resource0]
+                make[TestResource].from[IntegrationResource0]
+                many[TestResource]
+                  .ref[TestResource]
               },
             ))
           }
@@ -93,9 +94,9 @@ class RoleAppTest extends WordSpec
         ":" + TestRole00.id,
       ))
 
-      assert(probe.resources.startedCloseables == probe.resources.closedCloseables.reverse)
-      assert(probe.resources.checkedResources.toSet.size == 2)
-      assert(probe.resources.checkedResources.toSet == Set(probe.locator.get[Resource0], probe.locator.get[Resource2]))
+      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
+      assert(probe.resources.getCheckedResources().toSet.size == 2)
+      assert(probe.resources.getCheckedResources().toSet == Set(probe.locator.get[TestResource], probe.locator.get[IntegrationResource1]))
     }
 
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
@@ -103,9 +104,9 @@ class RoleAppTest extends WordSpec
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[Resource0].from[Resource1]
-        many[Resource0]
-          .ref[Resource0]
+        make[TestResource].from[IntegrationResource0]
+        many[TestResource]
+          .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
@@ -114,16 +115,16 @@ class RoleAppTest extends WordSpec
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
-              assert(probe.resources.startedCloseables.size == 3)
-              assert(probe.resources.checkedResources.size == 2)
-              assert(probe.resources.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+              assert(probe.resources.getStartedCloseables().size == 3)
+              assert(probe.resources.getCheckedResources().size == 2)
+              assert(probe.resources.getCheckedResources().toSet == Set(locator.get[TestResource], locator.get[IntegrationResource1]))
           }
         }
       }
@@ -134,12 +135,12 @@ class RoleAppTest extends WordSpec
 
       val logger = IzLogger()
       val definition = new ResourcesPluginBase {
-        make[Resource0].fromResource {
-          r: Resource2 =>
-            DIResource.fromAutoCloseable(new Resource1(r, probe.resources))
+        make[TestResource].fromResource {
+          r: IntegrationResource1 =>
+            DIResource.fromAutoCloseable(new IntegrationResource0(r, probe.resources))
         }
-        many[Resource0]
-          .ref[Resource0]
+        many[TestResource]
+          .ref[TestResource]
       } ++ IdentityDIEffectModule ++ probe
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
         PlanningOptions(),
@@ -148,16 +149,16 @@ class RoleAppTest extends WordSpec
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
-              assert(probe.resources.startedCloseables.size == 3)
-              assert(probe.resources.checkedResources.size == 2)
-              assert(probe.resources.checkedResources.toSet == Set(locator.get[Resource0], locator.get[Resource2]))
+              assert(probe.resources.getStartedCloseables().size == 3)
+              assert(probe.resources.getCheckedResources().size == 2)
+              assert(probe.resources.getCheckedResources().toSet == Set(locator.get[TestResource], locator.get[IntegrationResource1]))
           }
         }
       }
@@ -167,12 +168,12 @@ class RoleAppTest extends WordSpec
       val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder
       val definition = new ResourcesPluginBase {
-        make[Resource1]
-        make[Resource0].using[Resource1]
-        make[Resource0 with AutoCloseable].using[Resource1]
-        many[Resource0]
-          .ref[Resource0]
-          .ref[Resource0 with AutoCloseable]
+        make[IntegrationResource0]
+        make[TestResource].using[IntegrationResource0]
+        make[TestResource with AutoCloseable].using[IntegrationResource0]
+        many[TestResource]
+          .ref[TestResource]
+          .ref[TestResource with AutoCloseable]
         make[XXX_ResourceEffectsRecorder].fromValue(initCounter)
       } ++ IdentityDIEffectModule
       val roleAppPlanner = new RoleAppPlanner.Impl[Identity](
@@ -182,16 +183,16 @@ class RoleAppTest extends WordSpec
       )
       val integrationChecker = new IntegrationChecker.Impl[Identity](logger)
 
-      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[Resource0]]), definition)
+      val plans = roleAppPlanner.makePlan(Set(DIKey.get[Set[TestResource]]), definition)
       Injector().produce(plans.runtime).use {
         Injector.inherit(_).produce(plans.app.shared).use {
           Injector.inherit(_).produce(plans.app.side).use {
             locator =>
               integrationChecker.checkOrFail(plans.app.side.declaredRoots, locator)
 
-              assert(initCounter.startedCloseables.size == 3)
-              assert(initCounter.checkedResources.size == 2)
-              assert(initCounter.checkedResources.toSet == Set(locator.get[Resource1], locator.get[Resource2]))
+              assert(initCounter.getStartedCloseables().size == 3)
+              assert(initCounter.getCheckedResources().size == 2)
+              assert(initCounter.getCheckedResources().toSet == Set(locator.get[IntegrationResource0], locator.get[IntegrationResource1]))
           }
         }
       }
@@ -206,19 +207,30 @@ class RoleAppTest extends WordSpec
         ))
       }
 
-      val cfg1 = cfg("configwriter", version)
-      val cfg11 = cfg("configwriter-minimized", version)
+      val cwCfg = cfg("configwriter", version)
+      val cwCfgMin = cfg("configwriter-minimized", version)
 
-      val cfg2 = cfg("testrole00", version)
-      val cfg21 = cfg("testrole00-minimized", version)
+      val roleCfg = cfg("testrole00", version)
+      val roleCfgMin = cfg("testrole00-minimized", version)
 
-      assert(cfg1.exists())
-      assert(cfg11.exists())
-      assert(cfg2.exists())
-      assert(cfg21.exists())
+      assert(cwCfg.exists())
+      assert(cwCfgMin.exists())
+      assert(roleCfg.exists())
+      assert(roleCfgMin.exists())
 
-      assert(cfg1.length() > cfg11.length())
-      assert(new String(Files.readAllBytes(cfg21.toPath), UTF_8).contains("integrationOnlyCfg"))
+      assert(cwCfg.length() > cwCfgMin.length())
+      assert(roleCfg.length() > roleCfgMin.length())
+
+      val roleCfgMinStr = new String(Files.readAllBytes(roleCfgMin.toPath), UTF_8)
+      val roleCfgMinRestored = ConfigFactory.parseString(roleCfgMinStr)
+
+      assert(roleCfgMinRestored.hasPath("integrationOnlyCfg"))
+      assert(roleCfgMinRestored.hasPath("integrationOnlyCfg2"))
+      assert(roleCfgMinRestored.hasPath("testservice"))
+      assert(roleCfgMinRestored.hasPath("testservice2"))
+      assert(!roleCfgMinRestored.hasPath("unrequiredEntry"))
+
+      assert(roleCfgMinRestored.getString("testservice2.strval") == "xxx")
     }
   }
 

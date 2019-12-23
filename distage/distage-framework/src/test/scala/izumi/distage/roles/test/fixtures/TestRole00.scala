@@ -35,15 +35,16 @@ object roles {
 
   class TestRole00[F[_]: DIEffect]
   (
-    val conf: TestServiceConf,
-    val dummies: Set[Dummy],
-    val counter: XXX_ResourceEffectsRecorder,
-    val resource: TestRole00Resource[F],
     logger: IzLogger,
     notCloseable: NotCloseable,
-    val resources: Set[Resource0],
+    val conf: TestServiceConf,
+    val conf2: TestServiceConf2,
+    val dummies: Set[Dummy],
+    val resource: TestRole00Resource[F],
+    val resources: Set[TestResource],
     val conflict: Conflict,
     val es: ExecutorService,
+    val counter: XXX_ResourceEffectsRecorder,
     val ref: XXX_LocatorLeak,
   ) extends RoleService[F] {
     notCloseable.discard()
@@ -64,13 +65,18 @@ object roles {
     override def parserSchema: RoleParserSchema = RoleParserSchema(id, ParserDef.Empty, Some("Example role"), None, freeArgsAllowed = true)
 
     final case class IntegrationOnlyCfg(flag: Boolean)
+    final case class IntegrationOnlyCfg2(value: String)
 
     final class TestRole00Resource[F[_]](private val it: TestRole00ResourceIntegrationCheck)
     final class TestRole00ResourceIntegrationCheck
     (
       private val cfg: IntegrationOnlyCfg,
+      private val cfg2: IntegrationOnlyCfg2,
     ) extends IntegrationCheck {
-      override def resourcesAvailable(): ResourceCheck = ResourceCheck.Success()
+      override def resourcesAvailable(): ResourceCheck = {
+        assert(cfg2.value == "configvalue:updated")
+        ResourceCheck.Success()
+      }
     }
   }
 
