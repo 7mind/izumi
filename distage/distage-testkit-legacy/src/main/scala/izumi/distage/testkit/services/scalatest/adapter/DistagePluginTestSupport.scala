@@ -93,8 +93,8 @@ abstract class DistagePluginTestSupport[F[_] : TagK] extends DistageTestSupport[
 
   protected def bootstrapConfig: BootstrapConfig = {
     BootstrapConfig(
-      PluginConfig(debug = false, pluginPackages, Seq.empty),
-      pluginBootstrapPackages.map(p => PluginConfig(debug = false, p, Seq.empty)),
+      PluginConfig.cached(pluginPackages),
+      pluginBootstrapPackages.map(p => PluginConfig.cached(p)),
     )
   }
 

@@ -7,8 +7,8 @@ import izumi.distage.model.definition.{DIResource, LocatorDef}
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.provisioning.PlanInterpreter.Finalizer
 import izumi.distage.model.references.IdentifiedRef
-import izumi.distage.testkit.services.SyncCache
 import izumi.distage.testkit.services.scalatest.adapter.ExternalResourceProvider.{MemoizedInstance, PreparedShutdownRuntime}
+import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.platform.console.TrivialLogger
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks

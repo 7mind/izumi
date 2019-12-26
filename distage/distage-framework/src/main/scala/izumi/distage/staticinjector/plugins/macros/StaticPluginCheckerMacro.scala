@@ -67,12 +67,7 @@ object StaticPluginCheckerMacro {
     val loadedPlugins = if (pluginPath == "") {
       Seq.empty
     } else {
-      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig(
-        debug = false,
-        packagesEnabled = Seq(pluginPath),
-        packagesDisabled = Seq.empty,
-      ))
-
+      val pluginLoader = new PluginLoaderDefaultImpl(PluginConfig.packages(Seq(pluginPath)))
       pluginLoader.load()
     }
 

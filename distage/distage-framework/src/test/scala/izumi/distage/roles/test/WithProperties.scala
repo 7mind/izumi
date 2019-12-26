@@ -7,7 +7,7 @@ trait WithProperties {
     withProperties(properties.toSeq :_*)(f)
   }
 
-  final def withProperties(properties: (String, String)*)(f: => Unit): Unit = {
+  final def withProperties(properties: (String, String)*)(f: => Unit): Unit = synchronized {
     try {
       properties.foreach {
         case (k, v) =>

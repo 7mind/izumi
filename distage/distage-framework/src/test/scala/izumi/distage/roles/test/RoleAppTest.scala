@@ -213,10 +213,10 @@ class RoleAppTest extends WordSpec
       val roleCfg = cfg("testrole00", version)
       val roleCfgMin = cfg("testrole00-minimized", version)
 
-      assert(cwCfg.exists())
-      assert(cwCfgMin.exists())
-      assert(roleCfg.exists())
-      assert(roleCfgMin.exists())
+      assert(cwCfg.exists(), s"$cwCfg exists")
+      assert(cwCfgMin.exists(), s"$cwCfgMin exists")
+      assert(roleCfg.exists(), s"$roleCfg exists")
+      assert(roleCfgMin.exists(), s"$roleCfgMin exists")
 
       assert(cwCfg.length() > cwCfgMin.length())
       assert(roleCfg.length() > roleCfgMin.length())

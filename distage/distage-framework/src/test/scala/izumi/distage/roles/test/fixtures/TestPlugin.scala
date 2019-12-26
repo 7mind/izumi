@@ -17,7 +17,7 @@ import izumi.fundamentals.reflection.Tags.TagK
 class TestPluginBase[F[_]: TagK] extends CatsDIEffectModule with PluginDef with ConfigModuleDef {
   tag(Env.Prod)
 
-  private val version = Option(System.getProperty(TestPlugin.versionProperty)) match {
+  private def version = Option(System.getProperty(TestPlugin.versionProperty)) match {
     case Some(value) =>
       value
     case None =>

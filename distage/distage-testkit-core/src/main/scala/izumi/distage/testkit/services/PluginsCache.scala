@@ -1,6 +1,7 @@
 package izumi.distage.testkit.services
 
 import izumi.distage.framework.model.{AllLoadedPlugins, BootstrapConfig, PluginSource}
+import izumi.fundamentals.platform.cache.SyncCache
 
 object PluginsCache {
   final case class CacheKey(config: BootstrapConfig)

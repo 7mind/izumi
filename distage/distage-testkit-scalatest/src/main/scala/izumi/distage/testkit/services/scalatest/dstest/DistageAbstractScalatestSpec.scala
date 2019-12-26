@@ -32,7 +32,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   protected def makeTestEnvProvider(): TestEnvironmentProvider = {
     val conf = config
     val pluginSource = conf.pluginSource
-      .getOrElse(PluginSource(PluginConfig(packagesEnabled = Seq(this.getClass.getPackage.getName)), None))
+      .getOrElse(PluginSource(PluginConfig.cached(Seq(this.getClass.getPackage.getName)), None))
 
     new TestEnvironmentProvider.Impl(
       pluginSource,
