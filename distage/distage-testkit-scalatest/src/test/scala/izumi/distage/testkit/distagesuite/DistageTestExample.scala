@@ -2,8 +2,10 @@ package izumi.distage.testkit.distagesuite
 
 import cats.effect.{IO => CIO}
 import distage._
+import izumi.distage.framework.model.PluginSource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
@@ -11,9 +13,10 @@ import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestS
 import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
-trait DistageMemoizeExample[F[_]] { this: DistageAbstractScalatestSpec[F] =>
+trait DistageMemoizeExample[F[_]] {
+  this: DistageAbstractScalatestSpec[F] =>
   override protected def config: TestConfig = {
-    TestConfig(
+    TestConfig.forSuite(this.getClass).copy(
       memoizationRoots = Set(
         DIKey.get[MockCache[CIO]],
         DIKey.get[MockCache[Task]],
@@ -34,7 +37,12 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 }
 
-abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+
+  override protected def config: TestConfig = super.config.copy(
+    pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx")))
+  )
+
 
   "distage test custom runner" should {
     "test 1" in {
@@ -65,7 +73,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
     "test 5 (should be ignored)" skip {
       _: MockCachedUserService[F] =>
-       ???
+        ???
     }
 
     "test 6 (should be ignored)" in {
@@ -77,5 +85,7 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 }
 
 final class DistageTestExampleId extends DistageTestExampleBase[Identity]
+
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
+
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]

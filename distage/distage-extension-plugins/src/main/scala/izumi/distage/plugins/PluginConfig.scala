@@ -9,5 +9,11 @@ final case class PluginConfig(
 object PluginConfig {
   def empty: PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false)
   def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = true, debug = false)
-  def cached(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = true, debug = false)
+  def cached(packagesEnabled: Seq[String]): PluginConfig = {
+    import izumi.fundamentals.platform.strings.IzString._
+    val cacheEnabled = System
+      .getProperty(DebugProperties.`izumi.distage.testkit.plugins.memoize`)
+      .asBoolean(true)
+    PluginConfig(packagesEnabled, Nil, cachePackages = cacheEnabled, debug = false)
+  }
 }
