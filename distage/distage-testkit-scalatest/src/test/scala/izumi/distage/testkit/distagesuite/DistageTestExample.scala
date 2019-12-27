@@ -89,3 +89,4 @@ final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
+final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]

@@ -7,7 +7,6 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.logstage.api.{IzLogger, Log}
-import org.scalatest.events._
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
@@ -57,25 +56,20 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     DistageTestsRegistrySingleton.list[F]
   }
 
-  override def run(testName: Option[String], args: Args): Status = {
-    val status = new StatefulStatus
+  private[this] val status = new StatefulStatus
+  DistageTestsRegistrySingleton.registerStatus(suiteId, status)
 
+  override def run(testName: Option[String], args: Args): Status = {
+    DistageTestsRegistrySingleton.registerTracker(suiteId)(args.tracker)
     try {
       if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
         doRun(testName, args)
-      } else {
-        addStub(args, None)
       }
     } catch {
       case t: Throwable =>
-        // IDEA reporter is insane
-        //status.setFailedWith(t)
-        addStub(args, Some(t))
-
-    } finally {
-      status.setCompleted()
+        status.setFailedWith(t)
+        status.setCompleted()
     }
-
     status
   }
 
@@ -91,17 +85,17 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val testTags: Set[String] = Set.empty
 
     new TestData {
-      val configMap: ConfigMap = theConfigMap
-      val name: String = testName
-      val scopes: Vector[Nothing] = Vector.empty
-      val text: String = testName
-      val tags: Set[String] = Set.empty ++ suiteTags ++ testTags
-      val pos: None.type = None
+      override val configMap: ConfigMap = theConfigMap
+      override val name: String = testName
+      override val scopes: Vector[Nothing] = Vector.empty
+      override val text: String = testName
+      override val tags: Set[String] = Set.empty ++ suiteTags ++ testTags
+      override val pos: None.type = None
     }
   }
 
   private def doRun(testName: Option[String], args: Args): Unit = {
-    val dreporter = mkTestReporter(args)
+    val testReporter = mkTestReporter(args)
 
     val toRun = testName match {
       case None =>
@@ -134,52 +128,22 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     val runner = {
       val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
       val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](dreporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
+      new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
     }
 
-    runner.run()
+    try {
+      runner.run()
+    } finally {
+      DistageTestsRegistrySingleton.completeStatuses(testsInThisMonad.map(_.meta.id.suiteId).toSet)
+    }
   }
 
   // FIXME: read scalatest runner configuration???
   protected def parallelTestsAlways: Boolean = true
 
   private def mkTestReporter(args: Args): TestReporter = {
-    val scalatestReporter = new ScalatestReporter(args, suiteName, suiteId)
+    val scalatestReporter = new ScalatestReporter(args.reporter)
     new SafeTestReporter(scalatestReporter)
-  }
-
-  private def addStub(args: Args, failure: Option[Throwable]): Unit = {
-    val tracker = args.tracker
-    val FUCK_SCALATEST = "Scalatest and IDEA aren't so nice"
-    val SUITE_FAILED = "Whole suite failed :/"
-
-    failure match {
-      case Some(_) =>
-        args.reporter(TestStarting(
-          tracker.nextOrdinal(),
-          suiteName, suiteId, Some(suiteId),
-          SUITE_FAILED,
-          SUITE_FAILED,
-        ))
-        args.reporter(TestFailed(
-          tracker.nextOrdinal(),
-          s"suite failed",
-          suiteName, suiteId, Some(suiteId),
-          SUITE_FAILED,
-          SUITE_FAILED,
-          scala.collection.immutable.IndexedSeq.empty[RecordableEvent],
-          throwable = failure
-        ))
-      case None =>
-        args.reporter(TestCanceled(
-          tracker.nextOrdinal(), FUCK_SCALATEST,
-          suiteName, suiteId, Some(suiteId),
-          FUCK_SCALATEST,
-          FUCK_SCALATEST,
-          Vector.empty,
-        ))
-    }
-
   }
 
   override final val styleName: String = "DistageSuite"
