@@ -1,4 +1,4 @@
-package izumi.distage.testkit
+package izumi.distage.plugins
 
 import izumi.fundamentals.platform.logging.DebugProperties
 

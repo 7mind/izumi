@@ -1,10 +1,8 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import distage.{Tag, TagK, TagKK}
-import izumi.distage.framework.model.PluginSource
 import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, TestId, TestMeta}
 import izumi.distage.testkit.services.dstest._
@@ -23,31 +21,19 @@ trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
   }
 }
 
-trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] {
+trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] with DistageTestEnv {
   this: AbstractDistageSpec[F] =>
 
-  private[this] lazy val testEnvProvider: TestEnvironmentProvider = makeTestEnvProvider()
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
 
-  protected def makeTestEnvProvider(): TestEnvironmentProvider = {
-    val conf = config
-    val pluginSource = conf.pluginSource
-      .getOrElse(PluginSource(PluginConfig.cached(Seq(this.getClass.getPackage.getName)), None))
-
-    new TestEnvironmentProvider.Impl(
-      pluginSource,
-      conf.activation,
-      conf.memoizationRoots,
-      conf.bootstrapOverrides,
-      conf.moduleOverrides,
-    )
+  protected def makeTestEnv(): TestEnvironment = {
+    loadEnvironment(logger, config)
   }
-  protected def makeTestEnv(): TestEnvironment = testEnvProvider.loadEnvironment(logger)
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName
 
-  protected def config: TestConfig = TestConfig()
+  protected def config: TestConfig = TestConfig.forSuite(this.getClass)
 
   protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
