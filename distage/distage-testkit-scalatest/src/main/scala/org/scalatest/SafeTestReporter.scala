@@ -27,8 +27,7 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     testStatus match {
-//      case TestStatus.Scheduled =>
-//        reportStatus(test, testStatus)
+//      case TestStatus.Scheduled => reportStatus(test, testStatus)
 
       case TestStatus.Running =>
         runningTest match {

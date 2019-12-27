@@ -5,5 +5,4 @@ import izumi.distage.testkit.services.scalatest.dstest.{DistageAbstractScalatest
 import org.scalatest.DistageScalatestTestSuiteRunner
 
 abstract class DistageSpecScalatest[F[_]]()(implicit val tagMonoIO: TagK[F])
-  extends DistageScalatestTestSuiteRunner[F] with DistageAbstractScalatestSpec[F] {
-}
+  extends DistageScalatestTestSuiteRunner[F] with DistageAbstractScalatestSpec[F]
