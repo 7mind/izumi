@@ -7,13 +7,14 @@ final case class PluginConfig(
                                debug: Boolean,
                              )
 object PluginConfig {
-  def empty: PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false)
-  def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = true, debug = false)
-  def cached(packagesEnabled: Seq[String]): PluginConfig = {
+  lazy val empty: PluginConfig = PluginConfig(Nil, Nil, cachePackages = false, debug = false)
+  def packages(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = false, debug = false)
+  def cached(packagesEnabled: Seq[String]): PluginConfig = PluginConfig(packagesEnabled, Nil, cachePackages = cacheEnabled, debug = false)
+
+  private[this] lazy val cacheEnabled: Boolean = {
     import izumi.fundamentals.platform.strings.IzString._
-    val cacheEnabled = System
+    System
       .getProperty(DebugProperties.`izumi.distage.testkit.plugins.memoize`)
       .asBoolean(true)
-    PluginConfig(packagesEnabled, Nil, cachePackages = cacheEnabled, debug = false)
   }
 }

@@ -24,5 +24,5 @@ final case class TestConfig(
                            )
 
 object TestConfig {
-  def forSuite(clazz: Class[_]): TestConfig = TestConfig(PluginSource(PluginConfig.cached(Seq(this.getClass.getPackage.getName)), None))
+  def forSuite(clazz: Class[_]): TestConfig = TestConfig(PluginSource(PluginConfig.cached(Seq(clazz.getPackage.getName))))
 }

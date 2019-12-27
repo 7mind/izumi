@@ -1,5 +1,7 @@
 package izumi.distage.testkit.distagesuite
 
+import java.util.concurrent.atomic.AtomicReference
+
 import cats.effect.{IO => CIO}
 import distage._
 import izumi.distage.framework.model.PluginSource
@@ -13,13 +15,11 @@ import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestS
 import izumi.fundamentals.platform.functional.Identity
 import zio.Task
 
-trait DistageMemoizeExample[F[_]] {
-  this: DistageAbstractScalatestSpec[F] =>
+trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
   override protected def config: TestConfig = {
-    TestConfig.forSuite(this.getClass).copy(
+    super.config.copy(
       memoizationRoots = Set(
-        DIKey.get[MockCache[CIO]],
-        DIKey.get[MockCache[Task]],
+        DIKey.get[MockCache[F]],
       ))
   }
 }
@@ -37,12 +37,13 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 
 }
 
-abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-    pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx")))
-  )
+      pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx")))
+    )
 
+  val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
 
   "distage test custom runner" should {
     "test 1" in {
@@ -56,14 +57,20 @@ abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) exte
     "test 2" in {
       service: MockCachedUserService[F] =>
         for {
+          _ <- F.maybeSuspend(XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache))
           _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(assert(service.cache eq XXX_Whitebox_memoizedMockCache.get()))
           _ <- F.maybeSuspend(println("test1"))
         } yield ()
     }
 
     "test 3" in {
       service: MockCachedUserService[F] =>
-        F.maybeSuspend(assert(service != null))
+        F.maybeSuspend {
+          XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache)
+          assert(service != null)
+          assert(service.cache eq XXX_Whitebox_memoizedMockCache.get())
+        }
     }
 
     "test 4 (should be ignored)" in {
@@ -85,8 +92,6 @@ abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) exte
 }
 
 final class DistageTestExampleId extends DistageTestExampleBase[Identity]
-
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
-
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
 final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]

@@ -26,9 +26,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
 
-  protected def makeTestEnv(): TestEnvironment = {
-    loadEnvironment(logger, config)
-  }
+  protected def makeTestEnv(): TestEnvironment = loadEnvironment(logger, config)
 
   protected def distageSuiteName: String = getSimpleNameOfAnObjectsClass(this)
   protected def distageSuiteId: String = this.getClass.getName

@@ -12,7 +12,6 @@ import izumi.fundamentals.platform.cache.SyncCache
 import izumi.fundamentals.platform.language.unused
 import izumi.logstage.api.IzLogger
 
-
 trait DistageTestEnv {
   protected[distage] def loadEnvironment(logger: IzLogger, testConfig: TestConfig): TestEnvironment = {
     val roles = loadRoles(logger)
@@ -35,23 +34,22 @@ trait DistageTestEnv {
     val appModule = mergeStrategy.merge(plugins.app)
     val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
     val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
+    val activation = testConfig.activation
 
-    val baseEnv = TestEnvironment(
-      bsModule = bootstrapModule,
+    val bsModule = bootstrapModule overridenBy new BootstrapModuleDef {
+      make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
+      make[ActivationInfo].fromValue(availableActivations)
+      make[Activation].fromValue(activation)
+    }
+
+    TestEnvironment(
+      bsModule = bsModule,
       appModule = appModule,
       roles = roles,
       activationInfo = availableActivations,
-      activation = testConfig.activation,
-      memoizedKeys = Set.empty,
+      activation = activation,
+      memoizedKeys = testConfig.memoizationRoots,
     )
-
-    val bsModule = baseEnv.bsModule overridenBy new BootstrapModuleDef {
-      make[PlanMergingPolicy].from[PruningPlanMergingPolicyLoggedImpl]
-      make[ActivationInfo].fromValue(baseEnv.activationInfo)
-      make[Activation].fromValue(baseEnv.activation)
-    }
-
-    baseEnv.copy(bsModule = bsModule)
   }
 
   protected def loadRoles(@unused logger: IzLogger): RolesInfo = {

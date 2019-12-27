@@ -21,20 +21,22 @@ sealed trait PluginSource {
 
 object PluginSource {
   /** Load plugins from the specified packages */
-  def apply(pluginConfig: PluginConfig): PluginSource = PluginSource(BootstrapConfig(pluginConfig, None))
-  def apply(pluginConfig: PluginConfig, bootstrapPluginConfig: PluginConfig): PluginSource = PluginSource(BootstrapConfig(pluginConfig, Some(bootstrapPluginConfig)))
-  def apply(pluginConfig: PluginConfig, bootstrapPluginConfig: Option[PluginConfig]): PluginSource = PluginSource(BootstrapConfig(pluginConfig, bootstrapPluginConfig))
-  def apply(bootstrapConfig: BootstrapConfig): PluginSource = Load.withDefaultLoaders(bootstrapConfig)
-  /** Load plugins using the specified loaders */
-  def apply(pluginLoader: PluginLoader): PluginSource = Load(pluginLoader, PluginLoader.empty, None)
-  def apply(pluginLoader: PluginLoader, bootstrapPluginLoader: PluginLoader): PluginSource = new Load(pluginLoader, bootstrapPluginLoader, None)
-  /** Directly use the specified plugins */
-  def apply(plugins: Seq[PluginBase]): PluginSource = PluginSource(plugins, Seq.empty)
-  def apply(plugins: Seq[PluginBase], bootstrapPlugins: Seq[PluginBase]): PluginSource = PluginSource(AllLoadedPlugins(plugins, bootstrapPlugins))
-  def apply(allLoadedPlugins: AllLoadedPlugins): PluginSource = Const(allLoadedPlugins)
-  def empty: PluginSource = PluginSource(AllLoadedPlugins.empty)
+  def apply(pluginConfig: PluginConfig): PluginSource = Load(pluginConfig, PluginConfig.empty)
+  def apply(pluginConfig: PluginConfig, bootstrapPluginConfig: PluginConfig): PluginSource = Load(pluginConfig, bootstrapPluginConfig)
 
-  implicit final class PluginSourcesMerge(private val pluginSources: Iterable[PluginSource]) extends AnyVal {
+  /** Load plugins using the specified loaders */
+  def apply(pluginLoader: PluginLoader): PluginSource = CustomLoad(pluginLoader, PluginLoader.empty)
+  def apply(pluginLoader: PluginLoader, bootstrapPluginLoader: PluginLoader): PluginSource = CustomLoad(pluginLoader, bootstrapPluginLoader)
+
+  /** Directly use the specified plugins */
+  def apply(plugins: Seq[PluginBase]): PluginSource = Const(AllLoadedPlugins(plugins))
+  def apply(plugins: Seq[PluginBase], bootstrapPlugins: Seq[PluginBase]): PluginSource = Const(AllLoadedPlugins(plugins, bootstrapPlugins))
+  def apply(allLoadedPlugins: AllLoadedPlugins): PluginSource = Const(allLoadedPlugins)
+
+  /** Empty */
+  lazy val empty: PluginSource = Const(AllLoadedPlugins.empty)
+
+  implicit final class PluginSourceMerge(private val pluginSources: Iterable[PluginSource]) extends AnyVal {
     def merge: PluginSource = pluginSources.foldLeft(PluginSource.empty)(_ ++ _)
   }
 
@@ -44,34 +46,20 @@ object PluginSource {
   final case class Map(a: PluginSource, f: AllLoadedPlugins => AllLoadedPlugins) extends PluginSource {
     override def load(): AllLoadedPlugins = f(a.load())
   }
-  final case class Load(pluginLoader: PluginLoader, bootstrapPluginLoader: PluginLoader, bootstrapConfig: Option[BootstrapConfig]) extends PluginSource {
-    def load(): AllLoadedPlugins = {
-      val bsPlugins = bootstrapPluginLoader.load()
-      val appPlugins = pluginLoader.load()
+  final case class Load(pluginConfig: PluginConfig, bootstrapPluginConfig: PluginConfig) extends PluginSource {
+    override def load(): AllLoadedPlugins = {
+      val appPlugins = PluginLoader(pluginConfig).load()
+      val bsPlugins = PluginLoader(bootstrapPluginConfig).load()
       AllLoadedPlugins(appPlugins, bsPlugins)
-    }
-  }
-  object Load {
-    def withDefaultLoaders(bootstrapConfig: BootstrapConfig): PluginSource = {
-      Load(PluginLoader(bootstrapConfig.pluginConfig), bootstrapConfig.bootstrapPluginConfig.fold(PluginLoader.empty)(PluginLoader(_)), Some(bootstrapConfig))
     }
   }
 
   trait Custom extends PluginSource
-
   final case class Const(plugins: AllLoadedPlugins) extends PluginSource.Custom {
     override def load(): AllLoadedPlugins = plugins
   }
-
-  implicit final class ReplaceLoaders(private val pluginSource: PluginSource) extends AnyVal {
-    def replaceLoaders(f: PluginSource.Load => PluginSource): PluginSource = {
-      pluginSource match {
-        case Join(a, b) => Join(a.replaceLoaders(f), b.replaceLoaders(f))
-        case Map(a, g) => Map(a.replaceLoaders(f), g)
-        case i: Load => f(i)
-        case c: Custom => c
-      }
-    }
+  final case class CustomLoad(pluginLoader: PluginLoader, bootstrapPluginLoader: PluginLoader) extends PluginSource {
+    override def load(): AllLoadedPlugins = AllLoadedPlugins(app = pluginLoader.load(), bootstrap = bootstrapPluginLoader.load())
   }
 
 }
