@@ -1,13 +1,11 @@
 package izumi.distage.testkit
 
-import distage.{BootstrapModule, DIKey, Module}
+import distage.{Activation, BootstrapModule, DIKey, Module, StandardAxis}
 import izumi.distage.framework.model.PluginSource
-import izumi.distage.model.definition
-import izumi.distage.model.definition.{Activation, StandardAxis}
+import izumi.distage.plugins.PluginConfig
 
 /**
-  * @param pluginSource       If `None`, recursively scans packages of the test class itself
-  *                           each pluginSource creates a distinct memoization group, i.e.
+  * @param pluginSource       Each pluginSource creates a distinct memoization group, i.e.
   *                           objects will be memoized only between tests with the same plugins
   * @param activation         Chosen configurations. Different Activations have distinct memoization groups
   * @param memoizationRoots   Every distinct set of `memoizationRoots` will have a distinct memoization group
@@ -18,9 +16,13 @@ import izumi.distage.model.definition.{Activation, StandardAxis}
   * @param bootstrapOverrides Same as [[moduleOverrides]], but for [[BootstrapModule]]
   */
 final case class TestConfig(
-                             pluginSource: Option[PluginSource] = None,
+                             pluginSource: PluginSource,
                              activation: Activation = StandardAxis.testProdActivation,
                              memoizationRoots: Set[DIKey] = Set.empty,
                              moduleOverrides: Module = Module.empty,
-                             bootstrapOverrides: BootstrapModule = definition.BootstrapModule.empty,
+                             bootstrapOverrides: BootstrapModule = BootstrapModule.empty,
                            )
+
+object TestConfig {
+  def forSuite(clazz: Class[_]): TestConfig = TestConfig(PluginSource(PluginConfig.cached(Seq(clazz.getPackage.getName))))
+}

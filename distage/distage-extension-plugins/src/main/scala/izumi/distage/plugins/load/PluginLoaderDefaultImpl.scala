@@ -3,6 +3,7 @@ package izumi.distage.plugins.load
 import io.github.classgraph.ClassGraph
 import izumi.distage.plugins.{PluginBase, PluginConfig, PluginDef}
 import izumi.functional.Value
+import izumi.fundamentals.platform.cache.SyncCache
 
 import scala.jdk.CollectionConverters._
 
@@ -11,22 +12,40 @@ class PluginLoaderDefaultImpl
   pluginConfig: PluginConfig,
 ) extends PluginLoader {
   def load(): Seq[PluginBase] = {
-    val pluginBase = classOf[PluginBase]
-    val pluginDef = classOf[PluginDef]
     val config = pluginConfig.copy(packagesEnabled = pluginConfig.packagesEnabled)
 
     val enabledPackages: Seq[String] = config.packagesEnabled.filterNot(config.packagesDisabled.contains)
     val disabledPackages: Seq[String] = config.packagesDisabled
 
-    PluginLoaderDefaultImpl.load[PluginBase](pluginBase.getName, Seq(pluginDef.getName), enabledPackages, disabledPackages, config.debug)
+    val pluginBase = classOf[PluginBase]
+    val pluginDef = classOf[PluginDef]
+    val whitelistedClasses = Seq(pluginDef.getName)
+
+    def loadPkgs(pkgs: Seq[String]): Seq[PluginBase] = {
+      PluginLoaderDefaultImpl.doLoad[PluginBase](pluginBase.getName, whitelistedClasses, pkgs, disabledPackages, config.debug)
+    }
+
+    if (!pluginConfig.cachePackages) {
+      loadPkgs(enabledPackages)
+    } else {
+      val h1 = scala.util.hashing.MurmurHash3.seqHash(whitelistedClasses)
+      val h2 = scala.util.hashing.MurmurHash3.seqHash(disabledPackages)
+      enabledPackages.flatMap{
+        p =>
+          val key = s"$p;$h1;$h2"
+          PluginLoaderDefaultImpl.cache.getOrCompute(key, loadPkgs(Seq(p)))
+      }
+    }
   }
 }
 
 object PluginLoaderDefaultImpl {
-  def load[T](base: String, whitelist: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
+  private lazy val cache = new SyncCache[String, Seq[PluginBase]]()
+
+  def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
-      .map(_.whitelistClasses(whitelist :+ base: _*))
+      .map(_.whitelistClasses(whitelistClasses :+ base: _*))
       .map(_.blacklistPackages(disabledPackages: _*))
       .map(_.enableMethodInfo())
       .map(if (debug) _.verbose() else identity)

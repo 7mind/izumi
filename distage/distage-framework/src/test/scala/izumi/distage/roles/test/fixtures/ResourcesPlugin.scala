@@ -19,26 +19,26 @@ class ConflictPlugin extends PluginDef {
 
 class ResourcesPluginBase extends ModuleDef {
   make[ExecutorService].from(Executors.newCachedThreadPool())
-  make[Resource2]
-  make[Resource3]
-  make[Resource4]
-  make[Resource5]
-  make[Resource6]
+  make[IntegrationResource1]
+  make[JustResource1]
+  make[JustResource2]
+  make[ProbeResource0]
+  make[JustResource3]
 
-  many[Resource0]
-    .ref[Resource2]
-    .ref[Resource3]
-    .ref[Resource4]
-    .ref[Resource5]
-    .ref[Resource6]
+  many[TestResource]
+    .ref[IntegrationResource1]
+    .ref[JustResource1]
+    .ref[JustResource2]
+    .ref[ProbeResource0]
+    .ref[JustResource3]
 }
 
 class ResourcesPlugin extends ResourcesPluginBase with PluginDef {
   make[XXX_ResourceEffectsRecorder]
 
-  make[Resource1]
-  many[Resource0]
-    .ref[Resource1]
+  make[IntegrationResource0]
+  many[TestResource]
+    .ref[IntegrationResource0]
 }
 
 object ResourcesPlugin {

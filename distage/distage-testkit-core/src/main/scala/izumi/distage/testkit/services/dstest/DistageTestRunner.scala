@@ -256,7 +256,7 @@ object DistageTestRunner {
 
   sealed trait TestStatus
   object TestStatus {
-    case object Scheduled extends TestStatus
+//    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus

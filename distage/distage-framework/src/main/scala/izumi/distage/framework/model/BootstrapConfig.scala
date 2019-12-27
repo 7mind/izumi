@@ -7,5 +7,5 @@ final case class BootstrapConfig(
                                   bootstrapPluginConfig: Option[PluginConfig] = None,
                                 )
 object BootstrapConfig {
-  def empty = BootstrapConfig(PluginConfig.empty, None)
+  def empty: BootstrapConfig = BootstrapConfig(PluginConfig.empty, None)
 }

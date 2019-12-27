@@ -14,5 +14,5 @@ final case class AllLoadedPlugins(app: Seq[PluginBase], bootstrap: Seq[PluginBas
 }
 
 object AllLoadedPlugins {
-  def empty: AllLoadedPlugins = AllLoadedPlugins(Nil, Nil)
+  lazy val empty: AllLoadedPlugins = AllLoadedPlugins(Nil, Nil)
 }

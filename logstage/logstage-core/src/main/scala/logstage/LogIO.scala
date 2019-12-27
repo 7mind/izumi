@@ -13,11 +13,11 @@ import scala.language.implicitConversions
 trait LogIO[F[_]] extends UnsafeLogIO[F] {
   def log(entry: Entry): F[Unit]
   def log(logLevel: Level)(messageThunk: => Message)(implicit pos: CodePositionMaterializer): F[Unit]
-
   def withCustomContext(context: CustomContext): LogIO[F]
 
   final def withCustomContext(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
   final def withCustomContext(context: Map[String, Any]): LogIO[F] = withCustomContext(CustomContext(context))
+  final def apply(context: CustomContext): LogIO[F] = withCustomContext(context)
   final def apply(context: (String, Any)*): LogIO[F] = withCustomContext(context.toMap)
   final def apply(context: Map[String, Any]): LogIO[F] = withCustomContext(context)
 

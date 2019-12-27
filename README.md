@@ -33,7 +33,7 @@ Docs
 * [Scaladoc](https://izumi.7mind.io/latest/release/api/)
 
 Example projects:
-* [DIStage Example Project from ScalaWAW Warsaw](https://github.com/7mind/distage-livecode)
+* [DIStage Example Project from Functional Scala 2019](https://github.com/7mind/distage-example)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
 
 Slides:

@@ -1,4 +1,4 @@
-package izumi.distage.testkit.services
+package izumi.fundamentals.platform.cache
 
 import izumi.fundamentals.platform.language.Quirks._
 

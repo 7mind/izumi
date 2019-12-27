@@ -18,7 +18,7 @@ libraryDependencies += "io.7mind.izumi" %% "distage-framework" % "$izumi.version
 
 @@@
 
-With default @scaladoc[RoleAppLauncherImpl](izumi.distage.roles.RoleAppLauncherImpl), roles launch are specified on the command-line: `./launcher role1 role2 role3`.
+With default @scaladoc[RoleAppLauncherImpl](izumi.distage.roles.RoleAppLauncherImpl), roles to launch are specified on the command-line: `./launcher role1 role2 role3`.
 Only the components required by the specified roles will be created, everything else will be pruned. (see: @ref[GC](advanced-features.md#garbage-collection))
 
 Two roles are bundled by default: @scaladoc[Help](izumi.distage.roles.examples.Help) and @scaladoc[ConfigWriter](izumi.distage.roles.examples.ConfigWriter).
