@@ -14,7 +14,7 @@ object PluginConfig {
   private[this] lazy val cacheEnabled: Boolean = {
     import izumi.fundamentals.platform.strings.IzString._
     System
-      .getProperty(DebugProperties.`izumi.distage.testkit.plugins.memoize`)
+      .getProperty(DebugProperties.`izumi.distage.plugins.cache`)
       .asBoolean(true)
   }
 }
