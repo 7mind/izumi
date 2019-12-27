@@ -13,40 +13,30 @@ final class IdContractImpl[T] extends IdContract[T] {
 
 sealed trait Association {
   def symbol: SymbolInfo
-  def key: DIKey.BasicKey
+  def key: DIKey
   def name: String
   def isByName: Boolean
 
-  def withKey(key: DIKey.BasicKey): Association
+  def withKey(key: DIKey): Association
 }
 
 object Association {
-  final case class Parameter(symbol: SymbolInfo, key: DIKey.BasicKey) extends Association {
+  final case class Parameter(symbol: SymbolInfo, key: DIKey) extends Association {
     override final def name: String = symbol.name
     override final def isByName: Boolean = symbol.isByName
-    override final def withKey(key: DIKey.BasicKey): Association.Parameter = copy(key = key)
+    override final def withKey(key: DIKey): Association.Parameter = copy(key = key)
 
     final def wasGeneric: Boolean = symbol.wasGeneric
   }
 }
 
-sealed trait SymbolInfo {
-  def name: String
-  def finalResultType: SafeType
-
-  def isByName: Boolean
-  def wasGeneric: Boolean
-}
-
-object SymbolInfo {
-  final case class Static(
-                           name: String,
-                           finalResultType: SafeType,
-                           // annotations: List[u.Annotation],
-                           isByName: Boolean,
-                           wasGeneric: Boolean,
-                         ) extends SymbolInfo
-}
+final case class SymbolInfo(
+                             name: String,
+                             finalResultType: SafeType,
+                             // annotations: List[u.Annotation],
+                             isByName: Boolean,
+                             wasGeneric: Boolean,
+                           )
 
 final case class SafeType private(
                                    tag: LightTypeTag,
@@ -204,6 +194,7 @@ trait DIFunction {
 trait Provider extends DIFunction {
   def unsafeMap(newRet: SafeType, f: Any => _): Provider
   def unsafeZip(newRet: SafeType, that: Provider): Provider
+  def addUnused(keys: Seq[DIKey]): Provider
 
   override final def diKeys: Seq[DIKey] = parameters.map(_.key)
   override final def argTypes: Seq[SafeType] = parameters.map(_.key.tpe)
@@ -236,6 +227,9 @@ object Provider {
 
     override final def unsafeMap(newRet: SafeType, f: Any => _): ProviderImpl[_] =
       copy(ret = newRet, fun = xs => f.apply(fun(xs)))
+
+    override def addUnused(keys: Seq[DIKey]): Provider =
+      copy(parameters = parameters ++ keys.map(key => Association.Parameter(SymbolInfo("<unused>", key.tpe, false, false), key)))
 
     override final def unsafeZip(newRet: SafeType, that: Provider): Provider =
       ProviderImpl(

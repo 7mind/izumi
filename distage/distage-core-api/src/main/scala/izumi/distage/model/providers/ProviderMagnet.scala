@@ -2,7 +2,7 @@ package izumi.distage.model.providers
 
 import izumi.distage.model.exceptions.TODOBindingException
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.{Association, DIKey, Provider, SafeType, SymbolInfo}
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 import izumi.fundamentals.platform.language.CodePositionMaterializer
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.Tag
@@ -104,10 +104,11 @@ final case class ProviderMagnet[+A](get: Provider) {
   }
 
   /** Add `B` as an unused dependency for this constructor */
-  def addDependency[B: Tag]: ProviderMagnet[A] = {
-    val newProvider = zip(ProviderMagnet.identity[B]).get.unsafeMap(get.ret, { case (a, _) => a }: Any => Any)
-    copy[A](get = newProvider)
-  }
+  def addDependency[B: Tag]: ProviderMagnet[A] = addDependency(DIKey.get[B])
+
+  def addDependency(key: DIKey): ProviderMagnet[A] = addDependencies(key :: Nil)
+
+  def addDependencies(keys: Seq[DIKey]): ProviderMagnet[A] = copy[A](get = get.addUnused(keys))
 }
 
 object ProviderMagnet {
@@ -145,29 +146,9 @@ object ProviderMagnet {
       )
     )
 
-  def identity[A: Tag]: ProviderMagnet[A] = {
-    val key = DIKey.get[A]
-    val tpe = key.tpe
-    val symbolInfo = SymbolInfo.Static(
-      name = "x$1",
-      finalResultType = tpe,
-      isByName = false,
-      wasGeneric = false
-    )
+  def identity[A: Tag]: ProviderMagnet[A] = identityKey(DIKey.get[A]).asInstanceOf[ProviderMagnet[A]]
 
-    new ProviderMagnet[A](
-      Provider.ProviderImpl[A](
-        parameters = Seq(Association.Parameter(symbolInfo, key)),
-        ret = key.tpe,
-        fun = (_: Seq[Any]).head.asInstanceOf[A],
-        isGenerated = false,
-      )
-    )
-  }
-
-  def pure[A: Tag](a: A): ProviderMagnet[A] = {
-    lift(a)
-  }
+  def pure[A: Tag](a: A): ProviderMagnet[A] = lift(a)
 
   def lift[A: Tag](a: => A): ProviderMagnet[A] = {
     new ProviderMagnet[A](
@@ -175,6 +156,25 @@ object ProviderMagnet {
         parameters = Seq.empty,
         ret = SafeType.get[A],
         fun = (_: Seq[Any]) => a,
+        isGenerated = false,
+      )
+    )
+  }
+
+  def identityKey(key: DIKey): ProviderMagnet[_] = {
+    val tpe = key.tpe
+    val symbolInfo = SymbolInfo(
+      name = "x$1",
+      finalResultType = tpe,
+      isByName = false,
+      wasGeneric = false
+    )
+
+    new ProviderMagnet(
+      Provider.ProviderImpl(
+        parameters = Seq(Association.Parameter(symbolInfo, key)),
+        ret = key.tpe,
+        fun = (_: Seq[Any]).head,
         isGenerated = false,
       )
     )
