@@ -2,9 +2,8 @@ package izumi.distage.roles.test.fixtures
 
 import izumi.distage.framework.model.IntegrationCheck
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.language.Quirks._
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 object Fixture {
   trait Dummy
@@ -26,9 +25,9 @@ object Fixture {
     private val closedCloseables: mutable.ArrayBuffer[AutoCloseable] = mutable.ArrayBuffer()
     private val checkedResources: mutable.ArrayBuffer[IntegrationCheck] = mutable.ArrayBuffer()
 
-    def onStart(c: AutoCloseable): Unit = this.synchronized(startedCloseables += c).discard()
-    def onClose(c: AutoCloseable): Unit = this.synchronized(closedCloseables += c).discard()
-    def onCheck(c: IntegrationCheck): Unit = this.synchronized(checkedResources += c).discard()
+    def onStart(c: AutoCloseable): Unit = this.synchronized(startedCloseables += c)
+    def onClose(c: AutoCloseable): Unit = this.synchronized(closedCloseables += c)
+    def onCheck(c: IntegrationCheck): Unit = this.synchronized(checkedResources += c)
 
     def getStartedCloseables(): Seq[AutoCloseable] = this.synchronized(startedCloseables.toList)
     def getClosedCloseables(): Seq[AutoCloseable] = this.synchronized(closedCloseables.toList)

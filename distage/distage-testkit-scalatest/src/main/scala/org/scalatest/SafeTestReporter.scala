@@ -1,15 +1,15 @@
 package org.scalatest
 
-import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.{Done, Finished, Ignored, Running}
+import izumi.distage.testkit.services.dstest.DistageTestRunner.TestStatus.{Done, Finished, Ignored}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
-import izumi.fundamentals.platform.language.Quirks._
-import izumi.fundamentals.platform.language.unused
+import izumi.fundamentals.platform.language.Quirks
 
 import scala.collection.mutable
 
 class SafeTestReporter(underlying: TestReporter) extends TestReporter {
-  private val delayedReports = new mutable.LinkedHashMap[TestMeta, TestStatus]()
-  private var runningTest: Option[TestMeta] = None
+  private val delayedReports = mutable.LinkedHashMap.empty[TestMeta, TestStatus]
+  private var signalled: Option[TestMeta] = None
+  private var openSuite: Option[SuiteData] = None
 
   override def onFailure(f: Throwable): Unit = synchronized {
     endAll()
@@ -18,41 +18,45 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
 
   override def endAll(): Unit = synchronized {
     finish()
+    finishOpen()
     underlying.endAll()
   }
 
-  override def beginSuite(@unused id: SuiteData): Unit = {}
+  override def beginSuite(id: SuiteData): Unit = synchronized {
+    Quirks.discard(id)
+  }
 
-  override def endSuite(@unused id: SuiteData): Unit = {}
+  override def endSuite(id: SuiteData): Unit = synchronized {
+    Quirks.discard(id)
+  }
 
   override def testStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
     testStatus match {
-//      case TestStatus.Scheduled => reportStatus(test, testStatus)
+      case TestStatus.Scheduled =>
+        reportStatus(test, testStatus)
 
       case TestStatus.Running =>
-        runningTest match {
+        signalled match {
           case Some(_) =>
-            delayedReports.put(test, testStatus)
           case None =>
             reportStatus(test, testStatus)
-            runningTest = Some(test)
+            signalled = Some(test)
         }
 
       case _: Ignored =>
-        runningTest match {
+        signalled match {
           case None =>
             reportStatus(test, TestStatus.Running)
             reportStatus(test, testStatus)
           case Some(_) =>
-            // Ignores happen before running, so an ignored test cannot be the same as `signalled`
             delayedReports.put(test, testStatus)
         }
 
       case _: Finished =>
-        runningTest match {
+        signalled match {
           case Some(value) if value == test =>
             finishTest(test, testStatus)
-            runningTest = None
+            signalled = None
             finish()
           case _ =>
             delayedReports.put(test, testStatus)
@@ -62,25 +66,38 @@ class SafeTestReporter(underlying: TestReporter) extends TestReporter {
   }
 
   private def reportStatus(test: TestMeta, testStatus: TestStatus): Unit = synchronized {
+    val fakeSuite = SuiteData(test.id.suiteName, test.id.suiteId, test.id.suiteClassName)
+
+    nextSuite(fakeSuite)
     underlying.testStatus(test, testStatus)
+  }
+
+  private val fakeSuites = false
+  private def nextSuite(fakeSuite: SuiteData): Unit = {
+    if (fakeSuites) {
+      if (!openSuite.contains(fakeSuite)) {
+        finishOpen()
+        underlying.beginSuite(fakeSuite)
+        openSuite = Some(fakeSuite)
+      }
+    }
+  }
+
+  private def finishOpen(): Unit = {
+    if (fakeSuites) {
+      openSuite.foreach(underlying.endSuite)
+    }
   }
 
   private def finish(): Unit = {
     val finishedTests = delayedReports.collect { case (t, s: Done) => (t, s) }
 
-    // report all finished tests
     finishedTests
       .foreach {
         case (t, s) =>
           reportStatus(t, TestStatus.Running)
           finishTest(t, s)
       }
-    // switch to another test if it's already running
-    delayedReports.collectFirst {
-      case (t, Running) =>
-        reportStatus(t, TestStatus.Running)
-        runningTest = Some(t)
-    }.discard()
   }
 
   private def finishTest(test: TestMeta, testStatus: TestStatus): Option[TestStatus] = {
