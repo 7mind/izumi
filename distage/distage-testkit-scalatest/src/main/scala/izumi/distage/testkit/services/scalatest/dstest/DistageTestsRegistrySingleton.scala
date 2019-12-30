@@ -1,6 +1,7 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.{SafeType, TagK}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
@@ -12,17 +13,29 @@ object DistageTestsRegistrySingleton {
   private[DistageTestsRegistrySingleton] type Fake[T]
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
   private[this] val runTracker = new ConcurrentHashMap[SafeType, Boolean]()
+  private[this] val registrationOpen = new AtomicBoolean(true)
 
-  def list[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
+
+  def disableRegistration(): Unit = {
+    registrationOpen.set(false)
   }
 
-  def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
+  def register[F[_] : TagK](t: DistageTest[F]): Unit = synchronized {
+    if (registrationOpen.get()) {
+      registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
+    }
   }
 
-  def ticketToProceed[F[_]: TagK](): Boolean = {
+  def proceedWithTests[F[_] : TagK](): Option[Seq[DistageTest[F]]]= {
     val tpe = SafeType.getK[F]
-    !runTracker.putIfAbsent(tpe, true)
+    if (!runTracker.putIfAbsent(tpe, true)) {
+      Some(list[F])
+    } else {
+      None
+    }
+  }
+
+  def list[F[_] : TagK]: Seq[DistageTest[F]] = synchronized {
+    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 }

@@ -1,24 +1,65 @@
 package org.scalatest
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import distage.TagK
+import io.github.classgraph.ClassGraph
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.testkit.SpecConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
+import scala.util.Try
+
+trait ScalatestInitWorkaround {
+  def awaitTestsLoaded(): Unit
+}
+
+object ScalatestInitWorkaround {
+
+  class ScalatestInitWorkaroundImpl[F[_]](runner: DistageScalatestTestSuiteRunner[F]) extends ScalatestInitWorkaround {
+    ScalatestInitWorkaroundImpl.doScan(runner)
+
+    override def awaitTestsLoaded(): Unit = ScalatestInitWorkaroundImpl.awaitTestsLoaded()
+  }
+
+  object ScalatestInitWorkaroundImpl {
+    private val classpathScanned = new AtomicBoolean(false)
+    private val latch = new java.util.concurrent.CountDownLatch(1)
+
+    import scala.jdk.CollectionConverters._
+
+    def awaitTestsLoaded(): Unit = {
+      latch.await()
+    }
+
+    def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]): Unit = {
+      if (classpathScanned.compareAndSet(false, true)) {
+        val classLoader = instance.getClass.getClassLoader
+        val scan = new ClassGraph().disableJarScanning().enableClassInfo().addClassLoader(classLoader).scan()
+        val specs = scan.getClassesImplementing(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
+        specs.map(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
+        DistageTestsRegistrySingleton.disableRegistration()
+        latch.countDown()
+      }
+    }
+
+  }
+
+}
 
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
+  protected[scalatest] val init = new ScalatestInitWorkaround.ScalatestInitWorkaroundImpl[F](this)
+
   implicit def tagMonoIO: TagK[F]
-
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
-
   protected def specConfig: SpecConfig = SpecConfig()
-
   protected def makeSpecEnvironment(): SpecEnvironment = {
     val c = specConfig
     val clazz = this.getClass
@@ -36,35 +77,16 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
-  override def testNames: Set[String] = {
-    TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
-  }
-  override def tags: Map[String, Set[String]] = Map.empty
-
-  override def expectedTestCount(filter: Filter): Int = {
-    if (filter.tagsToInclude.isDefined) {
-      0
-    } else {
-      testNames.size - tags.size
-    }
-  }
-
-  private[this] def testsInThisTestClass: Seq[DistageTest[F]] = {
-    testsInThisMonad.filter(_.meta.id.suiteId == suiteId)
-  }
-
-  private[this] def testsInThisMonad: Seq[DistageTest[F]] = {
-    DistageTestsRegistrySingleton.list[F]
-  }
-
   override def run(testName: Option[String], args: Args): Status = {
     val status = new StatefulStatus
+    init.awaitTestsLoaded()
 
     try {
-      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
-        doRun(testName, args)
-      } else {
-        addStub(args, None)
+      DistageTestsRegistrySingleton.proceedWithTests[F]() match {
+        case Some(value) =>
+          doRun(value, testName, args)
+        case None =>
+          addStub(args, None)
       }
     } catch {
       case t: Throwable =>
@@ -77,6 +99,21 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
 
     status
+  }
+
+  override def testNames: Set[String] = {
+    val testsInThisTestClass = DistageTestsRegistrySingleton.list[F].filter(_.meta.id.suiteId == suiteId)
+    TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
+  }
+
+  override def tags: Map[String, Set[String]] = Map.empty
+
+  override def expectedTestCount(filter: Filter): Int = {
+    if (filter.tagsToInclude.isDefined) {
+      0
+    } else {
+      testNames.size - tags.size
+    }
   }
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap): TestData = {
@@ -100,34 +137,26 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
     }
   }
 
-  private def doRun(testName: Option[String], args: Args): Unit = {
+  private def doRun(candidatesForThisRuntime: Seq[DistageTest[F]], testName: Option[String], args: Args): Unit = {
     val dreporter = mkTestReporter(args)
 
     val toRun = testName match {
       case None =>
-        val enabled = args.filter.dynaTags.testTags.toSeq
-          .flatMap {
-            case (suiteId, tests) =>
-              tests
-                .filter(_._2.contains(Suite.SELECTED_TAG))
-                .keys
-                .map {
-                  testname =>
-                    (suiteId, testname)
-                }
-          }
-          .toSet
-
-        if (enabled.isEmpty) {
-          testsInThisMonad
-        } else {
-          testsInThisMonad.filter(t => enabled.contains((t.meta.id.suiteId, t.meta.id.name)))
+        val fakeSuiteId = suiteId
+        candidatesForThisRuntime.filter {
+          test =>
+            val tags: Map[String, Set[String]] = Map.empty
+            // for this check we need fool filter to think that all our tests belong to current suite
+            val (filterTest, ignoreTest) = args.filter.apply(test.meta.id.name, tags, fakeSuiteId)
+            val isOk = !filterTest && !ignoreTest
+            isOk
         }
+
       case Some(testName) =>
         if (!testNames.contains(testName)) {
           throw new IllegalArgumentException(Resources.testNotFound(testName))
         } else {
-          testsInThisMonad.filter(_.meta.id.name == testName)
+          candidatesForThisRuntime.filter(_.meta.id.name == testName)
         }
     }
 
