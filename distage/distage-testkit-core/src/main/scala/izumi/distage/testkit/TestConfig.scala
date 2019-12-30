@@ -5,14 +5,19 @@ import izumi.distage.framework.model.PluginSource
 import izumi.distage.plugins.PluginConfig
 
 /**
-  * @param pluginSource       Each pluginSource creates a distinct memoization group, i.e.
-  *                           objects will be memoized only between tests with the same plugins
-  * @param activation         Chosen configurations. Different Activations have distinct memoization groups
-  * @param memoizationRoots   Every distinct set of `memoizationRoots` will have a distinct memoization group
-  *                           of tests with the exact same `memoizedKeys`
+  * @param pluginSource       Source of module definitions from which to build object graphs for each tests.
+  *                           Each [[PluginSource]] creates a distinct memoization group (aka [[izumi.distage.testkit.services.dstest.TestEnvironment]]).
+  *                           objects will be memoized only between tests in the same memoization group
+  *
+  * @param activation         Chosen configurations. Different [[Activation]]s will create distinct memoization groups
+  *
+  * @param memoizationRoots   Every distinct set of `memoizationRoots` will create a distinct memoization group
+  *                           for tests with the exact same `memoizationRoots`
+  *
   * @param moduleOverrides    Override loaded plugins with a given [[Module]]. Using overrides
   *                           will create a distinct memoization group, i.e. objects will be
   *                           memoized only between tests with the exact same overrides
+  *
   * @param bootstrapOverrides Same as [[moduleOverrides]], but for [[BootstrapModule]]
   */
 final case class TestConfig(

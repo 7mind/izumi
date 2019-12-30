@@ -73,7 +73,7 @@ class DistageTestRunner[F[_]: TagK]
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testPlans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(env memoizedKeys _.target).map(_.target)
+            plan.steps.filter(env memoizationRoots _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
         logger.info(s"Memoized components in env: $sharedKeys")

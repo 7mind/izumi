@@ -22,7 +22,7 @@ trait DistageTestEnv {
       makeEnv(logger, testConfig, roles, mergeStrategy)
     }
 
-    if (DebugProperties.`izumi.distage.testkit.environment.memoize`.asBoolean(true)) {
+    if (DebugProperties.`izumi.distage.testkit.environment.cache`.asBoolean(true)) {
       DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
     } else {
       doMake()
@@ -48,7 +48,7 @@ trait DistageTestEnv {
       roles = roles,
       activationInfo = availableActivations,
       activation = activation,
-      memoizedKeys = testConfig.memoizationRoots,
+      memoizationRoots = testConfig.memoizationRoots,
     )
   }
 
