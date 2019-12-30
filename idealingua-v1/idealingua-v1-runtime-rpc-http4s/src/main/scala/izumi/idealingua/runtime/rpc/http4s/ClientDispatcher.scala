@@ -17,8 +17,7 @@ class ClientDispatcher[C <: Http4sContext]
 , printer: circe.Printer
 , baseUri: Uri
 , codec: IRTClientMultiplexor[C#BiIO]
-)
-  extends IRTDispatcher[C#BiIO] {
+) extends IRTDispatcher[C#BiIO] {
   import c._
 
   def dispatch(request: IRTMuxRequest): BiIO[Throwable, IRTMuxResponse] = {
@@ -33,15 +32,15 @@ class ClientDispatcher[C <: Http4sContext]
           val req = buildRequest(baseUri, request, outBytes)
 
           logger.debug(s"${request.method -> "method"}: Prepared request $encoded")
-          runRequest(handler, req)
+          runRequest[IRTMuxResponse](handler, req)
       }
   }
 
   protected def runRequest[T](handler: Response[MonoIO] => MonoIO[T], req: Request[MonoIO]): BiIO[Throwable, T] = {
     val builder = blazeClientBuilder(BlazeClientBuilder[MonoIO](c.clientExecutionContext))
-    builder.resource.use {
+    builder.resource.use[T] {
       client =>
-        client.fetch(req)(handler)
+        client.fetch[T](req)(handler)
     }
   }
 

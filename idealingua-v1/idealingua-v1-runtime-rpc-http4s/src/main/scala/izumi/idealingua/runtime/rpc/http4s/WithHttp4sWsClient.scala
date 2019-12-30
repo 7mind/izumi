@@ -35,8 +35,7 @@ class ClientWsDispatcher[C <: Http4sContext]
   protected val wsClientContextProvider: WsClientContextProvider[C#ClientContext],
   logger: IzLogger,
   printer: Printer,
-)
-  extends IRTDispatcher[C#BiIO] with AutoCloseable {
+) extends IRTDispatcher[C#BiIO] with AutoCloseable {
 
   import c._
 
