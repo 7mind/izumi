@@ -49,7 +49,7 @@ class DistageTestRunner[F[_]: TagK]
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
+        val appModule = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
         val injector = Injector.Standard(bsModule)
 
@@ -164,6 +164,8 @@ class DistageTestRunner[F[_]: TagK]
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
 
+                  println(s"Test Id $id")
+
                   checker.verify(newtestplan.primary)
                   checker.verify(newtestplan.side)
                   checker.verify(newtestplan.shared)
@@ -256,7 +258,7 @@ object DistageTestRunner {
 
   sealed trait TestStatus
   object TestStatus {
-    case object Scheduled extends TestStatus
+//    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus

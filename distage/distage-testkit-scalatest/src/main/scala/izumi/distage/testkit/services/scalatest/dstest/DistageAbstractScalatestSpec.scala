@@ -16,7 +16,7 @@ import org.scalatest.TestCancellation
 import scala.language.implicitConversions
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
-  private lazy val firstRegistration = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getCanonicalName)
+  private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
 
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
     if (firstRegistration) {

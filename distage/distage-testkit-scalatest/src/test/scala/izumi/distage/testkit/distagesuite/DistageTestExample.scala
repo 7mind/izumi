@@ -91,16 +91,15 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
 
 }
 
-
-
 final class DistageTestExampleId extends DistageTestExampleBase[Identity]
 final class DistageTestExampleCIO extends DistageTestExampleBase[CIO]
 final class DistageTestExampleZIO extends DistageTestExampleBase[Task]
+final class DistageTestExampleZIO2 extends DistageTestExampleBase[Task]
 
 abstract class DistageSleepTest[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
   "distage test" should {
     "sleep" in {
-      service: MockUserRepository[F] =>
+      _: MockUserRepository[F] =>
         for {
           _ <- F.maybeSuspend(Thread.sleep(100))
         } yield ()
