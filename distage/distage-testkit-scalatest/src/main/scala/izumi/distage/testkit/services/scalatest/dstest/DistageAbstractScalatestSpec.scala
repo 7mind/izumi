@@ -16,12 +16,19 @@ import org.scalatest.TestCancellation
 import scala.language.implicitConversions
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
+  private lazy val firstRegistration = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getCanonicalName)
+
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
-    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+    if (firstRegistration) {
+      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+    }
   }
 }
 
-trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] with DistageTestEnv {
+trait DistageAbstractScalatestSpec[F[_]]
+  extends ScalatestWords
+    with DistageTestEnv
+    with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
@@ -36,7 +43,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
   //
-  protected var context: Option[SuiteContext] = None
+  protected[distage] var context: Option[SuiteContext] = None
 
   override def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
     Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
