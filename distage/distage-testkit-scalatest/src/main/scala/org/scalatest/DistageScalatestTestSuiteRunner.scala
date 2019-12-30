@@ -1,24 +1,53 @@
 package org.scalatest
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import distage.TagK
+import io.github.classgraph.ClassGraph
 import izumi.distage.framework.services.IntegrationChecker
 import izumi.distage.testkit.SpecConfig
 import izumi.distage.testkit.services.dstest.DistageTestRunner._
 import izumi.distage.testkit.services.dstest.{AbstractDistageSpec, DistageTestRunner, SpecEnvironment}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalatest.events._
 import org.scalatest.exceptions.TestCanceledException
 
 import scala.collection.immutable.TreeSet
+import scala.util.Try
+
+object ScalatestWorkaround {
+  val classpathScanned = new AtomicBoolean(false)
+
+  import scala.jdk.CollectionConverters._
+
+
+  def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]) = instance.synchronized {
+    if (classpathScanned.compareAndSet(false, true)) {
+
+      val classLoader = instance.getClass.getClassLoader
+      println(s"Loading in ${classLoader}, ${System.identityHashCode(classLoader)}")
+      //val classpath = IzJvm.safeClasspathSeq(classLoader).filter(p => Paths.get(p).toFile.getName == "test-classes")
+      val scan = new ClassGraph().disableJarScanning().enableClassInfo().addClassLoader(classLoader).scan()
+      val specs =  scan.getClassesImplementing(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala
+      val out = specs.map(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
+      DistageTestsRegistrySingleton.disableRegistration()
+      out
+    } else {
+      Seq.empty
+    }
+
+  }
+
+}
 
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
+  val loaded = ScalatestWorkaround.doScan(this)
+
   implicit def tagMonoIO: TagK[F]
-
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
-
   protected def specConfig: SpecConfig = SpecConfig()
-
   protected def makeSpecEnvironment(): SpecEnvironment = {
     val c = specConfig
     val clazz = this.getClass
@@ -36,9 +65,36 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
   override protected final def runTests(testName: Option[String], args: Args): Status = throw new UnsupportedOperationException
   override protected final def runTest(testName: String, args: Args): Status = throw new UnsupportedOperationException
 
+  override def run(testName: Option[String], args: Args): Status = {
+    val status = new StatefulStatus
+    println(s"...RUN: ${this.getClass}, ${loaded.size}")
+
+    //Thread.sleep(1000)
+    try {
+      if (loaded.nonEmpty && DistageTestsRegistrySingleton.ticketToProceed[F]()) {
+        println(s"RUN: ${this.getClass}, ${loaded.size}")
+        doRun(testName, args)
+      } else {
+        println(s"STUB: ${this.getClass}")
+        addStub(args, None)
+      }
+    } catch {
+      case t: Throwable =>
+        // IDEA reporter is insane
+        //status.setFailedWith(t)
+        addStub(args, Some(t))
+
+    } finally {
+      status.setCompleted()
+    }
+
+    status
+  }
+
   override def testNames: Set[String] = {
     TreeSet[String](testsInThisTestClass.map(_.meta.id.name): _*)
   }
+
   override def tags: Map[String, Set[String]] = Map.empty
 
   override def expectedTestCount(filter: Filter): Int = {
@@ -55,28 +111,6 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
 
   private[this] def testsInThisMonad: Seq[DistageTest[F]] = {
     DistageTestsRegistrySingleton.list[F]
-  }
-
-  override def run(testName: Option[String], args: Args): Status = {
-    val status = new StatefulStatus
-
-    try {
-      if (DistageTestsRegistrySingleton.ticketToProceed[F]()) {
-        doRun(testName, args)
-      } else {
-        addStub(args, None)
-      }
-    } catch {
-      case t: Throwable =>
-        // IDEA reporter is insane
-        //status.setFailedWith(t)
-        addStub(args, Some(t))
-
-    } finally {
-      status.setCompleted()
-    }
-
-    status
   }
 
   override def testDataFor(testName: String, theConfigMap: ConfigMap): TestData = {
