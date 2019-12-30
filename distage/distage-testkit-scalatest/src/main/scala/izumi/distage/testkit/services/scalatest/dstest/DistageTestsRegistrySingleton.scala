@@ -20,21 +20,22 @@ object DistageTestsRegistrySingleton {
     registrationOpen.set(false)
   }
 
-  def list[F[_] : TagK]: Seq[DistageTest[F]] = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
-  }
-
   def register[F[_] : TagK](t: DistageTest[F]): Unit = synchronized {
     if (registrationOpen.get()) {
-      println("Test registered")
       registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
-    } else {
-      println("test ignored")
     }
   }
 
-  def ticketToProceed[F[_] : TagK](): Boolean = {
+  def proceedWithTests[F[_] : TagK](): Option[Seq[DistageTest[F]]]= {
     val tpe = SafeType.getK[F]
-    !runTracker.putIfAbsent(tpe, true)
+    if (!runTracker.putIfAbsent(tpe, true)) {
+      Some(list[F])
+    } else {
+      None
+    }
+  }
+
+  def list[F[_] : TagK]: Seq[DistageTest[F]] = synchronized {
+    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 }
