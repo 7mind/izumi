@@ -1,6 +1,7 @@
 package izumi.distage.testkit.services.scalatest.dstest
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 import distage.{SafeType, TagK}
 import izumi.distage.testkit.services.dstest.DistageTestRunner.DistageTest
@@ -10,27 +11,44 @@ import org.scalatest.{StatefulStatus, Tracker}
 import scala.collection.mutable
 
 object DistageTestsRegistrySingleton {
-  private[DistageTestsRegistrySingleton] type Fake[T]
+  protected[this] type Fake[T]
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
   private[this] val statuses = new mutable.HashMap[String, StatefulStatus]()
   private[this] val trackers = new mutable.HashMap[String, Either[mutable.ArrayBuffer[Tracker => Unit], Tracker]]()
-  private[this] val runTracker = new ConcurrentHashMap[SafeType, Boolean]()
+  private[this] val runTracker = new ConcurrentHashMap[SafeType, java.lang.Boolean]()
+  private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), java.lang.Boolean]()
+  private[this] val registrationOpen = new AtomicBoolean(true)
+
+  def disableRegistration(): Unit = {
+    registrationOpen.set(false)
+  }
+
+  def registerSuite[F[_]: TagK](suiteId: String): Boolean = synchronized {
+    val tpe = SafeType.getK[F]
+    knownSuites.putIfAbsent((tpe, suiteId), true) eq null
+  }
+
+  def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
+    if (registrationOpen.get()) {
+      registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
+    }
+  }
+
+  def proceedWithTests[F[_]: TagK](): Option[Seq[DistageTest[F]]] = {
+    val tpe = SafeType.getK[F]
+    if (runTracker.putIfAbsent(tpe, true) eq null) {
+      Some(list[F])
+    } else {
+      None
+    }
+  }
 
   def list[F[_]: TagK]: Seq[DistageTest[F]] = synchronized {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 
-  def register[F[_]: TagK](t: DistageTest[F]): Unit = synchronized {
-    registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).append(t.asInstanceOf[DistageTest[Fake]]).discard()
-  }
-
-  def ticketToProceed[F[_]: TagK](): Boolean = {
-    val tpe = SafeType.getK[F]
-    !runTracker.putIfAbsent(tpe, true)
-  }
-
-  def registerStatus(suiteId: String, status: StatefulStatus): Unit = synchronized {
-    statuses(suiteId) = status
+  def registerStatus(suiteId: String): StatefulStatus = synchronized {
+    statuses.getOrElseUpdate(suiteId, new StatefulStatus)
   }
 
   def completeStatuses(suiteIds: Set[String]): Unit = synchronized {
@@ -44,7 +62,6 @@ object DistageTestsRegistrySingleton {
       case Right(tracker) =>
         f(tracker)
     }
-    ()
   }
 
   def registerTracker(suiteId: String)(tracker: Tracker): Unit = synchronized {

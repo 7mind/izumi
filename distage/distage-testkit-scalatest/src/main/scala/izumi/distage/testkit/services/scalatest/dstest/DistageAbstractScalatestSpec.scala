@@ -8,7 +8,7 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks, unused}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
 import org.scalatest.TestCancellation
@@ -16,12 +16,19 @@ import org.scalatest.TestCancellation
 import scala.language.implicitConversions
 
 trait WithSingletonTestRegistration[F[_]] extends AbstractDistageSpec[F] {
+  private[this] lazy val firstRegistration: Boolean = DistageTestsRegistrySingleton.registerSuite[F](this.getClass.getName)
+
   override def registerTest(function: ProviderMagnet[F[_]], env: TestEnvironment, pos: CodePosition, id: TestId): Unit = {
-    DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+    if (firstRegistration) {
+      DistageTestsRegistrySingleton.register[F](DistageTest(function, env, TestMeta(id, pos, System.identityHashCode(function).toLong)))
+    }
   }
 }
 
-trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSingletonTestRegistration[F] with DistageTestEnv {
+trait DistageAbstractScalatestSpec[F[_]]
+  extends ScalatestWords
+    with DistageTestEnv
+    with WithSingletonTestRegistration[F] {
   this: AbstractDistageSpec[F] =>
 
   final protected lazy val testEnv: TestEnvironment = makeTestEnv()
@@ -36,7 +43,7 @@ trait DistageAbstractScalatestSpec[F[_]] extends ScalatestWords with WithSinglet
   protected def logger: IzLogger = IzLogger(Log.Level.Debug)("phase" -> "test")
 
   //
-  protected var context: Option[SuiteContext] = None
+  protected[distage] var context: Option[SuiteContext] = None
 
   override def registerBranch(description: String, childPrefix: Option[String], verb: String, methodName: String, stackDepth: Int, adjustment: Int, pos: source.Position, fun: () => Unit): Unit = {
     Quirks.discard(childPrefix, methodName, stackDepth, adjustment, pos)
@@ -68,6 +75,7 @@ object DistageAbstractScalatestSpec {
                                      )(
                                        implicit override val tagMonoIO: TagK[F]
                                      ) extends DISyntaxBase[F] {
+
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -94,13 +102,11 @@ object DistageAbstractScalatestSpec {
       takeFunAny(function, pos.get)
     }
 
-    def skip(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
+    def skip(@unused function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
-    final def skip[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
+    def skip[T: Tag](@unused function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
@@ -148,26 +154,23 @@ object DistageAbstractScalatestSpec {
       take2(function, pos.get)
     }
 
-
-    final def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+    def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       take2(function, pos.get)
     }
 
-    def skip(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
+    def skip(@unused function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
+      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
     }
 
-    final def skip[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
+    def skip[T: Tag](@unused function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
     }
 
-    private def cancel(eff: DIEffect[F[Throwable, *]]) = {
+    private def cancel(eff: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
       eff.maybeSuspend(cancelNow())
     }
 
-    private def cancelNow() = {
+    private def cancelNow(): Nothing = {
       TestCancellation.cancel(Some("test skipped!"), None, 1)
     }
   }

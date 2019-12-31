@@ -3,16 +3,17 @@ package izumi.distage.docker
 import java.util.concurrent.TimeUnit
 
 import com.github.dockerjava.api.command.InspectContainerResponse
-import com.github.dockerjava.api.model.{Bind, ExposedPort, PortBinding, Ports, Volume}
+import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
 import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.functional.Value
+import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.platform.network.IzSockets
 import izumi.logstage.api.IzLogger
@@ -130,7 +131,7 @@ object DockerContainer {
                   .exec()
               } catch {
                 case c: java.net.ConnectException =>
-                  throw new IntegrationCheckFailedException(c.getMessage, Some(c))
+                  throw new IntegrationCheckException(Seq(ResourceCheck.ResourceUnavailable(c.getMessage, Some(c))))
               }
             }
             .map(_.asScala.toList.sortBy(_.getId))

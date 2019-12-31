@@ -42,12 +42,14 @@ class PluginLoaderDefaultImpl
 object PluginLoaderDefaultImpl {
   private lazy val cache = new SyncCache[String, Seq[PluginBase]]()
 
+
+
   def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = Value(new ClassGraph())
       .map(_.whitelistPackages(enabledPackages: _*))
       .map(_.whitelistClasses(whitelistClasses :+ base: _*))
       .map(_.blacklistPackages(disabledPackages: _*))
-      .map(_.enableMethodInfo())
+      .map(_.enableClassInfo())
       .map(if (debug) _.verbose() else identity)
       .map(_.scan())
       .get

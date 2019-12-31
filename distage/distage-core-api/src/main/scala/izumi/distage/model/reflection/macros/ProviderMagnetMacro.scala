@@ -10,12 +10,14 @@ import izumi.fundamentals.reflection.{AnnotationTools, ReflectionUtil, TrivialMa
 import scala.reflect.macros.blackbox
 
 /**
-  * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.providermagnet=true` java property! e.g.
+  * To see macro debug output during compilation, set `-Dizumi.debug.macro.distage.providermagnet=true` java property!
+  *
   * {{{
-  * sbt -Dizumi.debug.macro.distage.providermagnet=true compile
+  *   sbt -Dizumi.debug.macro.distage.providermagnet=true compile
   * }}}
+  *
+  * @see [[DebugProperties]]
   */
-// TODO: bench and optimize
 class ProviderMagnetMacro(c: blackbox.Context) extends ProviderMagnetMacro0(c)
 
 class ProviderMagnetMacro0[C <: blackbox.Context](val c: C) {

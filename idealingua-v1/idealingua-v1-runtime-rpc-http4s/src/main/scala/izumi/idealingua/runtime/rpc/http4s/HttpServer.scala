@@ -252,7 +252,7 @@ class HttpServer[C <: Http4sContext]
       .flatMap(handleResult(context, method, _))
   }
 
-  private def handleResult(context: HttpRequestContext[MonoIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): MonoIO[Response[MonoIO]] = {
+  private def handleResult(context: HttpRequestContext[MonoIO, RequestContext], method: IRTMethodId, result: BIOExit[Throwable, Option[Json]]): BiIO[Throwable, Response[MonoIO]] = {
     result match {
       case Success(v) =>
         v match {

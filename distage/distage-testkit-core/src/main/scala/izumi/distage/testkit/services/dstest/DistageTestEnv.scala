@@ -22,7 +22,7 @@ trait DistageTestEnv {
       makeEnv(logger, testConfig, roles, mergeStrategy)
     }
 
-    if (DebugProperties.`izumi.distage.testkit.environment.memoize`.asBoolean(true)) {
+    if (DebugProperties.`izumi.distage.testkit.environment.cache`.asBoolean(true)) {
       DistageTestEnv.cache.getOrCompute(DistageTestEnv.EnvCacheKey(testConfig, roles, mergeStrategy), doMake())
     } else {
       doMake()
@@ -31,8 +31,8 @@ trait DistageTestEnv {
 
   private def makeEnv(logger: IzLogger, testConfig: TestConfig, roles: RolesInfo, mergeStrategy: PluginMergeStrategy): TestEnvironment = {
     val plugins = testConfig.pluginSource.load()
-    val appModule = mergeStrategy.merge(plugins.app)
-    val bootstrapModule = mergeStrategy.merge(plugins.bootstrap)
+    val appModule = mergeStrategy.merge(plugins.app) overridenBy testConfig.moduleOverrides
+    val bootstrapModule = mergeStrategy.merge(plugins.bootstrap) overridenBy testConfig.bootstrapOverrides
     val availableActivations = ActivationInfoExtractor.findAvailableChoices(logger, appModule)
     val activation = testConfig.activation
 
@@ -48,7 +48,7 @@ trait DistageTestEnv {
       roles = roles,
       activationInfo = availableActivations,
       activation = activation,
-      memoizedKeys = testConfig.memoizationRoots,
+      memoizationRoots = testConfig.memoizationRoots,
     )
   }
 

@@ -4,7 +4,7 @@ import distage.config.AppConfig
 import distage.{DIKey, Injector, ModuleBase}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.IntegrationChecker.IntegrationCheckException
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{ConfigLoader, IntegrationChecker, ModuleProvider, RoleAppPlanner}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Binding.SingletonBinding

@@ -171,7 +171,7 @@ import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
 
 class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
-  override protected def config: TestConfig = TestConfig(
+  override protected def config: TestConfig = super.config.copy(
     // choose implementations tagged `Repo.Dummy` when multiple implementations with `Repo.*` tags are available
     activation = Activation(Repo -> Repo.Dummy)
   )
@@ -180,7 +180,7 @@ class AxisTest extends DistageBIOSpecScalatest[zio.IO] {
 
 ### Resource Bindings, Lifecycle
 
-You can specify objects' lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
+You can specify object lifecycle by injecting [cats.effect.Resource](https://typelevel.org/cats-effect/datatypes/resource.html),
 [zio.ZManaged](https://zio.dev/docs/datatypes/datatypes_managed) or @scaladoc[distage.DIResource](izumi.distage.model.definition.DIResource)
 values that specify the allocation and finalization actions for an object.
 

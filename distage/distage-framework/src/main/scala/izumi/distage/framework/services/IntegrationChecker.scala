@@ -2,14 +2,12 @@ package izumi.distage.framework.services
 
 import distage.{DIKey, TagK}
 import izumi.distage.framework.model.IntegrationCheck
-import izumi.distage.framework.services.IntegrationChecker.IntegrationCheckException
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.Locator
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync}
-import izumi.distage.model.exceptions.DIException
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
 import izumi.fundamentals.platform.integration.ResourceCheck
-import izumi.fundamentals.platform.strings.IzString._
 import izumi.logstage.api.IzLogger
 
 import scala.util.control.NonFatal
@@ -21,7 +19,7 @@ trait IntegrationChecker[F[_]] {
 
     collectFailures(integrationComponents, integrationLocator).flatMap {
       case Left(failures) =>
-        F.fail(new IntegrationCheckException(s"Integration check failed, failures were: ${failures.niceList()}", failures))
+        F.fail(new IntegrationCheckException(failures))
       case Right(_) =>
         F.unit
     }
@@ -31,8 +29,6 @@ trait IntegrationChecker[F[_]] {
 }
 
 object IntegrationChecker {
-
-  class IntegrationCheckException(message: String, val failures: Seq[ResourceCheck.Failure]) extends DIException(message)
 
   class Impl[F[_]]
   (

@@ -59,7 +59,7 @@ class RequestState[F[+ _, + _]: BIOTemporal] {
       method <- maybeMethod match {
         case Some(m@PacketInfo(method, id)) =>
           respond(id, RawResponse.GoodRawResponse(data, method))
-          F.pure(m)
+          F.pure(m): F[IRTMissingHandlerException, PacketInfo]
 
         case None =>
           F.fail(new IRTMissingHandlerException(s"Cannot handle response for async request $maybePacketId: no service handler", data))
@@ -77,7 +77,7 @@ class RequestState[F[+ _, + _]: BIOTemporal] {
             case None =>
               F.fail(())
             case Some(value) =>
-              F.pure(Some(value))
+              F.pure(Some(value)): F[Unit, Some[RawResponse]]
           }
       }
       .retryOrElse(timeout, F.pure(None))

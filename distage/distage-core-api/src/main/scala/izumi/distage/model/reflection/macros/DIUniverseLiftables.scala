@@ -42,7 +42,7 @@ class DIUniverseLiftables[D <: StaticDIUniverse](val u: D) {
   // components, unlike general method symbols (info for which we don't generate).
   protected[this] implicit val liftableSymbolInfo: Liftable[SymbolInfo] = {
     info =>
-      q"""{ $runtimeDIUniverse.SymbolInfo.Static(
+      q"""{ $runtimeDIUniverse.SymbolInfo(
       name = ${info.name},
       finalResultType = ${liftTypeToSafeType(info.finalResultType)},
       isByName = ${info.isByName},

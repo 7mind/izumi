@@ -208,7 +208,6 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
     val injector = mkInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
-    val tag = Tag[Trait3[Dep] with Trait4].tag
     val instantiated = context.get[Trait3[Dep] with Trait4]
 
     assert(instantiated.dep == context.get[Dep])

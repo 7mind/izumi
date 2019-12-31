@@ -2,7 +2,12 @@ package izumi.distage.testkit.services.dstest
 
 import izumi.fundamentals.platform.logging
 
+/**
+  * Java properties that control caching of distage-testkit classpath scans (when used)
+  *
+  * @see [[logging.DebugProperties]]
+  */
 object DebugProperties extends logging.DebugProperties {
-  /** Scan classpath only once per test run */
-  final val `izumi.distage.testkit.environment.memoize` = "izumi.distage.testkit.environment.memoize"
+  /** Cache created [[TestEnvironment]] */
+  final val `izumi.distage.testkit.environment.cache` = "izumi.distage.testkit.environment.cache"
 }

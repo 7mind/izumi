@@ -43,7 +43,7 @@ class IRTServerMultiplexor[F[+_, +_] : BIO, C, C2](list: Set[IRTWrappedService[F
         case BIOExit.Error(decodingFailure, trace) =>
           F.fail(new IRTDecodingException(s"$toInvoke: Failed to decode JSON ${parsedBody.toString()} $trace", Some(decodingFailure)))
       }
-      casted <- F.syncThrowable(safeDecoded.value.asInstanceOf[method.signature.Input])
+      casted = safeDecoded.value.asInstanceOf[method.signature.Input]
       resultAction <- F.syncThrowable(method.invoke(context, casted))
       safeResult <- resultAction
       encoded <- F.syncThrowable(method.marshaller.encodeResponse.apply(IRTResBody(safeResult)))

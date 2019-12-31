@@ -11,5 +11,5 @@ final case class TestEnvironment(
                                   roles: RolesInfo,
                                   activationInfo: ActivationInfo,
                                   activation: Activation,
-                                  memoizedKeys: DIKey => Boolean,
+                                  memoizationRoots: DIKey => Boolean,
                                 )

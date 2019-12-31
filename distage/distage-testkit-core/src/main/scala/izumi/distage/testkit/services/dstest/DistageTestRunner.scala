@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
@@ -12,7 +13,6 @@ import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -49,7 +49,7 @@ class DistageTestRunner[F[_]: TagK]
         // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
         val provider = runnerEnvironment.makeModuleProvider(options, config, logger, env.roles, env.activationInfo, env.activation)
         val bsModule = provider.bootstrapModules().merge overridenBy env.bsModule overridenBy runnerEnvironment.bootstrapOverrides
-        val appModule: distage.Module = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
+        val appModule = provider.appModules().merge overridenBy env.appModule overridenBy runnerEnvironment.moduleOverrides
 
         val injector = Injector.Standard(bsModule)
 
@@ -73,7 +73,7 @@ class DistageTestRunner[F[_]: TagK]
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testPlans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(env memoizedKeys _.target).map(_.target)
+            plan.steps.filter(env memoizationRoots _.target).map(_.target)
         }.toSet -- runtimeGcRoots
 
         logger.info(s"Memoized components in env: $sharedKeys")
@@ -109,9 +109,9 @@ class DistageTestRunner[F[_]: TagK]
               }
             } catch {
               case p: ProvisioningException =>
-                val integrations = p.getSuppressed.collect { case i: IntegrationCheckFailedException => i.toResourceCheck }
+                val integrations = p.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq
                 if (integrations.nonEmpty) {
-                  ignoreIntegrationCheckFailedTests(tests, integrations)
+                  ignoreIntegrationCheckFailedTests(tests, integrations.flatten)
                 } else throw p
             }
         }
@@ -163,6 +163,8 @@ class DistageTestRunner[F[_]: TagK]
 
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
                   val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
+
+                  println(s"Test Id $id")
 
                   checker.verify(newtestplan.primary)
                   checker.verify(newtestplan.side)

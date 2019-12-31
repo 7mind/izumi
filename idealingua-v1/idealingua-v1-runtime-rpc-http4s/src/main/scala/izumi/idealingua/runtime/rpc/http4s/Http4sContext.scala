@@ -11,7 +11,7 @@ trait Http4sContext { outer =>
   type BiIO[+E, +A]
   final type MonoIO[+A] = BiIO[Throwable, A]
 
-  type MaterializedStream
+  type MaterializedStream = String
 
   type RequestContext
 
@@ -30,42 +30,30 @@ trait Http4sContext { outer =>
   implicit def CIOT: Timer[MonoIO]
 
   def BIORunner: BIORunner[BiIO]
-  def dsl: Http4sDsl[MonoIO]
+  val dsl: Http4sDsl[MonoIO]
 
   def clientExecutionContext: ExecutionContext
 
   final type DECL = this.type
 
-  final def self: IMPL[DECL] = new IMPL[DECL]
+  final def self: IMPL[DECL] = this
 
-  sealed trait Aux[_BiIO[+_, +_], _RequestContext, _MethodContext, _ClientId, _ClientContext, _ClientMethodContext] extends Http4sContext {
-    override final type BiIO[+E, +V] = _BiIO[E, V]
-
-    override final type MaterializedStream = String
-
-    override final type RequestContext = _RequestContext
-    override final type MethodContext = _MethodContext
-    override final type ClientContext = _ClientContext
-    override final type ClientMethodContext = _ClientMethodContext
-    override final type ClientId = _ClientId
+  type Aux[_BiIO[+_, +_], _RequestContext, _MethodContext, _ClientId, _ClientContext, _ClientMethodContext] = Http4sContext {
+    type BiIO[+E, +V] = _BiIO[E, V]
+    type RequestContext = _RequestContext
+    type MethodContext = _MethodContext
+    type ClientContext = _ClientContext
+    type ClientMethodContext = _ClientMethodContext
+    type ClientId = _ClientId
   }
 
   /**
-    * Mainly here for highlighting in Intellij, type alias works too
+    * This is to prove type equality between a type `C <: Http4sContext` and `c: C`
+    * Scalac treats them as different, even when there's a Singleton upper bound!
     *
-    * @see https://youtrack.jetbrains.net/issue/SCL-14533
+    * @see details: https://gist.github.com/pshirshov/1273add00d902a6cfebd72426d7ed758
+    * @see dotty: https://github.com/lampepfl/dotty/issues/4583#issuecomment-435382992
+    * @see intellij highlighting fixed: https://youtrack.jetbrains.net/issue/SCL-14533
     */
-  final class IMPL[C <: Http4sContext] private[Http4sContext] extends Aux[C#BiIO, C#RequestContext, C#MethodContext, C#ClientId, C#ClientContext, C#ClientMethodContext] {
-    override val BIORunner: BIORunner[C#BiIO] = outer.BIORunner.asInstanceOf[BIORunner[C#BiIO]]
-
-    override implicit val F: BIOTemporal[C#BiIO] = outer.F.asInstanceOf[BIOTemporal[C#BiIO]]
-
-    override val dsl: Http4sDsl[C#MonoIO] = outer.dsl.asInstanceOf[Http4sDsl[C#MonoIO]]
-
-    override implicit val CIO: ConcurrentEffect[C#MonoIO] = outer.CIO.asInstanceOf[ConcurrentEffect[C#MonoIO]]
-
-    override implicit val CIOT: Timer[C#MonoIO] = outer.CIOT.asInstanceOf[Timer[C#MonoIO]]
-
-    override val clientExecutionContext: ExecutionContext = outer.clientExecutionContext
-  }
+  final type IMPL[C <: Http4sContext] = Aux[C#BiIO, C#RequestContext, C#MethodContext, C#ClientId, C#ClientContext, C#ClientMethodContext]
 }
