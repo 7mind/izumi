@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import distage.{DIKey, Injector, PlannerInput}
 import izumi.distage.framework.model.IntegrationCheck
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.ModuleBase
@@ -12,7 +13,6 @@ import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.roles.model.exceptions.IntegrationCheckFailedException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -109,9 +109,9 @@ class DistageTestRunner[F[_]: TagK]
               }
             } catch {
               case p: ProvisioningException =>
-                val integrations = p.getSuppressed.collect { case i: IntegrationCheckFailedException => i.toResourceCheck }
+                val integrations = p.getSuppressed.collect { case i: IntegrationCheckException => i.failures }.toSeq
                 if (integrations.nonEmpty) {
-                  ignoreIntegrationCheckFailedTests(tests, integrations)
+                  ignoreIntegrationCheckFailedTests(tests, integrations.flatten)
                 } else throw p
             }
         }
