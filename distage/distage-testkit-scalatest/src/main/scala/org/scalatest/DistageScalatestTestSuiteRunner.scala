@@ -98,12 +98,17 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       DistageTestsRegistrySingleton.proceedWithTests[F]() match {
         case Some(value) =>
           doRun(value, testName, args)
+          if (!status.isCompleted) {
+            status.setCompleted()
+          }
         case None =>
       }
     } catch {
       case t: Throwable =>
-        status.setFailedWith(t)
-        status.setCompleted()
+        if (!status.isCompleted) {
+          status.setFailedWith(t)
+          status.setCompleted()
+        }
     }
     status
   }

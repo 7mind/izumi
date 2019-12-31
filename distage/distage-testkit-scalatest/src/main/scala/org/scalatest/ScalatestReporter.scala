@@ -1,8 +1,10 @@
 package org.scalatest
 
+import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{SuiteData, TestMeta, TestReporter, TestStatus}
 import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
 import izumi.fundamentals.platform.strings.IzString._
+import org.scalatest.Suite.getIndentedTextForTest
 import org.scalatest.events._
 
 class ScalatestReporter(reporter: Reporter) extends TestReporter {
@@ -39,6 +41,8 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
     val suiteClassName1 = test.id.suiteId
     val testName = test.id.name
 
+    val formatter = Some(getIndentedTextForTest(s"- $testName", 0, includeIcon = false))
+
     testStatus match {
 //      case TestStatus.Scheduled =>
 
@@ -49,6 +53,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           testName,
           testName,
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+          formatter = Some(MotionToSuppress),
         ))
       case TestStatus.Succeed(duration) =>
         doReport(suiteId1)(TestSucceeded(
@@ -59,6 +64,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           recordedEvents = Vector.empty,
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+          formatter = formatter,
         ))
       case TestStatus.Failed(t, duration) =>
         doReport(suiteId1)(TestFailed(
@@ -71,6 +77,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           throwable = Some(t),
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+          formatter = formatter,
         ))
       case TestStatus.Cancelled(clue, duration) =>
         doReport(suiteId1)(TestCanceled(
@@ -82,6 +89,7 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           recordedEvents = Vector.empty,
           duration = Some(duration.toMillis),
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
+          formatter = formatter,
         ))
       case TestStatus.Ignored(checks) =>
         doReport(suiteId1)(TestCanceled(
@@ -91,6 +99,8 @@ class ScalatestReporter(reporter: Reporter) extends TestReporter {
           testName,
           testName,
           recordedEvents = Vector.empty,
+          throwable = Some(new IntegrationCheckException(checks)),
+          formatter = formatter,
           location = Some(LineInFile(test.pos.position.line, test.pos.position.file, None)),
         ))
     }

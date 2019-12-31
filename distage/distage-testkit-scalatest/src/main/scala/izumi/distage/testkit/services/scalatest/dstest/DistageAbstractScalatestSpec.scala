@@ -8,7 +8,7 @@ import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, Tes
 import izumi.distage.testkit.services.dstest._
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec._
 import izumi.distage.testkit.services.{DISyntaxBIOBase, DISyntaxBase}
-import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks}
+import izumi.fundamentals.platform.language.{CodePosition, CodePositionMaterializer, Quirks, unused}
 import izumi.logstage.api.{IzLogger, Log}
 import org.scalactic.source
 import org.scalatest.TestCancellation
@@ -75,6 +75,7 @@ object DistageAbstractScalatestSpec {
                                      )(
                                        implicit override val tagMonoIO: TagK[F]
                                      ) extends DISyntaxBase[F] {
+
     override protected def takeIO(function: ProviderMagnet[F[_]], pos: CodePosition): Unit = {
       val id = TestId(
         context.map(_.toName(testname)).getOrElse(testname),
@@ -101,13 +102,11 @@ object DistageAbstractScalatestSpec {
       takeFunAny(function, pos.get)
     }
 
-    def skip(function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
+    def skip(@unused function: ProviderMagnet[F[_]])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
-    final def skip[T: Tag](function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
+    def skip[T: Tag](@unused function: T => F[_])(implicit pos: CodePositionMaterializer): Unit = {
       takeIO((eff: DIEffect[F]) => cancel(eff), pos.get)
     }
 
@@ -155,26 +154,23 @@ object DistageAbstractScalatestSpec {
       take2(function, pos.get)
     }
 
-
-    final def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+    def in[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
       take2(function, pos.get)
     }
 
-    def skip(function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
+    def skip(@unused function: ProviderMagnet[F[_, _]])(implicit pos: CodePositionMaterializer): Unit = {
+      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
     }
 
-    final def skip[T: Tag](function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
-      Quirks.discard(function)
-      takeAs1((eff: DIEffect[F[Throwable, *]]) => cancel(eff), pos.get)
+    def skip[T: Tag](@unused function: T => F[_, _])(implicit pos: CodePositionMaterializer): Unit = {
+      takeAs1((eff: DIEffect[F[Throwable, ?]]) => cancel(eff), pos.get)
     }
 
-    private def cancel(eff: DIEffect[F[Throwable, *]]) = {
+    private def cancel(eff: DIEffect[F[Throwable, ?]]): F[Throwable, Nothing] = {
       eff.maybeSuspend(cancelNow())
     }
 
-    private def cancelNow() = {
+    private def cancelNow(): Nothing = {
       TestCancellation.cancel(Some("test skipped!"), None, 1)
     }
   }
