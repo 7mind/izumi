@@ -134,10 +134,8 @@ Collect all `PluginDefs` in a package:
 
 ```scala mdoc:to-string
 val pluginLoader = PluginLoader(
-  PluginConfig(
-    debug = false,
-    packagesEnabled = Seq("com.example.petstore"), // packages to scan
-    packagesDisabled = Seq.empty,                  // packages to ignore
+  PluginConfig.cached(
+    packagesEnabled = Seq("com.example.petstore") // packages to scan
   )
 )
 
