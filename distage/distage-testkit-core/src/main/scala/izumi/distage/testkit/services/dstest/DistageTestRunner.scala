@@ -11,8 +11,10 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.ExecutableOp.CreateSet
+import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
+import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -73,7 +75,20 @@ class DistageTestRunner[F[_]: TagK]
         // here we find all the shared components in each of our individual tests
         val sharedKeys = testPlans.map(_._2).flatMap {
           plan =>
-            plan.steps.filter(env memoizationRoots _.target).map(_.target)
+            val memoized = plan.steps.filter(env memoizationRoots _.target).map(_.target)
+            val weak = plan.steps.collect {
+              case c: CreateSet =>
+                c.members
+                  .map { m =>(m, plan.index.get(m))}
+                  .collect {
+                    case (k, Some(op: ExecutableOp.WiringOp)) => (k, op.wiring)
+                  }
+                  .collect {
+                    case (k, r: Wiring.SingletonWiring.Reference) if r.weak => k
+                  }
+              case _ => Vector.empty
+            }.flatten.toSet
+            weak ++ memoized
         }.toSet -- runtimeGcRoots
 
         logger.info(s"Memoized components in env: $sharedKeys")
