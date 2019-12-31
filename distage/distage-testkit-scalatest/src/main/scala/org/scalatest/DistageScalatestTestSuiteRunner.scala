@@ -21,11 +21,12 @@ trait ScalatestInitWorkaround {
 }
 
 object ScalatestInitWorkaround {
-
-  class ScalatestInitWorkaroundImpl[F[_]](runner: DistageScalatestTestSuiteRunner[F]) extends ScalatestInitWorkaround {
+  def apply[F[_]](runner: DistageScalatestTestSuiteRunner[F]): ScalatestInitWorkaround = {
     ScalatestInitWorkaroundImpl.doScan(runner)
 
-    override def awaitTestsLoaded(): Unit = ScalatestInitWorkaroundImpl.awaitTestsLoaded()
+    new ScalatestInitWorkaround {
+      override def awaitTestsLoaded(): Unit = ScalatestInitWorkaroundImpl.awaitTestsLoaded()
+    }
   }
 
   object ScalatestInitWorkaroundImpl {
@@ -41,11 +42,21 @@ object ScalatestInitWorkaround {
     def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]): Unit = {
       if (classpathScanned.compareAndSet(false, true)) {
         val classLoader = instance.getClass.getClassLoader
-        val scan = new ClassGraph().disableJarScanning().enableClassInfo().addClassLoader(classLoader).scan()
-        val specs = scan.getClassesImplementing(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
-        specs.map(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
-        DistageTestsRegistrySingleton.disableRegistration()
-        latch.countDown()
+        val nearest2Packages = instance.getClass.getPackageName.split('.').toSeq.inits.take(2).map(_.mkString(".")).toSeq
+        val scan = new ClassGraph()
+          .whitelistJars("distage-testkit-scalatest*")
+          .whitelistPackages(nearest2Packages: _*)
+          .enableClassInfo()
+          .addClassLoader(classLoader)
+          .scan()
+        try {
+          val specs = scan.getClassesImplementing(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
+          specs.foreach(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
+          DistageTestsRegistrySingleton.disableRegistration()
+          latch.countDown()
+        } finally {
+          scan.close()
+        }
       }
     }
 
@@ -54,7 +65,7 @@ object ScalatestInitWorkaround {
 }
 
 trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
-  protected[scalatest] val init = new ScalatestInitWorkaround.ScalatestInitWorkaroundImpl[F](this)
+  protected[scalatest] val init = ScalatestInitWorkaround[F](this)
 
   implicit def tagMonoIO: TagK[F]
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
@@ -161,7 +172,9 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
         }
     }
 
-    if (toRun.isEmpty) {status.setCompleted(); return} else {
+    if (toRun.isEmpty) {
+      return
+    } else {
       println(s"TORUN: ${toRun.map(_.meta.id.name)}")
     }
 
