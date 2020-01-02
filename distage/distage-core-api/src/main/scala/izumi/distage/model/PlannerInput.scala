@@ -2,6 +2,7 @@ package izumi.distage.model
 
 import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.plan.GCMode
+import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
 
 /**
@@ -22,8 +23,8 @@ final case class PlannerInput(
                              )
 
 object PlannerInput {
-  def apply(bindings: ModuleBase, roots: Set[DIKey]): PlannerInput = {
-    new PlannerInput(bindings, GCMode.GCRoots(roots))
+  def apply(bindings: ModuleBase, roots: Set[DIKey], weaknessPredicate: WeaknessPredicate): PlannerInput = {
+    new PlannerInput(bindings, GCMode.GCRoots(roots, weaknessPredicate))
   }
   def noGc(bindings: ModuleBase): PlannerInput = {
     new PlannerInput(bindings, GCMode.NoGC)

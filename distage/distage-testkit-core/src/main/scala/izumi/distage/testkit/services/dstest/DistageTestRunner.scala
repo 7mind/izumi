@@ -11,7 +11,7 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
+import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
@@ -61,32 +61,22 @@ class DistageTestRunner[F[_] : TagK]
           DIKey.get[DIEffectAsync[F]],
         )
 
-        val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots))
+        val runtimePlan = injector.plan(PlannerInput(appModule, runtimeGcRoots, WeaknessPredicate.empty))
 
         assert(runtimeGcRoots.diff(runtimePlan.keys).isEmpty)
         // here we plan all the job for each individual test
         val testPlans = tests.map {
           distageTest =>
             val keys = distageTest.test.get.diKeys.toSet
-            distageTest -> injector.plan(PlannerInput(appModule, keys))
+            distageTest -> injector.plan(PlannerInput(appModule, keys, WeaknessPredicate.empty))
         }
 
         // here we find all the shared components in each of our individual tests
-        val sharedKeys = testPlans.map(_._2).flatMap {
-          plan =>
-            val memoized = plan.steps.filter(env memoizationRoots _.target).map(_.target)
-            val weak = plan.steps.collect {
-              // here we adding each weak reference into shared keys (we assume that if we have a weak reference in one test plan - it's should be bind)
-              case w: WiringOp.ReferenceKey if w.wiring.weak => w.target
-              // adding sets into shared keys if one of the members is preserving in test plan (we should build set with a weak reference before tests start)
-              case c: CreateSet if c.members.exists(plan.index.keys.toList.contains) => c.target
-            }.toSet
-            weak ++ memoized
-        }.toSet -- runtimeGcRoots
+        val sharedKeys = testPlans.map(_._2).flatMap(_.steps.filter(env memoizationRoots _.target).map(_.target)).toSet -- runtimeGcRoots
 
         logger.info(s"Shared and memoized components in env: $sharedKeys")
 
-        val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys, WeaknessPredicate.empty) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
@@ -170,7 +160,8 @@ class DistageTestRunner[F[_] : TagK]
                   val allSharedKeys = mainSharedLocator.allInstances.map(_.key).toSet
 
                   val integrations = testplan.collectChildren[IntegrationCheck].map(_.target).toSet -- allSharedKeys
-                  val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations)
+                  val predicate: WeaknessPredicate = testplan.steps.map(_.target).contains
+                  val newtestplan = testInjector.trisectByRoots(appmodule.drop(allSharedKeys), testplan.keys -- allSharedKeys, integrations, predicate)
 
                   println(s"Test Id $id")
 
@@ -265,24 +256,35 @@ object DistageTestRunner {
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
+
   object TestStatus {
+
     //    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
+
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
+
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
+
     final case class Succeed(duration: FiniteDuration) extends Finished
+
     final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
+
   }
 
   trait TestReporter {
     def onFailure(f: Throwable): Unit
+
     def endAll(): Unit
+
     def beginSuite(id: SuiteData): Unit
+
     def endSuite(id: SuiteData): Unit
+
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
   }
 

@@ -46,26 +46,27 @@ object DistageTestExampleBase {
   final case class SetElement1(v: Int) extends SetExample
   final case class SetElement2(v: Int) extends SetExample
   final case class SetElement3(v: Int) extends SetExample
+  val plugin: ModuleDef = new ModuleDef {
+    make[SetElement1].from(SetElement1(1))
+    make[SetElement2].from(SetElement2(2))
+    make[SetElement3].from(SetElement3(3))
+
+    many[SetExample]
+      .weak[SetElement1]
+      .weak[SetElement2]
+      .weak[SetElement3]
+
+    many[SetExample].named("set-id")
+      .weak[SetElement1]
+      .weak[SetElement2]
+      .weak[SetElement3]
+  }
 }
 
 abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-      pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx"))) ++ new ModuleDef {
-        make[SetElement1].from(SetElement1(1))
-        make[SetElement2].from(SetElement2(2))
-        make[SetElement3].from(SetElement3(3))
-
-        many[SetExample]
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
-
-        many[SetExample].named("set-id")
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
-      }
+      pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx"))) ++ DistageTestExampleBase.plugin
     )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
@@ -88,9 +89,14 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
-      )=>
+      ) =>
         Quirks.discard(s1, s2, s3)
         F.maybeSuspend(assert(set.size == 3))
+    }
+
+    "instantiate empty set if suit have no deps" in {
+      set: Set[SetExample] =>
+        F.maybeSuspend(assert(set.isEmpty))
     }
 
     "test 1" in {
