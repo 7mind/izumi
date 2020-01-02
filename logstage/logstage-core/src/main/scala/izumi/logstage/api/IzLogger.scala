@@ -5,8 +5,6 @@ import izumi.logstage.api.logger.{LogRouter, LogSink}
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink
 
-import scala.language.implicitConversions
-
 class IzLogger
 (
   override val router: LogRouter

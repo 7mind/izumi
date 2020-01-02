@@ -1,6 +1,6 @@
 package izumi.distage.model.reflection.universe
 
-trait WithDIAssociation {
+private[distage] trait WithDIAssociation {
   this:  DIUniverseBase
     with WithDISafeType
     with WithDIKey

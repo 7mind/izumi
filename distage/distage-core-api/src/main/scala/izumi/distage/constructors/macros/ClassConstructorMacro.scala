@@ -1,6 +1,6 @@
 package izumi.distage.constructors.macros
 
-import izumi.distage.constructors.{ConcreteConstructor, DebugProperties}
+import izumi.distage.constructors.{ClassConstructor, DebugProperties}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.model.reflection.ReflectionProvider
 import izumi.distage.model.reflection.macros.ProviderMagnetMacro0
@@ -11,9 +11,9 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 
 import scala.reflect.macros.blackbox
 
-object ConcreteConstructorMacro {
+object ClassConstructorMacro {
 
-  def mkConcreteConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ConcreteConstructor[T]] = {
+  def mkClassConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[ClassConstructor[T]] = {
     import c.universe._
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
@@ -26,8 +26,8 @@ object ConcreteConstructorMacro {
           case t: ConstantTypeApi => q"${t.value}"
           case _ => q"${t.termSymbol}"
         }
-        c.Expr[ConcreteConstructor[T]] {
-          q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($providerMagnet.pure[$targetType]($term)) }"
+        c.Expr[ClassConstructor[T]] {
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($providerMagnet.pure[$targetType]($term)) }"
         }
 
       case _ =>
@@ -35,7 +35,7 @@ object ConcreteConstructorMacro {
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val (associations, constructor) = mkConcreteConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
+        val (associations, constructor) = mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
         val provided: c.Expr[ProviderMagnet[T]] = {
           val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
@@ -46,19 +46,19 @@ object ConcreteConstructorMacro {
           )
         }
 
-        val res = c.Expr[ConcreteConstructor[T]] {
-          q"{ new ${weakTypeOf[ConcreteConstructor[T]]}($provided) }"
+        val res = c.Expr[ClassConstructor[T]] {
+          q"{ new ${weakTypeOf[ClassConstructor[T]]}($provided) }"
         }
         logger.log(s"Final syntax tree of concrete constructor for $targetType:\n$res")
         res
     }
   }
 
-  def mkConcreteConstructorUnwrappedImpl(c: blackbox.Context)
-                                        (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                        (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                         logger: TrivialLogger)
-                                        (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+  def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
+                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                      logger: TrivialLogger)
+                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
 
     if (!reflectionProvider.isConcrete(targetType)) {

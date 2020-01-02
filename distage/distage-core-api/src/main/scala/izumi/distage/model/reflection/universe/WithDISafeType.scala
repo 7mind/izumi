@@ -2,14 +2,14 @@ package izumi.distage.model.reflection.universe
 
 import izumi.fundamentals.reflection.macrortti.{LightTypeTag, LightTypeTagImpl}
 
-trait WithDISafeType {
+private[distage] trait WithDISafeType {
   this: DIUniverseBase =>
 
   // TODO: hotspot, hashcode on keys is inefficient
-  private[distage] case class SafeType private (
-                                                 private[distage] val typeNative: TypeNative,
-                                                 tag: LightTypeTag,
-                                               ) {
+  case class SafeType private (
+                                private[distage] val typeNative: TypeNative,
+                                tag: LightTypeTag,
+                              ) {
 
     override final lazy val hashCode: Int = tag.hashCode()
     override final lazy val toString: String = tag.repr

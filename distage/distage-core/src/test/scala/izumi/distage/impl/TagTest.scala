@@ -13,7 +13,7 @@ import org.scalatest.exceptions.TestFailedException
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
 
-trait X[Y] {
+trait XY[Y] {
   type Z = id[Y]
 
   implicit def tagZ: Tag[Z]
@@ -44,7 +44,7 @@ final case class testTag3[F[_]: TagK]() {
   val res = SafeType.get[X]
 }
 
-class TagTest extends WordSpec with X[String] {
+class TagTest extends WordSpec with XY[String] {
 
   def safe[T: ru.TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
     SafeType(
@@ -68,7 +68,7 @@ class TagTest extends WordSpec with X[String] {
   trait T1[A, B, C, D, E, F[_]]
   trait T2[A, B, C[_[_], _], D[_], E]
   trait Test[A, dafg, adfg, LS, L[_], SD, GG[A] <: L[A], ZZZ[_, _], S, SDD, TG]
-  trait Y[V] extends X[V]
+  trait YX[V] extends XY[V]
   case class ZOBA[A, B, C](value: Either[B, C])
   trait BIOService[F[_, _]]
   type Swap[A, B] = Either[B, A]
@@ -259,8 +259,8 @@ class TagTest extends WordSpec with X[String] {
       def t2[A: Tag, dafg: Tag, adfg: Tag, LS: Tag, L[_] : TagK, SD: Tag, GG[A] <: L[A] : TagK, ZZZ[_, _] : TagKK, S: Tag, SDD: Tag, TG: Tag]: Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]] =
         Tag[Test[A, dafg, adfg, LS, L, SD, GG, ZZZ, S, SDD, TG]]
 
-      assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, X, TagTest.this.Z, Y, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].toSafe
-        == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, X, String, Y, Either, String, String, String]])
+      assert(t2[TagTest.this.Z, TagTest.this.Z, T1[ZOB[String, Int, Byte], String, String, String, String, List], TagTest.this.Z, XY, TagTest.this.Z, YX, Either, TagTest.this.Z, TagTest.this.Z, TagTest.this.Z].toSafe
+        == safe[Test[String, String, T1[Either[Int, Byte], String, String, String, String, List], String, XY, String, YX, Either, String, String, String]])
     }
 
     "handle Swap type lambda" in {
@@ -382,7 +382,7 @@ class TagTest extends WordSpec with X[String] {
     }
 
     "can materialize TagK for type lambdas that close on a generic parameter with available Tag" in {
-      def partialEitherTagK[X: Tag] = TagK[Either[X, ?]]
+      def partialEitherTagK[A: Tag] = TagK[Either[A, ?]]
 
       val tag = partialEitherTagK[Int].tag
       val expectedTag = TagK[Either[Int, ?]].tag

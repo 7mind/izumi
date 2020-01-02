@@ -2,15 +2,15 @@ package izumi.distage.model.reflection.universe
 
 import izumi.distage.model.definition.ImplDef
 
-trait WithDIKey {
+private[distage] trait WithDIKey {
   this: DIUniverseBase
     with WithDISafeType =>
 
-  private[distage] sealed trait DIKey {
+  sealed trait DIKey {
     def tpe: SafeType
   }
 
-  private[distage] object DIKey {
+  object DIKey {
     sealed trait BasicKey extends DIKey {
       def withTpe(tpe: SafeType): DIKey.BasicKey
     }

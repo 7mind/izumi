@@ -82,7 +82,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
             if (excessiveSymbols.nonEmpty) {
               throw new UnsupportedDefinitionException(
                 s"""Augmentation failure.
-                   |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.underlying}` with result type `$resultType`
+                   |  * Type $tpe has been considered a factory because of abstract method `${factoryMethodSymb.name}: ${factoryMethodSymb.typeSignatureInDefiningClass}` with result type `$resultType`
                    |  * But method signature types not required by result type constructor: $excessiveSymbols
                    |  * Only the following types are required: ${methodTypeWireable.requiredKeys}
                    |  * This may happen in case you unintentionally bind an abstract type (trait, etc) as implementation type.""".stripMargin)
