@@ -148,6 +148,11 @@ object LogMessageMacro {
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
+      case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]))), TermName("stripMargin")) =>
+        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
+        val sc = q"""StringContext($stringContext.parts.map(_.stripMargin): _*)"""
+        reifyContext(c)(sc, namedArgs)
+
       case Literal(c.universe.Constant(s)) =>
         val emptyArgs = reify(List.empty)
         val sc = q"StringContext(${s.toString})"
