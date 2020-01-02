@@ -1,7 +1,7 @@
 package izumi.distage.dsl
 
 import distage._
-import izumi.distage.constructors.ConcreteConstructor
+import izumi.distage.constructors.ClassConstructor
 import izumi.distage.fixtures.BasicCases._
 import izumi.distage.fixtures.SetCases._
 import izumi.distage.injector.MkInjector
@@ -375,7 +375,7 @@ class DSLTest extends WordSpec with MkInjector {
             ImplDef.ResourceImpl(
               SafeType.get[ImplXYZ],
               SafeType.getK[Identity],
-              ImplDef.ProviderImpl(SafeType.get[X], ConcreteConstructor[X].provider.get),
+              ImplDef.ProviderImpl(SafeType.get[X], ClassConstructor[X].provider.get),
             ),
             Set.empty,
             SourceFilePosition.unknown

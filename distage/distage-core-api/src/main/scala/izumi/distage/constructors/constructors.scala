@@ -12,7 +12,7 @@ import scala.language.experimental.{macros => enableMacros}
 sealed trait AnyConstructor[T] extends AnyConstructorOptionalMakeDSL[T] {
   def provider: ProviderMagnet[T]
 }
-final case class ConcreteConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
+final case class ClassConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 final case class TraitConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 final case class FactoryConstructor[T](provider: ProviderMagnet[T]) extends AnyConstructor[T]
 
@@ -22,10 +22,10 @@ object AnyConstructor {
   implicit def materialize[T]: AnyConstructor[T] = macro AnyConstructorMacro.mkAnyConstructor[T]
 }
 
-object ConcreteConstructor {
-  def apply[T: ConcreteConstructor]: ConcreteConstructor[T] = implicitly
+object ClassConstructor {
+  def apply[T: ClassConstructor]: ClassConstructor[T] = implicitly
 
-  implicit def materialize[T]: ConcreteConstructor[T] = macro ConcreteConstructorMacro.mkConcreteConstructor[T]
+  implicit def materialize[T]: ClassConstructor[T] = macro ClassConstructorMacro.mkClassConstructor[T]
 }
 
 object TraitConstructor {

@@ -12,6 +12,7 @@ import izumi.fundamentals.reflection.{ReflectionUtil, TrivialMacroLogger}
 import scala.reflect.macros.blackbox
 
 object TraitConstructorMacro {
+
   def mkTraitConstructor[T: c.WeakTypeTag](c: blackbox.Context): c.Expr[TraitConstructor[T]] = {
     import c.universe._
 

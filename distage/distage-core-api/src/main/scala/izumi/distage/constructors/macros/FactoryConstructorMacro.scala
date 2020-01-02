@@ -49,7 +49,7 @@ object FactoryConstructorMacro {
             case p: PolyTypeApi => instantiatedMethod(p.resultType)
           }
 
-          val paramLists = instantiatedMethod(factoryMethod.underlying.typeSignatureIn(targetType)).paramLists.map(_.map {
+          val paramLists = instantiatedMethod(factoryMethod.typeSignatureInDefiningClass).paramLists.map(_.map {
             argSymbol =>
               val tpe = argSymbol.typeSignature
               val name = argSymbol.asTerm.name
@@ -122,7 +122,7 @@ object FactoryConstructorMacro {
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(targetType)
 
     if (reflectionProvider.isConcrete(tpe)) {
-      ConcreteConstructorMacro.mkConcreteConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
+      ClassConstructorMacro.mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else if (reflectionProvider.isWireableAbstract(tpe)) {
       TraitConstructorMacro.mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else {
