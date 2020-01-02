@@ -58,7 +58,7 @@ object DistageTestsRegistrySingleton {
   def runReport(suiteId: String)(f: Tracker => Unit): Unit = synchronized {
     trackers.getOrElseUpdate(suiteId, Left(mutable.ArrayBuffer.empty)) match {
       case Left(reports) =>
-        reports += f
+        (reports += f).discard()
       case Right(tracker) =>
         f(tracker)
     }

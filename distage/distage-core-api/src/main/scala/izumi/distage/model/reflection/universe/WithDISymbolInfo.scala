@@ -28,29 +28,29 @@ trait WithDISymbolInfo {
     /**
       * You can downcast from SymbolInfo if you need access to the underlying symbol reference (for example, to use a Mirror)
       */
-    @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
-    case class Runtime private (underlying: SymbNative, finalResultType: TypeNative, isByName: Boolean, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
+    case class Runtime private (underlying: SymbNative, typeSignatureInDefiningClass: TypeNative, finalResultType: TypeNative, isByName: Boolean, wasGeneric: Boolean, annotations: List[u.Annotation]) extends SymbolInfo {
       override final val name: String = underlying.name.toTermName.toString
       override final def withTpe(tpe: TypeNative): SymbolInfo = copy(finalResultType = tpe)
       override final def withIsByName(boolean: Boolean): SymbolInfo = copy(isByName = boolean)
     }
 
     object Runtime {
-      @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
       def apply(underlying: SymbNative, definingClass: TypeNative, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
+        val tpeIn = underlying.typeSignatureIn(definingClass)
         new Runtime(
           underlying = underlying,
-          finalResultType = underlying.typeSignatureIn(definingClass).finalResultType,
+          typeSignatureInDefiningClass = tpeIn,
+          finalResultType = tpeIn.finalResultType,
           isByName = underlying.isTerm && underlying.asTerm.isByNameParam,
           wasGeneric = wasGeneric,
           annotations = (AnnotationTools.getAllAnnotations(u: u.type)(underlying) ++ moreAnnotations).distinct
         )
       }
 
-      @deprecated("remove scala-reflect backed symbolinfo", "0.9.0")
       def apply(underlying: SymbNative): Runtime = {
         new Runtime(
           underlying = underlying,
+          typeSignatureInDefiningClass = underlying.typeSignature,
           finalResultType = underlying.typeSignature,
           isByName = (underlying.isTerm && underlying.asTerm.isByNameParam) || ReflectionUtil.isByName(u)(underlying.typeSignature),
           wasGeneric = underlying.typeSignature.typeSymbol.isParameter,
