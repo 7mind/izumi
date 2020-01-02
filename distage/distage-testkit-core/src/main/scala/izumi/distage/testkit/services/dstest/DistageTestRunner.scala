@@ -11,10 +11,9 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.ExecutableOp.CreateSet
-import izumi.distage.model.plan.{ExecutableOp, OrderedPlan, TriSplittedPlan}
+import izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
+import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.distage.model.reflection.universe.RuntimeDIUniverse.Wiring
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -23,7 +22,7 @@ import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_]: TagK]
+class DistageTestRunner[F[_] : TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
@@ -77,21 +76,15 @@ class DistageTestRunner[F[_]: TagK]
           plan =>
             val memoized = plan.steps.filter(env memoizationRoots _.target).map(_.target)
             val weak = plan.steps.collect {
-              case c: CreateSet =>
-                c.members
-                  .map { m =>(m, plan.index.get(m))}
-                  .collect {
-                    case (k, Some(op: ExecutableOp.WiringOp)) => (k, op.wiring)
-                  }
-                  .collect {
-                    case (k, r: Wiring.SingletonWiring.Reference) if r.weak => k
-                  }
-              case _ => Vector.empty
-            }.flatten.toSet
+              // here we adding each weak reference into shared keys (we assume that if we have a weak reference in one test plan - it's should be bind)
+              case w: WiringOp.ReferenceKey if w.wiring.weak => w.target
+              // adding sets into shared keys if one of the members is preserving in test plan (we should build set with a weak reference before tests start)
+              case c: CreateSet if c.members.exists(plan.index.keys.toList.contains) => c.target
+            }.toSet
             weak ++ memoized
         }.toSet -- runtimeGcRoots
 
-        logger.info(s"Memoized components in env: $sharedKeys")
+        logger.info(s"Shared and memoized components in env: $sharedKeys")
 
         val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
@@ -272,24 +265,35 @@ object DistageTestRunner {
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
+
   object TestStatus {
-//    case object Scheduled extends TestStatus
+
+    //    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
+
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
+
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
+
     final case class Succeed(duration: FiniteDuration) extends Finished
+
     final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
+
   }
 
   trait TestReporter {
     def onFailure(f: Throwable): Unit
+
     def endAll(): Unit
+
     def beginSuite(id: SuiteData): Unit
+
     def endSuite(id: SuiteData): Unit
+
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
   }
 
