@@ -265,35 +265,24 @@ object DistageTestRunner {
   final case class SuiteData(suiteName: String, suiteId: String, suiteClassName: String)
 
   sealed trait TestStatus
-
   object TestStatus {
-
     //    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus
-
     final case class Ignored(checks: Seq[ResourceCheck.Failure]) extends Done
 
     sealed trait Finished extends Done
-
     final case class Cancelled(clue: String, duration: FiniteDuration) extends Finished
-
     final case class Succeed(duration: FiniteDuration) extends Finished
-
     final case class Failed(t: Throwable, duration: FiniteDuration) extends Finished
-
   }
 
   trait TestReporter {
     def onFailure(f: Throwable): Unit
-
     def endAll(): Unit
-
     def beginSuite(id: SuiteData): Unit
-
     def endSuite(id: SuiteData): Unit
-
     def testStatus(test: TestMeta, testStatus: TestStatus): Unit
   }
 
