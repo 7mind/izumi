@@ -22,6 +22,10 @@ object AnyConstructorMacro {
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
     val enclosingClass = c.enclosingClass
+    // We expect this macro to be called only and __ONLY__ from `AnyConstructorMacro.make`
+    // we're going to use the position of the `make` call to search for subsequent methods
+    // instead of the position of the implicit search itself (which is unstable and
+    // sometimes doesn't exist, for example during scaladoc compilation)
     val positionOfMakeCall: Universe#Position = c.enclosingMacros(1).macroApplication.pos
 
     assert(enclosingClass.exists(_.pos == positionOfMakeCall), "enclosingClass must contain macro call position")
@@ -90,7 +94,7 @@ object AnyConstructorMacro {
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
     if (reflectionProvider.isConcrete(tpe)) {
-      ConcreteConstructorMacro.mkConcreteConstructor[T](c)
+      ClassConstructorMacro.mkClassConstructor[T](c)
     } else if (reflectionProvider.isFactory(tpe)) {
       FactoryConstructorMacro.mkFactoryConstructor[T](c)
     } else if (reflectionProvider.isWireableAbstract(tpe)) {
