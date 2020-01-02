@@ -1,7 +1,6 @@
 package izumi.distage.planning.gc
 
 import izumi.distage.model.plan.ExecutableOp._
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.plan.{ExecutableOp, GCMode, SemiPlan}
 import izumi.distage.model.planning.DIGarbageCollector
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse._
@@ -14,7 +13,6 @@ class TracingDIGC[OpType <: ExecutableOp]
   roots: Set[DIKey],
   fullIndex: Map[DIKey, OpType],
   override val ignoreMissingDeps: Boolean,
-  predicate: WeaknessPredicate
 ) extends AbstractGCTracer[DIKey, OpType] {
 
   @inline
@@ -68,7 +66,7 @@ class TracingDIGC[OpType <: ExecutableOp]
               (k, r)
           }
 
-        val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => newTraced.contains(kv._2.key) || predicate.judge(kv._2.key))
+        val (referencedWeaks, unreferencedWeaks) = weakMembers.partition(kv => newTraced.contains(kv._2.key))
 
         newTraced ++= referencedWeaks.map(_._1)
 
@@ -93,10 +91,10 @@ class TracingDIGC[OpType <: ExecutableOp]
 object TracingDIGC extends DIGarbageCollector {
   override def gc(plan: SemiPlan): SemiPlan = {
     plan.gcMode match {
-      case GCMode.GCRoots(roots, predicate) =>
+      case GCMode.GCRoots(roots) =>
         assert(roots.nonEmpty)
 
-        val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false, predicate).gc(plan.steps)
+        val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
         SemiPlan(collected.nodes, plan.gcMode)
 
       case GCMode.NoGC =>

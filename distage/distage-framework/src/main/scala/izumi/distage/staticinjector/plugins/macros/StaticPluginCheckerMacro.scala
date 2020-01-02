@@ -7,7 +7,6 @@ import izumi.distage.bootstrap.BootstrapLocator
 import izumi.distage.config.AppConfigModule
 import izumi.distage.config.model.AppConfig
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
@@ -147,7 +146,7 @@ object StaticPluginCheckerMacro {
     })
     val injector = Injector.inherit(bootstrap)
 
-    val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys), WeaknessPredicate.empty)).locateImports(bootstrap)
+    val finalPlan = injector.plan(PlannerInput(module, root.fold(Set.empty[DIKey])(_.keys))).locateImports(bootstrap)
     val imports = finalPlan.unresolvedImports.left.getOrElse(Seq.empty).filter {
       case i if moduleRequirements.fold(false)(_.requiredKeys contains i.target) => false
       case _ => true

@@ -3,7 +3,6 @@ package izumi.distage.planning
 import izumi.distage.model.definition.{Activation, BindingTag}
 import izumi.distage.model.exceptions.ConflictingDIKeyBindingsException
 import izumi.distage.model.plan.ExecutableOp.SemiplanOp
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.planning.PlanMergingPolicy
@@ -63,7 +62,7 @@ class PruningPlanMergingPolicyDefaultImpl
     val roots = plan.gcMode.toSet
 
     if (roots.nonEmpty && roots.intersect(issues.keySet).isEmpty) {
-      val collected = new TracingDIGC(roots, index, ignoreMissingDeps = true, WeaknessPredicate.empty).gc(ops)
+      val collected = new TracingDIGC(roots, index, ignoreMissingDeps = true).gc(ops)
 
       val lastTry = issues.map {
         case (k, v) =>

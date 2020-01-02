@@ -6,7 +6,6 @@ import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.services.RoleAppPlanner.AppStartupPlans
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.logstage.api.IzLogger
 
@@ -47,9 +46,9 @@ object RoleAppPlanner {
         DIKey.get[DIEffectAsync[F]],
       )
 
-      val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots, WeaknessPredicate.empty))
+      val runtimePlan = injector.plan(PlannerInput(fullAppModule, runtimeGcRoots))
 
-      val appPlan = injector.trisectByKeys(fullAppModule.drop(runtimeGcRoots), appMainRoots, WeaknessPredicate.empty) {
+      val appPlan = injector.trisectByKeys(fullAppModule.drop(runtimeGcRoots), appMainRoots) {
         _.collectChildren[IntegrationCheck].map(_.target).toSet
       }
 

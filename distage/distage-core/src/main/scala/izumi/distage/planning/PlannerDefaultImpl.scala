@@ -4,7 +4,6 @@ import izumi.distage.model.definition.ModuleBase
 import izumi.distage.model.exceptions.{SanityCheckFailedException, UnsupportedOpException}
 import izumi.distage.model.plan.ExecutableOp.WiringOp.ReferenceKey
 import izumi.distage.model.plan.ExecutableOp.{ImportDependency, InstantiationOp, SemiplanOp}
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import izumi.distage.model.plan._
 import izumi.distage.model.plan.initial.PrePlan
 import izumi.distage.model.plan.operations.OperationOrigin
@@ -34,7 +33,7 @@ final class PlannerDefaultImpl
       OrderedPlan.empty
     } else {
       assert(roots.diff(plan.index.keySet).isEmpty)
-      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false, WeaknessPredicate.empty).gc(plan.steps)
+      val collected = new TracingDIGC(roots, plan.index, ignoreMissingDeps = false).gc(plan.steps)
       OrderedPlan(collected.nodes, roots, analyzer.topology(collected.nodes))
     }
   }
@@ -198,7 +197,7 @@ final class PlannerDefaultImpl
     val sortedOps = sortedKeys.flatMap(k => index.get(k).toSeq)
 
     val roots = completedPlan.gcMode match {
-      case GCMode.GCRoots(roots, _) =>
+      case GCMode.GCRoots(roots) =>
         roots
       case GCMode.NoGC =>
         topology.effectiveRoots

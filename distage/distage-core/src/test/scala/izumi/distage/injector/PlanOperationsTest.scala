@@ -3,7 +3,6 @@ package izumi.distage.injector
 import distage._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.ExecutableOp.ImportDependency
-import izumi.distage.model.plan.GCMode.WeaknessPredicate
 import org.scalatest.WordSpec
 
 
@@ -31,9 +30,9 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent0]
       make[SharedComponent1]
       make[SharedComponent2]
-    }, primary ++ sub, WeaknessPredicate.empty)
+    }, primary ++ sub)
 
-    val split = injector.trisectByKeys(definition.bindings, primary, WeaknessPredicate.empty) {
+    val split = injector.trisectByKeys(definition.bindings, primary) {
       baseplan =>
         assert(sub.intersect(baseplan.index.keySet).isEmpty)
         sub
@@ -61,9 +60,9 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent0]
       make[SharedComponent1]
       make[SharedComponent2]
-    }, primary ++ sub, WeaknessPredicate.empty)
+    }, primary ++ sub)
 
-    val split = injector.trisectByKeys(definition.bindings, primary, WeaknessPredicate.empty)(_ => sub)
+    val split = injector.trisectByKeys(definition.bindings, primary)(_ => sub)
 
     val sideIndex = split.side.index
     val primaryIndex = split.primary.index
@@ -91,7 +90,7 @@ class PlanOperationsTest extends WordSpec with MkInjector {
       make[SharedComponent0]
       make[SharedComponent1]
       make[SharedComponent2]
-    }, primary ++ sub, WeaknessPredicate.empty)
+    }, primary ++ sub)
 
     val srcPlan = injector.plan(definition)
 

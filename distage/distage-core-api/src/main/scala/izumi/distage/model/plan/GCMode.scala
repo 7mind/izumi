@@ -8,24 +8,13 @@ sealed trait GCMode {
 
 object GCMode {
   def apply(key: DIKey, more: DIKey*): GCMode = {
-    GCRoots(more.toSet + key, WeaknessPredicate.empty)
+    GCRoots(more.toSet + key)
   }
-
   def fromSet(roots: Set[DIKey]): GCMode = {
-    if (roots.nonEmpty) GCRoots(roots, WeaknessPredicate.empty) else NoGC
+    if (roots.nonEmpty) GCRoots(roots) else NoGC
   }
 
-  trait WeaknessPredicate {
-    def judge(key: DIKey): Boolean
-  }
-
-  object WeaknessPredicate {
-    final val empty: WeaknessPredicate = _ => false
-
-    def apply(predicate: DIKey => Boolean): WeaknessPredicate = predicate(_)
-  }
-
-  final case class GCRoots(roots: Set[DIKey], weaknessPredicate: WeaknessPredicate) extends GCMode {
+  final case class GCRoots(roots: Set[DIKey]) extends GCMode {
     assert(roots.nonEmpty, "GC roots set cannot be empty")
 
     override def toSet: Set[DIKey] = roots
