@@ -9,7 +9,7 @@ import izumi.distage.model.effect.DIEffect
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.distagesuite.DistageTestExampleBase.{SetElement1, SetElement2, SetElement3, SetExample}
+import izumi.distage.testkit.distagesuite.DistageTestExampleBase.{SetElement1, SetElement2, SetElement3, SetElement}
 import izumi.distage.testkit.distagesuite.fixtures.{ApplePaymentProvider, MockCache, MockCachedUserService, MockUserRepository}
 import izumi.distage.testkit.scalatest.{DistageBIOSpecScalatest, DistageSpecScalatest}
 import izumi.distage.testkit.services.scalatest.dstest.DistageAbstractScalatestSpec
@@ -22,6 +22,7 @@ trait DistageMemoizeExample[F[_]] extends DistageAbstractScalatestSpec[F] {
     super.config.copy(
       memoizationRoots = Set(
         DIKey.get[MockCache[F]],
+        DIKey.get[Set[SetElement]],
       ))
   }
 }
@@ -40,40 +41,41 @@ class DistageTestExampleBIO extends DistageBIOSpecScalatest[zio.IO] with Distage
 }
 
 object DistageTestExampleBase {
-  sealed trait SetExample {
+  sealed trait SetElement {
+    println(s"Here is $v element.")
     def v: Int
   }
-  final case class SetElement1(v: Int) extends SetExample
-  final case class SetElement2(v: Int) extends SetExample
-  final case class SetElement3(v: Int) extends SetExample
+  final case class SetElement1(v: Int) extends SetElement
+  final case class SetElement2(v: Int) extends SetElement
+  final case class SetElement3(v: Int) extends SetElement
 }
 
-abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
+abstract class DistageTestExampleBase[F[_] : TagK](implicit F: DIEffect[F]) extends DistageSpecScalatest[F] with DistageMemoizeExample[F] {
 
   override protected def config: TestConfig = super.config.copy(
-      pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx"))) ++ new ModuleDef {
-        make[SetElement1].from(SetElement1(1))
-        make[SetElement2].from(SetElement2(2))
-        make[SetElement3].from(SetElement3(3))
+    pluginSource = super.config.pluginSource ++ PluginSource(PluginConfig.cached(Seq("xxx"))) ++ new ModuleDef {
+      make[SetElement1].from(SetElement1(1))
+      make[SetElement2].from(SetElement2(2))
+      make[SetElement3].from(SetElement3(3))
 
-        many[SetExample]
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
+      many[SetElement]
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
 
-        many[SetExample].named("set-id")
-          .weak[SetElement1]
-          .weak[SetElement2]
-          .weak[SetElement3]
-      }
-    )
+      many[SetElement].named("set-id")
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
+    }
+  )
 
   val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
 
   "distage test custom runner" should {
-    "support weak sets" in {
+    "support memoized weak sets" in {
       (
-        set: Set[SetExample],
+        set: Set[SetElement],
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
@@ -82,14 +84,19 @@ abstract class DistageTestExampleBase[F[_]: TagK](implicit F: DIEffect[F]) exten
         F.maybeSuspend(assert(set.size == 3))
     }
 
-    "support named weak sets" in {
+    "support memoized named weak sets" in {
       (
-        set: Set[SetExample] @Id("set-id"),
+        set: Set[SetElement]@Id("set-id"),
         s1: SetElement1,
         s2: SetElement2,
         s3: SetElement3,
-      )=>
+      ) =>
         Quirks.discard(s1, s2, s3)
+        F.maybeSuspend(assert(set.size == 3))
+    }
+
+    "return memoized weak set with have whole list of members even if test does not depends on them" in {
+      set: Set[SetElement] =>
         F.maybeSuspend(assert(set.size == 3))
     }
 

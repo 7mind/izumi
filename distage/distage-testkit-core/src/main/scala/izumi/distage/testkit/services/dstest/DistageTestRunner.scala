@@ -7,11 +7,11 @@ import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.{ImplDef, ModuleBase}
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.model.plan.ExecutableOp.{CreateSet, WiringOp}
 import izumi.distage.model.plan.{OrderedPlan, TriSplittedPlan}
 import izumi.distage.model.providers.ProviderMagnet
 import izumi.distage.testkit.services.dstest.DistageTestRunner.{DistageTest, SuiteData, TestReporter, TestStatus}
@@ -71,22 +71,23 @@ class DistageTestRunner[F[_] : TagK]
             distageTest -> injector.plan(PlannerInput(appModule, keys))
         }
 
+        val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
+
         // here we find all the shared components in each of our individual tests
-        val sharedKeys = testPlans.map(_._2).flatMap {
-          plan =>
-            val memoized = plan.steps.filter(env memoizationRoots _.target).map(_.target)
-            val weak = plan.steps.collect {
-              // here we adding each weak reference into shared keys (we assume that if we have a weak reference in one test plan - it's should be bind)
-              case w: WiringOp.ReferenceKey if w.wiring.weak => w.target
-              // adding sets into shared keys if one of the members is preserving in test plan (we should build set with a weak reference before tests start)
-              case c: CreateSet if c.members.exists(plan.index.keys.toList.contains) => c.target
-            }.toSet
-            weak ++ memoized
-        }.toSet -- runtimeGcRoots
+        val sharedKeys = wholeEnvKeys.filter(env.memoizationRoots) -- runtimeGcRoots
 
-        logger.info(s"Shared and memoized components in env: $sharedKeys")
+        logger.info(s"Memoized components in env: $sharedKeys")
 
-        val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val (strengthen, strengthenKeys) = appModule.drop(runtimeGcRoots).foldWith(List.empty[DIKey]) {
+          case (b@SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _), acc) if r.weak && wholeEnvKeys(key) =>
+            b.copy(implementation = r.copy(weak = false)) -> (key :: acc)
+          case (b, acc) =>
+            b -> acc
+        }
+
+        logger.info(s"Strengthen weak components in env: $strengthenKeys")
+
+        val shared = injector.trisectByKeys(strengthen, sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 

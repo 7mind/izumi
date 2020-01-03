@@ -29,10 +29,11 @@ object ConfigLoader {
     *   - $roleName-reference-dev.conf
     */
   class LocalFSImpl(
-    logger: IzLogger,
-    primaryConfig: Option[File],
-    roleConfigs: Map[String, Option[File]],
-  ) extends ConfigLoader {
+                     logger: IzLogger,
+                     primaryConfig: Option[File],
+                     roleConfigs: Map[String, Option[File]],
+                     configOverride: AppConfig => AppConfig = identity
+                   ) extends ConfigLoader {
 
     import LocalFSImpl._
 
@@ -93,11 +94,12 @@ object ConfigLoader {
         .withFallback(folded)
         .resolve()
 
-      AppConfig(config)
+      configOverride(AppConfig(config))
     }
 
     protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
       Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
         ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
         ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
       )

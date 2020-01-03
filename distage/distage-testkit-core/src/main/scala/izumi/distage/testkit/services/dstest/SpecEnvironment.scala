@@ -20,6 +20,7 @@ trait SpecEnvironment {
 
   def contextOptions: PlanningOptions
 
+  def configOverrides: AppConfig => AppConfig
   def makeConfigLoader(logger: IzLogger): ConfigLoader
   def makeModuleProvider(options: PlanningOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider
 }
@@ -33,6 +34,7 @@ object SpecEnvironment {
     override val bootstrapOverrides: BootstrapModule,
     override val moduleOverrides: ModuleBase,
     override val bootstrapLogLevel: Log.Level,
+    override val configOverrides: AppConfig => AppConfig
   ) extends SpecEnvironment {
 
     override def makeLogger(): IzLogger = {
@@ -47,8 +49,9 @@ object SpecEnvironment {
       val moreConfigs = Map(
         s"$lastPackage-test" -> None,
         s"$classname-test" -> None,
+        "application" -> None,
       )
-      new ConfigLoader.LocalFSImpl(logger, None, moreConfigs)
+      new ConfigLoader.LocalFSImpl(logger, None, moreConfigs, configOverrides)
     }
 
     override def makeModuleProvider(options: PlanningOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {
