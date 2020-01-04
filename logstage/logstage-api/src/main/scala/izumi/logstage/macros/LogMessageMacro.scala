@@ -12,13 +12,14 @@ object LogMessageMacro {
 
     message.tree match {
       case Typed(tree, _) =>
-        processExpr(c)(tree)
+        processExpr(c)(tree, false)
       case tree =>
-        processExpr(c)(tree)
+        processExpr(c)(tree, false)
     }
   }
 
-  private[this] def processExpr(c: blackbox.Context)(message: c.Tree): c.Expr[Message] = {
+  @scala.annotation.tailrec
+  private[this] def processExpr(c: blackbox.Context)(message: c.Tree, isMultiline: Boolean): c.Expr[Message] = {
     import c.universe._
 
     sealed trait Chunk {
@@ -47,9 +48,12 @@ object LogMessageMacro {
         balanced.collect { case Chunk.Argument(expr) => expr }
       }
 
-      def makeStringContext: c.Tree = {
+      def makeStringContext(isMultiline: Boolean): c.Tree = {
         val elements = balanced.collect { case e: Chunk.AbstractElement => e.tree }
-        val listExpr = c.Expr[Seq[String]](q"Seq(..$elements)")
+        val listExpr = if (isMultiline)
+          c.Expr[Seq[String]](q"Seq(..$elements).map(_.stripMargin)")
+        else
+          c.Expr[Seq[String]](q"Seq(..$elements)")
 
         val scParts = reify {
           listExpr.splice
@@ -139,7 +143,7 @@ object LogMessageMacro {
     message match {
       case PlusExtractor(lst) =>
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(lst.arguments.map(p => c.Expr(p)))
-        val sc = lst.makeStringContext
+        val sc = lst.makeStringContext(isMultiline)
         reifyContext(c)(sc, namedArgs)
 
       case Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]) =>
@@ -148,9 +152,18 @@ object LogMessageMacro {
         val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
         reifyContext(c)(stringContext, namedArgs)
 
+      case Select(Apply(_, List(Apply(Select(stringContext@Apply(Select(Select(Ident(TermName("scala")), TermName("StringContext")), TermName("apply")), _), TermName("s")), args: List[c.Tree]))), TermName("stripMargin")) =>
+        val namedArgs = ArgumentNameExtractionMacro.recoverArgNames(c)(args.map(p => c.Expr(p)))
+        val sc = q"""_root_.scala.StringContext($stringContext.parts.map(_.stripMargin): _*)"""
+        reifyContext(c)(sc, namedArgs)
+
+      // support .stripMargin in scala 2.13
+      case Select(Apply(_, List(Typed(tree, _))), TermName("stripMargin")) =>
+        processExpr(c)(tree, true)
+
       case Literal(c.universe.Constant(s)) =>
         val emptyArgs = reify(List.empty)
-        val sc = q"StringContext(${s.toString})"
+        val sc = q"_root_.scala.StringContext(${s.toString})"
         reifyContext(c)(sc, emptyArgs)
 
       case other =>
@@ -166,7 +179,7 @@ object LogMessageMacro {
           val repr = c.Expr[String](Literal(Constant(c.universe.showCode(other)))).splice
           ...
         */
-        val sc = q"StringContext($other)"
+        val sc = q"_root_.scala.StringContext($other)"
         reifyContext(c)(sc, emptyArgs)
     }
   }

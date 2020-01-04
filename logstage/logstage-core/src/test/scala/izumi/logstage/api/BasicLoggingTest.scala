@@ -33,16 +33,27 @@ class BasicLoggingTest extends WordSpec {
       assert(message1.template.parts == List("expression: ", ""))
     }
 
-    "progression test: doesn't support .stripMargin yet" in {
+    "support .stripMargin" in {
       val m = "M E S S A G E"
-      val message = Message {
+      val message1 = Message {
         s"""This
            |is a
            |multiline ${m -> "message"}""".stripMargin
       }
+      assert(message1.template.parts.toList == List("This\nis a\nmultiline ", ""))
+      assert(message1.args == List(LogArg(Seq("message"), m, hiddenName = false)))
 
-      assert(message.template.parts != List("This\nis a\nmultiline ", ""))
-      assert(message.args != List(LogArg(Seq("message"), m, hiddenName = false)))
+      val message2 = Message("single line with stripMargin".stripMargin)
+      assert(message2.template.parts.toList == List("single line with stripMargin"))
+      assert(message2.args == List.empty)
+
+      val message3 = Message {
+        """Hello
+          |there!
+          |""".stripMargin
+      }
+      assert(message3.template.parts.toList == List("Hello\nthere!\n"))
+      assert(message3.args == List.empty)
     }
   }
 
