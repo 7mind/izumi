@@ -78,11 +78,11 @@ class DistageTestRunner[F[_] : TagK]
 
         logger.info(s"Memoized components in env: $sharedKeys")
 
-        val (strengthen, strengthenKeys) = appModule.drop(runtimeGcRoots).foldWith(List.empty[DIKey]) {
-          case (b@SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _), acc) if r.weak && wholeEnvKeys(key) =>
-            b.copy(implementation = r.copy(weak = false)) -> (key :: acc)
-          case (b, acc) =>
-            b -> acc
+        val (strengthenKeys, strengthen) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
+          case (acc, b@SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && wholeEnvKeys(key) =>
+            (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+          case (acc, b) =>
+            acc -> b
         }
 
         logger.info(s"Strengthen weak components in env: $strengthenKeys")

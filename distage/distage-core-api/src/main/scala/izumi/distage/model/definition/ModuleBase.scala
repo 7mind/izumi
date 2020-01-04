@@ -59,13 +59,19 @@ object ModuleBase {
       T.make(module.bindings.map(f))
     }
 
-    def foldWith[B](b: B)(f: (Binding, B) => (Binding, B)): (T, B) = {
-      val (bindings, fold) = module.bindings.foldLeft(List.empty[Binding] -> b) {
-        case ((list, acc), bind) =>
-          val (l, acc1) = f(bind, acc)
-          (l :: list) -> acc1
+    def foldLeft[B](b: B)(f: (B, Binding) => B): B = {
+      module.bindings.foldLeft(b) {
+        case (acc, bind) => f(acc, bind)
       }
-      T.make(bindings.toSet) -> fold
+    }
+
+    def foldLeftWith[B](b: B)(f: (B, Binding) => (B, Binding)): (B, T) = {
+      val (bindings, fold) = foldLeft(List.empty[Binding] -> b) {
+        case ((list, acc), bind) =>
+          val (acc1, el) = f(acc, bind)
+          (el :: list) -> acc1
+      }
+      fold -> T.make(bindings.toSet)
     }
 
     def flatMap(f: Binding => Iterable[Binding]): T = {

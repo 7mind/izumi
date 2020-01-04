@@ -51,10 +51,7 @@ class BIOZio[R] extends BIOAsync[ZIO[R, +?, +?]] {
   @inline override final def redeem[E, A, E2, B](r: IO[E, A])(err: E => IO[E2, B], succ: A => IO[E2, B]): IO[E2, B] = r.foldM(err, succ)
   @inline override final def catchAll[E, A, E2, A2 >: A](r: IO[E, A])(f: E => IO[E2, A2]): IO[E2, A2] = r.catchAll(f)
   @inline override final def catchSome[E, A, E2 >: E, A2 >: A](r: ZIO[R, E, A])(f: PartialFunction[E, ZIO[R, E2, A2]]): ZIO[R, E2, A2] = r.catchSome(f)
-  @inline override final def withFilter[E, A](r: IO[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): IO[E, A] = r.flatMap { a =>
-    if (predicate(a)) ZIO.succeed(a)
-    else ZIO.fail(new NoSuchElementException("The value doesn't satisfy the predicate"))
-  }
+  @inline override final def withFilter[E, A](r: IO[E, A])(predicate: A => Boolean)(implicit ev: NoSuchElementException <:< E): IO[E, A] = r.withFilter(predicate)
 
   @inline override final def guarantee[E, A](f: IO[E, A])(cleanup: IO[Nothing, Unit]): IO[E, A] = f.ensuring(cleanup)
   @inline override final def attempt[E, A](r: IO[E, A]): IO[Nothing, Either[E, A]] = r.either

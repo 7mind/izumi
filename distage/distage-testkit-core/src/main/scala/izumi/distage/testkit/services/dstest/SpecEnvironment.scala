@@ -51,7 +51,7 @@ object SpecEnvironment {
         s"$classname-test" -> None,
         "application" -> None,
       )
-      new ConfigLoader.LocalFSImpl(logger, None, moreConfigs, configOverrides)
+      new ConfigLoader.LocalFSImpl(logger, None, moreConfigs) map configOverrides
     }
 
     override def makeModuleProvider(options: PlanningOptions, config: AppConfig, lateLogger: IzLogger, roles: RolesInfo, activationInfo: ActivationInfo, activation: Activation): ModuleProvider = {

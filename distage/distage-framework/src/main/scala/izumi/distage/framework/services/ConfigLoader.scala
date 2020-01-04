@@ -22,18 +22,19 @@ trait ConfigLoader {
 object ConfigLoader {
 
   /**
-    * default config locations:
-    *   - common-reference.conf
-    *   - common-reference-dev.conf
-    *   - $roleName-reference.conf
-    *   - $roleName-reference-dev.conf
-    */
+   * default config locations:
+   *   - common.conf
+   *   - common-reference.conf
+   *   - common-reference-dev.conf
+   *   - $roleName.conf
+   *   - $roleName-reference.conf
+   *   - $roleName-reference-dev.conf
+   */
   class LocalFSImpl(
-                     logger: IzLogger,
-                     primaryConfig: Option[File],
-                     roleConfigs: Map[String, Option[File]],
-                     configOverride: AppConfig => AppConfig = identity
-                   ) extends ConfigLoader {
+    logger: IzLogger,
+    primaryConfig: Option[File],
+    roleConfigs: Map[String, Option[File]],
+  ) extends ConfigLoader {
 
     import LocalFSImpl._
 
@@ -94,7 +95,7 @@ object ConfigLoader {
         .withFallback(folded)
         .resolve()
 
-      configOverride(AppConfig(config))
+      AppConfig(config)
     }
 
     protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
