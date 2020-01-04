@@ -4,6 +4,7 @@ import distage.{ModuleDef, With}
 import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases._
 import izumi.distage.model.PlannerInput
+import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
 
@@ -94,12 +95,75 @@ class FactoriesTest extends WordSpec with MkInjector {
     assert(instantiated.x(5).b.isSpecial)
   }
 
+  "handle factories with mixed assisted and non-assisted methods" in {
+    import FactoryCase1._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[MixedAssistendNonAssisted]
+      make[Dependency]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val dep = context.get[Dependency]
+    val instantiated = context.get[MixedAssistendNonAssisted]
+
+    assert(instantiated.assisted().b eq dep)
+    val dependency = new Dependency {}
+    assert(instantiated.nonAssisted(dependency).b ne dep)
+    assert(instantiated.nonAssisted(dependency).b eq dependency)
+  }
+
+  "handle assisted abstract factories with multiple parameters of the same type" in {
+    import FactoryCase2._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[AssistedAbstractFactory]
+      make[Dependency]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val dep = context.get[Dependency]
+    val instantiated = context.get[AssistedAbstractFactory]
+    val instance = instantiated.x(1, 2, 3)
+
+    assert(instance.isInstanceOf[ProductImpl])
+    assert(instance.asInstanceOf[ProductImpl].dependency eq dep)
+    assert(instance == ProductImpl(3, 2, 1, dep))
+  }
+
+  "handle higher-kinded assisted abstract factories with multiple parameters of the same type" in {
+    import FactoryCase2._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[AssistedAbstractFactoryF[Identity]]
+      make[Identity[Dependency]]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val dep = context.get[Dependency]
+    val instantiated = context.get[AssistedAbstractFactoryF[Identity]]
+    val instance = instantiated.x(1, 2, 3)
+
+    assert(instance.isInstanceOf[ProductFImpl[Identity]])
+    assert(instance.asInstanceOf[ProductFImpl[Identity]].dependency eq dep)
+    assert(instance == ProductFImpl[Identity](3, 2, 1, dep))
+  }
+
   "handle structural type factories" in {
     import FactoryCase1._
 
     FactoryConstructor[{
-            def makeConcreteDep(): Dependency @With[ConcreteDep]
-          }]
+      def makeConcreteDep(): Dependency @With[ConcreteDep]
+    }]
 
     val definition = PlannerInput.noGc(new ModuleDef {
       make[{
