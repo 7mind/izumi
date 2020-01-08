@@ -80,6 +80,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       bootstrapOverrides = c.bootstrapOverrides,
       moduleOverrides = c.moduleOverrides,
       bootstrapLogLevel = c.bootstrapLogLevel,
+      configOverrides = c.configOverrides
     )
   }
 

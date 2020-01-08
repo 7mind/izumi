@@ -22,12 +22,14 @@ trait ConfigLoader {
 object ConfigLoader {
 
   /**
-    * default config locations:
-    *   - common-reference.conf
-    *   - common-reference-dev.conf
-    *   - $roleName-reference.conf
-    *   - $roleName-reference-dev.conf
-    */
+   * default config locations:
+   *   - common.conf
+   *   - common-reference.conf
+   *   - common-reference-dev.conf
+   *   - $roleName.conf
+   *   - $roleName-reference.conf
+   *   - $roleName-reference-dev.conf
+   */
   class LocalFSImpl(
     logger: IzLogger,
     primaryConfig: Option[File],
@@ -98,6 +100,7 @@ object ConfigLoader {
 
     protected def defaultConfigReferences(name: String): Seq[ConfigSource] = {
       Seq(
+        ConfigSource.Resource(s"$name.conf", ResourceConfigKind.Primary),
         ConfigSource.Resource(s"$name-reference.conf", ResourceConfigKind.Primary),
         ConfigSource.Resource(s"$name-reference-dev.conf", ResourceConfigKind.Development),
       )
