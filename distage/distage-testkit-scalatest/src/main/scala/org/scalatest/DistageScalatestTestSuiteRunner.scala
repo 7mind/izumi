@@ -42,7 +42,7 @@ object ScalatestInitWorkaround {
     def doScan[F[_]](instance: DistageScalatestTestSuiteRunner[F]): Unit = {
       if (classpathScanned.compareAndSet(false, true)) {
         val classLoader = instance.getClass.getClassLoader
-        val nearest2Packages = instance.getClass.getPackageName.split('.').toSeq.inits.take(2).map(_.mkString(".")).toSeq
+        val nearest2Packages = instance.getClass.getPackage.getName.split('.').toSeq.inits.take(2).map(_.mkString(".")).toSeq
         val scan = new ClassGraph()
           .whitelistJars("distage-testkit-scalatest*")
           .whitelistPackages(nearest2Packages: _*)
@@ -80,6 +80,7 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
       bootstrapOverrides = c.bootstrapOverrides,
       moduleOverrides = c.moduleOverrides,
       bootstrapLogLevel = c.bootstrapLogLevel,
+      configOverrides = c.configOverrides
     )
   }
 

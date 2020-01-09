@@ -43,7 +43,7 @@ object FactoryConstructorMacro {
     val producerMethods = factoryMethods.map {
       case Factory.FactoryMethod(factoryMethod, productConstructor, _) =>
 
-        val (methodArgListDecls, methodArgsMap) = {
+        val (methodArgListDecls, methodArgList) = {
           @tailrec def instantiatedMethod(tpe: Type): MethodTypeApi = tpe match {
             case m: MethodTypeApi => m
             case p: PolyTypeApi => instantiatedMethod(p.resultType)
@@ -60,22 +60,27 @@ object FactoryConstructorMacro {
 
         val typeParams: List[TypeDef] = factoryMethod.underlying.asMethod.typeParams.map(c.internal.typeDef(_))
 
-        val (associations, fnTree) = mkAnyProductConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType)
+        val (associations, fnTree) = mkAnyConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(productConstructor.instanceType)
         val args = associations.map {
           param =>
-            dependencyArgMap
-              .get(param.key)
-              .orElse {
-                methodArgsMap.collectFirst {
-                  case (tpe, tree) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe) =>
-                    tree
-                }
-              }
-              .getOrElse {
-                c.abort(c.enclosingPosition,
-                  s"Couldn't find anything for ${param.tpe} in ${dependencyAssociations.map(_.tpe)} ++ ${methodArgsMap.map(_._1)}"
-                )
-              }
+            val candidates = methodArgList.collect {
+              case (tpe, termName) if ReflectionUtil.stripByName(u)(tpe) =:= ReflectionUtil.stripByName(u)(param.tpe) =>
+                termName
+            }
+            candidates match {
+              case one :: Nil =>
+                one
+              case Nil =>
+                dependencyArgMap.getOrElse(param.key, c.abort(c.enclosingPosition,
+                  s"Couldn't find a dependency to satisfy parameter ${param.name}: ${param.tpe} in factoryArgs: ${dependencyAssociations.map(_.tpe)}, methodArgs: ${methodArgList.map(_._1)}"
+                ))
+              case multiple =>
+                multiple.find(_.toString == param.name)
+                  .getOrElse(c.abort(c.enclosingPosition,
+                    s"""Couldn't disambiguate between multiple arguments with the same type available for parameter ${param.name}: ${param.tpe} of ${factoryMethod.finalResultType} constructor
+                       |Expected one of the arguments to be named `${param.name}` or for the type to be unique among factory method arguments""".stripMargin
+                  ))
+            }
         }
         val freshName = TermName(c.freshName("wiring"))
 
@@ -113,11 +118,11 @@ object FactoryConstructorMacro {
     res
   }
 
-  def mkAnyProductConstructorUnwrapped(c: blackbox.Context)
-                                      (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                      (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                       logger: TrivialLogger)
-                                      (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+  private[this] def mkAnyConstructorUnwrapped(c: blackbox.Context)
+                                             (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                             (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                              logger: TrivialLogger)
+                                             (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
 
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(targetType)
 

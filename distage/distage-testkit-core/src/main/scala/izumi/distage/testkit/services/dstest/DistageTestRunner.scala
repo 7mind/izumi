@@ -7,7 +7,8 @@ import izumi.distage.framework.model.IntegrationCheck
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.framework.services.{IntegrationChecker, PlanCircularDependencyCheck}
 import izumi.distage.model.Locator
-import izumi.distage.model.definition.ModuleBase
+import izumi.distage.model.definition.Binding.SetElementBinding
+import izumi.distage.model.definition.{ImplDef, ModuleBase}
 import izumi.distage.model.effect.DIEffect.syntax._
 import izumi.distage.model.effect.{DIEffect, DIEffectAsync, DIEffectRunner}
 import izumi.distage.model.exceptions.ProvisioningException
@@ -21,7 +22,7 @@ import izumi.fundamentals.reflection.Tags.TagK
 
 import scala.concurrent.duration.FiniteDuration
 
-class DistageTestRunner[F[_]: TagK]
+class DistageTestRunner[F[_] : TagK]
 (
   reporter: TestReporter,
   integrationChecker: IntegrationChecker[F],
@@ -70,15 +71,23 @@ class DistageTestRunner[F[_]: TagK]
             distageTest -> injector.plan(PlannerInput(appModule, keys))
         }
 
+        val wholeEnvKeys = testPlans.flatMap(_._2.steps).map(_.target).toSet
+
         // here we find all the shared components in each of our individual tests
-        val sharedKeys = testPlans.map(_._2).flatMap {
-          plan =>
-            plan.steps.filter(env memoizationRoots _.target).map(_.target)
-        }.toSet -- runtimeGcRoots
+        val sharedKeys = wholeEnvKeys.filter(env.memoizationRoots) -- runtimeGcRoots
 
         logger.info(s"Memoized components in env: $sharedKeys")
 
-        val shared = injector.trisectByKeys(appModule.drop(runtimeGcRoots), sharedKeys) {
+        val (strengthenKeys, strengthen) = appModule.drop(runtimeGcRoots).foldLeftWith(List.empty[DIKey]) {
+          case (acc, b@SetElementBinding(key, r: ImplDef.ReferenceImpl, _, _)) if r.weak && wholeEnvKeys(key) =>
+            (key :: acc) -> b.copy(implementation = r.copy(weak = false))
+          case (acc, b) =>
+            acc -> b
+        }
+
+        logger.info(s"Strengthen weak components in env: $strengthenKeys")
+
+        val shared = injector.trisectByKeys(strengthen, sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
         }
 
@@ -258,7 +267,7 @@ object DistageTestRunner {
 
   sealed trait TestStatus
   object TestStatus {
-//    case object Scheduled extends TestStatus
+    //    case object Scheduled extends TestStatus
     case object Running extends TestStatus
 
     sealed trait Done extends TestStatus

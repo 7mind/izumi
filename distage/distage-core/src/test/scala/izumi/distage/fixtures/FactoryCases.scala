@@ -1,5 +1,6 @@
 package izumi.distage.fixtures
 
+import com.sun.tools.classfile.Dependency
 import izumi.distage.model.definition.{Id, With}
 import izumi.fundamentals.platform.build.ExposedTestScope
 
@@ -26,19 +27,19 @@ object FactoryCases {
     }
 
     final case class TestClass(b: Dependency)
-
     final case class AssistedTestClass(b: Dependency, a: Int)
-
     final case class NamedAssistedTestClass(@Id("special") b: Dependency, a: Int)
-
     final case class GenericAssistedTestClass[T, S](a: List[T], b: List[S], c: Dependency)
 
     trait Factory {
       def wiringTargetForDependency: Dependency
-
       def factoryMethodForDependency(): Dependency
-
       def x(): TestClass
+    }
+
+    trait MixedAssistendNonAssisted {
+      def assisted(): TestClass
+      def nonAssisted(dependency: Dependency): TestClass
     }
 
     trait OverridingFactory {
@@ -51,7 +52,6 @@ object FactoryCases {
 
     trait NamedAssistedFactory {
       def dep: Dependency @Id("veryspecial")
-
       def x(a: Int): NamedAssistedTestClass
     }
 
@@ -70,7 +70,6 @@ object FactoryCases {
     trait AbstractFactory {
       @With[AbstractDependencyImpl]
       def x(): AbstractDependency
-
       def y(): FullyAbstractDependency
     }
 
@@ -78,6 +77,27 @@ object FactoryCases {
       def x(): Factory
     }
 
+  }
+
+  object FactoryCase2 {
+    trait AbstractAbstractFactory {
+      def x(z: Int, y: Int, x: Int): Product
+    }
+
+    trait AssistedAbstractFactory extends AbstractAbstractFactory {
+      override def x(z: Int, y: Int, x: Int): Product @With[ProductImpl]
+    }
+
+    class Dependency()
+
+    final case class ProductImpl(x: Int, y: Int, z: Int, dependency: Dependency)
+
+    trait AssistedAbstractFactoryF[F[_]] extends AbstractAbstractFactory {
+      override def x(z: Int, y: Int, x: Int): ProductF[F] @With[ProductFImpl[F]]
+    }
+
+    trait ProductF[F[_]] extends Product
+    final case class ProductFImpl[F[_]](x: Int, y: Int, z: Int, dependency: F[Dependency]) extends ProductF[F]
   }
 
 }

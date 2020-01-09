@@ -31,7 +31,7 @@ object V {
   // java, we need it bcs http4s ws client isn't ready yet
   val asynchttpclient = "2.10.4"
 
-  val classgraph = "4.8.59"
+  val classgraph = "4.8.60"
   val slf4j = "1.7.30"
   val typesafe_config = "1.4.0"
 

@@ -144,7 +144,6 @@ object Log {
         copy(context = context.copy(customContext = context.customContext + ctx))
       }
     }
-
   }
 
   object Entry {
@@ -156,6 +155,8 @@ object Log {
 
   final case class Message(template: StringContext, args: LogContext) {
     def argsMap: Map[String, Set[Any]] = args.map(kv => (kv.name, kv.value)).toMultimap
+
+    def +(that: Message): Message = Message(StringContext(template.parts ++ that.template.parts: _*), args ++ that.args)
   }
 
   object Message {

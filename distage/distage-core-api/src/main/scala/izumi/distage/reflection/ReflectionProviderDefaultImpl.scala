@@ -67,7 +67,7 @@ trait ReflectionProviderDefaultImpl extends ReflectionProvider {
           factoryMethod =>
             val factoryMethodSymb = SymbolInfo.Runtime(factoryMethod, tpe, wasGeneric = false)
 
-            val resultType = resultOfFactoryMethod(factoryMethodSymb)
+            val resultType = resultOfFactoryMethod(factoryMethodSymb).asSeenFrom(tpe, tpe.typeSymbol)
 
             val alreadyInSignature = {
               selectNonImplicitParameters(factoryMethod)
