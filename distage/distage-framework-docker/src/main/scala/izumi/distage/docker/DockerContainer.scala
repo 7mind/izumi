@@ -205,8 +205,7 @@ object DockerContainer {
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map {
-        case Mount(h, c, Some(nc)) => new Bind(h, new Volume(c), nc)
-        case Mount(h, c, _) => new Bind(h, new Volume(c))
+        case Mount(h, c, nc) => new Bind(h, new Volume(c), nc)
       }
 
       for {
