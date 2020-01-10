@@ -43,7 +43,7 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Container]): ProviderMagnet[DIResource[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }

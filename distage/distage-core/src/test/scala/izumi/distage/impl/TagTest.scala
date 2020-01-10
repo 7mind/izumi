@@ -7,11 +7,12 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.HKTag
 import izumi.fundamentals.reflection.macrortti._
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.{Assertions, WordSpec}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
+import scala.util.Try
 
 trait XY[Y] {
   type Z = id[Y]
@@ -19,11 +20,18 @@ trait XY[Y] {
   implicit def tagZ: Tag[Z]
 }
 
-trait ZY {
+trait ZY extends Assertions {
   type T
+  type U = T
+  type V = List[T]
+  type A = List[Option[Int]]
   val x: String = "5"
-
   object y
+
+  val tagT = intercept[TestFailedException](assertCompiles("Tag[T]"))
+  val tagU = intercept[TestFailedException](assertCompiles("Tag[U]"))
+  val tagV = intercept[TestFailedException](assertCompiles("Tag[V]"))
+  val tagA = Try(assertCompiles("Tag[A]"))
 }
 
 // https://github.com/scala/bug/issues/11139
@@ -92,6 +100,16 @@ class TagTest extends WordSpec with XY[String] {
   type BIOServiceL[F[+_, +_], E, A] = BIOService[Lambda[(X, Y) => F[A, E]]]
 
   class ApplePaymentProvider[F0[_]] extends H1
+
+  trait DockerContainer[T]
+  trait ContainerDef {
+    type T
+
+    def make(implicit t: Tag[T]) = {
+      t.discard()
+      Tag[DockerContainer[T]]
+    }
+  }
 
   "Tag" should {
 
@@ -488,6 +506,21 @@ class TagTest extends WordSpec with XY[String] {
       assert(tag.tag == Tag[BIOService[SwapF2[Either, ?, ?]]].tag)
       assert(tag.tag == Tag[BIOService[Swap]].tag)
       assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
+    }
+
+    "correctly resolve abstract types inside traits when summoned inside trait" in {
+      val a = new ContainerDef {}
+      val b = new ContainerDef {}
+
+      assert(a.make.tag == Tag[DockerContainer[a.T]].tag)
+      assert(a.make.tag != Tag[DockerContainer[b.T]].tag)
+      assert(Tag[DockerContainer[a.T]].tag == Tag[DockerContainer[a.T]].tag)
+
+      val zy = new ZY {}
+      assert(zy.tagT.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagU.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagV.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagA.isSuccess)
     }
 
     "progression test: cannot resolve a higher-kinded type in a higher-kinded tag in a named deeply-nested type lambda" in {
