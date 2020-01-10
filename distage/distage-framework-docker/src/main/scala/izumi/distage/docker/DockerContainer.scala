@@ -6,7 +6,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
-import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -204,7 +204,10 @@ object DockerContainer {
         .createContainerCmd(config.image)
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
-      val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
+      val volumes = config.mounts.map {
+        case Mount(h, c, Some(nc)) => new Bind(h, new Volume(c), nc)
+        case Mount(h, c, _) => new Bind(h, new Volume(c))
+      }
 
       for {
         out <- DIEffect[F].maybeSuspend {
