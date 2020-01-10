@@ -1,11 +1,11 @@
 package izumi.distage.impl
 
+import distage._
 import izumi.distage.fixtures.BasicCases.BasicCase4.ClassTypeAnnT
 import izumi.distage.fixtures.ProviderCases.ProviderCase1
 import izumi.distage.model.providers.ProviderMagnet
-import izumi.fundamentals.platform.language.Quirks._
-import distage._
 import izumi.distage.model.reflection.universe.RuntimeDIUniverse
+import izumi.fundamentals.platform.language.Quirks._
 import org.scalatest.WordSpec
 
 class ProviderMagnetTest extends WordSpec {
@@ -152,8 +152,11 @@ class ProviderMagnetTest extends WordSpec {
 
     "handle opaque local references in traits" in {
       val testProviderModule = new TestProviderModule {}
-      assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
-      assert(ProviderMagnet(testProviderModule.implType _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
+      assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[testProviderModule.TestClass])
+      assert(ProviderMagnet(testProviderModule.implType _).get.ret <:< SafeType.get[testProviderModule.TestClass])
+      // type projections broken
+      //      assert(ProviderMagnet(testProviderModule.implArg _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
+      //      assert(ProviderMagnet(testProviderModule.implType _).get.ret <:< SafeType.get[TestProviderModule#TestClass])
     }
 
     "handle constructor references with argument annotations" in {

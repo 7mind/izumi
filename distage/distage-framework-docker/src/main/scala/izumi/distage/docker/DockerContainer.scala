@@ -45,8 +45,7 @@ trait ContainerDef {
     */
   final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, Container]] = {
     tag.discard()
-    val res: ProviderMagnet[DIResource[F, Container]] = DockerContainer.resource[F](this)
-    res
+    DockerContainer.resource[F](this)
   }
 }
 
