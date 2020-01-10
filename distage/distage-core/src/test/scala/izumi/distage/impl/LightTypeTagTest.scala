@@ -294,18 +294,19 @@ class LightTypeTagTest extends WordSpec {
       val a = new C {
         override type A = Int
       }
-
-      assertSame(LTT[a.A], LTT[Int])
-
+      val a0 = new C {}
       val a1: C = new C {
         override type A = Int
       }
-      val a2: C = new C {
+      val a2 = new C {
         override type A = String
       }
 
+      assertSame(LTT[a.A], LTT[Int])
+      assertDifferent(LTT[a0.A], LTT[Int])
       assertDifferent(LTT[a1.A], LTT[Int])
       assertDifferent(LTT[a1.A], LTT[a2.A])
+      assertSame(LTT[a2.A], LTT[String])
     }
 
     "support subtyping of parents parameterized with type lambdas" in {

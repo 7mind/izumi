@@ -36,7 +36,9 @@ trait WithDISymbolInfo {
 
     object Runtime {
       def apply(underlying: SymbNative, definingClass: TypeNative, wasGeneric: Boolean, moreAnnotations: List[u.Annotation] = Nil): Runtime = {
-        val tpeIn = underlying.typeSignatureIn(definingClass)
+        val tpeIn = underlying
+          .typeSignatureIn(definingClass)
+          .asSeenFrom(definingClass, definingClass.typeSymbol)
         new Runtime(
           underlying = underlying,
           typeSignatureInDefiningClass = tpeIn,
