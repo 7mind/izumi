@@ -7,11 +7,12 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.Tags.HKTag
 import izumi.fundamentals.reflection.macrortti._
-import org.scalatest.WordSpec
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.{Assertions, WordSpec}
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
+import scala.util.Try
 
 trait XY[Y] {
   type Z = id[Y]
@@ -19,26 +20,30 @@ trait XY[Y] {
   implicit def tagZ: Tag[Z]
 }
 
-trait ZY {
+trait ZY extends Assertions {
   type T
+  type U = T
+  type V = List[T]
+  type A = List[Option[Int]]
   val x: String = "5"
-
   object y
+
+  val tagT = intercept[TestFailedException](assertCompiles("Tag[T]"))
+  val tagU = intercept[TestFailedException](assertCompiles("Tag[U]"))
+  val tagV = intercept[TestFailedException](assertCompiles("Tag[V]"))
+  val tagA = Try(assertCompiles("Tag[A]"))
 }
 
+// https://github.com/scala/bug/issues/11139
 final case class testTag[T: Tag]() {
   type X[A] = Either[Int, A]
   type Y = T
   val res = Tag[X[Y {}]]
 }
-
-// https://github.com/scala/bug/issues/11139
 final case class testTag2[T: Tag]() {
   type X = List[T]
   val res = Tag[X]
 }
-
-// https://github.com/scala/bug/issues/111397
 final case class testTag3[F[_]: TagK]() {
   type X = OptionT[F, Int]
   val res = SafeType.get[X]
@@ -46,11 +51,14 @@ final case class testTag3[F[_]: TagK]() {
 
 class TagTest extends WordSpec with XY[String] {
 
-  def safe[T: ru.TypeTag](implicit maybeClassTag: ClassTag[T] = null) = {
+  def safe[T: ru.TypeTag](implicit maybeClassTag: ClassTag[T] = null): SafeType = {
     SafeType(
       tag = LightTypeTagImpl.makeLightTypeTag(ru)(ru.typeOf[T]),
       cls = Option(maybeClassTag).fold[Class[_]](classOf[Any])(_.runtimeClass),
     )
+  }
+  def safeTypeLTag[T: LTag](implicit maybeClassTag: ClassTag[T] = null): SafeType = {
+    SafeType(LTag[T].tag, Option(maybeClassTag).fold[Class[_]](classOf[Any])(_.runtimeClass))
   }
 
   implicit class TagSafeType(tag: Tag[_]) {
@@ -93,6 +101,16 @@ class TagTest extends WordSpec with XY[String] {
 
   class ApplePaymentProvider[F0[_]] extends H1
 
+  trait DockerContainer[T]
+  trait ContainerDef {
+    type T
+
+    def make(implicit t: Tag[T]) = {
+      t.discard()
+      Tag[DockerContainer[T]]
+    }
+  }
+
   "Tag" should {
 
     "Work for any concrete type" in {
@@ -127,24 +145,23 @@ class TagTest extends WordSpec with XY[String] {
       assert(Tag[With[str.type] with ({type T = str.type with Int})].toSafe != safe[With[str.type] with ({type T = str.type with Long})])
     }
 
-    "Work with odd type prefixes" in {
+    "Work with term type prefixes" in {
       val zy = new ZY {}
+      val zx = new ZY {}
 
-      assert(Tag[zy.T].toSafe == safe[zy.T])
-      assert(Tag[zy.x.type].toSafe == safe[zy.x.type])
-      assert(Tag[zy.y.type].toSafe == safe[zy.y.type])
-    }
-
-    "Work with subtyping odd type prefixes" in {
-      val zy = new ZY {}
-
-      val b1 = Tag[zy.T].toSafe <:< safe[zy.T]
-      val b2 = Tag[zy.x.type].toSafe <:< safe[zy.x.type]
-      val b3 = Tag[zy.y.type].toSafe <:< safe[zy.y.type]
-
-      assert(b1)
-      assert(b2)
-      assert(b3)
+      assert(Tag[zy.T].toSafe == safeTypeLTag[zy.T])
+      assert(Tag[zy.T].toSafe <:< safeTypeLTag[zy.T])
+      assert(Tag[zy.T].toSafe != safeTypeLTag[zx.T])
+      assert(Tag[zy.x.type].toSafe == safeTypeLTag[zy.x.type])
+      assert(Tag[zy.x.type].toSafe <:< safeTypeLTag[zy.x.type])
+      assert(Tag[zy.x.type].toSafe <:< safeTypeLTag[String])
+      assert(Tag[zy.x.type].toSafe <:< safeTypeLTag[java.io.Serializable])
+      assert(Tag[zy.x.type].toSafe != safeTypeLTag[zx.x.type])
+      assert(Tag[zy.y.type].toSafe == safeTypeLTag[zy.y.type])
+      assert(Tag[zy.y.type].toSafe <:< safeTypeLTag[zy.y.type])
+      assert(Tag[zy.y.type].toSafe <:< safeTypeLTag[java.lang.Object])
+      assert(Tag[zy.y.type].toSafe != safeTypeLTag[zx.y.type])
+      assert(Tag[zy.y.type].toSafe != safeTypeLTag[zx.x.type])
     }
 
     "Work for any abstract type with available Tag when obscured by empty refinement" in {
@@ -185,7 +202,7 @@ class TagTest extends WordSpec with XY[String] {
       assert(testTag3[List].toSafe == safe[OptionT[List, Int]])
     }
 
-    "Can dealias transparent type members when a tag for them is summoned _inside_ the class, because LightTypeTags are not affected by https://github.com/scala/bug/issues/11139" in {
+    "Can dealias transparent type members with class type parameters inside them when a tag is summoned _inside_ the class, because LightTypeTags are not affected by https://github.com/scala/bug/issues/11139" in {
       assert(testTag[String]().res.toSafe == safe[Either[Int, String]])
       assert(testTag2[String]().res.toSafe == safe[List[String]])
       assert(testTag3[List]().res == safe[OptionT[List, Int]])
@@ -330,16 +347,9 @@ class TagTest extends WordSpec with XY[String] {
       implicitly[`TagK<:Dep`[Trait3]].tag.withoutArgs =:= LTag[Trait3[Nothing]].tag.withoutArgs
     }
 
-    "scalac bug: can't find HKTag when obscured by type lambda" in {
+    "can find HKTag when obscured by type lambda" in {
       assertCompiles("HKTag.hktagFromTagMacro[{ type Arg[C] = Option[C] }]")
-      assertTypeError("HKTag.hktagFromTagMacro[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]")
-      // The error produced above is:
-      //   Error:(177, 32) No TypeTag available for izumi.distage.model.reflection.universe.RuntimeDIUniverse.HKTag[Object{type Arg[C] = Option[C]}]
-      //   HKTag.unsafeFromTypeTag[({ type l[F[_]] = HKTag[{ type Arg[C] = F[C] }] })#l[Option]]
-      // That means that result of applying lambda:
-      //  `Lambda[(F[_]) => HKTag[{ type Arg[C] = F[C] }] }][Option]`
-      //  != HKTag[{ type Arg[C] = F[C] }]
-      // For Scalac. which necessitates another macro call for fixup ._.
+      assertCompiles("HKTag.hktagFromTagMacro[({ type l[F[_]] = { type Arg[C] = F[C] } })#l[Option]]")
     }
 
     "return expected class tag" in {
@@ -498,6 +508,21 @@ class TagTest extends WordSpec with XY[String] {
       assert(tag.tag == Tag[BIOService[Lambda[(E, A) => Either[A, E]]]].tag)
     }
 
+    "correctly resolve abstract types inside traits when summoned inside trait" in {
+      val a = new ContainerDef {}
+      val b = new ContainerDef {}
+
+      assert(a.make.tag == Tag[DockerContainer[a.T]].tag)
+      assert(a.make.tag != Tag[DockerContainer[b.T]].tag)
+      assert(Tag[DockerContainer[a.T]].tag == Tag[DockerContainer[a.T]].tag)
+
+      val zy = new ZY {}
+      assert(zy.tagT.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagU.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagV.getMessage contains "could not find implicit value for Tag[")
+      assert(zy.tagA.isSuccess)
+    }
+
     "progression test: cannot resolve a higher-kinded type in a higher-kinded tag in a named deeply-nested type lambda" in {
       val t = intercept[TestFailedException] {
         assertCompiles(
@@ -526,8 +551,8 @@ class TagTest extends WordSpec with XY[String] {
       assert(t.message.get contains "could not find implicit value")
     }
 
-    "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth to support?)" in {
-      intercept[IllegalArgumentException] {
+    "progression test: cannot resolve type prefix or a type projection (this case is no longer possible in dotty at all. not worth it to support?)" in {
+      val res = intercept[IllegalArgumentException] {
         class Path {
           type Child
         }
@@ -539,6 +564,7 @@ class TagTest extends WordSpec with XY[String] {
         assert(getTag[path.type].tag <:< Tag[Path#Child].tag)
         assert(!(Tag[Path#Child].tag <:< getTag[path.type].tag))
       }
+      assert(res.getMessage.contains("is not a type lambda, it cannot be parameterized"))
     }
 
     "progression test: type tags with bounds are not currently requested by the macro" in {

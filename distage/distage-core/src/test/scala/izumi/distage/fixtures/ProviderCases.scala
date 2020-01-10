@@ -38,15 +38,11 @@ object ProviderCases {
     def poly[F[_]](f: F[Int]): F[Unit] => Poly[F] = _ => { f.discard() ; new Poly[F] }
 
     class TestProviderModule {
-
       class TestDependency
-
       class TestClass(val a: TestDependency)
 
       def implArg(@Id("classdefargann1") arganndep: TestDependency): TestClass = new TestClass(arganndep)
-
       def implType(typeanndep: TestDependency @Id("classdeftypeann1")): TestClass = new TestClass(typeanndep)
-
     }
 
   }

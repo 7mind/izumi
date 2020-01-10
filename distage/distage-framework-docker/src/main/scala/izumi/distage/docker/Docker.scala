@@ -55,7 +55,7 @@ object Docker {
 
 
 
-  final case class Mount(host: String, container: String)
+  final case class Mount(host: String, container: String, noCopy: Boolean = false)
 
   final case class ContainerConfig[T](
                                        image: String,

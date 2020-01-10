@@ -99,16 +99,8 @@ object ReflectionUtil {
     tpe.typeSymbol.isClass && tpe.typeSymbol.asClass == u.definitions.ByNameParamClass
   }
 
-  final def allPartsStrong(tpe: Universe#Type): Boolean = {
-    def selfStrong = {
-      !tpe.typeSymbol.isParameter ||
-        tpe.typeParams.exists {
-          t =>
-            t == tpe.typeSymbol ||
-              t.typeSignature == tpe.typeSymbol.typeSignature ||
-              (t.name eq tpe.typeSymbol.name)
-        }
-    }
+  def allPartsStrong(tpe: Universe#Type): Boolean = {
+    val selfStrong = isSelfStrong(tpe)
     def prefixStrong = {
       tpe match {
         case t: Universe#TypeRefApi =>
@@ -118,7 +110,7 @@ object ReflectionUtil {
       }
     }
     def argsStrong = {
-      tpe.finalResultType.typeArgs.forall {
+      tpe.dealias.finalResultType.typeArgs.forall {
         arg =>
           tpe.typeParams.contains(arg.typeSymbol) ||
             allPartsStrong(arg)
@@ -135,6 +127,26 @@ object ReflectionUtil {
     }
 
     selfStrong && prefixStrong && argsStrong && intersectionStructStrong
+  }
+
+  def isSelfStrong(tpe: Universe#Type): Boolean = {
+    !(tpe.typeSymbol.isParameter || (
+      tpe.isInstanceOf[Universe#TypeRefApi] &&
+        tpe.asInstanceOf[Universe#TypeRefApi].pre.isInstanceOf[Universe#ThisTypeApi] &&
+        tpe.typeSymbol.isAbstract && !tpe.typeSymbol.isClass && isNotDealiasedFurther(tpe)
+      )) ||
+      tpe.typeParams.exists {
+        t =>
+          t == tpe.typeSymbol ||
+            t.typeSignature == tpe.typeSymbol.typeSignature ||
+            (t.name eq tpe.typeSymbol.name)
+      }
+  }
+
+  def isNotDealiasedFurther(tpe: Universe#Type): Boolean = {
+    val u: Universe = null
+    val tpe1: u.Type = tpe.asInstanceOf[u.Type]
+    tpe1.dealias =:= tpe1
   }
 
   def intersectionTypeMembers[U <: SingletonUniverse](targetType: U#Type): List[U#Type] = {

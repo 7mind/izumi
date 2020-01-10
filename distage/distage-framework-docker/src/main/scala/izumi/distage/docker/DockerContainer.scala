@@ -6,7 +6,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse
 import com.github.dockerjava.api.model._
 import com.github.dockerjava.core.command.PullImageResultCallback
 import distage.TagK
-import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, ServicePort}
+import izumi.distage.docker.Docker.{AvailablePort, ClientConfig, ContainerConfig, ContainerId, DockerPort, HealthCheckResult, Mount, ServicePort}
 import izumi.distage.framework.model.exceptions.IntegrationCheckException
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.DIEffect.syntax._
@@ -43,7 +43,7 @@ trait ContainerDef {
     * To kill all the containers: `docker rm -f $(docker ps -q -a -f 'label=distage.type')`
     *
     */
-  final def make[F[_]: TagK](implicit tag: distage.Tag[Tag]): ProviderMagnet[DIResource[F, Container]] = {
+  final def make[F[_]: TagK](implicit tag: distage.Tag[Container]): ProviderMagnet[DIResource[F, Container]] = {
     tag.discard()
     DockerContainer.resource[F](this)
   }
@@ -204,7 +204,9 @@ object DockerContainer {
         .createContainerCmd(config.image)
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
-      val volumes = config.mounts.map(m => new Bind(m.host, new Volume(m.container), true))
+      val volumes = config.mounts.map {
+        case Mount(h, c, nc) => new Bind(h, new Volume(c), nc)
+      }
 
       for {
         out <- DIEffect[F].maybeSuspend {

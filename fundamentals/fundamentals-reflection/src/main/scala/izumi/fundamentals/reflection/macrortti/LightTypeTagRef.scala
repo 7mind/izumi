@@ -84,6 +84,26 @@ sealed trait LightTypeTagRef {
     }
   }
 
+  final def getPrefix: Option[LightTypeTagRef] = {
+    @tailrec
+    @inline
+    def getPrefix(self: LightTypeTagRef): Option[LightTypeTagRef] = {
+      self match {
+        case Lambda(_, output) => getPrefix(output)
+        case NameReference(_, _, prefix) => prefix
+        case FullReference(_, _, prefix) => prefix
+        case IntersectionReference(refs) =>
+          val prefixes = refs.map(_.getPrefix).collect {
+            case Some(p: AppliedNamedReference) => p
+          }
+          if (prefixes.nonEmpty) Some(IntersectionReference(prefixes)) else None
+        case Refinement(reference, _) => getPrefix(reference)
+      }
+    }
+
+    getPrefix(this)
+  }
+
   final def typeArgs: List[AbstractReference] = {
     this match {
       case Lambda(input, output) =>

@@ -8,7 +8,6 @@ import izumi.distage.model.exceptions.ProvisioningException
 import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
 import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.WordSpec
-import org.scalatest.exceptions.TestFailedException
 
 class InnerClassesTest extends WordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {
@@ -138,38 +137,16 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[TopLevelPathDepTest.TestClass].a != null)
   }
 
-  "progression test: can't handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
-    val exc = intercept[TestFailedException] {
-      assertCompiles("""
-        import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
+  "Can handle factories inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait (macros can't)" in {
+    import InnerClassStablePathsCase.StableObjectInheritingTrait.{TestClass, TestDependency, TestFactory}
 
-        val definition = PlannerInput.noGc(new ModuleDef {
-          make[TestFactory]
-        })
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[TestFactory]
+    })
 
-        val context = mkInjector().produceUnsafe(definition)
+    val context = mkInjector().produceUnsafe(definition)
 
-        assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
-        """)
-    }
-    assert(exc.getMessage.contains("UnsupportedDefinitionException"))
-  }
-
-  "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
-    intercept[ProvisioningException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
-
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Circular1]
-        make[Circular2]
-      })
-
-      val context = mkInjector().produceUnsafe(definition)
-
-      assert(context.get[Circular1] != null)
-      assert(context.get[Circular1].circular2 != context.get[Circular2])
-    }
+    assert(context.get[TestFactory].mk(TestDependency()) == TestClass(TestDependency()))
   }
 
   "can now find proper constructor for by-name circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
@@ -223,6 +200,24 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
     assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
     assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
+  }
+
+  "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
+    val res = intercept[ProvisioningException] {
+      import InnerClassStablePathsCase._
+      import StableObjectInheritingTrait._
+
+      val definition = PlannerInput.noGc(new ModuleDef {
+        make[Circular1]
+        make[Circular2]
+      })
+
+      val context = mkInjector().produceUnsafe(definition)
+
+      assert(context.get[Circular1] != null)
+      assert(context.get[Circular1].circular2 != context.get[Circular2])
+    }
+    assert(res.getMessage.contains("Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors"))
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {

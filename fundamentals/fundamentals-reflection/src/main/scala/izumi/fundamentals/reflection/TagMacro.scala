@@ -44,9 +44,8 @@ class TagMacro(val c: blackbox.Context) {
   @inline final def makeHKTag[ArgStruct: c.WeakTypeTag]: c.Expr[HKTag[ArgStruct]] = {
     val argStruct = weakTypeOf[ArgStruct]
     val ctor = ltagMacro.unpackArgStruct(argStruct)
-    // FIXME: this check can never succeed for ArgStruct!//it can
-    if (ReflectionUtil.allPartsStrong(argStruct)) {
-      logger.log(s"HK: found Strong ArgStruct, returning $argStruct")
+    if (ReflectionUtil.allPartsStrong(ctor)) {
+      logger.log(s"HK: found Strong ctor=$ctor in ArgStruct, returning $argStruct")
       makeHKTagFromStrongTpe(ctor)
     } else {
       makeHKTagImpl(ctor)
@@ -87,7 +86,7 @@ class TagMacro(val c: blackbox.Context) {
           logger.log(s"HK type B $ctor ${ctor.typeSymbol}")
           val msg = s"  could not find implicit value for ${tagFormat(lambdaResult)}: $lambdaResult is a type parameter without an implicit Tag!"
           addImplicitError(msg)
-          c.abort(c.enclosingPosition, getImplicitError())
+          abortWithImplicitError()
 
         // type constructor is a type parameter AND has type arguments
         // we should resolve type constructor separately from an HKTag
@@ -186,7 +185,7 @@ class TagMacro(val c: blackbox.Context) {
     if (getImplicitError().endsWith(":")) { // yep
       logger.log(s"Got continuation implicit error: ${getImplicitError()}")
     } else {
-      resetImplicitError()
+      resetImplicitError(weakTypeOf[T])
       addImplicitError("\n\n<trace>: ")
     }
 
@@ -227,7 +226,7 @@ class TagMacro(val c: blackbox.Context) {
   @inline
   protected[this] def mkStruct(originalRefinement: Type): c.Expr[LightTypeTag] = {
     originalRefinement.decls
-      .find(_.info.typeSymbol.isParameter)
+      .find(symbol => !ReflectionUtil.isSelfStrong(symbol.info))
       .foreach {
         s =>
           val msg = s"  Encountered a type parameter ${s.info} as a part of structural refinement of $originalRefinement: It's not yet supported to summon a Tag for ${s.info} in that position!"
@@ -259,7 +258,7 @@ class TagMacro(val c: blackbox.Context) {
           logger.log(s"type B $ctor ${ctor.typeSymbol}")
           val msg = s"  could not find implicit value for ${tagFormat(tpe)}: $tpe is a type parameter without an implicit Tag!"
           addImplicitError(msg)
-          c.abort(c.enclosingPosition, getImplicitError())
+          abortWithImplicitError()
 
         // type constructor is a type parameter AND has type arguments
         // we should resolve type constructor separately from an HKTag
@@ -291,7 +290,7 @@ class TagMacro(val c: blackbox.Context) {
 
   @inline
   private[this] final def getCtorKindIfCtorIsTypeParameter(tpe: Type): Option[Kind] = {
-    if (tpe.typeSymbol.isParameter) Some(kindOf(tpe))
+    if (!ReflectionUtil.isSelfStrong(tpe)) Some(kindOf(tpe))
     else None
   }
 
@@ -366,7 +365,7 @@ class TagMacro(val c: blackbox.Context) {
         val error = hktagSummonHelpfulErrorMessage(tpe, kind)
         val msg = s"  could not find implicit value for ${tagFormat(tpe)}$error"
         addImplicitError(msg)
-        c.abort(c.enclosingPosition, getImplicitError())
+        abortWithImplicitError()
     }
   }
 
@@ -384,14 +383,18 @@ class TagMacro(val c: blackbox.Context) {
     ).getOrElse(defaultTagImplicitError)
   }
 
+  def abortWithImplicitError(): Nothing = {
+    c.abort(c.enclosingPosition, getImplicitError())
+  }
+
   @inline
   protected[this] def addImplicitError(err: String): Unit = {
     setImplicitError(s"${getImplicitError()}\n$err")
   }
 
   @inline
-  protected[this] def resetImplicitError(): Unit = {
-    setImplicitError(defaultTagImplicitError)
+  protected[this] def resetImplicitError(tpe: Type): Unit = {
+    setImplicitError(defaultTagImplicitError.replace("${T}", tpe.toString))
   }
 
   @inline
