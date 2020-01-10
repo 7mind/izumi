@@ -1,6 +1,5 @@
 package izumi.distage.fixtures
 
-import com.sun.tools.classfile.Dependency
 import izumi.distage.model.definition.{Id, With}
 import izumi.fundamentals.platform.build.ExposedTestScope
 

@@ -84,12 +84,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
   private def makeUnappliedInheritanceDb(allReferenceComponents: Set[Type]): Map[NameReference, Set[NameReference]] = {
     val baseclassReferences = allReferenceComponents.flatMap {
       i =>
-        val allbases = tpeBases(i)
-          .filterNot(_.takesTypeArgs)
-        allbases.map {
-          b =>
-            (i, makeRef(b))
-        }
+        val allbases = tpeBases(i).filterNot(_.takesTypeArgs)
+        allbases.map(b => (i, makeRef(b)))
     }
 
     val unparameterizedInheritanceData = baseclassReferences.flatMap {
@@ -102,11 +98,10 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
           case a: TypeRefApi =>
             val srcname = symName(a.sym)
             if (srcname != targetRef.ref) {
-              Seq((NameReference(srcname, prefix = getPrefix(tpef)), targetRef))
+              Seq((NameReference(srcname, Boundaries.Empty, prefix), targetRef))
             } else {
               Seq.empty
             }
-
           case _ =>
             Seq.empty
         }
@@ -225,12 +220,10 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
         case _ =>
           Seq.empty
       })
+//      val prefix = getPre(tpe)
 
       val next = (tpe.typeArgs ++ tpe.dealias.resultType.typeArgs ++ more).filterNot(inh.contains)
-      next.foreach {
-        a =>
-          extract(a, inh)
-      }
+      next.foreach(a => extract(a, inh))
     }
 
     val inh = mutable.HashSet[Type]()
@@ -482,37 +475,35 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
       }
     }
 
-    tpef match {
-      case t: TypeRefApi =>
-        t.pre match {
-          case i if i.typeSymbol.isPackage =>
-            None
-          case k if k == NoPrefix =>
-            None
-          case k: ThisTypeApi =>
-            k.sym.asType.toType match {
-              // This case matches UniRefinement.unapply#it.RefinementTypeRef case
-              case UniRefinement(_, _) =>
-                None
-              case o =>
-                fromRef(o)
-            }
-          case o =>
-            o.termSymbol match {
-              case k if k == NoSymbol =>
-                fromRef(o)
-              case s =>
-                val u = s.typeSignature
-                if (u.typeSymbol.isAbstract) {
-                  Some(NameReference(symName(o.termSymbol)))
-                } else {
-                  fromRef(u)
-                }
-            }
-        }
+    def unpackPrefix(pre: Type) = {
+      pre match {
+        case i if i.typeSymbol.isPackage =>
+          None
+        case k if k == NoPrefix =>
+          None
+        case k: ThisTypeApi =>
+          k.sym.asType.toType match {
+            // This case matches UniRefinement.unapply#it.RefinementTypeRef case
+            case UniRefinement(_, _) =>
+              None
+            case o =>
+              fromRef(o)
+          }
+        case k if k.termSymbol != NoSymbol =>
+          Some(NameReference(symName(k.termSymbol), Boundaries.Empty, getPrefix(k.termSymbol.typeSignature)))
+        case o =>
+          fromRef(o)
+      }
+    }
 
-      case _ =>
-        None
+    getPre(tpef).flatMap(unpackPrefix)
+  }
+
+  private def getPre(tpe: Type): Option[Type] = {
+    tpe match {
+      case t: TypeRefApi => Some(t.pre).filterNot(_ == NoPrefix)
+      case t: SingleTypeApi => Some(t.pre).filterNot(_ == NoPrefix)
+      case _ => None
     }
   }
 
@@ -520,6 +511,8 @@ final class LightTypeTagImpl[U <: SingletonUniverse](val u: U, withCache: Boolea
     originalType match {
       case c: ConstantTypeApi =>
         NameReference(SymLiteral(c.value.value), boundaries, prefix)
+      case s: SingleTypeApi if s.sym != NoSymbol =>
+        NameReference(symName(s.sym),  boundaries, prefix)
       case _ =>
         NameReference(symName(typeSymbol), boundaries, prefix)
     }

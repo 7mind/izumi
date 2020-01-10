@@ -51,7 +51,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
 
   final def makeParsedHKTagLightTypeTagImpl(argStruct: Type): c.Expr[LightTypeTag] = {
     def badShapeError(t: TypeApi) = {
-      c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.HK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
+      c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.StrongHK/WeakHK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
     }
 
     argStruct match {
@@ -66,7 +66,7 @@ private[reflection] class LightTypeTagMacro0[C <: blackbox.Context](val c: C)(lo
   }
 
   @inline final def unpackArgStruct(t: Type): Type = {
-    def badShapeError() = c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.HK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
+    def badShapeError() = c.abort(c.enclosingPosition, s"Expected type shape RefinedType `{ type Arg[A] = X[A] }` for summoning `LTag.StrongHK/WeakHK[X]`, but got $t (raw: ${showRaw(t)} ${t.getClass})")
     t match {
       case r: RefinedTypeApi =>
         r.decl(TypeName("Arg")) match {
