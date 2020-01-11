@@ -5,8 +5,8 @@ import izumi.distage.constructors.AnyConstructor
 import izumi.distage.fixtures.TraitCases._
 import izumi.distage.fixtures.TypesCases._
 import izumi.distage.model.PlannerInput
-import izumi.fundamentals.platform.language.IzScala
 import izumi.fundamentals.platform.language.IzScala.ScalaRelease
+import izumi.fundamentals.reflection.ProjectAttributeMacro
 import org.scalatest.WordSpec
 
 import scala.Ordering.Implicits.infixOrderingOps
@@ -256,7 +256,7 @@ class AdvancedTypesTest extends WordSpec with MkInjector {
   }
 
   "support constant types in class strategy" in {
-    assume(IzScala.scalaRelease >= ScalaRelease.`2_13`(0))
+    assume(ScalaRelease.parse(ProjectAttributeMacro.extractScalaVersion().get) >= ScalaRelease.`2_13`(0))
     assertCompiles(
       """
         new ModuleDef {
