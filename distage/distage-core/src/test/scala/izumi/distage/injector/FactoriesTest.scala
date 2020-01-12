@@ -171,7 +171,7 @@ class FactoriesTest extends WordSpec with MkInjector {
       }]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 

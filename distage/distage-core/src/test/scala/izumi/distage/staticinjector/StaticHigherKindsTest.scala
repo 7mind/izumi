@@ -31,7 +31,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
-    val listInjector = mkNoReflectionInjector()
+    val listInjector = mkNoCyclesInjector()
     val listPlan = listInjector.plan(PlannerInput.noGc(Definition[List](5)))
     val listContext = listInjector.produceUnsafe(listPlan)
 
@@ -44,7 +44,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-    val optionTInjector = mkNoReflectionInjector()
+    val optionTInjector = mkNoCyclesInjector()
     val optionTPlan = optionTInjector.plan(PlannerInput.noGc(Definition[OptionT[List, ?]](5)))
     val optionTContext = optionTInjector.produceUnsafe(optionTPlan)
 
@@ -53,7 +53,7 @@ class StaticHigherKindsTest extends WordSpec with MkInjector {
     assert(optionTContext.get[TestServiceTrait[OptionT[List, ?]]].get == OptionT(List(Option(10))))
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
-    val idInjector = mkNoReflectionInjector()
+    val idInjector = mkNoCyclesInjector()
     val idPlan = idInjector.plan(PlannerInput.noGc(Definition[id](5)))
     val idContext = idInjector.produceUnsafe(idPlan)
 

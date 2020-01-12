@@ -175,8 +175,10 @@ final class PlannerDefaultImpl
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is reference O_o: $keys", op)
         case op: ImportDependency =>
           throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is import O_o: $keys", op)
-        case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) =>
-          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
+          // this is legal, best candidate may be summoned with by-name,
+          // we should write a sanity check, if possible, but for now this will fail later, during instantiation...
+//        case op: InstantiationOp if !mirrorProvider.canBeProxied(op.target.tpe) =>
+//          throw new UnsupportedOpException(s"Failed to break circular dependencies, best candidate $best is not proxyable (final?): $keys", op)
         case _: InstantiationOp =>
           best
       }
