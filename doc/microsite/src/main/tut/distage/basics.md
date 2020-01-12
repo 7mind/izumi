@@ -455,7 +455,7 @@ and can be summoned at need. Example:
 import distage.{DIKey, GCMode, ModuleDef, Injector, ProviderMagnet, Tag}
 import izumi.distage.constructors.TraitConstructor
 import zio.console.{Console, putStrLn}
-import zio.{UIO, URIO, URManaged, ZIO, Ref, Task}
+import zio.{UIO, URIO, ZIO, Ref, Task}
 
 trait Hello {
   def hello: UIO[String]

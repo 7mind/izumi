@@ -20,7 +20,7 @@ Izumi (*jp. 泉水, spring*) is a set of independent libraries and frameworks al
 
 including the following components:
 
-1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Staged, transparent and debuggable runtime & compile-time Dependency Injection Framework,
+1. [distage](https://izumi.7mind.io/latest/release/doc/distage/) – Transparent and debuggable Dependency Injection framework for Pure FP Scala,
 2. [logstage](https://izumi.7mind.io/latest/release/doc/logstage/) – Automatic structural logs from Scala string interpolations,
 3. [idealingua](https://izumi.7mind.io/latest/release/doc/idealingua/) – API Definition, Data Modeling and RPC Language, optimized for fast prototyping – like gRPC, but with a human face. Currently generates servers and clients for Go, TypeScript, C# and Scala,
 4. [Opinionated SBT plugins](https://izumi.7mind.io/latest/release/doc/sbt/) (moved to [7mind/sbtgen](https://github.com/7mind/sbtgen)) – Reduces verbosity of SBT builds and introduces new features – inter-project shared test scopes and BOM plugins (from Maven)
@@ -29,20 +29,24 @@ including the following components:
 Docs
 ----
 
-* [Documentation & Tutorials](https://izumi.7mind.io/latest/release/doc/)
-* [Scaladoc](https://izumi.7mind.io/latest/release/api/)
+* **[Documentation](https://izumi.7mind.io/latest/release/doc/)**
+* **[Scaladoc](https://izumi.7mind.io/latest/release/api/)**
 
 Example projects:
-* [DIStage Example Project from Functional Scala 2019](https://github.com/7mind/distage-example)
+
+* [DIStage Example Project](https://github.com/7mind/distage-example)
 * [Idealingua Example Project with TypeScript and Scala](https://github.com/7mind/idealingua-example)
 
 Slides:
-* [ScalaUA Slides about DIStage](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
-* [ScalaUA Slides about LogStage](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
+
+* [DIStage-Testkit slides from Functional Scala](https://github.com/7mind/slides/blob/master/07-distage-tests-functional-scala/distage-tests-functional-scala.pdf)
+* [DIStage slides from ScalaUA](https://www.slideshare.net/7mind/scalaua-distage-staged-dependency-injection)
+* [LogStage slides from ScalaUA](https://www.slideshare.net/7mind/logstage-zerocosttructuredlogging)
 * [Slides from other meetups](https://github.com/7mind/slides)
 
-Video:
-* [Youtube: DIStage Bifunctor Tagless Final Livecoding](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
+Videos:
+
+* [Livecoding: DIStage & Bifunctor Tagless Final on Youtube](https://www.youtube.com/watch?v=C0srg5T0E4o&t=4971)
 
 Key goals
 =========
