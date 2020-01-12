@@ -21,7 +21,7 @@ Overview
 
 The following snippet:
 
-```scala mdoc:silent
+```scala mdoc:reset
 import logstage._
 import scala.util.Random
 
@@ -33,12 +33,15 @@ val justAList = List[Any](10, "green", "bottles")
 logger.trace(s"Argument: $justAnArg, another arg: $justAList")
 
 // custom name, not based on `val` name
+
 logger.info(s"Named expression: ${Random.nextInt() -> "random number"}")
 
 // print result without a name
+
 logger.warn(s"Invisible argument: ${Random.nextInt() -> "random number" -> null}")
 
 // add following fields to all messages printed by a new logger value
+
 val ctxLogger = logger("userId" -> "user@google.com", "company" -> "acme")
 val delta = Random.nextInt(1000)
 
@@ -138,7 +141,7 @@ If you're not using @ref[sbt-izumi-deps](../sbt/00_sbt.md#bills-of-materials) pl
 Basic setup
 -----------
 
-```scala mdoc:reset:silent
+```scala mdoc:reset
 import logstage._
 import logstage.circe._
 
@@ -179,17 +182,11 @@ I 2019-03-29T23:21:48.693Z[Europe/Dublin] r.S.App7.res8 ...main-12:5384  (00_log
 
 Example: 
 
-```scala mdoc:invisible:reset
-import logstage._
-
-val logger = IzLogger()
-```
-
-```scala mdoc
-import logstage.LogstageZIO
+```scala mdoc:reset
+import logstage.{IzLogger, LogstageZIO}
 import zio.{IO, DefaultRuntime}
 
-val log: LogBIO[IO] = LogstageZIO.withFiberId(logger)
+val log: LogBIO[IO] = LogstageZIO.withFiberId(IzLogger())
 
 val rts = new DefaultRuntime {}
 rts.unsafeRun {
@@ -201,9 +198,9 @@ rts.unsafeRun {
 I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_logstage.md:123) {fiberId=0} Hey! I'm logging with log=logstage.LogstageZIO$$anon$1@c39104astage!
 ```
 
-`LogIO`/`LogBIO` algebras can be extended with custom context, same as `IzLogger`:
+`LogIO`/`LogBIO` algebras can be extended with custom context using their `.apply` method, same as `IzLogger`:
 
-```scala
+```scala mdoc
 import cats.effect.IO
 import cats.implicits._
 import logstage._
@@ -211,7 +208,7 @@ import io.circe.Printer
 import io.circe.syntax._
 
 def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
-  val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.pretty(Printer.spaces2))
+  val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.print(Printer.spaces2))
 
   load(entity).handleErrorWith {
     case error =>
@@ -243,7 +240,5 @@ StaticLogRouter.instance.setup(myLogger.router)
 @@@ index
 
 * [Rendering policy](policy.md)
-* [Configuration](config.md)
-* [Logging contexts](custom_ctx.md)
 
 @@@
