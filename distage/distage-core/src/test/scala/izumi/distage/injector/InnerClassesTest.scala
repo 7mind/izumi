@@ -179,27 +179,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
   }
 
-//  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't take prefix type into account when calling constructor for generated lambdas and end up choosing the wrong constructor...)" in {
-//    // the value prefix probably has to be stored inside the Provider to fix this
-//    val exc = intercept[ProvisioningException] {
-//      import InnerClassUnstablePathsCase._
-//      val testProviderModule = new TestModule
-//
-//      val definition = PlannerInput.noGc(new ModuleDef {
-////        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-//        make[testProviderModule.Circular1]
-//        make[testProviderModule.Circular2]
-//      })
-//
-//      val context = mkInjector().produceUnsafe(definition)
-//
-//      assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
-//    }
-//    assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
-//    assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
-//    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
-//  }
-
   "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
     val res = intercept[ProvisioningException] {
       import InnerClassStablePathsCase._
