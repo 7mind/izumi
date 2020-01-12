@@ -36,7 +36,7 @@ Why use distage?
     `distage` supports resources and lifecycle natively and guarantees proper cleanups even when something went wrong.
 9. **No reflection**:
     `distage` generates all constructors and [type info](https://blog.7mind.io/lightweight-reflection.html) at compile-time and does not use Scala reflection.
-    As such, it's compatible with Graal Native Image and (soon) Scala.js.
+    As such, it's compatible with Graal Native Image and Scala.js.
 10. **Non-invasive**:
     `distage` is designed to not impact the way your Scala code is written. 
     It just removes all the initialization boilerplate.
