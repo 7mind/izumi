@@ -23,7 +23,9 @@ object Tags {
     def closestClass: Class[_]
 
     final def hasPreciseClass: Boolean = {
-      tag.shortName == closestClass.getSimpleName
+      try tag.shortName == closestClass.getSimpleName catch {
+        case i: InternalError if i.getMessage == "Malformed class name" => false
+      }
     }
   }
 

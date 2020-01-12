@@ -63,7 +63,9 @@ final case class SafeType private(
   }
 
   final def hasPreciseClass: Boolean = {
-    tag.shortName == cls.getSimpleName
+    try tag.shortName == cls.getSimpleName catch {
+      case i: InternalError if i.getMessage == "Malformed class name" => false
+    }
   }
 }
 
