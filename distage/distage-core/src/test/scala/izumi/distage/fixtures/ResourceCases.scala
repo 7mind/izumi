@@ -123,7 +123,7 @@ object ResourceCases {
 
   class Ref[F[_]: DIEffect, A](r: AtomicReference[A]) {
     def get: F[A] = DIEffect[F].maybeSuspend(r.get())
-    def update(f:  A => A): F[A] = DIEffect[F].maybeSuspend(r.updateAndGet(f(_)))
+    def update(f: A => A): F[A] = DIEffect[F].maybeSuspend(r.synchronized { r.set(f(r.get())); r.get() }) // no `.updateAndGet` on scala.js...
     def set(a: A): F[A] = update(_ => a)
   }
 

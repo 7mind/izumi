@@ -9,11 +9,78 @@ import scala.scalajs.js.typedarray.TypedArrayBufferOps._
 import scala.scalajs.js.typedarray._
 
 /**
+  * This is a fork-point from original `boopickle` codebase.
+  *
+  * LightTypeTags are encoded at compile-time and decoded at run-time,
+  * but Scala does not use the JVM version of the artifact to run macros
+  * from. Instead it tries to run the Scala.js version compiled for JVM,
+  * but the optimized encoder in boopickle is using native JavaScript classes
+  * so it can't work.
+  *
+  * Here we include both the JVM and JS versions of StringCodec and use the JVM
+  * version for encode* methods and JS version for decode* methods.
+  */
+private[izumi] object StringCodec extends StringCodecBase {
+  @inline override def decodeFast(len: Int, buf: ByteBuffer): String = {
+    JSStringCodec.decodeFast(len, buf)
+  }
+
+  @inline override def decodeUTF8(len: Int, buf: ByteBuffer): String = {
+    JSStringCodec.decodeUTF8(len, buf)
+  }
+
+  @inline override def decodeUTF16(len: Int, buf: ByteBuffer): String = {
+    JSStringCodec.decodeUTF16(len, buf)
+  }
+
+  @inline override def encodeUTF8(str: String): ByteBuffer = {
+    JVMStringCodec.encodeUTF8(str)
+  }
+
+  @inline override def encodeUTF16(str: String): ByteBuffer = {
+    JVMStringCodec.encodeUTF16(str)
+  }
+}
+
+/**
+  * This is a fork-point from original `boopickle` codebase.
+  *
+  * ByteBufferProvider is only used for encoding. JVM encoder is incompatible with `DirectByteBufferProvider`,
+  * so use `HeapByteBufferProvider`
+  * */
+private[izumi] object DefaultByteBufferProvider extends DefaultByteBufferProviderFuncs {
+//  override def provider = new DirectByteBufferProvider
+  override def provider = new HeapByteBufferProvider
+}
+
+private[boopickle] object JVMStringCodec extends StringCodecBase {
+  override def decodeUTF8(len: Int, buf: ByteBuffer): String = {
+    val a = new Array[Byte](len)
+    buf.get(a)
+    new String(a, StandardCharsets.UTF_8)
+  }
+
+  override def encodeUTF8(str: String): ByteBuffer = {
+    ByteBuffer.wrap(str.getBytes(StandardCharsets.UTF_8))
+  }
+
+  override def decodeUTF16(len: Int, buf: ByteBuffer): String = {
+    val a = new Array[Byte](len)
+    buf.get(a)
+    new String(a, StandardCharsets.UTF_16LE)
+  }
+
+  override def encodeUTF16(str: String): ByteBuffer = {
+    ByteBuffer.wrap(str.getBytes(StandardCharsets.UTF_16LE))
+  }
+}
+
+/**
   * Facade for native JS engine provided TextDecoder
   */
 @js.native
 @JSGlobal
-class TextDecoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object {
+private[boopickle] class TextDecoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object {
   def decode(data: ArrayBufferView): String = js.native
 }
 
@@ -22,11 +89,11 @@ class TextDecoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object
   */
 @js.native
 @JSGlobal
-class TextEncoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object {
+private[boopickle] class TextEncoder(utfLabel: js.UndefOr[String] = js.undefined) extends js.Object {
   def encode(str: String): Uint8Array = js.native
 }
 
-object StringCodec extends StringCodecBase {
+private[boopickle] object JSStringCodec extends StringCodecBase {
   private lazy val utf8decoder: (Int8Array) => String = {
     val td = new TextDecoder
     // use native TextDecoder

@@ -4,9 +4,6 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases._
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import izumi.distage.model.exceptions.ProvisioningException
-import izumi.distage.provisioning.strategies.cglib.exceptions.CgLibInstantiationOpException
-import net.sf.cglib.core.CodeGenerationException
 import org.scalatest.WordSpec
 
 class InnerClassesTest extends WordSpec with MkInjector {
@@ -158,7 +155,7 @@ class InnerClassesTest extends WordSpec with MkInjector {
       make[ByNameCircular2]
     })
 
-    val context = mkNoProxyInjector().produceUnsafe(definition)
+    val context = mkNoCglibInjector().produceUnsafe(definition)
 
     assert(context.get[ByNameCircular1] != null)
     assert(context.get[ByNameCircular1].circular2 eq context.get[ByNameCircular2])
@@ -179,45 +176,6 @@ class InnerClassesTest extends WordSpec with MkInjector {
     assert(context.instances.size == 3)
 
     assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
-  }
-
-  "progression test: cglib proxies can't resolve circular path-dependent dependencies (we don't take prefix type into account when calling constructor for generated lambdas and end up choosing the wrong constructor...)" in {
-    // the value prefix probably has to be stored inside the Provider to fix this
-    val exc = intercept[ProvisioningException] {
-      import InnerClassUnstablePathsCase._
-      val testProviderModule = new TestModule
-
-      val definition = PlannerInput.noGc(new ModuleDef {
-//        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
-        make[testProviderModule.Circular1]
-        make[testProviderModule.Circular2]
-      })
-
-      val context = mkInjector().produceUnsafe(definition)
-
-      assert(context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) == testProviderModule.TestClass(testProviderModule.TestDependency()))
-    }
-    assert(exc.getSuppressed.head.isInstanceOf[CgLibInstantiationOpException])
-    assert(exc.getSuppressed.head.getCause.isInstanceOf[CodeGenerationException])
-    assert(exc.getSuppressed.head.getCause.getCause.isInstanceOf[NoSuchMethodException])
-  }
-
-  "progression test: can't find proper constructor for circular dependencies inside stable objects that contain inner classes from inherited traits that depend on types defined inside trait" in {
-    val res = intercept[ProvisioningException] {
-      import InnerClassStablePathsCase._
-      import StableObjectInheritingTrait._
-
-      val definition = PlannerInput.noGc(new ModuleDef {
-        make[Circular1]
-        make[Circular2]
-      })
-
-      val context = mkInjector().produceUnsafe(definition)
-
-      assert(context.get[Circular1] != null)
-      assert(context.get[Circular1].circular2 != context.get[Circular2])
-    }
-    assert(res.getMessage.contains("Failed to instantiate class with CGLib, make sure you don't use proxied parameters in constructors"))
   }
 
   class InnerPathDepTest extends InnerClassUnstablePathsCase.TestModule {

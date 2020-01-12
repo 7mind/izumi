@@ -19,7 +19,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[AbstractFactory]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -53,7 +53,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -72,7 +72,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].from(ConcreteDep())
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -91,7 +91,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Dependency].named("veryspecial").from(VerySpecialDep())
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
@@ -131,7 +131,7 @@ class MacroAutoFactoriesTest extends WordSpec with MkInjector {
       make[Factory]
     })
 
-    val injector = mkNoReflectionInjector()
+    val injector = mkNoCyclesInjector()
     val plan = injector.plan(definition)
     val context = injector.produceUnsafe(plan)
 
