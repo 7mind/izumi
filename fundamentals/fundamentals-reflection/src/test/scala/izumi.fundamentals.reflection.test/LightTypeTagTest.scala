@@ -1,11 +1,14 @@
-package izumi.distage.impl
+package izumi.fundamentals.reflection.test
 
 import izumi.fundamentals.platform.language.Quirks._
 import izumi.fundamentals.reflection.macrortti._
 import org.scalatest.WordSpec
 
+import scala.annotation.StaticAnnotation
 import scala.collection.immutable.ListSet
 import scala.collection.{BitSet, immutable, mutable}
+
+final class IdAnnotation(val name: String) extends StaticAnnotation
 
 trait YieldOpCounts {
   def zioYieldOpCount: Int = 1024
@@ -475,40 +478,9 @@ class LightTypeTagTest extends WordSpec {
       assertCompiles("def x1 = { object x { type F[_[_]]; type Id[A] = A }; LTag[x.F[x.Id]].discard() }")
     }
 
-//    "resolve prefixes of annotated types" in {
-//      assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
-//    }
-//
-//    "allPartsStrong for Identity typelambda" in {
-//      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[Id[C]].typeConstructor)
-//      assert(res1)
-//    }
-//
-//    "allPartsStrong for eta-expansion typelambda" in {
-//      val res1 = ReflectionUtil.allPartsStrong(scala.reflect.runtime.universe.typeOf[FP1[C]].typeConstructor)
-//      assert(res1)
-//    }
-//
-//    "allPartsStrong for application typelambda" in {
-//      val tpe = scala.reflect.runtime.universe.typeOf[Ap1[List, Int]].typeConstructor
-//      val res1 = ReflectionUtil.allPartsStrong(tpe)
-//      assert(res1)
-//    }
-//
-//    "allPartsStrong for anonymous application typelambda" in {
-//      val tpe = scala.reflect.runtime.universe.weakTypeOf[{ type l[F[_], A] = F[A] }]
-//        .asInstanceOf[scala.reflect.runtime.universe.RefinedTypeApi].decl(scala.reflect.runtime.universe.TypeName("l"))
-//        .asType.typeSignature
-//        .typeConstructor
-//      println(tpe)
-//      val res1 = ReflectionUtil.allPartsStrong(tpe)
-//      assert(res1)
-//    }
-//
-//    "allPartsStrong for x.F[x.Id] typelambda" in {
-//      val res1 = ReflectionUtil.allPartsStrong({ object x { type F[_[_]]; type Id[A] = A }; scala.reflect.runtime.universe.weakTypeOf[x.F[x.Id]] })
-//      assert(res1)
-//    }
+    "resolve prefixes of annotated types" in {
+      assert(LTT[TPrefix.T @unchecked] == LTT[TPrefix.T])
+    }
 
     "`withoutArgs` comparison works" in {
       assert(LTT[Set[Int]].ref.withoutArgs == LTT[Set[Any]].ref.withoutArgs)
@@ -552,7 +524,7 @@ class LightTypeTagTest extends WordSpec {
     "issue #762: properly strip away annotated types / empty refinements / type aliases" in {
       val predefString = LTT[String]
       val javaLangString = LTT[java.lang.String]
-      val weirdPredefString = LTT[(scala.Predef.String {}) @distage.Id("abc")]
+      val weirdPredefString = LTT[(scala.Predef.String {}) @IdAnnotation("abc")]
 
       assertSame(predefString, javaLangString)
       assertSame(predefString, weirdPredefString)
