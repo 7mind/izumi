@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream
 
 import izumi.distage.model.definition.DIResource
 import izumi.distage.model.effect.{DIEffect, LowPriorityDIEffectInstances}
-import izumi.functional.bio.{BIO, BIOAsync}
+import izumi.functional.bio.{BIO, BIOAsync, BIOTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import org.scalatest.{GivenWhenThen, WordSpec}
 
@@ -29,6 +29,7 @@ class OptionalDependencyTest extends WordSpec with GivenWhenThen {
 
     And("Can search for BIO/BIOAsync")
     def optSearch[A >: Null](implicit a: A = null) = a
+    optSearch[BIOTemporal[Either]]
     optSearch[BIOAsync[Either]]
     optSearch[BIO[Either]]
 

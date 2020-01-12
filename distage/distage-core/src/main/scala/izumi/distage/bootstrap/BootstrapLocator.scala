@@ -133,8 +133,7 @@ object BootstrapLocator {
 
     make[BindingTranslator].from[BindingTranslator.Impl]
 
-//    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
-    make[ProxyStrategy].from[ProxyStrategyFailingImpl]
+    make[ProxyStrategy].from[ProxyStrategyDefaultImpl]
   }
 
   /** Disable cglib proxies, but allow by-name parameters to resolve cycles */
