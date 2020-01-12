@@ -3,25 +3,23 @@ package izumi.distage.gc
 import distage.DIKey
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.exceptions.UnsupportedOpException
 import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
-
-import scala.util.Try
 
 class GcBasicTests extends WordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
 
-    "progression test: should fail during planning on totally final loops" in {
+    "fail during planning on non-by-name loops involving only final classes" in {
       import GcCases.InjectorCase10._
 
       val injector = mkInjector()
-      val res = Try {
+      intercept[UnsupportedOpException] {
         injector.plan(PlannerInput(new ModuleDef {
           make[Circular1]
           make[Circular2]
         }, GCMode(DIKey.get[Circular2])))
       }
-      assert(res.isSuccess)
     }
 
     "handle by-name circular dependencies with sets through refs/2" in {
