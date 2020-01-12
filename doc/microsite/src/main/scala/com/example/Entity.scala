@@ -1,3 +1,5 @@
+package com.example
+
 import java.util.UUID
 
 import io.circe.Encoder

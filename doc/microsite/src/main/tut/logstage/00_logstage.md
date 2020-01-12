@@ -186,7 +186,7 @@ Example:
 import logstage.{IzLogger, LogstageZIO}
 import zio.{IO, DefaultRuntime}
 
-val log: LogBIO[IO] = LogstageZIO.withFiberId(IzLogger())
+val log = LogstageZIO.withFiberId(IzLogger())
 
 val rts = new DefaultRuntime {}
 rts.unsafeRun {
@@ -200,6 +200,12 @@ I 2019-03-29T23:21:48.760Z[Europe/Dublin] r.S.App9.res10 ...main-12:5384  (00_lo
 
 `LogIO`/`LogBIO` algebras can be extended with custom context using their `.apply` method, same as `IzLogger`:
 
+```scala mdoc:reset
+import com.example.Entity
+
+def load(entity: Entity): cats.effect.IO[Unit] = cats.effect.IO.unit
+```
+
 ```scala mdoc
 import cats.effect.IO
 import cats.implicits._
@@ -208,7 +214,7 @@ import io.circe.Printer
 import io.circe.syntax._
 
 def importEntity(entity: Entity)(implicit log: LogIO[IO]): IO[Unit] = {
-  val ctxLog = log("ID" -> someEntity.id, "entityAsJSON" -> entity.asJson.print(Printer.spaces2))
+  val ctxLog = log("ID" -> entity.id, "entityAsJSON" -> entity.asJson.printWith(Printer.spaces2))
 
   load(entity).handleErrorWith {
     case error =>
