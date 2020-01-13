@@ -33,13 +33,13 @@ libraryDependencies ++= Seq(
   "io.7mind.izumi" %% "distage-extension-config" % "$izumi.version$",
   // Classpath discovery support
   "io.7mind.izumi" %% "distage-extension-plugins" % "$izumi.version$",
+  // LogStage integration with DIStage
+  "io.7mind.izumi" %% "distage-extension-logstage" % "$izumi.version$",
   
   // Core LogStage library
   "io.7mind.izumi" %% "logstage-core" % "$izumi.version$",
   // Configure LogStage with Typesafe Config
   "io.7mind.izumi" %% "logstage-config" % "$izumi.version$",
-  // LogStage integration with DIStage
-  "io.7mind.izumi" %% "logstage-di" % "$izumi.version$",
   // Write logs as JSON
   "io.7mind.izumi" %% "logstage-rendering-circe " % "$izumi.version$",
   // Route Slf4J logs to LogStage

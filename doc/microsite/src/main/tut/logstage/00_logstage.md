@@ -129,7 +129,7 @@ libraryDependencies ++= Seq(
   // Configure LogStage with Typesafe Config
   "io.7mind.izumi" %% "logstage-config" % izumi_version,
   // LogStage integration with DIStage 
-  "io.7mind.izumi" %% "logstage-di" % izumi_version,
+  "io.7mind.izumi" %% "distage-extension-logstage" % izumi_version,
   // Router from LogStage to Slf4J
   "io.7mind.izumi" %% "logstage-sink-slf4j " % izumi_version,
 )
