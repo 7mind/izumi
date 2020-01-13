@@ -1,39 +1,61 @@
 package izumi.logstage.api.rendering.json
 
+import io.circe._
+import io.circe.syntax._
 import izumi.fundamentals.platform.exceptions.IzThrowable._
 import izumi.logstage.api.Log
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.rendering.logunits.LogFormat
-import izumi.logstage.api.rendering.{RenderedParameter, RenderingPolicy}
-import io.circe._
-import io.circe.syntax._
+import izumi.logstage.api.rendering.{RenderedMessage, RenderedParameter, RenderingPolicy}
 
-import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.runtime.RichInt
 
 class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends RenderingPolicy {
+
   import LogstageCirceRenderingPolicy._
 
   override def render(entry: Log.Entry): String = {
-    import izumi.fundamentals.platform.time.IzTime._
-
     val result = mutable.ArrayBuffer[(String, Json)]()
 
     val formatted = Format.formatMessage(entry, withColors = false)
-    val params = parametersToJson[RenderedParameter](ArraySeq.empty ++ (formatted.parameters ++ formatted.unbalanced), _.normalizedName, repr)
+    val params = parametersToJson[RenderedParameter](
+      formatted.parameters ++ formatted.unbalanced,
+      _.normalizedName,
+      repr
+    )
+
     if (params.nonEmpty) {
       result += "event" -> params.asJson
     }
 
-    val ctx = parametersToJson[LogArg](entry.context.customContext.values, _.name, v => {
-      val p = Format.formatArg(v, withColors = false)
-      repr(p)
-    })
+    val ctx = parametersToJson[LogArg](
+      entry.context.customContext.values,
+      _.name,
+      v => repr(Format.formatArg(v, withColors = false))
+    )
 
     if (ctx.nonEmpty) {
       result += "context" -> ctx.asJson
     }
+
+    result ++= makeEventEnvelope(entry, formatted)
+
+    val json = Json.fromFields(result)
+
+    dump(json)
+  }
+
+  protected def dump(json: Json): String = {
+    if (prettyPrint) {
+      json.printWith(Printer.spaces2)
+    } else {
+      json.noSpaces
+    }
+  }
+
+  protected def makeEventEnvelope(entry: Log.Entry, formatted: RenderedMessage): Seq[(String, Json)] = {
+    import izumi.fundamentals.platform.time.IzTime._
 
     val eventInfo = Json.fromFields(Seq(
       "class" -> Json.fromString(new RichInt(formatted.template.hashCode).toHexString),
@@ -56,18 +78,10 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
         "message" -> Json.fromString(formatted.message),
       ))
     )
-    result ++= tail
-
-    val json = Json.fromFields(result)
-
-    if (prettyPrint) {
-      json.printWith(Printer.spaces2)
-    } else {
-      json.noSpaces
-    }
+    tail
   }
 
-  @inline private[this] def parametersToJson[T](params: Seq[T], name: T => String, repr: T => Json): Map[String, Json] = {
+  protected def parametersToJson[T](params: Seq[T], name: T => String, repr: T => Json): Map[String, Json] = {
     val paramGroups = params.groupBy(name)
     val (unary, multiple) = paramGroups.partition(_._2.size == 1)
     val paramsMap = unary.map {
@@ -81,7 +95,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
     paramsMap ++ multiparamsMap
   }
 
-  @inline private[this] def repr(parameter: RenderedParameter): Json = {
+  protected def repr(parameter: RenderedParameter): Json = {
     val mapStruct: PartialFunction[Any, Json] = {
       case a: Iterable[_] =>
         val params = a
@@ -133,6 +147,7 @@ class LogstageCirceRenderingPolicy(prettyPrint: Boolean = false) extends Renderi
 }
 
 object LogstageCirceRenderingPolicy {
+
   object Format extends LogFormat.LogFormatImpl {
     override protected def toString(argValue: Any): String = {
       argValue match {
@@ -142,4 +157,5 @@ object LogstageCirceRenderingPolicy {
       }
     }
   }
+
 }
