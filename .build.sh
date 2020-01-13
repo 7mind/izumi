@@ -105,6 +105,8 @@ function publishScala {
 
 function init {
     echo "=== INIT ==="
+    export LC_ALL="C.UTF-8"
+    
     if [[ "$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" == ""  ]] ; then
         export CI_PULL_REQUEST=false
     else
@@ -152,9 +154,7 @@ function secrets {
 
 init
 
-PARAMS=()
-SOFT=0
-SKIP=()
+
 for i in "$@"
 do
 case $i in
