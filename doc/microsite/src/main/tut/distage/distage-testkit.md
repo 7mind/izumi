@@ -5,50 +5,71 @@ distage-testkit
 
 ### Testkit
 
-[distage Livecode project](https://github.com/7mind/distage-livecode) project shows how to use `distage-testkit`:
+[distage Example Project](https://github.com/7mind/distage-example) project shows how to use `distage-testkit`, there's also
+an overview in the [Hyper-pragmatic Pure FP Testing with distage-testkit](https://www.youtube.com/watch?v=CzpvjkUukAs) talk. 
+
+Further documentation still TBD: [Issue #820](https://github.com/7mind/izumi/issues/820)
+
+Some example code from [distage-example](https://github.com/7mind/distage-example):
 
 ```scala
-package livecode
+package leaderboard
 
-import distage.{DIKey, ModuleDef}
-import doobie.util.transactor.Transactor
-import izumi.distage.model.definition.StandardAxis
-import izumi.distage.docker.examples.PostgresDocker
-import izumi.distage.testkit.services.DISyntaxZIOEnv
+import com.typesafe.config.ConfigFactory
+import distage.{DIKey, Injector, ModuleDef}
+import izumi.distage.config.AppConfigModule
+import izumi.distage.framework.model.PluginSource
+import izumi.distage.model.definition.Activation
+import izumi.distage.model.definition.StandardAxis.Repo
+import izumi.distage.model.plan.GCMode
+import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
 import izumi.distage.testkit.scalatest.DistageBIOSpecScalatest
-import livecode.code._
-import livecode.zioenv._
+import izumi.distage.testkit.services.DISyntaxZIOEnv
+import izumi.logstage.api.logger.LogRouter
+import leaderboard.model.{QueryFailure, Score, UserId, UserProfile}
+import leaderboard.plugins.{LeaderboardPlugin, ZIOPlugin}
+import leaderboard.repo.{Ladder, Profiles}
+import leaderboard.zioenv._
+import logstage.di.LogstageModule
 import zio.{IO, Task, ZIO}
 
-abstract class LivecodeTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
+abstract class LeaderboardTest extends DistageBIOSpecScalatest[IO] with DISyntaxZIOEnv {
   override def config = TestConfig(
-    pluginPackages = Some(Seq("livecode.plugins")),
-    activation     = StandardAxis.testProdActivation,
+    pluginSource = PluginSource(PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins"))),
     moduleOverrides = new ModuleDef {
       make[Rnd[IO]].from[Rnd.Impl[IO]]
+      // For testing, setup a docker container with postgres,
+      // instead of trying to connect to an external database
       include(PostgresDockerModule)
     },
-    memoizedKeys = Set(
-      DIKey.get[Transactor[Task]],
+    // instantiate Ladder & Profiles only once per test-run and
+    // share them and all their dependencies across all tests.
+    // this includes the Postgres Docker container above and
+    // table DDLs 
+    memoizationRoots = Set(
       DIKey.get[Ladder[IO]],
       DIKey.get[Profiles[IO]],
-      DIKey.get[PostgresDocker.Container],
     ),
   )
 }
 
-trait DummyTest extends LivecodeTest {
+trait DummyTest extends LeaderboardTest {
   override final def config = super.config.copy(
-    activation = StandardAxis.testDummyActivation,
+    activation = Activation(Repo -> Repo.Dummy),
+  )
+}
+
+trait ProdTest extends LeaderboardTest {
+  override final def config = super.config.copy(
+    activation = Activation(Repo -> Repo.Prod),
   )
 }
 
 final class LadderTestDummy extends LadderTest with DummyTest
-final class ProfilesTestDummy extends ProfilesTest with DummyTest
-final class RanksTestDummy extends RanksTest with DummyTest
+final class LadderTestPostgres extends LadderTest with ProdTest
 
-class LadderTest extends LivecodeTest with DummyTest {
+abstract class LadderTest extends LeaderboardTest {
 
   "Ladder" should {
     // this test gets dependencies through arguments
@@ -64,7 +85,7 @@ class LadderTest extends LivecodeTest with DummyTest {
     }
 
     // other tests get dependencies via ZIO Env:
-    "return higher score higher in the list" in {
+    "assign a higher position in the list to a higher score" in {
       for {
         user1  <- rnd[UserId]
         score1 <- rnd[Score]
