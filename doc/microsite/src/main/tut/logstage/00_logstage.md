@@ -245,6 +245,4 @@ StaticLogRouter.instance.setup(myLogger.router)
 
 @@@ index
 
-* [Rendering policy](policy.md)
-
 @@@
