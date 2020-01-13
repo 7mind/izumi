@@ -201,16 +201,19 @@ object DockerContainer {
     private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client
+        client.cmd
         .createContainerCmd(config.image)
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 
       val volumes = config.mounts.map {
-        case Mount(h, c, nc) => new Bind(h, new Volume(c), nc)
+        case Mount(h, c, true) => new Bind(h, new Volume(c), true)
+        case Mount(h, c, _) => new Bind(h, new Volume(c))
       }
 
       for {
         out <- DIEffect[F].maybeSuspend {
           val cmd = Value(baseCmd)
+            .mut(config.name){case (n, c) => c.withName(n)}
             .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
             .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
             .mut(config.env.nonEmpty)(_.withEnv(config.env.map {
@@ -245,6 +248,26 @@ object DockerContainer {
             case Right(mappedPorts) =>
               val container = DockerContainer[T](ContainerId(res.getId), inspection.getName, mappedPorts, config, clientw.clientConfig, Map.empty)
               logger.debug(s"Created $container from ${config.image}...")
+
+              if (config.networks.nonEmpty) {
+                logger.debug(s"Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
+
+                val existedNetworks: List[Network] = client.listNetworksCmd().exec().asScala.toList
+
+                config.networks.map {
+                  network =>
+                    existedNetworks.find(_.getName == network.name).fold {
+                      logger.debug(s"Going to create $network ...")
+                      client.createNetworkCmd().withName(network.name).exec().getId
+                    }(_.getId)
+                }.foreach {
+                  client.connectToNetworkCmd()
+                    .withContainerId(container.id.name)
+                    .withNetworkId(_)
+                    .exec()
+                }
+              }
+
               container
           }
         }
