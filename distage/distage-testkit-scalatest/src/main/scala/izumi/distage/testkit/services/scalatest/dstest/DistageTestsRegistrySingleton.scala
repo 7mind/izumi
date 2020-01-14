@@ -14,7 +14,7 @@ object DistageTestsRegistrySingleton {
   protected[this] type Fake[T]
   private[this] object Fake
   private[this] val registry = new mutable.HashMap[SafeType, mutable.ArrayBuffer[DistageTest[Fake]]]()
-  private[this] val statuses = new mutable.HashMap[String, StatefulStatus]()
+  private[this] val statuses = new mutable.HashMap[SafeType, mutable.HashMap[String, StatefulStatus]]()
   private[this] val trackers = new mutable.HashMap[String, Either[mutable.ArrayBuffer[Tracker => Unit], Tracker]]()
   private[this] val runTracker = new ConcurrentHashMap[SafeType, Fake.type]()
   private[this] val knownSuites = new ConcurrentHashMap[(SafeType, String), Fake.type]()
@@ -48,12 +48,21 @@ object DistageTestsRegistrySingleton {
     registry.getOrElseUpdate(SafeType.getK[F], mutable.ArrayBuffer.empty).map(_.asInstanceOf[DistageTest[F]]).toSeq
   }
 
-  def registerStatus(suiteId: String): StatefulStatus = synchronized {
-    statuses.getOrElseUpdate(suiteId, new StatefulStatus)
+  def registerStatus[F[_]: TagK](suiteId: String): StatefulStatus = synchronized {
+    statuses
+      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
+      .getOrElseUpdate(suiteId, new StatefulStatus)
   }
 
-  def completeStatuses(suiteIds: Set[String]): Unit = synchronized {
-    suiteIds.foreach(statuses.get(_).foreach(_.setCompleted()))
+  def completeStatuses[F[_]: TagK](): Unit = synchronized {
+    statuses
+      .getOrElseUpdate(SafeType.getK[F], mutable.HashMap.empty)
+      .valuesIterator.foreach {
+        status =>
+          if (!status.isCompleted) {
+            status.setCompleted()
+          }
+      }
   }
 
   def runReport(suiteId: String)(f: Tracker => Unit): Unit = synchronized {

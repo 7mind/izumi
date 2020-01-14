@@ -51,7 +51,7 @@ object ScalatestInitWorkaround {
           .addClassLoader(classLoader)
           .scan()
         try {
-          val specs = scan.getClassesImplementing(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
+          val specs = scan.getSubclasses(classOf[DistageScalatestTestSuiteRunner[Identity]].getCanonicalName).asScala.filterNot(_.isAbstract)
           specs.foreach(spec => Try(spec.loadClass().getDeclaredConstructor().newInstance()))
           DistageTestsRegistrySingleton.disableRegistration()
           latch.countDown()
@@ -65,14 +65,12 @@ object ScalatestInitWorkaround {
 
 }
 
-trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSpec[F] {
+abstract class DistageScalatestTestSuiteRunner[F[_]](implicit override val tagMonoIO: TagK[F]) extends Suite with AbstractDistageSpec[F] {
   protected def specConfig: SpecConfig = SpecConfig()
-
-  implicit def tagMonoIO: TagK[F]
 
   // initialize status early, so that runner can set it to `true` even before this test is discovered
   // by scalatest, if it was already executed by that time
-  private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus(suiteId)
+  private[this] val status: StatefulStatus = DistageTestsRegistrySingleton.registerStatus[F](suiteId)
 
   private[this] lazy val specEnv: SpecEnvironment = makeSpecEnvironment()
   protected def makeSpecEnvironment(): SpecEnvironment = {
@@ -191,22 +189,18 @@ trait DistageScalatestTestSuiteRunner[F[_]] extends Suite with AbstractDistageSp
         }
     }
 
-    if (toRun.isEmpty) {
-      return
-    } else {
-      debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
-    }
-
-    val runner = {
-      val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
-      val checker = new IntegrationChecker.Impl(logger)
-      new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
-    }
-
     try {
-      runner.run()
+      if (toRun.nonEmpty) {
+        debugLogger.log(s"GOING TO RUN TESTS in ${tagMonoIO.tag}: ${toRun.map(_.meta.id.name)}")
+        val runner = {
+          val logger = IzLogger(Log.Level.Debug)("phase" -> "test")
+          val checker = new IntegrationChecker.Impl(logger)
+          new DistageTestRunner[F](testReporter, checker, specEnv, toRun, _.isInstanceOf[TestCanceledException], parallelTestsAlways)
+        }
+        runner.run()
+      }
     } finally {
-      DistageTestsRegistrySingleton.completeStatuses(toRun.map(_.meta.id.suiteId).toSet)
+      DistageTestsRegistrySingleton.completeStatuses[F]()
     }
   }
 
