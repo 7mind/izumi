@@ -87,7 +87,9 @@ class DistageTestRunner[F[_] : TagK]
             acc -> b
         }
 
-        logger.info(s"Strengthened weak components in env: $strengthenedKeys")
+        if (strengthenedKeys.nonEmpty) {
+          logger.info(s"Strengthened weak components in env: $strengthenedKeys")
+        }
 
         val shared = injector.trisectByKeys(strengthenedAppModule, sharedKeys) {
           _.collectChildren[IntegrationCheck].map(_.target).toSet
