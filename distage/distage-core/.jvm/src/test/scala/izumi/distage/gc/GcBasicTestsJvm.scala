@@ -7,7 +7,6 @@ import izumi.distage.model.plan.GCMode
 import org.scalatest.WordSpec
 
 import scala.collection.immutable
-import scala.util.Try
 
 class GcBasicTestsJvm extends WordSpec with MkGcInjector {
   "Garbage-collecting injector" should {
