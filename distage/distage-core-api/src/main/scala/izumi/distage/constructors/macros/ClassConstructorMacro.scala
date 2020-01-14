@@ -35,7 +35,7 @@ object ClassConstructorMacro {
         val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
         val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-        val (associations, constructor) = mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
+        val (associations, constructor) = mkClassConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
         val provided: c.Expr[ProviderMagnet[T]] = {
           val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
@@ -54,28 +54,35 @@ object ClassConstructorMacro {
     }
   }
 
-  def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
-                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+  def mkClassConstructorUnwrapped(c: blackbox.Context)
+                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
                                       logger: TrivialLogger)
-                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
 
     if (!reflectionProvider.isConcrete(targetType)) {
       c.abort(c.enclosingPosition,
         s"""Tried to derive constructor function for class $targetType, but the class is an
            |abstract class or a trait! Only concrete classes (`class` keyword) are supported""".stripMargin)
+    } else {
+      val (associations, ctorArgs, ctorArgNamesLists) = mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
+      (associations, q"(..$ctorArgs) => new $targetType(...$ctorArgNamesLists)")
     }
+  }
 
+  def mkClassConstructorUnwrappedImpl(c: blackbox.Context)
+                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                      logger: TrivialLogger)
+                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], List[c.Tree], List[List[c.universe.TermName]]) = {
     val paramLists = reflectionProvider.constructorParameterLists(targetType)
     val fnArgsNamesLists = paramLists.map(_.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_)))
 
-    val (associations, args) = fnArgsNamesLists.flatten.map { case (p, a, _) => (p, a) }.unzip
-    val argNamesLists = fnArgsNamesLists.map(_.map(_._3._2))
+    val (associations, ctorArgs) = fnArgsNamesLists.flatten.map { case (p, a, _) => (p, a) }.unzip
+    val ctorArgNamesLists = fnArgsNamesLists.map(_.map(_._3._2))
 
-    val constructor = q"(..$args) => new $targetType(...$argNamesLists)"
-
-    (associations, constructor)
+    (associations, ctorArgs, ctorArgNamesLists)
   }
 
 }

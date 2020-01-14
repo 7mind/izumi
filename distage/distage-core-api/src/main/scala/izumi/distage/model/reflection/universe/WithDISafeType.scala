@@ -7,8 +7,8 @@ private[distage] trait WithDISafeType {
 
   // TODO: hotspot, hashcode on keys is inefficient
   case class SafeType private (
-                                private[distage] val typeNative: TypeNative,
-                                tag: LightTypeTag,
+                                private[reflection] val typeNative: TypeNative,
+                                private[WithDISafeType] val tag: LightTypeTag,
                               ) {
 
     override final lazy val hashCode: Int = tag.hashCode()
@@ -23,20 +23,17 @@ private[distage] trait WithDISafeType {
       }
     }
 
-    final def =:=(that: SafeType): Boolean = {
-      tag =:= that.tag
-    }
-
-    final def <:<(that: SafeType): Boolean = {
-      tag <:< that.tag
-    }
-
-    @deprecated("Avoid using runtime reflection, this will be removed in future", "0.9.0")
-    def use[T](f: TypeNative => T): T = f(typeNative)
+//    final def =:=(that: SafeType): Boolean = {
+//      tag =:= that.tag
+//    }
+//
+//    final def <:<(that: SafeType): Boolean = {
+//      tag <:< that.tag
+//    }
   }
 
   object SafeType {
-    def apply(tpe: TypeNative): SafeType = {
+    def create(tpe: TypeNative): SafeType = {
       new SafeType(tpe, LightTypeTagImpl.makeLightTypeTag(u)(tpe))
     }
   }

@@ -116,4 +116,25 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
     assert(context.get[TestTrait].anyValDep.d eq context.get[Dep])
   }
 
+  "can handle abstract classes" in {
+    import TraitCase7._
+
+    val definition = PlannerInput.noGc(new ModuleDef {
+      make[Dependency1]
+      make[Dependency2]
+      make[X].from[XImpl]
+    })
+
+    val injector = mkInjector()
+    val plan = injector.plan(definition)
+    val context = injector.produceUnsafe(plan)
+
+    val dependency1 = context.get[Dependency1]
+    val dependency2 = context.get[Dependency2]
+
+    assert(context.get[X].get() == Result(dependency1, dependency2))
+    assert(context.get[X].get().dependency1 eq dependency1)
+    assert(context.get[X].get().dependency2 eq dependency2)
+  }
+
 }

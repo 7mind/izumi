@@ -23,9 +23,9 @@ object TraitConstructorMacro {
     val reflectionProvider = ReflectionProviderDefaultImpl(macroUniverse)
     val logger = TrivialMacroLogger.make[this.type](c, DebugProperties.`izumi.debug.macro.distage.constructors`)
 
-    val (associations, constructor) = mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
+    val (associations, constructor) = mkTraitConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
-    val provided: c.Expr[ProviderMagnet[T]] = {
+    val provider: c.Expr[ProviderMagnet[T]] = {
       val providerMagnetMacro = new ProviderMagnetMacro0[c.type](c)
       providerMagnetMacro.generateProvider[T](
         parameters = associations.asInstanceOf[List[providerMagnetMacro.macroUniverse.Association.Parameter]],
@@ -35,18 +35,18 @@ object TraitConstructorMacro {
     }
 
     val res = c.Expr[TraitConstructor[T]] {
-      q"""{ new ${weakTypeOf[TraitConstructor[T]]}($provided) }"""
+      q"""{ new ${weakTypeOf[TraitConstructor[T]]}($provider) }"""
     }
     logger.log(s"Final syntax tree of trait $targetType:\n$res")
 
     res
   }
 
-  def mkTraitConstructorUnwrappedImpl(c: blackbox.Context)
-                                     (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
-                                     (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
-                                      logger: TrivialLogger)
-                                     (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
+  def mkTraitConstructorUnwrapped(c: blackbox.Context)
+                                 (macroUniverse: StaticDIUniverse.Aux[c.universe.type])
+                                 (reflectionProvider: ReflectionProvider.Aux[macroUniverse.type],
+                                  logger: TrivialLogger)
+                                 (targetType: c.Type): (List[macroUniverse.Association.Parameter], c.Tree) = {
     import c.universe._
     import macroUniverse.Wiring.SingletonWiring.AbstractSymbol
 
@@ -63,31 +63,50 @@ object TraitConstructorMacro {
         c.abort(c.enclosingPosition, s"Cannot construct an implementation for $targetType: it contains a type parameter $err (${err.typeSymbol}) in type constructor position")
     }
 
-    val AbstractSymbol(_, wireables, _) = reflectionProvider.symbolToWiring(targetType)
-    val (associations, wireArgs, wire0) = wireables.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)).unzip3
-    val (wireMethods, _) = wire0.unzip
+    val AbstractSymbol(_, wireables, prefix@_) = reflectionProvider.symbolToWiring(targetType)
+    val (traitAssociations, traitCtorArgs, wireMethodsCtorArgNames) = wireables.map(mkArgFromAssociation(c)(macroUniverse)(logger)(_)).unzip3
+    val (wireMethods, _) = wireMethodsCtorArgNames.unzip
+    val (ctorAssociations, classCtorArgs, ctorParams) = ClassConstructorMacro.mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(targetType)
 
-    val instantiate = newWithMethods(c)(targetType, wireMethods)
-    val constructor = q"(..$wireArgs) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
+    val ctorLambda = newWithMethods(c)(targetType, ctorParams, wireMethods)
+    val constructor = q"(..${classCtorArgs ++ traitCtorArgs}) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($ctorLambda)"
 
-    (associations, constructor)
+    (ctorAssociations ++ traitAssociations, constructor)
   }
 
-  def newWithMethods(c: blackbox.Context)(targetType: c.universe.Type, methods: List[c.universe.Tree]): c.universe.Tree = {
+  def newWithMethods(c: blackbox.Context)(targetType: c.universe.Type, arguments: List[List[c.universe.TermName]], methods: List[c.universe.Tree]): c.universe.Tree = {
     import c.universe._
 
     val parents = ReflectionUtil.intersectionTypeMembers[c.universe.type](targetType)
-    if (methods.isEmpty) {
-      q"new ..$parents {}"
-    } else {
-      q"new ..$parents { ..$methods }"
+    parents match {
+      case parent :: Nil =>
+        if (methods.isEmpty) {
+          q"new $parent(...$arguments) {}"
+        } else {
+          q"new $parent(...$arguments) { ..$methods }"
+        }
+      case _ =>
+        if (arguments.nonEmpty) {
+          c.abort(c.enclosingPosition,
+            s"""Unsupported case: intersection type containing an abstract class.
+               |Please manually create an abstract class with the added traits.
+               |When trying to create a TraitConstructor for $targetType""".stripMargin)
+        } else {
+          if (methods.isEmpty) {
+            q"new ..$parents {}"
+          } else {
+            q"new ..$parents { ..$methods }"
+          }
+        }
     }
   }
 
   def mkArgFromAssociation(c: blackbox.Context)
                           (u: StaticDIUniverse.Aux[c.universe.type])
                           (logger: TrivialLogger)
-                          (association: u.Association): (u.Association.Parameter, c.universe.Tree, (c.universe.Tree, c.universe.TermName)) = {
+                          (association: u.Association
+                          // parameter: u.Association.Parameter, ctorArgument: u.u.Tree, traitMethodImpl: u.u.Tree, ctorArgumentName: u.u.TermName
+                          ): (u.Association.Parameter, u.u.Tree, (u.u.Tree, u.u.TermName)) = {
     import c.universe._
     import u.Association._
 

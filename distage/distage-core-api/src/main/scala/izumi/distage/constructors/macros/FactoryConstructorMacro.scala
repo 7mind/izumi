@@ -27,12 +27,12 @@ object FactoryConstructorMacro {
 
     val targetType = ReflectionUtil.norm(c.universe: c.universe.type)(weakTypeOf[T])
 
-    val factory@Factory(factoryMethods, _) = reflectionProvider.symbolToWiring(targetType)
-    val traitMeta = factory.traitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
+    val factory@Factory(factoryMethods, factoryTraitDependencies) = reflectionProvider.symbolToWiring(targetType)
+    val traitMeta = factoryTraitDependencies.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val paramMeta = factory.factoryProductDepsFromObjectGraph.map(TraitConstructorMacro.mkArgFromAssociation(c)(macroUniverse)(logger)(_))
     val allMeta = traitMeta ++ paramMeta
-    val (dependencyAssociations, dependencyArgDecls, _) = allMeta.unzip3
     val dependencyMethods = traitMeta.map(_._3._1)
+    val (dependencyAssociations, dependencyArgDecls, _) = allMeta.unzip3
     val dependencyArgMap: Map[DIKey.BasicKey, TermName] = allMeta.map { case (param, _, (_, argName)) => param.key -> argName }.toMap
 
     logger.log(
@@ -94,7 +94,7 @@ object FactoryConstructorMacro {
 
     val allMethods = producerMethods ++ dependencyMethods
 
-    val instantiate = TraitConstructorMacro.newWithMethods(c)(targetType, allMethods)
+    val instantiate = TraitConstructorMacro.newWithMethods(c)(targetType, Nil, allMethods)
 
     val constructor = q"(..$dependencyArgDecls) => _root_.izumi.distage.constructors.TraitConstructor.wrapInitialization[$targetType]($instantiate)"
 
@@ -127,9 +127,9 @@ object FactoryConstructorMacro {
     val tpe = ReflectionUtil.norm(c.universe: c.universe.type)(targetType)
 
     if (reflectionProvider.isConcrete(tpe)) {
-      ClassConstructorMacro.mkClassConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
+      ClassConstructorMacro.mkClassConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else if (reflectionProvider.isWireableAbstract(tpe)) {
-      TraitConstructorMacro.mkTraitConstructorUnwrappedImpl(c)(macroUniverse)(reflectionProvider, logger)(tpe)
+      TraitConstructorMacro.mkTraitConstructorUnwrapped(c)(macroUniverse)(reflectionProvider, logger)(tpe)
     } else {
       c.abort(
         c.enclosingPosition,
