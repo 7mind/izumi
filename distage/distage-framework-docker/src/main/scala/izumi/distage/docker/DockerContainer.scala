@@ -201,7 +201,6 @@ object DockerContainer {
     private[this] def doRun(ports: Seq[PortDecl]): F[DockerContainer[T]] = {
       val allPortLabels = ports.flatMap(p => p.labels).toMap
       val baseCmd = client
-        client.cmd
         .createContainerCmd(config.image)
         .withLabels((clientw.labels ++ allPortLabels).asJava)
 

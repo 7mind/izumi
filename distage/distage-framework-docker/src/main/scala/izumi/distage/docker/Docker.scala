@@ -57,7 +57,9 @@ object Docker {
 
   final case class Mount(host: String, container: String, noCopy: Boolean = false)
 
-  final case class Network(name: String)
+  trait ContainerNetwork {
+    def name: String
+  }
 
   final case class ContainerConfig[T](
                                        image: String,
@@ -69,7 +71,7 @@ object Docker {
                                        cwd: Option[String] = None,
                                        user: Option[String] = None,
                                        mounts: Seq[Mount] = Seq.empty,
-                                       networks: Seq[Network] = Seq.empty,
+                                       networks: Seq[ContainerNetwork] = Seq.empty,
                                        reuse: Boolean = true,
                                        healthCheckInterval: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS),
                                        pullTimeout: FiniteDuration = FiniteDuration(120, TimeUnit.SECONDS),
